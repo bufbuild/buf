@@ -1,0 +1,6 @@
+version: v2
+modules:
+  - path: finance/bond/proto
+    name: buf.testing/acme/bond
+deps:
+  - buf.testing/acme/date

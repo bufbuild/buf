@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -32,15 +33,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -59,10 +59,8 @@ type reader struct {
 	gitEnabled bool
 	gitCloner  git.Cloner
 
-	moduleEnabled  bool
-	moduleReader   bufmodule.ModuleReader
-	moduleResolver bufmodule.ModuleResolver
-	tracer         trace.Tracer
+	moduleEnabled     bool
+	moduleKeyProvider bufmodule.ModuleKeyProvider
 }
 
 func newReader(
@@ -73,7 +71,6 @@ func newReader(
 	reader := &reader{
 		logger:            logger,
 		storageosProvider: storageosProvider,
-		tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 	for _, option := range options {
 		option(reader)
@@ -111,15 +108,32 @@ func (r *reader) GetFile(
 	}
 }
 
-func (r *reader) GetBucket(
+func (r *reader) GetReadBucketCloser(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
-	options ...GetBucketOption,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
-	getBucketOptions := newGetBucketOptions()
+	options ...GetReadBucketCloserOption,
+) (retReadBucketCloser ReadBucketCloser, _ buftarget.BucketTargeting, retErr error) {
+	getReadBucketCloserOptions := newGetReadBucketCloserOptions()
 	for _, option := range options {
-		option(getBucketOptions)
+		option(getReadBucketCloserOptions)
+	}
+	if getReadBucketCloserOptions.copyToInMemory {
+		defer func() {
+			if retReadBucketCloser != nil {
+				castReadBucketCloser, ok := retReadBucketCloser.(*readBucketCloser)
+				if !ok {
+					retErr = multierr.Append(
+						retErr,
+						syserror.Newf("expected *readBucketCloser but got %T", retReadBucketCloser),
+					)
+					return
+				}
+				var err error
+				retReadBucketCloser, err = castReadBucketCloser.copyToInMemory(ctx)
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
 	}
 	switch t := bucketRef.(type) {
 	case ArchiveRef:
@@ -127,43 +141,73 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getReadBucketCloserOptions.targetPaths,
+			getReadBucketCloserOptions.targetExcludePaths,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 	case DirRef:
-		return r.getDirBucket(
+		readWriteBucket, bucketTargeting, err := r.getDirBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getReadBucketCloserOptions.targetPaths,
+			getReadBucketCloserOptions.targetExcludePaths,
+			getReadBucketCloserOptions.terminateFunc,
 		)
+		if err != nil {
+			return nil, nil, err
+		}
+		return newReadBucketCloserForReadWriteBucket(readWriteBucket), bucketTargeting, nil
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getReadBucketCloserOptions.targetPaths,
+			getReadBucketCloserOptions.targetExcludePaths,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 	case ProtoFileRef:
 		return r.getProtoFileBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 	default:
-		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
+		return nil, nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
 	}
 }
 
-func (r *reader) GetModule(
+func (r *reader) GetReadWriteBucket(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	dirRef DirRef,
+	options ...GetReadWriteBucketOption,
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
+	getReadWriteBucketOptions := newGetReadWriteBucketOptions()
+	for _, option := range options {
+		option(getReadWriteBucketOptions)
+	}
+	return r.getDirBucket(
+		ctx,
+		container,
+		dirRef,
+		getReadWriteBucketOptions.targetPaths,
+		getReadWriteBucketOptions.targetExcludePaths,
+		getReadWriteBucketOptions.terminateFunc,
+	)
+}
+
+func (r *reader) GetModuleKey(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef ModuleRef,
 	_ ...GetModuleOption,
-) (bufmodule.Module, error) {
+) (bufmodule.ModuleKey, error) {
 	switch t := moduleRef.(type) {
 	case ModuleRef:
-		return r.getModule(
+		return r.getModuleKey(
 			ctx,
 			container,
 			t,
@@ -197,50 +241,40 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	terminateFileNames [][]string,
-) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
-	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
-	if err != nil {
-		return nil, err
-	}
+	targetPaths []string,
+	targetExcludePaths []string,
+	terminateFunc buftarget.TerminateFunc,
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	ctx, span := r.tracer.Start(ctx, "unarchive")
-	defer span.End()
-	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
 		if err := storagearchive.Untar(
 			ctx,
 			readCloser,
 			readWriteBucket,
-			nil,
-			archiveRef.StripComponents(),
+			storagearchive.UntarWithStripComponentCount(
+				archiveRef.StripComponents(),
+			),
 		); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	case ArchiveTypeZip:
 		var readerAt io.ReaderAt
 		if size < 0 {
 			data, err := io.ReadAll(readCloser)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))
 		} else {
 			readerAt, err = ioext.ReaderAtForReader(readCloser)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 		if err := storagearchive.Unzip(
@@ -248,229 +282,83 @@ func (r *reader) getArchiveBucket(
 			readerAt,
 			size,
 			readWriteBucket,
-			nil,
-			archiveRef.StripComponents(),
+			storagearchive.UnzipWithStripComponentCount(
+				archiveRef.StripComponents(),
+			),
 		); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	default:
-		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
+		return nil, nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
-	if err != nil {
-		return nil, err
-	}
-	var terminateFileDirectoryPath string
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 {
-		terminateFileDirectoryPath = terminateFiles[0].Path()
-	}
-	if terminateFileDirectoryPath != "" {
-		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
-		if err != nil {
-			return nil, err
-		}
-		readBucketCloser, err := newReadBucketCloser(
-			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
-			terminateFileDirectoryPath,
-			relativeSubDirPath,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return newReadBucketCloserWithTerminateFiles(
-			readBucketCloser,
-			nil,
-		), nil
-	}
-	var readBucket storage.ReadBucket = readWriteBucket
-	if subDirPath != "." {
-		readBucket = storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(subDirPath))
-	}
-	readBucketCloser, err := newReadBucketCloser(
-		storage.NopReadBucketCloser(readBucket),
-		"",
-		"",
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readWriteBucket),
+		archiveRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
 	)
-	if err != nil {
-		return nil, err
-	}
-	return newReadBucketCloserWithTerminateFiles(
-		readBucketCloser,
-		nil,
-	), nil
 }
 
 func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	terminateFileNames [][]string,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
+	targetPaths []string,
+	targetExcludePaths []string,
+	terminateFunc buftarget.TerminateFunc,
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
 	if !r.localEnabled {
-		return nil, NewReadLocalDisabledError()
+		return nil, nil, NewReadLocalDisabledError()
 	}
-	terminateFileProvider, err := getTerminateFileProviderForOS(dirRef.Path(), terminateFileNames)
-	if err != nil {
-		return nil, err
-	}
-	rootPath, dirRelativePath, err := r.getBucketRootPathAndRelativePath(ctx, container, dirRef.Path(), terminateFileProvider)
-	if err != nil {
-		return nil, err
-	}
-	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-		rootPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	return getReadWriteBucketForOS(
+		ctx,
+		r.logger,
+		r.storageosProvider,
+		dirRef.Path(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
 	)
-	if err != nil {
-		return nil, err
-	}
-	if dirRelativePath != "" {
-		// Verify that the subDirPath exists too.
-		if _, err := r.storageosProvider.NewReadWriteBucket(
-			normalpath.Join(rootPath, dirRelativePath),
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		); err != nil {
-			return nil, err
-		}
-		readWriteBucketCloser, err := newReadWriteBucketCloser(
-			storage.NopReadWriteBucketCloser(readWriteBucket),
-			rootPath,
-			dirRelativePath,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return newReadBucketCloserWithTerminateFiles(
-			readWriteBucketCloser,
-			nil,
-		), nil
-	}
-	readBucketCloser, err := newReadWriteBucketCloser(
-		storage.NopReadWriteBucketCloser(readWriteBucket),
-		"",
-		"",
-	)
-	if err != nil {
-		return nil, err
-	}
-	return newReadBucketCloserWithTerminateFiles(
-		readBucketCloser,
-		nil,
-	), nil
 }
 
 func (r *reader) getProtoFileBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
-	terminateFileNames [][]string,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
+	terminateFunc buftarget.TerminateFunc,
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	if !r.localEnabled {
-		return nil, NewReadLocalDisabledError()
+		return nil, nil, NewReadLocalDisabledError()
 	}
-	terminateFileProvider, err := getTerminateFileProviderForOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
-	if err != nil {
-		return nil, err
-	}
-	rootPath, _, err := r.getBucketRootPathAndRelativePath(ctx, container, normalpath.Dir(protoFileRef.Path()), terminateFileProvider)
-	if err != nil {
-		return nil, err
-	}
-	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-		rootPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	return getReadBucketCloserForOSProtoFile(
+		ctx,
+		r.logger,
+		r.storageosProvider,
+		protoFileRef.Path(),
+		terminateFunc,
 	)
-	if err != nil {
-		return nil, err
-	}
-	readWriteBucketCloser, err := newReadWriteBucketCloser(
-		storage.NopReadWriteBucketCloser(readWriteBucket),
-		rootPath,
-		"", // For ProtoFileRef, we default to using the working directory
-	)
-	if err != nil {
-		return nil, err
-	}
-	return newReadBucketCloserWithTerminateFiles(
-		readWriteBucketCloser,
-		terminateFileProvider,
-	), nil
-}
-
-// getBucketRootPathAndRelativePath is a helper function that returns the rootPath and relative
-// path if available for the readWriteBucket based on the dirRef and protoFileRef.
-func (r *reader) getBucketRootPathAndRelativePath(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	dirPath string,
-	terminateFileProvider TerminateFileProvider,
-) (string, string, error) {
-	// Set the terminateFile to the first terminateFilesPriorities result, since that's the highest
-	// priority file.
-	var terminateFileDirectoryAbsPath string
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 {
-		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
-	}
-	if terminateFileDirectoryAbsPath != "" {
-		// If the terminate file exists, we need to determine the relative path from the
-		// terminateFileDirectoryAbsPath to the target DirRef.Path.
-		wd, err := osext.Getwd()
-		if err != nil {
-			return "", "", err
-		}
-		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
-		if err != nil {
-			return "", "", err
-		}
-		dirAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
-		if err != nil {
-			return "", "", err
-		}
-		dirRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, dirAbsPath)
-		if err != nil {
-			return "", "", err
-		}
-		// It should be impossible for the dirRefRelativePath to be outside of the context
-		// diretory, but we validate just to make sure.
-		dirRelativePath, err = normalpath.NormalizeAndValidate(dirRelativePath)
-		if err != nil {
-			return "", "", err
-		}
-		rootPath := terminateFileRelativePath
-		if filepath.IsAbs(normalpath.Unnormalize(dirPath)) {
-			// If the input was provided as an absolute path,
-			// we preserve it by initializing the workspace
-			// bucket with an absolute path.
-			rootPath = terminateFileDirectoryAbsPath
-		}
-		return rootPath, dirRelativePath, nil
-	}
-	return dirPath, "", nil
 }
 
 func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-	terminateFileNames [][]string,
-) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
+	targetPaths []string,
+	targetExcludePaths []string,
+	terminateFunc buftarget.TerminateFunc,
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	if !r.gitEnabled {
-		return nil, NewReadGitDisabledError()
+		return nil, nil, NewReadGitDisabledError()
 	}
 	if r.gitCloner == nil {
-		return nil, errors.New("git cloner is nil")
-	}
-	subDirPath, err := normalpath.NormalizeAndValidate(gitRef.SubDirPath())
-	if err != nil {
-		return nil, err
+		return nil, nil, errors.New("git cloner is nil")
 	}
 	gitURL, err := getGitURL(gitRef)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
@@ -484,73 +372,42 @@ func (r *reader) getGitBucket(
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
 		},
 	); err != nil {
-		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
+		return nil, nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
-	if err != nil {
-		return nil, err
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readWriteBucket),
+		gitRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
+}
+
+func (r *reader) getModuleKey(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	moduleRef ModuleRef,
+) (bufmodule.ModuleKey, error) {
+	if !r.moduleEnabled {
+		return nil, NewReadModuleDisabledError()
 	}
-	var terminateFileDirectoryPath string
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 {
-		terminateFileDirectoryPath = terminateFiles[0].Path()
+	if r.moduleKeyProvider == nil {
+		return nil, errors.New("module key provider is nil")
 	}
-	if terminateFileDirectoryPath != "" {
-		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
-		if err != nil {
-			return nil, err
-		}
-		readBucketCloser, err := newReadBucketCloser(
-			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
-			terminateFileDirectoryPath,
-			relativeSubDirPath,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return newReadBucketCloserWithTerminateFiles(
-			readBucketCloser,
-			nil,
-		), nil
-	}
-	var readBucket storage.ReadBucket = readWriteBucket
-	if subDirPath != "." {
-		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
-	}
-	readBucketCloser, err := newReadBucketCloser(
-		storage.NopReadBucketCloser(readBucket),
-		"",
-		"",
+	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(
+		ctx,
+		[]bufmodule.ModuleRef{moduleRef.ModuleRef()},
+		bufmodule.DigestTypeB5,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return newReadBucketCloserWithTerminateFiles(
-		readBucketCloser,
-		nil,
-	), nil
-}
-
-func (r *reader) getModule(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	moduleRef ModuleRef,
-) (bufmodule.Module, error) {
-	if !r.moduleEnabled {
-		return nil, NewReadModuleDisabledError()
+	if len(moduleKeys) != 1 {
+		return nil, fmt.Errorf("expected 1 ModuleKey, got %d", len(moduleKeys))
 	}
-	if r.moduleReader == nil {
-		return nil, errors.New("module reader is nil")
-	}
-	if r.moduleResolver == nil {
-		return nil, errors.New("module resolver is nil")
-	}
-	modulePin, err := r.moduleResolver.GetModulePin(ctx, moduleRef.ModuleReference())
-	if err != nil {
-		return nil, err
-	}
-	return r.moduleReader.GetModule(ctx, modulePin)
+	return moduleKeys[0], nil
 }
 
 func (r *reader) getFileReadCloserAndSize(
@@ -703,197 +560,348 @@ func getGitURL(gitRef GitRef) (string, error) {
 	}
 }
 
-// getTerminateFileProviderForBucket returns the directory path that contains
-// one of the terminateFileNames, starting with the subDirPath and ascending until the root
-// of the bucket.
-func getTerminateFileProviderForBucket(
+// Use for memory buckets i.e. archive and git.
+func getReadBucketCloserForBucket(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	subDirPath string,
-	terminateFileNames [][]string,
-) (TerminateFileProvider, error) {
-	terminateFiles := make([]TerminateFile, len(terminateFileNames))
-	if len(terminateFileNames) == 0 {
-		return newTerminateFileProvider(terminateFiles), nil
+	logger *zap.Logger,
+	inputBucket storage.ReadBucketCloser,
+	inputSubDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
+	terminateFunc buftarget.TerminateFunc,
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
+	if err := validatePaths(inputSubDirPath, targetPaths, targetExcludePaths); err != nil {
+		return nil, nil, err
 	}
-	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
-	var foundFiles int
-	for {
-		foundTerminateFiles, err := terminateFilesInBucket(ctx, readBucket, terminateFileDirectoryPath, terminateFileNames)
-		if err != nil {
-			return nil, err
-		}
-		for i, terminateFile := range foundTerminateFiles {
-			// We only want to return the first file for a hiearchy, so if a file already exists
-			// for a layer of hierarchy, we do not check again.
-			if terminateFiles[i] == nil {
-				// If a file is found for a specific layer of hierarchy, we return the first file found
-				// for that hierarchy.
-				if terminateFile != nil {
-					terminateFiles[i] = terminateFile
-					foundFiles++
-				}
-			}
-		}
-		// If we have found a terminate file for each layer, we can return now.
-		if foundFiles == len(terminateFileNames) {
-			return newTerminateFileProvider(terminateFiles), nil
-		}
-		parent := normalpath.Dir(terminateFileDirectoryPath)
-		if parent == terminateFileDirectoryPath {
-			break
-		}
-		terminateFileDirectoryPath = parent
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		inputBucket,
+		inputSubDirPath,
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
+	if err != nil {
+		return nil, nil, err
 	}
-	// The number of terminate files found is less than the number of layers of terminate files
-	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
-	var prunedTerminateFiles []TerminateFile
-	for _, terminateFile := range terminateFiles {
-		if terminateFile != nil {
-			prunedTerminateFiles = append(prunedTerminateFiles, terminateFile)
-		}
+	// If a controlling workspace is found, then we map the bucket on the controlling
+	// workspace path. We only need to remap the bucket in the case where a controlling
+	// workspace is found. In the case where no controlling workspace is found, bufworkspace
+	// will handle the SubDirPath through workspace targeting given the bucket and BucketTargeting.
+	//
+	// We return the same bucket targeting information, since BucketTargeting
+	// maps the target paths and target exclude paths to the controlling workspace path when
+	// one is found.
+	bucketPath := "."
+	if bucketTargeting.ControllingWorkspace() != nil && bucketTargeting.ControllingWorkspace().Path() != "." {
+		bucketPath = bucketTargeting.ControllingWorkspace().Path()
+		inputBucket = storage.MapReadBucketCloser(
+			inputBucket,
+			storage.MapOnPrefix(bucketPath),
+		)
 	}
-	return newTerminateFileProvider(prunedTerminateFiles), nil
+	logger.Debug(
+		"buffetch creating new bucket",
+		zap.String("bucketPath", bucketPath),
+		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
+	)
+	readBucketCloser := newReadBucketCloser(inputBucket, bucketTargeting)
+	return readBucketCloser, bucketTargeting, nil
 }
 
-func terminateFilesInBucket(
+// Use for directory-based buckets.
+func getReadWriteBucketForOS(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	directoryPath string,
-	paths [][]string,
-) ([]TerminateFile, error) {
-	foundPaths := make([]TerminateFile, len(paths))
-	for i := range paths {
-		// We need to check for the existence of all the terminate files, so we ascend and prepend
-		// the current directory to determine the fully-qualified filepaths.
-		//
-		// For example:
-		//   [][]string{
-		//     ["buf.work.yaml", "buf.work"],
-		//     ["buf.yaml", "buf.mod"],
-		//   }
-		// ==>
-		//
-		//   [][]string{
-		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
-		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
-		//   }
-		for _, path := range paths[i] {
-			path = normalpath.Join(directoryPath, path)
-			exists, err := storage.Exists(ctx, readBucket, path)
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	inputDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
+	terminateFunc buftarget.TerminateFunc,
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
+	fsRoot, fsRootInputSubDirPath, err := fsRootAndFSRelPathForPath(inputDirPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	fsRootTargetPaths := make([]string, len(targetPaths))
+	for i, targetPath := range targetPaths {
+		_, fsRootTargetPath, err := fsRootAndFSRelPathForPath(targetPath)
+		if err != nil {
+			return nil, nil, err
+		}
+		fsRootTargetPaths[i] = fsRootTargetPath
+	}
+	fsRootTargetExcludePaths := make([]string, len(targetExcludePaths))
+	for i, targetExcludePath := range targetExcludePaths {
+		_, fsRootTargetExcludePath, err := fsRootAndFSRelPathForPath(targetExcludePath)
+		if err != nil {
+			return nil, nil, err
+		}
+		fsRootTargetExcludePaths[i] = fsRootTargetExcludePath
+	}
+	osRootBucket, err := storageosProvider.NewReadWriteBucket(
+		fsRoot,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	osRootBucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		osRootBucket,
+		fsRootInputSubDirPath,
+		fsRootTargetPaths,
+		fsRootTargetExcludePaths,
+		terminateFunc,
+	)
+	if err != nil {
+		return nil, nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
+	}
+	// osRootBucketTargeting returns the information on whether or not a controlling
+	// workspace was found based on the inputDirPath.
+	//
+	// *** CONTROLLING WOKRSPACE FOUND ***
+	//
+	// In the case where a controlling workspace is found, we want to create a new bucket
+	// for the controlling workspace.
+	// If the inputDirPath is an absolute path, we want to use an absolute path:
+	//
+	//    bucketPath := fsRoot + controllingWorkspace.Path()
+	//
+	// If the inputDirPath is a relative path, we want to use a relative path between the
+	// current working directory (pwd) and controlling workspace.
+	//
+	//    bucketPath := Rel(Rel(fsRoot, pwd), controllingWorkspace.Path())
+	//
+	// We do not need to remap the input dir, target paths, and target exclude paths
+	// returned by buftarget.BucketTargeting, because they are already relative to the
+	// controlling workpsace.
+	//
+	// *** CONTROLLING WOKRSPACE NOT FOUND ***
+	//
+	// In the case where a controlling workpsace is not found, we have three outcomes for
+	// creating a new bucket.
+	// If the inputDirPath is an absolute path, we want to use an absolute path to the input
+	// path:
+	//
+	//    bucketPath := Abs(inputDirPath)
+	//
+	// If the inputDirPath is a relative path, there are two possible outcomes: the input
+	// dir is within the context of the working directory or is outside of the context of
+	// the working directory.
+	//
+	// In the case where the input dir, is within the context of the working directory, we
+	// use pwd:
+	//
+	//    bucketPath := Rel(fsRoot,pwd)
+	//
+	// In the case where the input dir is outside the context of the working directory, we
+	// use the input dir relative to the pwd:
+	//
+	//    bucketPath := Rel(Rel(fsRoot,pwd), Rel(fsRoot, inputDirPath))
+	//
+	// For all cases where no controlling workspace was found, we need to remap the input
+	// path, target paths, and target exclude paths to the root of the new bucket.
+	var bucketPath string
+	var inputDir string
+	bucketTargetPaths := make([]string, len(osRootBucketTargeting.TargetPaths()))
+	bucketTargetExcludePaths := make([]string, len(osRootBucketTargeting.TargetExcludePaths()))
+	if controllingWorkspace := osRootBucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
+		if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
+			bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspace().Path())
+		} else {
+			// Relative input dir
+			pwdFSRelPath, err := getPWDFSRelPath()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			if exists {
-				foundPaths[i] = newTerminateFile(normalpath.Base(path), normalpath.Dir(path))
-				// We want the first file found for each layer of hierarchy.
-				break
+			bucketPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.ControllingWorkspace().Path())
+			if err != nil {
+				return nil, nil, err
 			}
 		}
-	}
-	return foundPaths, nil
-}
-
-// getTerminateFileProviderForOS returns the directory that contains
-// the terminateFileName, starting with the subDirPath and ascending until
-// the root of the local filesystem.
-func getTerminateFileProviderForOS(
-	subDirPath string,
-	terminateFileNames [][]string,
-) (TerminateFileProvider, error) {
-	terminateFiles := make([]TerminateFile, len(terminateFileNames))
-	if len(terminateFileNames) == 0 {
-		return newTerminateFileProvider(terminateFiles), nil
-	}
-	fileInfo, err := os.Stat(normalpath.Unnormalize(subDirPath))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, &fs.PathError{Op: "stat", Path: subDirPath, Err: fs.ErrNotExist}
-		}
-		return nil, err
-	}
-	if !fileInfo.IsDir() {
-		return nil, normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
-	}
-	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
-	if err != nil {
-		return nil, err
-	}
-	var foundFiles int
-	for {
-		foundTerminateFiles, err := terminateFilesOnOS(terminateFileDirectoryPath, terminateFileNames)
-		if err != nil {
-			return nil, err
-		}
-		// More terminate files were found than layers of hierarchy, return an error. This path
-		// should be unreachable.
-		if len(foundTerminateFiles) > len(terminateFileNames) {
-			return nil, fmt.Errorf("more than one terminate file found per level of prioritization: %v", foundTerminateFiles)
-		}
-		for i, terminateFile := range foundTerminateFiles {
-			// We only want to return the first file for a hiearchy, so if a file already exists
-			// for a layer of hierarchy, we do not check again.
-			if terminateFiles[i] == nil {
-				// If a file is found for a specific layer of hierarchy, we return the first file found
-				// for that hierarchy.
-				if terminateFile != nil {
-					terminateFiles[i] = terminateFile
-					foundFiles++
+		inputDir = osRootBucketTargeting.SubDirPath()
+		bucketTargetPaths = osRootBucketTargeting.TargetPaths()
+		bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
+	} else {
+		// No controlling workspace found
+		if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
+			bucketPath = inputDirPath
+		} else {
+			// Relative input dir
+			pwdFSRelPath, err := getPWDFSRelPath()
+			if err != nil {
+				return nil, nil, err
+			}
+			if filepath.IsLocal(normalpath.Unnormalize(inputDirPath)) {
+				// Use current working directory
+				bucketPath = "."
+			} else {
+				// Relative input dir outside of working directory context
+				bucketPath, err = normalpath.Rel(pwdFSRelPath, fsRootInputSubDirPath)
+				if err != nil {
+					return nil, nil, err
 				}
 			}
 		}
-		// If we have found a terminate file for each layer, we can return now.
-		if foundFiles == len(terminateFileNames) {
-			return newTerminateFileProvider(terminateFiles), nil
+		// Map input dir, target paths, and target exclude paths to the new bucket path.
+		_, bucketPathFSRelPath, err := fsRootAndFSRelPathForPath(bucketPath)
+		if err != nil {
+			return nil, nil, err
 		}
-		parent := normalpath.Dir(terminateFileDirectoryPath)
-		if parent == terminateFileDirectoryPath {
-			break
+		inputDir, err = normalpath.Rel(bucketPathFSRelPath, osRootBucketTargeting.SubDirPath())
+		if err != nil {
+			return nil, nil, err
 		}
-		terminateFileDirectoryPath = parent
+		for i, targetPath := range osRootBucketTargeting.TargetPaths() {
+			bucketTargetPaths[i], err = normalpath.Rel(bucketPathFSRelPath, targetPath)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		for i, targetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
+			bucketTargetExcludePaths[i], err = normalpath.Rel(bucketPathFSRelPath, targetExcludePath)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
 	}
-	// The number of terminate files found is less than the number of layers of terminate files
-	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
-	var prunedTerminateFiles []TerminateFile
-	for _, terminateFile := range terminateFiles {
-		if terminateFile != nil {
-			prunedTerminateFiles = append(prunedTerminateFiles, terminateFile)
-		}
+	bucket, err := storageosProvider.NewReadWriteBucket(
+		bucketPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, nil, err
 	}
-	return newTerminateFileProvider(prunedTerminateFiles), nil
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		bucket,
+		inputDir,
+		bucketTargetPaths,
+		bucketTargetExcludePaths,
+		terminateFunc,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	readWriteBucket := newReadWriteBucket(bucket, bucketPath, bucketTargeting)
+	return readWriteBucket, bucketTargeting, nil
 }
 
-func terminateFilesOnOS(directoryPath string, paths [][]string) ([]TerminateFile, error) {
-	foundPaths := make([]TerminateFile, len(paths))
-	for i := range paths {
-		// We need to check for the existence of all the terminate files, so we ascend and prepend
-		// the current directory to determine the fully-qualified filepaths.
-		//
-		// For example:
-		//   [][]string{
-		//     ["buf.work.yaml", "buf.work"],
-		//     ["buf.yaml", "buf.mod"],
-		//   }
-		// ==>
-		//
-		//   [][]string{
-		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
-		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
-		//   }
-		for _, path := range paths[i] {
-			path = normalpath.Unnormalize(normalpath.Join(directoryPath, path))
-			fileInfo, err := os.Stat(path)
-			if err != nil && !os.IsNotExist(err) {
-				return nil, err
-			}
-			if fileInfo != nil && !fileInfo.IsDir() {
-				foundPaths[i] = newTerminateFile(normalpath.Base(path), normalpath.Dir(path))
-				// We want the first file found for each layer of hierarchy.
-				break
+// Use for ProtoFileRefs.
+func getReadBucketCloserForOSProtoFile(
+	ctx context.Context,
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	protoFilePath string,
+	terminateFunc buftarget.TerminateFunc,
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
+	// For proto file refs, we treat the input directory as the directory of
+	// the file and the file as a target path.
+	// No other target paths and target exclude paths are supported with
+	// proto file refs.
+	protoFileDir := normalpath.Dir(protoFilePath)
+	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
+		ctx,
+		logger,
+		storageosProvider,
+		protoFileDir,
+		[]string{protoFilePath},
+		nil, // no target exclude paths are supported for proto file refs
+		terminateFunc,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return newReadBucketCloserForReadWriteBucket(readWriteBucket), bucketTargeting, nil
+}
+
+// getPWDFSRelPath is a helper function that gets the relative path of the current working
+// directory to the FS root.
+func getPWDFSRelPath() (string, error) {
+	pwd, err := osext.Getwd()
+	if err != nil {
+		return "", err
+	}
+	_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
+	if err != nil {
+		return "", err
+	}
+	return pwdFSRelPath, nil
+}
+
+// fsRootAndFSRelPathForPath is a helper function that takes a path and returns the FS
+// root and relative path to the FS root.
+func fsRootAndFSRelPathForPath(path string) (string, string, error) {
+	absPath, err := normalpath.NormalizeAndAbsolute(path)
+	if err != nil {
+		return "", "", err
+	}
+	// Split the absolute path into components to get the FS root
+	absPathComponents := normalpath.Components(absPath)
+	fsRoot := absPathComponents[0]
+	fsRelPath, err := normalpath.Rel(fsRoot, absPath)
+	if err != nil {
+		return "", "", err
+	}
+	return fsRoot, fsRelPath, nil
+}
+
+// We attempt to fix up paths we get back to better printing to the user.
+// Without this, we'll get things like "stat: Users/foo/path/to/input: does not exist"
+// based on our usage of osRootBucket and absProtoFileDirPath above. While we won't
+// break any contracts printing these out, this is confusing to the user, so this is
+// our attempt to fix that.
+//
+// This is going to take away other intermediate errors unfortunately.
+func attemptToFixOSRootBucketPathErrors(fsRoot string, err error) error {
+	var pathError *fs.PathError
+	if errors.As(err, &pathError) {
+		pwd, err := osext.Getwd()
+		if err != nil {
+			return err
+		}
+		pwd = normalpath.Normalize(pwd)
+		if normalpath.EqualsOrContainsPath(pwd, normalpath.Join(fsRoot, pathError.Path), normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, normalpath.Join(fsRoot, pathError.Path))
+			// Just ignore if this errors and do nothing.
+			if err == nil {
+				// Making a copy just to be super-safe.
+				return &fs.PathError{
+					Op:   pathError.Op,
+					Path: relPath,
+					Err:  pathError.Err,
+				}
 			}
 		}
 	}
-	return foundPaths, nil
+	return err
+}
+
+func validatePaths(
+	inputSubDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
+) error {
+	if _, err := normalpath.NormalizeAndValidate(inputSubDirPath); err != nil {
+		return err
+	}
+	if _, err := slicesext.MapError(
+		targetPaths,
+		normalpath.NormalizeAndValidate,
+	); err != nil {
+		return err
+	}
+	if _, err := slicesext.MapError(
+		targetPaths,
+		normalpath.NormalizeAndValidate,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 type getFileOptions struct {
@@ -904,12 +912,25 @@ func newGetFileOptions() *getFileOptions {
 	return &getFileOptions{}
 }
 
-type getBucketOptions struct {
-	terminateFileNames [][]string
+type getReadBucketCloserOptions struct {
+	terminateFunc      buftarget.TerminateFunc
+	copyToInMemory     bool
+	targetPaths        []string
+	targetExcludePaths []string
 }
 
-func newGetBucketOptions() *getBucketOptions {
-	return &getBucketOptions{}
+func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
+	return &getReadBucketCloserOptions{}
+}
+
+type getReadWriteBucketOptions struct {
+	terminateFunc      buftarget.TerminateFunc
+	targetPaths        []string
+	targetExcludePaths []string
+}
+
+func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {
+	return &getReadWriteBucketOptions{}
 }
 
 type getModuleOptions struct{}

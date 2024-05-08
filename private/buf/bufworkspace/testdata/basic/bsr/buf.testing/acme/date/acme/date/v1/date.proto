@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package acme.date.v1;
+
+import "acme/extension/v1/extension.proto";
+
+message Date {
+  option (acme.extension.v1.experimental) = true;
+
+  uint32 day = 1;
+  uint32 month = 2;
+  uint32 year = 3;
+}

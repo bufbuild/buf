@@ -79,8 +79,14 @@ func TestOutputWithExclude(t *testing.T) {
 func TestOutputWithPathWithinExclude(t *testing.T) {
 	t.Parallel()
 	tempDirPath := t.TempDir()
-	testRunSuccess(
+	// This is new post-refactor. Before, we gave precedence to --path. While a change,
+	// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+	testRunStdoutStderr(
 		t,
+		nil,
+		1,
+		"",
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a" contains targeted path "testdata/paths/a/v1/a.proto", which means all paths in "testdata/paths/a/v1/a.proto" will be excluded`),
 		"--output",
 		tempDirPath,
 		"--template",
@@ -90,11 +96,6 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 		"--exclude-path",
 		filepath.Join("testdata", "paths", "a"),
 	)
-
-	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
-	require.NoError(t, err)
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
-	require.Contains(t, err.Error(), "no such file or directory")
 }
 
 func TestOutputWithExcludeWithinPath(t *testing.T) {
@@ -126,8 +127,14 @@ func TestOutputWithExcludeWithinPath(t *testing.T) {
 func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 	t.Parallel()
 	tempDirPath := t.TempDir()
-	testRunSuccess(
+	// This is new post-refactor. Before, we gave precedence to --path. While a change,
+	// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+	testRunStdoutStderr(
 		t,
+		nil,
+		1,
+		"",
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
 		"--output",
 		tempDirPath,
 		"--template",
@@ -140,30 +147,19 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 		filepath.Join("testdata", "paths", "a", "v3", "foo"),
 		filepath.Join("testdata", "paths"),
 	)
-	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "FooOuterClass.java"))
-	require.NoError(t, err)
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "A.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "BarOuterClass.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
 }
 
 func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
 	t.Parallel()
 	tempDirPath := t.TempDir()
-	testRunSuccess(
+	// This is new post-refactor. Before, we gave precedence to --path. While a change,
+	// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+	testRunStdoutStderr(
 		t,
+		nil,
+		1,
+		"",
+		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
 		"--output",
 		tempDirPath,
 		"--template",
@@ -178,21 +174,4 @@ func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
 		filepath.Join("testdata", "workspace", "b", "v1", "foo.proto"),
 		filepath.Join("testdata", "workspace"),
 	)
-	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "FooOuterClass.java"))
-	require.NoError(t, err)
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "A.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
-	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "BarOuterClass.java"))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file or directory")
 }

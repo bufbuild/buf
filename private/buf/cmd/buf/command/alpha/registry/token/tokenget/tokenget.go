@@ -21,13 +21,13 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/netext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -39,18 +39,17 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build>",
 		Short: "Get a token by ID",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -78,20 +77,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The ID of the token to get",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, tokenIDFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, tokenIDFlagName)
 }
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnAlphaCommand(ctx, container)
-	remote := container.Arg(0)
-	if err := bufmoduleref.ValidateRemoteNotEmpty(remote); err != nil {
-		return err
-	}
-	if err := bufmoduleref.ValidateRemoteHasNoPaths(remote); err != nil {
+	registryHostname := container.Arg(0)
+	if _, err := netext.ValidateHostname(registryHostname); err != nil {
 		return err
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
@@ -102,7 +98,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewTokenServiceClient)
+	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	resp, err := service.GetToken(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetTokenRequest{
@@ -117,7 +113,7 @@ func run(
 	}
 	printer, err := bufprint.NewTokenPrinter(container.Stdout(), format)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return printer.PrintTokens(ctx, resp.Msg.Token)
 }

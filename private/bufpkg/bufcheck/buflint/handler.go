@@ -17,30 +17,32 @@ package buflint
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
 type handler struct {
 	logger *zap.Logger
+	tracer tracing.Tracer
 	runner *internal.Runner
 }
 
-func newHandler(logger *zap.Logger) *handler {
+func newHandler(logger *zap.Logger, tracer tracing.Tracer) *handler {
 	return &handler{
 		logger: logger,
+		tracer: tracer,
 		// linting allows for comment ignores
 		// note that comment ignores still need to be enabled within the config
 		// for a given check, this just says that comment ignores are allowed
 		// in the first place
 		runner: internal.NewRunner(
 			logger,
+			tracer,
 			internal.RunnerWithIgnorePrefix(buflintcheck.CommentIgnorePrefix),
 		),
 	}
@@ -48,16 +50,19 @@ func newHandler(logger *zap.Logger) *handler {
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *buflintconfig.Config,
+	config bufconfig.LintConfig,
 	image bufimage.Image,
-) ([]bufanalysis.FileAnnotation, error) {
-	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
-	if err != nil {
-		return nil, err
+) error {
+	if config.Disabled() {
+		return nil
 	}
-	internalConfig, err := internalConfigForConfig(config)
+	files, err := bufprotosource.NewFiles(ctx, image)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	internalConfig, err := internalConfigForConfig(config, true)
+	if err != nil {
+		return err
 	}
 	return h.runner.Check(ctx, internalConfig, nil, files)
 }

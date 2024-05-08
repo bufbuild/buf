@@ -24,75 +24,29 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+const maxTagNumber = 536870911 // 2^29 - 1
+
 func newResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}
+	fileDescriptorSet := protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...)
+	if err := stripLegacyOptions(fileDescriptorSet.File); err != nil {
+		return nil, err
+	}
 	// TODO: handle if resolvable
 	files, err := protodesc.FileOptions{
 		AllowUnresolvable: true,
-	}.NewFiles(
-		protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...),
-	)
+	}.NewFiles(fileDescriptorSet)
 	if err != nil {
 		return nil, err
 	}
-	types := &protoregistry.Types{}
-	var rangeErr error
-	files.RangeFiles(func(fileDescriptor protoreflect.FileDescriptor) bool {
-		if err := registerDescriptors(types, fileDescriptor); err != nil {
-			rangeErr = err
-			return false
-		}
-		return true
-	})
-	if rangeErr != nil {
-		return nil, rangeErr
-	}
-	return &resolver{Files: files, Types: types}, nil
+	return &resolver{Files: files, Types: dynamicpb.NewTypes(files)}, nil
 }
 
 type resolver struct {
 	*protoregistry.Files
-	*protoregistry.Types
-}
-
-type descriptorContainer interface {
-	Messages() protoreflect.MessageDescriptors
-	Enums() protoreflect.EnumDescriptors
-	Extensions() protoreflect.ExtensionDescriptors
-}
-
-func registerDescriptors(types *protoregistry.Types, container descriptorContainer) error {
-	messageDescriptors := container.Messages()
-	for i, messagesLen := 0, messageDescriptors.Len(); i < messagesLen; i++ {
-		messageDescriptor := messageDescriptors.Get(i)
-		if err := types.RegisterMessage(dynamicpb.NewMessageType(messageDescriptor)); err != nil {
-			return err
-		}
-		// nested types, too
-		if err := registerDescriptors(types, messageDescriptor); err != nil {
-			return err
-		}
-	}
-
-	enumDescriptors := container.Enums()
-	for i, enumsLen := 0, enumDescriptors.Len(); i < enumsLen; i++ {
-		enumDescriptor := enumDescriptors.Get(i)
-		if err := types.RegisterEnum(dynamicpb.NewEnumType(enumDescriptor)); err != nil {
-			return err
-		}
-	}
-
-	extensionDescriptors := container.Extensions()
-	for i, extensionsLen := 0, extensionDescriptors.Len(); i < extensionsLen; i++ {
-		extensionDescriptor := extensionDescriptors.Get(i)
-		if err := types.RegisterExtension(dynamicpb.NewExtensionType(extensionDescriptor)); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	*dynamicpb.Types
 }
 
 type lazyResolver struct {

@@ -15,48 +15,19 @@
 package buffetch
 
 import (
-	"path/filepath"
-
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var _ SourceRef = &sourceRef{}
 
 type sourceRef struct {
 	bucketRef internal.BucketRef
-	dirPath   string
 }
 
 func newSourceRef(bucketRef internal.BucketRef) *sourceRef {
-	var dirPath string
-	if dirRef, ok := bucketRef.(internal.DirRef); ok {
-		dirPath = dirRef.Path()
-	}
 	return &sourceRef{
 		bucketRef: bucketRef,
-		dirPath:   dirPath,
 	}
-}
-
-func (r *sourceRef) PathForExternalPath(externalPath string) (string, error) {
-	if r.dirPath == "" {
-		return normalpath.NormalizeAndValidate(externalPath)
-	}
-	absDirPath, err := filepath.Abs(normalpath.Unnormalize(r.dirPath))
-	if err != nil {
-		return "", err
-	}
-	// we don't actually need to unnormalize externalPath but we do anyways
-	absExternalPath, err := filepath.Abs(normalpath.Unnormalize(externalPath))
-	if err != nil {
-		return "", err
-	}
-	path, err := filepath.Rel(absDirPath, absExternalPath)
-	if err != nil {
-		return "", err
-	}
-	return normalpath.NormalizeAndValidate(path)
 }
 
 func (r *sourceRef) internalRef() internal.Ref {

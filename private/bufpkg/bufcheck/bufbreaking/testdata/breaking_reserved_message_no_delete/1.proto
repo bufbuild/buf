@@ -52,3 +52,9 @@ message Three {
   int32 two = 2;
   int32 three = 3;
 }
+
+message Ten {
+  reserved 1 to 1000;
+  reserved 2000 to 5000, 10000 to 50000;
+  reserved 100000 to max;
+}

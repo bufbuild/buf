@@ -4,9 +4,12 @@ go 1.20
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240401165935-b983156c5e99.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.1-20240401180337-569d290ee4cc.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240401180337-569d290ee4cc.1
 	connectrpc.com/connect v1.16.1
 	connectrpc.com/otelconnect v0.7.0
-	github.com/bufbuild/protocompile v0.9.0
+	github.com/bufbuild/protocompile v0.13.0
+	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
 	github.com/bufbuild/protovalidate-go v0.6.2
 	github.com/bufbuild/protoyaml-go v0.1.9
 	github.com/docker/docker v26.1.1+incompatible
@@ -17,7 +20,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.19.1
 	github.com/jdx/go-netrc v1.0.0
-	github.com/jhump/protoreflect v1.15.6
+	github.com/jhump/protoreflect v1.16.0
 	github.com/klauspost/compress v1.17.8
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
@@ -39,7 +42,7 @@ require (
 	golang.org/x/sync v0.7.0
 	golang.org/x/term v0.20.0
 	golang.org/x/tools v0.20.0
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 

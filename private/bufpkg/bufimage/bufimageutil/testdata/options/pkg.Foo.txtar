@@ -7,7 +7,7 @@ option (UsedOption.file_foo) = { foo: "str" };
 message Foo {
   option (message_baz) = "str";
   option (message_foo) = { foo: "str" };
-  optional string foo = 1 [
+  optional uint64 foo = 1 [
     jstype = JS_STRING,
     (field_baz) = "str",
     (field_foo) = { foo: "str" }
@@ -38,6 +38,7 @@ message FeatureSet {
     edition_defaults = { value: "EXPLICIT", edition: EDITION_PROTO2 },
     edition_defaults = { value: "IMPLICIT", edition: EDITION_PROTO3 },
     edition_defaults = { value: "EXPLICIT", edition: EDITION_2023 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
@@ -45,6 +46,7 @@ message FeatureSet {
   optional EnumType enum_type = 2 [
     edition_defaults = { value: "CLOSED", edition: EDITION_PROTO2 },
     edition_defaults = { value: "OPEN", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_ENUM,
     targets = TARGET_TYPE_FILE
@@ -52,6 +54,7 @@ message FeatureSet {
   optional RepeatedFieldEncoding repeated_field_encoding = 3 [
     edition_defaults = { value: "EXPANDED", edition: EDITION_PROTO2 },
     edition_defaults = { value: "PACKED", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
@@ -59,12 +62,14 @@ message FeatureSet {
   optional Utf8Validation utf8_validation = 4 [
     edition_defaults = { value: "NONE", edition: EDITION_PROTO2 },
     edition_defaults = { value: "VERIFY", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
   ];
   optional MessageEncoding message_encoding = 5 [
     edition_defaults = { value: "LENGTH_PREFIXED", edition: EDITION_PROTO2 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
@@ -72,6 +77,7 @@ message FeatureSet {
   optional JsonFormat json_format = 6 [
     edition_defaults = { value: "LEGACY_BEST_EFFORT", edition: EDITION_PROTO2 },
     edition_defaults = { value: "ALLOW", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_MESSAGE,
     targets = TARGET_TYPE_ENUM,
@@ -105,10 +111,10 @@ message FeatureSet {
   }
   enum Utf8Validation {
     UTF8_VALIDATION_UNKNOWN = 0;
-    NONE = 1;
     VERIFY = 2;
+    NONE = 3;
   }
-  extensions 1000, 1001, 9995 to 9999;
+  extensions 1000, 1001, 1002, 9990, 9995 to 9999, 10000;
   reserved 999;
 }
 message FieldOptions {
@@ -124,10 +130,17 @@ message FieldOptions {
   repeated OptionTargetType targets = 19;
   repeated EditionDefault edition_defaults = 20;
   optional FeatureSet features = 21;
+  optional FeatureSupport feature_support = 22;
   repeated UninterpretedOption uninterpreted_option = 999;
   message EditionDefault {
     optional string value = 2;
     optional Edition edition = 3;
+  }
+  message FeatureSupport {
+    optional Edition edition_introduced = 1;
+    optional Edition edition_deprecated = 2;
+    optional string deprecation_warning = 3;
+    optional Edition edition_removed = 4;
   }
   enum CType {
     STRING = 0;
@@ -177,7 +190,6 @@ message FileOptions {
   optional string swift_prefix = 39;
   optional string php_class_prefix = 40;
   optional string php_namespace = 41;
-  optional bool php_generic_services = 42 [default = false];
   optional string php_metadata_namespace = 44;
   optional string ruby_package = 45;
   optional FeatureSet features = 50;
@@ -188,7 +200,7 @@ message FileOptions {
     LITE_RUNTIME = 3;
   }
   extensions 1000 to max;
-  reserved 38;
+  reserved 38, 42;
 }
 message MessageOptions {
   optional bool message_set_wire_format = 1 [default = false];
@@ -223,12 +235,15 @@ enum Edition {
   EDITION_UNKNOWN = 0;
   EDITION_1_TEST_ONLY = 1;
   EDITION_2_TEST_ONLY = 2;
+  EDITION_LEGACY = 900;
   EDITION_PROTO2 = 998;
   EDITION_PROTO3 = 999;
   EDITION_2023 = 1000;
+  EDITION_2024 = 1001;
   EDITION_99997_TEST_ONLY = 99997;
   EDITION_99998_TEST_ONLY = 99998;
   EDITION_99999_TEST_ONLY = 99999;
+  EDITION_MAX = 2147483647;
 }
 -- options.proto --
 syntax = "proto3";

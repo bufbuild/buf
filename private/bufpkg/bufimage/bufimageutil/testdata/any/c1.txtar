@@ -49,6 +49,7 @@ message FeatureSet {
     edition_defaults = { value: "EXPLICIT", edition: EDITION_PROTO2 },
     edition_defaults = { value: "IMPLICIT", edition: EDITION_PROTO3 },
     edition_defaults = { value: "EXPLICIT", edition: EDITION_2023 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
@@ -56,6 +57,7 @@ message FeatureSet {
   optional EnumType enum_type = 2 [
     edition_defaults = { value: "CLOSED", edition: EDITION_PROTO2 },
     edition_defaults = { value: "OPEN", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_ENUM,
     targets = TARGET_TYPE_FILE
@@ -63,6 +65,7 @@ message FeatureSet {
   optional RepeatedFieldEncoding repeated_field_encoding = 3 [
     edition_defaults = { value: "EXPANDED", edition: EDITION_PROTO2 },
     edition_defaults = { value: "PACKED", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
@@ -70,12 +73,14 @@ message FeatureSet {
   optional Utf8Validation utf8_validation = 4 [
     edition_defaults = { value: "NONE", edition: EDITION_PROTO2 },
     edition_defaults = { value: "VERIFY", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
   ];
   optional MessageEncoding message_encoding = 5 [
     edition_defaults = { value: "LENGTH_PREFIXED", edition: EDITION_PROTO2 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
@@ -83,6 +88,7 @@ message FeatureSet {
   optional JsonFormat json_format = 6 [
     edition_defaults = { value: "LEGACY_BEST_EFFORT", edition: EDITION_PROTO2 },
     edition_defaults = { value: "ALLOW", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_MESSAGE,
     targets = TARGET_TYPE_ENUM,
@@ -116,10 +122,10 @@ message FeatureSet {
   }
   enum Utf8Validation {
     UTF8_VALIDATION_UNKNOWN = 0;
-    NONE = 1;
     VERIFY = 2;
+    NONE = 3;
   }
-  extensions 1000, 1001, 9995 to 9999;
+  extensions 1000, 1001, 1002, 9990, 9995 to 9999, 10000;
   reserved 999;
 }
 message MessageOptions {

@@ -1,0 +1,6 @@
+version: v1
+directories:
+  - common/geo/proto
+  - common/money/proto
+  - finance/bond/proto
+  - finance/portfolio/proto

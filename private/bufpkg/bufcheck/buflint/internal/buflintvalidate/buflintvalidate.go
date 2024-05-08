@@ -16,64 +16,19 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/protovalidate-go/resolver"
-	"google.golang.org/protobuf/reflect/protodesc"
 )
 
 // https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
 const disabledFieldNumberInMesageConstraints = 1
 
-// Check validates that all rules on fields are valid, and all CEL expressions compile.
-//
-// For a set of rules to be valid, it must
-//  1. permit _some_ value
-//  2. have a type compatible with the field it validates.
-func Check(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	files []protosource.File,
+// CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.
+func CheckMessage(
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	message bufprotosource.Message,
 ) error {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
-	for _, file := range files {
-		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
-	}
-	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
-	if err != nil {
-		return err
-	}
-	for _, file := range files {
-		if file.IsImport() {
-			continue
-		}
-		for _, message := range file.Messages() {
-			if err := checkForMessage(
-				add,
-				descriptorResolver,
-				message,
-			); err != nil {
-				return err
-			}
-		}
-		for _, extension := range file.Extensions() {
-			if err := checkForField(
-				add,
-				descriptorResolver,
-				extension,
-			); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func checkForMessage(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	descriptorResolver protodesc.Resolver,
-	message protosource.Message,
-) error {
-	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
+	messageDescriptor, err := message.AsDescriptor()
 	if err != nil {
 		return err
 	}
@@ -87,36 +42,22 @@ func checkForMessage(
 			message.Name(),
 		)
 	}
-	if err := checkCELForMessage(
+	return checkCELForMessage(
 		add,
 		messageConstraints,
 		messageDescriptor,
 		message,
-	); err != nil {
-		return err
-	}
-	for _, nestedMessage := range message.Messages() {
-		if err := checkForMessage(add, descriptorResolver, nestedMessage); err != nil {
-			return err
-		}
-	}
-	for _, field := range message.Fields() {
-		if err := checkForField(
-			add,
-			descriptorResolver,
-			field,
-		); err != nil {
-			return err
-		}
-	}
-	for _, extension := range message.Extensions() {
-		if err := checkForField(
-			add,
-			descriptorResolver,
-			extension,
-		); err != nil {
-			return err
-		}
-	}
-	return nil
+	)
+}
+
+// CheckField validates that all rules on the field are valid, and any CEL expressions compile.
+//
+// For a set of rules to be valid, it must
+//  1. permit _some_ value
+//  2. have a type compatible with the field it validates.
+func CheckField(
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	field bufprotosource.Field,
+) error {
+	return checkField(add, field)
 }

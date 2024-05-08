@@ -19,14 +19,14 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 // addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Locations can be nil.
-type addFunc func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{})
+type addFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{})
 
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
@@ -60,7 +60,7 @@ func validLeadingComment(comment string) bool {
 func getImportCycleIfExists(
 	// Should never be ""
 	pkg string,
-	packageToDirectlyImportedPackageToFileImports map[string]map[string][]protosource.FileImport,
+	packageToDirectlyImportedPackageToFileImports map[string]map[string][]bufprotosource.FileImport,
 	usedPackageMap map[string]struct{},
 	usedPackageList []string,
 ) []string {
@@ -99,11 +99,11 @@ func getImportCycleIfExists(
 // Our linters should not consider imports when linting. However, some linters require all files to
 // perform their linting - for example, when recursively using the fullNameToMessage
 // map. For those linters, use this helper, and make sure to explicitly skip
-// linting of any files that are imports via protosource.File.IsImport().
+// linting of any files that are imports via bufprotosource.File.IsImport().
 func newFilesWithImportsCheckFunc(
-	f func(addFunc, []protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, []bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationWithExtraIgnoreLocationsf, files); err != nil {
 			return nil, err
@@ -113,10 +113,10 @@ func newFilesWithImportsCheckFunc(
 }
 
 func newFilesCheckFunc(
-	f func(addFunc, []protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-		filesWithoutImports := make([]protosource.File, 0, len(files))
+	f func(addFunc, []bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+		filesWithoutImports := make([]bufprotosource.File, 0, len(files))
 		for _, file := range files {
 			if !file.IsImport() {
 				filesWithoutImports = append(filesWithoutImports, file)
@@ -131,11 +131,11 @@ func newFilesCheckFunc(
 }
 
 func newPackageToFilesCheckFunc(
-	f func(add addFunc, pkg string, files []protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(add addFunc, pkg string, files []bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []protosource.File) error {
-			packageToFiles, err := protosource.PackageToFiles(files...)
+		func(add addFunc, files []bufprotosource.File) error {
+			packageToFiles, err := bufprotosource.PackageToFiles(files...)
 			if err != nil {
 				return err
 			}
@@ -150,11 +150,11 @@ func newPackageToFilesCheckFunc(
 }
 
 func newDirToFilesCheckFunc(
-	f func(add addFunc, dirPath string, files []protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(add addFunc, dirPath string, files []bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []protosource.File) error {
-			dirPathToFiles, err := protosource.DirPathToFiles(files...)
+		func(add addFunc, files []bufprotosource.File) error {
+			dirPathToFiles, err := bufprotosource.DirPathToFiles(files...)
 			if err != nil {
 				return err
 			}
@@ -169,10 +169,10 @@ func newDirToFilesCheckFunc(
 }
 
 func newFileCheckFunc(
-	f func(addFunc, protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []protosource.File) error {
+		func(add addFunc, files []bufprotosource.File) error {
 			for _, file := range files {
 				if err := f(add, file); err != nil {
 					return err
@@ -184,10 +184,10 @@ func newFileCheckFunc(
 }
 
 func newFileImportCheckFunc(
-	f func(addFunc, protosource.FileImport) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.FileImport) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file protosource.File) error {
+		func(add addFunc, file bufprotosource.File) error {
 			for _, fileImport := range file.FileImports() {
 				if err := f(add, fileImport); err != nil {
 					return err
@@ -199,12 +199,12 @@ func newFileImportCheckFunc(
 }
 
 func newEnumCheckFunc(
-	f func(addFunc, protosource.Enum) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.Enum) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file protosource.File) error {
-			return protosource.ForEachEnum(
-				func(enum protosource.Enum) error {
+		func(add addFunc, file bufprotosource.File) error {
+			return bufprotosource.ForEachEnum(
+				func(enum bufprotosource.Enum) error {
 					return f(add, enum)
 				},
 				file,
@@ -214,10 +214,10 @@ func newEnumCheckFunc(
 }
 
 func newEnumValueCheckFunc(
-	f func(addFunc, protosource.EnumValue) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.EnumValue) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumCheckFunc(
-		func(add addFunc, enum protosource.Enum) error {
+		func(add addFunc, enum bufprotosource.Enum) error {
 			for _, enumValue := range enum.Values() {
 				if err := f(add, enumValue); err != nil {
 					return err
@@ -229,12 +229,12 @@ func newEnumValueCheckFunc(
 }
 
 func newMessageCheckFunc(
-	f func(addFunc, protosource.Message) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.Message) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file protosource.File) error {
-			return protosource.ForEachMessage(
-				func(message protosource.Message) error {
+		func(add addFunc, file bufprotosource.File) error {
+			return bufprotosource.ForEachMessage(
+				func(message bufprotosource.Message) error {
 					return f(add, message)
 				},
 				file,
@@ -244,31 +244,42 @@ func newMessageCheckFunc(
 }
 
 func newFieldCheckFunc(
-	f func(addFunc, protosource.Field) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return newMessageCheckFunc(
-		func(add addFunc, message protosource.Message) error {
-			for _, field := range message.Fields() {
-				if err := f(add, field); err != nil {
-					return err
+	f func(addFunc, bufprotosource.Field) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return combine(
+		newMessageCheckFunc(
+			func(add addFunc, message bufprotosource.Message) error {
+				for _, field := range message.Fields() {
+					if err := f(add, field); err != nil {
+						return err
+					}
 				}
-			}
-			// TODO: is this right?
-			for _, field := range message.Extensions() {
-				if err := f(add, field); err != nil {
-					return err
+				for _, field := range message.Extensions() {
+					if err := f(add, field); err != nil {
+						return err
+					}
 				}
-			}
-			return nil
-		},
+				return nil
+			},
+		),
+		newFileCheckFunc(
+			func(add addFunc, file bufprotosource.File) error {
+				for _, field := range file.Extensions() {
+					if err := f(add, field); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		),
 	)
 }
 
 func newOneofCheckFunc(
-	f func(addFunc, protosource.Oneof) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.Oneof) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessageCheckFunc(
-		func(add addFunc, message protosource.Message) error {
+		func(add addFunc, message bufprotosource.Message) error {
 			for _, oneof := range message.Oneofs() {
 				if err := f(add, oneof); err != nil {
 					return err
@@ -280,10 +291,10 @@ func newOneofCheckFunc(
 }
 
 func newServiceCheckFunc(
-	f func(addFunc, protosource.Service) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.Service) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file protosource.File) error {
+		func(add addFunc, file bufprotosource.File) error {
 			for _, service := range file.Services() {
 				if err := f(add, service); err != nil {
 					return err
@@ -295,10 +306,10 @@ func newServiceCheckFunc(
 }
 
 func newMethodCheckFunc(
-	f func(addFunc, protosource.Method) error,
-) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, bufprotosource.Method) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newServiceCheckFunc(
-		func(add addFunc, service protosource.Service) error {
+		func(add addFunc, service bufprotosource.Service) error {
 			for _, method := range service.Methods() {
 				if err := f(add, method); err != nil {
 					return err
@@ -307,4 +318,20 @@ func newMethodCheckFunc(
 			return nil
 		},
 	)
+}
+
+func combine(
+	checks ...func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error),
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+		var annotations []bufanalysis.FileAnnotation
+		for _, check := range checks {
+			checkAnnotations, err := check(id, ignoreFunc, files)
+			if err != nil {
+				return nil, err
+			}
+			annotations = append(annotations, checkAnnotations...)
+		}
+		return annotations, nil
+	}
 }

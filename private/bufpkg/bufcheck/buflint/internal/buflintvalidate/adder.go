@@ -16,7 +16,7 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
@@ -41,10 +41,10 @@ import (
 // depth is at most 2 -- if checkMapRules or checkRepeatedRules calls checkConstraintsForField,
 // this call of checkConstraintsForField won't call checkMapRules or checkRepeatedRules.
 type adder struct {
-	field               protosource.Field
+	field               bufprotosource.Field
 	fieldPrettyTypeName string
 	basePath            []int32
-	addFunc             func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{})
+	addFunc             func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{})
 }
 
 func (a *adder) cloneWithNewBasePath(basePath ...int32) *adder {
@@ -70,7 +70,7 @@ func (a *adder) addForPathf(path []int32, format string, args ...interface{}) {
 }
 
 func (a *adder) addForPathsf(paths [][]int32, format string, args ...interface{}) {
-	locations := make([]protosource.Location, 0, len(paths))
+	locations := make([]bufprotosource.Location, 0, len(paths))
 	for _, path := range paths {
 		// Copy a.basePath so it won't be modified by append.
 		combinedPath := make([]int32, len(a.basePath), len(a.basePath)+len(path))
@@ -119,7 +119,7 @@ func (a *adder) getFieldRuleName(path ...int32) string {
 	return name
 }
 
-func deduplicateLocations(locations []protosource.Location) []protosource.Location {
+func deduplicateLocations(locations []bufprotosource.Location) []bufprotosource.Location {
 	type locationFields struct {
 		startLine   int
 		startColumn int
@@ -127,7 +127,7 @@ func deduplicateLocations(locations []protosource.Location) []protosource.Locati
 		endColumn   int
 	}
 	exactLocations := map[locationFields]struct{}{}
-	uniqueLocations := make([]protosource.Location, 0, len(locations))
+	uniqueLocations := make([]bufprotosource.Location, 0, len(locations))
 	for _, location := range locations {
 		var locationValue locationFields
 		if location != nil {

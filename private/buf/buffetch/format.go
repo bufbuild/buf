@@ -88,6 +88,15 @@ var (
 		formatZip,
 	}
 	// sorted
+	dirFormats = []string{
+		formatDir,
+	}
+	// sorted
+	dirOrProtoFileFormats = []string{
+		formatDir,
+		formatProtoFile,
+	}
+	// sorted
 	moduleFormats = []string{
 		formatMod,
 	}

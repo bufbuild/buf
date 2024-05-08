@@ -26,6 +26,7 @@ type writeObjectCloser struct {
 	bucket       *bucket
 	path         string
 	externalPath string
+	localPath    string
 	buffer       *bytes.Buffer
 	closed       bool
 }
@@ -56,6 +57,14 @@ func (w *writeObjectCloser) SetExternalPath(externalPath string) error {
 	return nil
 }
 
+func (w *writeObjectCloser) SetLocalPath(localPath string) error {
+	if w.localPath != "" {
+		return fmt.Errorf("local path already set: %q", w.localPath)
+	}
+	w.localPath = localPath
+	return nil
+}
+
 func (w *writeObjectCloser) Close() error {
 	if w.closed {
 		return storage.ErrClosed
@@ -71,6 +80,7 @@ func (w *writeObjectCloser) Close() error {
 	w.bucket.pathToImmutableObject[w.path] = internal.NewImmutableObject(
 		w.path,
 		w.externalPath,
+		w.localPath,
 		w.buffer.Bytes(),
 	)
 	return nil

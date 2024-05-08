@@ -10,8 +10,11 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
+	private/buf/bufwkt/cmd/wkt-go-data \
+	private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id \
 	private/bufpkg/bufstyle/cmd/bufstyle \
-	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -20,7 +23,8 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/spdx/cmd/spdx-go-data
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
-	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer
+	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
+	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
 GO_MOD_VERSION := 1.20
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
@@ -29,7 +33,6 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.idea/ \
 	.vscode/ \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
-	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
@@ -37,6 +40,8 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+# Required for protocompile v0.10.0
+PROTOC_GEN_GO_VERSION := v1.33.1-0.20240408130810-98873a205002
 PROTOVALIDATE_VERSION := v0.6.0
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
@@ -47,6 +52,8 @@ BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
 DISALLOW_NOLINT := true
+
+LEGACY_FEDERATION_FILE_PATH ?=
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
@@ -74,14 +81,26 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installwkt-go-data $(PROTOC)
-	rm -rf private/gen/data
+godata: installspdx-go-data installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
+	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
+	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
+	rm -rf private/gen/data/dataspdx
 	mkdir -p private/gen/data/dataspdx
-	wkt-go-data $(CACHE_INCLUDE) --package datawkt > private/gen/data/datawkt/datawkt.gen.go
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
+ifdef LEGACY_FEDERATION_FILE_PATH
+	rm -rf private/gen/data/datalegacyfederation
+	mkdir -p private/gen/data/datalegacyfederation
+	cat "$(LEGACY_FEDERATION_FILE_PATH)" | buf-legacyfederation-go-data --package datalegacyfederation > private/gen/data/datalegacyfederation/datalegacyfederation.gen.go
+endif
 
 prepostgenerate:: godata
+
+.PHONY: bufworkspacebuflocks
+bufworkspacebuflocks: installbuf-digest installbuf-new-commit-id
+	bash private/buf/bufworkspace/testdata/basic/scripts/fakebuflock.bash
+
+prepostgenerate:: bufworkspacebuflocks
 
 .PHONY: licenseheader
 licenseheader: installlicense-header installgit-ls-files-unstaged
@@ -113,28 +132,25 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
 	bufgeneratecleanbuflinttestdata
 
-.PHONY: bufgenerateprotogo
-bufgenerateprotogo:
-	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
-	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
-
-.PHONY: bufgenerateprotogoclient
-bufgenerateprotogoclient:
-	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
+.PHONY: bufgeneratego
+bufgeneratego:
+	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
-	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgeneratesteps:: \
-	bufgenerateprotogo \
-	bufgenerateprotogoclient \
+	bufgeneratego \
 	bufgeneratebuflinttestdata
 
 .PHONY: bufrelease
@@ -174,15 +190,15 @@ endif
 	$(SED_I) "s/golang:1\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: '1\.[0-9][0-9].x'/go-version: '$(GOVERSION).x'/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
 
-.PHONY: gofuzz
-gofuzz: $(GO_FUZZ)
-	@rm -rf $(TMP)/gofuzz
-	@mkdir -p $(TMP)/gofuzz $(TMP)/gofuzz/corpus
-	# go-fuzz-build requires github.com/dvyukov/go-fuzz be in go.mod, but we don't need that dependency otherwise.
-	# This adds go-fuzz-dep to go.mod, runs go-fuzz-build, then restores go.mod.
-	cp go.mod $(TMP)/go.mod.bak; cp go.sum $(TMP)/go.sum.bak
-	go get github.com/dvyukov/go-fuzz/go-fuzz-dep@$(GO_FUZZ_VERSION)
-	cd private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
-	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
-	cp private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
-	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)
+.PHONY: bufimageutilupdateexpectations
+bufimageutilupdateexpectations:
+	# You may need to run this after updating protoc versions
+	BUFBUILD_BUF_BUFIMAGEUTIL_SHOULD_UPDATE_EXPECTATIONS=1 go test -parallel 1 ./private/bufpkg/bufimage/bufimageutil
+
+.PHONY: newtodos
+newtodos:
+	@bash make/buf/scripts/newtodos.bash | grep -v FUTURE
+
+.PHONY: newtodofiles
+newtodofiles:
+	@bash make/buf/scripts/newtodos.bash | grep -v FUTURE | cut -f 1 -d : | sort | uniq

@@ -16,72 +16,74 @@ package push
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"strings"
 
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
-	"github.com/bufbuild/buf/private/bufpkg/buflock"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
 const (
-	tagFlagName              = "tag"
-	tagFlagShortName         = "t"
-	draftFlagName            = "draft"
-	branchFlagName           = "branch"
-	errorFormatFlagName      = "error-format"
-	disableSymlinksFlagName  = "disable-symlinks"
-	createFlagName           = "create"
-	createVisibilityFlagName = "create-visibility"
-	// deprecated
-	trackFlagName = "track"
+	labelFlagName              = "label"
+	errorFormatFlagName        = "error-format"
+	disableSymlinksFlagName    = "disable-symlinks"
+	createFlagName             = "create"
+	createVisibilityFlagName   = "create-visibility"
+	createDefaultLabelFlagName = "create-default-label"
+	sourceControlURLFlagName   = "source-control-url"
+
+	// All deprecated.
+	tagFlagName      = "tag"
+	tagFlagShortName = "t"
+	draftFlagName    = "draft"
+	branchFlagName   = "branch"
+)
+
+var (
+	useLabelInstead = fmt.Sprintf("Use --%s instead.", labelFlagName)
 )
 
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Push a module to a registry",
+		Short: "Push to a registry",
 		Long:  bufcli.GetSourceLong(`the source to push`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
 }
 
 type flags struct {
-	Tags             []string
-	Branch           string
-	Draft            string
-	ErrorFormat      string
-	DisableSymlinks  bool
-	Create           bool
-	CreateVisibility string
-	// Deprecated
-	Tracks []string
+	Tags               []string
+	Branch             string
+	Draft              string
+	Labels             []string
+	ErrorFormat        string
+	DisableSymlinks    bool
+	Create             bool
+	CreateVisibility   string
+	CreateDefaultLabel string
+	SourceControlURL   string
 	// special
 	InputHashtag string
 }
@@ -94,37 +96,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
-	flagSet.StringSliceVarP(
-		&f.Tags,
-		tagFlagName,
-		tagFlagShortName,
+	flagSet.StringSliceVar(
+		&f.Labels,
+		labelFlagName,
 		nil,
-		fmt.Sprintf(
-			"Create a tag for the pushed commit. Multiple tags are created if specified multiple times. Cannot be used together with --%s",
-			draftFlagName,
-		),
-	)
-	flagSet.StringVar(
-		&f.Draft,
-		draftFlagName,
-		"",
-		fmt.Sprintf(
-			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s) or --%s",
-			tagFlagName,
-			tagFlagShortName,
-			branchFlagName,
-		),
-	)
-	flagSet.StringVar(
-		&f.Branch,
-		branchFlagName,
-		"",
-		fmt.Sprintf(
-			"Push a commit to a branch with the specified name. Cannot be used together with --%s (-%s) or --%s",
-			tagFlagName,
-			tagFlagShortName,
-			draftFlagName,
-		),
+		"Associate the label with the modules pushed. Can be used multiple times.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -139,194 +115,255 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Create,
 		createFlagName,
 		false,
-		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
+		fmt.Sprintf(
+			"Create the repository if it does not exist. Must set --%s",
+			createVisibilityFlagName,
+		),
 	)
-	flagSet.StringSliceVar(
-		&f.Tracks,
-		trackFlagName,
-		nil,
-		"Do not use. This flag never had any effect",
+	flagSet.StringVar(
+		&f.CreateDefaultLabel,
+		createDefaultLabelFlagName,
+		"",
+		`The repository's default label setting, if created. If this is not set, then the repository will be created with the default label "main".`,
 	)
-	_ = flagSet.MarkHidden(trackFlagName)
+	flagSet.StringVar(
+		&f.SourceControlURL,
+		sourceControlURLFlagName,
+		"",
+		"The URL for viewing the source code of the pushed modules (e.g. the specific commit in source control).",
+	)
+
+	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
+	_ = flagSet.MarkHidden(tagFlagName)
+	_ = flagSet.MarkHidden(tagFlagShortName)
+	_ = flagSet.MarkDeprecated(tagFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(tagFlagShortName, useLabelInstead)
+	flagSet.StringVar(&f.Draft, draftFlagName, "", useLabelInstead)
+	_ = flagSet.MarkHidden(draftFlagName)
+	_ = flagSet.MarkDeprecated(draftFlagName, useLabelInstead)
+	flagSet.StringVar(&f.Branch, branchFlagName, "", useLabelInstead)
+	_ = flagSet.MarkHidden(branchFlagName)
+	_ = flagSet.MarkDeprecated(branchFlagName, useLabelInstead)
 }
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if len(flags.Tracks) > 0 {
-		return appcmd.NewInvalidArgumentErrorf("--%s has never had any effect, do not use.", trackFlagName)
-	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
+	if err := validateFlags(flags); err != nil {
 		return err
 	}
-	if flags.Draft != "" && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
+
+	workspace, err := getBuildableWorkspace(ctx, container, flags)
+	if err != nil {
+		return err
 	}
-	if len(flags.Tags) > 0 && flags.Draft != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
+
+	uploader, err := bufcli.NewUploader(container)
+	if err != nil {
+		return err
 	}
-	// For now, we are restricting branch behavior to be exactly the same as drafts, and thus
-	// cannot be used in conjunction with tags.
-	if len(flags.Tags) > 0 && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
+
+	var uploadOptions []bufmodule.UploadOption
+	if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
+		uploadOptions = append(uploadOptions, labelUploadOption)
 	}
-	if flags.CreateVisibility != "" {
-		if !flags.Create {
-			return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s.", createVisibilityFlagName, createFlagName)
+	if flags.Create {
+		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+		if err != nil {
+			return err
 		}
-		// We re-parse below as needed, but do not return an appcmd.NewInvalidArgumentError below as
-		// we expect validation to be handled here.
-		if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
-			return appcmd.NewInvalidArgumentError(err.Error())
-		}
-	} else if flags.Create {
-		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
+		uploadOptions = append(
+			uploadOptions,
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+		)
 	}
+	if flags.SourceControlURL != "" {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
+	}
+
+	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
+	if err != nil {
+		return err
+	}
+
+	if workspace.IsV2() {
+		_, err := container.Stdout().Write(
+			[]byte(
+				strings.Join(
+					slicesext.Map(
+						commits,
+						func(commit bufmodule.Commit) string {
+							return commit.ModuleKey().String()
+						},
+					),
+					"\n",
+				) + "\n",
+			),
+		)
+		return err
+	}
+	// v1 workspace, fallback to old behavior for backwards compatibility.
+	switch len(commits) {
+	case 0:
+		return nil
+	case 1:
+		_, err := container.Stdout().Write([]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"))
+		return err
+	default:
+		return syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
+	}
+}
+
+func getBuildableWorkspace(
+	ctx context.Context,
+	container appext.Container,
+	flags *flags,
+) (bufworkspace.Workspace, error) {
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	// We are pushing to the BSR, this module has to be independently buildable
-	// given the configuration it has without any enclosing workspace.
-	sourceBucket, sourceConfig, err := bufcli.BucketAndConfigForSource(
-		ctx,
-		container.Logger(),
+	controller, err := bufcli.NewController(
 		container,
-		storageosProvider,
-		runner,
-		source,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := buflock.CheckDeprecatedDigests(ctx, container.Logger(), sourceBucket); err != nil {
-		return err
-	}
-	moduleIdentity := sourceConfig.ModuleIdentity
-	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+	workspace, err := controller.GetWorkspace(
 		ctx,
-		sourceBucket,
-		sourceConfig.Build,
+		source,
+		// We actually could make it so that buf push would work with buf.work.yamls and push
+		// v1 workspaces as well, but this may have unintended (and potentially breaking) consequences
+		// that we don't want to deal with. If we have a v1 workspace, just outlaw pushing the whole
+		// workspace, and force people into the pre-refactor behavior.
+		bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs(),
 	)
 	if err != nil {
+		return nil, err
+	}
+	// Make sure the workspace builds.
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		workspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
+		return nil, err
+	}
+	return workspace, nil
+}
+
+func validateFlags(flags *flags) error {
+	if err := validateCreateFlags(flags); err != nil {
 		return err
 	}
-	modulePin, err := pushOrCreate(ctx, container, moduleIdentity, builtModule, flags)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			if _, err := container.Stderr().Write(
-				[]byte(fmt.Sprintf("%s\n", err.Error())),
-			); err != nil {
-				return err
-			}
-			return nil
-		}
-		return err
-	}
-	if modulePin == nil {
-		return errors.New("Missing local module pin in the registry's response.")
-	}
-	if _, err := container.Stdout().Write([]byte(modulePin.Commit + "\n")); err != nil {
+	if err := validateLabelFlags(flags); err != nil {
 		return err
 	}
 	return nil
 }
 
-func pushOrCreate(
-	ctx context.Context,
-	container appflag.Container,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	builtModule *bufmodulebuild.BuiltModule,
-	flags *flags,
-) (*registryv1alpha1.LocalModulePin, error) {
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return nil, err
-	}
-	modulePin, err := push(ctx, container, clientConfig, moduleIdentity, builtModule, flags)
-	if err != nil {
-		// We rely on Push* returning a NotFound error to denote the repository is not created.
-		// This technically could be a NotFound error for some other entity than the repository
-		// in question, however if it is, then this Create call will just fail as the repository
-		// is already created, and there is no side effect. The 99% case is that a NotFound
-		// error is because the repository does not exist, and we want to avoid having to do
-		// a GetRepository RPC call for every call to push --create.
-		if flags.Create && connect.CodeOf(err) == connect.CodeNotFound {
-			if err := create(ctx, container, clientConfig, moduleIdentity, flags); err != nil {
-				return nil, err
-			}
-			return push(ctx, container, clientConfig, moduleIdentity, builtModule, flags)
+func validateCreateFlags(flags *flags) error {
+	if flags.Create {
+		if flags.CreateVisibility == "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"--%s is required if --%s is set",
+				createVisibilityFlagName,
+				createFlagName,
+			)
 		}
-		return nil, err
+		if _, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility); err != nil {
+			return appcmd.NewInvalidArgumentError(err.Error())
+		}
+	} else {
+		if flags.CreateVisibility != "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"Cannot set --%s without --%s",
+				createVisibilityFlagName,
+				createFlagName,
+			)
+		}
+		if flags.CreateDefaultLabel != "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"Cannot set --%s without --%s",
+				createDefaultLabelFlagName,
+				createFlagName,
+			)
+		}
 	}
-	return modulePin, nil
+	return nil
 }
 
-func push(
-	ctx context.Context,
-	container appflag.Container,
-	clientConfig *connectclient.Config,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	builtModule *bufmodulebuild.BuiltModule,
-	flags *flags,
-) (*registryv1alpha1.LocalModulePin, error) {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
-	fileSet, err := bufcas.NewFileSetForBucket(ctx, builtModule.Bucket)
-	if err != nil {
-		return nil, err
-	}
-	protoManifestBlob, protoBlobs, err := bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
-	if err != nil {
-		return nil, err
-	}
-	draftOrBranchName := flags.Draft
-	if draftOrBranchName == "" {
-		// If draft is not set, then we we set the draft name to branch.
-		draftOrBranchName = flags.Branch
-	}
-	resp, err := service.PushManifestAndBlobs(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
-			Owner:      moduleIdentity.Owner(),
-			Repository: moduleIdentity.Repository(),
-			Manifest:   protoManifestBlob,
-			Blobs:      protoBlobs,
-			Tags:       flags.Tags,
-			DraftName:  draftOrBranchName,
-		}),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp.Msg.LocalModulePin, nil
-}
-
-func create(
-	ctx context.Context,
-	container appflag.Container,
-	clientConfig *connectclient.Config,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	flags *flags,
-) error {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
-	visiblity, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility)
-	if err != nil {
+func validateLabelFlags(flags *flags) error {
+	if err := validateLabelFlagCombinations(flags); err != nil {
 		return err
 	}
-	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
-	_, err = service.CreateRepositoryByFullName(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   fullName,
-			Visibility: visiblity,
-		}),
-	)
-	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("Expected repository %s to be missing but found the repository to already exist", fullName))
+	return validateLabelFlagValues(flags)
+}
+
+// We do not allow overlaps between `--label`, `--tag`, `--branch`, and `--draft` flags
+// when calling push. Only one type of flag is allowed to be used at a time when pushing.
+func validateLabelFlagCombinations(flags *flags) error {
+	var usedFlags []string
+	if len(flags.Labels) > 0 {
+		usedFlags = append(usedFlags, labelFlagName)
 	}
-	return err
+	if len(flags.Tags) > 0 {
+		usedFlags = append(usedFlags, tagFlagName)
+	}
+	if flags.Branch != "" {
+		usedFlags = append(usedFlags, branchFlagName)
+	}
+	if flags.Draft != "" {
+		usedFlags = append(usedFlags, draftFlagName)
+	}
+	if len(usedFlags) > 1 {
+		usedFlagsErrStr := strings.Join(
+			slicesext.Map(
+				usedFlags,
+				func(flag string) string { return fmt.Sprintf("--%s", flag) },
+			),
+			", ",
+		)
+		return appcmd.NewInvalidArgumentErrorf("These flags cannot be used in combination with one another: %s", usedFlagsErrStr)
+	}
+	return nil
+}
+
+func validateLabelFlagValues(flags *flags) error {
+	for _, label := range flags.Labels {
+		if label == "" {
+			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
+		}
+	}
+	for _, tag := range flags.Tags {
+		if tag == "" {
+			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", tagFlagName)
+		}
+	}
+	return nil
+}
+
+func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
+	// We do not allow the mixing of flags, so post-validation, we only expect one of the
+	// flags to be set. And so we return the corresponding bufmodule.UploadOption if any
+	// flags are set.
+	if len(flags.Labels) > 0 {
+		return bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...)
+	}
+	if len(flags.Tags) > 0 {
+		return bufmodule.UploadWithTags(slicesext.ToUniqueSorted(flags.Tags)...)
+	}
+	if flags.Branch != "" {
+		// We upload to a single label, the branch name.
+		return bufmodule.UploadWithLabels(flags.Branch)
+	}
+	if flags.Draft != "" {
+		// We upload to a single label, the draft name.
+		return bufmodule.UploadWithLabels(flags.Draft)
+	}
+	return nil
 }

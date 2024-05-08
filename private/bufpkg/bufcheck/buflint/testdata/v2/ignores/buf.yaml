@@ -1,0 +1,31 @@
+version: v2
+modules:
+  - path: ignores1
+    lint:
+      use:
+        - ENUM_PASCAL_CASE
+        - FIELD_LOWER_SNAKE_CASE
+        - MESSAGE_PASCAL_CASE
+  - path: ignores2
+    lint:
+      use:
+        - ENUM_PASCAL_CASE
+        - FIELD_LOWER_SNAKE_CASE
+        - MESSAGE_PASCAL_CASE
+      ignore:
+        - ignores2/bar2/bar2.proto
+        - ignores2/foo2
+  - path: ignores3
+    lint:
+      use:
+        - ENUM_PASCAL_CASE
+        - FIELD_LOWER_SNAKE_CASE
+        - MESSAGE_PASCAL_CASE
+      ignore_only:
+        BASIC:
+          - ignores3/foo3/bar
+        ENUM_PASCAL_CASE:
+          - ignores3/bar3/bar.proto
+          - ignores3/foo3/bar
+        MESSAGE_PASCAL_CASE:
+          - ignores3/bar3/bar.proto

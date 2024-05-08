@@ -19,34 +19,29 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opentelemetry.io/otel"
+	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-)
-
-const (
-	tracerName = "bufbuild/buf"
 )
 
 // Runner is a runner.
 type Runner struct {
 	logger       *zap.Logger
+	tracer       tracing.Tracer
 	ignorePrefix string
-	tracer       trace.Tracer
 }
 
 // NewRunner returns a new Runner.
-func NewRunner(logger *zap.Logger, options ...RunnerOption) *Runner {
+func NewRunner(logger *zap.Logger, tracer tracing.Tracer, options ...RunnerOption) *Runner {
 	runner := &Runner{
 		logger: logger,
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
+		tracer: tracer,
 	}
 	for _, option := range options {
 		option(runner)
@@ -70,15 +65,27 @@ func RunnerWithIgnorePrefix(ignorePrefix string) RunnerOption {
 }
 
 // Check runs the Rules.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+//
+// An error of type bufanalysis.FileAnnotationSet will be returned on a rule failure.
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufprotosource.File, files []bufprotosource.File) (retErr error) {
 	rules := config.Rules
 	if len(rules) == 0 {
-		return nil, nil
+		return nil
 	}
-	ctx, span := r.tracer.Start(ctx, "check", trace.WithAttributes(
-		attribute.Key("num_files").Int(len(files)),
-		attribute.Key("num_rules").Int(len(rules)),
-	))
+	for _, rule := range config.Rules {
+		if rule.Deprecated() {
+			// IgnoreIDToRootPaths relies on us only using the non-deprecated rules.
+			return syserror.Newf("Rule %q was send to internal.Runner.Check even though it was deprecated", rule.ID())
+		}
+	}
+	ctx, span := r.tracer.Start(
+		ctx,
+		tracing.WithErr(&retErr),
+		tracing.WithAttributes(
+			attribute.Key("num_files").Int(len(files)),
+			attribute.Key("num_rules").Int(len(rules)),
+		),
+	)
 	defer span.End()
 
 	ignoreFunc := r.newIgnoreFunc(config)
@@ -86,8 +93,13 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	resultC := make(chan *result, len(rules))
 	for _, rule := range rules {
 		rule := rule
+		ruleFunc := func() ([]bufanalysis.FileAnnotation, error) {
+			_, span := r.tracer.Start(ctx, tracing.WithSpanNameSuffix(rule.ID()))
+			defer span.End()
+			return rule.check(ignoreFunc, previousFiles, files)
+		}
 		go func() {
-			iFileAnnotations, iErr := rule.check(ignoreFunc, previousFiles, files)
+			iFileAnnotations, iErr := ruleFunc()
 			resultC <- newResult(iFileAnnotations, iErr)
 		}()
 	}
@@ -95,23 +107,23 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	for i := 0; i < len(rules); i++ {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return ctx.Err()
 		case result := <-resultC:
 			fileAnnotations = append(fileAnnotations, result.FileAnnotations...)
 			err = multierr.Append(err, result.Err)
 		}
 	}
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return err
 	}
-	bufanalysis.SortFileAnnotations(fileAnnotations)
-	return fileAnnotations, nil
+	if len(fileAnnotations) > 0 {
+		return bufanalysis.NewFileAnnotationSet(fileAnnotations...)
+	}
+	return nil
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
-	return func(id string, descriptors []protosource.Descriptor, locations []protosource.Location) bool {
+	return func(id string, descriptors []bufprotosource.Descriptor, locations []bufprotosource.Location) bool {
 		if idIsIgnored(id, descriptors, config) {
 			return true
 		}
@@ -132,7 +144,7 @@ func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
 	}
 }
 
-func idIsIgnored(id string, descriptors []protosource.Descriptor, config *Config) bool {
+func idIsIgnored(id string, descriptors []bufprotosource.Descriptor, config *Config) bool {
 	for _, descriptor := range descriptors {
 		// OR of descriptors
 		if idIsIgnoredForDescriptor(id, descriptor, config) {
@@ -142,7 +154,7 @@ func idIsIgnored(id string, descriptors []protosource.Descriptor, config *Config
 	return false
 }
 
-func idIsIgnoredForDescriptor(id string, descriptor protosource.Descriptor, config *Config) bool {
+func idIsIgnoredForDescriptor(id string, descriptor bufprotosource.Descriptor, config *Config) bool {
 	if descriptor == nil {
 		return false
 	}
@@ -160,7 +172,7 @@ func idIsIgnoredForDescriptor(id string, descriptor protosource.Descriptor, conf
 	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative)
 }
 
-func locationsAreIgnored(id string, ignorePrefix string, locations []protosource.Location, config *Config) bool {
+func locationsAreIgnored(id string, ignorePrefix string, locations []bufprotosource.Location, config *Config) bool {
 	// we already check that ignorePrefix is non-empty, but just doing here for safety
 	if id == "" || ignorePrefix == "" {
 		return false
@@ -180,7 +192,7 @@ func locationsAreIgnored(id string, ignorePrefix string, locations []protosource
 	return false
 }
 
-func descriptorPackageIsUnstable(descriptor protosource.Descriptor) bool {
+func descriptorPackageIsUnstable(descriptor bufprotosource.Descriptor) bool {
 	if descriptor == nil {
 		return false
 	}

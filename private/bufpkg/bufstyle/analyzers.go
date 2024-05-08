@@ -111,5 +111,43 @@ func newAnalyzers() []*analysis.Analyzer {
 				return nil, nil
 			},
 		},
+		//{
+		//Name: "FILENAME_CASING",
+		//Doc:  "Verifies fileName or FileName is used, not filename or Filename.",
+		//Run: func(pass *analysis.Pass) (interface{}, error) {
+		//if typesInfo := pass.TypesInfo; typesInfo != nil {
+		//for _, object := range pass.TypesInfo.Defs {
+		//if object != nil {
+		//if strings.Contains(object.Name(), "Filename") {
+		//pass.Reportf(object.Pos(), `Use "FileName" instead of "Filename" in name %q`, object.Name())
+		//}
+		//if strings.Contains(object.Name(), "filename") {
+		//pass.Reportf(object.Pos(), `Use "fileName" instead of "filename" in name %q`, object.Name())
+		//}
+		//}
+		//}
+		//}
+		//return nil, nil
+		//},
+		//},
+		//{
+		//Name: "DIRPATH_CASING",
+		//Doc:  "Verifies dirPath or DirPath is used, not dirpath or Dirpath.",
+		//Run: func(pass *analysis.Pass) (interface{}, error) {
+		//if typesInfo := pass.TypesInfo; typesInfo != nil {
+		//for _, object := range pass.TypesInfo.Defs {
+		//if object != nil {
+		//if strings.Contains(object.Name(), "Dirpath") {
+		//pass.Reportf(object.Pos(), `Use "DirPath" instead of "Dirpath" in name %q`, object.Name())
+		//}
+		//if strings.Contains(object.Name(), "dirpath") {
+		//pass.Reportf(object.Pos(), `Use "dirPath" instead of "dirpath" in name %q`, object.Name())
+		//}
+		//}
+		//}
+		//}
+		//return nil, nil
+		//},
+		//},
 	}
 }

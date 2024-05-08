@@ -1,0 +1,65 @@
+edition = "2023";
+
+package a;
+
+option features.utf8_validation = NONE;
+
+message A4 {
+  string str = 1;
+  repeated string strs = 2;
+  map<string, int32> str2int = 3;
+  map<int32, string> int2str = 4;
+  map<string, string> str2str = 5;
+  A4 msg = 6;
+  int32 int = 7;
+}
+
+message B4 {
+  string str = 1;
+  repeated string strs = 2;
+  map<string, int32> str2int = 3;
+  map<int32, string> int2str = 4;
+  map<string, string> str2str = 5;
+  B4 msg = 6;
+  int32 int = 7;
+}
+
+message C4 {
+  string str = 1;
+  repeated string strs = 2;
+  map<string, int32> str2int = 3;
+  map<int32, string> int2str = 4;
+  map<string, string> str2str = 5;
+  C4 msg = 6;
+  int32 int = 7;
+}
+
+message D4 {
+  string str = 1 [features.utf8_validation = VERIFY];
+  repeated string strs = 2 [features.utf8_validation = VERIFY];
+  map<string, int32> str2int = 3 [features.utf8_validation = VERIFY];
+  map<int32, string> int2str = 4 [features.utf8_validation = VERIFY];
+  map<string, string> str2str = 5 [features.utf8_validation = VERIFY];
+  D4 msg = 6;
+  int32 int = 7;
+}
+
+message C5 {
+  string str = 1;
+  repeated string strs = 2;
+  map<string, int32> str2int = 3;
+  map<int32, string> int2str = 4;
+  map<string, string> str2str = 5;
+  C5 msg = 6;
+  int32 int = 7;
+}
+
+message C6 {
+  string str = 1 [features.utf8_validation = VERIFY];
+  repeated string strs = 2 [features.utf8_validation = VERIFY];
+  map<string, int32> str2int = 3 [features.utf8_validation = VERIFY];
+  map<int32, string> int2str = 4 [features.utf8_validation = VERIFY];
+  map<string, string> str2str = 5 [features.utf8_validation = VERIFY];
+  C6 msg = 6;
+  int32 int = 7;
+}

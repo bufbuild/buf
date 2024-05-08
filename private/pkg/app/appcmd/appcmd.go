@@ -13,6 +13,10 @@
 // limitations under the License.
 
 // Package appcmd contains helper functionality for applications using commands.
+//
+// This package wraps cobra. Imports should not import cobra directly - raise an issue
+// internally if there is missing cobra functionality you need. It is acceptable to
+// import pflag, however.
 package appcmd
 
 import (
@@ -42,9 +46,7 @@ type Command struct {
 	// Must be unset if short is unset.
 	Long string
 	// Args are the expected arguments.
-	//
-	// TODO: make specific types for appcmd to limit what can be done.
-	Args cobra.PositionalArgs
+	Args PositionalArgs
 	// Deprecated says to print this deprecation string.
 	Deprecated string
 	// Hidden says to hide this command.
@@ -76,14 +78,14 @@ type Command struct {
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
 func NewInvalidArgumentError(message string) error {
-	return newInvalidArgumentError(message)
+	return newInvalidArgumentError(errors.New(message))
 }
 
 // NewInvalidArgumentErrorf creates a new InvalidArgumentError, indicating that
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
-func NewInvalidArgumentErrorf(format string, args ...interface{}) error {
-	return NewInvalidArgumentError(fmt.Sprintf(format, args...))
+func NewInvalidArgumentErrorf(format string, args ...any) error {
+	return newInvalidArgumentError(fmt.Errorf(format, args...))
 }
 
 // Main runs the application using the OS container and calling os.Exit on the return value of Run.
@@ -104,6 +106,14 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 		}
 	}
 }
+
+// MarkFlagRequired matches cobra.MarkFlagRequired so that importers of appcmd do
+// not need to reference cobra (and shouldn't).
+func MarkFlagRequired(flagSet *pflag.FlagSet, flagName string) error {
+	return cobra.MarkFlagRequired(flagSet, flagName)
+}
+
+// *** PRIVATE ***
 
 func newRunFunc(command *Command) func(context.Context, app.Container) error {
 	return func(ctx context.Context, container app.Container) error {
@@ -142,7 +152,7 @@ func run(
 					{
 						Use:   "bash",
 						Short: "Generate auto-completion scripts for bash",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenBashCompletion(container.Stdout())
 						},
@@ -150,7 +160,7 @@ func run(
 					{
 						Use:   "fish",
 						Short: "Generate auto-completion scripts for fish",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenFishCompletion(container.Stdout(), true)
 						},
@@ -158,7 +168,7 @@ func run(
 					{
 						Use:   "powershell",
 						Short: "Generate auto-completion scripts for powershell",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenPowerShellCompletion(container.Stdout())
 						},
@@ -166,7 +176,7 @@ func run(
 					{
 						Use:   "zsh",
 						Short: "Generate auto-completion scripts for zsh",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenZshCompletion(container.Stdout())
 						},
@@ -184,7 +194,7 @@ func run(
 			container,
 			&Command{
 				Use:    "manpages",
-				Args:   cobra.ExactArgs(1),
+				Args:   ExactArgs(1),
 				Hidden: true,
 				Run: func(ctx context.Context, container app.Container) error {
 					return doc.GenManTree(
@@ -263,10 +273,14 @@ func commandToCobra(
 	if err := commandValidate(command); err != nil {
 		return nil, err
 	}
+	var cobraPositionalArgs cobra.PositionalArgs
+	if command.Args != nil {
+		cobraPositionalArgs = command.Args.cobra()
+	}
 	cobraCommand := &cobra.Command{
 		Use:        command.Use,
 		Aliases:    command.Aliases,
-		Args:       command.Args,
+		Args:       cobraPositionalArgs,
 		Deprecated: command.Deprecated,
 		Hidden:     command.Hidden,
 		Short:      strings.TrimSpace(command.Short),
@@ -327,6 +341,7 @@ func commandToCobra(
 			}
 			cobraCommand.AddCommand(subCobraCommand)
 		}
+		addHelpTreeFlag(container, cobraCommand, runErrAddr)
 	}
 	if command.Version != "" {
 		doVersion := false
@@ -375,4 +390,67 @@ func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, s
 
 func printUsage(container app.StderrContainer, usage string) {
 	_, _ = container.Stderr().Write([]byte(usage + "\n"))
+}
+
+func addHelpTreeFlag(
+	container app.Container,
+	cmd *cobra.Command,
+	runErrAddr *error,
+) {
+	helpTree := false
+	oldRun := cmd.Run
+	cmd.Flags().BoolVar(
+		&helpTree,
+		"help-tree",
+		false,
+		"Print the entire sub-command tree",
+	)
+	cmd.Run = func(cmd *cobra.Command, args []string) {
+		if helpTree {
+			_, err := container.Stdout().Write([]byte(helpTreeString(cmd)))
+			*runErrAddr = err
+			return
+		}
+		oldRun(cmd, args)
+	}
+}
+
+func helpTreeString(cmd *cobra.Command) string {
+	var builder strings.Builder
+	helpTreeStringRec(cmd, &builder, maxPaddingRec(cmd, 0), 0)
+	return builder.String()
+}
+
+func helpTreeStringRec(cmd *cobra.Command, builder *strings.Builder, maxPadding int, curIndentCount int) {
+	if cmd.Hidden {
+		return
+	}
+	if name := cmd.Name(); name != "" {
+		_, _ = builder.WriteString(strings.Repeat(" ", curIndentCount*2))
+		_, _ = builder.WriteString(name)
+		_, _ = builder.WriteString(strings.Repeat(" ", maxPadding-(len(cmd.Name())+(curIndentCount*2))))
+		_, _ = builder.WriteString("  ")
+		_, _ = builder.WriteString(cmd.Short)
+		_, _ = builder.WriteString("\n")
+	}
+	for _, child := range cmd.Commands() {
+		helpTreeStringRec(child, builder, maxPadding, curIndentCount+1)
+	}
+}
+
+func maxPaddingRec(cmd *cobra.Command, curIndentCount int) int {
+	maxPadding := (curIndentCount * 2) + len(cmd.Name())
+	for _, child := range cmd.Commands() {
+		if !child.Hidden {
+			maxPadding = maxInt(maxPadding, maxPaddingRec(child, curIndentCount+1))
+		}
+	}
+	return maxPadding
+}
+
+func maxInt(i int, j int) int {
+	if i > j {
+		return i
+	}
+	return j
 }

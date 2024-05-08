@@ -13,6 +13,15 @@
 // limitations under the License.
 
 // Package app provides application primitives.
+//
+// This should be used for all mains. It provides common globals for the OS and environment
+// in containers, so that they can be isolated for testing.
+//
+// This package has three sub-packages:
+//
+// - appext: More containers for typical buf-related needs, to provide things like loggers.
+// - appcmd: A wrapper for cobra.
+// - appcmd/appcmdtesting: Testing utilities for appcmd.
 package app
 
 import (
@@ -44,6 +53,11 @@ type EnvContainer interface {
 // Empty values are effectively ignored.
 func NewEnvContainer(m map[string]string) EnvContainer {
 	return newEnvContainer(m)
+}
+
+// NewEnvContainerForEnviron returns a new EnvContainer for the environ slice.
+func NewEnvContainerForEnviron(environ []string) (EnvContainer, error) {
+	return newEnvContainerForEnviron(environ)
 }
 
 // NewEnvContainerForOS returns a new EnvContainer for the operating system.
@@ -325,14 +339,21 @@ func Run(ctx context.Context, container Container, f func(context.Context, Conta
 //
 // The exit code cannot be 0.
 func NewError(exitCode int, message string) error {
-	return newAppError(exitCode, message)
+	return newAppError(exitCode, errors.New(message))
 }
 
 // NewErrorf returns a new error that contains an exit code.
 //
 // The exit code cannot be 0.
 func NewErrorf(exitCode int, format string, args ...interface{}) error {
-	return newAppError(exitCode, fmt.Sprintf(format, args...))
+	return newAppError(exitCode, fmt.Errorf(format, args...))
+}
+
+// WrapError returns a new error that contains an exit code.
+//
+// The exit code cannot be 0 and the err cannot be nil.
+func WrapError(exitCode int, err error) error {
+	return newAppError(exitCode, err)
 }
 
 // GetExitCode gets the exit code.

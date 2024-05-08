@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+package b;
+
+message Foo {
+  extensions 1 to 100;
+  message Bar {
+    extend Foo {
+      optional string a = 1;
+      optional string B = 2;
+    }
+  }
+}
+
+extend Foo {
+  optional string c = 3;
+  optional string D = 4;
+}

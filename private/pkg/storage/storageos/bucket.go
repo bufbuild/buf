@@ -97,6 +97,8 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 	return storageutil.NewObjectInfo(
 		path,
 		externalPath,
+		// In storageos, the external path is also the local path.
+		externalPath,
 	), nil
 }
 
@@ -145,6 +147,8 @@ func (b *bucket) Walk(
 				if err := f(
 					storageutil.NewObjectInfo(
 						path,
+						externalPath,
+						// In storageos, the external path is also the local path.
 						externalPath,
 					),
 				); err != nil {
@@ -236,7 +240,7 @@ func (b *bucket) DeleteAll(ctx context.Context, prefix string) error {
 	return nil
 }
 
-func (*bucket) SetExternalPathSupported() bool {
+func (*bucket) SetExternalAndLocalPathsSupported() bool {
 	return false
 }
 
@@ -338,6 +342,8 @@ func newReadObjectCloser(
 		ObjectInfo: storageutil.NewObjectInfo(
 			path,
 			externalPath,
+			// In storageos, the external path is the local path
+			externalPath,
 		),
 		file: file,
 	}
@@ -382,6 +388,10 @@ func (w *writeObjectCloser) Write(p []byte) (int, error) {
 
 func (w *writeObjectCloser) SetExternalPath(string) error {
 	return storage.ErrSetExternalPathUnsupported
+}
+
+func (w *writeObjectCloser) SetLocalPath(string) error {
+	return storage.ErrSetLocalPathUnsupported
 }
 
 func (w *writeObjectCloser) Close() error {

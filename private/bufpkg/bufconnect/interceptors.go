@@ -21,13 +21,35 @@ import (
 	"net/http"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 const (
 	// tokenEnvKey is the environment variable key for the auth token
 	tokenEnvKey = "BUF_TOKEN"
 )
+
+// NewAugmentedConnectErrorInterceptor returns a new Connect Interceptor that wraps
+// [connect.Error]s in an [AugmentedConnectError].
+func NewAugmentedConnectErrorInterceptor() connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			resp, err := next(ctx, req)
+			if err != nil {
+				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
+					err = &AugmentedConnectError{
+						// Using the original err to avoid throwing information away.
+						cause:     err,
+						procedure: req.Spec().Procedure,
+						addr:      req.Peer().Addr,
+					}
+				}
+			}
+			return resp, err
+		}
+	}
+	return interceptor
+}
 
 // NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
 func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
@@ -41,7 +63,7 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 }
 
 // NewCLIWarningInterceptor returns a new Connect Interceptor that logs CLI warnings returned by server responses.
-func NewCLIWarningInterceptor(container applog.Container) connect.UnaryInterceptorFunc {
+func NewCLIWarningInterceptor(container appext.LoggerContainer) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			resp, err := next(ctx, req)
@@ -58,7 +80,7 @@ func NewCLIWarningInterceptor(container applog.Container) connect.UnaryIntercept
 	return interceptor
 }
 
-func logWarningFromHeader(container applog.Container, header http.Header) {
+func logWarningFromHeader(container appext.LoggerContainer, header http.Header) {
 	encoded := header.Get(CLIWarningHeaderName)
 	if encoded != "" {
 		warning, err := connect.DecodeBinaryHeader(encoded)

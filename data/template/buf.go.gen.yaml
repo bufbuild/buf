@@ -1,10 +1,31 @@
-# This template is for go only for OSS types.
-version: v1
+version: v2
 managed:
   enabled: true
-  go_package_prefix:
-    default: github.com/bufbuild/buf/private/gen/proto/go
+  override:
+    - file_option: go_package_prefix
+      value: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
-  - name: go
+  - local: protoc-gen-go
     out: private/gen/proto/go
-    opt: paths=source_relative
+    opt:
+      - paths=source_relative
+      - Mgoogle/protobuf/cpp_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
+      - Mgoogle/protobuf/java_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
+inputs:
+  - directory: proto
+  - module: buf.build/grpc/grpc
+    types:
+      - grpc.reflection.v1.ServerReflection
+    # TODO: Ideally we'd use the protocolbuffers/wellknowntypes module.
+    #       But that doesn't populate for release candidates. So we have
+    #       to wait until the final v27.0 is released to move to that.
+  - git_repo: https://github.com/protocolbuffers/protobuf.git
+    tag: v27.0-rc1
+    subdir: src
+    paths:
+     - src/google/protobuf/cpp_features.proto
+  - git_repo: https://github.com/protocolbuffers/protobuf.git
+    tag: v27.0-rc1
+    subdir: java/core/src/main/resources
+    paths:
+     - java/core/src/main/resources/google/protobuf/java_features.proto

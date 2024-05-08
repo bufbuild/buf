@@ -32,6 +32,18 @@ var (
 		"enums are not deleted from a given file",
 		bufbreakingcheck.CheckEnumNoDelete,
 	)
+	// EnumSameJSONFormatRuleBuilder is a rule builder.
+	EnumSameJSONFormatRuleBuilder = internal.NewNopRuleBuilder(
+		"ENUM_SAME_JSON_FORMAT",
+		"enums have the same JSON format support",
+		bufbreakingcheck.CheckEnumSameJSONFormat,
+	)
+	// EnumSameTypeRuleBuilder is a rule builder.
+	EnumSameTypeRuleBuilder = internal.NewNopRuleBuilder(
+		"ENUM_SAME_TYPE",
+		"enums have the same type (open vs closed)",
+		bufbreakingcheck.CheckEnumSameType,
+	)
 	// EnumValueNoDeleteRuleBuilder is a rule builder.
 	EnumValueNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_NO_DELETE",
@@ -80,11 +92,35 @@ var (
 		"fields are not deleted from a given message unless the number is reserved",
 		bufbreakingcheck.CheckFieldNoDeleteUnlessNumberReserved,
 	)
+	// FieldSameCardinalityRuleBuilder is a rule builder.
+	FieldSameCardinalityRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_CARDINALITY",
+		"fields have the same cardinalities in a given message",
+		bufbreakingcheck.CheckFieldSameCardinality,
+	)
+	// FieldSameCppStringTypeRuleBuilder is a rule builder.
+	FieldSameCppStringTypeRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_CPP_STRING_TYPE",
+		"fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature",
+		bufbreakingcheck.CheckFieldSameCppStringType,
+	)
 	// FieldSameCTypeRuleBuilder is a rule builder.
-	FieldSameCTypeRuleBuilder = internal.NewNopRuleBuilder(
+	FieldSameCTypeRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FIELD_SAME_CTYPE",
 		"fields have the same value for the ctype option",
-		bufbreakingcheck.CheckFieldSameCType,
+		[]string{"FIELD_SAME_CPP_STRING_TYPE"},
+	)
+	// FieldSameJavaUTF8ValidationRuleBuilder is a rule builder.
+	FieldSameJavaUTF8ValidationRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_JAVA_UTF8_VALIDATION",
+		"fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature",
+		bufbreakingcheck.CheckFieldSameJavaUTF8Validation,
+	)
+	// FieldSameDefaultRuleBuilder is a rule builder.
+	FieldSameDefaultRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_DEFAULT",
+		"fields have the same default value, if a default is specified",
+		bufbreakingcheck.CheckFieldSameDefault,
 	)
 	// FieldSameJSONNameRuleBuilder is a rule builder.
 	FieldSameJSONNameRuleBuilder = internal.NewNopRuleBuilder(
@@ -99,10 +135,20 @@ var (
 		bufbreakingcheck.CheckFieldSameJSType,
 	)
 	// FieldSameLabelRuleBuilder is a rule builder.
-	FieldSameLabelRuleBuilder = internal.NewNopRuleBuilder(
+	FieldSameLabelRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FIELD_SAME_LABEL",
 		"fields have the same labels in a given message",
-		bufbreakingcheck.CheckFieldSameLabel,
+		[]string{
+			"FIELD_SAME_CARDINALITY",
+			"FIELD_WIRE_COMPATIBLE_CARDINALITY",
+			"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		},
+	)
+	// FieldSameLabelV1Beta1RuleBuilder is a rule builder.
+	FieldSameLabelV1Beta1RuleBuilder = internal.NewDeprecatedRuleBuilder(
+		"FIELD_SAME_LABEL",
+		"fields have the same labels in a given message",
+		[]string{"FIELD_SAME_CARDINALITY"},
 	)
 	// FieldSameNameRuleBuilder is a rule builder.
 	FieldSameNameRuleBuilder = internal.NewNopRuleBuilder(
@@ -116,17 +162,35 @@ var (
 		"fields have the same oneofs in a given message",
 		bufbreakingcheck.CheckFieldSameOneof,
 	)
+	// FieldSameUTF8ValidationRuleBuilder is a rule builder.
+	FieldSameUTF8ValidationRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_UTF8_VALIDATION",
+		"string fields have the same UTF8 validation mode",
+		bufbreakingcheck.CheckFieldSameUTF8Validation,
+	)
 	// FieldSameTypeRuleBuilder is a rule builder.
 	FieldSameTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_TYPE",
 		"fields have the same types in a given message",
 		bufbreakingcheck.CheckFieldSameType,
 	)
+	// FieldWireCompatibleCardinalityRuleBuilder is a rule builder.
+	FieldWireCompatibleCardinalityRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_WIRE_COMPATIBLE_CARDINALITY",
+		"fields have wire-compatible cardinalities in a given message",
+		bufbreakingcheck.CheckFieldWireCompatibleCardinality,
+	)
 	// FieldWireCompatibleTypeRuleBuilder is a rule builder.
 	FieldWireCompatibleTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_WIRE_COMPATIBLE_TYPE",
 		"fields have wire-compatible types in a given message",
 		bufbreakingcheck.CheckFieldWireCompatibleType,
+	)
+	// FieldWireJSONCompatibleCardinalityRuleBuilder is a rule builder.
+	FieldWireJSONCompatibleCardinalityRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		"fields have wire and JSON compatible cardinalities in a given message",
+		bufbreakingcheck.CheckFieldWireJSONCompatibleCardinality,
 	)
 	// FieldWireJSONCompatibleTypeRuleBuilder is a rule builder.
 	FieldWireJSONCompatibleTypeRuleBuilder = internal.NewNopRuleBuilder(
@@ -171,10 +235,10 @@ var (
 		bufbreakingcheck.CheckFileSameJavaPackage,
 	)
 	// FileSameJavaStringCheckUtf8RuleBuilder is a rule builder.
-	FileSameJavaStringCheckUtf8RuleBuilder = internal.NewNopRuleBuilder(
+	FileSameJavaStringCheckUtf8RuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FILE_SAME_JAVA_STRING_CHECK_UTF8",
 		"files have the same value for the java_string_check_utf8 option",
-		bufbreakingcheck.CheckFileSameJavaStringCheckUtf8,
+		[]string{"FIELD_SAME_JAVA_UTF8_VALIDATION"},
 	)
 	// FileSameObjcClassPrefixRuleBuilder is a rule builder.
 	FileSameObjcClassPrefixRuleBuilder = internal.NewNopRuleBuilder(
@@ -243,10 +307,10 @@ var (
 		bufbreakingcheck.CheckFileSamePyGenericServices,
 	)
 	// FileSamePhpGenericServicesRuleBuilder is a rule builder.
-	FileSamePhpGenericServicesRuleBuilder = internal.NewNopRuleBuilder(
+	FileSamePhpGenericServicesRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FILE_SAME_PHP_GENERIC_SERVICES",
 		"files have the same value for the php_generic_services option",
-		bufbreakingcheck.CheckFileSamePhpGenericServices,
+		nil,
 	)
 	// FileSameCcEnableArenasRuleBuilder is a rule builder.
 	FileSameCcEnableArenasRuleBuilder = internal.NewNopRuleBuilder(
@@ -271,6 +335,12 @@ var (
 		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR",
 		"messages do not change the no_standard_descriptor_accessor option from false or unset to true",
 		bufbreakingcheck.CheckMessageNoRemoveStandardDescriptorAccessor,
+	)
+	// MessageSameJSONFormatRuleBuilder is a rule builder.
+	MessageSameJSONFormatRuleBuilder = internal.NewNopRuleBuilder(
+		"MESSAGE_SAME_JSON_FORMAT",
+		"messages have the same JSON format support",
+		bufbreakingcheck.CheckMessageSameJSONFormat,
 	)
 	// MessageSameMessageSetWireFormatRuleBuilder is a rule builder.
 	MessageSameMessageSetWireFormatRuleBuilder = internal.NewNopRuleBuilder(

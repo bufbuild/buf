@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package a;
+
+message B1 {
+  string s = 1;
+}
+
+message B2 {
+  string s = 1;
+}
+
+message B3 {
+  string s = 1;
+}
+
+message B4 {
+  string s = 1;
+}

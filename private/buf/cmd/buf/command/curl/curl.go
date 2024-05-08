@@ -33,19 +33,13 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
-	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/app/appverbose"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
@@ -101,7 +95,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -184,12 +178,11 @@ If an error occurs that is due to incorrect usage or other unexpected error, thi
 return an exit code that is less than 8. If the RPC fails otherwise, this program will return an
 exit code that is the gRPC code, shifted three bits to the left.
 `,
-		Args: checkPositionalArgs,
+		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -595,7 +588,7 @@ func (f *flags) determineCredentials(
 	ctx context.Context,
 	container interface {
 		app.Container
-		appverbose.Container
+		appext.VerboseContainer
 	},
 	host string,
 ) (string, error) {
@@ -773,15 +766,7 @@ func verifyEndpointURL(urlArg string) (endpointURL *url.URL, service, method, ba
 	return endpointURL, service, method, baseURL, nil
 }
 
-func checkPositionalArgs(_ *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return errors.New("expecting exactly one positional argument: the URL of the endpoint to invoke")
-	}
-	_, _, _, _, err := verifyEndpointURL(args[0])
-	return err
-}
-
-func run(ctx context.Context, container appflag.Container, f *flags) (err error) {
+func run(ctx context.Context, container appext.Container, f *flags) (err error) {
 	endpointURL, service, method, baseURL, err := verifyEndpointURL(container.Arg(0))
 	if err != nil {
 		return err
@@ -906,59 +891,16 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		defer closeRes()
 		resolvers = append(resolvers, res)
 	}
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
 	for _, schema := range f.Schemas {
-		ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, schema)
+		image, err := controller.GetImage(ctx, schema)
 		if err != nil {
 			return err
 		}
-		storageosProvider := bufcli.NewStorageosProvider(false)
-		// TODO: Ideally, we'd use our verbose client for this Connect client, so we can see the same
-		//   kind of output in verbose mode as we see for reflection requests.
-		clientConfig, err := bufcli.NewConnectClientConfig(container)
-		if err != nil {
-			return err
-		}
-		imageConfigReader, err := bufcli.NewWireImageConfigReader(
-			container,
-			storageosProvider,
-			command.NewRunner(),
-			clientConfig,
-		)
-		if err != nil {
-			return err
-		}
-		imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
-			ctx,
-			container,
-			ref,
-			"",
-			nil,
-			nil,
-			false, // input files must exist
-			false, // we must include source info for generation
-		)
-		if err != nil {
-			return err
-		}
-		if len(fileAnnotations) > 0 {
-			if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, bufanalysis.FormatText.String()); err != nil {
-				return err
-			}
-			return bufcli.ErrFileAnnotation
-		}
-		images := make([]bufimage.Image, 0, len(imageConfigs))
-		for _, imageConfig := range imageConfigs {
-			images = append(images, imageConfig.Image())
-		}
-		image, err := bufimage.MergeImages(images...)
-		if err != nil {
-			return err
-		}
-		res, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return err
-		}
-		resolvers = append(resolvers, res)
+		resolvers = append(resolvers, image.Resolver())
 	}
 	res := protoencoding.CombineResolvers(resolvers...)
 

@@ -16,7 +16,7 @@ message MessageFoo {
       FOO_ONE = 1;
     }
     message MessageBaz {
-      int64 foo = 1;
+      optional int64 foo = 1;
       oneof bar {
         int64 baz = 2;
       }

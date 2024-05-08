@@ -41,9 +41,19 @@ func (z *zapExporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpa
 		if checkedEntry := z.logger.Check(zap.DebugLevel, span.Name()); checkedEntry != nil {
 			fields := []zap.Field{
 				zap.Duration("duration", span.EndTime().Sub(span.StartTime())),
+				zap.String("status", span.Status().Code.String()),
 			}
 			for _, attribute := range span.Attributes() {
 				fields = append(fields, zap.Any(string(attribute.Key), attribute.Value.AsInterface()))
+			}
+			for _, event := range span.Events() {
+				for _, attribute := range event.Attributes {
+					// Event attributes seem to have their event name magically prepended to the attribute key.
+					// This could overlap with attributes, but we're going to ignore this
+					// for now since it's extremely unlikely, and since this is only really for the CLI.
+					// Not a good answer.
+					fields = append(fields, zap.Any(string(attribute.Key), attribute.Value.AsInterface()))
+				}
 			}
 			checkedEntry.Write(fields...)
 		}

@@ -20,9 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 // NewMessage returns a new dynamic proto.Message for the fully qualified typeName
@@ -35,19 +33,11 @@ func NewMessage(
 	if err := ValidateTypeName(typeName); err != nil {
 		return nil, err
 	}
-	files, err := protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(image))
+	messageType, err := image.Resolver().FindMessageByName(protoreflect.FullName(typeName))
 	if err != nil {
 		return nil, err
 	}
-	descriptor, err := files.FindDescriptorByName(protoreflect.FullName(typeName))
-	if err != nil {
-		return nil, err
-	}
-	typedDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("%q must be a message but is a %T", typeName, descriptor)
-	}
-	return dynamicpb.NewMessage(typedDescriptor), nil
+	return messageType.New().Interface(), nil
 }
 
 // ValidateTypeName validates that the typeName is well-formed, such that it has one or more

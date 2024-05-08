@@ -34,6 +34,12 @@ var (
 	NopCloser = nopCloser{}
 )
 
+// ReadAllAndClose reads all the data and then closes the ReadCloser.
+func ReadAllAndClose(readCloser io.ReadCloser) ([]byte, error) {
+	data, err := io.ReadAll(readCloser)
+	return data, multierr.Append(err, readCloser.Close())
+}
+
 // NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.
 func NopWriteCloser(writer io.Writer) io.WriteCloser {
 	return nopWriteCloser{Writer: writer}
@@ -52,6 +58,11 @@ func CompositeReadCloser(reader io.Reader, closer io.Closer) io.ReadCloser {
 // CompositeWriteCloser returns a io.WriteCloser that is a composite of the Writer and Closer.
 func CompositeWriteCloser(writer io.Writer, closer io.Closer) io.WriteCloser {
 	return compositeWriteCloser{Writer: writer, Closer: closer}
+}
+
+// CompositeReadWriteCloser returns a io.ReadWriteCloser that is a composite of the Reader, Writer, and Closer.
+func CompositeReadWriteCloser(reader io.Reader, writer io.Writer, closer io.Closer) io.ReadWriteCloser {
+	return compositeReadWriteCloser{Reader: reader, Writer: writer, Closer: closer}
 }
 
 // ChainCloser chains the closers by calling them in order.
@@ -109,6 +120,12 @@ type compositeReadCloser struct {
 }
 
 type compositeWriteCloser struct {
+	io.Writer
+	io.Closer
+}
+
+type compositeReadWriteCloser struct {
+	io.Reader
 	io.Writer
 	io.Closer
 }

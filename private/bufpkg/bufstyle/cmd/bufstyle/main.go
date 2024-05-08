@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"golang.org/x/tools/go/analysis/multichecker"
 )
 
@@ -54,7 +55,7 @@ func newAnalyzerProvider() (bufstyle.AnalyzerProvider, error) {
 			)
 		}
 	}
-	rootDirPath, err := os.Getwd()
+	rootDirPath, err := osext.Getwd()
 	if err != nil {
 		return nil, err
 	}

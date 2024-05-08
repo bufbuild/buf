@@ -18,12 +18,15 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/pluginpb"
 )
+
+// false until buf CLI can fully and correctly support editions
+var allowEditions = false
 
 // FileDescriptor is an interface that matches the methods on a *descriptorpb.FileDescriptorProto.
 //
@@ -130,66 +133,18 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 	if err := ValidateProtoPaths("FileDescriptor.Dependency", fileDescriptor.GetDependency()); err != nil {
 		return err
 	}
-	return nil
-}
-
-// ValidateCodeGeneratorRequest validates the CodeGeneratorRequest.
-func ValidateCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) error {
-	if err := ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
-		return err
+	// TODO: Remove this once the CLI is a-okay to work with editions.
+	if fileDescriptor.GetSyntax() == "editions" && !allowEditions {
+		return fmt.Errorf("%s uses edition %s, but editions are not yet supported in buf",
+			fileDescriptor.GetName(), strings.TrimPrefix(fileDescriptor.GetEdition().String(), "EDITION_"))
 	}
-	for i, fileDescriptorProto := range request.ProtoFile {
-		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
-			return fmt.Errorf("CodeGeneratorRequest.ProtoFile[%d]: %w", i, err)
-		}
-	}
-	for i, fileDescriptorProto := range request.SourceFileDescriptors {
-		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
-			return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors[%d]: %w", i, err)
-		}
-	}
-	return nil
-}
-
-// ValidateCodeGeneratorRequestExceptFileDescriptorProtos validates the CodeGeneratorRequest
-// minus the FileDescriptorProtos.
-func ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.CodeGeneratorRequest) error {
-	if request == nil {
-		return errors.New("nil CodeGeneratorRequest")
-	}
-	if len(request.ProtoFile) == 0 {
-		return errors.New("empty CodeGeneratorRequest.ProtoFile")
-	}
-	if len(request.FileToGenerate) == 0 {
-		return errors.New("empty CodeGeneratorRequest.FileToGenerate")
-	}
-	if err := ValidateProtoPaths("CodeGeneratorRequest.FileToGenerate", request.FileToGenerate); err != nil {
-		return err
-	}
-	// TODO: validate that there are no duplicates in file_to_generate, proto_file, and source_file_descriptors
-	//       validate that proto_file is in topological order and contains everything from file_to_generate
-	//       validate that source_file_descriptors, if present, matches file_to_generate
-	return nil
-}
-
-// ValidateCodeGeneratorResponse validates the CodeGeneratorResponse.
-//
-// This validates that names are set.
-//
-// It is actually OK per the plugin.proto specs to not have the name set, and
-// if this is empty, the content should be combined with the previous file.
-// However, for our handlers, we do not support this, and for our
-// binary handlers, we combine CodeGeneratorResponse.File contents.
-//
-// https://github.com/protocolbuffers/protobuf/blob/b99994d994e399174fe688a5efbcb6d91f36952a/src/google/protobuf/compiler/plugin.proto#L127
-func ValidateCodeGeneratorResponse(response *pluginpb.CodeGeneratorResponse) error {
-	if response == nil {
-		return errors.New("nil CodeGeneratorResponse")
-	}
-	for _, file := range response.File {
-		if file.GetName() == "" {
-			return errors.New("empty CodeGeneratorResponse.File.Name")
-		}
+	if fileDescriptor.GetSyntax() == "editions" && fileDescriptor.GetEdition() != descriptorpb.Edition_EDITION_2023 {
+		// Currently, we could only support edition 2023.
+		// TODO: For maximum safety, we probably want to ask protocompile if it supports
+		//       the edition, too. It's a little unlikely that we'd update buf CLI to
+		//       support an edition before protocompile, but just in case.
+		return fmt.Errorf("%s uses unsupported edition %s",
+			fileDescriptor.GetName(), fileDescriptor.GetEdition())
 	}
 	return nil
 }
@@ -284,4 +239,16 @@ func FieldDescriptorProtoLabelPrettyString(l descriptorpb.FieldDescriptorProto_L
 	default:
 		return strconv.Itoa(int(l))
 	}
+}
+
+// AllowEditionsForTesting enables support for Protobuf editions, which should only
+// be done for testing until buf fully supports editions correctly (at which point
+// this function will be removed).
+//
+// This function and the internal flag it touches are not thread-safe. So this
+// should be used as early as possible, before any other use of this package. It
+// should typically be called from a TestMain function for a package whose tests
+// need to verify editions-specific behavior.
+func AllowEditionsForTesting() {
+	allowEditions = true
 }

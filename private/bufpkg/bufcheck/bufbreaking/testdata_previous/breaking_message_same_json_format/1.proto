@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package a;
+
+message A1 {
+  optional string s = 1;
+}
+
+message A2 {
+  optional string s = 1;
+}
+
+message A3 {
+  optional string s = 1;
+}
+
+message A4 {
+  optional string s = 1;
+}

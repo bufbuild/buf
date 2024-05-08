@@ -19,59 +19,44 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"google.golang.org/protobuf/types/pluginpb"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/protoplugin"
 )
 
-const defaultTimeout = 10 * time.Second
+const (
+	appName        = "protoc-gen-buf-breaking"
+	defaultTimeout = 10 * time.Second
+)
 
 // Main is the main.
 func Main() {
-	appproto.Main(
-		context.Background(),
-		appproto.HandlerFunc(
-			func(
-				ctx context.Context,
-				container app.EnvStderrContainer,
-				responseWriter appproto.ResponseBuilder,
-				request *pluginpb.CodeGeneratorRequest,
-			) error {
-				return handle(
-					ctx,
-					container,
-					responseWriter,
-					request,
-				)
-			},
-		),
-	)
+	protoplugin.Main(protoplugin.HandlerFunc(handle))
 }
 
 func handle(
 	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginEnv protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	request protoplugin.Request,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(
-		[]byte(request.GetParameter()),
+		[]byte(request.Parameter()),
 		externalConfig,
 	); err != nil {
 		return err
@@ -80,35 +65,36 @@ func handle(
 		// this is actually checked as part of ReadImageEnv but just in case
 		return errors.New(`"against_input" is required`)
 	}
+	container, err := newAppextContainer(
+		pluginEnv,
+		externalConfig.LogLevel,
+		externalConfig.LogFormat,
+	)
+	if err != nil {
+		return err
+	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
+	var targetPaths []string
+	if externalConfig.LimitToInputFiles {
+		targetPaths = request.CodeGeneratorRequest().GetFileToGenerate()
+	}
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithFileAnnotationErrorFormat(externalConfig.ErrorFormat),
+	)
 	if err != nil {
 		return err
 	}
-	files := request.FileToGenerate
-	if !externalConfig.LimitToInputFiles {
-		files = nil
-	}
-	againstMessageRef, err := buffetch.NewMessageRefParser(logger).GetMessageRef(ctx, externalConfig.AgainstInput)
-	if err != nil {
-		return fmt.Errorf("against_input: %v", err)
-	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	runner := command.NewRunner()
-	imageReader := bufcli.NewWireImageReader(logger, storageosProvider, runner)
-	againstImage, err := imageReader.GetImage(
+	againstImage, err := controller.GetImage(
 		ctx,
-		newContainer(container),
-		againstMessageRef,
-		files, // limit to the input files if specified
-		nil,   // exclude paths are not supported on this plugin
-		true,  // allow files in the against input to not exist
-		false, // keep for now
+		externalConfig.AgainstInput,
+		// limit to the input files if specified
+		bufctl.WithTargetPaths(targetPaths, nil),
 	)
 	if err != nil {
 		return err
@@ -116,48 +102,44 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
+		ctx,
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
 		return err
 	}
-	config, err := bufconfig.ReadConfigOS(
-		ctx,
-		readWriteBucket,
-		bufconfig.ReadConfigOSWithOverride(
-			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		),
-	)
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest())
 	if err != nil {
 		return err
 	}
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
-	if err != nil {
-		return err
-	}
-	fileAnnotations, err := bufbreaking.NewHandler(logger).Check(
+	if err := bufbreaking.NewHandler(container.Logger(), tracing.NopTracer).Check(
 		ctx,
-		config.Breaking,
+		moduleConfig.BreakingConfig(),
 		againstImage,
 		image,
-	)
-	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		buffer := bytes.NewBuffer(nil)
-		if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			return err
+	); err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			buffer := bytes.NewBuffer(nil)
+			if err := bufanalysis.PrintFileAnnotationSet(
+				buffer,
+				fileAnnotationSet,
+				externalConfig.ErrorFormat,
+			); err != nil {
+				return err
+			}
+			responseWriter.SetError(strings.TrimSpace(buffer.String()))
+			return nil
 		}
-		responseWriter.AddError(strings.TrimSpace(buffer.String()))
+		return err
 	}
 	return nil
 }
 
 type externalConfig struct {
-	AgainstInput       string          `json:"against_input,omitempty" yaml:"against_input,omitempty"`
+	AgainstInput string `json:"against_input,omitempty" yaml:"against_input,omitempty"`
+	// This was never actually used, but we keep it around for we can do unmarshal strict without breaking anyone.
 	AgainstInputConfig json.RawMessage `json:"against_input_config,omitempty" yaml:"against_input_config,omitempty"`
 	InputConfig        json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
 	LimitToInputFiles  bool            `json:"limit_to_input_files,omitempty" yaml:"limit_to_input_files,omitempty"`
@@ -168,15 +150,52 @@ type externalConfig struct {
 	Timeout            time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
-type container struct {
-	app.EnvContainer
-	app.StdinContainer
+func newAppextContainer(
+	pluginEnv protoplugin.PluginEnv,
+	logLevel string,
+	logFormat string,
+) (appext.Container, error) {
+	logger, err := zaputil.NewLoggerForFlagValues(
+		pluginEnv.Stderr,
+		logLevel,
+		logFormat,
+	)
+	if err != nil {
+		return nil, err
+	}
+	appContainer, err := newAppContainer(pluginEnv)
+	if err != nil {
+		return nil, err
+	}
+	return appext.NewContainer(
+		appContainer,
+		appName,
+		logger,
+		verbose.NopPrinter,
+	)
 }
 
-func newContainer(c app.EnvContainer) *container {
-	return &container{
-		EnvContainer: c,
+type appContainer struct {
+	app.EnvContainer
+	app.StderrContainer
+	app.StdinContainer
+	app.StdoutContainer
+	app.ArgContainer
+}
+
+func newAppContainer(pluginEnv protoplugin.PluginEnv) (*appContainer, error) {
+	envContainer, err := app.NewEnvContainerForEnviron(pluginEnv.Environ)
+	if err != nil {
+		return nil, err
+	}
+	return &appContainer{
+		EnvContainer:    envContainer,
+		StderrContainer: app.NewStderrContainer(pluginEnv.Stderr),
 		// cannot read against input from stdin, this is for the CodeGeneratorRequest
 		StdinContainer: app.NewStdinContainer(nil),
-	}
+		// cannot write output to stdout, this is for the CodeGeneratorResponse
+		StdoutContainer: app.NewStdoutContainer(nil),
+		// no args
+		ArgContainer: app.NewArgContainer(),
+	}, nil
 }

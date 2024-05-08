@@ -1,0 +1,4 @@
+version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen

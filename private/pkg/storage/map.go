@@ -37,7 +37,22 @@ func MapReadBucket(readBucket ReadBucket, mappers ...Mapper) ReadBucket {
 	if len(mappers) == 0 {
 		return readBucket
 	}
-	return newMapReadBucket(readBucket, MapChain(mappers...))
+	return newMapReadBucketCloser(readBucket, nil, MapChain(mappers...))
+}
+
+// MapReadBucketCloser maps the ReadBucketCloser.
+//
+// If the Mappers are empty, the original ReadBucketCloser is returned.
+// If there is more than one Mapper, the Mappers are called in order
+// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+//
+// That is, order these assuming you are starting with a full path and
+// working to a path.
+func MapReadBucketCloser(readBucketCloser ReadBucketCloser, mappers ...Mapper) ReadBucketCloser {
+	if len(mappers) == 0 {
+		return readBucketCloser
+	}
+	return newMapReadBucketCloser(readBucketCloser, readBucketCloser.Close, MapChain(mappers...))
 }
 
 // MapWriteBucket maps the WriteBucket.
@@ -54,7 +69,24 @@ func MapWriteBucket(writeBucket WriteBucket, mappers ...Mapper) WriteBucket {
 	if len(mappers) == 0 {
 		return writeBucket
 	}
-	return newMapWriteBucket(writeBucket, MapChain(mappers...))
+	return newMapWriteBucketCloser(writeBucket, nil, MapChain(mappers...))
+}
+
+// MapWriteBucketCloser maps the WriteBucketCloser.
+//
+// If the Mappers are empty, the original WriteBucketCloser is returned.
+// If there is more than one Mapper, the Mappers are called in order
+// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+//
+// That is, order these assuming you are starting with a full path and
+// working to a path.
+//
+// If a path that does not match is called for Put, an error is returned.
+func MapWriteBucketCloser(writeBucketCloser WriteBucketCloser, mappers ...Mapper) WriteBucketCloser {
+	if len(mappers) == 0 {
+		return writeBucketCloser
+	}
+	return newMapWriteBucketCloser(writeBucketCloser, writeBucketCloser.Close, MapChain(mappers...))
 }
 
 // MapReadWriteBucket maps the ReadWriteBucket.
@@ -70,28 +102,52 @@ func MapReadWriteBucket(readWriteBucket ReadWriteBucket, mappers ...Mapper) Read
 		return readWriteBucket
 	}
 	mapper := MapChain(mappers...)
-	return compositeReadWriteBucket{
-		newMapReadBucket(readWriteBucket, mapper),
-		newMapWriteBucket(readWriteBucket, mapper),
+	return compositeReadWriteBucketCloser{
+		newMapReadBucketCloser(readWriteBucket, nil, mapper),
+		newMapWriteBucketCloser(readWriteBucket, nil, mapper),
+		nil,
 	}
 }
 
-type mapReadBucket struct {
-	delegate ReadBucket
-	mapper   Mapper
+// MapReadWriteBucketCloser maps the ReadWriteBucketCloser.
+//
+// If the Mappers are empty, the original ReadWriteBucketCloser is returned.
+// If there is more than one Mapper, the Mappers are called in order
+// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+//
+// That is, order these assuming you are starting with a full path and
+// working to a path.
+func MapReadWriteBucketCloser(readWriteBucketCloser ReadWriteBucketCloser, mappers ...Mapper) ReadWriteBucketCloser {
+	if len(mappers) == 0 {
+		return readWriteBucketCloser
+	}
+	mapper := MapChain(mappers...)
+	return compositeReadWriteBucketCloser{
+		newMapReadBucketCloser(readWriteBucketCloser, nil, mapper),
+		newMapWriteBucketCloser(readWriteBucketCloser, nil, mapper),
+		readWriteBucketCloser.Close,
+	}
 }
 
-func newMapReadBucket(
+type mapReadBucketCloser struct {
+	delegate  ReadBucket
+	closeFunc func() error
+	mapper    Mapper
+}
+
+func newMapReadBucketCloser(
 	delegate ReadBucket,
+	closeFunc func() error,
 	mapper Mapper,
-) *mapReadBucket {
-	return &mapReadBucket{
-		delegate: delegate,
-		mapper:   mapper,
+) *mapReadBucketCloser {
+	return &mapReadBucketCloser{
+		delegate:  delegate,
+		closeFunc: closeFunc,
+		mapper:    mapper,
 	}
 }
 
-func (r *mapReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
+func (r *mapReadBucketCloser) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
 	fullPath, err := r.getFullPath("read", path)
 	if err != nil {
 		return nil, err
@@ -104,7 +160,7 @@ func (r *mapReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser,
 	return replaceReadObjectCloserPath(readObjectCloser, path), nil
 }
 
-func (r *mapReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, error) {
+func (r *mapReadBucketCloser) Stat(ctx context.Context, path string) (ObjectInfo, error) {
 	fullPath, err := r.getFullPath("stat", path)
 	if err != nil {
 		return nil, err
@@ -117,7 +173,7 @@ func (r *mapReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, erro
 	return replaceObjectInfoPath(objectInfo, path), nil
 }
 
-func (r *mapReadBucket) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {
+func (r *mapReadBucketCloser) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {
 	prefix, err := normalpath.NormalizeAndValidate(prefix)
 	if err != nil {
 		return err
@@ -142,7 +198,14 @@ func (r *mapReadBucket) Walk(ctx context.Context, prefix string, f func(ObjectIn
 	)
 }
 
-func (r *mapReadBucket) getFullPath(op string, path string) (string, error) {
+func (r *mapReadBucketCloser) Close() error {
+	if r.closeFunc != nil {
+		return r.closeFunc()
+	}
+	return nil
+}
+
+func (r *mapReadBucketCloser) getFullPath(op string, path string) (string, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return "", err
@@ -157,22 +220,24 @@ func (r *mapReadBucket) getFullPath(op string, path string) (string, error) {
 	return fullPath, nil
 }
 
-type mapWriteBucket struct {
-	delegate WriteBucket
-	mapper   Mapper
+type mapWriteBucketCloser struct {
+	delegate  WriteBucket
+	closeFunc func() error
+	mapper    Mapper
 }
 
-func newMapWriteBucket(
+func newMapWriteBucketCloser(
 	delegate WriteBucket,
+	closeFunc func() error,
 	mapper Mapper,
-) *mapWriteBucket {
-	return &mapWriteBucket{
+) *mapWriteBucketCloser {
+	return &mapWriteBucketCloser{
 		delegate: delegate,
 		mapper:   mapper,
 	}
 }
 
-func (w *mapWriteBucket) Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error) {
+func (w *mapWriteBucketCloser) Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error) {
 	fullPath, err := w.getFullPath(path)
 	if err != nil {
 		return nil, err
@@ -182,10 +247,10 @@ func (w *mapWriteBucket) Put(ctx context.Context, path string, opts ...PutOption
 	if err != nil {
 		return nil, err
 	}
-	return replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser), nil
+	return replaceWriteObjectCloserExternalAndLocalPathsNotSupported(writeObjectCloser), nil
 }
 
-func (w *mapWriteBucket) Delete(ctx context.Context, path string) error {
+func (w *mapWriteBucketCloser) Delete(ctx context.Context, path string) error {
 	fullPath, err := w.getFullPath(path)
 	if err != nil {
 		return err
@@ -193,7 +258,7 @@ func (w *mapWriteBucket) Delete(ctx context.Context, path string) error {
 	return w.delegate.Delete(ctx, fullPath)
 }
 
-func (w *mapWriteBucket) DeleteAll(ctx context.Context, prefix string) error {
+func (w *mapWriteBucketCloser) DeleteAll(ctx context.Context, prefix string) error {
 	prefix, err := normalpath.NormalizeAndValidate(prefix)
 	if err != nil {
 		return err
@@ -205,11 +270,18 @@ func (w *mapWriteBucket) DeleteAll(ctx context.Context, prefix string) error {
 	return w.delegate.DeleteAll(ctx, fullPrefix)
 }
 
-func (*mapWriteBucket) SetExternalPathSupported() bool {
+func (*mapWriteBucketCloser) SetExternalAndLocalPathsSupported() bool {
 	return false
 }
 
-func (w *mapWriteBucket) getFullPath(path string) (string, error) {
+func (w *mapWriteBucketCloser) Close() error {
+	if w.closeFunc != nil {
+		return w.closeFunc()
+	}
+	return nil
+}
+
+func (w *mapWriteBucketCloser) getFullPath(path string) (string, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return "", err
@@ -231,6 +303,7 @@ func replaceObjectInfoPath(objectInfo ObjectInfo, path string) ObjectInfo {
 	return storageutil.NewObjectInfo(
 		path,
 		objectInfo.ExternalPath(),
+		objectInfo.LocalPath(),
 	)
 }
 
@@ -241,14 +314,18 @@ func replaceReadObjectCloserPath(readObjectCloser ReadObjectCloser, path string)
 	return compositeReadObjectCloser{replaceObjectInfoPath(readObjectCloser, path), readObjectCloser}
 }
 
-func replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser WriteObjectCloser) WriteObjectCloser {
-	return writeObjectCloserExternalPathNotSuppoted{writeObjectCloser}
+func replaceWriteObjectCloserExternalAndLocalPathsNotSupported(writeObjectCloser WriteObjectCloser) WriteObjectCloser {
+	return writeObjectCloserExternalAndLocalPathsNotSuppoted{writeObjectCloser}
 }
 
-type writeObjectCloserExternalPathNotSuppoted struct {
+type writeObjectCloserExternalAndLocalPathsNotSuppoted struct {
 	io.WriteCloser
 }
 
-func (writeObjectCloserExternalPathNotSuppoted) SetExternalPath(string) error {
+func (writeObjectCloserExternalAndLocalPathsNotSuppoted) SetExternalPath(string) error {
 	return ErrSetExternalPathUnsupported
+}
+
+func (writeObjectCloserExternalAndLocalPathsNotSuppoted) SetLocalPath(string) error {
+	return ErrSetLocalPathUnsupported
 }

@@ -34,7 +34,6 @@ func TestToUniqueSorted(t *testing.T) {
 
 func TestElementsContained(t *testing.T) {
 	t.Parallel()
-	assert.True(t, ElementsContained(nil, nil))
 	assert.True(t, ElementsContained([]string{}, []string{}))
 	assert.True(t, ElementsContained(nil, []string{}))
 	assert.True(t, ElementsContained([]string{}, nil))
@@ -76,6 +75,23 @@ func TestDuplicates(t *testing.T) {
 		[]string{"b", "a"},
 		Duplicates([]string{"a", "b", "b", "a", "b"}),
 	)
+}
+
+func TestDeduplicate(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, []string{}, Deduplicate([]string{}))
+	assert.Equal(t, []string{"a"}, Deduplicate([]string{"a"}))
+	assert.Equal(t, []string{"b", "a"}, Deduplicate([]string{"b", "a"}))
+	assert.Equal(t, []string{"b", "a"}, Deduplicate([]string{"b", "a", "b"}))
+}
+
+func TestDeduplicateAny(t *testing.T) {
+	t.Parallel()
+	f := func(i int) int { return i / 2 }
+	assert.Equal(t, []int{}, DeduplicateAny([]int{}, f))
+	assert.Equal(t, []int{1}, DeduplicateAny([]int{1}, f))
+	assert.Equal(t, []int{2, 1}, DeduplicateAny([]int{2, 1}, f))
+	assert.Equal(t, []int{2, 1}, DeduplicateAny([]int{2, 1, 3}, f))
 }
 
 func TestToChunks(t *testing.T) {

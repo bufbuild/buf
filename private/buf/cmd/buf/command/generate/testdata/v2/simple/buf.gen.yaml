@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - protoc_builtin: java
+    out: java
+managed:
+  enabled: false

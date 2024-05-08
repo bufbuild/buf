@@ -15,8 +15,12 @@
 package internal
 
 import (
+	"context"
+
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
 var _ ReadBucketCloser = &readBucketCloser{}
@@ -24,34 +28,55 @@ var _ ReadBucketCloser = &readBucketCloser{}
 type readBucketCloser struct {
 	storage.ReadBucketCloser
 
-	relativeRootPath string
-	subDirPath       string
+	subDirPath string
 }
 
 func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
-	relativeRootPath string,
-	subDirPath string,
-) (*readBucketCloser, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
-	if err != nil {
-		return nil, err
-	}
+	bucketTargeting buftarget.BucketTargeting,
+) *readBucketCloser {
+	normalizedSubDirPath := normalpath.Normalize(bucketTargeting.SubDirPath())
 	return &readBucketCloser{
 		ReadBucketCloser: storageReadBucketCloser,
-		relativeRootPath: normalpath.Normalize(relativeRootPath),
 		subDirPath:       normalizedSubDirPath,
-	}, nil
+	}
 }
 
-func (r *readBucketCloser) RelativeRootPath() string {
-	return r.relativeRootPath
+func newReadBucketCloserForReadWriteBucket(
+	readWriteBucket ReadWriteBucket,
+) *readBucketCloser {
+	return &readBucketCloser{
+		ReadBucketCloser: storage.NopReadBucketCloser(readWriteBucket),
+		subDirPath:       readWriteBucket.SubDirPath(),
+	}
 }
 
 func (r *readBucketCloser) SubDirPath() string {
 	return r.subDirPath
 }
 
-func (r *readBucketCloser) SetSubDirPath(subDirPath string) {
-	r.subDirPath = subDirPath
+func (r *readBucketCloser) copyToInMemory(ctx context.Context) (*readBucketCloser, error) {
+	storageReadBucket, err := storagemem.CopyReadBucket(ctx, r.ReadBucketCloser)
+	if err != nil {
+		return nil, err
+	}
+	return &readBucketCloser{
+		ReadBucketCloser: compositeStorageReadBucketCloser{
+			ReadBucket: storageReadBucket,
+			closeFunc:  r.ReadBucketCloser.Close,
+		},
+		subDirPath: r.subDirPath,
+	}, nil
+}
+
+type compositeStorageReadBucketCloser struct {
+	storage.ReadBucket
+	closeFunc func() error
+}
+
+func (c compositeStorageReadBucketCloser) Close() error {
+	if c.closeFunc != nil {
+		return c.closeFunc()
+	}
+	return nil
 }

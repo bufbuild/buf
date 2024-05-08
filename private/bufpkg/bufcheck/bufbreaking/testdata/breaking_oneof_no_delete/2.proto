@@ -8,6 +8,7 @@ message One {
     int32 two = 2;
     int32 three = 3;
   }
+  string four = 4;
 }
 
 message One2 {

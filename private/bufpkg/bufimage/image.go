@@ -17,6 +17,11 @@ package bufimage
 import (
 	"errors"
 	"fmt"
+
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/gofrs/uuid/v5"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var _ Image = &image{}
@@ -24,37 +29,42 @@ var _ Image = &image{}
 type image struct {
 	files           []ImageFile
 	pathToImageFile map[string]ImageFile
+	resolver        protoencoding.Resolver
 }
 
-func newImage(files []ImageFile, reorder bool) (*image, error) {
+func newImage(files []ImageFile, reorder bool, resolver protoencoding.Resolver) (*image, error) {
 	if len(files) == 0 {
 		return nil, errors.New("image contains no files")
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
-	type commitAndFilePath struct {
-		commit   string
+	type commitIDAndFilePath struct {
+		commitID uuid.UUID
 		filePath string
 	}
-	identityStringToCommitAndFilePath := make(map[string]commitAndFilePath)
+	moduleFullNameStringToCommitIDAndFilePath := make(map[string]commitIDAndFilePath)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
-			return nil, fmt.Errorf("duplicate file path: %s", path)
+			return nil, fmt.Errorf("duplicate file: %s", path)
 		}
 		pathToImageFile[path] = file
-		if moduleIdentity := file.ModuleIdentity(); moduleIdentity != nil {
-			identityString := moduleIdentity.IdentityString()
-			existing, ok := identityStringToCommitAndFilePath[identityString]
+		if moduleFullName := file.ModuleFullName(); moduleFullName != nil {
+			moduleFullNameString := moduleFullName.String()
+			existing, ok := moduleFullNameStringToCommitIDAndFilePath[moduleFullNameString]
 			if ok {
-				if existing.commit != file.Commit() {
+				if existing.commitID != file.CommitID() {
 					return nil, fmt.Errorf(
 						"files with different commits for the same module %s: %s:%s and %s:%s",
-						identityString, existing.filePath, existing.commit, path, file.Commit(),
+						moduleFullNameString,
+						existing.filePath,
+						uuidutil.ToDashless(existing.commitID),
+						path,
+						uuidutil.ToDashless(file.CommitID()),
 					)
 				}
 			} else {
-				identityStringToCommitAndFilePath[identityString] = commitAndFilePath{
-					commit:   file.Commit(),
+				moduleFullNameStringToCommitIDAndFilePath[moduleFullNameString] = commitIDAndFilePath{
+					commitID: file.CommitID(),
 					filePath: path,
 				}
 			}
@@ -63,13 +73,21 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 	if reorder {
 		files = orderImageFiles(files, pathToImageFile)
 	}
+	if resolver == nil {
+		fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(files))
+		for i := range files {
+			fileDescriptorProtos[i] = files[i].FileDescriptorProto()
+		}
+		resolver = protoencoding.NewLazyResolver(fileDescriptorProtos...)
+	}
 	return &image{
 		files:           files,
 		pathToImageFile: pathToImageFile,
+		resolver:        resolver,
 	}, nil
 }
 
-func newImageNoValidate(files []ImageFile) *image {
+func newImageNoValidate(files []ImageFile, resolver protoencoding.Resolver) *image {
 	pathToImageFile := make(map[string]ImageFile, len(files))
 	for _, file := range files {
 		path := file.Path()
@@ -78,6 +96,7 @@ func newImageNoValidate(files []ImageFile) *image {
 	return &image{
 		files:           files,
 		pathToImageFile: pathToImageFile,
+		resolver:        resolver,
 	}
 }
 
@@ -87,6 +106,10 @@ func (i *image) Files() []ImageFile {
 
 func (i *image) GetFile(path string) ImageFile {
 	return i.pathToImageFile[path]
+}
+
+func (i *image) Resolver() protoencoding.Resolver {
+	return i.resolver
 }
 
 func (*image) isImage() {}

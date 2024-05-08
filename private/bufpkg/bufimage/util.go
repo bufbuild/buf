@@ -17,13 +17,13 @@ package bufimage
 import (
 	"errors"
 	"fmt"
-	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/bufbuild/protocompile/options"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
@@ -300,15 +300,19 @@ func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.Fi
 	return fileDescriptorProtos
 }
 
-func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
+func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) {
+	var protoCommitID string
+	if !imageFile.CommitID().IsNil() {
+		protoCommitID = uuidutil.ToDashless(imageFile.CommitID())
+	}
 	return fileDescriptorProtoToProtoImageFile(
 		imageFile.FileDescriptorProto(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
-		imageFile.ModuleIdentity(),
-		imageFile.Commit(),
-	)
+		imageFile.ModuleFullName(),
+		protoCommitID,
+	), nil
 }
 
 func fileDescriptorProtoToProtoImageFile(
@@ -316,20 +320,21 @@ func fileDescriptorProtoToProtoImageFile(
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	moduleCommit string,
+	moduleFullName bufmodule.ModuleFullName,
+	// Dashless
+	moduleProtoCommitID string,
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
-	if moduleIdentity != nil {
+	if moduleFullName != nil {
 		protoModuleInfo = &imagev1.ModuleInfo{
 			Name: &imagev1.ModuleName{
-				Remote:     proto.String(moduleIdentity.Remote()),
-				Owner:      proto.String(moduleIdentity.Owner()),
-				Repository: proto.String(moduleIdentity.Repository()),
+				Remote:     proto.String(moduleFullName.Registry()),
+				Owner:      proto.String(moduleFullName.Owner()),
+				Repository: proto.String(moduleFullName.Name()),
 			},
 		}
-		if moduleCommit != "" {
-			protoModuleInfo.Commit = proto.String(moduleCommit)
+		if moduleProtoCommitID != "" {
+			protoModuleInfo.Commit = proto.String(moduleProtoCommitID)
 		}
 	}
 	if len(unusedDependencyIndexes) == 0 {
@@ -493,70 +498,4 @@ func isFileToGenerate(
 		alreadyUsedPaths[path] = struct{}{}
 	}
 	return true
-}
-
-func sortImageModuleDependencies(imageModuleDependencies []ImageModuleDependency) {
-	sort.Slice(imageModuleDependencies, func(i, j int) bool {
-		return imageModuleDependencyLess(imageModuleDependencies[i], imageModuleDependencies[j])
-	})
-}
-
-func imageModuleDependencyLess(a ImageModuleDependency, b ImageModuleDependency) bool {
-	return imageModuleDependencyCompareTo(a, b) < 0
-}
-
-// return -1 if less
-// return 1 if greater
-// return 0 if equal
-func imageModuleDependencyCompareTo(a ImageModuleDependency, b ImageModuleDependency) int {
-	if a == nil && b == nil {
-		return 0
-	}
-	if a == nil && b != nil {
-		return -1
-	}
-	if a != nil && b == nil {
-		return 1
-	}
-	aModuleIdentity := a.ModuleIdentity()
-	bModuleIdentity := b.ModuleIdentity()
-	if aModuleIdentity != nil || bModuleIdentity != nil {
-		if aModuleIdentity == nil && bModuleIdentity != nil {
-			return -1
-		}
-		if aModuleIdentity != nil && bModuleIdentity == nil {
-			return 1
-		}
-		if aModuleIdentity.Remote() < bModuleIdentity.Remote() {
-			return -1
-		}
-		if aModuleIdentity.Remote() > bModuleIdentity.Remote() {
-			return 1
-		}
-		if aModuleIdentity.Owner() < bModuleIdentity.Owner() {
-			return -1
-		}
-		if aModuleIdentity.Owner() > bModuleIdentity.Owner() {
-			return 1
-		}
-		if aModuleIdentity.Repository() < bModuleIdentity.Repository() {
-			return -1
-		}
-		if aModuleIdentity.Repository() > bModuleIdentity.Repository() {
-			return 1
-		}
-	}
-	if a.Commit() < b.Commit() {
-		return -1
-	}
-	if a.Commit() > b.Commit() {
-		return 1
-	}
-	if a.IsDirect() && !b.IsDirect() {
-		return -1
-	}
-	if !a.IsDirect() && b.IsDirect() {
-		return 1
-	}
-	return 0
 }

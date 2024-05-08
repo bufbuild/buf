@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/spdx"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -41,7 +40,7 @@ func newCommand() *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:  programName,
-		Args: cobra.NoArgs,
+		Args: appcmd.NoArgs,
 		Run: func(ctx context.Context, container app.Container) error {
 			return run(ctx, container, flags)
 		},
@@ -64,7 +63,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The name of the generated package.",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, pkgFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, pkgFlagName)
 }
 
 func run(ctx context.Context, container app.Container, flags *flags) error {

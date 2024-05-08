@@ -49,7 +49,7 @@ func newArchiveReader(
 	httpClient *http.Client,
 ) *archiveReader {
 	return &archiveReader{
-		logger:            logger.Named("githubtesting"),
+		logger:            logger,
 		storageosProvider: storageosProvider,
 		httpClient:        httpClient,
 	}
@@ -126,7 +126,6 @@ func (a *archiveReader) GetArchive(
 		ctx,
 		gzipReader,
 		readWriteBucket,
-		nil,
-		1,
+		storagearchive.UntarWithStripComponentCount(1),
 	)
 }

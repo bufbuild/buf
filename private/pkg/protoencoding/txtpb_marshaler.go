@@ -32,9 +32,7 @@ func newTxtpbMarshaler(resolver Resolver) Marshaler {
 func (m *txtpbMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	options := prototext.MarshalOptions{
 		Resolver: m.resolver,
-		// TODO: make this an option
-		Multiline: true,
-		Indent:    "  ",
+		Indent:   "  ",
 	}
 	return options.Marshal(message)
 }

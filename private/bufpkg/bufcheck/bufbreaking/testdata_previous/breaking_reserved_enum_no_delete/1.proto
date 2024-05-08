@@ -5,6 +5,7 @@ package a;
 enum One {
   reserved 3 to 5, 100 to 200;
   reserved 300, 301, 1000 to max;
+  reserved 10 to 20, 50 to 75;
   reserved "foo", "bar";
   reserved "baz";
   ONE_UNSPECIFIED = 0;
@@ -71,4 +72,9 @@ enum Nine {
   NINE_UNSPECIFIED = 0;
   NINE_ONE = 1;
   NINE_TWO = 2;
+}
+
+enum Ten {
+  reserved 1 to max;
+  TEN_UNSPECIFIED = 0;
 }

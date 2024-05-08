@@ -18,55 +18,37 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/cmd/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"google.golang.org/protobuf/types/pluginpb"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/protoplugin"
 )
 
 const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	appproto.Main(
-		context.Background(),
-		appproto.HandlerFunc(
-			func(
-				ctx context.Context,
-				container app.EnvStderrContainer,
-				responseWriter appproto.ResponseBuilder,
-				request *pluginpb.CodeGeneratorRequest,
-			) error {
-				return handle(
-					ctx,
-					container,
-					responseWriter,
-					request,
-				)
-			},
-		),
-	)
+	protoplugin.Main(protoplugin.HandlerFunc(handle))
 }
 
 func handle(
 	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginEnv protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	request protoplugin.Request,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(
-		[]byte(request.GetParameter()),
+		[]byte(request.Parameter()),
 		externalConfig,
 	); err != nil {
 		return err
@@ -77,24 +59,13 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
+	logger, err := zaputil.NewLoggerForFlagValues(pluginEnv.Stderr, externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	config, err := bufconfig.ReadConfigOS(
+	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
-		readWriteBucket,
-		bufconfig.ReadConfigOSWithOverride(
-			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		),
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
 		return err
@@ -103,24 +74,38 @@ func handle(
 	// unused imports that the compiler reports. But with a plugin, we get descriptors
 	// that are already built and no access to any possible associated compiler warnings.
 	// So we have to analyze the files to compute the unused imports.
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request, bufimage.WithUnusedImportsComputation())
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest(), bufimage.WithUnusedImportsComputation())
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := buflint.NewHandler(logger).Check(
+	if err := buflint.NewHandler(logger, tracing.NopTracer).Check(
 		ctx,
-		config.Lint,
+		moduleConfig.LintConfig(),
 		image,
-	)
-	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		buffer := bytes.NewBuffer(nil)
-		if err := buflintconfig.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			return err
+	); err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			buffer := bytes.NewBuffer(nil)
+			if externalConfig.ErrorFormat == "config-ignore-yaml" {
+				if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+					buffer,
+					fileAnnotationSet,
+				); err != nil {
+					return err
+				}
+			} else {
+				if err := bufanalysis.PrintFileAnnotationSet(
+					buffer,
+					fileAnnotationSet,
+					externalConfig.ErrorFormat,
+				); err != nil {
+					return err
+				}
+			}
+			responseWriter.SetError(strings.TrimSpace(buffer.String()))
+			return nil
 		}
-		responseWriter.AddError(strings.TrimSpace(buffer.String()))
+		return err
 	}
 	return nil
 }

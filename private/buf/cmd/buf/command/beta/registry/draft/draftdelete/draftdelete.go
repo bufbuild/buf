@@ -17,17 +17,16 @@ package draftdelete
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -36,18 +35,17 @@ const forceFlagName = "force"
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository:draft>",
 		Short: "Delete a repository draft",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -72,20 +70,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	if moduleReference.Reference() == bufmoduleref.Main {
-		// bufmoduleref.ModuleReferenceForString will give a default reference when user did not specify one
-		// we need to check the origin input and return different errors for different cases.
-		if strings.HasSuffix(container.Arg(0), ":"+bufmoduleref.Main) {
-			return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", bufmoduleref.Main)
-		}
+	if moduleRef.Ref() == "" {
 		return appcmd.NewInvalidArgumentError("a valid draft name need to be specified")
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
@@ -94,31 +87,33 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleReference.Remote(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(
 			container,
 			"draft",
-			moduleReference.Reference(),
+			moduleRef.Ref(),
 		); err != nil {
 			return err
 		}
 	}
 	if _, err := service.DeleteRepositoryDraftCommit(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteRepositoryDraftCommitRequest{
-			RepositoryOwner: moduleReference.Owner(),
-			RepositoryName:  moduleReference.Repository(),
-			DraftName:       moduleReference.Reference(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteRepositoryDraftCommitRequest{
+				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+				RepositoryName:  moduleRef.ModuleFullName().Name(),
+				DraftName:       moduleRef.Ref(),
+			},
+		),
 	); err != nil {
 		// not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.
 		return err
 	}
 	if _, err := fmt.Fprintln(container.Stdout(), "Draft deleted."); err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return nil
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/spdx"
-	"github.com/spf13/cobra"
 )
 
 const (
@@ -43,7 +42,7 @@ func main() {
 func newCommand() *appcmd.Command {
 	return &appcmd.Command{
 		Use:  programName,
-		Args: cobra.NoArgs,
+		Args: appcmd.NoArgs,
 		Run:  run,
 	}
 }

@@ -26,18 +26,24 @@ var (
 		bufbreakingbuild.EnumValueNoDeleteRuleBuilder,
 		bufbreakingbuild.EnumValueNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.EnumValueNoDeleteUnlessNumberReservedRuleBuilder,
+		bufbreakingbuild.EnumSameJSONFormatRuleBuilder,
+		bufbreakingbuild.EnumSameTypeRuleBuilder,
 		bufbreakingbuild.EnumValueSameNameRuleBuilder,
 		bufbreakingbuild.ExtensionMessageNoDeleteRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
+		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
+		bufbreakingbuild.FieldSameCppStringTypeRuleBuilder,
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
+		bufbreakingbuild.FieldSameJavaUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
-		bufbreakingbuild.FieldSameLabelRuleBuilder,
+		bufbreakingbuild.FieldSameLabelV1Beta1RuleBuilder,
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
+		bufbreakingbuild.FieldSameUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FileNoDeleteRuleBuilder,
 		bufbreakingbuild.FileSameCsharpNamespaceRuleBuilder,
 		bufbreakingbuild.FileSameGoPackageRuleBuilder,
@@ -61,6 +67,7 @@ var (
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
 		bufbreakingbuild.MessageNoRemoveStandardDescriptorAccessorRuleBuilder,
+		bufbreakingbuild.MessageSameJSONFormatRuleBuilder,
 		bufbreakingbuild.MessageSameMessageSetWireFormatRuleBuilder,
 		bufbreakingbuild.MessageSameRequiredFieldsRuleBuilder,
 		bufbreakingbuild.OneofNoDeleteRuleBuilder,
@@ -87,6 +94,14 @@ var (
 	v1beta1IDToCategories = map[string][]string{
 		"ENUM_NO_DELETE": {
 			"FILE",
+		},
+		"ENUM_SAME_JSON_FORMAT": {
+			"FILE",
+			"PACKAGE",
+		},
+		"ENUM_SAME_TYPE": {
+			"FILE",
+			"PACKAGE",
 		},
 		"ENUM_VALUE_NO_DELETE": {
 			"FILE",
@@ -119,7 +134,18 @@ var (
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FIELD_SAME_CTYPE": {
+		"FIELD_SAME_CARDINALITY": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+			"WIRE",
+		},
+		"FIELD_SAME_CPP_STRING_TYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_CTYPE": {}, // deprecated, so not part of any category by default
+		"FIELD_SAME_JAVA_UTF8_VALIDATION": {
 			"FILE",
 			"PACKAGE",
 		},
@@ -132,12 +158,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {
-			"FILE",
-			"PACKAGE",
-			"WIRE_JSON",
-			"WIRE",
-		},
+		"FIELD_SAME_LABEL": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
@@ -154,6 +175,10 @@ var (
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
+		},
+		"FIELD_SAME_UTF8_VALIDATION": {
+			"FILE",
+			"PACKAGE",
 		},
 		"FILE_NO_DELETE": {
 			"FILE",
@@ -178,10 +203,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {}, // deprecated, so not part of any category by default
 		"FILE_SAME_OBJC_CLASS_PREFIX": {
 			"FILE",
 			"PACKAGE",
@@ -225,10 +247,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FILE_SAME_PHP_GENERIC_SERVICES": {}, // deprecated, so not part of any category by default
 		"FILE_SAME_CC_ENABLE_ARENAS": {
 			"FILE",
 			"PACKAGE",
@@ -241,6 +260,10 @@ var (
 			"FILE",
 		},
 		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR": {
+			"FILE",
+			"PACKAGE",
+		},
+		"MESSAGE_SAME_JSON_FORMAT": {
 			"FILE",
 			"PACKAGE",
 		},

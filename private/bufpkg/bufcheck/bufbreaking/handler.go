@@ -17,48 +17,53 @@ package bufbreaking
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
 type handler struct {
 	logger *zap.Logger
+	tracer tracing.Tracer
 	runner *internal.Runner
 }
 
 func newHandler(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 ) *handler {
 	return &handler{
 		logger: logger,
+		tracer: tracer,
 		// comment ignores are not allowed for breaking changes
 		// so do not set the ignore prefix per the RunnerWithIgnorePrefix comments
-		runner: internal.NewRunner(logger),
+		runner: internal.NewRunner(logger, tracer),
 	}
 }
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *bufbreakingconfig.Config,
+	config bufconfig.BreakingConfig,
 	previousImage bufimage.Image,
 	image bufimage.Image,
-) ([]bufanalysis.FileAnnotation, error) {
-	previousFiles, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(previousImage.Files())...)
-	if err != nil {
-		return nil, err
+) error {
+	if config.Disabled() {
+		return nil
 	}
-	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
+	previousFiles, err := bufprotosource.NewFiles(ctx, previousImage)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	internalConfig, err := internalConfigForConfig(config)
+	files, err := bufprotosource.NewFiles(ctx, image)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	internalConfig, err := internalConfigForConfig(config, true)
+	if err != nil {
+		return err
 	}
 	return h.runner.Check(ctx, internalConfig, previousFiles, files)
 }

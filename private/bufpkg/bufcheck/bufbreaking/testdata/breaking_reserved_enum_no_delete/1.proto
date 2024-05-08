@@ -49,3 +49,10 @@ message Three {
     EIGHT_TWO = 2;
   }
 }
+
+enum Ten {
+  reserved 1 to 1000;
+  reserved 2000 to 5000, 10000 to 50000;
+  reserved 100000 to max;
+  TEN_UNSPECIFIED = 0;
+}

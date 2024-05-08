@@ -16,23 +16,24 @@ package buflint_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 // Hint on how to get these:
@@ -145,6 +146,7 @@ func TestRunComments(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 264, 3, 264, 30, "COMMENT_FIELD"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 273, 3, 273, 72, "COMMENT_RPC"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 277, 3, 277, 72, "COMMENT_RPC"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 13, 3, 13, 31, "COMMENT_MESSAGE"),
 	)
 }
 
@@ -328,6 +330,8 @@ func TestRunFieldLowerSnakeCase(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 30, 11, 30, 20, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 11, 31, 21, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 11, 32, 21, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 10, 23, 10, 24, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 17, 19, 17, 20, "FIELD_LOWER_SNAKE_CASE"),
 	)
 }
 
@@ -344,30 +348,46 @@ func TestRunFieldNoDescriptor(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 11, 19, 11, 30, "FIELD_NO_DESCRIPTOR"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 19, 12, 31, "FIELD_NO_DESCRIPTOR"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 19, 13, 33, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 23, 19, 33, "FIELD_NO_DESCRIPTOR"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 23, 20, 33, "FIELD_NO_DESCRIPTOR"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 23, 21, 33, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 23, 22, 34, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 23, 23, 35, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 23, 24, 34, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 25, 23, 25, 35, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 26, 23, 26, 37, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 21, 28, 31, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 21, 29, 31, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 30, 21, 30, 31, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 21, 31, 32, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 21, 32, 33, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 33, 21, 33, 32, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 21, 34, 33, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 21, 35, 35, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 37, 19, 37, 29, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 38, 19, 38, 29, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 39, 19, 39, 29, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 19, 40, 30, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 41, 19, 41, 31, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 42, 19, 42, 30, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 43, 19, 43, 31, "FIELD_NO_DESCRIPTOR"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 44, 19, 44, 33, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 23, 22, 33, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 23, 23, 34, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 23, 24, 35, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 25, 23, 25, 34, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 26, 23, 26, 35, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 23, 27, 37, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 30, 27, 30, 38, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 27, 31, 39, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 27, 32, 38, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 33, 27, 33, 39, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 27, 34, 41, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 27, 35, 39, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 36, 27, 36, 38, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 37, 27, 37, 39, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 41, 21, 41, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 42, 21, 42, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 43, 21, 43, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 44, 21, 44, 32, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 45, 21, 45, 33, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 46, 21, 46, 32, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 47, 21, 47, 33, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 48, 21, 48, 35, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 50, 19, 50, 29, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 51, 19, 51, 29, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 52, 19, 52, 29, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 53, 19, 53, 30, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 54, 19, 54, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 55, 19, 55, 30, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 56, 19, 56, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 57, 19, 57, 33, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 61, 19, 61, 29, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 62, 19, 62, 29, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 63, 19, 63, 29, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 19, 64, 30, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 65, 19, 65, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 66, 19, 66, 30, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 67, 19, 67, 31, "FIELD_NO_DESCRIPTOR"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 68, 19, 68, 33, "FIELD_NO_DESCRIPTOR"),
 	)
 }
 
@@ -459,10 +479,10 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 
 func TestRunPackageNoImportCycle(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
+	testLintWithOptions(
 		t,
 		"package_no_import_cycle",
-		nil,
+		"",
 		func(image bufimage.Image) bufimage.Image {
 			// Testing that import cycles are still detected via imports, but are
 			// not reported for imports, only for non-imports.
@@ -479,7 +499,6 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			require.NoError(t, err)
 			return newImage
 		},
-		"",
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
@@ -556,11 +575,13 @@ func TestRunPackageVersionSuffix(t *testing.T) {
 	)
 }
 
-func TestRunProtovalidateRules(t *testing.T) {
+func TestRunProtovalidate(t *testing.T) {
 	t.Parallel()
-	testLintWithValidate(
+	testLintWithOptions(
 		t,
-		"protovalidate_rules",
+		"protovalidate",
+		"buf.testing/lint/protovalidate",
+		nil,
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 18, 51, 18, 84, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 19, 31, 19, 69, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 20, 50, 20, 88, "PROTOVALIDATE"),
@@ -977,11 +998,70 @@ func TestRunIgnores4(t *testing.T) {
 	)
 }
 
+func TestRunV2WorkspaceIgnores(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"v2/ignores",
+		"ignores1",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf1.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf1.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf1.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+	testLintWithOptions(
+		t,
+		"v2/ignores",
+		"ignores2",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf2.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf2.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+	testLintWithOptions(
+		t,
+		"v2/ignores",
+		"ignores3",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf3.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf3.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf3.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+}
+
 func TestCommentIgnoresOff(t *testing.T) {
 	t.Parallel()
 	testLint(
 		t,
-		"comment_ignores",
+		"comment_ignores_off",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 1, 9, 11, "PACKAGE_DIRECTORY_MATCH"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 1, 9, 11, "PACKAGE_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 1, 9, 11, "PACKAGE_VERSION_SUFFIX"),
@@ -1022,14 +1102,9 @@ func TestCommentIgnoresOff(t *testing.T) {
 
 func TestCommentIgnoresOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
+	testLint(
 		t,
-		"comment_ignores",
-		func(config *bufconfig.Config) {
-			config.Lint.AllowCommentIgnores = true
-		},
-		nil,
-		"",
+		"comment_ignores_on",
 	)
 }
 
@@ -1037,7 +1112,7 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 	t.Parallel()
 	testLint(
 		t,
-		"comment_ignores_cascade",
+		"comment_ignores_cascade_off",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 6, 13, 13, "ENUM_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 3, 15, 29, "ENUM_NO_ALLOW_ALIAS"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 3, 16, 14, "ENUM_VALUE_UPPER_SNAKE_CASE"),
@@ -1076,14 +1151,9 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 
 func TestCommentIgnoresCascadeOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
+	testLint(
 		t,
-		"comment_ignores_cascade",
-		func(config *bufconfig.Config) {
-			config.Lint.AllowCommentIgnores = true
-		},
-		nil,
-		"",
+		"comment_ignores_cascade_on",
 	)
 }
 
@@ -1092,115 +1162,96 @@ func testLint(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	testLintWithModifiers(
+	testLintWithOptions(
 		t,
 		relDirPath,
-		nil,
-		nil,
 		"",
-		expectedFileAnnotations...,
-	)
-}
-
-func testLintWithValidate(
-	t *testing.T,
-	relDirPath string,
-	expectedFileAnnotations ...bufanalysis.FileAnnotation,
-) {
-	testLintWithModifiers(
-		t,
-		relDirPath,
-		func(config *bufconfig.Config) {
-			config.Lint.IgnoreRootPaths = []string{"buf/validate"}
-		},
 		nil,
-		"deps/protovalidate",
 		expectedFileAnnotations...,
 	)
 }
 
-func testLintWithModifiers(
+func testLintWithOptions(
 	t *testing.T,
 	relDirPath string,
-	configModifier func(*bufconfig.Config),
+	// only set if in workspace
+	moduleFullNameString string,
 	imageModifier func(bufimage.Image) bufimage.Image,
-	dependencyPathPrefix string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	logger := zap.NewNop()
 
 	dirPath := filepath.Join("testdata", relDirPath)
-
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-
-	config := testGetConfig(t, readWriteBucket)
-	if configModifier != nil {
-		configModifier(config)
-	}
-
-	var module *bufmodulebuild.BuiltModule
-	if dependencyPathPrefix != "" {
-		dependencyReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
-			filepath.Join("testdata", dependencyPathPrefix),
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		require.NoError(t, err)
-		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-			context.Background(),
-			storage.MultiReadBucket(dependencyReadWriteBucket, readWriteBucket),
-			config.Build,
-		)
-		require.NoError(t, err)
-	} else {
-		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-			context.Background(),
-			readWriteBucket,
-			config.Build,
-		)
-		require.NoError(t, err)
-	}
-
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		module,
+		zaptest.NewLogger(t),
+		readWriteBucket,
+		".", // the bucket is rooted at the input
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
+	workspace, err := bufworkspace.NewWorkspaceProvider(
+		zap.NewNop(),
+		tracing.NopTracer,
+		bufmodule.NopGraphProvider,
+		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
+	).GetWorkspaceForBucket(
+		ctx,
+		readWriteBucket,
+		bucketTargeting,
+	)
+	require.NoError(t, err)
+
+	// the module full name string represents the opaque ID of the module
+	opaqueID := moduleFullNameString
+	if opaqueID == "" {
+		opaqueID = "."
+	}
+
+	// build the image for the specified module string (opaqueID)
+	moduleSet, err := workspace.WithTargetOpaqueIDs(opaqueID)
+	require.NoError(t, err)
+	module := moduleSet.GetModuleForOpaqueID(opaqueID)
+	require.NotNil(t, module)
+	moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
+	require.NoError(t, err)
+	image, err := bufimage.BuildImage(
+		ctx,
+		tracing.NopTracer,
+		moduleReadBucket,
+	)
+	require.NoError(t, err)
 	if imageModifier != nil {
 		image = imageModifier(image)
 	}
 
-	handler := buflint.NewHandler(logger)
-	fileAnnotations, err = handler.Check(
+	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
+	require.NotNil(t, lintConfig)
+	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
+	err = handler.Check(
 		ctx,
-		config.Lint,
+		lintConfig,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
-}
-
-func testGetConfig(
-	t *testing.T,
-	readBucket storage.ReadBucket,
-) *bufconfig.Config {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
-	require.NoError(t, err)
-	return config
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.True(t, errors.As(err, &fileAnnotationSet))
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }

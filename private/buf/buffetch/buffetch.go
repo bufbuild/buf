@@ -16,10 +16,14 @@ package buffetch
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/buf/buftarget"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -67,38 +71,26 @@ var (
 	//
 	// This does not include deprecated formats.
 	SourceOrModuleFormatsString = stringutil.SliceToString(sourceOrModuleFormatsNotDeprecated)
+	// DirOrProtoFileFormats is the string representation of all dir or proto file formats.
+	//
+	// This does not include deprecated formats.
+	DirOrProtoFileFormatsString = stringutil.SliceToString(dirOrProtoFileFormats)
 	// AllFormatsString is the string representation of all formats.
 	//
 	// This does not include deprecated formats.
 	AllFormatsString = stringutil.SliceToString(allFormatsNotDeprecated)
+
+	// ErrModuleFormatDetectedForDirOrProtoFileRef is the error returned if a module is the
+	// detected format in the DirOrProtoFileRefParser. We have a special heuristic to determine
+	// if a path is a module or directory, and if a user specifies a suspected module, we want to error.
+	ErrModuleFormatDetectedForDirOrProtoFileRef = errors.New("module format detected when parsing dir or proto file refs")
 )
 
 // MessageEncoding is the encoding of the message.
 type MessageEncoding int
 
-// PathResolver resolves external paths to paths.
-type PathResolver interface {
-	// PathForExternalPath takes a path external to the asset and converts it to
-	// a path that is relative to the asset.
-	//
-	// The returned path will be normalized and validated.
-	//
-	// Example:
-	//   Directory: /foo/bar
-	//   ExternalPath: /foo/bar/baz/bat.proto
-	//   Path: baz/bat.proto
-	//
-	// Example:
-	//   Directory: .
-	//   ExternalPath: baz/bat.proto
-	//   Path: baz/bat.proto
-	PathForExternalPath(externalPath string) (string, error)
-}
-
 // Ref is an message file or source bucket reference.
 type Ref interface {
-	PathResolver
-
 	internalRef() internal.Ref
 }
 
@@ -124,10 +116,23 @@ type SourceOrModuleRef interface {
 	isSourceOrModuleRef()
 }
 
+// DirOrProtoFileRef is a directory or proto file reference.
+type DirOrProtoFileRef interface {
+	isDirOrProtoFileRef()
+}
+
 // SourceRef is a source bucket reference.
 type SourceRef interface {
 	SourceOrModuleRef
 	internalBucketRef() internal.BucketRef
+}
+
+// DirRef is a dir bucket reference.
+type DirRef interface {
+	SourceRef
+	DirOrProtoFileRef
+	DirPath() string
+	internalDirRef() internal.DirRef
 }
 
 // ModuleRef is a module reference.
@@ -139,6 +144,10 @@ type ModuleRef interface {
 // ProtoFileRef is a proto file reference.
 type ProtoFileRef interface {
 	SourceRef
+	DirOrProtoFileRef
+	ProtoFilePath() string
+	// True if the FileScheme is Stdio, Stdout, Stdin, or Null.
+	IsDevPath() bool
 	IncludePackageFiles() bool
 	internalProtoFileRef() internal.ProtoFileRef
 }
@@ -147,12 +156,52 @@ type ProtoFileRef interface {
 type MessageRefParser interface {
 	// GetMessageRef gets the reference for the message file.
 	GetMessageRef(ctx context.Context, value string) (MessageRef, error)
+	// GetMessageRefForInputConfig gets the reference for the message file.
+	GetMessageRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (MessageRef, error)
 }
 
 // SourceRefParser is a source ref parser for Buf.
 type SourceRefParser interface {
 	// GetSourceRef gets the reference for the source file.
 	GetSourceRef(ctx context.Context, value string) (SourceRef, error)
+	// GetSourceRef gets the reference for the source file.
+	GetSourceRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (SourceRef, error)
+}
+
+// DirRefParser is a dir ref parser for Buf.
+type DirRefParser interface {
+	// GetDirRef gets the reference for the value.
+	//
+	// The value cannot be stdin, stdout, or stderr.
+	GetDirRef(ctx context.Context, value string) (DirRef, error)
+	// GetDirRefForInputConfig gets the reference for the InputConfig.
+	//
+	// The input cannot be stdin, stdout, or stderr.
+	GetDirRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (DirRef, error)
+}
+
+// DirOrProtoFileRefParser is a dir or proto file ref parser for Buf.
+type DirOrProtoFileRefParser interface {
+	// GetDirOrProtoFileRef gets the reference for the value.
+	//
+	// The value cannot be stdin, stdout, or stderr.
+	GetDirOrProtoFileRef(ctx context.Context, value string) (DirOrProtoFileRef, error)
+	// GetDirOrProtoFileRefForInputConfig gets the reference for the InputConfig.
+	//
+	// The input cannot be stdin, stdout, or stderr.
+	GetDirOrProtoFileRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (DirOrProtoFileRef, error)
 }
 
 // ModuleRefParser is a source ref parser for Buf.
@@ -170,15 +219,25 @@ type SourceOrModuleRefParser interface {
 
 	// GetSourceOrModuleRef gets the reference for the message file or source bucket.
 	GetSourceOrModuleRef(ctx context.Context, value string) (SourceOrModuleRef, error)
+	// GetSourceOrModuleRefForInputConfig gets the reference for the message file or source bucket.
+	GetSourceOrModuleRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (SourceOrModuleRef, error)
 }
 
 // RefParser is a ref parser for Buf.
 type RefParser interface {
 	MessageRefParser
+	SourceRefParser
+	DirRefParser
 	SourceOrModuleRefParser
 
+	// TODO FUTURE: should this be renamed to GetRefForString?
 	// GetRef gets the reference for the message file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
+	// GetRefForInputConfig gets the reference for the message file, source bucket, or module.
+	GetRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig) (Ref, error)
 }
 
 // NewRefParser returns a new RefParser.
@@ -207,9 +266,19 @@ func MessageRefParserWithDefaultMessageEncoding(defaultMessageEncoding MessageEn
 
 // NewSourceRefParser returns a new RefParser for sources only.
 //
-// This defaults to dir or module.
+// This defaults to dir.
 func NewSourceRefParser(logger *zap.Logger) SourceRefParser {
 	return newSourceRefParser(logger)
+}
+
+// NewDirRefParser returns a new RefParser for dirs only.
+func NewDirRefParser(logger *zap.Logger) DirRefParser {
+	return newDirRefParser(logger)
+}
+
+// NewDirOrProtoFileRefParser returns a new RefParser for dirs only.
+func NewDirOrProtoFileRefParser(logger *zap.Logger) DirOrProtoFileRefParser {
+	return newDirOrProtoFileRefParser(logger)
 }
 
 // NewModuleRefParser returns a new RefParser for modules only.
@@ -224,22 +293,16 @@ func NewSourceOrModuleRefParser(logger *zap.Logger) SourceOrModuleRefParser {
 	return newSourceOrModuleRefParser(logger)
 }
 
-// ReadBucketCloser is a bucket returned from GetBucket.
-// We need to surface the internal.ReadBucketCloser
-// interface to other packages, so we use a type
-// declaration to do so.
+// BucketExtender matches the internal type.
+type BucketExtender internal.BucketExtender
+
+// ReadBucketCloser matches the internal type.
 type ReadBucketCloser internal.ReadBucketCloser
 
-// ReadWriteBucketCloser is a bucket returned from GetBucket.
-// We need to surface the internal.ReadWriteBucketCloser
-// interface to other packages, so we use a type
-// declaration to do so.
-type ReadWriteBucketCloser internal.ReadWriteBucketCloser
+// ReadWriteBucket matches the internal type.
+type ReadWriteBucket internal.ReadWriteBucket
 
-// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
-type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
-
-// MessageReader is an message reader.
+// MessageReader is a message reader.
 type MessageReader interface {
 	// GetMessageFile gets the message file.
 	//
@@ -253,43 +316,108 @@ type MessageReader interface {
 
 // SourceReader is a source reader.
 type SourceReader interface {
-	// GetSourceBucket gets the source bucket.
-	//
-	// The returned bucket will only have .proto and configuration files.
-	// The returned bucket may be upgradeable to a ReadWriteBucketCloser.
-	GetSourceBucket(
+	// GetSourceReadBucketCloser gets the source bucket.
+	GetSourceReadBucketCloser(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
-		options ...GetSourceBucketOption,
-	) (ReadBucketCloserWithTerminateFileProvider, error)
+		options ...GetReadBucketCloserOption,
+	) (ReadBucketCloser, buftarget.BucketTargeting, error)
 }
 
-// GetSourceBucketOption is an option for GetSourceBucket.
-type GetSourceBucketOption func(*getSourceBucketOptions)
+// GetReadBucketCloserOption is an option for a GetSourceReadBucketCloser call.
+type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
 
-// GetSourceBucketWithWorkspacesDisabled disables workspace mode.
-func GetSourceBucketWithWorkspacesDisabled() GetSourceBucketOption {
-	return func(o *getSourceBucketOptions) {
-		o.workspacesDisabled = true
+// GetReadBucketCloserCopyToInMemory says to copy the returned ReadBucketCloser to an
+// in-memory ReadBucketCloser. This can be a performance optimization at the expense of memory.
+func GetReadBucketCloserWithCopyToInMemory() GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.copyToInMemory = true
+	}
+}
+
+// GetReadBucketCloserWithNoSearch says to not search for buf.work.yamls or buf.yamls, instead just returning a bucket for the
+// direct SourceRef or DirRef given.
+//
+// This is used for when the --config flag is specified.
+func GetReadBucketCloserWithNoSearch() GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.noSearch = true
+	}
+}
+
+// GetReadBucketCloserWithTargetPaths sets the targets paths for bucket targeting information
+// returned with the bucket.
+func GetReadBucketCloserWithTargetPaths(targetPaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetPaths = targetPaths
+	}
+}
+
+// GetReadBucketCloserWithTargetExcludePaths sets the target exclude paths for bucket targeting
+// information returned with the bucket.
+func GetReadBucketCloserWithTargetExcludePaths(targetExcludePaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
+// DirReader is a dir reader.
+type DirReader interface {
+	// GetDirReadWriteBucket gets the dir bucket.
+	GetDirReadWriteBucket(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		dirRef DirRef,
+		options ...GetReadWriteBucketOption,
+	) (ReadWriteBucket, buftarget.BucketTargeting, error)
+}
+
+// GetReadWriteBucketOption is an option for a GetDirReadWriteBucket call.
+type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
+
+// GetReadWriteBucketWithNoSearch says to not search for buf.work.yamls or buf.yamls, instead just returning a bucket for the
+// direct SourceRef or DirRef given.
+//
+// This is used for when the --config flag is specified.
+func GetReadWriteBucketWithNoSearch() GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.noSearch = true
+	}
+}
+
+// GetReadWriteBucketWithTargetPaths sets the target paths for the bucket targeting information
+// returned with the bucket.
+func GetReadWriteBucketWithTargetPaths(targetPaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetPaths = targetPaths
+	}
+}
+
+// GetReadWriteBucketWithTargetExcludePaths sets the target exclude paths for the bucket
+// targeting information returned with the bucket.
+func GetReadWriteBucketWithTargetExcludePaths(targetExcludePaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
 // ModuleFetcher is a module fetcher.
 type ModuleFetcher interface {
-	// GetModule gets the module.
+	// GetModuleKey gets the ModuleKey.
 	// Unresolved ModuleRef's are automatically resolved.
-	GetModule(
+	GetModuleKey(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
-	) (bufmodule.Module, error)
+	) (bufmodule.ModuleKey, error)
 }
 
 // Reader is a reader for Buf.
 type Reader interface {
 	MessageReader
 	SourceReader
+	DirReader
 	ModuleFetcher
 }
 
@@ -300,8 +428,7 @@ func NewReader(
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) Reader {
 	return newReader(
 		logger,
@@ -309,8 +436,7 @@ func NewReader(
 		httpClient,
 		httpAuthenticator,
 		gitCloner,
-		moduleResolver,
-		moduleReader,
+		moduleKeyProvider,
 	)
 }
 
@@ -348,18 +474,27 @@ func NewSourceReader(
 	)
 }
 
+// NewDirReader returns a new DirReader.
+func NewDirReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) DirReader {
+	return newDirReader(
+		logger,
+		storageosProvider,
+	)
+}
+
 // NewModuleFetcher returns a new ModuleFetcher.
 func NewModuleFetcher(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) ModuleFetcher {
 	return newModuleFetcher(
 		logger,
 		storageosProvider,
-		moduleResolver,
-		moduleReader,
+		moduleKeyProvider,
 	)
 }
 
@@ -382,6 +517,82 @@ func NewWriter(
 	)
 }
 
-type getSourceBucketOptions struct {
-	workspacesDisabled bool
+// ProtoFileWriter is a writer of proto files.
+type ProtoFileWriter interface {
+	// PutProtoFile puts the proto file.
+	PutProtoFile(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		protoFileRef ProtoFileRef,
+	) (io.WriteCloser, error)
+}
+
+// NewProtoFileWriter returns a new ProtoFileWriter.
+func NewProtoFileWriter(
+	logger *zap.Logger,
+) ProtoFileWriter {
+	return newProtoFileWriter(
+		logger,
+	)
+}
+
+// GetInputConfigForString returns the input config for the input string.
+func GetInputConfigForString(
+	ctx context.Context,
+	refParser RefParser,
+	value string,
+) (bufconfig.InputConfig, error) {
+	ref, err := refParser.GetRef(ctx, value)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case MessageRef:
+		switch t.MessageEncoding() {
+		case MessageEncodingBinpb:
+			return bufconfig.NewBinaryImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			)
+		case MessageEncodingJSON:
+			return bufconfig.NewJSONImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			)
+		case MessageEncodingTxtpb:
+			return bufconfig.NewTextImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			)
+		case MessageEncodingYAML:
+			return bufconfig.NewYAMLImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			)
+		default:
+			return nil, fmt.Errorf("unknown encoding: %v", t.MessageEncoding())
+		}
+	}
+	return internal.GetInputConfigForRef(ref.internalRef(), value)
+}
+
+type getReadBucketCloserOptions struct {
+	noSearch           bool
+	copyToInMemory     bool
+	targetPaths        []string
+	targetExcludePaths []string
+}
+
+func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
+	return &getReadBucketCloserOptions{}
+}
+
+type getReadWriteBucketOptions struct {
+	noSearch           bool
+	targetPaths        []string
+	targetExcludePaths []string
+}
+
+func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {
+	return &getReadWriteBucketOptions{}
 }

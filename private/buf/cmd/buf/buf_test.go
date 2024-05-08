@@ -16,25 +16,32 @@ package buf
 
 import (
 	"bytes"
-	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
@@ -178,7 +185,7 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
@@ -196,7 +203,7 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
@@ -209,7 +216,7 @@ func TestFail6(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
@@ -234,7 +241,7 @@ func TestFail6(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		filepath.FromSlash(`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`),
+		"Failure: --path is not valid for use with .proto file references",
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--path",
@@ -257,10 +264,11 @@ func TestFail7(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
-		"", // stderr should be empty
+		bufctl.ExitCodeFileAnnotation,
+		"", // stdout is empty
+		// This is new behavior we introduced. When setting a config override, we no longer do
+		// a search for the controlling workspace. See bufctl/option.go for additional details.
+		filepath.FromSlash(`Failure: testdata/export/other/proto/unimported.proto: import "another.proto": file does not exist`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -271,8 +279,12 @@ testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, 
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+		bufctl.ExitCodeFileAnnotation,
+		// Note: `were in directory "buf"` was changed to `were in directory "testdata/fail/buf"`
+		// during the refactor. This is actually more correct - pre-refactor, the CLI was acting
+		// as if the buf.yaml at testdata/fail/buf.yaml mattered in some way. In fact, it doesn't -
+		// you've said that you have overridden it entirely.
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory ".".
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
 		"lint",
@@ -287,7 +299,7 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
@@ -300,7 +312,7 @@ func TestFail9(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		filepath.Join("testdata", "fail2"),
@@ -347,8 +359,8 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf("%v:5:8:read buf/buf.proto: file does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -357,7 +369,7 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -369,7 +381,7 @@ func TestFail12(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		`version: v1
 lint:
   ignore_only:
@@ -391,7 +403,7 @@ func TestFail13(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail_buf_mod/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".`),
 		"lint",
 		filepath.Join("testdata", "fail_buf_mod"),
@@ -403,7 +415,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
@@ -425,7 +437,7 @@ func TestFailCheckBreaking2(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -439,7 +451,7 @@ func TestFailCheckBreaking3(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		<input>:1:1:Previously present file "bar.proto" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
@@ -456,7 +468,7 @@ func TestFailCheckBreaking4(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
@@ -473,7 +485,7 @@ func TestFailCheckBreaking5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
     <input>:1:1:Previously present file "bar.proto" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
@@ -559,7 +571,7 @@ func TestCheckLsLintRules2(t *testing.T) {
 		"mod",
 		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
@@ -621,7 +633,7 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 	)
 }
 
-func TestCheckLsBreakingRules1(t *testing.T) {
+func TestCheckLsBreakingRulesV1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
@@ -629,12 +641,17 @@ ENUM_NO_DELETE                                  FILE                            
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
 FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
 FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
 FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
 FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
@@ -643,11 +660,9 @@ FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   
 FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
 FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
 FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_GENERIC_SERVICES                  FILE, PACKAGE                   Checks that files have the same value for the php_generic_services option.
 FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
 FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
 FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
@@ -655,12 +670,12 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
@@ -678,9 +693,11 @@ PACKAGE_NO_DELETE                               PACKAGE                         
 PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
 ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
 FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                       Checks that fields have wire and JSON compatible cardinalities in a given message.
 FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                       Checks that fields have wire and JSON compatible types in a given message.
 ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
 FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            Checks that fields have wire-compatible cardinalities in a given message.
 FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            Checks that fields have wire-compatible types in a given message.
 		`
 	testRunStdout(
@@ -695,44 +712,7 @@ FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            
 	)
 }
 
-func TestCheckLsBreakingRules2(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		`
-		ID                    CATEGORIES     PURPOSE
-		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
-		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
-		`,
-		"mod",
-		"ls-breaking-rules",
-		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
-	)
-}
-
-func TestCheckLsBreakingRules3(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		`
-		ID                    CATEGORIES     PURPOSE
-		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
-		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
-		`,
-		"mod",
-		"ls-breaking-rules",
-		"--config",
-		// making sure that .yml works
-		filepath.Join("testdata", "small_list_rules_yml", "config.yml"),
-	)
-}
-
-func TestCheckLsBreakingRules4(t *testing.T) {
+func TestCheckLsBreakingRulesV1Beta1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
@@ -741,11 +721,15 @@ FILE_NO_DELETE                                  FILE                            
 FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
 FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
 FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
 FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
@@ -754,11 +738,9 @@ FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   
 FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
 FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
 FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_GENERIC_SERVICES                  FILE, PACKAGE                   Checks that files have the same value for the php_generic_services option.
 FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
 FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
 FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
@@ -766,12 +748,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same cardinalities in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
@@ -802,6 +785,287 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		"--version",
 		"v1beta1",
 	)
+}
+
+func TestCheckLsBreakingRulesV2(t *testing.T) {
+	t.Parallel()
+	expectedStdout := `
+ID                                              CATEGORIES                      PURPOSE
+ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
+MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
+FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same default value, if a default is specified.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
+FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
+MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                       Checks that fields have wire and JSON compatible cardinalities in a given message.
+FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                       Checks that fields have wire and JSON compatible types in a given message.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            Checks that fields have wire-compatible cardinalities in a given message.
+FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            Checks that fields have wire-compatible types in a given message.
+		`
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"config",
+		"ls-breaking-rules",
+		"--version",
+		"v2",
+	)
+}
+
+func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		ID                    CATEGORIES     PURPOSE
+		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
+		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
+		`,
+		"mod",
+		"ls-breaking-rules",
+		"--config",
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
+	)
+}
+
+func TestCheckLsBreakingRulesFromConfigNotNamedBufYAML(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		ID                    CATEGORIES     PURPOSE
+		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
+		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
+		`,
+		"mod",
+		"ls-breaking-rules",
+		"--config",
+		// making sure that .yml works
+		filepath.Join("testdata", "small_list_rules_yml", "config.yml"),
+	)
+}
+
+func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
+	t.Parallel()
+
+	for _, version := range bufconfig.AllFileVersions {
+		version := version
+		t.Run(version.String(), func(t *testing.T) {
+			t.Parallel()
+			allRules, err := bufbreaking.GetAllRules(version)
+			require.NoError(t, err)
+			allPackageIDs := make([]string, 0, len(allRules))
+			for _, rule := range allRules {
+				if rule.Deprecated() {
+					// Deprecated rules should not be associated with a category.
+					// Instead, their replacements are associated with categories.
+					assert.Empty(t, rule.Categories())
+					continue
+				}
+				var found bool
+				for _, category := range rule.Categories() {
+					if category == "PACKAGE" {
+						found = true
+						break
+					}
+				}
+				if found {
+					allPackageIDs = append(allPackageIDs, rule.ID())
+				}
+			}
+			sort.Strings(allPackageIDs)
+			deprecations, err := bufbreaking.GetRelevantDeprecations(version)
+			require.NoError(t, err)
+
+			for deprecatedRule := range deprecations {
+				deprecatedRule := deprecatedRule
+				t.Run(deprecatedRule, func(t *testing.T) {
+					t.Parallel()
+					ids := getRuleIDsFromLsBreaking(t, version.String(), []string{"PACKAGE"}, []string{deprecatedRule})
+					expectedIDs := make([]string, 0, len(allPackageIDs))
+					replacements := deprecations[deprecatedRule]
+					for _, id := range allPackageIDs {
+						var skip bool
+						for _, replacement := range replacements {
+							if id == replacement {
+								skip = true
+								break
+							}
+						}
+						if skip {
+							continue
+						}
+						expectedIDs = append(expectedIDs, id)
+					}
+					require.Equal(t, expectedIDs, ids)
+				})
+			}
+		})
+	}
+}
+
+func TestLsBreakingRulesDeprecated(t *testing.T) {
+	t.Parallel()
+
+	stdout := bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	// The deprecated rules are omitted from v2.
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	// Test the non-all version too. Should never have deprecated rules.
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--configured-only")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--configured-only", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 }
 
 func TestLsFiles(t *testing.T) {
@@ -1069,7 +1333,7 @@ func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		`Failure: --path is not valid for use with .proto file references`,
 		"build",
 		filepath.Join("testdata", "success", "buf", "buf.proto"),
 		"--path",
@@ -1177,16 +1441,57 @@ func TestModInitBasic(t *testing.T) {
 	t.Parallel()
 	testModInit(
 		t,
-		`version: v1
-breaking:
-  use:
-    - FILE
+		`version: v2
 lint:
   use:
     - DEFAULT
+breaking:
+  use:
+    - FILE
 `,
 		false,
 		"",
+	)
+}
+
+func TestLsFilesOverlappingPaths(t *testing.T) {
+	t.Parallel()
+	// It should be OK to have paths that overlap, and ls-files (and other commands)
+	// should output the union.
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/paths/a/v3/a.proto
+testdata/paths/a/v3/foo/bar.proto
+testdata/paths/a/v3/foo/foo.proto`),
+		"ls-files",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+}
+
+func TestBuildOverlappingPaths(t *testing.T) {
+	t.Parallel()
+	// This may differ from LsFilesOverlappingPaths as we do a build of an image here.
+	// Building of images results in bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles being
+	// called, which is the original source of the issue that resulted in this test.
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{
+			`a/v3/a.proto`,
+			`a/v3/foo/bar.proto`,
+			`a/v3/foo/foo.proto`,
+		},
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
 	)
 }
 
@@ -1458,7 +1763,7 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		`Failure: --path is not valid for use with .proto file references`,
 		"export",
 		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 		"-o",
@@ -1471,7 +1776,21 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 func TestBuildWithPaths(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
-	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3", "foo"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3"))
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		// This is new post-refactor. Before, we gave precedence to --path. While a change,
+		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
+		"build",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+	)
 }
 
 func TestLintWithPaths(t *testing.T) {
@@ -1479,7 +1798,7 @@ func TestLintWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/paths/a/v3/a.proto:7:10:Field name "Value" should be lower_snake_case, such as "value".`),
 		"",
 		"lint",
@@ -1492,11 +1811,11 @@ func TestLintWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(
-			`testdata/paths/a/v3/foo/bar.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".
-testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".`),
+		1,
 		"",
+		// This is new post-refactor. Before, we gave precedence to --path. While a change,
+		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
 		"lint",
 		filepath.Join("testdata", "paths"),
 		"--path",
@@ -1523,7 +1842,7 @@ func TestBreakingWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
 a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
 a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
@@ -1542,205 +1861,6 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 func TestVersion(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, bufcli.Version, "--version")
-}
-
-func TestMigrateV1Beta1(t *testing.T) {
-	t.Parallel()
-	storageosProvider := storageos.NewProvider()
-	runner := command.NewRunner()
-
-	// These test cases are ordered alphabetically to align with the folders in testadata.
-	t.Run("buf-gen-yaml-without-version", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"buf-gen-yaml-without-version",
-			"Successfully migrated your buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("buf-yaml-without-version", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"buf-yaml-without-version",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("complex", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"complex",
-			`The ignored file "file3.proto" was not found in any roots and has been removed.
-Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
-		)
-	})
-	t.Run("deps-without-name", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"deps-without-name",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("flat-deps-without-name", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"flat-deps-without-name",
-			"Successfully migrated your buf.yaml and buf.lock to v1.",
-		)
-	})
-	t.Run("lock-file-without-deps", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"lock-file-without-deps",
-			`Successfully migrated your buf.yaml and buf.lock to v1.`,
-		)
-	})
-	t.Run("nested-folder", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"nested-folder",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("nested-root", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"nested-root",
-			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("no-deps", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"no-deps",
-			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("noop", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"noop",
-			"",
-		)
-	})
-	t.Run("only-buf-gen-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-buf-gen-yaml",
-			"Successfully migrated your buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("only-buf-lock", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-buf-lock",
-			"Successfully migrated your buf.lock to v1.",
-		)
-	})
-	t.Run("only-buf-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-buf-yaml",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("only-old-buf-gen-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-old-buf-gen-yaml",
-			"Successfully migrated your buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("only-old-buf-lock", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-old-buf-lock",
-			`Successfully migrated your buf.lock to v1.`,
-		)
-	})
-	t.Run("only-old-buf-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-old-buf-yaml",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("simple", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"simple",
-			"Successfully migrated your buf.yaml, buf.gen.yaml, and buf.lock to v1.",
-		)
-	})
-	t.Run("v1beta1-lock-file", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"v1beta1-lock-file",
-			`Successfully migrated your buf.yaml and buf.lock to v1.`,
-		)
-	})
-
-	t.Run("fails-on-invalid-version", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Failure(
-			t,
-			storageosProvider,
-			"invalid-version",
-			`failed to migrate config: unknown config file version: spaghetti`,
-		)
-	})
 }
 
 func TestConvertWithImage(t *testing.T) {
@@ -1783,7 +1903,7 @@ func TestConvertWithImage(t *testing.T) {
 			nil,
 			1,
 			"",
-			"Failure: size of input message must not be zero",
+			`Failure: --from: length of data read from "-" was zero`,
 			"convert",
 			filepath.Join(tempDir, "image.binpb"),
 			"--type",
@@ -1906,7 +2026,7 @@ func TestConvertInvalidTypeName(t *testing.T) {
 		stdin,
 		1,
 		"",
-		`Failure: ".foo" is not a valid fully qualified type name`,
+		`Failure: --from: ".foo" is not a valid fully qualified type name`,
 		"convert",
 		filepath.Join(tempDir, "image.binpb"),
 		"--type",
@@ -2159,7 +2279,7 @@ func TestFormatSingleFile(t *testing.T) {
 		"format",
 		filepath.Join("testdata", "format", "simple"),
 		"-o",
-		filepath.Join(tempDir, "simple.formatted.proto"),
+		filepath.Join(tempDir, "simple.formatted"),
 	)
 	testRunStdout(
 		t,
@@ -2167,7 +2287,7 @@ func TestFormatSingleFile(t *testing.T) {
 		0,
 		``,
 		"format",
-		filepath.Join(tempDir, "simple.formatted.proto"),
+		filepath.Join(tempDir, "simple.formatted"),
 		"-d",
 	)
 }
@@ -2214,7 +2334,7 @@ func TestFormatExitCode(t *testing.T) {
 	stdout := bytes.NewBuffer(nil)
 	testRun(
 		t,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		nil,
 		stdout,
 		"format",
@@ -2225,7 +2345,7 @@ func TestFormatExitCode(t *testing.T) {
 	stdout = bytes.NewBuffer(nil)
 	testRun(
 		t,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		nil,
 		stdout,
 		"format",
@@ -2283,12 +2403,13 @@ func TestFormatEquivalence(t *testing.T) {
 func TestFormatInvalidFlagCombination(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: --output cannot be used with --write`,
+		[]string{
+			`Failure: cannot use --output when using --write`,
+		},
 		"format",
 		filepath.Join("testdata", "format", "diff"),
 		"-w",
@@ -2299,12 +2420,13 @@ func TestFormatInvalidFlagCombination(t *testing.T) {
 
 func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: --write cannot be used with module reference inputs`,
+		[]string{
+			`Failure: invalid input "buf.build/acme/weather" when using --write: must be a directory or proto file`,
+		},
 		"format",
 		"buf.build/acme/weather",
 		"-w",
@@ -2313,12 +2435,13 @@ func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 
 func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: this command does not support including package files`,
+		[]string{
+			"Failure: cannot specify include_package_files=true with format",
+		},
 		"format",
 		filepath.Join("testdata", "format", "simple", "simple.proto#include_package_files=true"),
 	)
@@ -2466,53 +2589,77 @@ func TestConvertRoundTrip(t *testing.T) {
 	})
 }
 
-func testMigrateV1Beta1Diff(
-	t *testing.T,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	scenario string,
-	expectedStderr string,
-) {
-	// Copy test setup to temporary directory to avoid writing to filesystem
-	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "input"))
-	require.NoError(t, err)
-	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
-
-	testRunStdoutStderrNoWarn(
+func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
+	t.Parallel()
+	// We can build a simple proto file re that does not belong to any workspace or module
+	// based on the directory of the input.
+	testRunStdout(
 		t,
 		nil,
 		0,
 		"",
-		expectedStderr,
-		"beta",
-		"migrate-v1beta1",
-		tempDir,
+		"build",
+		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "success", "simple.proto"),
 	)
-
-	expectedOutputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "output"))
-	require.NoError(t, err)
-
-	diff, err := storage.DiffBytes(context.Background(), runner, expectedOutputBucket, readWriteBucket)
-	require.NoError(t, err)
-	require.Empty(t, string(diff))
-}
-
-func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
-	// Copy test setup to temporary directory to avoid writing to filesystem
-	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "failure", scenario))
-	require.NoError(t, err)
-	tempDir, _ := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
-
+	// However, we should fail if there is any complexity (e.g. an import that cannot be
+	// resolved) since there is no workspace or module config to base this off of.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		1,
-		"",
-		expectedStderr,
-		"beta",
-		"migrate-v1beta1",
-		tempDir,
+		bufctl.ExitCodeFileAnnotation,
+		"", // no stdout
+		filepath.FromSlash(`testdata/protofileref/noworkspaceormodule/fail/import.proto:3:8:import "`)+`google/type/date.proto": file does not exist`,
+		"build",
+		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "fail", "import.proto"),
 	)
+}
+
+func TestModuleArchiveDir(t *testing.T) {
+	// Archive that defines module at input path
+	t.Parallel()
+	zipDir := createZipFromDir(
+		t,
+		filepath.Join("testdata", "failarchive"),
+		"archive.zip",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"lint",
+		filepath.Join(zipDir, "archive.zip#subdir=fail"),
+	)
+}
+
+func TestLintDisabledForModuleInWorkspace(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/lint_ignore_disabled/proto/a.proto:3:9:Message name "foo" should be PascalCase, such as "Foo".`),
+		"lint",
+		filepath.Join("testdata", "lint_ignore_disabled"),
+	)
+}
+
+// testBuildLsFilesFormatImport does effectively an ls-files, but via doing a build of an Image, and then
+// listing the files from the image as if --format=import was set.
+func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFiles []string, buildArgs ...string) {
+	buffer := bytes.NewBuffer(nil)
+	testRun(t, expectedExitCode, nil, buffer, append([]string{"build", "-o", "-"}, buildArgs...)...)
+	protoImage := &imagev1.Image{}
+	err := proto.Unmarshal(buffer.Bytes(), protoImage)
+	require.NoError(t, err)
+	image, err := bufimage.NewImageForProto(protoImage)
+	require.NoError(t, err)
+	var paths []string
+	for _, imageFile := range image.Files() {
+		paths = append(paths, imageFile.Path())
+	}
+	require.Equal(t, expectedFiles, paths)
 }
 
 func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
@@ -2526,7 +2673,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 		args = append(args, "--name", name)
 	}
 	testRun(t, 0, nil, nil, args...)
-	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
+	data, err := os.ReadFile(filepath.Join(tempDir, "buf.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
 }
@@ -2543,7 +2690,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 	)
 }
 
-func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
+func testRunStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
@@ -2562,6 +2709,22 @@ func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode i
 		expectedExitCode,
 		expectedStdout,
 		expectedStderr,
+		internaltesting.NewEnvFunc(t),
+		stdin,
+		// we do not want warnings to be part of our stderr test calculation
+		append(
+			args,
+			"--no-warn",
+		)...,
+	)
+}
+
+func testRunStderrContainsNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStderrContains(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStderrPartials,
 		internaltesting.NewEnvFunc(t),
 		stdin,
 		// we do not want warnings to be part of our stderr test calculation
@@ -2621,4 +2784,45 @@ func testRun(
 		stderr,
 		args...,
 	)
+}
+
+func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string, exceptIDs []string) []string {
+	t.Helper()
+	var stdout bytes.Buffer
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		0,
+		internaltesting.NewEnvFunc(t),
+		nil,
+		&stdout,
+		nil,
+		"config",
+		"ls-breaking-rules",
+		"--format=json",
+		"--configured-only",
+		"--config",
+		fmt.Sprintf(
+			`{ "version": %q, "breaking": { "use": %s, "except": %s } }`,
+			fileVersion,
+			"["+strings.Join(slicesext.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+			"["+strings.Join(slicesext.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+		),
+	)
+	var ids []string
+	decoder := json.NewDecoder(&stdout)
+	type entry struct {
+		ID string
+	}
+	for {
+		var entry entry
+		err := decoder.Decode(&entry)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		ids = append(ids, entry.ID)
+	}
+	sort.Strings(ids)
+	return ids
 }

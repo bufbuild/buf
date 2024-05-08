@@ -1,0 +1,30 @@
+edition = "2023";
+
+package a;
+
+enum C1 {
+  C1_ZERO = 0;
+}
+
+enum C2 {
+  C2_ZERO = 0;
+}
+
+enum C3 {
+  C3_ZERO = 0;
+}
+
+enum C4 {
+  option features.json_format = LEGACY_BEST_EFFORT;
+  C4_ZERO = 0;
+}
+
+enum C5 {
+  option features.json_format = LEGACY_BEST_EFFORT;
+  C5_ZERO = 0;
+}
+
+enum C6 {
+  option features.json_format = LEGACY_BEST_EFFORT;
+  C6_ZERO = 0;
+}

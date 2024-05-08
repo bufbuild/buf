@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -89,15 +88,11 @@ func Untar(
 	ctx context.Context,
 	reader io.Reader,
 	writeBucket storage.WriteBucket,
-	mapper storage.Mapper,
-	stripComponentCount uint32,
-	opts ...UntarOption,
+	options ...UntarOption,
 ) error {
-	options := &untarOptions{
-		maxFileSize: math.MaxInt64,
-	}
-	for _, opt := range opts {
-		opt.applyUntar(options)
+	untarOptions := newUntarOptions()
+	for _, option := range options {
+		option(untarOptions)
 	}
 	tarReader := tar.NewReader(reader)
 	walkChecker := storageutil.NewWalkChecker()
@@ -114,14 +109,14 @@ func Untar(
 		if isAppleExtendedAttributesFile(tarHeader.FileInfo()) {
 			continue
 		}
-		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
+		path, ok, err := unmapArchivePath(tarHeader.Name, untarOptions.filePathMatcher, untarOptions.stripComponentCount)
 		if err != nil {
 			return err
 		}
 		if !ok || !tarHeader.FileInfo().Mode().IsRegular() {
 			continue
 		}
-		if tarHeader.Size > options.maxFileSize {
+		if untarOptions.maxFileSize != 0 && tarHeader.Size > untarOptions.maxFileSize {
 			return fmt.Errorf("%w %s:%d", ErrFileSizeLimit, tarHeader.Name, tarHeader.Size)
 		}
 		if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
@@ -131,14 +126,33 @@ func Untar(
 	return nil
 }
 
-// UntarOption is an option for [Untar].
-type UntarOption interface {
-	applyUntar(*untarOptions)
+// UntarOption is an option for Untar.
+type UntarOption func(*untarOptions)
+
+// UntarWithMaxFileSize returns a new UntarOption that limits the maximum file size.
+//
+// The default is to have no limit.
+func UntarWithMaxFileSize(maxFileSize int64) UntarOption {
+	return func(untarOptions *untarOptions) {
+		untarOptions.maxFileSize = maxFileSize
+	}
 }
 
-// WithMaxFileSizeUntarOption returns an option that limits the maximum size
-func WithMaxFileSizeUntarOption(size int) UntarOption {
-	return &withMaxFileSizeUntarOption{maxFileSize: int64(size)}
+// UntarWithStripComponentCount returns a new UntarOption that strips the specified number of components.
+func UntarWithStripComponentCount(stripComponentCount uint32) UntarOption {
+	return func(untarOptions *untarOptions) {
+		untarOptions.stripComponentCount = stripComponentCount
+	}
+}
+
+// UntarWithFilePathMatcher returns a new UntarOption that will only write a given file to the
+// bucket if the function returns true on the normalized file path.
+//
+// The matcher will be applied after components are stripped.
+func UntarWithFilePathMatcher(filePathMatcher func(string) bool) UntarOption {
+	return func(untarOptions *untarOptions) {
+		untarOptions.filePathMatcher = filePathMatcher
+	}
 }
 
 // Zip zips the given bucket to the writer.
@@ -189,9 +203,12 @@ func Unzip(
 	readerAt io.ReaderAt,
 	size int64,
 	writeBucket storage.WriteBucket,
-	mapper storage.Mapper,
-	stripComponentCount uint32,
+	options ...UnzipOption,
 ) error {
+	unzipOptions := newUnzipOptions()
+	for _, option := range options {
+		option(unzipOptions)
+	}
 	if size < 0 {
 		return fmt.Errorf("unknown size to unzip: %d", int(size))
 	}
@@ -208,7 +225,7 @@ func Unzip(
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
-		path, ok, err := unmapArchivePath(zipFile.Name, mapper, stripComponentCount)
+		path, ok, err := unmapArchivePath(zipFile.Name, unzipOptions.filePathMatcher, unzipOptions.stripComponentCount)
 		if err != nil {
 			return err
 		}
@@ -225,6 +242,26 @@ func Unzip(
 		}
 	}
 	return nil
+}
+
+// UnzipOption is an option for Unzip.
+type UnzipOption func(*unzipOptions)
+
+// UnzipWithStripComponentCount returns a new UnzipOption that strips the specified number of components.
+func UnzipWithStripComponentCount(stripComponentCount uint32) UnzipOption {
+	return func(unzipOptions *unzipOptions) {
+		unzipOptions.stripComponentCount = stripComponentCount
+	}
+}
+
+// UnzipWithFilePathMatcher returns a new UnzipOption that will only write a given file to the
+// bucket if the function returns true on the normalized file path.
+//
+// The matcher will be applied after components are stripped.
+func UnzipWithFilePathMatcher(filePathMatcher func(string) bool) UnzipOption {
+	return func(unzipOptions *unzipOptions) {
+		unzipOptions.filePathMatcher = filePathMatcher
+	}
 }
 
 func isAppleExtendedAttributesFile(fileInfo fs.FileInfo) bool {
@@ -259,7 +296,7 @@ func copyZipFile(
 
 func unmapArchivePath(
 	archivePath string,
-	mapper storage.Mapper,
+	filePathMatcher func(string) bool,
 	stripComponentCount uint32,
 ) (string, bool, error) {
 	if archivePath == "" {
@@ -276,8 +313,27 @@ func unmapArchivePath(
 	if !ok {
 		return "", false, nil
 	}
-	if mapper != nil {
-		return mapper.UnmapFullPath(fullPath)
+	if filePathMatcher != nil && !filePathMatcher(fullPath) {
+		return "", false, nil
 	}
 	return fullPath, true, nil
+}
+
+type untarOptions struct {
+	maxFileSize         int64
+	stripComponentCount uint32
+	filePathMatcher     func(string) bool
+}
+
+func newUntarOptions() *untarOptions {
+	return &untarOptions{}
+}
+
+type unzipOptions struct {
+	stripComponentCount uint32
+	filePathMatcher     func(string) bool
+}
+
+func newUnzipOptions() *unzipOptions {
+	return &unzipOptions{}
 }

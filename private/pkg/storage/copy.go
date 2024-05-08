@@ -41,7 +41,7 @@ func Copy(
 		ctx,
 		from,
 		to,
-		copyOptions.externalPaths,
+		copyOptions.externalAndLocalPaths,
 		copyOptions.atomic,
 	)
 }
@@ -62,7 +62,7 @@ func CopyReadObject(
 		readObject,
 		writeBucket,
 		readObject.Path(),
-		copyOptions.externalPaths,
+		copyOptions.externalAndLocalPaths,
 		copyOptions.atomic,
 	)
 }
@@ -104,7 +104,7 @@ func CopyPath(
 		fromPath,
 		to,
 		toPath,
-		copyOptions.externalPaths,
+		copyOptions.externalAndLocalPaths,
 		copyOptions.atomic,
 	)
 }
@@ -112,12 +112,12 @@ func CopyPath(
 // CopyOption is an option for Copy.
 type CopyOption func(*copyOptions)
 
-// CopyWithExternalPaths returns a new CopyOption that says to copy external paths.
+// CopyWithExternalAndLocalPaths returns a new CopyOption that says to copy external and local paths.
 //
-// The to WriteBucket must support setting external paths.
-func CopyWithExternalPaths() CopyOption {
+// The to WriteBucket must support setting external and local paths.
+func CopyWithExternalAndLocalPaths() CopyOption {
 	return func(copyOptions *copyOptions) {
-		copyOptions.externalPaths = true
+		copyOptions.externalAndLocalPaths = true
 	}
 }
 
@@ -134,7 +134,7 @@ func copyPaths(
 	ctx context.Context,
 	from ReadBucket,
 	to WriteBucket,
-	copyExternalPaths bool,
+	copyExternalAndLocalPaths bool,
 	atomicOpt bool,
 ) (int, error) {
 	paths, err := AllPaths(ctx, from, "")
@@ -146,7 +146,7 @@ func copyPaths(
 	for i, path := range paths {
 		path := path
 		jobs[i] = func(ctx context.Context) error {
-			if err := copyPath(ctx, from, path, to, path, copyExternalPaths, atomicOpt); err != nil {
+			if err := copyPath(ctx, from, path, to, path, copyExternalAndLocalPaths, atomicOpt); err != nil {
 				return err
 			}
 			count.Add(1)
@@ -166,7 +166,7 @@ func copyPath(
 	fromPath string,
 	to WriteBucket,
 	toPath string,
-	copyExternalPaths bool,
+	copyExternalAndLocalPaths bool,
 	atomic bool,
 ) (retErr error) {
 	readObjectCloser, err := from.Get(ctx, fromPath)
@@ -176,7 +176,7 @@ func copyPath(
 	defer func() {
 		retErr = multierr.Append(err, readObjectCloser.Close())
 	}()
-	return copyReadObject(ctx, readObjectCloser, to, toPath, copyExternalPaths, atomic)
+	return copyReadObject(ctx, readObjectCloser, to, toPath, copyExternalAndLocalPaths, atomic)
 }
 
 func copyReadObject(
@@ -184,7 +184,7 @@ func copyReadObject(
 	readObject ReadObject,
 	to WriteBucket,
 	toPath string,
-	copyExternalPaths bool,
+	copyExternalAndLocalPaths bool,
 	atomic bool,
 ) (retErr error) {
 	var putOptions []PutOption
@@ -198,8 +198,11 @@ func copyReadObject(
 	defer func() {
 		retErr = multierr.Append(retErr, writeObjectCloser.Close())
 	}()
-	if copyExternalPaths {
+	if copyExternalAndLocalPaths {
 		if err := writeObjectCloser.SetExternalPath(readObject.ExternalPath()); err != nil {
+			return err
+		}
+		if err := writeObjectCloser.SetLocalPath(readObject.LocalPath()); err != nil {
 			return err
 		}
 	}
@@ -208,8 +211,8 @@ func copyReadObject(
 }
 
 type copyOptions struct {
-	externalPaths bool
-	atomic        bool
+	externalAndLocalPaths bool
+	atomic                bool
 }
 
 func newCopyOptions() *copyOptions {

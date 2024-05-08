@@ -16,26 +16,26 @@ package protoc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufpluginexec"
+	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -43,7 +43,7 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
@@ -62,7 +62,7 @@ Additional flags:
       --(.*)_opt:                   Options for the named plugin.
       @filename:                    Parse arguments from the given filename.`,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				env, err := flagsBuilder.Build(app.Args(container))
 				if err != nil {
 					return err
@@ -83,9 +83,15 @@ Additional flags:
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	env *env,
 ) (retErr error) {
+	runner := command.NewRunner()
+	logger := container.Logger()
+	tracer := tracing.NewTracer(container.Tracer())
+	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
 	}
@@ -96,63 +102,58 @@ func run(
 		return fmt.Errorf("cannot call --%s and plugins at the same time", outputFlagName)
 	}
 
-	if checkedEntry := container.Logger().Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
+	if checkedEntry := logger.Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
 		checkedEntry.Write(
 			zap.Any("flags", env.flags),
 			zap.Any("plugins", env.PluginNameToPluginInfo),
 		)
 	}
 
-	var buildOption bufmodulebuild.BuildOption
-	if len(env.FilePaths) > 0 {
-		buildOption = bufmodulebuild.WithPaths(env.FilePaths)
-	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	runner := command.NewRunner()
-	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger(), storageosProvider).BuildForIncludes(
+	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
+		tracer,
+		storageosProvider,
 		env.IncludeDirPaths,
-		buildOption,
+		env.FilePaths,
 	)
 	if err != nil {
 		return err
 	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return err
-	}
-	var buildOptions []bufimagebuild.BuildOption
+	var buildOptions []bufimage.BuildImageOption
 	// we always need source code info if we are doing generation
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
-		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())
+		buildOptions = append(buildOptions, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger(), moduleReader).Build(
+	image, err := bufimage.BuildImage(
 		ctx,
-		module,
+		tracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		buildOptions...,
 	)
 	if err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			if err := bufanalysis.PrintFileAnnotationSet(
+				container.Stderr(),
+				fileAnnotationSet,
+				env.ErrorFormat,
+			); err != nil {
+				return err
+			}
+			// we do this even though we're in protoc compatibility mode as we just need to do non-zero
+			// but this also makes us consistent with the rest of buf
+			return bufctl.ErrFileAnnotation
+		}
 		return err
 	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			env.ErrorFormat,
-		); err != nil {
-			return err
-		}
-		// we do this even though we're in protoc compatibility mode as we just need to do non-zero
-		// but this also makes us consistent with the rest of buf
-		return bufcli.ErrFileAnnotation
-	}
-
 	if env.PrintFreeFieldNumbers {
-		fileInfos, err := module.TargetFileInfos(ctx)
+		fileInfos, err := bufmodule.GetTargetFileInfos(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
+				moduleSet,
+			),
+		)
 		if err != nil {
 			return err
 		}
@@ -172,17 +173,17 @@ func run(
 	if len(env.PluginNameToPluginInfo) > 0 {
 		images := []bufimage.Image{image}
 		if env.ByDir {
-			_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_by_dir")
-			images, err = bufimage.ImageByDir(image)
-			if err != nil {
-				span.RecordError(err)
-				span.SetStatus(codes.Error, err.Error())
-				span.End()
+			f := func() (retErr error) {
+				_, span := tracer.Start(ctx, tracing.WithErr(&retErr))
+				defer span.End()
+				images, err = bufimage.ImageByDir(image)
 				return err
 			}
-			span.End()
+			if err := f(); err != nil {
+				return err
+			}
 		}
-		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
+		pluginResponses := make([]*bufprotoplugin.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
 			if !ok {
@@ -190,7 +191,8 @@ func run(
 			}
 			response, err := executePlugin(
 				ctx,
-				container.Logger(),
+				logger,
+				tracer,
 				storageosProvider,
 				runner,
 				container,
@@ -201,13 +203,13 @@ func run(
 			if err != nil {
 				return err
 			}
-			pluginResponses = append(pluginResponses, appproto.NewPluginResponse(response, pluginName, pluginInfo.Out))
+			pluginResponses = append(pluginResponses, bufprotoplugin.NewPluginResponse(response, pluginName, pluginInfo.Out))
 		}
-		if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
+		if err := bufprotoplugin.ValidatePluginResponses(pluginResponses); err != nil {
 			return err
 		}
-		responseWriter := appprotoos.NewResponseWriter(
-			container.Logger(),
+		responseWriter := bufprotopluginos.NewResponseWriter(
+			logger,
 			storageosProvider,
 		)
 		for _, pluginResponse := range pluginResponses {
@@ -231,15 +233,17 @@ func run(
 	if env.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
 	}
-	messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, env.Output)
+	controller, err := bufcli.NewController(container)
 	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
+		return err
 	}
-	return bufcli.NewWireImageWriter(container.Logger()).PutImage(ctx,
-		container,
-		messageRef,
+	return controller.PutImage(
+		ctx,
+		env.Output,
 		image,
-		true,
-		!env.IncludeImports,
+		// Actually redundant with bufimage.BuildImageOptions right now.
+		bufctl.WithImageExcludeSourceInfo(!env.IncludeSourceInfo),
+		bufctl.WithImageExcludeImports(!env.IncludeImports),
+		bufctl.WithImageAsFileDescriptorSet(true),
 	)
 }

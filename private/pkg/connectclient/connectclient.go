@@ -18,6 +18,8 @@ import (
 	"connectrpc.com/connect"
 )
 
+// TODO FUTURE: eliminate config, just make the below MakeOptions, add httpClient as a parameter to Make
+
 // Config holds configuration for creating Connect RPC clients.
 type Config struct {
 	httpClient              connect.HTTPClient

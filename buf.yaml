@@ -1,0 +1,13 @@
+version: v2
+modules:
+  - path: proto
+    name: buf.build/bufbuild/buf
+lint:
+  use:
+    - DEFAULT
+    - UNARY_RPC
+  disallow_comment_ignores: true
+breaking:
+  use:
+    - WIRE_JSON
+  ignore_unstable_packages: true

@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -141,20 +142,24 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	otherData = protowire.AppendFixed32(otherData, 23456)
 	fileDescriptor.ProtoReflect().SetUnknown(otherData)
 
-	module, err := bufmoduleref.ModuleIdentityForString("buf.build/foo/bar")
+	moduleFullName, err := bufmodule.ParseModuleFullName("buf.build/foo/bar")
+	require.NoError(t, err)
+	commitID, err := uuidutil.New()
 	require.NoError(t, err)
 	imageFile, err := NewImageFile(
 		fileDescriptor,
-		module,
-		"1234123451235",
+		moduleFullName,
+		commitID,
 		"foo/bar/baz.proto",
+		"",
 		false,
 		false,
 		nil,
 	)
 	require.NoError(t, err)
 
-	protoImageFile := imageFileToProtoImageFile(imageFile)
+	protoImageFile, err := imageFileToProtoImageFile(imageFile)
+	require.NoError(t, err)
 	// make sure unrecognized bytes survived
 	require.Equal(t, otherData, []byte(protoImageFile.ProtoReflect().GetUnknown()))
 
@@ -170,21 +175,25 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 
 	// if we go back through an image file, we should strip out the
 	// buf extension unknown bytes but preserve the rest
-	module, err = bufmoduleref.ModuleIdentityForString("buf.build/abc/def")
+	moduleFullName, err = bufmodule.ParseModuleFullName("buf.build/abc/def")
 	require.NoError(t, err)
 	// NB: intentionally different metadata
+	commitID2, err := uuidutil.New()
+	require.NoError(t, err)
 	imageFile, err = NewImageFile(
 		fileDescriptor,
-		module,
-		"987654321",
+		moduleFullName,
+		commitID2,
 		"abc/def/xyz.proto",
+		"",
 		false,
 		true,
 		[]int32{1, 2, 3},
 	)
 	require.NoError(t, err)
 
-	protoImageFile = imageFileToProtoImageFile(imageFile)
+	protoImageFile, err = imageFileToProtoImageFile(imageFile)
+	require.NoError(t, err)
 	// make sure unrecognized bytes survived and extraneous buf extension is not present
 	require.Equal(t, otherData, []byte(protoImageFile.ProtoReflect().GetUnknown()))
 

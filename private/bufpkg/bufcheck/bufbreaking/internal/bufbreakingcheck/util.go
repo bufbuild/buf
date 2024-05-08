@@ -20,86 +20,90 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingcheck/customfeatures"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
+	"github.com/bufbuild/protocompile/protoutil"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var (
 	// https://developers.google.com/protocol-buffers/docs/proto3#updating
-	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[descriptorpb.FieldDescriptorProto_Type]int{
-		descriptorpb.FieldDescriptorProto_TYPE_INT32:  1,
-		descriptorpb.FieldDescriptorProto_TYPE_INT64:  1,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT32: 1,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT64: 1,
-		descriptorpb.FieldDescriptorProto_TYPE_BOOL:   1,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT32: 2,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT64: 2,
+	fieldKindToWireCompatiblityGroup = map[protoreflect.Kind]int{
+		protoreflect.Int32Kind:  1,
+		protoreflect.Int64Kind:  1,
+		protoreflect.Uint32Kind: 1,
+		protoreflect.Uint64Kind: 1,
+		protoreflect.BoolKind:   1,
+		protoreflect.Sint32Kind: 2,
+		protoreflect.Sint64Kind: 2,
 		// While string and bytes are compatible if the bytes are valid UTF-8, we cannot
 		// determine if a field will actually be valid UTF-8, as we are concerned with the
 		// definitions and not individual messages, so we have these in different
 		// compatibility groups. We allow string to evolve to bytes, but not bytes to
 		// string, but we need them to be in different compatibility groups so that
 		// we have to manually detect this.
-		descriptorpb.FieldDescriptorProto_TYPE_STRING:   3,
-		descriptorpb.FieldDescriptorProto_TYPE_BYTES:    4,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  5,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: 5,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  6,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: 6,
-		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   7,
-		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    8,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:    9,
+		protoreflect.StringKind:   3,
+		protoreflect.BytesKind:    4,
+		protoreflect.Fixed32Kind:  5,
+		protoreflect.Sfixed32Kind: 5,
+		protoreflect.Fixed64Kind:  6,
+		protoreflect.Sfixed64Kind: 6,
+		protoreflect.DoubleKind:   7,
+		protoreflect.FloatKind:    8,
+		protoreflect.GroupKind:    9,
 		// Embedded messages are compatible with bytes if the bytes are serialized versions
 		// of the message, but we have no way of verifying this.
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: 10,
+		protoreflect.MessageKind: 10,
 		// Enum is compatible with int32, uint32, int64, uint64 if the values match
 		// an enum value, but we have no way of verifying this.
-		descriptorpb.FieldDescriptorProto_TYPE_ENUM: 11,
+		protoreflect.EnumKind: 11,
 	}
 
-	// https://developers.google.com/protocol-buffers/docs/proto3#json
+	// httpsKind://developers.google.com/protocol-buffers/docs/proto3#json
 	// this is not just JSON-compatible, but also wire-compatible, i.e. the intersection
-	fieldDescriptorProtoTypeToWireJSONCompatiblityGroup = map[descriptorpb.FieldDescriptorProto_Type]int{
+	fieldKindToWireJSONCompatiblityGroup = map[protoreflect.Kind]int{
 		// fixed32 not compatible for wire so not included
-		descriptorpb.FieldDescriptorProto_TYPE_INT32:  1,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT32: 1,
+		protoreflect.Int32Kind:  1,
+		protoreflect.Uint32Kind: 1,
 		// fixed64 not compatible for wire so not included
-		descriptorpb.FieldDescriptorProto_TYPE_INT64:    2,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT64:   2,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  3,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: 3,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  4,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: 4,
-		descriptorpb.FieldDescriptorProto_TYPE_BOOL:     5,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT32:   6,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT64:   7,
-		descriptorpb.FieldDescriptorProto_TYPE_STRING:   8,
-		descriptorpb.FieldDescriptorProto_TYPE_BYTES:    9,
-		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   10,
-		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    11,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:    12,
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:  14,
-		descriptorpb.FieldDescriptorProto_TYPE_ENUM:     15,
+		protoreflect.Int64Kind:    2,
+		protoreflect.Uint64Kind:   2,
+		protoreflect.Fixed32Kind:  3,
+		protoreflect.Sfixed32Kind: 3,
+		protoreflect.Fixed64Kind:  4,
+		protoreflect.Sfixed64Kind: 4,
+		protoreflect.BoolKind:     5,
+		protoreflect.Sint32Kind:   6,
+		protoreflect.Sint64Kind:   7,
+		protoreflect.StringKind:   8,
+		protoreflect.BytesKind:    9,
+		protoreflect.DoubleKind:   10,
+		protoreflect.FloatKind:    11,
+		protoreflect.GroupKind:    12,
+		protoreflect.MessageKind:  13,
+		protoreflect.EnumKind:     14,
 	}
 )
 
 // addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
-type addFunc func(protosource.Descriptor, []protosource.Descriptor, protosource.Location, string, ...interface{})
+type addFunc func(bufprotosource.Descriptor, []bufprotosource.Descriptor, bufprotosource.Location, string, ...interface{})
 
 // corpus is a store of the previous files and files given to a check function.
 //
 // this is passed down so that pair functions have access to the original inputs.
 type corpus struct {
-	previousFiles []protosource.File
-	files         []protosource.File
+	previousFiles []bufprotosource.File
+	files         []bufprotosource.File
 }
 
 func newCorpus(
-	previousFiles []protosource.File,
-	files []protosource.File,
+	previousFiles []bufprotosource.File,
+	files []bufprotosource.File,
 ) *corpus {
 	return &corpus{
 		previousFiles: previousFiles,
@@ -107,10 +111,18 @@ func newCorpus(
 	}
 }
 
+func fieldDescriptorTypePrettyString(descriptor protoreflect.FieldDescriptor) string {
+	if descriptor.Kind() == protoreflect.GroupKind && descriptor.Syntax() != protoreflect.Proto2 {
+		// Kind will be set to "group", but it's really a "delimited-encoded message"
+		return "message (delimited encoding)"
+	}
+	return descriptor.Kind().String()
+}
+
 func newFilesCheckFunc(
 	f func(addFunc, *corpus) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationWithExtraIgnoreDescriptorsf, newCorpus(previousFiles, files)); err != nil {
 			return nil, err
@@ -120,15 +132,15 @@ func newFilesCheckFunc(
 }
 
 func newFilePairCheckFunc(
-	f func(addFunc, *corpus, protosource.File, protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.File, bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFilePathToFile, err := protosource.FilePathToFile(corpus.previousFiles...)
+			previousFilePathToFile, err := bufprotosource.FilePathToFile(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			filePathToFile, err := protosource.FilePathToFile(corpus.files...)
+			filePathToFile, err := bufprotosource.FilePathToFile(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -145,15 +157,15 @@ func newFilePairCheckFunc(
 }
 
 func newEnumPairCheckFunc(
-	f func(addFunc, *corpus, protosource.Enum, protosource.Enum) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Enum, bufprotosource.Enum) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFullNameToEnum, err := protosource.FullNameToEnum(corpus.previousFiles...)
+			previousFullNameToEnum, err := bufprotosource.FullNameToEnum(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToEnum, err := protosource.FullNameToEnum(corpus.files...)
+			fullNameToEnum, err := bufprotosource.FullNameToEnum(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -172,15 +184,15 @@ func newEnumPairCheckFunc(
 // compares all the enums that are of the same number
 // map is from name to EnumValue for the given number
 func newEnumValuePairCheckFunc(
-	f func(addFunc, *corpus, map[string]protosource.EnumValue, map[string]protosource.EnumValue) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, map[string]bufprotosource.EnumValue, map[string]bufprotosource.EnumValue) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumPairCheckFunc(
-		func(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
-			previousNumberToNameToEnumValue, err := protosource.NumberToNameToEnumValue(previousEnum)
+		func(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
+			previousNumberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(previousEnum)
 			if err != nil {
 				return err
 			}
-			numberToNameToEnumValue, err := protosource.NumberToNameToEnumValue(enum)
+			numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
 			if err != nil {
 				return err
 			}
@@ -197,15 +209,15 @@ func newEnumValuePairCheckFunc(
 }
 
 func newMessagePairCheckFunc(
-	f func(addFunc, *corpus, protosource.Message, protosource.Message) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Message, bufprotosource.Message) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFullNameToMessage, err := protosource.FullNameToMessage(corpus.previousFiles...)
+			previousFullNameToMessage, err := bufprotosource.FullNameToMessage(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToMessage, err := protosource.FullNameToMessage(corpus.files...)
+			fullNameToMessage, err := bufprotosource.FullNameToMessage(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -222,15 +234,15 @@ func newMessagePairCheckFunc(
 }
 
 func newFieldPairCheckFunc(
-	f func(addFunc, *corpus, protosource.Field, protosource.Field) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Field, bufprotosource.Field) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessagePairCheckFunc(
-		func(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
-			previousNumberToField, err := protosource.NumberToMessageField(previousMessage)
+		func(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+			previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
 			if err != nil {
 				return err
 			}
-			numberToField, err := protosource.NumberToMessageField(message)
+			numberToField, err := bufprotosource.NumberToMessageField(message)
 			if err != nil {
 				return err
 			}
@@ -246,16 +258,34 @@ func newFieldPairCheckFunc(
 	)
 }
 
-func newServicePairCheckFunc(
-	f func(addFunc, *corpus, protosource.Service, protosource.Service) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return newFilesCheckFunc(
-		func(add addFunc, corpus *corpus) error {
-			previousFullNameToService, err := protosource.FullNameToService(corpus.previousFiles...)
+func newFieldDescriptorPairCheckFunc(
+	f func(addFunc, *corpus, bufprotosource.Field, protoreflect.FieldDescriptor, bufprotosource.Field, protoreflect.FieldDescriptor) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return newFieldPairCheckFunc(
+		func(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
+			previousDescriptor, err := previousField.AsDescriptor()
 			if err != nil {
 				return err
 			}
-			fullNameToService, err := protosource.FullNameToService(corpus.files...)
+			descriptor, err := field.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			return f(add, corpus, previousField, previousDescriptor, field, descriptor)
+		},
+	)
+}
+
+func newServicePairCheckFunc(
+	f func(addFunc, *corpus, bufprotosource.Service, bufprotosource.Service) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return newFilesCheckFunc(
+		func(add addFunc, corpus *corpus) error {
+			previousFullNameToService, err := bufprotosource.FullNameToService(corpus.previousFiles...)
+			if err != nil {
+				return err
+			}
+			fullNameToService, err := bufprotosource.FullNameToService(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -272,15 +302,15 @@ func newServicePairCheckFunc(
 }
 
 func newMethodPairCheckFunc(
-	f func(addFunc, *corpus, protosource.Method, protosource.Method) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Method, bufprotosource.Method) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newServicePairCheckFunc(
-		func(add addFunc, corpus *corpus, previousService protosource.Service, service protosource.Service) error {
-			previousNameToMethod, err := protosource.NameToMethod(previousService)
+		func(add addFunc, corpus *corpus, previousService bufprotosource.Service, service bufprotosource.Service) error {
+			previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
 			if err != nil {
 				return err
 			}
-			nameToMethod, err := protosource.NameToMethod(service)
+			nameToMethod, err := bufprotosource.NameToMethod(service)
 			if err != nil {
 				return err
 			}
@@ -296,9 +326,9 @@ func newMethodPairCheckFunc(
 	)
 }
 
-func getDescriptorAndLocationForDeletedEnum(file protosource.File, previousNestedName string) (protosource.Descriptor, protosource.Location, error) {
+func getDescriptorAndLocationForDeletedEnum(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
 	if strings.Contains(previousNestedName, ".") {
-		nestedNameToMessage, err := protosource.NestedNameToMessage(file)
+		nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -312,7 +342,7 @@ func getDescriptorAndLocationForDeletedEnum(file protosource.File, previousNeste
 	return file, nil, nil
 }
 
-func getDescriptorAndLocationForDeletedMessage(file protosource.File, nestedNameToMessage map[string]protosource.Message, previousNestedName string) (protosource.Descriptor, protosource.Location) {
+func getDescriptorAndLocationForDeletedMessage(file bufprotosource.File, nestedNameToMessage map[string]bufprotosource.Message, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location) {
 	if strings.Contains(previousNestedName, ".") {
 		split := strings.Split(previousNestedName, ".")
 		for i := len(split) - 1; i > 0; i-- {
@@ -324,7 +354,7 @@ func getDescriptorAndLocationForDeletedMessage(file protosource.File, nestedName
 	return file, nil
 }
 
-func getSortedEnumValueNames(nameToEnumValue map[string]protosource.EnumValue) []string {
+func getSortedEnumValueNames(nameToEnumValue map[string]bufprotosource.EnumValue) []string {
 	names := make([]string, 0, len(nameToEnumValue))
 	for name := range nameToEnumValue {
 		names = append(names, name)
@@ -333,8 +363,8 @@ func getSortedEnumValueNames(nameToEnumValue map[string]protosource.EnumValue) [
 	return names
 }
 
-func getEnumByFullName(files []protosource.File, enumFullName string) (protosource.Enum, error) {
-	fullNameToEnum, err := protosource.FullNameToEnum(files...)
+func getEnumByFullName(files []bufprotosource.File, enumFullName string) (bufprotosource.Enum, error) {
+	fullNameToEnum, err := bufprotosource.FullNameToEnum(files...)
 	if err != nil {
 		return nil, err
 	}
@@ -345,9 +375,116 @@ func getEnumByFullName(files []protosource.File, enumFullName string) (protosour
 	return enum, nil
 }
 
-func withBackupLocation(primary protosource.Location, secondary protosource.Location) protosource.Location {
-	if primary != nil {
-		return primary
+func withBackupLocation(locs ...bufprotosource.Location) bufprotosource.Location {
+	for _, loc := range locs {
+		if loc != nil {
+			return loc
+		}
 	}
-	return secondary
+	return nil
+}
+
+func findFeatureField(name protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.FieldDescriptor, error) {
+	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
+	featureField := featureSetDescriptor.Fields().ByName(name)
+	if featureField == nil {
+		return nil, fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), name)
+	}
+	if featureField.Kind() != expectedKind || featureField.IsList() {
+		return nil, fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional %s, got %s %s",
+			featureSetDescriptor.FullName(), name, expectedKind, featureField.Cardinality(), featureField.Kind())
+	}
+	return featureField, nil
+}
+
+func fieldCppStringType(field bufprotosource.Field, descriptor protoreflect.FieldDescriptor) (protobuf.CppFeatures_StringType, bool, error) {
+	// We don't support Edition 2024 yet. But we know of this rule, so we can go ahead and
+	// implement it so it's one less thing to do when we DO add support for 2024.
+	if field.File().Edition() < descriptorpb.Edition_EDITION_2024 {
+		opts, _ := descriptor.Options().(*descriptorpb.FieldOptions)
+		// TODO: In Edition 2024, it will be *required* to use the new (pb.cpp).string_type option. So
+		//       we shouldn't bother checking the ctype option in editions >= 2024.
+		if opts != nil && opts.Ctype != nil {
+			switch opts.GetCtype() {
+			case descriptorpb.FieldOptions_CORD:
+				return protobuf.CppFeatures_CORD, false, nil
+			case descriptorpb.FieldOptions_STRING_PIECE:
+				return protobuf.CppFeatures_STRING, true, nil
+			case descriptorpb.FieldOptions_STRING:
+				return protobuf.CppFeatures_STRING, false, nil
+			default:
+				if descriptor.ParentFile().Syntax() != protoreflect.Editions {
+					return protobuf.CppFeatures_STRING, false, nil
+				}
+				// If the file is edition 2023, we fall through to below since 2023 allows either
+				// the ctype field or the (pb.cpp).string_type feature.
+			}
+		}
+	}
+	val, err := customfeatures.ResolveCppFeature(descriptor, cppFeatureNameStringType, protoreflect.EnumKind)
+	if err != nil {
+		return 0, false, err
+	}
+	return protobuf.CppFeatures_StringType(val.Enum()), false, nil
+}
+
+func fieldCppStringTypeLocation(field bufprotosource.Field) bufprotosource.Location {
+	ext := protobuf.E_Cpp.TypeDescriptor()
+	if ext.Message() == nil {
+		return nil
+	}
+	return getCustomFeatureLocation(field, ext, cppFeatureNameStringType)
+}
+
+func fieldJavaUTF8Validation(field protoreflect.FieldDescriptor) (descriptorpb.FeatureSet_Utf8Validation, error) {
+	standardFeatureField, err := findFeatureField(featureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return 0, err
+	}
+	val, err := protoutil.ResolveFeature(field, standardFeatureField)
+	if err != nil {
+		return 0, fmt.Errorf("unable to resolve value of %s feature: %w", standardFeatureField.Name(), err)
+	}
+	defaultValue := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
+
+	opts, _ := field.ParentFile().Options().(*descriptorpb.FileOptions)
+	if field.ParentFile().Syntax() != protoreflect.Editions || (opts != nil && opts.JavaStringCheckUtf8 != nil) {
+		if opts.GetJavaStringCheckUtf8() {
+			return descriptorpb.FeatureSet_VERIFY, nil
+		}
+		return defaultValue, nil
+	}
+
+	val, err = customfeatures.ResolveJavaFeature(field, javaFeatureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return 0, err
+	}
+	if protobuf.JavaFeatures_Utf8Validation(val.Enum()) == protobuf.JavaFeatures_VERIFY {
+		return descriptorpb.FeatureSet_VERIFY, nil
+	}
+	return defaultValue, nil
+}
+
+func fieldJavaUTF8ValidationLocation(field bufprotosource.Field) bufprotosource.Location {
+	ext := protobuf.E_Java.TypeDescriptor()
+	if ext.Message() == nil {
+		return nil
+	}
+	return getCustomFeatureLocation(field, ext, javaFeatureNameUTF8Validation)
+}
+
+func getCustomFeatureLocation(field bufprotosource.Field, extension protoreflect.ExtensionTypeDescriptor, fieldName protoreflect.Name) bufprotosource.Location {
+	if extension.Message() == nil {
+		return nil
+	}
+	feature := extension.Message().Fields().ByName(fieldName)
+	if feature == nil {
+		return nil
+	}
+	featureField := (*descriptorpb.FieldOptions)(nil).ProtoReflect().Descriptor().Fields().ByName(featuresFieldName)
+	if featureField == nil {
+		// should not be possible
+		return nil
+	}
+	return field.OptionLocation(featureField, int32(extension.Number()), int32(feature.Number()))
 }

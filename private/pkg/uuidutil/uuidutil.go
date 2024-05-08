@@ -30,21 +30,9 @@ func New() (uuid.UUID, error) {
 }
 
 // ToDashless returns the uuid without dashes.
-func ToDashless(id uuid.UUID) (string, error) {
+func ToDashless(id uuid.UUID) string {
 	s := id.String()
-	if s[8] != '-' {
-		return "", fmt.Errorf("expected - at char 9: %q", s)
-	}
-	if s[13] != '-' {
-		return "", fmt.Errorf("expected - at char 14: %q", s)
-	}
-	if s[18] != '-' {
-		return "", fmt.Errorf("expected - at char 19: %q", s)
-	}
-	if s[23] != '-' {
-		return "", fmt.Errorf("expected - at char 24: %q", s)
-	}
-	return s[0:8] + s[9:13] + s[14:18] + s[19:23] + s[24:], nil
+	return s[0:8] + s[9:13] + s[14:18] + s[19:23] + s[24:]
 }
 
 // FromString returns the uuid from the string.

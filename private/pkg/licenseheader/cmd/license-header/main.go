@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/licenseheader"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -78,7 +77,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The license type. Must be one of [none,apache,proprietary].",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, licenseTypeFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, licenseTypeFlagName)
 	flagSet.StringVar(
 		&f.CopyrightHolder,
 		copyrightHolderFlagName,

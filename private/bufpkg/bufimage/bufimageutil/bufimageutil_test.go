@@ -17,20 +17,19 @@ package bufimageutil
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
+	"os"
 	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/gofrs/uuid/v5"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
@@ -44,9 +43,10 @@ import (
 )
 
 // IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
-// SWITCH THIS TO TRUE, TURN OFF PARALLEL TESTING, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
-// go test -parallel 1 ./privage/pkg/bufimage/bufimageutil
-const shouldUpdateExpectations = false
+// RUN THE FOLLOWING:
+// make bufimageutilupdateexpectations
+
+var shouldUpdateExpectations = os.Getenv("BUFBUILD_BUF_BUFIMAGEUTIL_SHOULD_UPDATE_EXPECTATIONS")
 
 func TestOptions(t *testing.T) {
 	t.Parallel()
@@ -165,24 +165,21 @@ func TestSourceCodeInfo(t *testing.T) {
 func TestTransitivePublic(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	bucket, err := storagemem.NewReadBucket(map[string][]byte{
-		"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
-		"b.proto": []byte(`syntax = "proto3";package b;import public "a.proto";message Bar {}`),
-		"c.proto": []byte(`syntax = "proto3";package c;import "b.proto";message Baz{ a.Foo foo = 1; }`),
-	})
-	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
-	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(
-		zaptest.NewLogger(t),
-		bufmodule.NewNopModuleReader(),
-	).Build(
-		ctx,
-		module,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+	moduleSet, err := bufmoduletesting.NewModuleSetForPathToData(
+		map[string][]byte{
+			"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
+			"b.proto": []byte(`syntax = "proto3";package b;import public "a.proto";message Bar {}`),
+			"c.proto": []byte(`syntax = "proto3";package c;import "b.proto";message Baz{ a.Foo foo = 1; }`),
+		},
 	)
 	require.NoError(t, err)
-	require.Empty(t, analysis)
+	image, err := bufimage.BuildImage(
+		ctx,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
@@ -195,38 +192,35 @@ func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	moduleIdentityString := "buf.build/repo/main"
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleIdentityString)
-	require.NoError(t, err)
-	moduleIdentityDepString := "buf.build/repo/dep"
-	moduleIdentityDep, err := bufmoduleref.ModuleIdentityForString(moduleIdentityDepString)
-	require.NoError(t, err)
-	bucket := storagemem.NewReadWriteBucket()
-	require.NoError(t, storage.PutPath(ctx, bucket, "a.proto", []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`)))
-	require.NoError(t, bufmoduletesting.WriteTestLockFileToBucket(ctx, bucket, moduleIdentityDepString))
-	module, err := bufmodule.NewModuleForBucket(ctx, bucket, bufmodule.ModuleWithModuleIdentity(moduleIdentity))
-	require.NoError(t, err)
-	bucketDep, err := storagemem.NewReadBucket(map[string][]byte{
-		"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
-	})
-	require.NoError(t, err)
-	moduleDep, err := bufmodule.NewModuleForBucket(ctx, bucketDep, bufmodule.ModuleWithModuleIdentity(moduleIdentityDep))
-	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(
-		zaptest.NewLogger(t),
-		bufmoduletesting.NewTestModuleReader(
-			map[string]bufmodule.Module{
-				moduleIdentityDep.IdentityString(): moduleDep,
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/repo/main",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`),
 			},
-		),
-	).Build(
-		ctx,
-		module,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/repo/dep",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
+			},
+			NotTargeted: true,
+		},
 	)
 	require.NoError(t, err)
-	require.Empty(t, analysis)
+	image, err := bufimage.BuildImage(
+		ctx,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
 
+	dep := moduleSet.GetModuleForOpaqueID("buf.build/repo/dep")
+	require.NotNil(t, dep)
+	bProtoFileInfo, err := dep.StatFileInfo(ctx, "b.proto")
+	require.NoError(t, err)
+	require.False(t, bProtoFileInfo.IsTargetFile())
 	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
@@ -240,36 +234,30 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimagebuild.BuildOption) (storage.ReadWriteBucket, bufimage.Image, error) {
+func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
 		return nil, nil, err
 	}
-	module, err := bufmodule.NewModuleForBucket(
-		ctx,
-		storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")),
-	)
+	moduleSet, err := bufmoduletesting.NewModuleSetForBucket(bucket)
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader())
-	image, analysis, err := builder.Build(
+	image, err := bufimage.BuildImage(
 		ctx,
-		module,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	if err != nil {
 		return nil, nil, err
-	}
-	if len(analysis) > 0 {
-		return nil, nil, fmt.Errorf("%d errors in source when building", len(analysis))
 	}
 	return bucket, image, nil
 }
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimagebuild.WithExcludeSourceCodeInfo())
+	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -282,12 +270,10 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
 	// way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
-	require.NoError(t, err)
 	data, err := proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	err = proto.UnmarshalOptions{Resolver: resolver}.Unmarshal(data, fileDescriptorSet)
+	err = proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
 
 	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(fileDescriptorSet)
@@ -316,7 +302,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 }
 
 func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket storage.ReadWriteBucket, expectedFile string) {
-	if shouldUpdateExpectations {
+	if shouldUpdateExpectations != "" {
 		writer, err := bucket.Put(ctx, expectedFile)
 		require.NoError(t, err)
 		_, err = writer.Write(actual)
@@ -434,14 +420,14 @@ func examineComment(t *testing.T, file protoreflect.FileDescriptor, descriptor p
 }
 
 func BenchmarkFilterImage_WithoutSourceCodeInfo(b *testing.B) {
-	benchmarkFilterImage(b, bufimagebuild.WithExcludeSourceCodeInfo())
+	benchmarkFilterImage(b, bufimage.WithExcludeSourceCodeInfo())
 }
 
 func BenchmarkFilterImage_WithSourceCodeInfo(b *testing.B) {
 	benchmarkFilterImage(b)
 }
 
-func benchmarkFilterImage(b *testing.B, opts ...bufimagebuild.BuildOption) {
+func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 	benchmarkCases := []*struct {
 		folder string
 		image  bufimage.Image
@@ -483,7 +469,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimagebuild.BuildOption) {
 					clone, ok := proto.Clone(imageFile.FileDescriptorProto()).(*descriptorpb.FileDescriptorProto)
 					require.True(b, ok)
 					var err error
-					imageFiles[j], err = bufimage.NewImageFile(clone, nil, "", "", false, false, nil)
+					imageFiles[j], err = bufimage.NewImageFile(clone, nil, uuid.Nil, "", "", false, false, nil)
 					require.NoError(b, err)
 				}
 				image, err := bufimage.NewImage(imageFiles)

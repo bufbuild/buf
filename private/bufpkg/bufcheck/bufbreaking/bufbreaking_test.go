@@ -20,20 +20,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
+
+func init() {
+	protodescriptor.AllowEditionsForTesting()
+}
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
 	t.Parallel()
@@ -43,6 +48,40 @@ func TestRunBreakingEnumNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 18, 2, "ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 14, 4, "ENUM_NO_DELETE"),
+	)
+}
+
+func TestRunBreakingEnumSameJSONFormat(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_enum_same_json_format",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "ENUM_SAME_JSON_FORMAT"),
+	)
+}
+
+func TestRunBreakingEnumSameType(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_enum_same_type",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "ENUM_SAME_TYPE"),
 	)
 }
 
@@ -113,9 +152,10 @@ func TestRunBreakingExtensionMessageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 36, 4, "EXTENSION_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 36, 4, "EXTENSION_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 36, 4, "EXTENSION_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 73, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 73, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 73, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 49, 1, 53, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
 	)
 }
 
@@ -160,18 +200,228 @@ func TestRunBreakingFieldNoDeleteUnlessNumberReserved(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldSameCardinality(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_cardinality",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 7, 32, 10, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 5, 48, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_SAME_CARDINALITY"),
+	)
+}
+
+func TestRunBreakingFieldSameCppStringType(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_cpp_string_type",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 23, 8, 41, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 22, 9, 32, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 23, 12, 57, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 22, 13, 56, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 15, 22, 15, 34, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 16, 21, 16, 39, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 17, 3, 17, 30, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 30, 18, 66, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 22, 19, 56, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 29, 23, 39, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 26, 30, 26, 64, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 29, 27, 63, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 25, 30, 35, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 31, 34, 31, 52, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 33, 25, 33, 59, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 24, 34, 58, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 8, 23, 8, 57, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 9, 22, 9, 56, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 12, 23, 12, 33, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 22, 13, 40, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 15, 22, 15, 58, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 16, 21, 16, 55, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 3, 17, 30, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 18, 30, 18, 42, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 20, 21, 20, 39, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 22, 22, 22, 58, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 23, 21, 23, 55, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 24, 3, 24, 30, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 25, 30, 25, 42, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 26, 22, 26, 32, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 27, 21, 27, 39, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 30, 24, 30, 34, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 31, 34, 31, 52, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 33, 25, 33, 59, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 34, 24, 34, 58, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 10, 24, 10, 36, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 11, 23, 11, 33, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 12, 33, 12, 51, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 13, 32, 13, 68, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 15, 23, 15, 57, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 16, 3, 16, 32, "FIELD_SAME_CPP_STRING_TYPE"),
+	)
+}
+
 func TestRunBreakingFieldSameCType(t *testing.T) {
 	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_ctype",
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 19, 6, 39, "FIELD_SAME_CTYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 18, "FIELD_SAME_CTYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 23, 13, 43, "FIELD_SAME_CTYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 14, 7, 14, 22, "FIELD_SAME_CTYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 21, 23, 33, "FIELD_SAME_CTYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 49, 28, 49, 48, "FIELD_SAME_CTYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 50, 28, 50, 42, "FIELD_SAME_CTYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 19, 6, 39, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 18, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 23, 13, 43, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 14, 7, 14, 22, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 21, 23, 33, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 49, 28, 49, 48, "FIELD_SAME_CPP_STRING_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 50, 28, 50, 42, "FIELD_SAME_CPP_STRING_TYPE"),
+	)
+}
+
+func TestRunBreakingFieldSameJavaUTF8Validation(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_java_utf8_validation",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 17, 3, 17, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 3, 18, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 3, 19, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 3, 19, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 28, 3, 28, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 29, 3, 29, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 30, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 30, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 3, 39, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 3, 40, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 3, 41, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 3, 41, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 50, 3, 50, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 51, 3, 51, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 52, 3, 52, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 52, 3, 52, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 61, 3, 61, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 62, 3, 62, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 63, 3, 63, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 63, 3, 63, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 5, 38, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 5, 38, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 5, 38, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 5, 38, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 17, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 8, 3, 8, 17, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 9, 3, 9, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 10, 3, 10, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 10, 3, 10, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 85, 18, 85, 60, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 87, 3, 87, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 87, 3, 87, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 10, 3, 10, 17, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 11, 3, 11, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 12, 3, 12, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 12, 3, 12, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 87, 18, 87, 59, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 89, 3, 89, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "5.proto", 89, 3, 89, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 11, 3, 11, 17, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 12, 3, 12, 26, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 13, 3, 13, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 13, 3, 13, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 79, 3, 79, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 79, 3, 79, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 90, 3, 90, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "6.proto", 90, 3, 90, 22, "FIELD_SAME_JAVA_UTF8_VALIDATION"),
+	)
+}
+
+func TestRunBreakingFieldSameDefault(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_default",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 26, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 27, 9, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 25, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 14, 26, 14, 41, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 5, 18, 27, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 28, 20, 41, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 25, 5, 25, 28, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 29, 27, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 5, 32, 28, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 29, 34, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 5, 39, 29, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 30, 41, 43, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 46, 5, 46, 30, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 31, 48, 44, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 53, 5, 53, 27, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 55, 28, 55, 41, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 60, 5, 60, 28, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 62, 29, 62, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 67, 5, 67, 28, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 69, 29, 69, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 74, 5, 74, 29, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 76, 30, 76, 43, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 81, 5, 81, 30, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 83, 31, 83, 44, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 88, 5, 88, 27, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 90, 28, 90, 41, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 95, 5, 95, 28, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 97, 29, 97, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 102, 5, 102, 26, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 104, 27, 104, 42, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 109, 5, 109, 26, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 111, 27, 111, 40, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 18, 6, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 8, 17, 8, 30, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 17, 10, 32, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 12, 16, 12, 30, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 15, 19, 15, 32, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 20, 17, 35, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 21, 20, 21, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 23, 21, 23, 34, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 27, 20, 27, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 29, 19, 29, 34, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 33, 21, 33, 34, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 35, 20, 35, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 39, 22, 39, 35, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 41, 19, 41, 31, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 45, 19, 45, 32, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 47, 20, 47, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 51, 20, 51, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 53, 20, 53, 35, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 57, 20, 57, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 59, 20, 59, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 63, 21, 63, 34, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 65, 19, 65, 32, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 69, 22, 69, 35, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 19, 71, 34, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 19, 75, 36, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 77, 20, 77, 33, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 81, 20, 81, 37, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 83, 20, 83, 35, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 87, 18, 87, 32, "FIELD_SAME_DEFAULT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 20, 89, 33, "FIELD_SAME_DEFAULT"),
 	)
 }
 
@@ -233,28 +483,76 @@ func TestRunBreakingFieldSameLabel(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_field_same_label",
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 36, 5, 36, 28, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 5, 37, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 38, 5, 38, 21, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 5, 39, 18, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 20, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 19, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_SAME_LABEL"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 7, 32, 10, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 7, 32, 10, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 5, 48, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
 	)
 }
 
@@ -276,43 +574,136 @@ func TestRunBreakingFieldSameOneof(t *testing.T) {
 		t,
 		"breaking_field_same_oneof",
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 19, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 3, 18, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 3, 20, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 3, 23, 19, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 3, 37, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 3, 39, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 3, 42, 19, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 94, 3, 94, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 96, 3, 96, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 99, 3, 99, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 5, 8, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 5, 11, 21, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 7, 18, 21, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 9, 20, 23, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 9, 23, 25, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 5, 37, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 7, 39, 21, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 7, 42, 23, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 95, 3, 95, 17, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 97, 5, 97, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 100, 5, 100, 21, "FIELD_SAME_ONEOF"),
 	)
 }
 
 func TestRunBreakingFieldSameType(t *testing.T) {
 	t.Parallel()
-	// TODO: double check all this
 	testBreaking(
 		t,
 		"breaking_field_same_type",
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 12, 8, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 12, 9, 15, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 6, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 6, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 18, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 16, 19, 21, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 16, 20, 19, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 10, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 10, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 22, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 36, 14, 36, 19, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 14, 37, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 5, 39, 8, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 8, "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 64, 5, 64, 10, "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 65, 5, 65, 9, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 20, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 57, 5, 57, 10, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 58, 5, 58, 9, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 7, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 9, 3, 9, 7, "FIELD_SAME_TYPE"),
+	)
+}
+
+func TestRunBreakingFieldSameUTF8Validation(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_utf8_validation",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 16, 3, 16, 27, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 17, 3, 17, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 3, 18, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 3, 19, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 3, 20, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 3, 20, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 26, 3, 26, 27, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 3, 27, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 28, 3, 28, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 29, 3, 29, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 30, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 30, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 7, 3, 7, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 8, 3, 8, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 9, 3, 9, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 36, 3, 36, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 37, 3, 37, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 38, 3, 38, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 39, 3, 39, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 9, 3, 9, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 36, 3, 36, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 37, 3, 37, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 38, 3, 38, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 39, 3, 39, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 56, 19, 56, 50, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 57, 29, 57, 60, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 58, 3, 58, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 59, 3, 59, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 60, 3, 60, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 60, 3, 60, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 18, 3, 18, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 19, 3, 19, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 20, 3, 20, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 21, 3, 21, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 22, 3, 22, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 22, 3, 22, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 58, 19, 58, 52, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 59, 29, 59, 62, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 60, 3, 60, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 61, 3, 61, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 62, 3, 62, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 62, 3, 62, 22, "FIELD_SAME_UTF8_VALIDATION"),
+	)
+}
+
+func TestRunBreakingFieldWireCompatibleCardinality(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_wire_compatible_cardinality",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
 	)
 }
 
@@ -340,8 +731,42 @@ func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 79, 3, 79, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 80, 3, 80, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 85, 3, 85, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 7, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 7, "FIELD_WIRE_COMPATIBLE_TYPE"),
 	)
 }
+
+func TestRunBreakingFieldWireJSONCompatibleCardinality(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_wire_json_compatible_cardinality",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 7, 32, 10, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+	)
+}
+
 func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -367,6 +792,8 @@ func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 83, 3, 83, 6, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 87, 3, 87, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 3, 88, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 7, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 7, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
 	)
 }
 
@@ -435,7 +862,6 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 13, 30, "FILE_SAME_PHP_NAMESPACE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 14, 1, 14, 39, "FILE_SAME_PHP_METADATA_NAMESPACE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 15, 1, 15, 29, "FILE_SAME_RUBY_PACKAGE"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 17, 1, 17, 39, "FILE_SAME_JAVA_STRING_CHECK_UTF8"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 1, 18, 29, "FILE_SAME_OPTIMIZE_FOR"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 1, 19, 36, "FILE_SAME_CC_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 1, 20, 38, "FILE_SAME_JAVA_GENERIC_SERVICES"),
@@ -453,7 +879,6 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 1, 13, 30, "FILE_SAME_PHP_NAMESPACE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 1, 14, 39, "FILE_SAME_PHP_METADATA_NAMESPACE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 15, 1, 15, 29, "FILE_SAME_RUBY_PACKAGE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 17, 38, "FILE_SAME_JAVA_STRING_CHECK_UTF8"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 18, 1, 18, 33, "FILE_SAME_OPTIMIZE_FOR"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 19, 1, 19, 35, "FILE_SAME_CC_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 20, 1, 20, 37, "FILE_SAME_JAVA_GENERIC_SERVICES"),
@@ -473,12 +898,28 @@ func TestRunBreakingMessageNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingMessageSameJSONFormat(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_message_same_json_format",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "MESSAGE_SAME_JSON_FORMAT"),
+	)
+}
+
 func TestRunBreakingMessageSameValues(t *testing.T) {
 	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_same_values",
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 42, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
@@ -487,7 +928,6 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 5, 21, 44, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 5, 24, 43, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 3, 27, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
@@ -524,7 +964,7 @@ func TestRunBreakingOneofNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 5, 1, 9, 2, "ONEOF_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 5, 17, 6, "ONEOF_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 26, 3, 30, 4, "ONEOF_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "ONEOF_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 76, 1, 80, 2, "ONEOF_NO_DELETE"),
 	)
 }
 
@@ -568,11 +1008,12 @@ func TestRunBreakingReservedEnumNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 53, 1, 58, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
 	)
 }
 
@@ -596,11 +1037,12 @@ func TestRunBreakingReservedMessageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 56, 1, 60, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
 	)
 }
 
@@ -722,8 +1164,10 @@ func TestRunBreakingMessageEnum(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_message_enum",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 0, 0, 0, 0, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
 	)
 }
@@ -733,7 +1177,9 @@ func TestRunBreakingMessageInt(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_message_int",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 8, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
 	)
 }
@@ -756,7 +1202,7 @@ func testBreaking(
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	logger := zap.NewNop()
+	logger := zaptest.NewLogger(t)
 
 	previousDirPath := filepath.Join("testdata_previous", relDirPath)
 	dirPath := filepath.Join("testdata", relDirPath)
@@ -767,72 +1213,90 @@ func testBreaking(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
+	previousBucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		previousReadWriteBucket,
+		".", // the bucket is rooted at the input
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-
-	previousConfig := testGetConfig(t, previousReadWriteBucket)
-	config := testGetConfig(t, readWriteBucket)
-
-	previousModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		previousReadWriteBucket,
-		previousConfig.Build,
-	)
-	require.NoError(t, err)
-	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		previousModule,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		logger,
+		readWriteBucket,
+		".", // the bucket is rooted at the input
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
 	)
 	require.NoError(t, err)
-	require.Empty(t, previousFileAnnotations)
+
+	workspaceProvider := bufworkspace.NewWorkspaceProvider(
+		zap.NewNop(),
+		tracing.NopTracer,
+		bufmodule.NopGraphProvider,
+		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
+	)
+	previousWorkspace, err := workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		previousReadWriteBucket,
+		previousBucketTargeting,
+	)
+	require.NoError(t, err)
+	workspace, err := workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		readWriteBucket,
+		bucketTargeting,
+	)
+	require.NoError(t, err)
+
+	previousImage, err := bufimage.BuildImage(
+		ctx,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	image, err := bufimage.BuildImage(
 		ctx,
-		module,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 
-	handler := bufbreaking.NewHandler(logger)
-	fileAnnotations, err = handler.Check(
+	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
+	require.NotNil(t, breakingConfig)
+	handler := bufbreaking.NewHandler(
+		zap.NewNop(),
+		tracing.NopTracer,
+	)
+	err = handler.Check(
 		ctx,
-		config.Breaking,
+		breakingConfig,
 		previousImage,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
-}
-
-func testGetConfig(
-	t *testing.T,
-	readBucket storage.ReadBucket,
-) *bufconfig.Config {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
-	require.NoError(t, err)
-	return config
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.ErrorAs(t, err, &fileAnnotationSet)
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }

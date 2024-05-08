@@ -4,6 +4,22 @@
 
 - No changes yet.
 
+## [v1.32.0-beta.1] - 2024-04-23
+
+- Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
+  rules to incoming messages specified with `--from`.
+- Add `buf config migrate` to migrate configuration files to the latest version (now `v2`).
+- Promote `buf beta graph` to stable as `buf dep graph`.
+- Move `buf mod init` to `buf config init`. `buf mod init` is now deprecated.
+- Move `buf mod ls-lint-rules` to `buf config ls-lint-rules`. `buf mod ls-lint-rules` is now deprecated.
+- Move `buf mod ls-breaking-rules` to `buf config ls-breaking-rules`. `buf mod ls-breaking-rules` is now deprecated.
+- Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
+- Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
+- Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
+- Deprecate `buf mod open`.
+- Delete `buf beta migrate-v1beta1`.
+- Add `buf registry sdk version` to get the version of a Generated SDK for a module and plugin.
+
 ## [v1.31.0] - 2024-04-23
 
 - Update dependencies.
@@ -1028,7 +1044,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.31.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...HEAD
+[v1.32.0-beta.1]: https://github.com/bufbuild/buf/compare/v1.31.0...v1.32.0-beta.1
 [v1.31.0]: https://github.com/bufbuild/buf/compare/v1.30.1...v1.31.0
 [v1.30.1]: https://github.com/bufbuild/buf/compare/v1.30.0...v1.30.1
 [v1.30.0]: https://github.com/bufbuild/buf/compare/v1.29.0...v1.30.0
