@@ -56,7 +56,7 @@ func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.
 	for previousNestedName := range previousNestedNameToEnum {
 		if _, ok := nestedNameToEnum[previousNestedName]; !ok {
 			// TODO: search for enum in other files and return that the enum was moved?
-			descriptor, location, err := getDescriptorAndLocationForDeletedEnum(file, previousNestedName)
+			descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 			if err != nil {
 				return err
 			}
@@ -240,6 +240,30 @@ var CheckExtensionMessageNoDelete = newMessagePairCheckFunc(checkExtensionMessag
 
 func checkExtensionMessageNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	return checkTagRanges(add, "extension", message, previousMessage.ExtensionRanges(), message.ExtensionRanges())
+}
+
+// CheckExtensionNoDelete is a check function.
+var CheckExtensionNoDelete = newFilePairCheckFunc(checkExtensionNoDelete)
+
+func checkExtensionNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
+	previousNestedNameToExtension, err := bufprotosource.NestedNameToExtension(previousFile)
+	if err != nil {
+		return err
+	}
+	nestedNameToExtension, err := bufprotosource.NestedNameToExtension(file)
+	if err != nil {
+		return err
+	}
+	for previousNestedName := range previousNestedNameToExtension {
+		if _, ok := nestedNameToExtension[previousNestedName]; !ok {
+			descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+			if err != nil {
+				return err
+			}
+			add(descriptor, nil, location, `Previously present extension %q was deleted from file.`, previousNestedName)
+		}
+	}
+	return nil
 }
 
 // CheckFieldNoDelete is a check function.
@@ -506,11 +530,19 @@ func checkFieldSameJSType(add addFunc, corpus *corpus, previousField bufprotosou
 var CheckFieldSameName = newFieldPairCheckFunc(checkFieldSameName)
 
 func checkFieldSameName(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	if previousField.Name() != field.Name() {
+	var previousName, name string
+	if previousField.Extendee() != "" {
+		previousName = previousField.FullName()
+		name = field.FullName()
+	} else {
+		previousName = previousField.Name()
+		name = field.Name()
+	}
+	if previousName != name {
 		add(field, nil, field.NameLocation(),
 			`%s changed name from %q to %q.`,
 			fieldDescriptionWithName(field, ""), // don't include name in description
-			previousField.Name(), field.Name())
+			previousName, name)
 	}
 	return nil
 }
@@ -1249,7 +1281,7 @@ func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
 					file, ok := filePathToFile[previousEnum.File().Path()]
 					if ok {
 						// File exists, try to get a location to attach the error to.
-						descriptor, location, err := getDescriptorAndLocationForDeletedEnum(file, previousNestedName)
+						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 						if err != nil {
 							return err
 						}
@@ -1260,6 +1292,54 @@ func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous enum was in an unstable package.
 						add(nil, []bufprotosource.Descriptor{previousEnum}, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// CheckPackageExtensionNoDelete is a check function.
+var CheckPackageExtensionNoDelete = newFilesCheckFunc(checkPackageExtensionNoDelete)
+
+func checkPackageExtensionNoDelete(add addFunc, corpus *corpus) error {
+	previousPackageToNestedNameToExtension, err := bufprotosource.PackageToNestedNameToExtension(corpus.previousFiles...)
+	if err != nil {
+		return err
+	}
+	packageToNestedNameToExtension, err := bufprotosource.PackageToNestedNameToExtension(corpus.files...)
+	if err != nil {
+		return err
+	}
+	// caching across loops
+	var filePathToFile map[string]bufprotosource.File
+	for previousPackage, previousNestedNameToExtension := range previousPackageToNestedNameToExtension {
+		if nestedNameToExtension, ok := packageToNestedNameToExtension[previousPackage]; ok {
+			for previousNestedName, previousExtension := range previousNestedNameToExtension {
+				if _, ok := nestedNameToExtension[previousNestedName]; !ok {
+					// if cache not populated, populate it
+					if filePathToFile == nil {
+						filePathToFile, err = bufprotosource.FilePathToFile(corpus.files...)
+						if err != nil {
+							return err
+						}
+					}
+					// Check if the file still exists.
+					file, ok := filePathToFile[previousExtension.File().Path()]
+					if ok {
+						// File exists, try to get a location to attach the error to.
+						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						if err != nil {
+							return err
+						}
+						add(descriptor, nil, location, `Previously present extension %q was deleted from package %q.`, previousNestedName, previousPackage)
+					} else {
+						// File does not exist, we don't know where the enum was deleted from.
+						// Add the previous enum to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous enum was in an unstable package.
+						add(nil, []bufprotosource.Descriptor{previousExtension}, nil, `Previously present extension %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}

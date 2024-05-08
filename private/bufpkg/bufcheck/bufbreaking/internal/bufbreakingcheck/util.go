@@ -112,11 +112,6 @@ func newCorpus(
 	}
 }
 
-type container interface {
-	Extensions() []bufprotosource.Field
-	Messages() []bufprotosource.Message
-}
-
 func fieldDescriptorTypePrettyString(descriptor protoreflect.FieldDescriptor) string {
 	if descriptor.Kind() == protoreflect.GroupKind && descriptor.Syntax() != protoreflect.Proto2 {
 		// Kind will be set to "group", but it's really a "delimited-encoded message"
@@ -379,7 +374,7 @@ func combine(
 	}
 }
 
-func getDescriptorAndLocationForDeletedEnum(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
+func getDescriptorAndLocationForDeletedElement(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
 	if strings.Contains(previousNestedName, ".") {
 		nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
 		if err != nil {
@@ -570,7 +565,7 @@ func fieldDescriptionWithName(field bufprotosource.Field, name string) string {
 	return fmt.Sprintf("%s %q%s on message %q", kind, numberString, name, message)
 }
 
-func addToTypeToNumberToExtension(container container, typeToNumberToExt map[string]map[int]bufprotosource.Field) error {
+func addToTypeToNumberToExtension(container bufprotosource.ContainerDescriptor, typeToNumberToExt map[string]map[int]bufprotosource.Field) error {
 	for _, extension := range container.Extensions() {
 		numberToExt := typeToNumberToExt[extension.Extendee()]
 		if numberToExt == nil {

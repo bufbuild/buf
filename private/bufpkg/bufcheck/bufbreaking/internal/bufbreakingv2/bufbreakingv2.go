@@ -31,6 +31,11 @@ import (
 // values are a feature of proto2 and editions, but not in
 // proto3 syntax.)
 //
+// Adds new EXTENSION_NO_DELETE and PACKAGE_EXTENSION_NO_DELETE
+// checks, to make sure that extensions are not deleted from a
+// file or package, respectively. (In previous versions, an
+// extension being deleted was simply undetected.)
+//
 // Removes the following deprecated checks (but retains their
 // replacements):
 //   - FIELD_SAME_CTYPE

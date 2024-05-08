@@ -792,6 +792,7 @@ func TestCheckLsBreakingRulesV2(t *testing.T) {
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
 ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+EXTENSION_NO_DELETE                             FILE                            Checks that extensions are not deleted from a given file.
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
@@ -843,6 +844,7 @@ RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  
 RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
 RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
 PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                         Checks that extensions are not deleted from a given package.
 PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
 PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
 PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
