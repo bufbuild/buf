@@ -92,6 +92,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isMavenEmpty  = externalRegistryConfig.Maven == nil
 		isSwiftEmpty  = externalRegistryConfig.Swift == nil
 		isPythonEmpty = externalRegistryConfig.Python == nil
+		isCargoEmpty  = externalRegistryConfig.Cargo == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -100,6 +101,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isMavenEmpty,
 		isSwiftEmpty,
 		isPythonEmpty,
+		isCargoEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -159,6 +161,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Python:  pythonRegistryConfig,
+			Options: options,
+		}, nil
+	case !isCargoEmpty:
+		cargoRegistryConfig, err := newCargoRegistryConfig(externalRegistryConfig.Cargo)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Cargo:   cargoRegistryConfig,
 			Options: options,
 		}, nil
 	default:
@@ -355,6 +366,25 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 		RequiresPython: externalPythonRegistryConfig.RequiresPython,
 		PackageType:    externalPythonRegistryConfig.PackageType,
 	}, nil
+}
+
+func newCargoRegistryConfig(externalCargoRegistryConfig *ExternalCargoRegistryConfig) (*CargoRegistryConfig, error) {
+	if externalCargoRegistryConfig == nil {
+		return nil, nil
+	}
+	config := &CargoRegistryConfig{
+		RustVersion: externalCargoRegistryConfig.RustVersion,
+	}
+	for _, dependency := range externalCargoRegistryConfig.Deps {
+		if dependency.Name == "" {
+			return nil, fmt.Errorf("cargo registry dependency cannot have empty name")
+		}
+		if dependency.VersionRequirement == "" {
+			return nil, fmt.Errorf("cargo registry dependency cannot have empty req")
+		}
+		config.Deps = append(config.Deps, CargoRegistryDependency(dependency))
+	}
+	return config, nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {
