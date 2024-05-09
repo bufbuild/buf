@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Adds a new `FIELD_NOT_REQUIRED` lint rule that prevents use of required
+  in proto2 files and of `features.field_presence = LEGACY_REQUIRED` in
+  Editions files. This new rule is not active by default in existing v1 and
+  v1beta1 configurations, for backwards-compatibility reasons. Migrate your
+  config to v2 to use them.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 
