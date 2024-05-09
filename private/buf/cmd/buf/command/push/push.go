@@ -663,7 +663,9 @@ func getGitMetadataSourceControlURLUploadOption(
 		); err != nil {
 			return nil, err
 		}
-		remoteToURL[remote] = strings.TrimSpace(buffer.String())
+		if rawURL := strings.TrimSpace(buffer.String()); rawURL != "" {
+			remoteToURL[remote] = rawURL
+		}
 	}
 
 	// We prioritize the Git default remote, "origin", URL
