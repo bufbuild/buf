@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -57,9 +59,11 @@ const (
 
 	gitCommand                = "git"
 	gitOriginRemote           = "origin"
-	defaultGitRemoteURLFormat = "%s/commit/%s"
-	bitBucketRemoteURLFormat  = "%s/commits/%s"
-	bitBucketURL              = "https://bitbucket.org"
+	defaultGitRemoteURLFormat = "%s://%s%s/commit/%s"
+	bitBucketRemoteURLFormat  = "%s://%s%s/commits/%s"
+	bitBucketHostname         = "bitbucket.org"
+	githubHostname            = "github.com"
+	gitlabHostname            = "gitlab.com"
 )
 
 var (
@@ -459,7 +463,7 @@ func getGitMetadataUploadOptions(
 	if gitLabelsUploadOption != nil {
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
 	}
-	gitSourceControlURLUploadOption, err := getGitMetadataSourceControlURLUploadOption(ctx, runner, remotes, input)
+	gitSourceControlURLUploadOption, err := getGitMetadataSourceControlURLUploadOption(ctx, runner, container.Logger(), remotes, input)
 	if err != nil {
 		return nil, err
 	}
@@ -640,6 +644,7 @@ func getCurrentGitBranch(
 func getGitMetadataSourceControlURLUploadOption(
 	ctx context.Context,
 	runner command.Runner,
+	logger *zap.Logger,
 	remotes []string,
 	input string,
 ) (bufmodule.UploadOption, error) {
@@ -649,6 +654,8 @@ func getGitMetadataSourceControlURLUploadOption(
 		if err := runner.Run(
 			ctx,
 			gitCommand,
+			// We use `git config --get remote.<remote>.url` instead of `git remote get-url
+			// since it is more specific to the checkout.
 			command.RunWithArgs("config", "--get", fmt.Sprintf("remote.%s.url", remote)),
 			command.RunWithStdout(buffer),
 			command.RunWithStderr(buffer),
@@ -658,36 +665,63 @@ func getGitMetadataSourceControlURLUploadOption(
 		}
 		remoteToURL[remote] = strings.TrimSpace(buffer.String())
 	}
+
 	// We prioritize the Git default remote, "origin", URL
 	if gitOriginRemoteURL, ok := remoteToURL[gitOriginRemote]; ok {
-		// First we need to trim the `.git` suffix if there is one.
-		gitOriginRemoteURL = strings.TrimSuffix(gitOriginRemoteURL, ".git")
-		// Then we get the current HEAD commit.
-		currentHEADCommit, err := getCurrentHEADGitCommit(ctx, runner, input)
+		gitCommitSHA, err := getCurrentHEADGitCommit(ctx, runner, input)
 		if err != nil {
 			return nil, err
 		}
-		// Bitbucket is the only URL that uses the "/commits" route, both Github and Gitlab
-		// use "/commit", so we default to that if the remote URL does not point at Bitbucket.
-		if strings.HasPrefix(gitOriginRemoteURL, bitBucketURL) {
-			return bufmodule.UploadWithSourceControlURL(fmt.Sprintf(
-				bitBucketRemoteURLFormat,
-				gitOriginRemoteURL,
-				currentHEADCommit,
-			)), nil
+		parsedSourceControlURL, err := parseSourceControlURL(gitOriginRemoteURL, gitCommitSHA, logger)
+		if err != nil {
+			return nil, err
 		}
-		return bufmodule.UploadWithSourceControlURL(fmt.Sprintf(
-			defaultGitRemoteURLFormat,
-			gitOriginRemoteURL,
-			currentHEADCommit,
-		)), nil
+		return bufmodule.UploadWithSourceControlURL(parsedSourceControlURL), nil
 	}
-	// Otherwise we sort by alphabetical order and return the first URL
-	sortedRemotes := slicesext.MapKeysToSortedSlice(remoteToURL)
-	if len(sortedRemotes) > 0 {
-		return bufmodule.UploadWithSourceControlURL(remoteToURL[sortedRemotes[0]]), nil
-	}
+	logger.Warn(
+		fmt.Sprintf("no source control URL found for remote: %s", gitOriginRemote),
+	)
 	return nil, nil
+}
+
+func parseSourceControlURL(
+	rawSourceControlURL string,
+	commitSHA string,
+	logger *zap.Logger,
+) (string, error) {
+	url, err := url.Parse(rawSourceControlURL)
+	if err != nil {
+		return "", err
+	}
+	// Docs: https://git-scm.com/docs/git-clone#_git_urls
+	// Validate URL scheme
+	if !slices.Contains([]string{"ssh", "git", "http", "https", "ftp", "ftps"}, url.Scheme) {
+		logger.Warn(
+			fmt.Sprintf("source control URL found with unrecognized scheme, no source control URL set: %s", rawSourceControlURL),
+		)
+		return "", nil
+	}
+	// We default to https unless the scheme is specfically "http"
+	scheme := "https"
+	if url.Scheme == "http" {
+		scheme = "http"
+	}
+	// If the hostname contains "bitbucket" (e.g. bitbucket.foo.com or bitbucket.org), we
+	// use the Bitbucket route "commits" to construct a source control URL to the commit
+	// url.Path already has a "/" prefix.
+	if strings.Contains(url.Hostname(), bitBucketHostname) {
+		return fmt.Sprintf(bitBucketRemoteURLFormat, scheme, url.Hostname(), strings.TrimSuffix(url.Path, ".git"), commitSHA), nil
+	}
+	// If the hostname contains "github" (e.g. github.foo.com or github.com) or "gitlab"
+	// (e.g. gitlab.foo.com or gitlab.com), we use the route "commit" to construct a source
+	// control URL to the commit.
+	// url.Path already has a "/" prefix.
+	if strings.Contains(url.Hostname(), githubHostname) || strings.Contains(url.Hostname(), gitlabHostname) {
+		return fmt.Sprintf(defaultGitRemoteURLFormat, scheme, url.Hostname(), strings.TrimSuffix(url.Path, ".git"), commitSHA), nil
+	}
+	// No known hostname is parsed, so we cannot return a reliable route with the commitSHA,
+	// so we return just the URL to the source control repository.
+	return rawSourceControlURL, nil
 }
 
 func getCurrentHEADGitCommit(
