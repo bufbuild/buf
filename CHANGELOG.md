@@ -2,7 +2,13 @@
 
 ## [Unreleased]
 
-- No changes yet.
+* Adds support for extensions to `buf breaking`. All existing rules for
+  fields are now applied to extensions, except for `FIELD_NO_DELETE` (and its
+  variants). There are also new `EXTENSION_NO_DELETE` and
+  `PACKAGE_EXTENSION_NO_DELETE` rules for catching deletions of an extension.
+  The new rules are not active by default in existing v1 and v1beta1
+  configurations, for backwards-compatibility reasons. Migrate your config to
+  v2 to use them.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 
