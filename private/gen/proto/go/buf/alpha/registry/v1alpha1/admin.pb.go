@@ -1972,8 +1972,9 @@ type ListRepositoriesUsageResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list containing the maximum types usage with owner and repository information
-	// for all repositories in all orgs on a single BSR instance for a given time range.
+	// The list contains types usage info and counts for all repositories in all
+	// orgs on a single BSR instance, based on a snapshot single point in time within
+	// the requested time range where the aggregate types usage is at a maximum.
 	RepositoryUsages []*RepositoryUsage `protobuf:"bytes,1,rep,name=repository_usages,json=repositoryUsages,proto3" json:"repository_usages,omitempty"`
 }
 

@@ -302,7 +302,8 @@ message ListRepositoriesUsageRequest {
 }
 
 message ListRepositoriesUsageResponse {
-  // The list containing the maximum types usage with owner and repository information
-  // for all repositories in all orgs on a single BSR instance for a given time range.
+  // The list contains types usage info and counts for all repositories in all
+  // orgs on a single BSR instance, based on a snapshot single point in time within
+  // the requested time range where the aggregate types usage is at a maximum.
   repeated RepositoryUsage repository_usages = 1;
 }
