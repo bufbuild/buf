@@ -86,9 +86,9 @@ const (
 	// AdminServiceGetClusterUsageProcedure is the fully-qualified name of the AdminService's
 	// GetClusterUsage RPC.
 	AdminServiceGetClusterUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetClusterUsage"
-	// AdminServiceListRepositoriesUsageProcedure is the fully-qualified name of the AdminService's
-	// ListRepositoriesUsage RPC.
-	AdminServiceListRepositoriesUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListRepositoriesUsage"
+	// AdminServiceListRepositoriesMaxUsageProcedure is the fully-qualified name of the AdminService's
+	// ListRepositoriesMaxUsage RPC.
+	AdminServiceListRepositoriesMaxUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListRepositoriesMaxUsage"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -107,7 +107,7 @@ var (
 	adminServiceGetReviewFlowGracePeriodPolicyMethodDescriptor       = adminServiceServiceDescriptor.Methods().ByName("GetReviewFlowGracePeriodPolicy")
 	adminServiceUpdateReviewFlowGracePeriodPolicyMethodDescriptor    = adminServiceServiceDescriptor.Methods().ByName("UpdateReviewFlowGracePeriodPolicy")
 	adminServiceGetClusterUsageMethodDescriptor                      = adminServiceServiceDescriptor.Methods().ByName("GetClusterUsage")
-	adminServiceListRepositoriesUsageMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("ListRepositoriesUsage")
+	adminServiceListRepositoriesMaxUsageMethodDescriptor             = adminServiceServiceDescriptor.Methods().ByName("ListRepositoriesMaxUsage")
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -143,9 +143,9 @@ type AdminServiceClient interface {
 	// GetClusterUsage returns the summation of total message, enum and service types usage
 	// for every repository in each organization within a single tenant BSR instance.
 	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
-	// ListRepositoriesUsage returns the usage metrics for all repositories within
-	// a single tenant BSR instance highest point in time usage for a given time range.
-	ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error)
+	// ListRepositoriesMaxUsage returns the types metrics for all repositories within
+	// a single tenant BSR instance for the period with the highest usage between a given time range.
+	ListRepositoriesMaxUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesMaxUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesMaxUsageResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -242,10 +242,10 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceGetClusterUsageMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		listRepositoriesUsage: connect.NewClient[v1alpha1.ListRepositoriesUsageRequest, v1alpha1.ListRepositoriesUsageResponse](
+		listRepositoriesMaxUsage: connect.NewClient[v1alpha1.ListRepositoriesMaxUsageRequest, v1alpha1.ListRepositoriesMaxUsageResponse](
 			httpClient,
-			baseURL+AdminServiceListRepositoriesUsageProcedure,
-			connect.WithSchema(adminServiceListRepositoriesUsageMethodDescriptor),
+			baseURL+AdminServiceListRepositoriesMaxUsageProcedure,
+			connect.WithSchema(adminServiceListRepositoriesMaxUsageMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -266,7 +266,7 @@ type adminServiceClient struct {
 	getReviewFlowGracePeriodPolicy       *connect.Client[v1alpha1.GetReviewFlowGracePeriodPolicyRequest, v1alpha1.GetReviewFlowGracePeriodPolicyResponse]
 	updateReviewFlowGracePeriodPolicy    *connect.Client[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest, v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse]
 	getClusterUsage                      *connect.Client[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse]
-	listRepositoriesUsage                *connect.Client[v1alpha1.ListRepositoriesUsageRequest, v1alpha1.ListRepositoriesUsageResponse]
+	listRepositoriesMaxUsage             *connect.Client[v1alpha1.ListRepositoriesMaxUsageRequest, v1alpha1.ListRepositoriesMaxUsageResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -341,9 +341,9 @@ func (c *adminServiceClient) GetClusterUsage(ctx context.Context, req *connect.R
 	return c.getClusterUsage.CallUnary(ctx, req)
 }
 
-// ListRepositoriesUsage calls buf.alpha.registry.v1alpha1.AdminService.ListRepositoriesUsage.
-func (c *adminServiceClient) ListRepositoriesUsage(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error) {
-	return c.listRepositoriesUsage.CallUnary(ctx, req)
+// ListRepositoriesMaxUsage calls buf.alpha.registry.v1alpha1.AdminService.ListRepositoriesMaxUsage.
+func (c *adminServiceClient) ListRepositoriesMaxUsage(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoriesMaxUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesMaxUsageResponse], error) {
+	return c.listRepositoriesMaxUsage.CallUnary(ctx, req)
 }
 
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
@@ -379,9 +379,9 @@ type AdminServiceHandler interface {
 	// GetClusterUsage returns the summation of total message, enum and service types usage
 	// for every repository in each organization within a single tenant BSR instance.
 	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
-	// ListRepositoriesUsage returns the usage metrics for all repositories within
-	// a single tenant BSR instance highest point in time usage for a given time range.
-	ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error)
+	// ListRepositoriesMaxUsage returns the types metrics for all repositories within
+	// a single tenant BSR instance for the period with the highest usage between a given time range.
+	ListRepositoriesMaxUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesMaxUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesMaxUsageResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -474,10 +474,10 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceGetClusterUsageMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	adminServiceListRepositoriesUsageHandler := connect.NewUnaryHandler(
-		AdminServiceListRepositoriesUsageProcedure,
-		svc.ListRepositoriesUsage,
-		connect.WithSchema(adminServiceListRepositoriesUsageMethodDescriptor),
+	adminServiceListRepositoriesMaxUsageHandler := connect.NewUnaryHandler(
+		AdminServiceListRepositoriesMaxUsageProcedure,
+		svc.ListRepositoriesMaxUsage,
+		connect.WithSchema(adminServiceListRepositoriesMaxUsageMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -508,8 +508,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceUpdateReviewFlowGracePeriodPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceGetClusterUsageProcedure:
 			adminServiceGetClusterUsageHandler.ServeHTTP(w, r)
-		case AdminServiceListRepositoriesUsageProcedure:
-			adminServiceListRepositoriesUsageHandler.ServeHTTP(w, r)
+		case AdminServiceListRepositoriesMaxUsageProcedure:
+			adminServiceListRepositoriesMaxUsageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -571,6 +571,6 @@ func (UnimplementedAdminServiceHandler) GetClusterUsage(context.Context, *connec
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage is not implemented"))
 }
 
-func (UnimplementedAdminServiceHandler) ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListRepositoriesUsage is not implemented"))
+func (UnimplementedAdminServiceHandler) ListRepositoriesMaxUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesMaxUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesMaxUsageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListRepositoriesMaxUsage is not implemented"))
 }
