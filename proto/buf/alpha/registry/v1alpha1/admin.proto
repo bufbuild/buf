@@ -162,7 +162,7 @@ service AdminService {
   // for every repository in each organization within a single tenant BSR instance.
   rpc GetClusterUsage(GetClusterUsageRequest) returns (GetClusterUsageResponse);
   // ListRepositoriesUsage returns the usage metrics for all repositories within
-  // a single tenant BSR instance for a given time range.
+  // a single tenant BSR instance highest point in time usage for a given time range.
   rpc ListRepositoriesUsage(ListRepositoriesUsageRequest) returns (ListRepositoriesUsageResponse);
 }
 
@@ -281,8 +281,8 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
-  // Source id is an optional owner or repository id used to filter usage.
-  oneof source_id {
+  // Usage filter is an optional owner or repository id used to filter usage.
+  oneof usage_filter {
     // The id of the owner.
     string owner_id = 3;
     // The id of the repository.
@@ -303,7 +303,7 @@ message ListRepositoriesUsageRequest {
 
 message ListRepositoriesUsageResponse {
   // The list contains types usage info and counts for all repositories in all
-  // orgs on a single BSR instance, based on a snapshot single point in time within
+  // owners on a single BSR instance, based on a snapshot single point in time within
   // the requested time range where the aggregate types usage is at a maximum.
   repeated RepositoryUsage repository_usages = 1;
 }

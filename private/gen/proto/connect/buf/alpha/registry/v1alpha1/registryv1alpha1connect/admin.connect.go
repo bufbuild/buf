@@ -144,7 +144,7 @@ type AdminServiceClient interface {
 	// for every repository in each organization within a single tenant BSR instance.
 	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
 	// ListRepositoriesUsage returns the usage metrics for all repositories within
-	// a single tenant BSR instance for a given time range.
+	// a single tenant BSR instance highest point in time usage for a given time range.
 	ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error)
 }
 
@@ -380,7 +380,7 @@ type AdminServiceHandler interface {
 	// for every repository in each organization within a single tenant BSR instance.
 	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
 	// ListRepositoriesUsage returns the usage metrics for all repositories within
-	// a single tenant BSR instance for a given time range.
+	// a single tenant BSR instance highest point in time usage for a given time range.
 	ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error)
 }
 
