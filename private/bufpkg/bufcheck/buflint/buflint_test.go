@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -36,10 +35,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
-
-func init() {
-	protodescriptor.AllowEditionsForTesting()
-}
 
 // Hint on how to get these:
 // 1. cd into the specific directory
