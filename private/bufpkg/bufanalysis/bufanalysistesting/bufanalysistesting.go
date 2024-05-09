@@ -115,14 +115,28 @@ func AssertFileAnnotationsEqual(
 	) {
 		t.Log("If actuals are correct, change expectations to the following:")
 		for _, annotation := range actual {
-			t.Logf("    bufanalysistesting.NewFileAnnotation(t, %q, %d, %d, %d, %d, %q),",
-				annotation.FileInfo().Path(),
-				annotation.StartLine(),
-				annotation.StartColumn(),
-				annotation.EndLine(),
-				annotation.EndColumn(),
-				annotation.Type(),
-			)
+			if annotation.StartLine() == 0 && annotation.StartColumn() == 0 &&
+				annotation.EndLine() == 0 && annotation.EndColumn() == 0 {
+				if annotation.FileInfo().Path() == "" {
+					t.Logf("    bufanalysistesting.NewFileAnnotationNoLocationOrPath(t, %q),",
+						annotation.Type(),
+					)
+				} else {
+					t.Logf("    bufanalysistesting.NewFileAnnotationNoLocation(t, %q, %q),",
+						annotation.FileInfo().Path(),
+						annotation.Type(),
+					)
+				}
+			} else {
+				t.Logf("    bufanalysistesting.NewFileAnnotation(t, %q, %d, %d, %d, %d, %q),",
+					annotation.FileInfo().Path(),
+					annotation.StartLine(),
+					annotation.StartColumn(),
+					annotation.EndLine(),
+					annotation.EndColumn(),
+					annotation.Type(),
+				)
+			}
 		}
 	}
 }

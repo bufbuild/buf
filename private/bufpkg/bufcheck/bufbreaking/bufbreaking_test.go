@@ -159,6 +159,19 @@ func TestRunBreakingExtensionMessageNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingExtensionNoDelete(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_extension_no_delete",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "EXTENSION_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "EXTENSION_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "EXTENSION_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "3.proto", "EXTENSION_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 14, 4, "EXTENSION_NO_DELETE"),
+	)
+}
+
 func TestRunBreakingFieldNoDelete(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -1018,6 +1031,17 @@ func TestRunBreakingOneofNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingPackageExtensionNoDelete(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_package_extension_no_delete",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "PACKAGE_EXTENSION_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "3.proto", "PACKAGE_EXTENSION_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 14, 4, "PACKAGE_EXTENSION_NO_DELETE"),
+	)
+}
+
 func TestRunBreakingPackageNoDelete(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -1035,6 +1059,15 @@ func TestRunBreakingPackageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "b1.proto", "PACKAGE_ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "b1.proto", "PACKAGE_SERVICE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "b2.proto", 7, 1, 21, 2, "PACKAGE_MESSAGE_NO_DELETE"),
+	)
+}
+
+func TestRunBreakingPackageServiceNoDelete(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_package_service_no_delete",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "PACKAGE_SERVICE_NO_DELETE"),
 	)
 }
 
@@ -1141,15 +1174,6 @@ func TestRunBreakingServiceNoDelete(t *testing.T) {
 		"breaking_service_no_delete",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "SERVICE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "SERVICE_NO_DELETE"),
-	)
-}
-
-func TestRunBreakingPackageServiceNoDelete(t *testing.T) {
-	t.Parallel()
-	testBreaking(
-		t,
-		"breaking_package_service_no_delete",
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "PACKAGE_SERVICE_NO_DELETE"),
 	)
 }
 

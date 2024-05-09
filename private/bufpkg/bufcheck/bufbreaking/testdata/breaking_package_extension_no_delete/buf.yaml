@@ -1,0 +1,4 @@
+version: v2
+breaking:
+  use:
+    - PACKAGE_EXTENSION_NO_DELETE
