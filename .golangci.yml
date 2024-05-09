@@ -286,4 +286,4 @@ issues:
         - gochecknoinits
       # must use init to safely enable editions support for testing
       # TODO: this is temporary; remove it when editions support is ready
-      path: private/buf/bufgen/features_test.go|private/bufpkg/bufcheck/bufbreaking/bufbreaking_test.go
+      path: private/buf/bufgen/features_test.go|private/bufpkg/bufcheck/bufbreaking/bufbreaking_test.go|private/bufpkg/bufcheck/buflint/buflint_test.go

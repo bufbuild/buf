@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
+
+func init() {
+	protodescriptor.AllowEditionsForTesting()
+}
 
 // Hint on how to get these:
 // 1. cd into the specific directory
@@ -388,6 +393,18 @@ func TestRunFieldNoDescriptor(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 66, 19, 66, 30, "FIELD_NO_DESCRIPTOR"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 67, 19, 67, 31, "FIELD_NO_DESCRIPTOR"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 68, 19, 68, 33, "FIELD_NO_DESCRIPTOR"),
+	)
+}
+
+func TestRunFieldNotRequired(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"field_not_required",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 19, 13, 20, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 19, 28, 20, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 13, 10, 13, 11, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 28, 10, 28, 11, "FIELD_NOT_REQUIRED"),
 	)
 }
 
