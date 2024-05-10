@@ -391,6 +391,18 @@ func TestRunFieldNoDescriptor(t *testing.T) {
 	)
 }
 
+func TestRunFieldNotRequired(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"field_not_required",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 19, 13, 20, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 19, 28, 20, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 13, 10, 13, 11, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 28, 10, 28, 11, "FIELD_NOT_REQUIRED"),
+	)
+}
+
 func TestRunFileLowerSnakeCase(t *testing.T) {
 	t.Parallel()
 	testLint(

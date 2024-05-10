@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -35,10 +34,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
-
-func init() {
-	protodescriptor.AllowEditionsForTesting()
-}
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
 	t.Parallel()

@@ -1,0 +1,31 @@
+syntax = "proto2";
+
+package a;
+
+message One {
+  optional string a = 1;
+  repeated string b = 2;
+  optional string c = 3;
+  repeated string d = 4;
+  optional string e = 5;
+  optional string f = 6;
+  optional string g = 7;
+  required string h = 8;
+  extensions 10 to 100;
+}
+
+message Two {
+  message Three {
+    message Four {
+      optional string a = 1;
+      optional string b = 2;
+      optional string c = 3;
+    }
+    repeated string a = 1;
+    repeated string b = 2;
+    optional string c = 3;
+  }
+  required string a = 1;
+  optional string b = 2;
+  repeated string c = 3;
+}
