@@ -130,8 +130,14 @@ var (
 	// FieldNoDescriptorRuleBuilder is a rule builder.
 	FieldNoDescriptorRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DESCRIPTOR",
-		`field names are not name capitalization of "descriptor" with any number of prefix or suffix underscores`,
+		`field names are not any capitalization of "descriptor" with any number of prefix or suffix underscores`,
 		newAdapter(buflintcheck.CheckFieldNoDescriptor),
+	)
+	// FieldNotRequiredRuleBuilder is a rule builder.
+	FieldNotRequiredRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_NOT_REQUIRED",
+		`fields are not configured to be required`,
+		newAdapter(buflintcheck.CheckFieldNotRequired),
 	)
 	// FileLowerSnakeCaseRuleBuilder is a rule builder.
 	FileLowerSnakeCaseRuleBuilder = internal.NewNopRuleBuilder(

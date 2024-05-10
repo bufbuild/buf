@@ -1,0 +1,4 @@
+version: v2
+lint:
+  use:
+    - FIELD_NOT_REQUIRED
