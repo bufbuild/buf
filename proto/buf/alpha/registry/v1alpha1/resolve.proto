@@ -53,6 +53,10 @@ service ResolveService {
   rpc GetPythonVersion(GetPythonVersionRequest) returns (GetPythonVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetCargoVersion resolves the given plugin and module references to a version.
+  rpc GetCargoVersion(GetCargoVersionRequest) returns (GetCargoVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetModulePinsRequest {
@@ -189,6 +193,18 @@ message GetPythonVersionRequest {
 
 message GetPythonVersionResponse {
   // version is the resolved version to be used with the python repository.
+  string version = 1;
+}
+
+message GetCargoVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetCargoVersionResponse {
+  // version is the resolved version to be used with the cargo registry.
   string version = 1;
 }
 
