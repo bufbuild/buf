@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+- Prepare `buf breaking` rules to work with editions sources. To this end
+  some rules have been deprecated and replaced with Editions-aware rules:
+  * `FIELD_SAME_CTYPE` has been replaced with `FIELD_SAME_CPP_STRING_TYPE`,
+    which considers both `ctype` field options and new `(pb.cpp).string_type`
+    features when deciding on backwards compatibility.
+  * `FIELD_SAME_LABEL` has been replaced with three rules that all check
+    "cardinality". The new rules can distinguish between maps and other
+    repeated fields and between implicit and explicit field presence. The
+    new rules are:
+    1. `FIELD_SAME_CARDINALITY` in the `FILE` and `PACKAGE` categories.
+    2. `FIELD_WIRE_COMPATIBLE_CARDINALITY` in the `WIRE` category.
+    3. `FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY` in the `WIRE_JSON` category.
+  * `FILE_SAME_JAVA_STRING_CHECK_UTF8` has been replaced with
+    `FIELD_SAME_JAVA_UTF8_VALIDATION`, which considers both the
+    `java_string_check_utf8` file option and `(pb.java).utf8_validation`
+    features when deciding on backwards compatibility.
+  * Adds to the existing `FILE_SAME_SYNTAX` rule with a few related rules
+    that can catch the same sort of compatibility issues, but in an Editions
+    source file that changes feature values:
+    1. `MESSAGE_SAME_JSON_FORMAT` and `ENUM_SAME_JSON_FORMAT` catch changes
+       to the `json_format` feature, which controls whether support for the
+       JSON format is best-effort or properly supported. When supported, the
+       compiler performs more checks relating to field name collisions for
+       the JSON format as well as for FieldMask usage.
+    2. `FIELD_SAME_UTF8_VALIDATION` catches changes to the `utf8_validation`
+       feature, which controls validation of string values.
+    3. `ENUM_SAME_TYPE` catches changes to an enum's type, open vs. closed.
+- Adds support for top-level extensions to `buf lint`. It previously only
+  checked extensions that were defined inside of messages.
 - Adds a new `FIELD_NOT_REQUIRED` lint rule that prevents use of required
   in proto2 files and of `features.field_presence = LEGACY_REQUIRED` in
   Editions files. This new rule is not active by default in existing v1 and
