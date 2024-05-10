@@ -149,5 +149,14 @@ func run(
 	// Note that the check to make sure configuredDepModuleKeys is a superset of the remote deps should be a no-op
 	// in this case, they should be equivalent based on the updates we just did, but we do the check
 	// anyways to triple verify.
-	return internal.Prune(ctx, logger, controller, configuredDepModuleKeys, workspaceDepManager, dirPath)
+	return internal.Prune(
+		ctx,
+		logger,
+		controller,
+		container,
+		configuredDepModuleKeys,
+		workspaceDepManager,
+		dirPath,
+		true, // keepUnused
+	)
 }
