@@ -19,7 +19,7 @@ package bufcurl
 import "crypto/tls"
 
 func tlsVersionName(tlsVersion uint16) string {
-	// TODO: once we can use Go 1.20, it will provide tls.VersionName that we can use
+	// TODO: once we can use Go 1.21, it will provide tls.VersionName that we can use
 	//       https://github.com/golang/go/issues/46308
 	switch tlsVersion {
 	case tls.VersionTLS10:
