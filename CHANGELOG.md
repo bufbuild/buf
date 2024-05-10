@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
-- Prepare `buf breaking` rules to work with editions sources. To this end
+- Add support for Protobuf Editions. This allows `buf` to be used with
+  sources that use edition 2023, instead of proto2 or proto3 syntax.
+  This also updates the `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`
+  Protobuf plugins to support files that use edition 2023.
+- Update `buf breaking` rules to work with editions sources. To this end
   some rules have been deprecated and replaced with Editions-aware rules:
   * `FIELD_SAME_CTYPE` has been replaced with `FIELD_SAME_CPP_STRING_TYPE`,
     which considers both `ctype` field options and new `(pb.cpp).string_type`

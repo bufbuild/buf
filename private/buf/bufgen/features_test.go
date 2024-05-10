@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,10 +27,6 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
-
-func init() {
-	protodescriptor.AllowEditionsForTesting()
-}
 
 func TestComputeRequiredFeatures(t *testing.T) {
 	t.Parallel()
