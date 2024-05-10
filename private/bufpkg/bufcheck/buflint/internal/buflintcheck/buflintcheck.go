@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -331,6 +332,34 @@ func checkFieldNoDescriptor(add addFunc, field bufprotosource.Field) error {
 			otherLocs,
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,
+		)
+	}
+	return nil
+}
+
+// CheckFieldNotRequired is a check function.
+var CheckFieldNotRequired = newFieldCheckFunc(checkFieldNotRequired)
+
+func checkFieldNotRequired(add addFunc, field bufprotosource.Field) error {
+	fieldDescriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	// We use the protoreflect field descriptor to handle editions, where the
+	// field is set to required using special "features" options, instead of the
+	// label on the descriptor proto.
+	if fieldDescriptor.Cardinality() == protoreflect.Required {
+		var otherLocs []bufprotosource.Location
+		if message := field.ParentMessage(); message != nil {
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			otherLocs = []bufprotosource.Location{message.Location()}
+		}
+		add(
+			field,
+			field.NameLocation(),
+			otherLocs,
+			`Field named %q should not be required.`,
 		)
 	}
 	return nil

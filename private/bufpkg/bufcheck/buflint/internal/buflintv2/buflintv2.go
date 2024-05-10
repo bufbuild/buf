@@ -16,8 +16,9 @@
 //
 // It uses buflintcheck and buflintbuild.
 //
-// The only change from v1 to v2 was that PACKAGE_NO_IMPORT_CYCLE was added
-// to MINIMAL, BASIC, DEFAULT.
+// The only changes from v1 to v2 are:
+// 1. New rule PACKAGE_NO_IMPORT_CYCLE was added to MINIMAL, BASIC, DEFAULT.
+// 2. New rule FIELD_NO_REQUIRED was added to BASIC and DEFAULT.
 package buflintv2
 
 import (

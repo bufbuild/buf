@@ -29,8 +29,13 @@
     2. `FIELD_SAME_UTF8_VALIDATION` catches changes to the `utf8_validation`
        feature, which controls validation of string values.
     3. `ENUM_SAME_TYPE` catches changes to an enum's type, open vs. closed.
-* Adds support for top-level extensions to `buf lint`. It previously only
+- Adds support for top-level extensions to `buf lint`. It previously only
   checked extensions that were defined inside of messages.
+- Adds a new `FIELD_NOT_REQUIRED` lint rule that prevents use of required
+  in proto2 files and of `features.field_presence = LEGACY_REQUIRED` in
+  Editions files. This new rule is not active by default in existing v1 and
+  v1beta1 configurations, for backwards-compatibility reasons. Migrate your
+  config to v2 to use them.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 

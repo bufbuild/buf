@@ -1,0 +1,31 @@
+edition = "2023";
+
+package b;
+
+message One {
+  string a = 1;
+  repeated string b = 2;
+  string c = 3;
+  repeated string d = 4;
+  string e = 5;
+  string f = 6;
+  string g = 7;
+  string h = 8 [features.field_presence = LEGACY_REQUIRED];
+  extensions 10 to 100;
+}
+
+message Two {
+  message Three {
+    message Four {
+      string a = 1;
+      string b = 2;
+      string c = 3;
+    }
+    repeated string a = 1;
+    repeated string b = 2;
+    string c = 3;
+  }
+  string a = 1 [features.field_presence = LEGACY_REQUIRED];
+  string b = 2;
+  repeated string c = 3;
+}
