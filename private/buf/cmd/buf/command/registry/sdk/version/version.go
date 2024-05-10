@@ -214,6 +214,20 @@ func run(
 			return err
 		}
 		version = pythonVersionResponse.Msg.Version
+	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO:
+		cargoVersionResponse, err := resolveServiceClient.GetCargoVersion(
+			ctx,
+			connect.NewRequest(
+				&registryv1alpha1.GetCargoVersionRequest{
+					ModuleReference: moduleReference,
+					PluginReference: pluginReference,
+				},
+			),
+		)
+		if err != nil {
+			return err
+		}
+		version = cargoVersionResponse.Msg.Version
 	default:
 		return syserror.Newf("unknown PluginRegistryType: %v", pluginRegistryType)
 	}
