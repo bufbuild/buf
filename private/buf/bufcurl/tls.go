@@ -52,7 +52,7 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 	// we verify manually so that we can emit verbose output while doing so
 	conf.InsecureSkipVerify = true
 	conf.VerifyConnection = func(state tls.ConnectionState) error {
-		printer.Printf("* TLS connection using %s / %s", tls.VersionName(state.Version), tls.CipherSuiteName(state.CipherSuite))
+		printer.Printf("* TLS connection using %s / %s", tlsVersionName(state.Version), tls.CipherSuiteName(state.CipherSuite))
 		if state.DidResume {
 			printer.Printf("* (TLS session resumed)")
 		}
