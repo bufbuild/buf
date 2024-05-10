@@ -1,0 +1,37 @@
+edition = "2023";
+
+package a.b.c;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FeatureSet {
+  string string_feature = 9995;
+}
+
+option features.(string_feature) = "abc";
+
+option features.message_encoding = DELIMITED;
+option features.field_presence = IMPLICIT;
+
+extend google.protobuf.FieldOptions {
+  string string_option = 50000;
+}
+
+message Foo {
+  uint64 id = 1 [(string_option) = "xyz"];
+  string str = 2 [features.field_presence = EXPLICIT, default = "str"];
+  Foo child = 3;
+  Enum en = 4;
+
+  reserved abc, def, ghi_jkl, __xyz__;
+  reserved 10, 11, 12;
+}
+
+enum Enum {
+  ZERO = 0;
+  ONE = 1;
+  TWO = 2;
+
+  reserved 10, 11;
+  reserved TEN, ELEVEN, __100__;
+}
