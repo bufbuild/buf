@@ -72,7 +72,6 @@ func Prune(
 	dirPath string,
 	// For some use cases, such as dep/mod update, we want to keep unused declared dependencies
 	// in buf.lock (and only prune dependencies that are no longer declared) when set to true.
-	keepUnused bool,
 ) error {
 	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
 	if err != nil {
@@ -88,22 +87,8 @@ func Prune(
 	}
 	// Compute those dependencies that are in buf.yaml that are not used at all, and warn
 	// about them.
-	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
-	if err != nil {
+	if err := LogUnusedConfiguredDepsForWorkspace(workspace, logger); err != nil {
 		return err
-	}
-	var unusedModuleRefs []bufmodule.ModuleRef
-	for _, malformedDep := range malformedDeps {
-		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUnused:
-			logger.Sugar().Warnf(
-				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
-				malformedDep.ModuleRef().ModuleFullName(),
-			)
-			unusedModuleRefs = append(unusedModuleRefs, malformedDep.ModuleRef())
-		default:
-			return fmt.Errorf("unknown MalformedDepType: %v", t)
-		}
 	}
 	// Step that actually computes remote dependencies based on imports. These are all
 	// that is needed for buf.lock.
@@ -120,38 +105,34 @@ func Prune(
 	if err != nil {
 		return err
 	}
-	// If keepUnused is set to true, we add the unused declared dependencies to depModuleKeys.
-	if keepUnused {
-		moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
-		if err != nil {
-			return err
-		}
-		unusedModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
-			ctx,
-			unusedModuleRefs,
-			workspaceDepManager.BufLockFileDigestType(),
-		)
-		if err != nil {
-			return err
-		}
-		foundDepModuleKeys := copy(make([]bufmodule.ModuleKey, len(depModuleKeys)), depModuleKeys)
-		depModuleKeys = append(depModuleKeys, unusedModuleKeys...)
-		// Check that `depModuleKeys` and `unusedModuleKeys` do not overlap, since `depModuleKeys`
-		// should be based on used deps.
-		// Return a syserror if an overlap is found.
-		dedupedDepModuleKeys := slicesext.DeduplicateAny(
-			depModuleKeys,
-			func(moduleKey bufmodule.ModuleKey) string { return moduleKey.ModuleFullName().String() },
-		)
-		if len(depModuleKeys) != len(dedupedDepModuleKeys) {
-			return syserror.Newf("unexpected overlap found between depModuleKeys and unsuedModuleKeys: %v, %v", foundDepModuleKeys, unusedModuleKeys)
-		}
-	}
-
 	if err := validateModuleKeysContains(bufYAMLBasedDepModuleKeys, depModuleKeys); err != nil {
 		return err
 	}
 	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys)
+}
+
+// LogUnusedConfiugredDepsForWorkspace takes a workspace and logs the unused configured
+// dependneices as warnings to the user.
+func LogUnusedConfiguredDepsForWorkspace(
+	workspace bufworkspace.Workspace,
+	logger *zap.Logger,
+) error {
+	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
+	if err != nil {
+		return err
+	}
+	for _, malformedDep := range malformedDeps {
+		switch t := malformedDep.Type(); t {
+		case bufworkspace.MalformedDepTypeUnused:
+			logger.Sugar().Warnf(
+				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
+				malformedDep.ModuleRef().ModuleFullName(),
+			)
+		default:
+			return fmt.Errorf("unknown MalformedDepType: %v", t)
+		}
+	}
+	return nil
 }
 
 // moduleKeysAndTransitiveDepModuleKeysForModuleKeys returns the ModuleKeys

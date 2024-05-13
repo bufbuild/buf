@@ -83,6 +83,5 @@ func run(
 		configuredDepModuleKeys,
 		workspaceDepManager,
 		dirPath,
-		false, // keepUnused
 	)
 }
