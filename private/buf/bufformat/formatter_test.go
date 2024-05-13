@@ -32,12 +32,17 @@ import (
 func TestFormatter(t *testing.T) {
 	t.Parallel()
 	testFormatCustomOptions(t)
+	testFormatEditions(t)
 	testFormatProto2(t)
 	testFormatProto3(t)
 }
 
 func testFormatCustomOptions(t *testing.T) {
 	testFormatNoDiff(t, "testdata/customoptions")
+}
+
+func testFormatEditions(t *testing.T) {
+	testFormatNoDiff(t, "testdata/editions")
 }
 
 func testFormatProto2(t *testing.T) {

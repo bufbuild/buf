@@ -40,6 +40,8 @@
   Editions files. This new rule is not active by default in existing v1 and
   v1beta1 configurations, for backwards-compatibility reasons. Migrate your
   config to v2 to use them.
+- Add `buf beta registry label archive` and `buf beta registry label unarchive` commands
+  for managing labels on the BSR.
 - Change the default visibility of `--create-visibility` flag for `buf push` to `private`
   when the `--create` flag is set. Users are no longer required to set `--create-visibility`
   when running `buf push --create`.
