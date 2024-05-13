@@ -12,7 +12,7 @@ require (
 	github.com/docker/docker v26.1.1+incompatible
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/gofrs/flock v0.8.1
-	github.com/gofrs/uuid/v5 v5.1.0
+	github.com/gofrs/uuid/v5 v5.2.0
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.19.1
