@@ -70,8 +70,6 @@ func Prune(
 	bufYAMLBasedDepModuleKeys []bufmodule.ModuleKey,
 	workspaceDepManager bufworkspace.WorkspaceDepManager,
 	dirPath string,
-	// For some use cases, such as dep/mod update, we want to keep unused declared dependencies
-	// in buf.lock (and only prune dependencies that are no longer declared) when set to true.
 ) error {
 	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
 	if err != nil {
@@ -112,7 +110,7 @@ func Prune(
 }
 
 // LogUnusedConfiugredDepsForWorkspace takes a workspace and logs the unused configured
-// dependneices as warnings to the user.
+// dependencies as warnings to the user.
 func LogUnusedConfiguredDepsForWorkspace(
 	workspace bufworkspace.Workspace,
 	logger *zap.Logger,
