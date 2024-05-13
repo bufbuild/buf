@@ -35,6 +35,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -248,6 +250,14 @@ func NewRootCommand(name string) *appcmd.Command {
 								SubCommands: []*appcmd.Command{
 									pluginpush.NewCommand("push", builder),
 									plugindelete.NewCommand("delete", builder),
+								},
+							},
+							{
+								Use:   "label",
+								Short: "Manage labels on the Buf Schema Registry",
+								SubCommands: []*appcmd.Command{
+									labelarchive.NewCommand("archive", builder),
+									labelunarchive.NewCommand("unarchive", builder),
 								},
 							},
 						},
