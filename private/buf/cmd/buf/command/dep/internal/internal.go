@@ -134,7 +134,18 @@ func Prune(
 		if err != nil {
 			return err
 		}
+		foundDepModuleKeys := copy(make([]bufmodule.ModuleKey, len(depModuleKeys)), depModuleKeys)
 		depModuleKeys = append(depModuleKeys, unusedModuleKeys...)
+		// Check that `depModuleKeys` and `unusedModuleKeys` do not overlap, since `depModuleKeys`
+		// should be based on used deps.
+		// Return a syserror if an overlap is found.
+		dedupedDepModuleKeys := slicesext.DeduplicateAny(
+			depModuleKeys,
+			func(moduleKey bufmodule.ModuleKey) string { return moduleKey.ModuleFullName().String() },
+		)
+		if len(depModuleKeys) != len(dedupedDepModuleKeys) {
+			return syserror.Newf("unexpected overlap found between depModuleKeys and unsuedModuleKeys: %v, %v", foundDepModuleKeys, unusedModuleKeys)
+		}
 	}
 
 	if err := validateModuleKeysContains(bufYAMLBasedDepModuleKeys, depModuleKeys); err != nil {
