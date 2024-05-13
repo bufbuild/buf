@@ -243,11 +243,16 @@ func (f *formatter) writeFileHeader() {
 			continue
 		}
 	}
-	if f.fileNode.Syntax == nil && packageNode == nil && importNodes == nil && optionNodes == nil {
+	if f.fileNode.Syntax == nil && f.fileNode.Edition == nil &&
+		packageNode == nil && importNodes == nil && optionNodes == nil {
 		// There aren't any header values, so we can return early.
 		return
 	}
-	if syntaxNode := f.fileNode.Syntax; syntaxNode != nil {
+	editionNode := f.fileNode.Edition
+	if editionNode != nil {
+		f.writeEdition(editionNode)
+	}
+	if syntaxNode := f.fileNode.Syntax; syntaxNode != nil && editionNode == nil {
 		f.writeSyntax(syntaxNode)
 	}
 	if packageNode != nil {
@@ -346,6 +351,20 @@ func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) {
 	f.Space()
 	f.writeInline(syntaxNode.Syntax)
 	f.writeLineEnd(syntaxNode.Semicolon)
+}
+
+// writeEdition writes the edition.
+//
+// For example,
+//
+//	edition = "2023";
+func (f *formatter) writeEdition(editionNode *ast.EditionNode) {
+	f.writeStart(editionNode.Keyword)
+	f.Space()
+	f.writeInline(editionNode.Equals)
+	f.Space()
+	f.writeInline(editionNode.Edition)
+	f.writeLineEnd(editionNode.Semicolon)
 }
 
 // writePackage writes the package.
@@ -1078,6 +1097,10 @@ func (f *formatter) writeReserved(reservedNode *ast.ReservedNode) {
 	case reservedNode.Names != nil:
 		for _, nameNode := range reservedNode.Names {
 			elements = append(elements, nameNode)
+		}
+	case reservedNode.Identifiers != nil:
+		for _, identNode := range reservedNode.Identifiers {
+			elements = append(elements, identNode)
 		}
 	case reservedNode.Ranges != nil:
 		for _, rangeNode := range reservedNode.Ranges {
