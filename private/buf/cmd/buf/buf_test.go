@@ -703,7 +703,6 @@ ENUM_NO_DELETE                                  FILE                            
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
 ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
@@ -732,12 +731,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
@@ -783,7 +783,6 @@ FILE_NO_DELETE                                  FILE                            
 FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
 ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
@@ -810,12 +809,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
 FIELD_SAME_CARDINALITY                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same cardinalities in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
@@ -857,7 +857,6 @@ ENUM_NO_DELETE                                  FILE                            
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
 ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
@@ -886,12 +885,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
 FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same default value, if a default is specified.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
