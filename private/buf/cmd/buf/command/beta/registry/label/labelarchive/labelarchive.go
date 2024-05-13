@@ -34,7 +34,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository:label",
+		Use:   name + " <buf.build/owner/repository:label>",
 		Short: "Archive a label for a repository",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
