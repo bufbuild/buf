@@ -33,6 +33,13 @@
     2. `FIELD_SAME_UTF8_VALIDATION` catches changes to the `utf8_validation`
        feature, which controls validation of string values.
     3. `ENUM_SAME_TYPE` catches changes to an enum's type, open vs. closed.
+- Adds support for extensions to `buf breaking`. All existing rules for
+  fields are now applied to extensions, except for `FIELD_NO_DELETE` (and its
+  variants). There are also new `EXTENSION_NO_DELETE` and
+  `PACKAGE_EXTENSION_NO_DELETE` rules for catching deletions of an extension.
+  The new rules are not active by default in existing v1 and v1beta1
+  configurations, for backwards-compatibility reasons. Migrate your config to
+  v2 to use them.
 - Adds support for top-level extensions to `buf lint`. It previously only
   checked extensions that were defined inside of messages.
 - Adds a new `FIELD_NOT_REQUIRED` lint rule that prevents use of required

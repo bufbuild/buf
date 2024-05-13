@@ -2,6 +2,7 @@ edition = "2023";
 
 package a;
 
+import "2.proto";
 import "google/protobuf/cpp_features.proto";
 
 option features.(pb.cpp).string_type=CORD;
@@ -18,4 +19,23 @@ message Baz {
   map<string, Baz> map1 = 11;
   map<uint32, string> map2 = 12;
   map<int64, bytes> map3 = 13;
+
+  extensions 100 to 200;
+
+  message Fizzbuzz {
+    extend Baz {
+      repeated string ext_str1 = 100 [features.(pb.cpp).string_type=CORD];
+      string ext_str2 = 101;
+      repeated bytes ext_byt1 = 102 [features.(pb.cpp).string_type=VIEW];
+      bytes ext_byt2 = 103 [ctype=STRING];
+    }
+  }
+}
+
+extend Baz {
+  repeated string ext_str = 200;
+}
+
+extend Bar {
+  repeated string ext_str2 = 201;
 }

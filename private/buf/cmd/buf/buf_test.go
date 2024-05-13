@@ -438,7 +438,7 @@ func TestFailCheckBreaking2(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
+		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
 		"--against",
@@ -454,7 +454,7 @@ func TestFailCheckBreaking3(t *testing.T) {
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		<input>:1:1:Previously present file "bar.proto" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -471,7 +471,7 @@ func TestFailCheckBreaking4(t *testing.T) {
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto")),
@@ -488,7 +488,7 @@ func TestFailCheckBreaking5(t *testing.T) {
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
     <input>:1:1:Previously present file "bar.proto" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -854,6 +854,7 @@ func TestCheckLsBreakingRulesV2(t *testing.T) {
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
 ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+EXTENSION_NO_DELETE                             FILE                            Checks that extensions are not deleted from a given file.
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
@@ -905,6 +906,7 @@ RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  
 RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
 RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
 PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                         Checks that extensions are not deleted from a given package.
 PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
 PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
 PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
@@ -1905,7 +1907,7 @@ func TestBreakingWithPaths(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
+		`a/v3/a.proto:6:3:Field "1" with name "key" on message "Foo" changed type from "string" to "int32".
 a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
 a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
 		"",

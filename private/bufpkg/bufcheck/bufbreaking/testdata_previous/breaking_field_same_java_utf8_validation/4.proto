@@ -1,10 +1,10 @@
 edition = "2023";
-
 package a;
 
 import "google/protobuf/java_features.proto";
 
 message D1 {
+  extensions 100 to 1000;
   string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -68,6 +68,18 @@ message D6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   D6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend D1 {
+    string d1_s1 = 100 [features.(pb.java).utf8_validation=VERIFY];
+    repeated string d1_s2 = 101;
+  }
+}
+
+extend D6 {
+  string d6_s1 = 100 [features.(pb.java).utf8_validation=VERIFY];
+  repeated string d6_s2 = 101;
 }
 
 message D7 {

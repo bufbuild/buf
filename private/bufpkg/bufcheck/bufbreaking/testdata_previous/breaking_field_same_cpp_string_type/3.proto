@@ -18,4 +18,19 @@ message Baz {
   map<string, Baz> map1 = 11;
   map<uint32, string> map2 = 12;
   map<int64, bytes> map3 = 13;
+
+  extensions 100 to 200;
+
+  message Fizzbuzz {
+    extend Baz {
+      repeated string ext_str1 = 100;
+      string ext_str2 = 101 [ctype=STRING_PIECE];
+      repeated bytes ext_byt1 = 102 [features.(pb.cpp).string_type=VIEW];
+      bytes ext_byt2 = 103;
+    }
+  }
+}
+
+extend Baz {
+  repeated string ext_str = 200;
 }

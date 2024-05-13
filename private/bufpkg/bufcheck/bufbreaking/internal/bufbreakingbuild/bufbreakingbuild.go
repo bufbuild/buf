@@ -74,6 +74,12 @@ var (
 		"extension ranges are not deleted from a given message",
 		bufbreakingcheck.CheckExtensionMessageNoDelete,
 	)
+	// ExtensionNoDeleteRuleBuilder is a rule builder.
+	ExtensionNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
+		"EXTENSION_NO_DELETE",
+		"extensions are not deleted from a given file",
+		bufbreakingcheck.CheckExtensionNoDelete,
+	)
 	// FieldNoDeleteRuleBuilder is a rule builder.
 	FieldNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DELETE",
@@ -365,6 +371,12 @@ var (
 		"PACKAGE_ENUM_NO_DELETE",
 		"enums are not deleted from a given package",
 		bufbreakingcheck.CheckPackageEnumNoDelete,
+	)
+	// PackageExtensionNoDeleteRuleBuilder is a rule builder.
+	PackageExtensionNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
+		"PACKAGE_EXTENSION_NO_DELETE",
+		"extensions are not deleted from a given package",
+		bufbreakingcheck.CheckPackageExtensionNoDelete,
 	)
 	// PackageMessageNoDeleteRuleBuilder is a rule builder.
 	PackageMessageNoDeleteRuleBuilder = internal.NewNopRuleBuilder(

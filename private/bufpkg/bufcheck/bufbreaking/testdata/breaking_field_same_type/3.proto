@@ -9,6 +9,8 @@ message One3 {
   One3 delimited = 2;
   One3 normal_b = 3;
   One3 delimited_b = 4 [features.message_encoding=DELIMITED];
+
+  extensions 100 to 1000;
 }
 
 message Nine2 {
@@ -22,4 +24,18 @@ message Ten2 {
   Foo foo = 1 [features.message_encoding=DELIMITED];
   message Foo {
   }
+
+  extensions 100 to 1000;
+
+  extend Ten2 {
+    bool ten2_str = 100;
+    Ten2 ten2_msg = 101;
+    int64 ten2_uint32 = 102;
+  }
+}
+
+extend One3 {
+  bytes one3_str = 100;
+  One3 one3_msg = 101 [features.message_encoding=DELIMITED];
+  uint32 one3_uint32 = 102;
 }

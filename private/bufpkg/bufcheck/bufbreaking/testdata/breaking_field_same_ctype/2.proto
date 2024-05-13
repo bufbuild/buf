@@ -49,3 +49,11 @@ message Nine {
   optional string one = 1 [ctype = STRING_PIECE];
   optional string two = 2 [ctype = STRING];
 }
+
+message Ten2 {
+  extensions 1 to 100;
+}
+
+extend Ten2 {
+  optional string ten_one = 1 [ctype = CORD];
+}

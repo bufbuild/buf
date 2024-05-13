@@ -38,4 +38,17 @@ message Three2 {
 message Nine2 {
   optional int64 one = 1 [jstype = JS_NUMBER];
   required int64 two = 2 [jstype = JS_STRING];
+
+  extensions 100 to 1000;
+}
+
+extend Nine2 {
+  optional sint64 s1 = 101 [jstype = JS_NORMAL];
+  optional sint64 s2 = 102 [jstype = JS_NUMBER];
+  optional sint64 s3 = 103 [jstype = JS_STRING];
+  optional sint64 s4 = 104;
+  optional sint64 s5 = 105;
+  optional sint64 s6 = 106 [jstype = JS_STRING];
+  optional sint64 s7 = 107 [jstype = JS_NUMBER];
+  optional sint64 s8 = 108 [jstype = JS_NORMAL];
 }

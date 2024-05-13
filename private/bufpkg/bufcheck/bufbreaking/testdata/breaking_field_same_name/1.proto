@@ -1,6 +1,6 @@
 syntax = "proto3";
-
 package a;
+import "google/protobuf/descriptor.proto";
 
 message Two {
   int32 one = 1;
@@ -30,8 +30,17 @@ message Three {
     int32 one = 1;
     int32 two = 2;
     int32 three = 3;
+
+    extend google.protobuf.MessageOptions {
+      string msg_str_opt = 10101;
+    }
   }
   int32 one = 1;
   int32 two = 2;
   int32 three = 3;
+}
+
+
+extend google.protobuf.FileOptions {
+  string file_str_opt = 10101;
 }

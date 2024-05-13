@@ -1,8 +1,8 @@
 syntax = "proto2";
-
 package a;
 
 message A1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -66,4 +66,16 @@ message A6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   optional A6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend A1 {
+    optional string a1_s1 = 100;
+    repeated string a1_s2 = 101;
+  }
+}
+
+extend A6 {
+  optional string a6_s1 = 100;
+  repeated string a6_s2 = 101;
 }

@@ -1,10 +1,10 @@
 syntax = "proto2";
-
 package a;
 
 option java_string_check_utf8 = true;
 
 message B1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -68,4 +68,16 @@ message B6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   optional B6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend B1 {
+    optional string b1_s1 = 100;
+    repeated string b1_s2 = 101;
+  }
+}
+
+extend B6 {
+  optional string b6_s1 = 100;
+  repeated string b6_s2 = 101;
 }

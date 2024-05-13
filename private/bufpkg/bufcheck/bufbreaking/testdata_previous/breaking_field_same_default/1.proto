@@ -133,4 +133,24 @@ message Baz {
   repeated uint64 uints = 3;
   optional Bar bar = 4;
   repeated Bar bars = 5;
+
+  extensions 100 to 200;
+
+  extend Baz {
+    optional string s = 200;
+    optional bool b = 199 [default = true];
+    optional fixed32 f32 = 198 [default = 123];
+    optional sint64 s64 = 197 [default = -456];
+    optional float f = 196 [default = 0.1020304];
+  }
+}
+
+extend Baz {
+  optional uint32 u1 = 100 [default = 3456];
+  optional uint32 u2 = 101 [default = 9876];
+  optional bytes b1 = 102 [default = "abcdef"];
+  optional bytes b2 = 103 [default = "a1b2c3"];
+  repeated Baz bb1 = 104;
+  optional string s1 = 105 [default = "abc"];
+  optional string s2 = 106 [default = "xyz"];
 }

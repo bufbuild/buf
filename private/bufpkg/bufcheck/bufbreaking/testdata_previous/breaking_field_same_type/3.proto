@@ -7,4 +7,12 @@ message One3 {
   One3 delimited = 2 [features.message_encoding=DELIMITED];
   One3 normal_b = 3;
   One3 delimited_b = 4 [features.message_encoding=DELIMITED];
+
+  extensions 100 to 1000;
+}
+
+extend One3 {
+  string one3_str = 100;
+  One3 one3_msg = 101;
+  uint32 one3_uint32 = 102;
 }
