@@ -40,6 +40,8 @@
   Editions files. This new rule is not active by default in existing v1 and
   v1beta1 configurations, for backwards-compatibility reasons. Migrate your
   config to v2 to use them.
+- Add `buf beta registry label archive` and `buf beta registry label unarchive` commands
+  for managing labels on the BSR.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 
