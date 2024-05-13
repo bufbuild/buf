@@ -105,7 +105,7 @@ func Prune(
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}
 	}
-	// Step that actual computed remote dependencies based on imports. These are all
+	// Step that actually computes remote dependencies based on imports. These are all
 	// that is needed for buf.lock.
 	depModules, err := bufmodule.RemoteDepsForModuleSet(workspace)
 	if err != nil {
