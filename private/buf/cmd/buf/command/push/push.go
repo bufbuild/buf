@@ -600,19 +600,20 @@ func getGitTagsOnCurrentCommit(
 	runner command.Runner,
 	input string,
 ) ([]string, error) {
-	buffer := bytes.NewBuffer(nil)
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
 	if err := runner.Run(
 		ctx,
 		gitCommand,
 		command.RunWithArgs("tag", "--points-at", "HEAD"),
-		command.RunWithStdout(buffer),
-		command.RunWithStderr(buffer),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
 		command.RunWithDir(input),
 	); err != nil {
 		return nil, err
 	}
 	if len(buffer.Bytes()) > 0 {
-		return getAllTrimmedLinesFromBuffer(buffer), nil
+		return getAllTrimmedLinesFromBuffer(stdout), nil
 	}
 	return nil, nil
 }
@@ -622,18 +623,19 @@ func getCurrentGitBranch(
 	runner command.Runner,
 	input string,
 ) (string, error) {
-	buffer := bytes.NewBuffer(nil)
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
 	if err := runner.Run(
 		ctx,
 		gitCommand,
 		command.RunWithArgs("rev-parse", "--abbrev-ref", "HEAD"),
-		command.RunWithStdout(buffer),
-		command.RunWithStderr(buffer),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
 		command.RunWithDir(input),
 	); err != nil {
 		return "", err
 	}
-	branch := strings.TrimSpace(buffer.String())
+	branch := strings.TrimSpace(stdout.String())
 	if branch == "HEAD" {
 		// This is a detached HEAD -- "HEAD" is not a valid branch name in Git
 		return "", nil
@@ -650,20 +652,21 @@ func getGitMetadataSourceControlURLUploadOption(
 ) (bufmodule.UploadOption, error) {
 	remoteToURL := map[string]string{}
 	for _, remote := range remotes {
-		buffer := bytes.NewBuffer(nil)
+		stdout := bytes.NewBuffer(nil)
+		stderr := bytes.NewBuffer(nil)
 		if err := runner.Run(
 			ctx,
 			gitCommand,
 			// We use `git config --get remote.<remote>.url` instead of `git remote get-url
 			// since it is more specific to the checkout.
 			command.RunWithArgs("config", "--get", fmt.Sprintf("remote.%s.url", remote)),
-			command.RunWithStdout(buffer),
-			command.RunWithStderr(buffer),
+			command.RunWithStdout(stdout),
+			command.RunWithStderr(stderr),
 			command.RunWithDir(input),
 		); err != nil {
 			return nil, err
 		}
-		if rawURL := strings.TrimSpace(buffer.String()); rawURL != "" {
+		if rawURL := strings.TrimSpace(stdout.String()); rawURL != "" {
 			remoteToURL[remote] = rawURL
 		}
 	}
@@ -731,18 +734,19 @@ func getCurrentHEADGitCommit(
 	runner command.Runner,
 	input string,
 ) (string, error) {
-	buffer := bytes.NewBuffer(nil)
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
 	if err := runner.Run(
 		ctx,
 		gitCommand,
 		command.RunWithArgs("rev-parse", "HEAD"),
-		command.RunWithStdout(buffer),
-		command.RunWithStderr(buffer),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
 		command.RunWithDir(input),
 	); err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(buffer.String()), nil
+	return strings.TrimSpace(stdout.String()), nil
 }
 
 func getGitDefaultBranch(
@@ -754,19 +758,20 @@ func getGitDefaultBranch(
 ) (string, error) {
 	remoteToHEADBranch := map[string]string{}
 	for _, remote := range remotes {
-		buffer := bytes.NewBuffer(nil)
+		stdout := bytes.NewBuffer(nil)
+		stderr := bytes.NewBuffer(nil)
 		if err := runner.Run(
 			ctx,
 			gitCommand,
 			command.RunWithArgs("remote", "show", remote),
-			command.RunWithStdout(buffer),
-			command.RunWithStderr(buffer),
+			command.RunWithStdout(stdout),
+			command.RunWithStderr(stderr),
 			command.RunWithDir(input),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 		); err != nil {
 			return "", err
 		}
-		branch, err := getHEADBranchFromGitRemoteOutput(buffer)
+		branch, err := getHEADBranchFromGitRemoteOutput(stdout)
 		if err != nil {
 			return "", err
 		}
