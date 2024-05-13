@@ -97,7 +97,7 @@ func checkEnumSameJSONFormat(
 		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
 	}
 	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
-	if previousJSONFormat != jsonFormat {
+	if previousJSONFormat == descriptorpb.FeatureSet_ALLOW && jsonFormat != descriptorpb.FeatureSet_ALLOW {
 		add(
 			enum,
 			nil,
@@ -1162,7 +1162,7 @@ func checkMessageSameJSONFormat(
 		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
 	}
 	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
-	if previousJSONFormat != jsonFormat {
+	if previousJSONFormat == descriptorpb.FeatureSet_ALLOW && jsonFormat != descriptorpb.FeatureSet_ALLOW {
 		add(
 			message,
 			nil,

@@ -53,13 +53,8 @@ func TestRunBreakingEnumSameJSONFormat(t *testing.T) {
 		"breaking_enum_same_json_format",
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "ENUM_SAME_JSON_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "ENUM_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "ENUM_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "ENUM_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "ENUM_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "ENUM_SAME_JSON_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "ENUM_SAME_JSON_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "ENUM_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "ENUM_SAME_JSON_FORMAT"),
 	)
 }
 
@@ -963,13 +958,8 @@ func TestRunBreakingMessageSameJSONFormat(t *testing.T) {
 		"breaking_message_same_json_format",
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "MESSAGE_SAME_JSON_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "MESSAGE_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "MESSAGE_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "MESSAGE_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "MESSAGE_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "MESSAGE_SAME_JSON_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "MESSAGE_SAME_JSON_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "MESSAGE_SAME_JSON_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "MESSAGE_SAME_JSON_FORMAT"),
 	)
 }
 
