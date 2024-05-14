@@ -35,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 )
 
 const (
@@ -54,7 +53,9 @@ const (
 	draftFlagName    = "draft"
 	branchFlagName   = "branch"
 
-	gitOriginRemote = "origin"
+	gitOriginRemote             = "origin"
+	githubGitlabRemoteURLFormat = "https://%s%s/commit/%s"
+	bitBucketRemoteURLFormat    = "https://%s%s/commits/%s"
 )
 
 var (
@@ -442,7 +443,11 @@ func getGitMetadataUploadOptions(
 	if len(uncommittedFiles) > 0 {
 		return nil, fmt.Errorf("uncommitted changes found in the following files: %v", uncommittedFiles)
 	}
-	if err := validateGitRemotes(ctx, container.Logger(), runner, input); err != nil {
+	originRemote, err := git.GetRemote(ctx, runner, app.EnvironMap(container), input, gitOriginRemote)
+	if err != nil {
+		if errors.Is(err, git.ErrRemoteNotFound) {
+			return nil, appcmd.NewInvalidArgumentErrorf("remote %s must be present on Git checkout: %w", gitOriginRemote, err)
+		}
 		return nil, err
 	}
 	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, input)
@@ -457,7 +462,7 @@ func getGitMetadataUploadOptions(
 	if gitLabelsUploadOption != nil {
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
 	}
-	gitSourceControlURLUploadOption, err := getGitMetadataSourceControlURLUploadOption(ctx, runner, input, currentGitCommit)
+	gitSourceControlURLUploadOption, err := getGitMetadataSourceControlURLUploadOption(originRemote, currentGitCommit)
 	if err != nil {
 		return nil, err
 	}
@@ -465,43 +470,16 @@ func getGitMetadataUploadOptions(
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitSourceControlURLUploadOption)
 	}
 	if flags.Create {
-		gitDefaultBranch, err := git.GetRemoteHEADBranch(ctx, runner, app.EnvironMap(container), input, gitOriginRemote)
-		if err != nil {
-			return nil, err
-		}
 		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
 			return nil, err
 		}
 		gitMetadataUploadOptions = append(
 			gitMetadataUploadOptions,
-			bufmodule.UploadWithCreateIfNotExist(createModuleVisibility, gitDefaultBranch),
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisibility, originRemote.HEADBranch()),
 		)
 	}
 	return gitMetadataUploadOptions, nil
-}
-
-func validateGitRemotes(
-	ctx context.Context,
-	logger *zap.Logger,
-	runner command.Runner,
-	input string,
-) error {
-	remotes, err := git.GetGitRemotes(ctx, runner, input)
-	if err != nil {
-		return err
-	}
-	if len(remotes) > 1 {
-		logger.Warn(
-			fmt.Sprintf("More than one Git remote found, %q will be used for Git metadata: %v", gitOriginRemote, remotes),
-		)
-	}
-	for _, remote := range remotes {
-		if remote == gitOriginRemote {
-			return nil
-		}
-	}
-	return fmt.Errorf("Git remote %q not found", gitOriginRemote)
 }
 
 func getGitMetadataLabelsUploadOptions(
@@ -521,20 +499,40 @@ func getGitMetadataLabelsUploadOptions(
 	return bufmodule.UploadWithLabels(refs...), nil
 }
 
+// getGitMetadataSourceControlURLUploadOption takes a remote and git commit sha and makes
+// the best effort to construct a user-facing URL based on the hostname.
+//
+// If the remote hostname contains bitbucket (e.g. bitbucket.mycompany.com or bitbucket.org),
+// then it uses the route /commits for the git commit sha.
+//
+// If the remote hostname contains github (e.g. github.mycompany.com or github.com) or gitlab
+// (e.g. gitlab.mycompany.com or gitlab.com) then it uses the route /commit for the git
+// commit sha.
 func getGitMetadataSourceControlURLUploadOption(
-	ctx context.Context,
-	runner command.Runner,
-	input string,
+	remote git.Remote,
 	gitCommitSha string,
 ) (bufmodule.UploadOption, error) {
-	sourceControlURL, err := git.GetSourceControlURL(ctx, runner, input, gitOriginRemote, gitCommitSha)
-	if err != nil {
-		return nil, err
+	switch remote.Kind() {
+	case git.RemoteKindBitBucket:
+		return bufmodule.UploadWithSourceControlURL(
+			fmt.Sprintf(
+				bitBucketRemoteURLFormat,
+				remote.Hostname(),
+				remote.RepositoryPath(),
+				gitCommitSha,
+			),
+		), nil
+	case git.RemoteKindGitHub, git.RemoteKindGitLab:
+		return bufmodule.UploadWithSourceControlURL(
+			fmt.Sprintf(
+				githubGitlabRemoteURLFormat,
+				remote.Hostname(),
+				remote.RepositoryPath(),
+				gitCommitSha,
+			),
+		), nil
 	}
-	if sourceControlURL == "" {
-		return nil, errors.New("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
-	}
-	return bufmodule.UploadWithSourceControlURL(sourceControlURL), nil
+	return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
 }
 
 func getLabelUploadOption(flags *flags) bufmodule.UploadOption {

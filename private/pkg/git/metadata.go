@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -70,32 +69,6 @@ func CheckForUncommittedGitChanges(
 
 	modifiedFiles = append(modifiedFiles, getAllTrimmedLinesFromBuffer(stdout)...)
 	return modifiedFiles, nil
-}
-
-// GetGitRemotes returns all git remotes based on the given directory.
-func GetGitRemotes(
-	ctx context.Context,
-	runner command.Runner,
-	dir string,
-) ([]string, error) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
-		ctx,
-		gitCommand,
-		command.RunWithArgs("remote"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-	); err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(stdout)
-	var remotes []string
-	for scanner.Scan() {
-		remotes = append(remotes, strings.TrimSpace(scanner.Text()))
-	}
-	return remotes, nil
 }
 
 // GetCurrentHEADGitCommit returns the current HEAD commit based on the given directory.
@@ -159,39 +132,6 @@ func GetRefsForGitCommitAndRemote(
 		}
 	}
 	return refs, nil
-}
-
-// GetRemoteHEADBranch returns the HEAD branch based on the given remote and given
-// directory. Querying the remote for the HEAD branch requires the passing the
-// environment for permissions.
-func GetRemoteHEADBranch(
-	ctx context.Context,
-	runner command.Runner,
-	env map[string]string,
-	dir string,
-	remote string,
-) (string, error) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
-		ctx,
-		gitCommand,
-		command.RunWithArgs("remote", "show", remote),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(env),
-	); err != nil {
-		return "", err
-	}
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if branch, isHEADBranch := strings.CutPrefix(line, "HEAD branch:"); isHEADBranch {
-			return strings.TrimSpace(branch), nil
-		}
-	}
-	return "", errors.New("no HEAD branch information found")
 }
 
 func getAllTrimmedLinesFromBuffer(buffer *bytes.Buffer) []string {
