@@ -144,8 +144,16 @@ func run(
 		return err
 	}
 	// Validate that the workspace builds and log unused configured deps.
+	// Building also has the side effect of doing tamper-proofing.
 	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
 	if err != nil {
+		return err
+	}
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		workspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
 		return err
 	}
 	// Log warnings for users on unused configured deps.
