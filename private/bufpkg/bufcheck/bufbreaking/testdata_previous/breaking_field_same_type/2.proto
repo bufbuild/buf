@@ -57,4 +57,12 @@ message Nine2 {
 message Ten2 {
   optional group Foo = 1 {
   }
+
+  extensions 100 to 1000;
+
+  extend Ten2 {
+    optional string ten2_str = 100;
+    optional Ten2 ten2_msg = 101;
+    optional uint32 ten2_uint32 = 102;
+  }
 }

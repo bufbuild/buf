@@ -102,6 +102,7 @@ var (
 		"ENUM_SAME_JSON_FORMAT": {
 			"FILE",
 			"PACKAGE",
+			"WIRE_JSON",
 		},
 		"ENUM_SAME_TYPE": {
 			"FILE",
@@ -281,6 +282,7 @@ var (
 		"MESSAGE_SAME_JSON_FORMAT": {
 			"FILE",
 			"PACKAGE",
+			"WIRE_JSON",
 		},
 		"MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT": {
 			"FILE",

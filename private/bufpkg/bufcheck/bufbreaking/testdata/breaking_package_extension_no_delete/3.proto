@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package b;
+
+message Fizz {
+  extensions 10 to 100;
+
+  message Buzz {
+    optional int32 len = 1;
+
+    extend Fizz {
+      optional string str = 10;
+    }
+  }
+}
+
+extend Fizz {
+  optional bytes meta = 20;
+  repeated uint64 tags = 21;
+}

@@ -438,7 +438,7 @@ func TestFailCheckBreaking2(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
+		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
 		"--against",
@@ -454,7 +454,7 @@ func TestFailCheckBreaking3(t *testing.T) {
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		<input>:1:1:Previously present file "bar.proto" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -471,7 +471,7 @@ func TestFailCheckBreaking4(t *testing.T) {
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto")),
@@ -488,7 +488,7 @@ func TestFailCheckBreaking5(t *testing.T) {
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
     <input>:1:1:Previously present file "bar.proto" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" with name "world" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -703,7 +703,6 @@ ENUM_NO_DELETE                                  FILE                            
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
 ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
@@ -732,12 +731,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
@@ -783,7 +783,6 @@ FILE_NO_DELETE                                  FILE                            
 FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
 ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
@@ -810,12 +809,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
 FIELD_SAME_CARDINALITY                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same cardinalities in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
@@ -854,10 +854,10 @@ func TestCheckLsBreakingRulesV2(t *testing.T) {
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
 ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+EXTENSION_NO_DELETE                             FILE                            Checks that extensions are not deleted from a given file.
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
 ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
@@ -886,12 +886,13 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
 FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same default value, if a default is specified.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
@@ -905,6 +906,7 @@ RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  
 RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
 RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
 PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                         Checks that extensions are not deleted from a given package.
 PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
 PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
 PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
@@ -1905,7 +1907,7 @@ func TestBreakingWithPaths(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
+		`a/v3/a.proto:6:3:Field "1" with name "key" on message "Foo" changed type from "string" to "int32".
 a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
 a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
 		"",

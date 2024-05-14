@@ -3,6 +3,7 @@ syntax = "proto2";
 package a;
 
 message A1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -14,6 +15,7 @@ message A1 {
 }
 
 message B1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -36,6 +38,7 @@ message C1 {
 }
 
 message D1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -47,6 +50,7 @@ message D1 {
 }
 
 message E1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -58,6 +62,7 @@ message E1 {
 }
 
 message F1 {
+  extensions 100 to 1000;
   optional string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;

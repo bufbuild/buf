@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package a;
 
+import "google/protobuf/descriptor.proto";
+
 message Fizz {
   string s1 = 1;
   string s2 = 2;
@@ -96,4 +98,10 @@ message Buzz {
   repeated uint64 uints = 3;
   Buzz buzz = 4;
   repeated Buzz buzzes = 5;
+}
+
+extend google.protobuf.MessageOptions {
+  uint32 num = 10000;
+  repeated string strings = 10101;
+  Buzz buzz = 20202;
 }

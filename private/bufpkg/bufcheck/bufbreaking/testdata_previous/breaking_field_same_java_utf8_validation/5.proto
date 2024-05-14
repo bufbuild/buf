@@ -1,5 +1,4 @@
 edition = "2023";
-
 package a;
 
 import "google/protobuf/java_features.proto";
@@ -7,6 +6,7 @@ import "google/protobuf/java_features.proto";
 option features.(pb.java).utf8_validation = VERIFY;
 
 message E1 {
+  extensions 100 to 1000;
   string s1 = 1;
   repeated string s2 = 2;
   map<string, string> s3 = 3;
@@ -70,6 +70,18 @@ message E6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   E6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend E1 {
+    string e1_s1 = 100 [features.(pb.java).utf8_validation=DEFAULT];
+    repeated string e1_s2 = 101;
+  }
+}
+
+extend E6 {
+  string e6_s1 = 100 [features.(pb.java).utf8_validation=DEFAULT];
+  repeated string e6_s2 = 101;
 }
 
 message E7 {
@@ -92,4 +104,6 @@ message E8 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   E8 other4 = 14;
+
+  extensions 100 to 1000;
 }
