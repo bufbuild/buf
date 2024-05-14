@@ -120,10 +120,12 @@ func GetCurrentHEADGitCommit(
 }
 
 // GetRefsForGitCommitAndRemote returns all refs pointing to a given commit based on the
-// given remote for the given directory.
+// given remote for the given directory. Querying the remote for refs information requires
+// passing the environment for permissions.
 func GetRefsForGitCommitAndRemote(
 	ctx context.Context,
 	runner command.Runner,
+	env map[string]string,
 	dir string,
 	remote string,
 	gitCommitSha string,
@@ -137,6 +139,7 @@ func GetRefsForGitCommitAndRemote(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
+		command.RunWithEnv(env),
 	); err != nil {
 		return nil, err
 	}
@@ -183,9 +186,9 @@ func GetRemoteHEADBranch(
 	}
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
-		line := scanner.Text()
-		if branch, isHEADBranch := strings.CutPrefix(line, "HEAD branch: "); isHEADBranch {
-			return branch, nil
+		line := strings.TrimSpace(scanner.Text())
+		if branch, isHEADBranch := strings.CutPrefix(line, "HEAD branch:"); isHEADBranch {
+			return strings.TrimSpace(branch), nil
 		}
 	}
 	return "", errors.New("no HEAD branch information found")

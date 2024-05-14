@@ -7,4 +7,18 @@ message Message {
   Message delimited = 2;
   Message normal_b = 3;
   Message delimited_b = 4 [features.message_encoding=DELIMITED];
+
+  extensions 100 to 1000;
+
+  extend Message {
+    bytes str = 100;
+    Message msg = 101 [features.message_encoding=DELIMITED];
+    uint64 uint64 = 102;
+  }
+}
+
+extend Message {
+  string str = 200;
+  Message msg = 201;
+  sint32 sint32 = 202;
 }

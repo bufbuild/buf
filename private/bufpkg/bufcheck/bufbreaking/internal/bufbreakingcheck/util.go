@@ -17,6 +17,7 @@ package bufbreakingcheck
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -236,25 +237,56 @@ func newMessagePairCheckFunc(
 func newFieldPairCheckFunc(
 	f func(addFunc, *corpus, bufprotosource.Field, bufprotosource.Field) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return newMessagePairCheckFunc(
-		func(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
-			previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
-			if err != nil {
-				return err
-			}
-			numberToField, err := bufprotosource.NumberToMessageField(message)
-			if err != nil {
-				return err
-			}
-			for previousNumber, previousField := range previousNumberToField {
-				if field, ok := numberToField[previousNumber]; ok {
-					if err := f(add, corpus, previousField, field); err != nil {
+	return combine(
+		// Regular fields
+		newMessagePairCheckFunc(
+			func(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+				previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
+				if err != nil {
+					return err
+				}
+				numberToField, err := bufprotosource.NumberToMessageField(message)
+				if err != nil {
+					return err
+				}
+				for previousNumber, previousField := range previousNumberToField {
+					if field, ok := numberToField[previousNumber]; ok {
+						if err := f(add, corpus, previousField, field); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			},
+		),
+		// And extension fields
+		newFilesCheckFunc(
+			func(add addFunc, corpus *corpus) error {
+				previousTypeToNumberToField := make(map[string]map[int]bufprotosource.Field)
+				for _, previousFile := range corpus.previousFiles {
+					if err := addToTypeToNumberToExtension(previousFile, previousTypeToNumberToField); err != nil {
 						return err
 					}
 				}
-			}
-			return nil
-		},
+				typeToNumberToField := make(map[string]map[int]bufprotosource.Field)
+				for _, file := range corpus.files {
+					if err := addToTypeToNumberToExtension(file, typeToNumberToField); err != nil {
+						return err
+					}
+				}
+				for previousType, previousNumberToField := range previousTypeToNumberToField {
+					numberToField := typeToNumberToField[previousType]
+					for previousNumber, previousField := range previousNumberToField {
+						if field, ok := numberToField[previousNumber]; ok {
+							if err := f(add, corpus, previousField, field); err != nil {
+								return err
+							}
+						}
+					}
+				}
+				return nil
+			},
+		),
 	)
 }
 
@@ -326,7 +358,23 @@ func newMethodPairCheckFunc(
 	)
 }
 
-func getDescriptorAndLocationForDeletedEnum(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
+func combine(
+	checks ...func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error),
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+		var annotations []bufanalysis.FileAnnotation
+		for _, check := range checks {
+			checkAnnotations, err := check(id, ignoreFunc, previousFiles, files)
+			if err != nil {
+				return nil, err
+			}
+			annotations = append(annotations, checkAnnotations...)
+		}
+		return annotations, nil
+	}
+}
+
+func getDescriptorAndLocationForDeletedElement(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
 	if strings.Contains(previousNestedName, ".") {
 		nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
 		if err != nil {
@@ -487,4 +535,68 @@ func getCustomFeatureLocation(field bufprotosource.Field, extension protoreflect
 		return nil
 	}
 	return field.OptionLocation(featureField, int32(extension.Number()), int32(feature.Number()))
+}
+
+func fieldDescription(field bufprotosource.Field) string {
+	var name string
+	if field.Extendee() != "" {
+		// extensions are known by fully-qualified name
+		name = field.FullName()
+	} else {
+		name = field.Name()
+	}
+	return fieldDescriptionWithName(field, name)
+}
+
+func fieldDescriptionWithName(field bufprotosource.Field, name string) string {
+	if name != "" {
+		name = fmt.Sprintf(" with name %q", name)
+	}
+	// otherwise prints as hex
+	numberString := strconv.FormatInt(int64(field.Number()), 10)
+	var kind, message string
+	if field.Extendee() != "" {
+		kind = "Extension"
+		message = field.Extendee()
+	} else {
+		kind = "Field"
+		message = field.ParentMessage().Name()
+	}
+	return fmt.Sprintf("%s %q%s on message %q", kind, numberString, name, message)
+}
+
+func addToTypeToNumberToExtension(container bufprotosource.ContainerDescriptor, typeToNumberToExt map[string]map[int]bufprotosource.Field) error {
+	for _, extension := range container.Extensions() {
+		numberToExt := typeToNumberToExt[extension.Extendee()]
+		if numberToExt == nil {
+			numberToExt = make(map[int]bufprotosource.Field)
+			typeToNumberToExt[extension.Extendee()] = numberToExt
+		}
+		if existing, ok := numberToExt[extension.Number()]; ok {
+			return fmt.Errorf("duplicate extension %d of %s: %s in %q and %s in %q",
+				extension.Number(), extension.Extendee(),
+				existing.FullName(), existing.File().Path(),
+				extension.FullName(), extension.File().Path())
+		}
+		numberToExt[extension.Number()] = extension
+	}
+	for _, message := range container.Messages() {
+		if err := addToTypeToNumberToExtension(message, typeToNumberToExt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func is64bitInteger(fieldType descriptorpb.FieldDescriptorProto_Type) bool {
+	switch fieldType {
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64:
+		return true
+	default:
+		return false
+	}
 }

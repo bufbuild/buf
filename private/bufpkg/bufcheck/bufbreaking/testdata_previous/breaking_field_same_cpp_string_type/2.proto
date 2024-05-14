@@ -33,4 +33,20 @@ message Bar {
   string default5 = 35;
   bytes default6 = 36;
   repeated string default7 = 37;
+
+  extensions 100 to 300;
+
+  message Frobnitz {
+    extend Bar {
+      repeated string ext_str1 = 100;
+      string ext_str2 = 101 [ctype=STRING_PIECE];
+      repeated bytes ext_byt1 = 102 [features.(pb.cpp).string_type=VIEW];
+      bytes ext_byt2 = 103;
+    }
+  }
+}
+
+extend Bar {
+  repeated string ext_str1 = 200 [features.(pb.cpp).string_type=STRING];
+  repeated string ext_str2 = 201;
 }

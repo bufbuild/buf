@@ -449,7 +449,7 @@ func getGitMetadataUploadOptions(
 		return nil, err
 	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
-	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, input, currentGitCommit)
+	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, app.EnvironMap(container), input, currentGitCommit)
 	if err != nil {
 		return nil, err
 	}
@@ -503,17 +503,14 @@ func validateGitRemotes(
 	return fmt.Errorf("Git remote %q not found", gitOriginRemote)
 }
 
-// This returns an upload option for all Git metadata labels. We set labels for the following
-// Git matadata:
-//   - tags on current commit
-//   - all branches that point directly to the commit
 func getGitMetadataLabelsUploadOptions(
 	ctx context.Context,
 	runner command.Runner,
+	env map[string]string,
 	input string,
 	gitCommitSha string,
 ) (bufmodule.UploadOption, error) {
-	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, input, gitOriginRemote, gitCommitSha)
+	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, env, input, gitOriginRemote, gitCommitSha)
 	if err != nil {
 		return nil, err
 	}

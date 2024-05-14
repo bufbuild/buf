@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package a;
+
+import "3.proto";
+import "4.proto";
+
+message One {
+  optional int32 one = 1;
+  optional int32 two = 2;
+}
+
+message Nine {
+  optional int32 one = 1;
+  optional int32 three = 3;
+}
+
+extend Foo {
+  optional bytes meta = 20;
+  optional Foo ch = 22;
+}
+
+extend b.Fizz {
+  optional b.Fizz child = 22;
+}

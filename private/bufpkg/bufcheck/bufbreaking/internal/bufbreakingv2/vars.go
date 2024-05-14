@@ -30,6 +30,7 @@ var (
 		bufbreakingbuild.EnumValueNoDeleteUnlessNumberReservedRuleBuilder,
 		bufbreakingbuild.EnumValueSameNameRuleBuilder,
 		bufbreakingbuild.ExtensionMessageNoDeleteRuleBuilder,
+		bufbreakingbuild.ExtensionNoDeleteRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
@@ -73,6 +74,7 @@ var (
 		bufbreakingbuild.MessageSameRequiredFieldsRuleBuilder,
 		bufbreakingbuild.OneofNoDeleteRuleBuilder,
 		bufbreakingbuild.PackageEnumNoDeleteRuleBuilder,
+		bufbreakingbuild.PackageExtensionNoDeleteRuleBuilder,
 		bufbreakingbuild.PackageMessageNoDeleteRuleBuilder,
 		bufbreakingbuild.PackageNoDeleteRuleBuilder,
 		bufbreakingbuild.PackageServiceNoDeleteRuleBuilder,
@@ -99,6 +101,7 @@ var (
 		"ENUM_SAME_JSON_FORMAT": {
 			"FILE",
 			"PACKAGE",
+			"WIRE_JSON",
 		},
 		"ENUM_SAME_TYPE": {
 			"FILE",
@@ -123,6 +126,9 @@ var (
 		"EXTENSION_MESSAGE_NO_DELETE": {
 			"FILE",
 			"PACKAGE",
+		},
+		"EXTENSION_NO_DELETE": {
+			"FILE",
 		},
 		"FIELD_NO_DELETE": {
 			"FILE",
@@ -280,6 +286,7 @@ var (
 		"MESSAGE_SAME_JSON_FORMAT": {
 			"FILE",
 			"PACKAGE",
+			"WIRE_JSON",
 		},
 		"MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT": {
 			"FILE",
@@ -298,6 +305,9 @@ var (
 			"PACKAGE",
 		},
 		"PACKAGE_ENUM_NO_DELETE": {
+			"PACKAGE",
+		},
+		"PACKAGE_EXTENSION_NO_DELETE": {
 			"PACKAGE",
 		},
 		"PACKAGE_MESSAGE_NO_DELETE": {

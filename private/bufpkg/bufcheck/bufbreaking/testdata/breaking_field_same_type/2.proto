@@ -1,6 +1,6 @@
 syntax = "proto2";
-
 package a;
+import "google/protobuf/descriptor.proto";
 
 message One {
   optional int32 one = 1;
@@ -62,4 +62,8 @@ message Nine {
 message Ten {
   repeated int64 one = 1;
   required int64 two = 2;
+}
+
+extend google.protobuf.FieldOptions {
+  repeated Nine ten_option = 10101;
 }

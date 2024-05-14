@@ -121,6 +121,7 @@ type NamedDescriptor interface {
 type ContainerDescriptor interface {
 	Enums() []Enum
 	Messages() []Message
+	Extensions() []Field
 }
 
 // OptionExtensionDescriptor contains options and option extensions.
@@ -585,7 +586,7 @@ func PackageToFiles(files ...File) (map[string][]File, error) {
 
 // ForEachEnum calls f on each Enum in the given ContainerDescriptor, including nested Enums.
 //
-// Returns error and stops iterating if f returns error
+// Returns error and stops iterating if f returns error.
 // Never returns error unless f returns error.
 func ForEachEnum(f func(Enum) error, containerDescriptor ContainerDescriptor) error {
 	for _, enum := range containerDescriptor.Enums() {
@@ -595,6 +596,25 @@ func ForEachEnum(f func(Enum) error, containerDescriptor ContainerDescriptor) er
 	}
 	for _, message := range containerDescriptor.Messages() {
 		if err := ForEachEnum(f, message); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ForEachExtension calls f on each extension Field in the given ContainerDescriptor,
+// including nested extensions.
+//
+// Returns error and stops iterating if f returns error.
+// Never returns error unless f returns error.
+func ForEachExtension(f func(Field) error, containerDescriptor ContainerDescriptor) error {
+	for _, extension := range containerDescriptor.Extensions() {
+		if err := f(extension); err != nil {
+			return err
+		}
+	}
+	for _, message := range containerDescriptor.Messages() {
+		if err := ForEachExtension(f, message); err != nil {
 			return err
 		}
 	}
@@ -638,6 +658,30 @@ func NestedNameToEnum(containerDescriptor ContainerDescriptor) (map[string]Enum,
 		return nil, err
 	}
 	return nestedNameToEnum, nil
+}
+
+// NestedNameToExtension maps the Enums in the ContainerDescriptor to a map from
+// nested name to extension Field.
+//
+// Returns error if extensions do not have unique nested names within the
+// ContainerDescriptor, which should generally never happen for properly-formed
+// ContainerDescriptors.
+func NestedNameToExtension(containerDescriptor ContainerDescriptor) (map[string]Field, error) {
+	nestedNameToExtension := make(map[string]Field)
+	if err := ForEachExtension(
+		func(extension Field) error {
+			nestedName := extension.NestedName()
+			if _, ok := nestedNameToExtension[nestedName]; ok {
+				return fmt.Errorf("duplicate extension: %q", nestedName)
+			}
+			nestedNameToExtension[nestedName] = extension
+			return nil
+		},
+		containerDescriptor,
+	); err != nil {
+		return nil, err
+	}
+	return nestedNameToExtension, nil
 }
 
 // FullNameToEnum maps the Enums in the Files to a map from full name to enum.
@@ -693,6 +737,37 @@ func PackageToNestedNameToEnum(files ...File) (map[string]map[string]Enum, error
 		}
 	}
 	return packageToNestedNameToEnum, nil
+}
+
+// PackageToNestedNameToExtension maps the extension Fields in the Files to a map
+// from package to nested name to Field.
+//
+// Returns error if the extension do not have unique nested names within the packages,
+// which should generally never happen for properly-formed Files.
+func PackageToNestedNameToExtension(files ...File) (map[string]map[string]Field, error) {
+	packageToNestedNameToExtension := make(map[string]map[string]Field)
+	for _, file := range files {
+		if err := ForEachExtension(
+			func(enum Field) error {
+				pkg := enum.File().Package()
+				nestedName := enum.NestedName()
+				nestedNameToExtension, ok := packageToNestedNameToExtension[pkg]
+				if !ok {
+					nestedNameToExtension = make(map[string]Field)
+					packageToNestedNameToExtension[pkg] = nestedNameToExtension
+				}
+				if _, ok := nestedNameToExtension[nestedName]; ok {
+					return fmt.Errorf("duplicate extension in package %q: %q", pkg, nestedName)
+				}
+				nestedNameToExtension[nestedName] = enum
+				return nil
+			},
+			file,
+		); err != nil {
+			return nil, err
+		}
+	}
+	return packageToNestedNameToExtension, nil
 }
 
 // NameToEnumValue maps the EnumValues in the Enum to a map from name to EnumValue.
@@ -815,8 +890,7 @@ func PackageToNestedNameToMessage(files ...File) (map[string]map[string]Message,
 
 // NumberToMessageField maps the Fields in the Message to a map from number to Field.
 //
-// TODO: is this right?
-// Includes extensions.
+// Does not includes extensions.
 //
 // Returns error if the Fields do not have unique numbers within the Message,
 // which should generally never happen for properly-formed Messages.
@@ -829,27 +903,13 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 		}
 		numberToMessageField[number] = messageField
 	}
-	for _, messageField := range message.Extensions() {
-		if messageField.Extendee() != message.FullName() {
-			// TODO: ideally we want this field to be returned when
-			// the Extendee message is passed into some function,
-			// need to investigate what index is necessary for that.
-			continue
-		}
-		number := messageField.Number()
-		if _, ok := numberToMessageField[number]; ok {
-			return nil, fmt.Errorf("duplicate message field: %d", number)
-		}
-		numberToMessageField[number] = messageField
-	}
 	return numberToMessageField, nil
 }
 
 // NumberToMessageFieldForLabel maps the Fields with the given label in the message
 // to a map from number to Field.
 //
-// TODO: is this right?
-// Includes extensions.
+// Does not includes extensions.
 //
 // Returns error if the Fields do not have unique numbers within the Message,
 // which should generally never happen for properly-formed Messages.

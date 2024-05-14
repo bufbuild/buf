@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package a;
+
+message Foo {
+  extensions 10 to 100;
+
+  message Bar {
+    optional int32 len = 1;
+
+    extend Foo {
+      optional string str = 10;
+      repeated string labels = 11;
+    }
+  }
+}
