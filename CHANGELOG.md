@@ -16,7 +16,7 @@
 - Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
   rules to incoming messages specified with `--from`.
 - Deprecate `buf mod open`.
-- Delete `buf beta migrate-v1beta1` This is now replaced with `buf confifg migrate`.
+- Delete `buf beta migrate-v1beta1` This is now replaced with `buf config migrate`.
 - Add `buf registry sdk version` to get the version of a Generated SDK for a module and plugin.
 - Add `buf beta registry label archive` and `buf beta registry label unarchive` commands for
   managing labels on the BSR.
