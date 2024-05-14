@@ -16,6 +16,7 @@ package push
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -515,7 +516,7 @@ func getGitMetadataLabelsUploadOptions(
 		return nil, err
 	}
 	if len(refs) == 0 {
-		return nil, fmt.Errorf("not tags or branch found for HEAD, %s", gitCommitSha)
+		return nil, fmt.Errorf("no tags or branches found for HEAD, %s", gitCommitSha)
 	}
 	return bufmodule.UploadWithLabels(refs...), nil
 }
@@ -531,7 +532,7 @@ func getGitMetadataSourceControlURLUploadOption(
 		return nil, err
 	}
 	if sourceControlURL == "" {
-		return nil, fmt.Errorf("no valid source control URL parsed for git commit sha: %s", gitCommitSha)
+		return nil, errors.New("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
 	}
 	return bufmodule.UploadWithSourceControlURL(sourceControlURL), nil
 }
