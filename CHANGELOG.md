@@ -2,53 +2,62 @@
 
 ## [Unreleased]
 
-- Add support for Protobuf Editions. This allows `buf` to be used with
-  sources that use edition 2023, instead of proto2 or proto3 syntax.
-  This also updates the `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`
-  Protobuf plugins to support files that use edition 2023.
-- Update `buf breaking` rules to work with editions sources. To this end
-  some rules have been deprecated and replaced with Editions-aware rules:
-  * `FIELD_SAME_CTYPE` has been replaced with `FIELD_SAME_CPP_STRING_TYPE`,
-    which considers both `ctype` field options and new `(pb.cpp).string_type`
-    features when deciding on backwards compatibility.
-  * `FIELD_SAME_LABEL` has been replaced with three rules that all check
-    "cardinality". The new rules can distinguish between maps and other
-    repeated fields and between implicit and explicit field presence. The
-    new rules are:
+- Add version `v2` for `buf.yaml` and `buf.gen.yaml` configuration files.
+- Add `buf config migrate` to migrate configuration files to the latest version (now `v2`).
+- Move `buf mod init` to `buf config init`. `buf mod init` is now deprecated.
+- Move `buf mod ls-lint-rules` to `buf config ls-lint-rules`. `buf mod ls-lint-rules` is now
+  deprecated.
+- Move `buf mod ls-breaking-rules` to `buf config ls-breaking-rules`. `buf mod ls-breaking-rules`
+  is now deprecated.
+- Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
+- Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
+- Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
+- Move `buf beta graph` to stable as `buf dep graph`.
+- Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
+  rules to incoming messages specified with `--from`.
+- Deprecate `buf mod open`.
+- Delete `buf beta migrate-v1beta1` This is now replaced with `buf config migrate`.
+- Add `buf registry sdk version` to get the version of a Generated SDK for a module and plugin.
+- Add `buf beta registry label archive` and `buf beta registry label unarchive` commands for
+  managing labels on the BSR.
+- Add support for Protobuf Editions. This allows `buf` to be used with sources that use edition
+  2023, instead of proto2 or proto3 syntax. This also updates the `protoc-gen-buf-breaking` and
+  `protoc-gen-buf-lint` Protobuf plugins to support files that use edition 2023.
+- Update `buf breaking` rules to work with Protobuf Editions. To support Editions, some rules have
+  been deprecated and replaced with Editions-aware rules. All deprecated rules continue to work
+  for existing users.
+  * `FIELD_SAME_CTYPE` has been replaced with `FIELD_SAME_CPP_STRING_TYPE`, which considers both
+    `ctype` field options and new `(pb.cpp).string_type` features when deciding on backwards
+    compatibility.
+  * `FIELD_SAME_LABEL` has been replaced with three rules that all check "cardinality". The new
+    rules can distinguish between maps and other repeated fields and between implicit and explicit
+    field presence. The new rules are:
     1. `FIELD_SAME_CARDINALITY` in the `FILE` and `PACKAGE` categories.
     2. `FIELD_WIRE_COMPATIBLE_CARDINALITY` in the `WIRE` category.
     3. `FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY` in the `WIRE_JSON` category.
-  * `FILE_SAME_JAVA_STRING_CHECK_UTF8` has been replaced with
-    `FIELD_SAME_JAVA_UTF8_VALIDATION`, which considers both the
-    `java_string_check_utf8` file option and `(pb.java).utf8_validation`
+  * `FILE_SAME_JAVA_STRING_CHECK_UTF8` has been replaced with `FIELD_SAME_JAVA_UTF8_VALIDATION`,
+    which considers both the `java_string_check_utf8` file option and `(pb.java).utf8_validation`
     features when deciding on backwards compatibility.
-  * Adds to the existing `FILE_SAME_SYNTAX` rule with a few related rules
-    that can catch the same sort of compatibility issues, but in an Editions
-    source file that changes feature values:
-    1. `MESSAGE_SAME_JSON_FORMAT` and `ENUM_SAME_JSON_FORMAT` catch changes
-       to the `json_format` feature, which controls whether support for the
-       JSON format is best-effort or properly supported. When supported, the
-       compiler performs more checks relating to field name collisions for
-       the JSON format as well as for FieldMask usage.
-    2. `FIELD_SAME_UTF8_VALIDATION` catches changes to the `utf8_validation`
-       feature, which controls validation of string values.
+  * Add to the existing `FILE_SAME_SYNTAX` rule with a few related rules that can catch the same
+    sort of compatibility issues, but in an Editions source file that changes feature values:
+    1. `MESSAGE_SAME_JSON_FORMAT` and `ENUM_SAME_JSON_FORMAT` catch changes to the `json_format`
+       feature, which controls whether support for the JSON format is best-effort or properly
+       supported. When supported, the compiler performs more checks relating to field name
+       collisions for the JSON format as well as for FieldMask usage.
+    2. `FIELD_SAME_UTF8_VALIDATION` catches changes to the `utf8_validation` feature, which
+       controls validation of string values.
     3. `ENUM_SAME_TYPE` catches changes to an enum's type, open vs. closed.
-- Adds support for extensions to `buf breaking`. All existing rules for
-  fields are now applied to extensions, except for `FIELD_NO_DELETE` (and its
-  variants). There are also new `EXTENSION_NO_DELETE` and
-  `PACKAGE_EXTENSION_NO_DELETE` rules for catching deletions of an extension.
-  The new rules are not active by default in existing v1 and v1beta1
-  configurations, for backwards-compatibility reasons. Migrate your config to
-  v2 to use them.
-- Adds support for top-level extensions to `buf lint`. It previously only
-  checked extensions that were defined inside of messages.
-- Adds a new `FIELD_NOT_REQUIRED` lint rule that prevents use of required
-  in proto2 files and of `features.field_presence = LEGACY_REQUIRED` in
-  Editions files. This new rule is not active by default in existing v1 and
-  v1beta1 configurations, for backwards-compatibility reasons. Migrate your
-  config to v2 to use them.
-- Add `buf beta registry label archive` and `buf beta registry label unarchive` commands
-  for managing labels on the BSR.
+- Add support for extensions to `buf breaking`. All existing rules for fields are now applied to
+  extensions, except for `FIELD_NO_DELETE` (and its variants). There are also new
+  `EXTENSION_NO_DELETE` and `PACKAGE_EXTENSION_NO_DELETE` rules for catching deletions of an
+  extension. The new rules are not active by default in existing `v1` and `v1beta1`
+  configurations, for backwards-compatibility reasons. Migrate your config to `v2` to use them.
+- Add support for top-level extensions to `buf lint`. It previously only checked extensions that
+  were defined inside of messages.
+- Add a new `FIELD_NOT_REQUIRED` lint rule that prevents use of required in proto2 files and of
+  `features.field_presence = LEGACY_REQUIRED` in Editions files. This new rule is not active by
+  default in existing `v1` and `v1beta1` configurations, for backwards-compatibility reasons.
+  Migrate your config to `v2` to use them.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 
