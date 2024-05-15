@@ -1134,6 +1134,30 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "workspace", "success", "dir", "other"))
 }
 
+func TestWorkspaceInputOverlapNonExistentDirFail(t *testing.T) {
+	// The target input is a non-existent directory and the workspace contains a single
+	// module at the root, ".".
+	t.Parallel()
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: input path "proto/fake-dir" does not exist`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "fake-dir"),
+	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: input path "fake-dir" does not exist`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "v2", "overlap", "fake-dir"),
+	)
+}
+
 func TestWorkspaceNoVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a version.
 	t.Parallel()
