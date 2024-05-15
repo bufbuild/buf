@@ -67,6 +67,22 @@ func (r *remote) HEADBranch() string {
 	return r.headBranch
 }
 
+func newRemote(
+	name string,
+	kind RemoteKind,
+	hostname string,
+	repositoryPath string,
+	headBranch string,
+) *remote {
+	return &remote{
+		name:           name,
+		kind:           kind,
+		hostname:       hostname,
+		repositoryPath: repositoryPath,
+		headBranch:     headBranch,
+	}
+}
+
 func getRemote(
 	ctx context.Context,
 	runner command.Runner,
@@ -90,13 +106,13 @@ func getRemote(
 	if err != nil {
 		return nil, err
 	}
-	return &remote{
-		name:           name,
-		kind:           getRemoteKindFromHostname(hostname),
-		hostname:       hostname,
-		repositoryPath: repositoryPath,
-		headBranch:     headBranch,
-	}, nil
+	return newRemote(
+		name,
+		getRemoteKindFromHostname(hostname),
+		hostname,
+		repositoryPath,
+		headBranch,
+	), nil
 }
 
 func validateRemoteExists(
