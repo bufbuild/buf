@@ -153,7 +153,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	--%s for each Git tag and branch pointing to the currently checked out commit
 	--%s to the Git default branch (e.g. main) - this is only in effect if --%s is also set
 
-The source control URL and default branch is based on the Git remote, %q, and requires you to have this remote.
+The source control URL and default branch is based on the required Git remote %q.
 This flag is only compatible with checkouts of Git source repositories.
 This flag does not allow you to set any of the following flags yourself: --%s, --%s.`,
 			sourceControlURLFlagName,
