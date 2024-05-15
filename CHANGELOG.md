@@ -29,6 +29,8 @@
 - Deprecate `buf mod open`.
 - Delete `buf beta migrate-v1beta1` This is now replaced with `buf config migrate`.
 - Add `buf registry sdk version` to get the version of a Generated SDK for a module and plugin.
+- Add `buf beta registry archive` and `buf beta registry unarchive` commands for archiving and
+  unarchiving labels on the BSR.
 - Add support for Protobuf Editions. This allows `buf` to be used with sources that use edition
   2023, instead of proto2 or proto3 syntax. This also updates the `protoc-gen-buf-breaking` and
   `protoc-gen-buf-lint` Protobuf plugins to support files that use edition 2023.
