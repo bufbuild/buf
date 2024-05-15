@@ -38,11 +38,12 @@ const (
 type MalformedDepType int
 
 // MalformedDep is a dep that was malformed in some way in the buf.yaml.
+// It provides the module ref information and the malformed dep type.
 type MalformedDep interface {
-	// ModuleFullName returns the full name of the malformed dep.
+	// ModuleRef is the module ref information of the malformed dep.
 	//
 	// Always present.
-	ModuleFullName() bufmodule.ModuleFullName
+	ModuleRef() bufmodule.ModuleRef
 	// Type is why this dep was malformed.
 	//
 	// Always present.
@@ -105,7 +106,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 			malformedDeps = append(
 				malformedDeps,
 				newMalformedDep(
-					configuredDepModuleRef.ModuleFullName(),
+					configuredDepModuleRef,
 					MalformedDepTypeUnused,
 				),
 			)
@@ -114,8 +115,8 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	sort.Slice(
 		malformedDeps,
 		func(i int, j int) bool {
-			return malformedDeps[i].ModuleFullName().String() <
-				malformedDeps[j].ModuleFullName().String()
+			return malformedDeps[i].ModuleRef().ModuleFullName().String() <
+				malformedDeps[j].ModuleRef().ModuleFullName().String()
 		},
 	)
 	return malformedDeps, nil
@@ -124,19 +125,22 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 // *** PRIVATE ***
 
 type malformedDep struct {
-	moduleFullName   bufmodule.ModuleFullName
+	moduleRef        bufmodule.ModuleRef
 	malformedDepType MalformedDepType
 }
 
-func newMalformedDep(moduleFullName bufmodule.ModuleFullName, malformedDepType MalformedDepType) *malformedDep {
+func newMalformedDep(
+	moduleRef bufmodule.ModuleRef,
+	malformedDepType MalformedDepType,
+) *malformedDep {
 	return &malformedDep{
-		moduleFullName:   moduleFullName,
+		moduleRef:        moduleRef,
 		malformedDepType: malformedDepType,
 	}
 }
 
-func (m *malformedDep) ModuleFullName() bufmodule.ModuleFullName {
-	return m.moduleFullName
+func (m *malformedDep) ModuleRef() bufmodule.ModuleRef {
+	return m.moduleRef
 }
 
 func (m *malformedDep) Type() MalformedDepType {
