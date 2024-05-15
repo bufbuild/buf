@@ -442,7 +442,7 @@ func getGitMetadataUploadOptions(
 	if len(uncommittedFiles) > 0 {
 		return nil, fmt.Errorf("uncommitted changes found in the following files: %v", uncommittedFiles)
 	}
-	originRemote, err := git.GetRemote(ctx, runner, app.EnvironMap(container), input, gitOriginRemote)
+	originRemote, err := git.GetRemote(ctx, runner, container, input, gitOriginRemote)
 	if err != nil {
 		if errors.Is(err, git.ErrRemoteNotFound) {
 			return nil, appcmd.NewInvalidArgumentErrorf("remote %s must be present on Git checkout: %w", gitOriginRemote, err)
@@ -454,7 +454,7 @@ func getGitMetadataUploadOptions(
 		return nil, err
 	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
-	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, app.EnvironMap(container), input, currentGitCommit)
+	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, container, input, currentGitCommit)
 	if err != nil {
 		return nil, err
 	}
@@ -482,11 +482,11 @@ func getGitMetadataUploadOptions(
 func getGitMetadataLabelsUploadOptions(
 	ctx context.Context,
 	runner command.Runner,
-	env map[string]string,
+	envContainer app.EnvContainer,
 	input string,
 	gitCommitSha string,
 ) (bufmodule.UploadOption, error) {
-	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, env, input, gitOriginRemote, gitCommitSha)
+	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, envContainer, input, gitOriginRemote, gitCommitSha)
 	if err != nil {
 		return nil, err
 	}

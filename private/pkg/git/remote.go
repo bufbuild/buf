@@ -25,6 +25,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 )
 
@@ -35,16 +36,7 @@ const (
 	gitSuffix                   = ".git"
 	githubGitlabRemoteURLFormat = "https://%s%s/commit/%s"
 	bitBucketRemoteURLFormat    = "https://%s%s/commits/%s"
-)
 
-var (
-	ErrRemoteNotFound = errors.New("git remote not found")
-)
-
-// remoteKind is the kind of remote based on Git source (e.g. GitHub, GitLab, BitBucket, etc.)
-type remoteKind int
-
-const (
 	// remoteKindUnknown is a remote to a unknown Git source.
 	remoteKindUnknown remoteKind = iota + 1
 	// RemoteKindGitHub is a remote to a GitHub Git source.
@@ -54,6 +46,9 @@ const (
 	// RemoteKindBitBucket is a remote to a BitBucket Git source.
 	remoteKindBitBucket
 )
+
+// remoteKind is the kind of remote based on Git source (e.g. GitHub, GitLab, BitBucket, etc.)
+type remoteKind int
 
 type remote struct {
 	name           string
@@ -121,11 +116,11 @@ func newRemote(
 func getRemote(
 	ctx context.Context,
 	runner command.Runner,
-	env map[string]string,
+	envContainer app.EnvContainer,
 	dir string,
 	name string,
 ) (*remote, error) {
-	if err := validateRemoteExists(ctx, runner, env, dir, name); err != nil {
+	if err := validateRemoteExists(ctx, runner, envContainer, dir, name); err != nil {
 		return nil, err
 	}
 	hostname, repositoryPath, err := getRemoteURLMetadata(
@@ -137,7 +132,7 @@ func getRemote(
 	if err != nil {
 		return nil, err
 	}
-	headBranch, err := getRemoteHEADBranch(ctx, runner, env, dir, name)
+	headBranch, err := getRemoteHEADBranch(ctx, runner, envContainer, dir, name)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +148,7 @@ func getRemote(
 func validateRemoteExists(
 	ctx context.Context,
 	runner command.Runner,
-	env map[string]string,
+	envContainer app.EnvContainer,
 	dir string,
 	name string,
 ) error {
@@ -166,7 +161,7 @@ func validateRemoteExists(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
-		command.RunWithEnv(env),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -241,7 +236,7 @@ func parseSCPLikeURL(rawURL string) *url.URL {
 func getRemoteHEADBranch(
 	ctx context.Context,
 	runner command.Runner,
-	env map[string]string,
+	envContainer app.EnvContainer,
 	dir string,
 	remote string,
 ) (string, error) {
@@ -254,7 +249,7 @@ func getRemoteHEADBranch(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
-		command.RunWithEnv(env),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
 		return "", err
 	}
