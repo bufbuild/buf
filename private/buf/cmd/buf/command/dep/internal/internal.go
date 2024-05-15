@@ -53,7 +53,7 @@ func ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 
 // Prune prunes the buf.lock.
 //
-// Used by both dep/mod prune and dep/mod update.
+// Used by dep/mod prune.
 func Prune(
 	ctx context.Context,
 	logger *zap.Logger,
