@@ -143,15 +143,16 @@ func run(
 	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys); err != nil {
 		return err
 	}
-	// Validate that the workspace builds and log unused configured deps.
-	// Building also has the side effect of doing tamper-proofing.
 	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
 	if err != nil {
 		return err
 	}
+	// Validate that the workspace builds.
+	// Building also has the side effect of doing tamper-proofing.
 	if _, err := controller.GetImageForWorkspace(
 		ctx,
 		workspace,
+		// This is a performance optimization - we don't need source code info.
 		bufctl.WithImageExcludeSourceInfo(true),
 	); err != nil {
 		return err
