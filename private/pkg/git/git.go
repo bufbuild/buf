@@ -158,7 +158,7 @@ type Remote interface {
 	HEADBranch() string
 	// Kind of remote (e.g. GitHub, GitLab, BitBucket, etc.).
 	Kind() RemoteKind
-	// Hostname is the host name parsed from the remote URL. If the remote is not an unknown
+	// Hostname is the host name parsed from the remote URL. If the remote is an unknown
 	// kind, then this may be an empty string.
 	Hostname() string
 	// RepositoryPath is the path to the repository based on the remote URL. If the remote

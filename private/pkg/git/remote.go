@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	ErrRemoteNotFound = errors.New("not found")
+	ErrRemoteNotFound = errors.New("git remote not found")
 )
 
 type remote struct {
@@ -185,7 +185,7 @@ func parseSCPLikeURL(rawURL string) *url.URL {
 }
 
 // getRemoteHEADBranch returns the HEAD branch based on the given remote and given
-// directory. Querying the remote for the HEAD branch requires the passing the
+// directory. Querying the remote for the HEAD branch requires passing the
 // environment for permissions.
 func getRemoteHEADBranch(
 	ctx context.Context,
