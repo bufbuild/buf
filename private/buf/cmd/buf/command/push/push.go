@@ -434,7 +434,8 @@ func getGitMetadataUploadOptions(
 		return nil, err
 	}
 	// validate that input is a local directory
-	if _, err := os.Stat(input); err != nil {
+	fileInfo, err := os.Stat(input)
+	if err != nil || !fileInfo.IsDir() {
 		return nil, appcmd.NewInvalidArgumentErrorf("input, %s, must be a local Git repository checkout: %w", input, err)
 	}
 	runner := command.NewRunner()
