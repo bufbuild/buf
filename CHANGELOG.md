@@ -11,8 +11,19 @@
   is now deprecated.
 - Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
 - Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
-- Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
+- Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now
+  deprecated.
 - Move `buf beta graph` to stable as `buf dep graph`.
+- Change the default visibility of `buf push --create-visibility` to `private` when the `--create`
+  flag is set. Users are no longer required to set `--create-visibility` when running
+  `buf push --create`.
+- Add `buf push --label`, which allows users to set labels when pushing new commits to the BSR.
+- Add `buf push --source-control-url`, which allows users to associate commits pushed to the BSR
+  with a URL to a source code repository.
+- Add `buf push --create-default-label`, which allows users to set a default label for a repository
+  when calling `buf push --create`.
+- Add `buf push --git-metadata`, which automatically sets appropriate `--label`,
+  `--source-control-url`, and `--create-default-label` flags based on the current Git repository.
 - Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
   rules to incoming messages specified with `--from`.
 - Deprecate `buf mod open`.
@@ -56,18 +67,6 @@
   `features.field_presence = LEGACY_REQUIRED` in Editions files. This new rule is not active by
   default in existing `v1` and `v1beta1` configurations, for backwards-compatibility reasons.
   Migrate your config to `v2` to use them.
-- Change the default visibility of `--create-visibility` flag for `buf push` to `private`
-  when the `--create` flag is set. Users are no longer required to set `--create-visibility`
-  when running `buf push --create`.
-- Add `--label` flag to `buf push` which allows users to set labels when pushing new
-  commits to the BSR.
-- Add `--source-control-url` flag to `buf push` which allows users to associate commits
-  pushed to the BSR with a URL to a source code repository.
-- Add `--create-default-label` flag to `buf push`, which allows users to set a default
-  label for a repository when calling `buf push --create`.
-- Add `--git-metadata` flag to `buf push`, which automatically sets appropriate
-  `--label`, `--source-control-url`, and `--create-default-label` flags based on the
-  current Git repository.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 
