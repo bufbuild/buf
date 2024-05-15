@@ -79,7 +79,6 @@ func run(
 		ctx,
 		container.Logger(),
 		controller,
-		container,
 		configuredDepModuleKeys,
 		workspaceDepManager,
 		dirPath,

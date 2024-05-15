@@ -58,7 +58,6 @@ func Prune(
 	ctx context.Context,
 	logger *zap.Logger,
 	controller bufctl.Controller,
-	container appext.Container,
 	// Contains all the Modules and their transitive dependencies based on the  buf.yaml.
 	//
 	// All dependencies must be within this group from RemoteDepsForModuleSet. If a dependency
