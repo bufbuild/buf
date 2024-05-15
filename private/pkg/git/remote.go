@@ -67,10 +67,6 @@ func (r *remote) Name() string {
 	return r.name
 }
 
-func (r *remote) Kind() remoteKind {
-	return r.kind
-}
-
 func (r *remote) Hostname() string {
 	return r.hostname
 }
