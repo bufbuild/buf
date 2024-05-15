@@ -53,7 +53,7 @@ func ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 
 // Prune prunes the buf.lock.
 //
-// Used by both mod prune and mod update.
+// Used by dep/mod prune.
 func Prune(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -84,22 +84,10 @@ func Prune(
 	}
 	// Compute those dependencies that are in buf.yaml that are not used at all, and warn
 	// about them.
-	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
-	if err != nil {
+	if err := LogUnusedConfiguredDepsForWorkspace(workspace, logger); err != nil {
 		return err
 	}
-	for _, malformedDep := range malformedDeps {
-		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUnused:
-			logger.Sugar().Warnf(
-				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
-				malformedDep.ModuleFullName(),
-			)
-		default:
-			return fmt.Errorf("unknown MalformedDepType: %v", t)
-		}
-	}
-	// Sep that actual computed remote dependencies based on imports. These are all
+	// Step that actually computes remote dependencies based on imports. These are all
 	// that is needed for buf.lock.
 	depModules, err := bufmodule.RemoteDepsForModuleSet(workspace)
 	if err != nil {
@@ -118,6 +106,30 @@ func Prune(
 		return err
 	}
 	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys)
+}
+
+// LogUnusedConfiugredDepsForWorkspace takes a workspace and logs the unused configured
+// dependencies as warnings to the user.
+func LogUnusedConfiguredDepsForWorkspace(
+	workspace bufworkspace.Workspace,
+	logger *zap.Logger,
+) error {
+	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
+	if err != nil {
+		return err
+	}
+	for _, malformedDep := range malformedDeps {
+		switch t := malformedDep.Type(); t {
+		case bufworkspace.MalformedDepTypeUnused:
+			logger.Sugar().Warnf(
+				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
+				malformedDep.ModuleRef().ModuleFullName(),
+			)
+		default:
+			return fmt.Errorf("unknown MalformedDepType: %v", t)
+		}
+	}
+	return nil
 }
 
 // moduleKeysAndTransitiveDepModuleKeysForModuleKeys returns the ModuleKeys
