@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -432,12 +433,14 @@ func getGitMetadataUploadOptions(
 	if err != nil {
 		return nil, err
 	}
+	// validate that input is a local directory
+	if _, err := os.Stat(input); err != nil {
+		return nil, appcmd.NewInvalidArgumentErrorf("input, %s, must be a local Git repository checkout: %w", input, err)
+	}
 	runner := command.NewRunner()
 	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, input)
 	if err != nil {
-		// We surface additional information here for the user to ensure they are using this flag
-		// with a git checkout.
-		return nil, fmt.Errorf("unable to check input %q, please ensure this is a Git repository checkout: %w", input, err)
+		return nil, err
 	}
 	if len(uncommittedFiles) > 0 {
 		return nil, fmt.Errorf("uncommitted changes found in the following files: %v", uncommittedFiles)
