@@ -31,12 +31,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/archive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelarchive"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -51,6 +50,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/unarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -189,6 +189,8 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
+							archive.NewCommand("archive", builder),
+							unarchive.NewCommand("unarchive", builder),
 							{
 								Use:   "organization",
 								Short: "Manage organizations",
@@ -250,14 +252,6 @@ func NewRootCommand(name string) *appcmd.Command {
 								SubCommands: []*appcmd.Command{
 									pluginpush.NewCommand("push", builder),
 									plugindelete.NewCommand("delete", builder),
-								},
-							},
-							{
-								Use:   "label",
-								Short: "Manage labels on the Buf Schema Registry",
-								SubCommands: []*appcmd.Command{
-									labelarchive.NewCommand("archive", builder),
-									labelunarchive.NewCommand("unarchive", builder),
 								},
 							},
 						},
