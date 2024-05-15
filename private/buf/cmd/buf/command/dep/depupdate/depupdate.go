@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -104,7 +105,6 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	configuredDepModuleRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
 	if err != nil {
 		return err
@@ -143,11 +143,20 @@ func run(
 	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys); err != nil {
 		return err
 	}
-	// Prune the buf.lock. This also verifies the workspace builds again.
+	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
+	if err != nil {
+		return err
+	}
+	// Validate that the workspace builds.
 	// Building also has the side effect of doing tamper-proofing.
-	//
-	// Note that the check to make sure configuredDepModuleKeys is a superset of the remote deps should be a no-op
-	// in this case, they should be equivalent based on the updates we just did, but we do the check
-	// anyways to triple verify.
-	return internal.Prune(ctx, logger, controller, configuredDepModuleKeys, workspaceDepManager, dirPath)
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		workspace,
+		// This is a performance optimization - we don't need source code info.
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
+		return err
+	}
+	// Log warnings for users on unused configured deps.
+	return internal.LogUnusedConfiguredDepsForWorkspace(workspace, logger)
 }

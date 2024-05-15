@@ -206,10 +206,10 @@ func (n *NoProtoFilesError) Error() string {
 		return ""
 	}
 	var builder strings.Builder
-	_, _ = builder.WriteString(`module `)
+	_, _ = builder.WriteString(`"`)
 	// Writing even if the error is malformed via d.OpaqueID being empty.
 	_, _ = builder.WriteString(n.OpaqueID)
-	_, _ = builder.WriteString(` had no .proto files`)
+	_, _ = builder.WriteString(`" had no .proto files`)
 	return builder.String()
 }
 

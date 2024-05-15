@@ -75,5 +75,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	return internal.Prune(ctx, container.Logger(), controller, configuredDepModuleKeys, workspaceDepManager, dirPath)
+	return internal.Prune(
+		ctx,
+		container.Logger(),
+		controller,
+		configuredDepModuleKeys,
+		workspaceDepManager,
+		dirPath,
+	)
 }
