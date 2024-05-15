@@ -136,34 +136,36 @@ type ListFilesAndUnstagedFilesOptions struct {
 	IgnorePathRegexps []*regexp.Regexp
 }
 
-// RemoteKind is the kind of remote based on Git source (e.g. GitHub, GitLab, BitBucket, etc.)
-type RemoteKind int
-
-const (
-	// RemoteKindUnknown is a remote to a unknown Git source.
-	RemoteKindUnknown RemoteKind = iota + 1
-	// RemoteKindGitHub is a remote to a GitHub Git source.
-	RemoteKindGitHub
-	// RemoteKindGitLab is a remote to a GitLab Git source.
-	RemoteKindGitLab
-	// RemoteKindBitBucket is a remote to a BitBucket Git source.
-	RemoteKindBitBucket
-)
-
 // Remote represents a Git remote and provides associated metadata.
 type Remote interface {
 	// Name of the remote (e.g. "origin")
 	Name() string
 	// HEADBranch is the name of the HEAD branch of the remote.
 	HEADBranch() string
-	// Kind of remote (e.g. GitHub, GitLab, BitBucket, etc.).
-	Kind() RemoteKind
 	// Hostname is the host name parsed from the remote URL. If the remote is an unknown
 	// kind, then this may be an empty string.
 	Hostname() string
 	// RepositoryPath is the path to the repository based on the remote URL. If the remote
 	// is an unknown kind, then this may be an empty string.
 	RepositoryPath() string
+	// SourceControlURL makes the best effort to construct a user-facing source control url
+	// given a commit sha string based on the remoteKind and available hostname and
+	// repository path information.
+	//
+	// If the remote hostname contains bitbucket (e.g. bitbucket.mycompany.com or bitbucket.org),
+	// then it uses the route /commits for the git commit sha.
+	//
+	// If the remote hostname contains github (e.g. github.mycompany.com or github.com) or gitlab
+	// (e.g. gitlab.mycompany.com or gitlab.com) then it uses the route /commit for the git
+	// commit sha.
+	//
+	// If the remote is unknown and/or no hostname/repository path information is available,
+	// this will return an empty string.
+	//
+	// This does not do any validation against the gitCommitSha provided.
+	SourceControlURL(gitCommitSha string) string
+
+	isRemote()
 }
 
 // GetRemote gets the Git remote based on the given remote name.

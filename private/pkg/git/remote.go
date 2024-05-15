@@ -29,19 +29,35 @@ import (
 )
 
 const (
-	bitBucketHostname = "bitbucket"
-	githubHostname    = "github"
-	gitlabHostname    = "gitlab"
-	gitSuffix         = ".git"
+	bitBucketHostname           = "bitbucket"
+	githubHostname              = "github"
+	gitlabHostname              = "gitlab"
+	gitSuffix                   = ".git"
+	githubGitlabRemoteURLFormat = "https://%s%s/commit/%s"
+	bitBucketRemoteURLFormat    = "https://%s%s/commits/%s"
 )
 
 var (
 	ErrRemoteNotFound = errors.New("git remote not found")
 )
 
+// remoteKind is the kind of remote based on Git source (e.g. GitHub, GitLab, BitBucket, etc.)
+type remoteKind int
+
+const (
+	// remoteKindUnknown is a remote to a unknown Git source.
+	remoteKindUnknown remoteKind = iota + 1
+	// RemoteKindGitHub is a remote to a GitHub Git source.
+	remoteKindGitHub
+	// RemoteKindGitLab is a remote to a GitLab Git source.
+	remoteKindGitLab
+	// RemoteKindBitBucket is a remote to a BitBucket Git source.
+	remoteKindBitBucket
+)
+
 type remote struct {
 	name           string
-	kind           RemoteKind
+	kind           remoteKind
 	hostname       string
 	repositoryPath string
 	headBranch     string
@@ -51,7 +67,7 @@ func (r *remote) Name() string {
 	return r.name
 }
 
-func (r *remote) Kind() RemoteKind {
+func (r *remote) Kind() remoteKind {
 	return r.kind
 }
 
@@ -67,9 +83,32 @@ func (r *remote) HEADBranch() string {
 	return r.headBranch
 }
 
+func (r *remote) isRemote() {}
+
+func (r *remote) SourceControlURL(gitCommitSha string) string {
+	switch r.kind {
+	case remoteKindBitBucket:
+		return fmt.Sprintf(
+			bitBucketRemoteURLFormat,
+			r.Hostname(),
+			r.RepositoryPath(),
+			gitCommitSha,
+		)
+	case remoteKindGitHub, remoteKindGitLab:
+		return fmt.Sprintf(
+			githubGitlabRemoteURLFormat,
+			r.Hostname(),
+			r.RepositoryPath(),
+			gitCommitSha,
+		)
+	}
+	// Unknown remote kind, we return an empty URL.
+	return ""
+}
+
 func newRemote(
 	name string,
-	kind RemoteKind,
+	kind remoteKind,
 	hostname string,
 	repositoryPath string,
 	headBranch string,
@@ -233,15 +272,15 @@ func getRemoteHEADBranch(
 	return "", errors.New("no HEAD branch information found")
 }
 
-func getRemoteKindFromHostname(hostname string) RemoteKind {
+func getRemoteKindFromHostname(hostname string) remoteKind {
 	if strings.Contains(hostname, bitBucketHostname) {
-		return RemoteKindBitBucket
+		return remoteKindBitBucket
 	}
 	if strings.Contains(hostname, githubHostname) {
-		return RemoteKindGitHub
+		return remoteKindGitHub
 	}
 	if strings.Contains(hostname, gitlabHostname) {
-		return RemoteKindGitLab
+		return remoteKindGitLab
 	}
-	return RemoteKindUnknown
+	return remoteKindUnknown
 }

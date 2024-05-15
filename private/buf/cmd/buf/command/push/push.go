@@ -53,9 +53,7 @@ const (
 	draftFlagName    = "draft"
 	branchFlagName   = "branch"
 
-	gitOriginRemote             = "origin"
-	githubGitlabRemoteURLFormat = "https://%s%s/commit/%s"
-	bitBucketRemoteURLFormat    = "https://%s%s/commits/%s"
+	gitOriginRemote = "origin"
 )
 
 var (
@@ -149,14 +147,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			`Uses the Git source control state to set flag values. If this flag is set, we will use the following values for your flags:
 
-	--%s to <git remote URL>/<repository name>/<route>/<checked out commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53)
-	--%s for each Git tag and branch pointing to the currently checked out commit
-	--%s to the Git default branch (e.g. main) - this is only in effect if --%s is also set
+	--%s to <git remote URL>/<repository name>/<route>/<checked out commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53).
+	--%s for each Git tag and branch pointing to the currently checked out commit. You can set additional labels using --%s with this flag.
+	--%s to the Git default branch (e.g. main) - this is only in effect if --%s is also set.
 
 The source control URL and default branch is based on the required Git remote %q.
 This flag is only compatible with checkouts of Git source repositories.
 This flag does not allow you to set any of the following flags yourself: --%s, --%s.`,
 			sourceControlURLFlagName,
+			labelFlagName,
 			labelFlagName,
 			createDefaultLabelFlagName,
 			createFlagName,
@@ -462,13 +461,11 @@ func getGitMetadataUploadOptions(
 	if gitLabelsUploadOption != nil {
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
 	}
-	gitSourceControlURLUploadOption, err := getGitMetadataSourceControlURLUploadOption(originRemote, currentGitCommit)
-	if err != nil {
-		return nil, err
+	sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
+	if sourceControlURL == "" {
+		return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
 	}
-	if gitSourceControlURLUploadOption != nil {
-		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitSourceControlURLUploadOption)
-	}
+	gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
 	if flags.Create {
 		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
@@ -497,42 +494,6 @@ func getGitMetadataLabelsUploadOptions(
 		return nil, fmt.Errorf("no tags or branches found for HEAD, %s", gitCommitSha)
 	}
 	return bufmodule.UploadWithLabels(refs...), nil
-}
-
-// getGitMetadataSourceControlURLUploadOption takes a remote and git commit sha and makes
-// the best effort to construct a user-facing URL based on the hostname.
-//
-// If the remote hostname contains bitbucket (e.g. bitbucket.mycompany.com or bitbucket.org),
-// then it uses the route /commits for the git commit sha.
-//
-// If the remote hostname contains github (e.g. github.mycompany.com or github.com) or gitlab
-// (e.g. gitlab.mycompany.com or gitlab.com) then it uses the route /commit for the git
-// commit sha.
-func getGitMetadataSourceControlURLUploadOption(
-	remote git.Remote,
-	gitCommitSha string,
-) (bufmodule.UploadOption, error) {
-	switch remote.Kind() {
-	case git.RemoteKindBitBucket:
-		return bufmodule.UploadWithSourceControlURL(
-			fmt.Sprintf(
-				bitBucketRemoteURLFormat,
-				remote.Hostname(),
-				remote.RepositoryPath(),
-				gitCommitSha,
-			),
-		), nil
-	case git.RemoteKindGitHub, git.RemoteKindGitLab:
-		return bufmodule.UploadWithSourceControlURL(
-			fmt.Sprintf(
-				githubGitlabRemoteURLFormat,
-				remote.Hostname(),
-				remote.RepositoryPath(),
-				gitCommitSha,
-			),
-		), nil
-	}
-	return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
 }
 
 func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
