@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.32.0] - 2024-05-16
 
 - Add version `v2` for `buf.yaml` and `buf.gen.yaml` configuration files.
@@ -1110,6 +1114,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.0...HEAD
 [v1.32.0]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...v1.32.0
 [v1.32.0-beta.1]: https://github.com/bufbuild/buf/compare/v1.31.0...v1.32.0-beta.1
 [v1.31.0]: https://github.com/bufbuild/buf/compare/v1.30.1...v1.31.0
