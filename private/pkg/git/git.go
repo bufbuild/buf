@@ -176,11 +176,17 @@ type Remote interface {
 	// repository path information.
 	//
 	// If the remote hostname contains bitbucket (e.g. bitbucket.mycompany.com or bitbucket.org),
-	// then it uses the route /commits for the git commit sha.
+	// we construct the source control URL as:
 	//
-	// If the remote hostname contains github (e.g. github.mycompany.com or github.com) or gitlab
-	// (e.g. gitlab.mycompany.com or gitlab.com) then it uses the route /commit for the git
-	// commit sha.
+	//   https://<hostname>/<repository-path>/commits/<git-commit-sha>
+	//
+	// If the remote hostname contains github (e.g. github.mycompany.com or github.com), we
+	// construct the source control URL as:
+	//   https://<hostname>/repository-path>/commit/git-commit-sha>
+	//
+	// If the remote hostname contains gitlab (e.g. gitlab.mycompany.com or gitlab.com), we
+	// construct the source control URL as:
+	//   https://<hostname>/repository-path>/commit/git-commit-sha>
 	//
 	// If the remote is unknown and/or no hostname/repository path information is available,
 	// this will return an empty string.
