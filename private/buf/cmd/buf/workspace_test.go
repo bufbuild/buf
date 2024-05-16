@@ -1143,7 +1143,7 @@ func TestWorkspaceInputOverlapNonExistentDirFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: input path "proto/fake-dir" does not exist`,
+		`Failure: no .proto files were targeted. This can occur if no .proto files are found in your input, --path points to files that do not exist, or --exclude-path excludes all files.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "fake-dir"),
 	)
@@ -1152,7 +1152,7 @@ func TestWorkspaceInputOverlapNonExistentDirFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: input path "fake-dir" does not exist`,
+		`Failure: no .proto files were targeted. This can occur if no .proto files are found in your input, --path points to files that do not exist, or --exclude-path excludes all files.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "overlap", "fake-dir"),
 	)
