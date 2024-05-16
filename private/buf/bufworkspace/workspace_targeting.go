@@ -700,7 +700,7 @@ func checkForOverlap(
 				return err
 			}
 			if empty {
-				return nil, bufmodule.ErrNoTargetProtoFiles
+				return bufmodule.ErrNoTargetProtoFiles
 			}
 			return fmt.Errorf("failed to build input %q because it is contained by module at path %q specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path", inputPath, moduleDirPath)
 		}
