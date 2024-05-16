@@ -16,16 +16,21 @@ package push
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -41,12 +46,15 @@ const (
 	createVisibilityFlagName   = "create-visibility"
 	createDefaultLabelFlagName = "create-default-label"
 	sourceControlURLFlagName   = "source-control-url"
+	gitMetadataFlagName        = "git-metadata"
 
 	// All deprecated.
 	tagFlagName      = "tag"
 	tagFlagShortName = "t"
 	draftFlagName    = "draft"
 	branchFlagName   = "branch"
+
+	gitOriginRemote = "origin"
 )
 
 var (
@@ -84,6 +92,7 @@ type flags struct {
 	CreateVisibility   string
 	CreateDefaultLabel string
 	SourceControlURL   string
+	GitMetadata        bool
 	// special
 	InputHashtag string
 }
@@ -116,7 +125,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		createFlagName,
 		false,
 		fmt.Sprintf(
-			"Create the repository if it does not exist. Must set --%s",
+			"Create the repository if it does not exist. Defaults to creating a private repository if --%s is not set.",
 			createVisibilityFlagName,
 		),
 	)
@@ -131,6 +140,30 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		sourceControlURLFlagName,
 		"",
 		"The URL for viewing the source code of the pushed modules (e.g. the specific commit in source control).",
+	)
+	flagSet.BoolVar(
+		&f.GitMetadata,
+		gitMetadataFlagName,
+		false,
+		fmt.Sprintf(
+			`Uses the Git source control state to set flag values. If this flag is set, we will use the following values for your flags:
+
+	--%s to <git remote URL>/<repository name>/<route>/<checked out commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53).
+	--%s for each Git tag and branch pointing to the currently checked out commit. You can set additional labels using --%s with this flag.
+	--%s to the Git default branch (e.g. main) - this is only in effect if --%s is also set.
+
+The source control URL and default branch is based on the required Git remote %q.
+This flag is only compatible with checkouts of Git source repositories.
+This flag does not allow you to set any of the following flags yourself: --%s, --%s.`,
+			sourceControlURLFlagName,
+			labelFlagName,
+			labelFlagName,
+			createDefaultLabelFlagName,
+			createFlagName,
+			gitOriginRemote,
+			sourceControlURLFlagName,
+			createDefaultLabelFlagName,
+		),
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
@@ -166,21 +199,34 @@ func run(
 	}
 
 	var uploadOptions []bufmodule.UploadOption
-	if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
-		uploadOptions = append(uploadOptions, labelUploadOption)
-	}
-	if flags.Create {
-		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+	if flags.GitMetadata {
+		gitMetadataUploadOptions, err := getGitMetadataUploadOptions(ctx, container, flags)
 		if err != nil {
 			return err
 		}
-		uploadOptions = append(
-			uploadOptions,
-			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
-		)
-	}
-	if flags.SourceControlURL != "" {
-		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
+		uploadOptions = append(uploadOptions, gitMetadataUploadOptions...)
+		// Accept any additional labels the user has set using `--label`
+		if len(flags.Labels) > 0 {
+			uploadOptions = append(uploadOptions, bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...))
+		}
+	} else {
+		// Otherwise, we parse the flags set individually by the user.
+		if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
+			uploadOptions = append(uploadOptions, labelUploadOption)
+		}
+		if flags.Create {
+			createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+			if err != nil {
+				return err
+			}
+			uploadOptions = append(
+				uploadOptions,
+				bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+			)
+		}
+		if flags.SourceControlURL != "" {
+			uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
+		}
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
@@ -263,7 +309,7 @@ func validateFlags(flags *flags) error {
 	if err := validateLabelFlags(flags); err != nil {
 		return err
 	}
-	return nil
+	return validateGitMetadataFlags(flags)
 }
 
 func validateCreateFlags(flags *flags) error {
@@ -279,13 +325,6 @@ func validateCreateFlags(flags *flags) error {
 			return appcmd.NewInvalidArgumentError(err.Error())
 		}
 	} else {
-		if flags.CreateVisibility != "" {
-			return appcmd.NewInvalidArgumentErrorf(
-				"Cannot set --%s without --%s",
-				createVisibilityFlagName,
-				createFlagName,
-			)
-		}
 		if flags.CreateDefaultLabel != "" {
 			return appcmd.NewInvalidArgumentErrorf(
 				"Cannot set --%s without --%s",
@@ -345,6 +384,137 @@ func validateLabelFlagValues(flags *flags) error {
 		}
 	}
 	return nil
+}
+
+// We do not allow users to set --source-control-url, --create-default-label, and --label
+// flags if the --git-metadata flag is set.
+func validateGitMetadataFlags(flags *flags) error {
+	if flags.GitMetadata {
+		var usedFlags []string
+		if flags.SourceControlURL != "" {
+			usedFlags = append(usedFlags, sourceControlURLFlagName)
+		}
+		if flags.CreateDefaultLabel != "" {
+			usedFlags = append(usedFlags, createDefaultLabelFlagName)
+		}
+		if len(flags.Tags) > 0 {
+			usedFlags = append(usedFlags, tagFlagName)
+		}
+		if flags.Branch != "" {
+			usedFlags = append(usedFlags, branchFlagName)
+		}
+		if flags.Draft != "" {
+			usedFlags = append(usedFlags, draftFlagName)
+		}
+		if len(usedFlags) > 0 {
+			usedFlagsErrStr := strings.Join(
+				slicesext.Map(
+					usedFlags,
+					func(flag string) string { return fmt.Sprintf("--%s", flag) },
+				),
+				", ",
+			)
+			return appcmd.NewInvalidArgumentErrorf(
+				"The following flag(s) cannot be used in combination with --%s: %s.",
+				gitMetadataFlagName,
+				usedFlagsErrStr,
+			)
+		}
+	}
+	return nil
+}
+
+func getGitMetadataUploadOptions(
+	ctx context.Context,
+	container appext.Container,
+	flags *flags,
+) ([]bufmodule.UploadOption, error) {
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	if err != nil {
+		return nil, err
+	}
+	runner := command.NewRunner()
+	// validate that input is a dirRef and is a valid git checkout
+	if err := validateInputIsValidDirAndGitCheckout(ctx, runner, container, input); err != nil {
+		return nil, err
+	}
+	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, input)
+	if err != nil {
+		return nil, err
+	}
+	if len(uncommittedFiles) > 0 {
+		return nil, fmt.Errorf("--%s requires that there are no uncommitted changes, uncommitted changes found in the following files: %v", gitMetadataFlagName, uncommittedFiles)
+	}
+	originRemote, err := git.GetRemote(ctx, runner, container, input, gitOriginRemote)
+	if err != nil {
+		if errors.Is(err, git.ErrRemoteNotFound) {
+			return nil, appcmd.NewInvalidArgumentErrorf("remote %s must be present on Git checkout: %w", gitOriginRemote, err)
+		}
+		return nil, err
+	}
+	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, input)
+	if err != nil {
+		return nil, err
+	}
+	var gitMetadataUploadOptions []bufmodule.UploadOption
+	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, container, input, currentGitCommit)
+	if err != nil {
+		return nil, err
+	}
+	if gitLabelsUploadOption != nil {
+		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
+	}
+	sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
+	if sourceControlURL == "" {
+		return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
+	}
+	gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
+	if flags.Create {
+		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+		if err != nil {
+			return nil, err
+		}
+		gitMetadataUploadOptions = append(
+			gitMetadataUploadOptions,
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisibility, originRemote.HEADBranch()),
+		)
+	}
+	return gitMetadataUploadOptions, nil
+}
+
+func validateInputIsValidDirAndGitCheckout(
+	ctx context.Context,
+	runner command.Runner,
+	container appext.Container,
+	input string,
+) error {
+	if _, err := buffetch.NewDirRefParser(container.Logger()).GetDirRef(ctx, input); err != nil {
+		return appcmd.NewInvalidArgumentErrorf("input %q is not a valid directory: %w", input, err)
+	}
+	if err := git.CheckDirectoryIsValidGitCheckout(ctx, runner, container, input); err != nil {
+		if errors.Is(err, git.ErrInvalidGitCheckout) {
+			return appcmd.NewInvalidArgumentErrorf("input %q is not a local Git repository checkout", input)
+		}
+		return err
+	}
+	return nil
+}
+
+func getGitMetadataLabelsUploadOptions(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	input string,
+	gitCommitSha string,
+) (bufmodule.UploadOption, error) {
+	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, envContainer, input, gitOriginRemote, gitCommitSha)
+	if err != nil {
+		return nil, err
+	}
+	if len(refs) == 0 {
+		return nil, fmt.Errorf("no tags or branches found for HEAD, %s", gitCommitSha)
+	}
+	return bufmodule.UploadWithLabels(refs...), nil
 }
 
 func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
