@@ -435,7 +435,7 @@ func getGitMetadataUploadOptions(
 	}
 	runner := command.NewRunner()
 	// validate that input is a dirRef and is a valid git checkout
-	if err := validateInput(ctx, runner, container, input); err != nil {
+	if err := validateInputIsValidDirAndGitCheckout(ctx, runner, container, input); err != nil {
 		return nil, err
 	}
 	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, input)
@@ -482,7 +482,7 @@ func getGitMetadataUploadOptions(
 	return gitMetadataUploadOptions, nil
 }
 
-func validateInput(
+func validateInputIsValidDirAndGitCheckout(
 	ctx context.Context,
 	runner command.Runner,
 	container appext.Container,
@@ -492,7 +492,10 @@ func validateInput(
 		return appcmd.NewInvalidArgumentErrorf("input %q is not a valid directory: %w", input, err)
 	}
 	if err := git.CheckDirectoryIsValidGitCheckout(ctx, runner, container, input); err != nil {
-		return appcmd.NewInvalidArgumentErrorf("input %q is not a local Git repository checkout: %w", input, err)
+		if errors.Is(err, git.ErrInvalidGitCheckout) {
+			return appcmd.NewInvalidArgumentErrorf("input %q is not a local Git repository checkout", input)
+		}
+		return err
 	}
 	return nil
 }

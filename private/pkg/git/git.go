@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -227,7 +228,7 @@ func CheckDirectoryIsValidGitCheckout(
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			if exitErr.ProcessState.ExitCode() == 128 {
-				return ErrInvalidGitCheckout
+				return fmt.Errorf("dir %s: %w", dir, ErrInvalidGitCheckout)
 			}
 		}
 		return err
