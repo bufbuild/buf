@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os/exec"
 	"regexp"
 	"strings"
 
@@ -41,6 +42,10 @@ var (
 	// ErrRemoteNotFound is returned from GetRemote when the specified remote name is not
 	// found in the current git checkout.
 	ErrRemoteNotFound = errors.New("git remote not found")
+
+	// ErrInvalidGitCheckout is returned from CheckDirectoryIsValidGitCheckout when the
+	// specified directory is not a valid git checkout.
+	ErrInvalidGitCheckout = errors.New("invalid git checkout")
 )
 
 // Name is a name identifiable by git.
@@ -196,6 +201,38 @@ func GetRemote(
 	name string,
 ) (Remote, error) {
 	return getRemote(ctx, runner, envContainer, dir, name)
+}
+
+// CheckDirectoryIsValidGitCheckout runs a simple git rev-parse. In the case where the
+// directory is not a valid git checkout (e.g. the directory is not a git repository or
+// the directory does not exist), this will return a 128. We handle that and return an
+// ErrInvalidGitCheckout to the user.
+func CheckDirectoryIsValidGitCheckout(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	dir string,
+) error {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs("rev-parse"),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+	); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			if exitErr.ProcessState.ExitCode() == 128 {
+				return ErrInvalidGitCheckout
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 // CheckForUncommittedGitChanges checks if there are any uncommitted and/or unchecked

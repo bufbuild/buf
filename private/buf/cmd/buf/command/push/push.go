@@ -18,11 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -433,18 +433,17 @@ func getGitMetadataUploadOptions(
 	if err != nil {
 		return nil, err
 	}
-	// validate that input is a local directory
-	fileInfo, err := os.Stat(input)
-	if err != nil || !fileInfo.IsDir() {
-		return nil, appcmd.NewInvalidArgumentErrorf("input, %s, must be a local Git repository checkout: %w", input, err)
-	}
 	runner := command.NewRunner()
+	// validate that input is a dirRef and is a valid git checkout
+	if err := validateInput(ctx, runner, container, input); err != nil {
+		return nil, err
+	}
 	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, input)
 	if err != nil {
 		return nil, err
 	}
 	if len(uncommittedFiles) > 0 {
-		return nil, fmt.Errorf("uncommitted changes found in the following files: %v", uncommittedFiles)
+		return nil, fmt.Errorf("--%s requires that there are no uncommitted changes, uncommitted changes found in the following files: %v", gitMetadataFlagName, uncommittedFiles)
 	}
 	originRemote, err := git.GetRemote(ctx, runner, container, input, gitOriginRemote)
 	if err != nil {
@@ -481,6 +480,21 @@ func getGitMetadataUploadOptions(
 		)
 	}
 	return gitMetadataUploadOptions, nil
+}
+
+func validateInput(
+	ctx context.Context,
+	runner command.Runner,
+	container appext.Container,
+	input string,
+) error {
+	if _, err := buffetch.NewDirRefParser(container.Logger()).GetDirRef(ctx, input); err != nil {
+		return appcmd.NewInvalidArgumentErrorf("input %q is not a valid directory: %w", input, err)
+	}
+	if err := git.CheckDirectoryIsValidGitCheckout(ctx, runner, container, input); err != nil {
+		return appcmd.NewInvalidArgumentErrorf("input %q is not a local Git repository checkout: %w", input, err)
+	}
+	return nil
 }
 
 func getGitMetadataLabelsUploadOptions(
