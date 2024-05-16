@@ -106,6 +106,9 @@ func run(
 	}
 	registryToModuleFullNames := map[string][]bufmodule.ModuleFullName{}
 	for _, module := range workspace.Modules() {
+		if !module.IsTarget() {
+			continue
+		}
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 			moduleFullNames, ok := registryToModuleFullNames[moduleFullName.Registry()]
 			if !ok {
