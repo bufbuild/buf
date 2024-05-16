@@ -694,10 +694,6 @@ func checkForOverlap(
 			// or moduleDirPath == "real-path" and inputPath == "real-path/fake-path", the error
 			// returned below is not very clear (in particular the first case, "." and "fake-path").
 			// We do a check here to return a clearer error to the user.
-			//
-			// It should be noted that if the inputPath exists and contains many files, this may not
-			// be very performant, since storage.IsEmpty will do a full walk, however, it does
-			// not do any processing on ObjectInfo, so this should be reasonable.
 			empty, err := storage.IsEmpty(ctx, bucket, inputPath)
 			if err != nil {
 				return err
