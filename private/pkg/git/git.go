@@ -171,7 +171,7 @@ type Remote interface {
 	// is an unknown kind, then this may be an empty string.
 	RepositoryPath() string
 	// SourceControlURL makes the best effort to construct a user-facing source control url
-	// given a commit sha string based on the remoteKind and available hostname and
+	// given a commit sha string based on the remote source, and available hostname and
 	// repository path information.
 	//
 	// If the remote hostname contains bitbucket (e.g. bitbucket.mycompany.com or bitbucket.org),

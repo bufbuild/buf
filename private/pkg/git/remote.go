@@ -30,12 +30,13 @@ import (
 )
 
 const (
-	bitBucketHostname           = "bitbucket"
-	githubHostname              = "github"
-	gitlabHostname              = "gitlab"
-	gitSuffix                   = ".git"
-	githubGitlabRemoteURLFormat = "https://%s%s/commit/%s"
-	bitBucketRemoteURLFormat    = "https://%s%s/commits/%s"
+	bitBucketHostname        = "bitbucket"
+	githubHostname           = "github"
+	gitlabHostname           = "gitlab"
+	gitSuffix                = ".git"
+	githubRemoteURLFormat    = "https://%s%s/commit/%s"
+	gitlabRemoteURLFormat    = "https://%s%s/commit/%s"
+	bitBucketRemoteURLFormat = "https://%s%s/commits/%s"
 
 	// remoteKindUnknown is a remote to a unknown Git source.
 	remoteKindUnknown remoteKind = iota + 1
@@ -85,9 +86,16 @@ func (r *remote) SourceControlURL(gitCommitSha string) string {
 			r.RepositoryPath(),
 			gitCommitSha,
 		)
-	case remoteKindGitHub, remoteKindGitLab:
+	case remoteKindGitHub:
 		return fmt.Sprintf(
-			githubGitlabRemoteURLFormat,
+			githubRemoteURLFormat,
+			r.Hostname(),
+			r.RepositoryPath(),
+			gitCommitSha,
+		)
+	case remoteKindGitLab:
+		return fmt.Sprintf(
+			gitlabRemoteURLFormat,
 			r.Hostname(),
 			r.RepositoryPath(),
 			gitCommitSha,
