@@ -693,13 +693,14 @@ func checkForOverlap(
 			// but does not exist, for example, moduleDirPath == "." and inputPath == "fake-path",
 			// or moduleDirPath == "real-path" and inputPath == "real-path/fake-path", the error
 			// returned below is not very clear (in particular the first case, "." and "fake-path").
-			// We do a check here to return a clearer error to the user.
+			// We do a check here and return ErrNoTargetProtoFiles if the inputPath is empty
+			// and/or it does not exist.
 			empty, err := storage.IsEmpty(ctx, bucket, inputPath)
 			if err != nil {
 				return err
 			}
 			if empty {
-				return fmt.Errorf("input path %q does not exist", inputPath)
+				return nil, bufmodule.ErrNoTargetProtoFiles
 			}
 			return fmt.Errorf("failed to build input %q because it is contained by module at path %q specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path", inputPath, moduleDirPath)
 		}
