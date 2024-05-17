@@ -221,4 +221,7 @@ message GetRemotePackageVersionPlugin {
   // If empty, this is a reference to the latest version.
   // example: v1.0.0
   string version = 3;
+  // The revision of the plugin version.
+  // example: 1
+  uint32 revision = 4;
 }
