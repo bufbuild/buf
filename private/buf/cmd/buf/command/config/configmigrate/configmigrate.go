@@ -100,7 +100,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		diffFlagName,
 		diffFlagShortName,
 		false,
-		"Write a diff to stdout instead of migrating files on disk. Useful for perfoming a dry run.",
+		"Write a diff to stdout instead of migrating files on disk. Useful for performing a dry run.",
 	)
 }
 
