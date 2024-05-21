@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - Fix archive and git inputs so that `--path` and `--exclude-path` paths are relative to
-  the `#subdir` rather than the root of the input.
+  the `#subdir` rather than the root of the input. This fixes a unintended behavior change that was introduced in `v1.32.0`.
 
 ## [v1.32.0] - 2024-05-16
 
