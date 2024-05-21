@@ -160,7 +160,7 @@ func TestWorkspaceGit(t *testing.T) {
 		"build",
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
 		"--path",
-		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+		filepath.Join("rpc.proto"),
 	)
 	testRunStdout(
 		t,
@@ -188,7 +188,7 @@ func TestWorkspaceGit(t *testing.T) {
 		"lint",
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
 		"--path",
-		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+		filepath.Join("rpc.proto"),
 	)
 	testRunStdout(
 		t,
@@ -206,7 +206,7 @@ func TestWorkspaceGit(t *testing.T) {
 		"build",
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
 		"--path",
-		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "v2", "dir", "proto", "rpc.proto"),
+		filepath.Join("rpc.proto"),
 	)
 	testRunStdout(
 		t,
@@ -234,6 +234,6 @@ func TestWorkspaceGit(t *testing.T) {
 		"lint",
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
 		"--path",
-		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "v2", "dir", "proto", "rpc.proto"),
+		filepath.Join("rpc.proto"),
 	)
 }

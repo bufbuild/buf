@@ -925,26 +925,12 @@ func mapTargetPathsAndTargetExcludePathsForArchiveAndGitRefs(
 	return slicesext.Map(
 			targetPaths,
 			func(targetPath string) string {
-				// If the targetPath is already contained/relative to the inputSubDirPath, we do not
-				// do any additional mapping.
-				if normalpath.ContainsPath(inputSubDirPath, targetPath, normalpath.Relative) {
-					return targetPath
-				}
-				// Otherwise we treat the targetPath as a sub-path of inputSubDirPath and return
-				// the joined path.
 				return normalpath.Join(inputSubDirPath, targetPath)
 			},
 		),
 		slicesext.Map(
 			targetExcludePaths,
 			func(targetExcludePath string) string {
-				// If the targetExcludePath is already contained/relative to the inputSubDirPath, we do not
-				// do any additional mapping.
-				if normalpath.ContainsPath(inputSubDirPath, targetExcludePath, normalpath.Relative) {
-					return targetExcludePath
-				}
-				// Otherwise we treat the targetExcludePath as a sub-path of inputSubDirPath and return
-				// the joined path.
 				return normalpath.Join(inputSubDirPath, targetExcludePath)
 			},
 		)

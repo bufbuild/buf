@@ -291,23 +291,6 @@ func TestWorkspaceArchiveDir(t *testing.T) {
 			"lint",
 			filepath.Join(zipDir, "archive.zip#subdir=proto"),
 			"--path",
-			filepath.Join("proto", "rpc.proto"),
-		)
-		// When passing --path and --exclude-path to archive refs, versions of the CLI
-		// pre-1.32.0 maps the target path and target exclude paths relative to the subDir,
-		// rather than the execution context. This is inconsistent behavior for CLI inputs,
-		// so in 1.32.0, we now map target paths and target exclude paths to the execution
-		// context/root of the bucket. However, we need to maintain backwards compatibility,
-		// so we now support both.
-		testRunStdout(
-			t,
-			nil,
-			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
-        proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
-			"lint",
-			filepath.Join(zipDir, "archive.zip#subdir=proto"),
-			"--path",
 			filepath.Join("rpc.proto"),
 		)
 	}
@@ -359,7 +342,7 @@ func TestWorkspaceNestedArchive(t *testing.T) {
 			"lint",
 			filepath.Join(zipDir, "archive.zip#subdir=proto/internal"),
 			"--path",
-			filepath.Join("proto", "internal", "internal.proto"),
+			filepath.Join("internal.proto"),
 		)
 	}
 }
