@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.32.1] - 2024-05-21
 
 - Fix archive and git inputs so that `--path` and `--exclude-path` paths are relative to
@@ -1118,6 +1122,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.1...HEAD
 [v1.32.1]: https://github.com/bufbuild/buf/compare/v1.32.0...v1.32.1
 [v1.32.0]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...v1.32.0
 [v1.32.0-beta.1]: https://github.com/bufbuild/buf/compare/v1.31.0...v1.32.0-beta.1
