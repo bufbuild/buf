@@ -49,7 +49,7 @@ func GetModuleConfigForProtocPlugin(
 		// If we have a v1beta1 or v1 buf.yaml, dirPath will be ".". Using the ModuleConfig from
 		// a v1beta1 or v1 buf.yaml file matches the pre-refactor behavior.
 		//
-		// If we have a v2 buf.yaml, users have to provide a dirPath or module, otherwise
+		// If we have a v2 buf.yaml, users have to provide a module path or full name, otherwise
 		// we can't deduce what ModuleConfig to use.
 		if dirPath := moduleConfig.DirPath(); dirPath == module {
 			return moduleConfig, nil
