@@ -107,6 +107,7 @@ func handle(
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		externalConfig.Module,
 	)
 	if err != nil {
 		return err
@@ -144,6 +145,7 @@ type externalConfig struct {
 	// This was never actually used, but we keep it around for we can do unmarshal strict without breaking anyone.
 	AgainstInputConfig json.RawMessage `json:"against_input_config,omitempty" yaml:"against_input_config,omitempty"`
 	InputConfig        json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
+	Module             string          `json:"module,omitempty" yaml:"module,omitempty"`
 	LimitToInputFiles  bool            `json:"limit_to_input_files,omitempty" yaml:"limit_to_input_files,omitempty"`
 	ExcludeImports     bool            `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
 	LogLevel           string          `json:"log_level,omitempty" yaml:"log_level,omitempty"`

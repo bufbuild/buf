@@ -68,6 +68,7 @@ func handle(
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		externalConfig.Module,
 	)
 	if err != nil {
 		return err
@@ -114,6 +115,7 @@ func handle(
 
 type externalConfig struct {
 	InputConfig json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
+	Module      string          `json:"module,omitempty" yaml:"module,omitempty"`
 	LogLevel    string          `json:"log_level,omitempty" yaml:"log_level,omitempty"`
 	LogFormat   string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
 	ErrorFormat string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
