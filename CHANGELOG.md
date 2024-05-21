@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix archive and git inputs so that `--path` and `--exclude-path` paths are relative to
+  the `#subdir` rather than the root of the input.
 
 ## [v1.32.0] - 2024-05-16
 
