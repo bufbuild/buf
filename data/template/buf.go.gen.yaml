@@ -23,9 +23,9 @@ inputs:
     tag: v27.0-rc1
     subdir: src
     paths:
-     - src/google/protobuf/cpp_features.proto
+     - google/protobuf/cpp_features.proto
   - git_repo: https://github.com/protocolbuffers/protobuf.git
     tag: v27.0-rc1
     subdir: java/core/src/main/resources
     paths:
-     - java/core/src/main/resources/google/protobuf/java_features.proto
+     - google/protobuf/java_features.proto
