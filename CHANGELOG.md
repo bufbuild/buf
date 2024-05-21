@@ -5,6 +5,8 @@
 - Fix archive and git inputs so that `--path` and `--exclude-path` paths are relative to
   the `#subdir` rather than the root of the input. This fixes an unintended behavior change
   that was introduced in `v1.32.0`.
+- Add `module` input for protoc-gen-buf-lint and protoc-gen-buf-breaking to allow
+  users to specify the module for v2 config files.
 
 ## [v1.32.0] - 2024-05-16
 
