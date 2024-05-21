@@ -291,7 +291,7 @@ func TestWorkspaceArchiveDir(t *testing.T) {
 			"lint",
 			filepath.Join(zipDir, "archive.zip#subdir=proto"),
 			"--path",
-			filepath.Join("proto", "rpc.proto"),
+			filepath.Join("rpc.proto"),
 		)
 	}
 }
@@ -342,7 +342,7 @@ func TestWorkspaceNestedArchive(t *testing.T) {
 			"lint",
 			filepath.Join(zipDir, "archive.zip#subdir=proto/internal"),
 			"--path",
-			filepath.Join("proto", "internal", "internal.proto"),
+			filepath.Join("internal.proto"),
 		)
 	}
 }
