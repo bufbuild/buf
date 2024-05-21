@@ -573,6 +573,15 @@ func getReadBucketCloserForBucket(
 	if err := validatePaths(inputSubDirPath, targetPaths, targetExcludePaths); err != nil {
 		return nil, nil, err
 	}
+	// For archive and git refs, target paths and target exclude paths are expected to be
+	// mapped to the inputSubDirPath rather than the execution context.
+	// This affects buftarget when checking and mapping paths against the controlling
+	// workspace, so we need to ensure that all paths are properly mapped.
+	targetPaths, targetExcludePaths = mapTargetPathsAndTargetExcludePathsForArchiveAndGitRefs(
+		inputSubDirPath,
+		targetPaths,
+		targetExcludePaths,
+	)
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
 		logger,
@@ -902,6 +911,43 @@ func validatePaths(
 		return err
 	}
 	return nil
+}
+
+func mapTargetPathsAndTargetExcludePathsForArchiveAndGitRefs(
+	inputSubDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
+) ([]string, []string) {
+	// No need to remap
+	if inputSubDirPath == "." {
+		return targetPaths, targetExcludePaths
+	}
+	return slicesext.Map(
+			targetPaths,
+			func(targetPath string) string {
+				// If the targetPath is already contained/relative to the inputSubDirPath, we do not
+				// do any additional mapping.
+				if normalpath.ContainsPath(inputSubDirPath, targetPath, normalpath.Relative) {
+					return targetPath
+				}
+				// Otherwise we treat the targetPath as a sub-path of inputSubDirPath and return
+				// the joined path.
+				return normalpath.Join(inputSubDirPath, targetPath)
+			},
+		),
+		slicesext.Map(
+			targetExcludePaths,
+			func(targetExcludePath string) string {
+				// If the targetExcludePath is already contained/relative to the inputSubDirPath, we do not
+				// do any additional mapping.
+				if normalpath.ContainsPath(inputSubDirPath, targetExcludePath, normalpath.Relative) {
+					return targetExcludePath
+				}
+				// Otherwise we treat the targetExcludePath as a sub-path of inputSubDirPath and return
+				// the joined path.
+				return normalpath.Join(inputSubDirPath, targetExcludePath)
+			},
+		)
 }
 
 type getFileOptions struct {
