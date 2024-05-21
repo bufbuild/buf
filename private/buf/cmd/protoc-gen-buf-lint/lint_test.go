@@ -182,6 +182,26 @@ func TestRunLint7(t *testing.T) {
 	)
 }
 
+func TestRunLint8(t *testing.T) {
+	t.Parallel()
+	testRunLint(
+		t,
+		filepath.Join("testdata", "fail"),
+		[]string{
+			filepath.Join("testdata", "fail", "buf", "buf.proto"),
+			filepath.Join("testdata", "fail", "buf", "buf_two.proto"),
+		},
+		`{"input_config":"testdata/fail/v2.yaml","module":"fail"}`,
+		[]string{
+			normalpath.Join("buf", "buf.proto"),
+		},
+		0,
+		`
+		buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+		`,
+	)
+}
+
 func TestRunLint_UnusedImports(t *testing.T) {
 	unusedImportsFileComponents := [][]string{
 		{"buf", "v1", "a.proto"},
