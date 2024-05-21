@@ -293,11 +293,11 @@ func TestWorkspaceArchiveDir(t *testing.T) {
 			"--path",
 			filepath.Join("proto", "rpc.proto"),
 		)
-		// When passing --path and --exclude-path to archive refs, version of the CLI
-		// pre-1.31.0 maps the target path and target exclude paths relative to the subDir,
-		// rather than the execution context. This is inconsistent behaviour for CLI inputs,
+		// When passing --path and --exclude-path to archive refs, versions of the CLI
+		// pre-1.32.0 maps the target path and target exclude paths relative to the subDir,
+		// rather than the execution context. This is inconsistent behavior for CLI inputs,
 		// so in 1.32.0, we now map target paths and target exclude paths to the execution
-		// context/root of the bucket. However, we need to maintain backwards compatability,
+		// context/root of the bucket. However, we need to maintain backwards compatibility,
 		// so we now support both.
 		testRunStdout(
 			t,
