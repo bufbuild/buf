@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.32.1] - 2024-05-21
 
 - Fix archive and git inputs so that `--path` and `--exclude-path` paths are relative to
   the `#subdir` rather than the root of the input. This fixes an unintended behavior change
@@ -1118,7 +1118,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.0...HEAD
+[v1.32.1]: https://github.com/bufbuild/buf/compare/v1.32.0...v1.32.1
 [v1.32.0]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...v1.32.0
 [v1.32.0-beta.1]: https://github.com/bufbuild/buf/compare/v1.31.0...v1.32.0-beta.1
 [v1.31.0]: https://github.com/bufbuild/buf/compare/v1.30.1...v1.31.0
