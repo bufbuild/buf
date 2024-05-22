@@ -150,15 +150,6 @@ func run(
 		return err
 	}
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace)
-	image, err := controller.GetImageForWorkspace(
-		ctx,
-		workspace,
-		bufctl.WithImageExcludeSourceInfo(true),
-		bufctl.WithImageExcludeImports(flags.ExcludeImports),
-	)
-	if err != nil {
-		return err
-	}
 
 	if err := os.MkdirAll(flags.Output, 0755); err != nil {
 		return err
@@ -170,6 +161,40 @@ func run(
 	readWriteBucket, err := storageos.NewProvider(options...).NewReadWriteBucket(
 		flags.Output,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// In the case where we are excluding imports, we are allowing users to specify an input
+	// that may not have resolved imports (https://github.com/bufbuild/buf/issues/3002).
+	// Thus we do not need to build the image, and instead we can return the non-import files
+	// from the workspace.
+	if flags.ExcludeImports {
+		if err := moduleReadBucket.WalkFileInfos(
+			ctx,
+			func(fileInfo bufmodule.FileInfo) error {
+				moduleFile, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
+				if err != nil {
+					return syserror.Wrap(err)
+				}
+				if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
+					return multierr.Append(err, moduleFile.Close())
+				}
+				return moduleFile.Close()
+			},
+			bufmodule.WalkFileInfosWithOnlyTargetFiles(),
+		); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	image, err := controller.GetImageForWorkspace(
+		ctx,
+		workspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+		bufctl.WithImageExcludeImports(flags.ExcludeImports),
 	)
 	if err != nil {
 		return err
