@@ -365,8 +365,16 @@ func checkFieldNotRequired(add addFunc, field bufprotosource.Field) error {
 	return nil
 }
 
-// CheckFileLowerSnakeCase is a check function.
-var CheckFileLowerSnakeCase = newFileCheckFunc(checkFileLowerSnakeCase)
+var (
+	// CheckFileLowerSnakeCase is a check function.
+	CheckFileLowerSnakeCase = newFileCheckFunc(checkFileLowerSnakeCase)
+
+	// CheckImportNoPublic is a check function.
+	CheckImportNoPublic = newFileImportCheckFunc(checkImportNoPublic)
+
+	// CheckImportNoWeak is a check function.
+	CheckImportNoWeak = newFileImportCheckFunc(checkImportNoWeak)
+)
 
 func checkFileLowerSnakeCase(add addFunc, file bufprotosource.File) error {
 	filename := file.Path()
@@ -379,15 +387,6 @@ func checkFileLowerSnakeCase(add addFunc, file bufprotosource.File) error {
 	}
 	return nil
 }
-
-var (
-	// CheckImportNoPublic is a check function.
-	CheckImportNoPublic = newFileImportCheckFunc(checkImportNoPublic)
-	// CheckImportNoWeak is a check function.
-	CheckImportNoWeak = newFileImportCheckFunc(checkImportNoWeak)
-	// CheckImportUsed is a check function.
-	CheckImportUsed = newFileImportCheckFunc(checkImportUsed)
-)
 
 func checkImportNoPublic(add addFunc, fileImport bufprotosource.FileImport) error {
 	return checkImportNoPublicWeak(add, fileImport, fileImport.IsPublic(), "public")
@@ -403,6 +402,9 @@ func checkImportNoPublicWeak(add addFunc, fileImport bufprotosource.FileImport, 
 	}
 	return nil
 }
+
+// CheckImportUsed is a check function.
+var CheckImportUsed = newFileImportCheckFunc(checkImportUsed)
 
 func checkImportUsed(add addFunc, fileImport bufprotosource.FileImport) error {
 	if fileImport.IsUnused() {
@@ -1025,6 +1027,32 @@ func checkServiceSuffix(add addFunc, service bufprotosource.Service, suffix stri
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
 		add(service, service.NameLocation(), nil, "Service name %q should be suffixed with %q.", name, suffix)
+	}
+	return nil
+}
+
+// CheckStablePackageNoImportUnstable is a check function.
+var CheckStablePackageNoImportUnstable = newFileCheckFunc(checkStablePackageNoImportUnstable)
+
+func checkStablePackageNoImportUnstable(add addFunc, file bufprotosource.File) error {
+	packageVersion, ok := protoversion.NewPackageVersionForPackage(file.Package())
+	if !ok {
+		// No package, or no version on package - unstable to determine if stable.
+		return nil
+	}
+	if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
+		// If package is not stable, no failure.
+		return nil
+	}
+	// Package is stable. Check imports.
+	for _, fileImport := range file.FileImports() {
+		packageVersion, ok := protoversion.NewPackageVersionForPackage(fileImport.File().Package())
+		if !ok {
+			continue
+		}
+		if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
+			add(fileImport, fileImport.Location(), nil, `This file has package %q that represents a stable version, but it imports %q, which has package %q that represents an unstable version. Stable packages should not depend on unstable packages.`, file.Package(), fileImport.Import(), fileImport.File().Package())
+		}
 	}
 	return nil
 }
