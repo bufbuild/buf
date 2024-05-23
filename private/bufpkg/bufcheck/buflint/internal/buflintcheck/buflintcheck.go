@@ -365,16 +365,8 @@ func checkFieldNotRequired(add addFunc, field bufprotosource.Field) error {
 	return nil
 }
 
-var (
-	// CheckFileLowerSnakeCase is a check function.
-	CheckFileLowerSnakeCase = newFileCheckFunc(checkFileLowerSnakeCase)
-
-	// CheckImportNoPublic is a check function.
-	CheckImportNoPublic = newFileImportCheckFunc(checkImportNoPublic)
-
-	// CheckImportNoWeak is a check function.
-	CheckImportNoWeak = newFileImportCheckFunc(checkImportNoWeak)
-)
+// CheckFileLowerSnakeCase is a check function.
+var CheckFileLowerSnakeCase = newFileCheckFunc(checkFileLowerSnakeCase)
 
 func checkFileLowerSnakeCase(add addFunc, file bufprotosource.File) error {
 	filename := file.Path()
@@ -387,6 +379,15 @@ func checkFileLowerSnakeCase(add addFunc, file bufprotosource.File) error {
 	}
 	return nil
 }
+
+var (
+	// CheckImportNoPublic is a check function.
+	CheckImportNoPublic = newFileImportCheckFunc(checkImportNoPublic)
+	// CheckImportNoWeak is a check function.
+	CheckImportNoWeak = newFileImportCheckFunc(checkImportNoWeak)
+	// CheckImportUsed is a check function.
+	CheckImportUsed = newFileImportCheckFunc(checkImportUsed)
+)
 
 func checkImportNoPublic(add addFunc, fileImport bufprotosource.FileImport) error {
 	return checkImportNoPublicWeak(add, fileImport, fileImport.IsPublic(), "public")
@@ -402,9 +403,6 @@ func checkImportNoPublicWeak(add addFunc, fileImport bufprotosource.FileImport, 
 	}
 	return nil
 }
-
-// CheckImportUsed is a check function.
-var CheckImportUsed = newFileImportCheckFunc(checkImportUsed)
 
 func checkImportUsed(add addFunc, fileImport bufprotosource.FileImport) error {
 	if fileImport.IsUnused() {
