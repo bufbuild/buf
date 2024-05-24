@@ -110,8 +110,11 @@ func addedModulesToModules(
 		return nil, nil
 	}
 	// First pass to load local Modules and collect remote ModuleKeys.
-	modulesToReturn := make([]Module, len(addedModules))
-	var remoteModuleKeys []ModuleKey
+	var (
+		modulesToReturn     = make([]Module, len(addedModules))
+		remoteModuleKeys    []ModuleKey
+		inputIdxToRemoteIdx = make(map[int]int)
+	)
 	for i, addedModule := range addedModules {
 		// If the addedModule is a local Module, just return it.
 		if addedModule.localModule != nil {
@@ -119,7 +122,12 @@ func addedModulesToModules(
 			continue
 		}
 		// Otherwise grab its remote ModuleKey to get the module data later.
+		inputIdxToRemoteIdx[i] = len(remoteModuleKeys)
 		remoteModuleKeys = append(remoteModuleKeys, addedModule.remoteModuleKey)
+	}
+	if len(remoteModuleKeys) == 0 {
+		// No remote modules to fetch, all are local.
+		return modulesToReturn, nil
 	}
 	// Now that all remote module keys are prepared, we can load remote modules.
 	getModuleDatas := syncext.OnceValues(
@@ -147,6 +155,7 @@ func addedModulesToModules(
 		},
 	)
 	for i, addedModule := range addedModules {
+		i := i
 		if addedModule.localModule != nil {
 			continue // local Modules were already added.
 		}
@@ -160,7 +169,7 @@ func addedModulesToModules(
 				// only be constructed via NewModuleData.
 				//
 				// TODO FUTURE: This is a bit shady.
-				return moduleDatas[i].Bucket()
+				return moduleDatas[inputIdxToRemoteIdx[i]].Bucket()
 			},
 		)
 		getV1BufYAMLObjectData := func() (ObjectData, error) {
@@ -168,14 +177,14 @@ func addedModulesToModules(
 			if err != nil {
 				return nil, err
 			}
-			return moduleDatas[i].V1Beta1OrV1BufYAMLObjectData()
+			return moduleDatas[inputIdxToRemoteIdx[i]].V1Beta1OrV1BufYAMLObjectData()
 		}
 		getV1BufLockObjectData := func() (ObjectData, error) {
 			moduleDatas, err := getModuleDatas()
 			if err != nil {
 				return nil, err
 			}
-			return moduleDatas[i].V1Beta1OrV1BufLockObjectData()
+			return moduleDatas[inputIdxToRemoteIdx[i]].V1Beta1OrV1BufLockObjectData()
 		}
 		// Imagine the following scenario:
 		//
@@ -277,7 +286,7 @@ func addedModulesToModules(
 			if err != nil {
 				return nil, err
 			}
-			declaredDepModuleKeys, err := moduleDatas[i].DeclaredDepModuleKeys()
+			declaredDepModuleKeys, err := moduleDatas[inputIdxToRemoteIdx[i]].DeclaredDepModuleKeys()
 			if err != nil {
 				return nil, err
 			}
