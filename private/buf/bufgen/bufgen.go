@@ -24,7 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -78,7 +78,7 @@ type Generator interface {
 	// always be valid.
 	Generate(
 		ctx context.Context,
-		container app.EnvStdioContainer,
+		container appext.Container,
 		config bufconfig.GenerateConfig,
 		images []bufimage.Image,
 		options ...GenerateOption,

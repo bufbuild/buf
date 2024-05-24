@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -85,7 +86,7 @@ func newGenerator(
 // for each of the plugins if all of the plugins are successful.
 func (g *generator) Generate(
 	ctx context.Context,
-	container app.EnvStdioContainer,
+	container appext.Container,
 	config bufconfig.GenerateConfig,
 	images []bufimage.Image,
 	options ...GenerateOption,
@@ -120,7 +121,7 @@ func (g *generator) Generate(
 
 func (g *generator) generateCode(
 	ctx context.Context,
-	container app.EnvStdioContainer,
+	container appext.Container,
 	inputImage bufimage.Image,
 	baseOutDir string,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
@@ -169,7 +170,7 @@ func (g *generator) generateCode(
 
 func (g *generator) execPlugins(
 	ctx context.Context,
-	container app.EnvStdioContainer,
+	container appext.Container,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
 	image bufimage.Image,
 	includeImportsOverride *bool,

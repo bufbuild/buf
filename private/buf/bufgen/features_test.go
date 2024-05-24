@@ -15,17 +15,18 @@
 package bufgen
 
 import (
-	"bytes"
 	"math"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -106,29 +107,29 @@ func TestCheckRequiredFeatures(t *testing.T) {
 		t,
 		requiresProto3Optional,
 		supportsNoFeatures,
-		`Warning: plugin "test" does not support required features.
-Feature "proto3 optional" is required by 1 file(s):
-proto3_optional.proto`,
+		`plugin "test" does not support required features.
+  Feature "proto3 optional" is required by 1 file(s):
+    proto3_optional.proto`,
 		"", // No error expected
 	)
 	testCheckRequiredFeatures(
 		t,
 		requiresEditions,
 		supportsNoFeatures,
-		`Warning: plugin "test" does not support required features.
-Feature "supports editions" is required by 1 file(s):
-editions.proto`,
+		`plugin "test" does not support required features.
+  Feature "supports editions" is required by 1 file(s):
+    editions.proto`,
 		"", // No error expected
 	)
 	testCheckRequiredFeatures(
 		t,
 		requiresBoth,
 		supportsNoFeatures,
-		`Warning: plugin "test" does not support required features.
-Feature "proto3 optional" is required by 1 file(s):
-proto3_optional.proto
-Feature "supports editions" is required by 1 file(s):
-editions.proto`,
+		`plugin "test" does not support required features.
+  Feature "proto3 optional" is required by 1 file(s):
+    proto3_optional.proto
+  Feature "supports editions" is required by 1 file(s):
+    editions.proto`,
 		"", // No error expected
 	)
 	testCheckRequiredFeatures(
@@ -149,9 +150,11 @@ func testCheckRequiredFeatures(
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
-	stderr := bytes.NewBuffer(nil)
+	observed, logs := observer.New(zapcore.WarnLevel)
 	err := checkRequiredFeatures(
-		app.NewStderrContainer(stderr),
+		appext.NewLoggerContainer(
+			zap.New(observed),
+		),
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
@@ -167,7 +170,12 @@ func testCheckRequiredFeatures(
 			newMockPluginConfig("never_fails"),
 		},
 	)
-	require.Equal(t, expectedStdErr, stringutil.TrimLines(stderr.String()))
+	if expectedStdErr != "" {
+		require.NotEmpty(t, logs.All())
+		require.Equal(t, expectedStdErr, logs.All()[0].Message)
+	} else {
+		require.Empty(t, logs.All())
+	}
 	if expectedErr != "" {
 		require.ErrorContains(t, err, expectedErr)
 	} else {
