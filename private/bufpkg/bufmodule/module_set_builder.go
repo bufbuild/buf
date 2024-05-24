@@ -100,12 +100,11 @@ type ModuleSetBuilder interface {
 	//
 	// Any errors from Add* calls will be returned here as well.
 	//
-	// For future consideration, `Build` can take ...buildOption. A use case for this
-	// would be for workspaces to have a unified/top-level README and/or LICENSE file.
-	// The workspace at build time can pass `BuildWithREADME` and/or `BuildWithLicense` for
-	// the module set. Then each module in the module set can refer to this through the module
-	// set as needed.
-	Build() (ModuleSet, error)
+	// For future consideration, add a `BuildOption` for workspaces to have a unified/top-level README
+	// and/or LICENSE file. The workspace at build time can pass `BuildWithREADME` and/or
+	// `BuildWithLicense` for the module set. Then each module in the module set can refer to this
+	// through the module set as needed.
+	Build(options ...BuildOption) (ModuleSet, error)
 
 	isModuleSetBuilder()
 }
@@ -257,6 +256,21 @@ func RemoteModuleWithTargetPaths(
 	}
 }
 
+// BuildOption is an option for Build.
+type BuildOption func(*buildOptions)
+
+// BuildWithLoadAllModulesInBatch returns a new BuildOption that sets all modules in the workspace
+// to be loaded whenever any of them is requested.
+//
+// Normally when building a workspace, all Modules are lazy-loaded only when they are required, but
+// for some scenarios in which the caller knows all modules in the workspace will be loaded, it is
+// useful to load them all in a single batch instead of sequentially.
+func BuildWithLoadAllModulesInBatch() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.loadAllModulesInBatch = true
+	}
+}
+
 /// *** PRIVATE ***
 
 // moduleSetBuilder
@@ -386,10 +400,14 @@ func (b *moduleSetBuilder) AddRemoteModule(
 	return b
 }
 
-func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
+func (b *moduleSetBuilder) Build(options ...BuildOption) (_ ModuleSet, retErr error) {
 	ctx, span := b.tracer.Start(b.ctx, tracing.WithErr(&retErr))
 	defer span.End()
 
+	buildOptions := newBuildOptions()
+	for _, option := range options {
+		option(buildOptions)
+	}
 	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled
 	}
@@ -410,9 +428,23 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	if err != nil {
 		return nil, err
 	}
-	modules, err := addedModulesToModules(ctx, b.moduleDataProvider, b.commitProvider, addedModules)
-	if err != nil {
-		return nil, err
+	var modules []Module
+	if buildOptions.loadAllModulesInBatch {
+		modules, err = addedModulesToModulesInBatch(ctx, b.moduleDataProvider, b.commitProvider, addedModules)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// load sequentially
+		modules, err = slicesext.MapError(
+			addedModules,
+			func(addedModule *addedModule) (Module, error) {
+				return addedModule.ToModule(ctx, b.moduleDataProvider, b.commitProvider)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return newModuleSet(b.tracer, modules)
 }
@@ -446,4 +478,12 @@ type remoteModuleOptions struct {
 
 func newRemoteModuleOptions() *remoteModuleOptions {
 	return &remoteModuleOptions{}
+}
+
+type buildOptions struct {
+	loadAllModulesInBatch bool
+}
+
+func newBuildOptions() *buildOptions {
+	return &buildOptions{}
 }

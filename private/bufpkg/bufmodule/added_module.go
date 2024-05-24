@@ -94,88 +94,47 @@ func (a *addedModule) OpaqueID() string {
 	return a.localModule.OpaqueID()
 }
 
-// addedModulesToModules converts the addedModules to Modules.
+// ToModule converts the addedModule to a Module.
 //
-// If an addedModule is a local Module, this is just returned.
-// If an addedModule is a remote Module, the ModuleDataProvider and CommitProvider are queried to get the Module.
-//
-// The Modules are returned in the same order as requested.
-func addedModulesToModules(
+// If the addedModule is a local Module, this is just returned.
+// If the addedModule is a remote Module, the ModuleDataProvider and CommitProvider are queried to get the Module.
+func (a *addedModule) ToModule(
 	ctx context.Context,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
-	addedModules []*addedModule,
-) ([]Module, error) {
-	if len(addedModules) == 0 {
-		return nil, nil
+) (Module, error) {
+	// If the addedModule is a local Module, just return it.
+	if a.localModule != nil {
+		return a.localModule, nil
 	}
-	// First pass to load local Modules and collect remote ModuleKeys.
-	var (
-		modulesToReturn     = make([]Module, len(addedModules))
-		remoteModuleKeys    []ModuleKey
-		inputIdxToRemoteIdx = make(map[int]int)
-	)
-	for i, a := range addedModules {
-		// If the addedModule is a local Module, use it.
-		if a.localModule != nil {
-			modulesToReturn[i] = a.localModule
-			continue
-		}
-		// Otherwise grab its remote ModuleKey to get the module data later in batch.
-		inputIdxToRemoteIdx[i] = len(remoteModuleKeys)
-		remoteModuleKeys = append(remoteModuleKeys, a.remoteModuleKey)
-	}
-	if len(remoteModuleKeys) == 0 {
-		// No remote modules to fetch, all are local.
-		return modulesToReturn, nil
-	}
-	// Now that all remote module keys are prepared, we can load remote modules in batch.
-	getModuleDatas := syncext.OnceValues(
-		func() ([]ModuleData, error) {
-			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(ctx, remoteModuleKeys)
+	// Else, get the remote Module.
+	getModuleData := syncext.OnceValues(
+		func() (ModuleData, error) {
+			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(
+				ctx,
+				[]ModuleKey{a.remoteModuleKey},
+			)
 			if err != nil {
 				return nil, err
 			}
-			if len(remoteModuleKeys) != len(moduleDatas) {
-				return nil, syserror.Newf("expected %d ModuleDatas, got %d", len(remoteModuleKeys), len(moduleDatas))
+			if len(moduleDatas) != 1 {
+				return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
 			}
-			for i, moduleData := range moduleDatas {
-				if moduleData.ModuleKey().ModuleFullName() == nil {
-					return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
-				}
-				if remoteModuleKeys[i].ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
-					return nil, syserror.Newf(
-						"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
-						remoteModuleKeys[i].ModuleFullName().String(),
-						moduleData.ModuleKey().ModuleFullName().String(),
-					)
-				}
+			moduleData := moduleDatas[0]
+			if moduleData.ModuleKey().ModuleFullName() == nil {
+				return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
 			}
-			return moduleDatas, nil
+			if a.remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
+				return nil, syserror.Newf(
+					"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
+					a.remoteModuleKey.ModuleFullName().String(),
+					moduleData.ModuleKey().ModuleFullName().String(),
+				)
+			}
+			return moduleData, nil
 		},
 	)
-	for i, a := range addedModules {
-		if a.localModule != nil {
-			continue // local Modules were already loaded.
-		}
-		i := i
-		module, err := a.toModule(
-			ctx,
-			commitProvider,
-			func() (ModuleData, error) {
-				moduleDatas, err := getModuleDatas()
-				if err != nil {
-					return nil, err
-				}
-				return moduleDatas[inputIdxToRemoteIdx[i]], nil
-			},
-		)
-		if err != nil {
-			return nil, syserror.Newf("remote addedModule to Module: %w", err)
-		}
-		modulesToReturn[i] = module
-	}
-	return modulesToReturn, nil
+	return a.toModule(ctx, commitProvider, getModuleData)
 }
 
 // toModule converts a remote addedModule to a Module.
@@ -377,6 +336,90 @@ func (a *addedModule) toModule(
 		"",
 		false,
 	)
+}
+
+// addedModulesToModulesInBatch converts the addedModules to Modules in a single batch.
+//
+// If an addedModule is a local Module, this is just returned.
+// If an addedModule is a remote Module, the ModuleDataProvider and CommitProvider are queried to get the Module.
+//
+// The Modules are returned in the same order as requested.
+func addedModulesToModulesInBatch(
+	ctx context.Context,
+	moduleDataProvider ModuleDataProvider,
+	commitProvider CommitProvider,
+	addedModules []*addedModule,
+) ([]Module, error) {
+	if len(addedModules) == 0 {
+		return nil, nil
+	}
+	// First pass to load local Modules and collect remote ModuleKeys.
+	var (
+		modulesToReturn     = make([]Module, len(addedModules))
+		remoteModuleKeys    []ModuleKey
+		inputIdxToRemoteIdx = make(map[int]int)
+	)
+	for i, a := range addedModules {
+		// If the addedModule is a local Module, use it.
+		if a.localModule != nil {
+			modulesToReturn[i] = a.localModule
+			continue
+		}
+		// Otherwise grab its remote ModuleKey to get the module data later in batch.
+		inputIdxToRemoteIdx[i] = len(remoteModuleKeys)
+		remoteModuleKeys = append(remoteModuleKeys, a.remoteModuleKey)
+	}
+	if len(remoteModuleKeys) == 0 {
+		// No remote modules to fetch, all are local.
+		return modulesToReturn, nil
+	}
+	// Now that all remote module keys are prepared, we can load remote modules in batch.
+	getModuleDatas := syncext.OnceValues(
+		func() ([]ModuleData, error) {
+			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(ctx, remoteModuleKeys)
+			if err != nil {
+				return nil, err
+			}
+			if len(remoteModuleKeys) != len(moduleDatas) {
+				return nil, syserror.Newf("expected %d ModuleDatas, got %d", len(remoteModuleKeys), len(moduleDatas))
+			}
+			for i, moduleData := range moduleDatas {
+				if moduleData.ModuleKey().ModuleFullName() == nil {
+					return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
+				}
+				if remoteModuleKeys[i].ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
+					return nil, syserror.Newf(
+						"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
+						remoteModuleKeys[i].ModuleFullName().String(),
+						moduleData.ModuleKey().ModuleFullName().String(),
+					)
+				}
+			}
+			return moduleDatas, nil
+		},
+	)
+	for i, a := range addedModules {
+		if a.localModule != nil {
+			continue // local Modules were already loaded.
+		}
+		i := i
+		module, err := a.toModule(
+			ctx,
+			commitProvider,
+			func() (ModuleData, error) {
+				moduleDatas, err := getModuleDatas()
+				if err != nil {
+					return nil, err
+				}
+				return moduleDatas[inputIdxToRemoteIdx[i]], nil
+			},
+		)
+		if err != nil {
+			return nil, syserror.Newf("remote addedModule to Module: %w", err)
+		}
+		modulesToReturn[i] = module
+	}
+	return modulesToReturn, nil
 }
 
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the addedModule list.
