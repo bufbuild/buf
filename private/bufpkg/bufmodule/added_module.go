@@ -94,239 +94,261 @@ func (a *addedModule) OpaqueID() string {
 	return a.localModule.OpaqueID()
 }
 
-// ToModule converts the addedModule to a Module.
+// addedModulesToModules converts the addedModules to Modules.
 //
-// If the addedModule is a local Module, this is just returned.
-// If the addedModule is a remote Module, the ModuleDataProvider and CommitProvider are queried to get the Module.
-func (a *addedModule) ToModule(
+// If an addedModule is a local Module, this is just returned.
+// If an addedModule is a remote Module, the ModuleDataProvider and CommitProvider are queried to get the Module.
+//
+// The Modules are returned in the same order as requested.
+func addedModulesToModules(
 	ctx context.Context,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
-) (Module, error) {
-	// If the addedModule is a local Module, just return it.
-	if a.localModule != nil {
-		return a.localModule, nil
+	addedModules []*addedModule,
+) ([]Module, error) {
+	if len(addedModules) == 0 {
+		return nil, nil
 	}
-	// Else, get the remote Module.
-	getModuleData := syncext.OnceValues(
-		func() (ModuleData, error) {
-			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(
-				ctx,
-				[]ModuleKey{a.remoteModuleKey},
-			)
+	// First pass to load local Modules and collect remote ModuleKeys.
+	modulesToReturn := make([]Module, len(addedModules))
+	var remoteModuleKeys []ModuleKey
+	for i, addedModule := range addedModules {
+		// If the addedModule is a local Module, just return it.
+		if addedModule.localModule != nil {
+			modulesToReturn[i] = addedModule.localModule
+			continue
+		}
+		// Otherwise grab its remote ModuleKey to get the module data later.
+		remoteModuleKeys = append(remoteModuleKeys, addedModule.remoteModuleKey)
+	}
+	// Now that all remote module keys are prepared, we can load remote modules.
+	getModuleDatas := syncext.OnceValues(
+		func() ([]ModuleData, error) {
+			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(ctx, remoteModuleKeys)
 			if err != nil {
 				return nil, err
 			}
-			if len(moduleDatas) != 1 {
-				return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
+			if len(remoteModuleKeys) != len(moduleDatas) {
+				return nil, syserror.Newf("expected %d ModuleDatas, got %d", len(remoteModuleKeys), len(moduleDatas))
 			}
-			moduleData := moduleDatas[0]
-			if moduleData.ModuleKey().ModuleFullName() == nil {
-				return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
+			for i, moduleData := range moduleDatas {
+				if moduleData.ModuleKey().ModuleFullName() == nil {
+					return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
+				}
+				if remoteModuleKeys[i].ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
+					return nil, syserror.Newf(
+						"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
+						remoteModuleKeys[i].ModuleFullName().String(),
+						moduleData.ModuleKey().ModuleFullName().String(),
+					)
+				}
 			}
-			if a.remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
-				return nil, syserror.Newf(
-					"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
-					a.remoteModuleKey.ModuleFullName().String(),
-					moduleData.ModuleKey().ModuleFullName().String(),
-				)
-			}
-			return moduleData, nil
+			return moduleDatas, nil
 		},
 	)
-	getBucket := syncext.OnceValues(
-		func() (storage.ReadBucket, error) {
-			moduleData, err := getModuleData()
-			if err != nil {
-				return nil, err
-			}
-			// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
-			// only be constructed via NewModuleData.
-			//
-			// TODO FUTURE: This is a bit shady.
-			return moduleData.Bucket()
-		},
-	)
-	getV1BufYAMLObjectData := func() (ObjectData, error) {
-		moduleData, err := getModuleData()
-		if err != nil {
-			return nil, err
+	for i, addedModule := range addedModules {
+		if addedModule.localModule != nil {
+			continue // local Modules were already added.
 		}
-		return moduleData.V1Beta1OrV1BufYAMLObjectData()
-	}
-	getV1BufLockObjectData := func() (ObjectData, error) {
-		moduleData, err := getModuleData()
-		if err != nil {
-			return nil, err
-		}
-		return moduleData.V1Beta1OrV1BufLockObjectData()
-	}
-	// Imagine the following scenario:
-	//
-	//   module-a (local)
-	//     README.md
-	//     a.proto
-	//     b.proto
-	//   module-b:c1
-	//     README.md
-	//     c.proto
-	//     d.proto
-	//   module-b:c2
-	//     README.md
-	//     c.proto
-	//     d.proto
-	//   module-c:c1
-	//     e.proto
-	//     f.proto
-	//   module-c:c2
-	//     e.proto
-	//     f.proto
-	//     g.proto
-	//
-	// Then, you have this dependency graph:
-	//
-	// module-a -> module-b:c1, module-c:c2
-	// module-b:c1 -> module-c:c1
-	//
-	// Note that module-b depends on an earlier commit of module-c than module-a does.
-	//
-	// If we were to just use the dependencies in the ModuleSet to compute the digest, the following
-	// would happen as a calculation:
-	//
-	//   DIGEST(module-a) = digest(
-	//     // module-a contents
-	//     README.md,
-	//     a.proto,
-	//     b.proto,
-	//     // module-b:c1 digest
-	//     DIGEST(
-	//       README.md,
-	//       c.proto,
-	//       d.proto,
-	//       // module-c:c2 digest
-	//       DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//         g.proto,
-	//       ),
-	//     ),
-	//     // module-c:c2 digest
-	//     DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//         g.proto,
-	//     ),
-	//   )
-	//
-	// Note that to compute the digest of module-b:c1, we would actually use the digest of
-	// module-c:c2, as opposed to module-c:c1, since within the ModuleSet, we would resolve
-	// to use module-c:c2 instead of module-c:c1.
-	//
-	// We should be using module-c:c1 to compute the digest of module-b:c1:
-	//
-	//   DIGEST(module-a) = digest(
-	//     // module-a contents
-	//     README.md,
-	//     a.proto,
-	//     b.proto,
-	//     // module-b:c1 digest
-	//     DIGEST(
-	//       README.md,
-	//       c.proto,
-	//       d.proto,
-	//       // module-c:c1 digest
-	//       DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//       ),
-	//     ),
-	//     // module-c:c2 digest
-	//     DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//         g.proto,
-	//     ),
-	//   )
-	//
-	// To accomplish this, we need to take the dependencies of the declared ModuleKeys (ie what
-	// the Module actually says is in its buf.lock). This function enables us to do that for
-	// digest calculations. Within the Module, we say that if we get a remote Module, use the
-	// declared ModuleKeys instead of whatever Module we have resolved to for a given ModuleFullName.
-	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
-		moduleData, err := getModuleData()
-		if err != nil {
-			return nil, err
-		}
-		declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
-		if err != nil {
-			return nil, err
-		}
-		if len(declaredDepModuleKeys) == 0 {
-			return nil, nil
-		}
-		var digestType DigestType
-		for i, moduleKey := range declaredDepModuleKeys {
-			digest, err := moduleKey.Digest()
-			if err != nil {
-				return nil, err
-			}
-			if i == 0 {
-				digestType = digest.Type()
-			} else if digestType != digest.Type() {
-				return nil, syserror.Newf("multiple digest types found in DeclaredDepModuleKeys: %v, %v", digestType, digest.Type())
-			}
-		}
-		switch digestType {
-		case DigestTypeB4:
-			// The declared ModuleKey dependencies for a commit may be stored in v1 buf.lock file,
-			// in which case they will use B4 digests. B4 digests aren't allowed to be used as
-			// input to the B5 digest calculation, so we perform a call to convert all ModuleKeys
-			// from B4 to B5 by using the commit provider.
-			commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
-			for i, declaredDepModuleKey := range declaredDepModuleKeys {
-				commitKey, err := NewCommitKey(declaredDepModuleKey.ModuleFullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
+		getBucket := syncext.OnceValues(
+			func() (storage.ReadBucket, error) {
+				moduleDatas, err := getModuleDatas()
 				if err != nil {
 					return nil, err
 				}
-				commitKeysToFetch[i] = commitKey
-			}
-			commits, err := commitProvider.GetCommitsForCommitKeys(ctx, commitKeysToFetch)
+				// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
+				// only be constructed via NewModuleData.
+				//
+				// TODO FUTURE: This is a bit shady.
+				return moduleDatas[i].Bucket()
+			},
+		)
+		getV1BufYAMLObjectData := func() (ObjectData, error) {
+			moduleDatas, err := getModuleDatas()
 			if err != nil {
 				return nil, err
 			}
-			if len(commits) != len(commitKeysToFetch) {
-				return nil, syserror.Newf("expected %d commit(s), got %d", commitKeysToFetch, len(commits))
-			}
-			return slicesext.Map(commits, func(commit Commit) ModuleKey {
-				return commit.ModuleKey()
-			}), nil
-		case DigestTypeB5:
-			// No need to fetch b5 digests - we've already got them stored in the module's declared dependencies.
-			return declaredDepModuleKeys, nil
-		default:
-			return nil, syserror.Newf("unsupported digest type: %v", digestType)
+			return moduleDatas[i].V1Beta1OrV1BufYAMLObjectData()
 		}
+		getV1BufLockObjectData := func() (ObjectData, error) {
+			moduleDatas, err := getModuleDatas()
+			if err != nil {
+				return nil, err
+			}
+			return moduleDatas[i].V1Beta1OrV1BufLockObjectData()
+		}
+		// Imagine the following scenario:
+		//
+		//   module-a (local)
+		//     README.md
+		//     a.proto
+		//     b.proto
+		//   module-b:c1
+		//     README.md
+		//     c.proto
+		//     d.proto
+		//   module-b:c2
+		//     README.md
+		//     c.proto
+		//     d.proto
+		//   module-c:c1
+		//     e.proto
+		//     f.proto
+		//   module-c:c2
+		//     e.proto
+		//     f.proto
+		//     g.proto
+		//
+		// Then, you have this dependency graph:
+		//
+		// module-a -> module-b:c1, module-c:c2
+		// module-b:c1 -> module-c:c1
+		//
+		// Note that module-b depends on an earlier commit of module-c than module-a does.
+		//
+		// If we were to just use the dependencies in the ModuleSet to compute the digest, the following
+		// would happen as a calculation:
+		//
+		//   DIGEST(module-a) = digest(
+		//     // module-a contents
+		//     README.md,
+		//     a.proto,
+		//     b.proto,
+		//     // module-b:c1 digest
+		//     DIGEST(
+		//       README.md,
+		//       c.proto,
+		//       d.proto,
+		//       // module-c:c2 digest
+		//       DIGEST(
+		//         README.md,
+		//         e.proto,
+		//         f.proto,
+		//         g.proto,
+		//       ),
+		//     ),
+		//     // module-c:c2 digest
+		//     DIGEST(
+		//         README.md,
+		//         e.proto,
+		//         f.proto,
+		//         g.proto,
+		//     ),
+		//   )
+		//
+		// Note that to compute the digest of module-b:c1, we would actually use the digest of
+		// module-c:c2, as opposed to module-c:c1, since within the ModuleSet, we would resolve
+		// to use module-c:c2 instead of module-c:c1.
+		//
+		// We should be using module-c:c1 to compute the digest of module-b:c1:
+		//
+		//   DIGEST(module-a) = digest(
+		//     // module-a contents
+		//     README.md,
+		//     a.proto,
+		//     b.proto,
+		//     // module-b:c1 digest
+		//     DIGEST(
+		//       README.md,
+		//       c.proto,
+		//       d.proto,
+		//       // module-c:c1 digest
+		//       DIGEST(
+		//         README.md,
+		//         e.proto,
+		//         f.proto,
+		//       ),
+		//     ),
+		//     // module-c:c2 digest
+		//     DIGEST(
+		//         README.md,
+		//         e.proto,
+		//         f.proto,
+		//         g.proto,
+		//     ),
+		//   )
+		//
+		// To accomplish this, we need to take the dependencies of the declared ModuleKeys (ie what
+		// the Module actually says is in its buf.lock). This function enables us to do that for
+		// digest calculations. Within the Module, we say that if we get a remote Module, use the
+		// declared ModuleKeys instead of whatever Module we have resolved to for a given ModuleFullName.
+		getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
+			moduleDatas, err := getModuleDatas()
+			if err != nil {
+				return nil, err
+			}
+			declaredDepModuleKeys, err := moduleDatas[i].DeclaredDepModuleKeys()
+			if err != nil {
+				return nil, err
+			}
+			if len(declaredDepModuleKeys) == 0 {
+				return nil, nil
+			}
+			var digestType DigestType
+			for i, moduleKey := range declaredDepModuleKeys {
+				digest, err := moduleKey.Digest()
+				if err != nil {
+					return nil, err
+				}
+				if i == 0 {
+					digestType = digest.Type()
+				} else if digestType != digest.Type() {
+					return nil, syserror.Newf("multiple digest types found in DeclaredDepModuleKeys: %v, %v", digestType, digest.Type())
+				}
+			}
+			switch digestType {
+			case DigestTypeB4:
+				// The declared ModuleKey dependencies for a commit may be stored in v1 buf.lock file,
+				// in which case they will use B4 digests. B4 digests aren't allowed to be used as
+				// input to the B5 digest calculation, so we perform a call to convert all ModuleKeys
+				// from B4 to B5 by using the commit provider.
+				commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
+				for i, declaredDepModuleKey := range declaredDepModuleKeys {
+					commitKey, err := NewCommitKey(declaredDepModuleKey.ModuleFullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
+					if err != nil {
+						return nil, err
+					}
+					commitKeysToFetch[i] = commitKey
+				}
+				commits, err := commitProvider.GetCommitsForCommitKeys(ctx, commitKeysToFetch)
+				if err != nil {
+					return nil, err
+				}
+				if len(commits) != len(commitKeysToFetch) {
+					return nil, syserror.Newf("expected %d commit(s), got %d", commitKeysToFetch, len(commits))
+				}
+				return slicesext.Map(commits, func(commit Commit) ModuleKey {
+					return commit.ModuleKey()
+				}), nil
+			case DigestTypeB5:
+				// No need to fetch b5 digests - we've already got them stored in the module's declared dependencies.
+				return declaredDepModuleKeys, nil
+			default:
+				return nil, syserror.Newf("unsupported digest type: %v", digestType)
+			}
+		}
+		module, err := newModule(
+			ctx,
+			getBucket,
+			"",
+			addedModule.remoteModuleKey.ModuleFullName(),
+			addedModule.remoteModuleKey.CommitID(),
+			addedModule.isTarget,
+			false,
+			getV1BufYAMLObjectData,
+			getV1BufLockObjectData,
+			getDeclaredDepModuleKeysB5,
+			addedModule.remoteTargetPaths,
+			addedModule.remoteTargetExcludePaths,
+			"",
+			false,
+		)
+		if err != nil {
+			return nil, syserror.Newf("new module: %w", err)
+		}
+		modulesToReturn[i] = module
 	}
-	return newModule(
-		ctx,
-		getBucket,
-		"",
-		a.remoteModuleKey.ModuleFullName(),
-		a.remoteModuleKey.CommitID(),
-		a.isTarget,
-		false,
-		getV1BufYAMLObjectData,
-		getV1BufLockObjectData,
-		getDeclaredDepModuleKeysB5,
-		a.remoteTargetPaths,
-		a.remoteTargetExcludePaths,
-		"",
-		false,
-	)
+	return modulesToReturn, nil
 }
 
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the addedModule list.

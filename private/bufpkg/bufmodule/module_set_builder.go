@@ -410,12 +410,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	if err != nil {
 		return nil, err
 	}
-	modules, err := slicesext.MapError(
-		addedModules,
-		func(addedModule *addedModule) (Module, error) {
-			return addedModule.ToModule(ctx, b.moduleDataProvider, b.commitProvider)
-		},
-	)
+	modules, err := addedModulesToModules(ctx, b.moduleDataProvider, b.commitProvider, addedModules)
 	if err != nil {
 		return nil, err
 	}
