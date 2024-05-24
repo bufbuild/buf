@@ -116,12 +116,12 @@ func addedModulesToModules(
 		inputIdxToRemoteIdx = make(map[int]int)
 	)
 	for i, a := range addedModules {
-		// If the addedModule is a local Module, just return it.
+		// If the addedModule is a local Module, use it.
 		if a.localModule != nil {
 			modulesToReturn[i] = a.localModule
 			continue
 		}
-		// Otherwise grab its remote ModuleKey to get the module data later.
+		// Otherwise grab its remote ModuleKey to get the module data later in batch.
 		inputIdxToRemoteIdx[i] = len(remoteModuleKeys)
 		remoteModuleKeys = append(remoteModuleKeys, a.remoteModuleKey)
 	}
@@ -129,7 +129,7 @@ func addedModulesToModules(
 		// No remote modules to fetch, all are local.
 		return modulesToReturn, nil
 	}
-	// Now that all remote module keys are prepared, we can load remote modules.
+	// Now that all remote module keys are prepared, we can load remote modules in batch.
 	getModuleDatas := syncext.OnceValues(
 		func() ([]ModuleData, error) {
 			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(ctx, remoteModuleKeys)
@@ -156,11 +156,11 @@ func addedModulesToModules(
 	)
 	for i, a := range addedModules {
 		if a.localModule != nil {
-			continue // local Modules were already added.
+			continue // local Modules were already loaded.
 		}
 		module, err := a.toModule(ctx, commitProvider, getModuleDatas, inputIdxToRemoteIdx[i])
 		if err != nil {
-			return nil, syserror.Newf("remote addedModule to module: %w", err)
+			return nil, syserror.Newf("remote addedModule to Module: %w", err)
 		}
 		modulesToReturn[i] = module
 	}
