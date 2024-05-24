@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -85,6 +86,7 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 }
 
 func checkRequiredFeatures(
+	stderrContainer app.StderrContainer,
 	required *requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
 	configs []bufconfig.GeneratePluginConfig,
@@ -132,11 +134,22 @@ func checkRequiredFeatures(
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i] < failedFeatures[j]
 			})
+			// We only log failed features (whereas we error on failed editions). This is in
+			// keeping with CLI versions pre-1.32.0 (BSR-3931).
+			_, _ = fmt.Fprintf(stderrContainer.Stderr(), "Warning: plugin %q does not support required features.\n", pluginName)
 			for _, feature := range failedFeatures {
-				for _, file := range failed.featureToFilenames[feature] {
-					errs = append(errs, fmt.Errorf("plugin %q does not support feature %q which is required by %q",
-						pluginName, featureName(feature), file))
-				}
+				files := failed.featureToFilenames[feature]
+				_, _ = fmt.Fprintf(
+					stderrContainer.Stderr(),
+					"  Feature %q is required by %d file(s):\n",
+					featureName(feature),
+					len(files),
+				)
+				_, _ = fmt.Fprintf(
+					stderrContainer.Stderr(),
+					"    %s\n",
+					strings.Join(files, ","),
+				)
 			}
 		}
 		if len(failedEditions) > 0 {

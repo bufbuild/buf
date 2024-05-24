@@ -15,11 +15,14 @@
 package bufgen
 
 import (
+	"bytes"
 	"math"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -93,32 +96,62 @@ func TestCheckRequiredFeatures(t *testing.T) {
 	}
 
 	// Successful cases
-	testCheckRequiredFeatures(t, noRequiredFeatures, supportsNoFeatures, "")
-	testCheckRequiredFeatures(t, requiresProto3Optional, supportsBoth, "")
-	testCheckRequiredFeatures(t, requiresEditions, supportsBoth, "")
-	testCheckRequiredFeatures(t, requiresBoth, supportsBoth, "")
+	testCheckRequiredFeatures(t, noRequiredFeatures, supportsNoFeatures, "", "")
+	testCheckRequiredFeatures(t, requiresProto3Optional, supportsBoth, "", "")
+	testCheckRequiredFeatures(t, requiresEditions, supportsBoth, "", "")
+	testCheckRequiredFeatures(t, requiresBoth, supportsBoth, "", "")
 
 	// Error cases
-	testCheckRequiredFeatures(t, requiresProto3Optional, supportsNoFeatures,
-		`plugin "test" does not support feature "proto3 optional" which is required by "proto3_optional.proto"`)
-	testCheckRequiredFeatures(t, requiresEditions, supportsNoFeatures,
-		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`)
-	testCheckRequiredFeatures(t, requiresBoth, supportsNoFeatures,
-		`plugin "test" does not support feature "proto3 optional" which is required by "proto3_optional.proto"; `+
-			`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`)
-	testCheckRequiredFeatures(t, requiresEditions, supportsEditionsButOutOfRange,
-		`plugin "test" does not support edition "2023" which is required by "editions.proto"`)
+	testCheckRequiredFeatures(
+		t,
+		requiresProto3Optional,
+		supportsNoFeatures,
+		`Warning: plugin "test" does not support required features.
+Feature "proto3 optional" is required by 1 file(s):
+proto3_optional.proto`,
+		"", // No error expected
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresEditions,
+		supportsNoFeatures,
+		`Warning: plugin "test" does not support required features.
+Feature "supports editions" is required by 1 file(s):
+editions.proto`,
+		"", // No error expected
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresBoth,
+		supportsNoFeatures,
+		`Warning: plugin "test" does not support required features.
+Feature "proto3 optional" is required by 1 file(s):
+proto3_optional.proto
+Feature "supports editions" is required by 1 file(s):
+editions.proto`,
+		"", // No error expected
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresEditions,
+		supportsEditionsButOutOfRange,
+		"", // No stderr expected
+		`plugin "test" does not support edition "2023" which is required by "editions.proto"`,
+	)
 }
 
 func testCheckRequiredFeatures(
 	t *testing.T,
 	image bufimage.Image,
 	codeGenResponse *pluginpb.CodeGeneratorResponse,
+	expectedStdErr string,
 	expectedErr string,
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
+	stderr := bytes.NewBuffer(nil)
 	err := checkRequiredFeatures(
+		app.NewStderrContainer(stderr),
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
@@ -134,6 +167,7 @@ func testCheckRequiredFeatures(
 			newMockPluginConfig("never_fails"),
 		},
 	)
+	require.Equal(t, expectedStdErr, stringutil.TrimLines(stderr.String()))
 	if expectedErr != "" {
 		require.ErrorContains(t, err, expectedErr)
 	} else {

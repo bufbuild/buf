@@ -274,7 +274,7 @@ func (g *generator) execPlugins(
 	if err := validateResponses(responses, pluginConfigs); err != nil {
 		return nil, err
 	}
-	if err := checkRequiredFeatures(requiredFeatures, responses, pluginConfigs); err != nil {
+	if err := checkRequiredFeatures(container, requiredFeatures, responses, pluginConfigs); err != nil {
 		return nil, err
 	}
 	return responses, nil
