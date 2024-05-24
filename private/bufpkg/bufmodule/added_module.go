@@ -158,7 +158,18 @@ func addedModulesToModules(
 		if a.localModule != nil {
 			continue // local Modules were already loaded.
 		}
-		module, err := a.toModule(ctx, commitProvider, getModuleDatas, inputIdxToRemoteIdx[i])
+		i := i
+		module, err := a.toModule(
+			ctx,
+			commitProvider,
+			func() (ModuleData, error) {
+				moduleDatas, err := getModuleDatas()
+				if err != nil {
+					return nil, err
+				}
+				return moduleDatas[inputIdxToRemoteIdx[i]], nil
+			},
+		)
 		if err != nil {
 			return nil, syserror.Newf("remote addedModule to Module: %w", err)
 		}
@@ -168,18 +179,14 @@ func addedModulesToModules(
 }
 
 // toModule converts a remote addedModule to a Module.
-//
-// It receives a bulk getModuleDatas operation with the response index to which this module
-// corresponds.
 func (a *addedModule) toModule(
 	ctx context.Context,
 	commitProvider CommitProvider,
-	getModuleDatas func() ([]ModuleData, error),
-	moduleDatasIdx int,
+	getModuleData func() (ModuleData, error),
 ) (Module, error) {
 	getBucket := syncext.OnceValues(
 		func() (storage.ReadBucket, error) {
-			moduleDatas, err := getModuleDatas()
+			moduleData, err := getModuleData()
 			if err != nil {
 				return nil, err
 			}
@@ -187,22 +194,22 @@ func (a *addedModule) toModule(
 			// only be constructed via NewModuleData.
 			//
 			// TODO FUTURE: This is a bit shady.
-			return moduleDatas[moduleDatasIdx].Bucket()
+			return moduleData.Bucket()
 		},
 	)
 	getV1BufYAMLObjectData := func() (ObjectData, error) {
-		moduleDatas, err := getModuleDatas()
+		moduleData, err := getModuleData()
 		if err != nil {
 			return nil, err
 		}
-		return moduleDatas[moduleDatasIdx].V1Beta1OrV1BufYAMLObjectData()
+		return moduleData.V1Beta1OrV1BufYAMLObjectData()
 	}
 	getV1BufLockObjectData := func() (ObjectData, error) {
-		moduleDatas, err := getModuleDatas()
+		moduleData, err := getModuleData()
 		if err != nil {
 			return nil, err
 		}
-		return moduleDatas[moduleDatasIdx].V1Beta1OrV1BufLockObjectData()
+		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
 	// Imagine the following scenario:
 	//
@@ -300,11 +307,11 @@ func (a *addedModule) toModule(
 	// digest calculations. Within the Module, we say that if we get a remote Module, use the
 	// declared ModuleKeys instead of whatever Module we have resolved to for a given ModuleFullName.
 	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
-		moduleDatas, err := getModuleDatas()
+		moduleData, err := getModuleData()
 		if err != nil {
 			return nil, err
 		}
-		declaredDepModuleKeys, err := moduleDatas[moduleDatasIdx].DeclaredDepModuleKeys()
+		declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 		if err != nil {
 			return nil, err
 		}
