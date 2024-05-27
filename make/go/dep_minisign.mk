@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/aead/minisign 20231031 checked 20231211
-MINISIGN_VERSION ?= v0.2.1
+# https://github.com/aead/minisign 20240519 checked 20240524
+MINISIGN_VERSION ?= v0.3.0
 
 MINISIGN := $(CACHE_VERSIONS)/MINISIGN/$(MINISIGN_VERSION)
 $(MINISIGN):
