@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -152,9 +151,7 @@ func testCheckRequiredFeatures(
 	required := computeRequiredFeatures(image)
 	observed, logs := observer.New(zapcore.WarnLevel)
 	err := checkRequiredFeatures(
-		appext.NewLoggerContainer(
-			zap.New(observed),
-		),
+		zap.New(observed),
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,

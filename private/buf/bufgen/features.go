@@ -21,8 +21,8 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -86,7 +86,7 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 }
 
 func checkRequiredFeatures(
-	container appext.LoggerContainer,
+	logger *zap.Logger,
 	required *requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
 	configs []bufconfig.GeneratePluginConfig,
@@ -145,7 +145,7 @@ func checkRequiredFeatures(
 				)
 				warningMessage = fmt.Sprintln(warningMessage, fmt.Sprintf("   %s", strings.Join(files, ",")))
 			}
-			container.Logger().Warn(strings.TrimSpace(warningMessage))
+			logger.Warn(strings.TrimSpace(warningMessage))
 		}
 		if len(failedEditions) > 0 {
 			sort.Slice(failedEditions, func(i, j int) bool {
