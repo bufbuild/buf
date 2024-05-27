@@ -218,7 +218,7 @@ func NewCommand(
           file_option: csharp_namespace
 
     # The inputs to generate code for.
-    # The inputs here are ignored if an input is specifed as a command line argument.
+    # The inputs here are ignored if an input is specified as a command line argument.
     # Each input is one of "directory", "git_repo", "module", "tarball", "zip_archive",
     # "proto_file", "binary_image", "json_image", "text_image" and "yaml_image".
     # Optional.
