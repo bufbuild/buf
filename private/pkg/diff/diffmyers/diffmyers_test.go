@@ -213,7 +213,7 @@ func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden str
 		require.NoError(t, err)
 		goldenFilePath := filepath.Join("testdata", golden)
 		if writeGoldenFiles {
-			require.NoError(t, os.WriteFile(goldenFilePath, diff, os.ModePerm))
+			require.NoError(t, os.WriteFile(goldenFilePath, diff, 0600))
 		}
 		diffGolden, err := os.ReadFile(goldenFilePath)
 		require.NoError(t, err)
