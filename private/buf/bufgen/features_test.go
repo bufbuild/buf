@@ -115,10 +115,8 @@ func TestCheckRequiredFeatures(t *testing.T) {
 		t,
 		requiresEditions,
 		supportsNoFeatures,
-		`plugin "test" does not support required features.
-  Feature "supports editions" is required by 1 file(s):
-    editions.proto`,
-		"", // No error expected
+		"", // No stderr expected
+		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`,
 	)
 	testCheckRequiredFeatures(
 		t,
@@ -126,10 +124,8 @@ func TestCheckRequiredFeatures(t *testing.T) {
 		supportsNoFeatures,
 		`plugin "test" does not support required features.
   Feature "proto3 optional" is required by 1 file(s):
-    proto3_optional.proto
-  Feature "supports editions" is required by 1 file(s):
-    editions.proto`,
-		"", // No error expected
+    proto3_optional.proto`,
+		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`,
 	)
 	testCheckRequiredFeatures(
 		t,

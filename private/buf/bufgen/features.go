@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -134,18 +135,30 @@ func checkRequiredFeatures(
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i] < failedFeatures[j]
 			})
-			// We only log failed features (whereas we error on failed editions). This is in
-			// keeping with CLI versions pre-1.32.0 (BSR-3931).
-			warningMessage := fmt.Sprintf("plugin %q does not support required features.\n", pluginName)
 			for _, feature := range failedFeatures {
-				files := failed.featureToFilenames[feature]
-				warningMessage = fmt.Sprintln(
-					warningMessage,
-					fmt.Sprintf(" Feature %q is required by %d file(s):", featureName(feature), len(files)),
+				// For CLI versions pre-1.32.0, we logged unsupported features. However, this is an
+				// unsafe behavior for editions. So, in keeping with pre-1.32.0 CLI versions, we
+				// warn for proto3 optional, but error if editions are required (BSR-3931).
+				if feature == pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL {
+					warningMessage := fmt.Sprintf("plugin %q does not support required features.\n", pluginName)
+
+					files := failed.featureToFilenames[feature]
+					warningMessage = fmt.Sprintln(
+						warningMessage,
+						fmt.Sprintf(" Feature %q is required by %d file(s):", featureName(feature), len(files)),
+					)
+					warningMessage = fmt.Sprintln(warningMessage, fmt.Sprintf("   %s", strings.Join(files, ",")))
+					logger.Warn(strings.TrimSpace(warningMessage))
+					continue
+				}
+				featureErrs := slicesext.Map(
+					failed.featureToFilenames[feature],
+					func(fileName string) error {
+						return fmt.Errorf("plugin %q does not support feature %q which is required by %q", pluginName, featureName(feature), fileName)
+					},
 				)
-				warningMessage = fmt.Sprintln(warningMessage, fmt.Sprintf("   %s", strings.Join(files, ",")))
+				errs = append(errs, featureErrs...)
 			}
-			logger.Warn(strings.TrimSpace(warningMessage))
 		}
 		if len(failedEditions) > 0 {
 			sort.Slice(failedEditions, func(i, j int) bool {
