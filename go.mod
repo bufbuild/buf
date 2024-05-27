@@ -4,9 +4,9 @@ go 1.20
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.1-20240508200655-46a4cf4ba109.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240514010100-299bd9c9a0c4.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.1-20240514010100-299bd9c9a0c4.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.1-20240514010100-299bd9c9a0c4.1
-	connectrpc.com/connect v1.16.2
+	connectrpc.com/connect v1.16.1
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.13.1-0.20240510201809-752249dfc37f
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
@@ -36,7 +36,7 @@ require (
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.23.0
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/exp v0.0.0-20240525044651-4c93da0ed11d
 	golang.org/x/mod v0.17.0
 	golang.org/x/net v0.25.0
 	golang.org/x/sync v0.7.0
@@ -58,16 +58,16 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v26.1.3+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.8.1 // indirect
+	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/fgprof v0.9.4 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/pprof v0.0.0-20240509144519-723abb6459b7 // indirect
+	github.com/google/pprof v0.0.0-20240525223248-4bfdf5a9a2af // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -90,7 +90,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.2.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240515191416-fc5f0ca64291 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 // indirect
-	google.golang.org/grpc v1.64.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240521202816-d264139d666e // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240521202816-d264139d666e // indirect
 )
