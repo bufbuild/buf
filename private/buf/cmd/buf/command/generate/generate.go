@@ -322,7 +322,7 @@ Same as the defaults (template of "buf.gen.yaml", current directory as input):
 
 The --template flag also takes YAML or JSON data as input, so it can be used without a file:
 
-    $ buf generate --template '{"version":"v2","plugins":[{"plugin":"protoc-gen-go","out":"gen/go"}]}'
+    $ buf generate --template '{"version":"v2","plugins":[{"local":"protoc-gen-go","out":"gen/go"}]}'
 
 Download the repository and generate code stubs per the bar.yaml template:
 
