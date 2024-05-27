@@ -20,12 +20,12 @@ inputs:
     #       But that doesn't populate for release candidates. So we have
     #       to wait until the final v27.0 is released to move to that.
   - git_repo: https://github.com/protocolbuffers/protobuf.git
-    tag: v27.0-rc1
+    tag: v27.0
     subdir: src
     paths:
      - google/protobuf/cpp_features.proto
   - git_repo: https://github.com/protocolbuffers/protobuf.git
-    tag: v27.0-rc1
+    tag: v27.0
     subdir: java/core/src/main/resources
     paths:
      - google/protobuf/java_features.proto
