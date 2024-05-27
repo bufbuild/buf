@@ -21,7 +21,7 @@ import (
 	"io"
 	"time"
 
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 )
 
 type organizationPrinter struct {
@@ -39,7 +39,7 @@ func newOrganizationPrinter(
 	}
 }
 
-func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, message *registryv1alpha1.Organization) error {
+func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, message *ownerv1.Organization) error {
 	outOrganization := registryOrganizationToOutputOrganization(p.address, message)
 	switch format {
 	case FormatText:
@@ -51,7 +51,7 @@ func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Form
 	}
 }
 
-func (p *organizationPrinter) PrintOrganizations(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.Organization) error {
+func (p *organizationPrinter) PrintOrganizations(ctx context.Context, format Format, nextPageToken string, messages ...*ownerv1.Organization) error {
 	if len(messages) == 0 {
 		return nil
 	}
@@ -101,7 +101,7 @@ type outputOrganization struct {
 	CreateTime time.Time `json:"create_time,omitempty"`
 }
 
-func registryOrganizationToOutputOrganization(address string, organization *registryv1alpha1.Organization) outputOrganization {
+func registryOrganizationToOutputOrganization(address string, organization *ownerv1.Organization) outputOrganization {
 	return outputOrganization{
 		ID:         organization.Id,
 		Remote:     address,

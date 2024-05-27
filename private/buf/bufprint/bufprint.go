@@ -20,6 +20,7 @@ import (
 	"io"
 	"strconv"
 
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -83,7 +84,7 @@ func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
 
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
-	PrintOrganization(ctx context.Context, format Format, organization *registryv1alpha1.Organization) error
+	PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error
 }
 
 // NewOrganizationPrinter returns a new OrganizationPrinter.

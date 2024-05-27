@@ -18,13 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -81,21 +80,23 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleOwner.Registry(),
-		registryv1alpha1connect.NewOrganizationServiceClient,
-	)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "organization", moduleOwner.Owner()); err != nil {
 			return err
 		}
 	}
-	if _, err := service.DeleteOrganizationByName(
+	organizationServiceClient := bufapi.NewClientProvider(clientConfig).V1OrganizationServiceClient(moduleOwner.Registry())
+	if _, err := organizationServiceClient.DeleteOrganizations(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.DeleteOrganizationByNameRequest{
-				Name: moduleOwner.Owner(),
+			&ownerv1.DeleteOrganizationsRequest{
+				OrganizationRefs: []*ownerv1.OrganizationRef{
+					{
+						Value: &ownerv1.OrganizationRef_Name{
+							Name: moduleOwner.Owner(),
+						},
+					},
+				},
 			},
 		),
 	); err != nil {
