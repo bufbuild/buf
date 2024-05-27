@@ -111,38 +111,17 @@ func (a *uploader) Upload(
 	if err != nil {
 		return nil, err
 	}
-
-	// This must be in the same order as contentModules.
-	var modules []*modulev1.Module
-	if uploadOptions.CreateIfNotExist() {
-		// We must attempt to create each module one at a time, since CreateModules will return
-		// an `AlreadyExists` if any of the modules we are attempting to create already exists,
-		// and no new modules will be created.
-		modules = make([]*modulev1.Module, len(contentModules))
-		for i, contentModule := range contentModules {
-			module, err := a.createContentModuleIfNotExist(
-				ctx,
-				primaryRegistry,
-				contentModule,
-				uploadOptions.CreateModuleVisibility(),
-				uploadOptions.CreateDefaultLabel(),
-			)
-			if err != nil {
-				return nil, err
-			}
-			modules[i] = module
-		}
-	} else {
-		// The modules retrieved by GetModules retains the same order as the request, so
-		// this matches the order of contentModules.
-		modules, err = a.validateContentModulesExist(
-			ctx,
-			primaryRegistry,
-			contentModules,
-		)
-		if err != nil {
-			return nil, err
-		}
+	// We must validate that the modules exist, and if they do not, create them.
+	modules, err := a.validateContentModulesExist(
+		ctx,
+		primaryRegistry,
+		contentModules,
+		uploadOptions.CreateIfNotExist(),
+		uploadOptions.CreateModuleVisibility(),
+		uploadOptions.CreateDefaultLabel(),
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	var v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef
@@ -335,7 +314,7 @@ func (a *uploader) createContentModuleIfNotExist(
 	if err != nil {
 		return nil, err
 	}
-	response, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
+	createResponse, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.CreateModulesRequest{
@@ -357,28 +336,45 @@ func (a *uploader) createContentModuleIfNotExist(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			// If a module already existed, then we check validate its contents.
-			modules, err := a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
+			getResponse, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
+				ctx,
+				connect.NewRequest(
+					&modulev1.GetModulesRequest{
+						ModuleRefs: []*modulev1.ModuleRef{{
+							Value: &modulev1.ModuleRef_Name_{
+								Name: &modulev1.ModuleRef_Name{
+									Owner:  contentModule.ModuleFullName().Owner(),
+									Module: contentModule.ModuleFullName().Name(),
+								},
+							}},
+						},
+					},
+				),
+			)
 			if err != nil {
 				return nil, err
 			}
-			if len(modules) != 1 {
-				return nil, syserror.Newf("expected 1 Module, found %d", len(modules))
+			if len(getResponse.Msg.Modules) != 1 {
+				return nil, syserror.Newf("expected 1 Module, found %d", len(getResponse.Msg.Modules))
 			}
-			return modules[0], nil
+			return getResponse.Msg.Modules[0], nil
 		}
 		return nil, err
 	}
-	if len(response.Msg.Modules) != 1 {
-		return nil, syserror.Newf("expected 1 Module, found %d", len(response.Msg.Modules))
+	if len(createResponse.Msg.Modules) != 1 {
+		return nil, syserror.Newf("expected 1 Module, found %d", len(createResponse.Msg.Modules))
 	}
 	// Otherwise we return the module we created
-	return response.Msg.Modules[0], nil
+	return createResponse.Msg.Modules[0], nil
 }
 
 func (a *uploader) validateContentModulesExist(
 	ctx context.Context,
 	primaryRegistry string,
 	contentModules []bufmodule.Module,
+	createIfNotExists bool,
+	createModuleVisibility bufmodule.ModuleVisibility,
+	createDefaultLabel string,
 ) ([]*modulev1.Module, error) {
 	response, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
@@ -401,6 +397,24 @@ func (a *uploader) validateContentModulesExist(
 		),
 	)
 	if err != nil {
+		if createIfNotExists && connect.CodeOf(err) == connect.CodeNotFound {
+			// If the module does not exist, we create it.
+			modules := make([]*modulev1.Module, len(contentModules))
+			for i, contentModule := range contentModules {
+				module, err := a.createContentModuleIfNotExist(
+					ctx,
+					primaryRegistry,
+					contentModule,
+					createModuleVisibility,
+					createDefaultLabel,
+				)
+				if err != nil {
+					return nil, err
+				}
+				modules[i] = module
+			}
+			return modules, nil
+		}
 		return nil, err
 	}
 	return response.Msg.Modules, nil
