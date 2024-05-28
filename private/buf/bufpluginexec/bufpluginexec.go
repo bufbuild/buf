@@ -39,14 +39,14 @@ const (
 	// download protoc vX.0, the version reported by protoc --version is 3.X.0.
 	// This is what we want to report here.
 
-	// DefaultMajorVersion is the default major version.
+	// defaultMajorVersion is the default major version.
 	defaultMajorVersion = 5
-	// DefaultMinorVersion is the default minor version.
+	// defaultMinorVersion is the default minor version.
 	defaultMinorVersion = 27
-	// DefaultPatchVersion is the default patch version.
+	// defaultPatchVersion is the default patch version.
 	defaultPatchVersion = 0
-	// DefaultSuffixVersion is the default suffix version.
-	defaultSuffixVersion = "-rc1"
+	// defaultSuffixVersion is the default suffix version.
+	defaultSuffixVersion = ""
 )
 
 var (

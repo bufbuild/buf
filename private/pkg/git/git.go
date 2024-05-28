@@ -21,7 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -33,10 +35,7 @@ import (
 )
 
 const (
-	gitCommand      = "git"
-	gitOriginRemote = "origin"
-	tagsPrefix      = "refs/tags/"
-	headsPrefix     = "refs/heads/"
+	gitCommand = "git"
 )
 
 var (
@@ -233,7 +232,7 @@ func CheckDirectoryIsValidGitCheckout(
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			if exitErr.ProcessState.ExitCode() == 128 {
+			if exitErr.ExitCode() == 128 {
 				return fmt.Errorf("dir %s: %w", dir, ErrInvalidGitCheckout)
 			}
 		}
@@ -315,12 +314,60 @@ func GetRefsForGitCommitAndRemote(
 	remote string,
 	gitCommitSha string,
 ) ([]string, error) {
+	if err := fetchRemoteRefs(ctx, runner, envContainer, dir, remote); err != nil {
+		return nil, err
+	}
+	refs, err := getRefsPointsAt(ctx, runner, envContainer, dir, remote, gitCommitSha)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := getTagsPointsAt(ctx, runner, envContainer, dir, gitCommitSha)
+	if err != nil {
+		return nil, err
+	}
+	values := append(refs, tags...)
+	sort.Strings(values)
+	return values, nil
+}
+
+func fetchRemoteRefs(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	dir string,
+	remote string,
+) error {
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs("fetch", "--tags", remote),
+		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func getRefsPointsAt(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	dir string,
+	remote string,
+	gitCommitSha string,
+) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	if err := runner.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("ls-remote", "--heads", "--tags", "--refs", remote),
+		command.RunWithArgs(
+			"for-each-ref",
+			"--points-at", gitCommitSha,
+			"--format", "%(refname:short)",
+			path.Join("refs/remotes", remote),
+		),
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
@@ -328,22 +375,40 @@ func GetRefsForGitCommitAndRemote(
 	); err != nil {
 		return nil, err
 	}
-	scanner := bufio.NewScanner(stdout)
-	var refs []string
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if ref, found := strings.CutPrefix(line, gitCommitSha); found {
-			ref = strings.TrimSpace(ref)
-			if tag, isTag := strings.CutPrefix(ref, tagsPrefix); isTag {
-				refs = append(refs, tag)
-				continue
-			}
-			if branch, isBranchHead := strings.CutPrefix(ref, headsPrefix); isBranchHead {
-				refs = append(refs, branch)
-			}
-		}
+	lines := getAllTrimmedLinesFromBuffer(stdout)
+	originPrefix := fmt.Sprintf("%s/", remote)
+	for i, line := range lines {
+		lines[i] = strings.TrimPrefix(line, originPrefix)
 	}
-	return refs, nil
+	return lines, nil
+}
+
+func getTagsPointsAt(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	dir string,
+	gitCommitSha string,
+) ([]string, error) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs(
+			"for-each-ref",
+			"--points-at", gitCommitSha,
+			"--format", "%(refname:short)",
+			"refs/tags",
+		),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+	); err != nil {
+		return nil, err
+	}
+	return getAllTrimmedLinesFromBuffer(stdout), nil
 }
 
 func getAllTrimmedLinesFromBuffer(buffer *bytes.Buffer) []string {

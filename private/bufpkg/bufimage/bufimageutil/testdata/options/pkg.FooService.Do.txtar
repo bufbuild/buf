@@ -104,8 +104,31 @@ message FeatureSet {
     UTF8_VALIDATION_UNKNOWN = 0;
     VERIFY = 2;
     NONE = 3;
+    reserved 1;
   }
-  extensions 1000, 1001, 1002, 9990, 9995 to 9999, 10000;
+  extensions 1000 to 9994 [
+    declaration = {
+      number: 1000,
+      full_name: ".pb.cpp",
+      type: ".pb.CppFeatures"
+    },
+    declaration = {
+      number: 1001,
+      full_name: ".pb.java",
+      type: ".pb.JavaFeatures"
+    },
+    declaration = {
+      number: 1002,
+      full_name: ".pb.go",
+      type: ".pb.GoFeatures"
+    },
+    declaration = {
+      number: 9990,
+      full_name: ".pb.proto1",
+      type: ".pb.Proto1Features"
+    }
+  ];
+  extensions 9995 to 9999, 10000;
   reserved 999;
 }
 message FileOptions {
@@ -137,6 +160,7 @@ message FileOptions {
   }
   extensions 1000 to max;
   reserved 38, 42;
+  reserved "php_generic_services";
 }
 message MethodOptions {
   optional bool deprecated = 33 [default = false];

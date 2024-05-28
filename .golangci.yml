@@ -48,7 +48,6 @@ linters:
     # - depguard
     - dogsled
     - errcheck
-    - execinquery
     - exhaustruct
     - exportloopref
     - forbidigo
@@ -66,7 +65,7 @@ linters:
     - grouper
     - importas
     - ineffassign
-    - logrlint
+    - loggercheck
     - makezero
     - mirror
     - misspell
