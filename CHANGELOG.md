@@ -2,8 +2,7 @@
 
 ## [Unreleased]
 
-- Update `buf generate` to warn when proto3 optional is required by a file but not supported
-  by the plugin.
+- No changes yet.
 
 ## [v1.32.1] - 2024-05-21
 
