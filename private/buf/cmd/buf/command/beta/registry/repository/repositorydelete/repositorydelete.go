@@ -18,14 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -82,21 +81,26 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleFullName.Registry(),
-		registryv1alpha1connect.NewRepositoryServiceClient,
-	)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "repository", moduleFullName.Name()); err != nil {
 			return err
 		}
 	}
-	if _, err := service.DeleteRepositoryByFullName(
+	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	if _, err := moduleServiceClient.DeleteModules(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.DeleteRepositoryByFullNameRequest{
-				FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
+			&modulev1.DeleteModulesRequest{
+				ModuleRefs: []*modulev1.ModuleRef{
+					{
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+							},
+						},
+					},
+				},
 			},
 		),
 	); err != nil {

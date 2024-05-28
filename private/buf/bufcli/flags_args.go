@@ -18,9 +18,9 @@ import (
 	"errors"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -225,28 +225,28 @@ func GetInputValue(
 	return defaultValue, nil
 }
 
-// VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
-func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
+// VisibilityFlagToVisibility parses the given string as a modulev1.ModuleVisibility
+func VisibilityFlagToVisibility(visibility string) (modulev1.ModuleVisibility, error) {
 	switch visibility {
 	case publicVisibility:
-		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
 	case privateVisibility:
-		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
 	}
 }
 
-// VisibilityFlagToVisibilityAllowUnspecified parses the given string as a registryv1alpha1.Visibility,
+// VisibilityFlagToVisibilityAllowUnspecified parses the given string as a modulev1.ModuleVisibility
 // where an empty string will be parsed as unspecified
-func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1alpha1.Visibility, error) {
+func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (modulev1.ModuleVisibility, error) {
 	switch visibility {
 	case publicVisibility:
-		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
 	case privateVisibility:
-		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
 	case "":
-		return registryv1alpha1.Visibility_VISIBILITY_UNSPECIFIED, nil
+		return modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED, nil
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
