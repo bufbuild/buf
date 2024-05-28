@@ -591,8 +591,8 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 		}
 	}
 	f.writeCompositeValueBody(
-		messageLiteralNode.Open,
-		messageLiteralNode.Close,
+		messageLiteralOpen(messageLiteralNode),
+		messageLiteralClose(messageLiteralNode),
 		elementWriterFunc,
 	)
 }
@@ -617,8 +617,8 @@ func (f *formatter) writeMessageLiteralForArray(
 		closeWriter = f.writeBodyEnd
 	}
 	f.writeBody(
-		messageLiteralNode.Open,
-		messageLiteralNode.Close,
+		messageLiteralOpen(messageLiteralNode),
+		messageLiteralClose(messageLiteralNode),
 		elementWriterFunc,
 		f.writeOpenBracePrefixForArray,
 		closeWriter,
@@ -636,10 +636,12 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	}
 	// messages with a single scalar field and no comments can be
 	// printed all on one line
+	openNode := messageLiteralOpen(messageLiteralNode)
+	closeNode := messageLiteralClose(messageLiteralNode)
 	if inArrayLiteral {
-		f.Indent(messageLiteralNode.Open)
+		f.Indent(openNode)
 	}
-	f.writeInline(messageLiteralNode.Open)
+	f.writeInline(openNode)
 	fieldNode := messageLiteralNode.Elements[0]
 	f.writeInline(fieldNode.Name)
 	if fieldNode.Sep != nil {
@@ -647,7 +649,7 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	}
 	f.Space()
 	f.writeInline(fieldNode.Val)
-	f.writeInline(messageLiteralNode.Close)
+	f.writeInline(closeNode)
 	return true
 }
 
@@ -679,11 +681,9 @@ func arrayLiteralHasNestedMessageOrArray(arrayLiteralNode *ast.ArrayLiteralNode)
 //	foo: 2
 func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageLiteralNode) {
 	for i := 0; i < len(messageLiteralNode.Elements); i++ {
-		if sep := messageLiteralNode.Seps[i]; sep != nil {
-			f.writeMessageFieldWithSeparator(messageLiteralNode.Elements[i])
-			f.writeLineEnd(messageLiteralNode.Seps[i])
-			continue
-		}
+		// Separators ("," or ";") are optional. To avoid inconsistent formatted output,
+		// we suppress them, since they aren't needed. So we just write the element and
+		// ignore any optional separator in the AST.
 		f.writeNode(messageLiteralNode.Elements[i])
 	}
 }
@@ -698,18 +698,6 @@ func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) {
 		return
 	}
 	f.writeLineEnd(messageFieldNode.Val)
-}
-
-// writeMessageFieldWithSeparator writes the message field node,
-// but leaves room for a trailing separator in the parent message
-// literal.
-func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.MessageFieldNode) {
-	f.writeMessageFieldPrefix(messageFieldNode)
-	if compoundStringLiteral, ok := messageFieldNode.Val.(*ast.CompoundStringLiteralNode); ok {
-		f.writeCompoundStringLiteralIndentEndInline(compoundStringLiteral)
-		return
-	}
-	f.writeInline(messageFieldNode.Val)
 }
 
 // writeMessageFieldPrefix writes the message field node as a single line.
@@ -737,8 +725,13 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	if fieldReferenceNode.Close != nil {
 		f.writeInline(fieldReferenceNode.Close)
 	}
+	// The colon separator is optional sometimes, but we don't have enough
+	// information here to know whether it's necessary. For more consistent
+	// output, just always include it.
 	if messageFieldNode.Sep != nil {
 		f.writeInline(messageFieldNode.Sep)
+	} else {
+		f.WriteString(":")
 	}
 	f.Space()
 }
@@ -1602,6 +1595,9 @@ func (f *formatter) writeKeyword(keywordNode *ast.KeywordNode) {
 
 // writeRune writes a rune (e.g. '=').
 func (f *formatter) writeRune(runeNode *ast.RuneNode) {
+	if runeNode.Rune == 0 {
+		return
+	}
 	if strings.ContainsRune("{[(<", runeNode.Rune) {
 		f.pendingIndent++
 	} else if strings.ContainsRune("}])>", runeNode.Rune) {
@@ -2315,4 +2311,24 @@ func isOpenBrace(node ast.Node) bool {
 // safely ignore them.
 func newlineCount(value string) int {
 	return strings.Count(value, "\n")
+}
+
+func messageLiteralOpen(msg *ast.MessageLiteralNode) *ast.RuneNode {
+	node := msg.Open
+	if node.Rune == '{' {
+		return node
+	}
+	// If it's not "{" then this message literal used "<" and ">" to enclose it.
+	// For consistent formatted output, change it to "{".
+	return ast.NewRuneNode('{', node.Token())
+}
+
+func messageLiteralClose(msg *ast.MessageLiteralNode) *ast.RuneNode {
+	node := msg.Close
+	if node.Rune == '}' {
+		return node
+	}
+	// If it's not "}" then this message literal used "<" and ">" to enclose it.
+	// For consistent formatted output, change it to "}".
+	return ast.NewRuneNode('}', node.Token())
 }
