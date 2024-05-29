@@ -18,14 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -85,11 +84,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleRef.ModuleFullName().Registry(),
-		registryv1alpha1connect.NewRepositoryCommitServiceClient,
-	)
+
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(
 			container,
@@ -99,13 +94,22 @@ func run(
 			return err
 		}
 	}
-	if _, err := service.DeleteRepositoryDraftCommit(
+	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	if _, err := labelServiceClient.ArchiveLabels(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.DeleteRepositoryDraftCommitRequest{
-				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
-				RepositoryName:  moduleRef.ModuleFullName().Name(),
-				DraftName:       moduleRef.Ref(),
+			&modulev1.ArchiveLabelsRequest{
+				LabelRefs: []*modulev1.LabelRef{
+					{
+						Value: &modulev1.LabelRef_Name_{
+							Name: &modulev1.LabelRef_Name{
+								Owner:  moduleRef.ModuleFullName().Owner(),
+								Module: moduleRef.ModuleFullName().Name(),
+								Label:  moduleRef.Ref(),
+							},
+						},
+					},
+				},
 			},
 		),
 	); err != nil {

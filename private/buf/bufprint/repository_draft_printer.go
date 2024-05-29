@@ -20,7 +20,8 @@ import (
 	"fmt"
 	"io"
 
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 type repositoryDraftPrinter struct {
@@ -40,27 +41,19 @@ type outputRepositoryDraft struct {
 	Commit string `json:"commit,omitempty"`
 }
 
-func (p *repositoryDraftPrinter) PrintRepositoryDraft(ctx context.Context, format Format, message *registryv1alpha1.RepositoryCommit) error {
-	outDraft := registryDraftToOutputDraft(message)
-	switch format {
-	case FormatText:
-		return p.printRepositoryDraftsText([]outputRepositoryDraft{outDraft})
-	case FormatJSON:
-		return json.NewEncoder(p.writer).Encode(outDraft)
-	default:
-		return fmt.Errorf("unknown format: %v", format)
-	}
-}
-
-func (p *repositoryDraftPrinter) PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.RepositoryCommit) error {
-	if len(messages) == 0 {
+func (p *repositoryDraftPrinter) PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, drafts ...*modulev1.Label) error {
+	if len(drafts) == 0 {
 		return nil
 	}
-	var outputRepositoryDrafs []outputRepositoryDraft
-	for _, repositoryCommit := range messages {
-		outputDraft := registryDraftToOutputDraft(repositoryCommit)
-		outputRepositoryDrafs = append(outputRepositoryDrafs, outputDraft)
-	}
+	outputRepositoryDrafs := slicesext.Map(
+		drafts,
+		func(label *modulev1.Label) outputRepositoryDraft {
+			return outputRepositoryDraft{
+				Name:   label.GetName(),
+				Commit: label.GetCommitId(),
+			}
+		},
+	)
 	switch format {
 	case FormatText:
 		return p.printRepositoryDraftsText(outputRepositoryDrafs)
@@ -93,11 +86,4 @@ func (p *repositoryDraftPrinter) printRepositoryDraftsText(outputRepositoryDraft
 			return nil
 		},
 	)
-}
-
-func registryDraftToOutputDraft(repositoryCommit *registryv1alpha1.RepositoryCommit) outputRepositoryDraft {
-	return outputRepositoryDraft{
-		Name:   repositoryCommit.DraftName,
-		Commit: repositoryCommit.Name,
-	}
 }

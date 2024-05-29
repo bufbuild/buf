@@ -20,6 +20,7 @@ import (
 	"io"
 	"strconv"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -130,8 +131,7 @@ func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 
 // RepositoryDraftPrinter is a repository draft printer.
 type RepositoryDraftPrinter interface {
-	PrintRepositoryDraft(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
-	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, drafts ...*modulev1.Label) error
 }
 
 // NewRepositoryDraftPrinter returns a new RepositoryDraftPrinter.

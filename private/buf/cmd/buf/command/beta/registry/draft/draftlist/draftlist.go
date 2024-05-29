@@ -18,15 +18,16 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -106,20 +107,23 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleFullName.Registry(),
-		registryv1alpha1connect.NewRepositoryCommitServiceClient,
-	)
-	resp, err := service.ListRepositoryDraftCommits(
+	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	moduleResp, err := moduleServiceClient.GetModules(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.ListRepositoryDraftCommitsRequest{
-			RepositoryOwner: moduleFullName.Owner(),
-			RepositoryName:  moduleFullName.Name(),
-			PageSize:        flags.PageSize,
-			PageToken:       flags.PageToken,
-			Reverse:         flags.Reverse,
-		}),
+		&connect.Request[modulev1.GetModulesRequest]{
+			Msg: &modulev1.GetModulesRequest{
+				ModuleRefs: []*modulev1.ModuleRef{
+					{
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+							},
+						},
+					},
+				},
+			},
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -127,6 +131,100 @@ func run(
 		}
 		return err
 	}
+	modules := moduleResp.Msg.GetModules()
+	if len(modules) != 1 {
+		return syserror.Newf("expected 1 module from response, got %d", len(modules))
+	}
+	defaultLabelName := modules[0].GetDefaultLabelName()
+	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleFullName.Registry())
+	order := modulev1.ListLabelsRequest_ORDER_CREATE_TIME_ASC
+	if flags.Reverse {
+		order = modulev1.ListLabelsRequest_ORDER_CREATE_TIME_DESC
+	}
+	labelsResp, err := labelServiceClient.ListLabels(
+		ctx,
+		&connect.Request[modulev1.ListLabelsRequest]{
+			Msg: &modulev1.ListLabelsRequest{
+				// Get 1 extra label to account for the default label returned. We will need to
+				// remove the default label from the response. It's also possible that the response
+				// does not contain the default label, in which case we will remove the last one.
+				PageSize:  flags.PageSize + 1,
+				PageToken: flags.PageToken,
+				Order:     *order.Enum(),
+				ResourceRef: &modulev1.ResourceRef{
+					Value: &modulev1.ResourceRef_Name_{
+						Name: &modulev1.ResourceRef_Name{
+							Owner:  moduleFullName.Owner(),
+							Module: moduleFullName.Name(),
+						},
+					},
+				},
+				ArchiveFilter: modulev1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY,
+			},
+		},
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+		}
+		return err
+	}
+	labels := labelsResp.Msg.GetLabels()
+	nextPageToken := labelsResp.Msg.NextPageToken
+	if len(labels) > 0 {
+		respLabelCount := len(labels)
+		labels = slicesext.Filter(
+			labels,
+			func(label *modulev1.Label) bool {
+				return label.GetName() != defaultLabelName
+			},
+		)
+		switch {
+		case len(labels) == respLabelCount-1:
+			// This means the default label was filtered out.
+			break
+		case len(labels) == respLabelCount && respLabelCount <= int(flags.PageSize):
+			// Less than or equal to page size of labels are returned, no need to trim the slice.
+			break
+		case len(labels) == respLabelCount && respLabelCount == int(flags.PageSize)+1:
+			// We got pageSize+1 labels back.
+			labels = labels[0:flags.PageSize]
+			// We also need a different next page token:
+			// Say there are 10 labels (1 - 10), page size is 2, we send a request
+			// for 3 tokens and we get 3, 4, 5 back. The token that comes with this response
+			// indicates that the next page starts with 6. However, we only display 3 and 4
+			// to the user, we need a token that indicates 5 next.
+			resp, err := labelServiceClient.ListLabels(
+				ctx,
+				&connect.Request[modulev1.ListLabelsRequest]{
+					Msg: &modulev1.ListLabelsRequest{
+						// We ask for the correct size.
+						PageSize:  flags.PageSize,
+						PageToken: flags.PageToken,
+						Order:     *order.Enum(),
+						ResourceRef: &modulev1.ResourceRef{
+							Value: &modulev1.ResourceRef_Name_{
+								Name: &modulev1.ResourceRef_Name{
+									Owner:  moduleFullName.Owner(),
+									Module: moduleFullName.Name(),
+								},
+							},
+						},
+						ArchiveFilter: modulev1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY,
+					},
+				},
+			)
+			if err != nil {
+				if connect.CodeOf(err) == connect.CodeNotFound {
+					return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+				}
+				return err
+			}
+			nextPageToken = resp.Msg.GetNextPageToken()
+		default:
+			return syserror.Newf("incorrect number of labels after filtering: %d", len(labels))
+		}
+	}
 	return bufprint.NewRepositoryDraftPrinter(container.Stdout()).
-		PrintRepositoryDrafts(ctx, format, resp.Msg.NextPageToken, resp.Msg.RepositoryCommits...)
+		PrintRepositoryDrafts(ctx, format, nextPageToken, labels...)
 }
