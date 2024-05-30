@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 )
 
 type repositoryCommitPrinter struct {
@@ -35,7 +35,7 @@ func newRepositoryCommitPrinter(
 	}
 }
 
-func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, format Format, message *registryv1alpha1.RepositoryCommit) error {
+func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, format Format, message *modulev1.Commit) error {
 	outCommit := registryCommitToOutputCommit(message)
 	switch format {
 	case FormatText:
@@ -47,7 +47,7 @@ func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, for
 	}
 }
 
-func (p *repositoryCommitPrinter) PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.RepositoryCommit) error {
+func (p *repositoryCommitPrinter) PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, messages ...*modulev1.Commit) error {
 	if len(messages) == 0 {
 		return nil
 	}
@@ -89,13 +89,11 @@ func (p *repositoryCommitPrinter) printRepositoryCommitsText(outputRepositoryCom
 }
 
 type outputRepositoryCommit struct {
-	Commit string                `json:"commit,omitempty"`
-	Tags   []outputRepositoryTag `json:"tags,omitempty"`
+	Commit string `json:"commit,omitempty"`
 }
 
-func registryCommitToOutputCommit(repositoryCommit *registryv1alpha1.RepositoryCommit) outputRepositoryCommit {
+func registryCommitToOutputCommit(repositoryCommit *modulev1.Commit) outputRepositoryCommit {
 	return outputRepositoryCommit{
-		Commit: repositoryCommit.Name,
-		Tags:   registryTagsToOutputTags(repositoryCommit.Tags),
+		Commit: repositoryCommit.Id,
 	}
 }

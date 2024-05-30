@@ -18,15 +18,15 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -87,18 +87,24 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleRef.ModuleFullName().Registry(),
-		registryv1alpha1connect.NewRepositoryCommitServiceClient,
-	)
-	resp, err := service.GetRepositoryCommitByReference(
+	commitServiceClient := bufapi.NewClientProvider(clientConfig).V1CommitServiceClient(moduleRef.ModuleFullName().Registry())
+	resp, err := commitServiceClient.GetCommits(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
-				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
-				RepositoryName:  moduleRef.ModuleFullName().Name(),
-				Reference:       moduleRef.Ref(),
+			&modulev1.GetCommitsRequest{
+				ResourceRefs: []*modulev1.ResourceRef{
+					{
+						Value: &modulev1.ResourceRef_Name_{
+							Name: &modulev1.ResourceRef_Name{
+								Owner:  moduleRef.ModuleFullName().Owner(),
+								Module: moduleRef.ModuleFullName().Name(),
+								Child: &modulev1.ResourceRef_Name_LabelName{
+									LabelName: moduleRef.Ref(),
+								},
+							},
+						},
+					},
+				},
 			},
 		),
 	)
@@ -108,6 +114,10 @@ func run(
 		}
 		return err
 	}
+	commits := resp.Msg.Commits
+	if len(commits) != 1 {
+		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
+	}
 	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
-		PrintRepositoryCommit(ctx, format, resp.Msg.RepositoryCommit)
+		PrintRepositoryCommit(ctx, format, commits[0])
 }

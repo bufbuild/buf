@@ -120,8 +120,8 @@ func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
 
 // RepositoryCommitPrinter is a repository commit printer.
 type RepositoryCommitPrinter interface {
-	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
-	PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *modulev1.Commit) error
+	PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*modulev1.Commit) error
 }
 
 // NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
