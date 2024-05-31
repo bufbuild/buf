@@ -154,8 +154,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 The source control URL and default branch is based on the required Git remote %q.
 This flag is only compatible with checkouts of Git source repositories.
-If you set the --%s flag yourself, then this value will be used instead and the source control URL will not be derived from the Git source control state.
-This flag does not allow you to set the --%s flag yourself.`,
+If you set the --%s flag and/or --%s flag yourself, then the value(s) will be used instead and the information will not be derived from the Git source control state.`,
 			sourceControlURLFlagName,
 			labelFlagName,
 			labelFlagName,
@@ -215,16 +214,16 @@ func run(
 		if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
 			uploadOptions = append(uploadOptions, labelUploadOption)
 		}
-		if flags.Create {
-			createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
-			if err != nil {
-				return err
-			}
-			uploadOptions = append(
-				uploadOptions,
-				bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
-			)
+	}
+	if flags.Create {
+		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+		if err != nil {
+			return err
 		}
+		uploadOptions = append(
+			uploadOptions,
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+		)
 	}
 	if flags.SourceControlURL != "" {
 		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
@@ -392,9 +391,6 @@ func validateLabelFlagValues(flags *flags) error {
 func validateGitMetadataFlags(flags *flags) error {
 	if flags.GitMetadata {
 		var usedFlags []string
-		if flags.CreateDefaultLabel != "" {
-			usedFlags = append(usedFlags, createDefaultLabelFlagName)
-		}
 		if len(flags.Tags) > 0 {
 			usedFlags = append(usedFlags, tagFlagName)
 		}
@@ -463,8 +459,8 @@ func getGitMetadataUploadOptions(
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
 	}
 	// We get the source control URL information if the user has not provided a value for
-	// the --source-control-url flag. If they did, then we skip this step and use user-set
-	// source control URL instead.
+	// the --source-control-url flag. If they did, then we skip this step and use the user-set
+	// value for source control URL instead.
 	if flags.SourceControlURL == "" {
 		sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
 		if sourceControlURL == "" {
@@ -472,7 +468,10 @@ func getGitMetadataUploadOptions(
 		}
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
 	}
-	if flags.Create {
+	// We get the default label information if the user has not provided a value for the
+	// --create-default-label flag. If they did, then we skip this step and use the user-set
+	// value for --create-default-label instead.
+	if flags.Create && flags.CreateDefaultLabel == "" {
 		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
 			return nil, err
