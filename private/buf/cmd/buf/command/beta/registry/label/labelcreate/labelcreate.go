@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	updateExistingFlagName = "update-exsiting"
+	updateExistingFlagName = "update-existing"
 	formatFlagName         = "format"
 )
 
@@ -124,7 +124,9 @@ func run(
 			),
 		)
 		if err == nil {
-			return bufcli.NewLabelNameAlreadyExistsError(label)
+			// Wrap the error with NewInvalidArgumentError to print the help text,
+			// which includes the --update-existing flag.
+			return appcmd.NewInvalidArgumentError(bufcli.NewLabelNameAlreadyExistsError(label).Error())
 		}
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -144,7 +146,7 @@ func run(
 		),
 	)
 	if err != nil {
-		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.
+		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or label not found.
 		return err
 	}
 	labels := resp.Msg.Labels

@@ -109,7 +109,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
+			return bufcli.NewLabelNotFoundError(moduleRef)
 		}
 		return err
 	}

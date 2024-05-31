@@ -72,14 +72,20 @@ func (p *repositoryLabelPrinter) printRepositoryLabelsText(outputRepositoryLabel
 		[]string{
 			"Name",
 			"Commit",
-			"Created",
+			"Create Time",
+			"Archive Time",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepositoryLabel := range outputRepositoryLabels {
+				formattedArchiveTime := "N/A"
+				if outputRepositoryLabel.ArchiveTime != nil {
+					formattedArchiveTime = outputRepositoryLabel.ArchiveTime.Format(time.RFC3339)
+				}
 				if err := tabWriter.Write(
 					outputRepositoryLabel.Name,
 					outputRepositoryLabel.Commit,
 					outputRepositoryLabel.CreateTime.Format(time.RFC3339),
+					formattedArchiveTime,
 				); err != nil {
 					return err
 				}

@@ -170,12 +170,7 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		addr,
 		flagName,
 		unarchivedArchiveStatus,
-		fmt.Sprintf(
-			`The label archive status filter. Must be one of %s.
-This defaults to %s if not specified.`,
-			stringutil.SliceToString(allArchiveStatusStrings),
-			unarchivedArchiveStatus,
-		),
+		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, stringutil.SliceToString(allArchiveStatusStrings)),
 	)
 }
 

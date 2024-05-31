@@ -44,7 +44,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
+		Use:   name + " <buf.build/owner/repository[:ref]>",
 		Short: "List repository labels",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -102,10 +102,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	if container.Arg(0) == "" {
-		return appcmd.NewInvalidArgumentError("repository is required")
-	}
-	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -121,7 +118,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleFullName.Registry())
+	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
 	order := modulev1.ListLabelsRequest_ORDER_CREATE_TIME_ASC
 	if flags.Reverse {
 		order = modulev1.ListLabelsRequest_ORDER_CREATE_TIME_DESC
@@ -135,8 +132,11 @@ func run(
 				ResourceRef: &modulev1.ResourceRef{
 					Value: &modulev1.ResourceRef_Name_{
 						Name: &modulev1.ResourceRef_Name{
-							Owner:  moduleFullName.Owner(),
-							Module: moduleFullName.Name(),
+							Owner:  moduleRef.ModuleFullName().Owner(),
+							Module: moduleRef.ModuleFullName().Name(),
+							Child: &modulev1.ResourceRef_Name_Ref{
+								Ref: moduleRef.Ref(),
+							},
 						},
 					},
 				},
@@ -146,9 +146,7 @@ func run(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
-		}
+		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or label not found.
 		return err
 	}
 	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabels(ctx, format, resp.Msg.NextPageToken, resp.Msg.Labels...)
