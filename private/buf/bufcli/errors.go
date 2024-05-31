@@ -71,7 +71,7 @@ func NewModuleRefNotFoundError(moduleRef bufmodule.ModuleRef) error {
 	return fmt.Errorf("%q does not exist", moduleRef)
 }
 
-// NewModuleRefNotFoundError informs the user that a ModuleRef does not exist as a label.
+// NewLabelNotFoundError informs the user that a ModuleRef does not exist as a label.
 func NewLabelNotFoundError(moduleRef bufmodule.ModuleRef) error {
 	return fmt.Errorf("label %q does not exist", moduleRef)
 }

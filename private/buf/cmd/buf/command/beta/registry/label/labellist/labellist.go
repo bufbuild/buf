@@ -118,7 +118,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
 	order := modulev1.ListLabelsRequest_ORDER_CREATE_TIME_ASC
 	if flags.Reverse {
 		order = modulev1.ListLabelsRequest_ORDER_CREATE_TIME_DESC
@@ -146,7 +147,9 @@ func run(
 		),
 	)
 	if err != nil {
-		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or label not found.
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewModuleRefNotFoundError(moduleRef)
+		}
 		return err
 	}
 	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabels(ctx, format, resp.Msg.NextPageToken, resp.Msg.Labels...)

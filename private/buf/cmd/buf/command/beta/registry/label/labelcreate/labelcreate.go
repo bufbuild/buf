@@ -125,7 +125,7 @@ func run(
 		)
 		if err == nil {
 			// Wrap the error with NewInvalidArgumentError to print the help text,
-			// which includes the --update-existing flag.
+			// which mentions the --update-existing flag.
 			return appcmd.NewInvalidArgumentError(bufcli.NewLabelNameAlreadyExistsError(label).Error())
 		}
 		if connect.CodeOf(err) != connect.CodeNotFound {
@@ -146,7 +146,7 @@ func run(
 		),
 	)
 	if err != nil {
-		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or label not found.
+		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found, commit not found or misformatted commit id.
 		return err
 	}
 	labels := resp.Msg.Labels

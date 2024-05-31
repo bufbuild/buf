@@ -125,7 +125,7 @@ type RepositoryLabelPrinter interface {
 	PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, labels ...*modulev1.Label) error
 }
 
-// NewRepositoryLabelPrinter returns a new RepositoryTagPrinter.
+// NewRepositoryLabelPrinter returns a new RepositoryLabelPrinter.
 func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
 	return newRepositoryLabelPrinter(writer)
 }

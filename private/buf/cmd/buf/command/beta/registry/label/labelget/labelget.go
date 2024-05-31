@@ -78,7 +78,6 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	// label not empty
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -94,7 +93,7 @@ func run(
 		connect.NewRequest(
 			&modulev1.GetLabelsRequest{
 				LabelRefs: []*modulev1.LabelRef{
-					&modulev1.LabelRef{
+					{
 						Value: &modulev1.LabelRef_Name_{
 							Name: &modulev1.LabelRef_Name{
 								Owner:  moduleRef.ModuleFullName().Owner(),
@@ -117,6 +116,5 @@ func run(
 	if len(labels) != 1 {
 		return syserror.Newf("expect 1 label from response, got %d", len(labels))
 	}
-	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).
-		PrintRepositoryLabel(ctx, format, labels[0])
+	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabel(ctx, format, labels[0])
 }
