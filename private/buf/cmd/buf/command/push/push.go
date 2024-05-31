@@ -154,7 +154,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 The source control URL and default branch is based on the required Git remote %q.
 This flag is only compatible with checkouts of Git source repositories.
-This flag does not allow you to set any of the following flags yourself: --%s, --%s.`,
+If you set the --%s flag yourself, then this value will be used instead and the source control URL will not be derived from the Git source control state.
+This flag does not allow you to set the --%s flag yourself.`,
 			sourceControlURLFlagName,
 			labelFlagName,
 			labelFlagName,
@@ -224,9 +225,9 @@ func run(
 				bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
 			)
 		}
-		if flags.SourceControlURL != "" {
-			uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
-		}
+	}
+	if flags.SourceControlURL != "" {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
@@ -391,9 +392,6 @@ func validateLabelFlagValues(flags *flags) error {
 func validateGitMetadataFlags(flags *flags) error {
 	if flags.GitMetadata {
 		var usedFlags []string
-		if flags.SourceControlURL != "" {
-			usedFlags = append(usedFlags, sourceControlURLFlagName)
-		}
 		if flags.CreateDefaultLabel != "" {
 			usedFlags = append(usedFlags, createDefaultLabelFlagName)
 		}
@@ -464,11 +462,16 @@ func getGitMetadataUploadOptions(
 	if gitLabelsUploadOption != nil {
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
 	}
-	sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
-	if sourceControlURL == "" {
-		return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
+	// We get the source control URL information if the user has not provided a value for
+	// the --source-control-url flag. If they did, then we skip this step and use user-set
+	// source control URL instead.
+	if flags.SourceControlURL == "" {
+		sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
+		if sourceControlURL == "" {
+			return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
+		}
+		gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
 	}
-	gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
 	if flags.Create {
 		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
