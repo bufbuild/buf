@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf push --git-metadata` when local tags point to different objects than
+  the remote tags.
 
 ## [v1.32.2] - 2024-05-28
 
