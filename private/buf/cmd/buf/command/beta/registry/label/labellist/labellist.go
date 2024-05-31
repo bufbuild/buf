@@ -30,6 +30,7 @@ import (
 )
 
 const (
+	archiveStatusName = "archive-status"
 	pageSizeFlagName  = "page-size"
 	pageTokenFlagName = "page-token"
 	reverseFlagName   = "reverse"
@@ -56,10 +57,11 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	ArchiveStatus string
+	PageSize      uint32
+	PageToken     string
+	Reverse       bool
+	Format        string
 }
 
 func newFlags() *flags {
@@ -67,17 +69,21 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
+	bufcli.BindArchiveStatus(flagSet, &f.ArchiveStatus, archiveStatusName)
+	flagSet.Uint32Var(
+		&f.PageSize,
 		pageSizeFlagName,
 		10,
 		`The page size.`,
 	)
-	flagSet.StringVar(&f.PageToken,
+	flagSet.StringVar(
+		&f.PageToken,
 		pageTokenFlagName,
 		"",
 		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
 	)
-	flagSet.BoolVar(&f.Reverse,
+	flagSet.BoolVar(
+		&f.Reverse,
 		reverseFlagName,
 		false,
 		`Reverse the results`,
@@ -100,6 +106,10 @@ func run(
 		return appcmd.NewInvalidArgumentError("repository is required")
 	}
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	archiveStatusFitler, err := bufcli.ArchiveStatusFlagToArchiveStatusFilter(flags.ArchiveStatus)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -130,7 +140,8 @@ func run(
 						},
 					},
 				},
-				Order: order,
+				Order:         order,
+				ArchiveFilter: archiveStatusFitler,
 			},
 		),
 	)
