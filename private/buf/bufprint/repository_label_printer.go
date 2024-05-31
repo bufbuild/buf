@@ -90,17 +90,23 @@ func (p *repositoryLabelPrinter) printRepositoryLabelsText(outputRepositoryLabel
 }
 
 type outputRepositoryLabel struct {
-	ID         string    `json:"id,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	Commit     string    `json:"commit,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	Commit      string     `json:"commit,omitempty"`
+	CreateTime  time.Time  `json:"create_time,omitempty"`
+	ArchiveTime *time.Time `json:"archive_time,omitempty"`
 }
 
 func registryLabelToOutputLabel(repositoryLabel *modulev1.Label) outputRepositoryLabel {
+	var archiveTime *time.Time
+	if repositoryLabel.ArchiveTime != nil {
+		timeValue := repositoryLabel.ArchiveTime.AsTime()
+		archiveTime = &timeValue
+	}
 	return outputRepositoryLabel{
-		Name:       repositoryLabel.Name,
-		Commit:     repositoryLabel.CommitId,
-		CreateTime: repositoryLabel.CreateTime.AsTime(),
+		Name:        repositoryLabel.Name,
+		Commit:      repositoryLabel.CommitId,
+		CreateTime:  repositoryLabel.CreateTime.AsTime(),
+		ArchiveTime: archiveTime,
 	}
 }
 

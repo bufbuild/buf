@@ -34,6 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/archive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
@@ -222,6 +224,8 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "label",
 								Short: "Manage a repository's labels",
 								SubCommands: []*appcmd.Command{
+									labelcreate.NewCommand("create", builder),
+									labelget.NewCommand("get", builder),
 									labellist.NewCommand("list", builder),
 								},
 							},

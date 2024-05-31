@@ -114,7 +114,7 @@ func run(
 		return err
 	}
 	labels := resp.Msg.Labels
-	if len(labels) == 1 {
+	if len(labels) != 1 {
 		return syserror.Newf("expect 1 label from response, got %d", len(labels))
 	}
 	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).
