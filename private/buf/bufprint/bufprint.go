@@ -118,6 +118,18 @@ func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
 	return newRepositoryTagPrinter(writer)
 }
 
+// RepositoryLabelPrinter is a repository label printer.
+// TODO: perhaps rename this to LabelPrinter along with other printers
+type RepositoryLabelPrinter interface {
+	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
+	PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, labels ...*modulev1.Label) error
+}
+
+// NewRepositoryLabelPrinter returns a new RepositoryLabelPrinter.
+func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
+	return newRepositoryLabelPrinter(writer)
+}
+
 // RepositoryCommitPrinter is a repository commit printer.
 type RepositoryCommitPrinter interface {
 	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *modulev1.Commit) error
