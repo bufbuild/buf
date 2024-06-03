@@ -188,7 +188,7 @@ func run(
 		// This should be impossible because getLabelOrCommitForRef would've returned an error.
 		return syserror.Newf("%s is neither a commit nor a label", moduleRef.String())
 	}
-	// The ref is a label. Call ListLabelHistory to get all the commits.
+	// The ref is a label. Call ListLabelHistory to get all commits.
 	labelHistoryOrder := modulev1.ListLabelHistoryRequest_ORDER_ASC
 	if flags.Reverse {
 		labelHistoryOrder = modulev1.ListLabelHistoryRequest_ORDER_DESC
