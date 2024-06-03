@@ -4,6 +4,8 @@
 
 - Allow user to override `--source-control-url` and `--create-default-label` when using
   `--git-metadata` with `buf push`.
+- Fix `buf push --git-metadata` when local tags point to different objects than
+  the remote tags.
 
 ## [v1.32.2] - 2024-05-28
 
