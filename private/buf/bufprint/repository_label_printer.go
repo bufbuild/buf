@@ -22,6 +22,7 @@ import (
 	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 type repositoryLabelPrinter struct {
@@ -67,6 +68,31 @@ func (p *repositoryLabelPrinter) PrintRepositoryLabels(ctx context.Context, form
 }
 
 func (p *repositoryLabelPrinter) printRepositoryLabelsText(outputRepositoryLabels []outputRepositoryLabel) error {
+	archivedLabelCount := slicesext.Count(outputRepositoryLabels, func(label outputRepositoryLabel) bool {
+		return label.ArchiveTime != nil
+	})
+	if archivedLabelCount == 0 {
+		return WithTabWriter(
+			p.writer,
+			[]string{
+				"Name",
+				"Commit",
+				"Create Time",
+			},
+			func(tabWriter TabWriter) error {
+				for _, outputRepositoryLabel := range outputRepositoryLabels {
+					if err := tabWriter.Write(
+						outputRepositoryLabel.Name,
+						outputRepositoryLabel.Commit,
+						outputRepositoryLabel.CreateTime.Format(time.RFC3339),
+					); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		)
+	}
 	return WithTabWriter(
 		p.writer,
 		[]string{
@@ -77,7 +103,7 @@ func (p *repositoryLabelPrinter) printRepositoryLabelsText(outputRepositoryLabel
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepositoryLabel := range outputRepositoryLabels {
-				formattedArchiveTime := "N/A"
+				formattedArchiveTime := ""
 				if outputRepositoryLabel.ArchiveTime != nil {
 					formattedArchiveTime = outputRepositoryLabel.ArchiveTime.Format(time.RFC3339)
 				}
