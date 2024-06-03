@@ -146,9 +146,10 @@ func run(
 		return syserror.Newf("expect 1 resource from response, got %d", len(resources))
 	}
 	resource := resources[0]
+	repositoryCommitPrinter := bufprint.NewRepositoryCommitPrinter(container.Stdout())
 	if commit := resource.GetCommit(); commit != nil {
 		// If the ref is a commit, the commit is the only result and there is no next page.
-		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).PrintRepositoryCommits(ctx, format, "", commit)
+		return repositoryCommitPrinter.PrintRepositoryCommits(ctx, format, "", commit)
 	}
 	if resource.GetModule() != nil {
 		// The ref is a module, ListCommits returns all the commits.
@@ -180,7 +181,7 @@ func run(
 			}
 			return err
 		}
-		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
+		return repositoryCommitPrinter.
 			PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, resp.Msg.Commits...)
 	}
 	label := resource.GetLabel()
@@ -225,6 +226,5 @@ func run(
 			return value.Commit
 		},
 	)
-	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
-		PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, commits...)
+	return repositoryCommitPrinter.PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, commits...)
 }
