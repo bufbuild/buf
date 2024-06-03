@@ -98,8 +98,8 @@ func run(
 							Name: &modulev1.ResourceRef_Name{
 								Owner:  moduleRef.ModuleFullName().Owner(),
 								Module: moduleRef.ModuleFullName().Name(),
-								Child: &modulev1.ResourceRef_Name_LabelName{
-									LabelName: moduleRef.Ref(),
+								Child: &modulev1.ResourceRef_Name_Ref{
+									Ref: moduleRef.Ref(),
 								},
 							},
 						},

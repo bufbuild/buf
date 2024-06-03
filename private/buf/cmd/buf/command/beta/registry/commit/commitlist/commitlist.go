@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1/modulev1connect"
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -107,15 +106,51 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
+	registry := moduleRef.ModuleFullName().Registry()
 	clientProvider := bufapi.NewClientProvider(clientConfig)
-	commitServiceClient := clientProvider.V1CommitServiceClient(moduleRef.ModuleFullName().Registry())
-	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
-	if moduleRef.Ref() == "" {
+	commitServiceClient := clientProvider.V1CommitServiceClient(registry)
+	labelServiceClient := clientProvider.V1LabelServiceClient(registry)
+	resourceServiceClient := clientProvider.V1ResourceServiceClient(registry)
+	resourceResp, err := resourceServiceClient.GetResources(
+		ctx,
+		connect.NewRequest(
+			&modulev1.GetResourcesRequest{
+				ResourceRefs: []*modulev1.ResourceRef{
+					{
+						Value: &modulev1.ResourceRef_Name_{
+							Name: &modulev1.ResourceRef_Name{
+								Owner:  moduleRef.ModuleFullName().Owner(),
+								Module: moduleRef.ModuleFullName().Name(),
+								Child: &modulev1.ResourceRef_Name_Ref{
+									Ref: moduleRef.Ref(),
+								},
+							},
+						},
+					},
+				},
+			},
+		),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewModuleRefNotFoundError(moduleRef)
+		}
+		return err
+	}
+	resources := resourceResp.Msg.Resources
+	if len(resources) != 1 {
+		return syserror.Newf("expect 1 resource from response, got %d", len(resources))
+	}
+	resource := resources[0]
+	if commit := resource.GetCommit(); commit != nil {
+		// If the ref is a commit, the commit is the only result and there is no next page.
+		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).PrintRepositoryCommits(ctx, format, "", commit)
+	}
+	if resource.GetModule() != nil {
 		// The moduleRef is a module, ListCommits returns all the commits.
 		commitOrder := modulev1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
 		if flags.Reverse {
@@ -148,14 +183,7 @@ func run(
 		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
 			PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, resp.Msg.Commits...)
 	}
-	label, commit, err := getLabelOrCommitForRef(ctx, labelServiceClient, commitServiceClient, moduleRef)
-	if err != nil {
-		return err
-	}
-	if commit != nil {
-		// If the ref is a commit, the commit is the only result and there is no next page.
-		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).PrintRepositoryCommits(ctx, format, "", commit)
-	}
+	label := resource.GetLabel()
 	if label == nil {
 		// This should be impossible because getLabelOrCommitForRef would've returned an error.
 		return syserror.Newf("%s is neither a commit nor a label", moduleRef.String())
@@ -199,77 +227,4 @@ func run(
 	)
 	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
 		PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, commits...)
-}
-
-// A non-empty ref string could be either a label or a commit.
-//
-// If the ref is a label or both, returns a non-nil label.
-// If the ref is a commit, returns a non-nil commit.
-func getLabelOrCommitForRef(
-	ctx context.Context,
-	labelServiceClient modulev1connect.LabelServiceClient,
-	commitServiceClient modulev1connect.CommitServiceClient,
-	moduleRef bufmodule.ModuleRef,
-) (*modulev1.Label, *modulev1.Commit, error) {
-	// First check if it's a label.
-	labelResp, err := labelServiceClient.GetLabels(
-		ctx,
-		connect.NewRequest(
-			&modulev1.GetLabelsRequest{
-				LabelRefs: []*modulev1.LabelRef{
-					{
-						Value: &modulev1.LabelRef_Name_{
-							Name: &modulev1.LabelRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Label:  moduleRef.Ref(),
-							},
-						},
-					},
-				},
-			},
-		),
-	)
-	if err == nil {
-		labels := labelResp.Msg.Labels
-		if len(labels) != 1 {
-			return nil, nil, syserror.Newf("expect 1 label from response, got %d", len(labels))
-		}
-		return labels[0], nil, nil
-	}
-	if connect.CodeOf(err) != connect.CodeNotFound {
-		return nil, nil, err
-	}
-	// Now check if it's a commit.
-	commitResp, err := commitServiceClient.GetCommits(
-		ctx,
-		connect.NewRequest(
-			&modulev1.GetCommitsRequest{
-				ResourceRefs: []*modulev1.ResourceRef{
-					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
-								},
-							},
-						},
-					},
-				},
-			},
-		),
-	)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return nil, nil, bufcli.NewModuleRefNotFoundError(moduleRef)
-		}
-		return nil, nil, err
-	}
-	commits := commitResp.Msg.Commits
-	if len(commits) != 1 {
-		return nil, nil, syserror.Newf("expect 1 commit from response, got %d", len(commits))
-	}
-	return nil, commits[0], nil
 }
