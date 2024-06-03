@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
--  Add `buf beta registry label {create,get,list}` to replace `buf beta registry {draft, tag}` commands.
 - Allow user to override `--source-control-url` and `--create-default-label` when using
   `--git-metadata` with `buf push`.
+- Add `buf beta registry label {create,get,list}` to replace `buf beta registry {draft, tag}` commands.
 
 ## [v1.32.2] - 2024-05-28
 
