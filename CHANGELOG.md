@@ -4,7 +4,13 @@
 
 - Allow user to override `--source-control-url` and `--create-default-label` when using
   `--git-metadata` with `buf push`.
-- Add `buf beta registry label {create,get,list}` to replace `buf beta registry {draft, tag}` commands.
+- Add `buf beta registry label {create,get,list}` to replace `buf beta registry {draft, tag}`
+  commands.
+- Update `buf beta commit {get,list}` commands to display create time and stop displaying 
+  associated tags.
+- Change the behavior of `buf beta commit list <buf.build/owner/repository>` when the
+  reference is empty. It now lists commits in the repository instead of listing commits
+  of the default label.
 
 ## [v1.32.2] - 2024-05-28
 
