@@ -151,7 +151,7 @@ func run(
 		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).PrintRepositoryCommits(ctx, format, "", commit)
 	}
 	if resource.GetModule() != nil {
-		// The moduleRef is a module, ListCommits returns all the commits.
+		// The ref is a module, ListCommits returns all the commits.
 		commitOrder := modulev1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
 		if flags.Reverse {
 			commitOrder = modulev1.ListCommitsRequest_ORDER_CREATE_TIME_DESC
