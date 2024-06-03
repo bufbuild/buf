@@ -107,17 +107,6 @@ func NewRepositoryPrinter(
 	return newRepositoryPrinter(clientConfig, address, writer)
 }
 
-// RepositoryTagPrinter is a repository tag printer.
-type RepositoryTagPrinter interface {
-	PrintRepositoryTag(ctx context.Context, format Format, repositoryTag *registryv1alpha1.RepositoryTag) error
-	PrintRepositoryTags(ctx context.Context, format Format, nextPageToken string, repositoryTags ...*registryv1alpha1.RepositoryTag) error
-}
-
-// NewRepositoryTagPrinter returns a new RepositoryTagPrinter.
-func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
-	return newRepositoryTagPrinter(writer)
-}
-
 // RepositoryLabelPrinter is a repository label printer.
 // TODO: perhaps rename this to LabelPrinter along with other printers
 type RepositoryLabelPrinter interface {
@@ -139,16 +128,6 @@ type RepositoryCommitPrinter interface {
 // NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
 func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 	return newRepositoryCommitPrinter(writer)
-}
-
-// RepositoryDraftPrinter is a repository draft printer.
-type RepositoryDraftPrinter interface {
-	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, drafts ...*modulev1.Label) error
-}
-
-// NewRepositoryDraftPrinter returns a new RepositoryDraftPrinter.
-func NewRepositoryDraftPrinter(writer io.Writer) RepositoryDraftPrinter {
-	return newRepositoryDraftPrinter(writer)
 }
 
 // TokenPrinter is a token printer.

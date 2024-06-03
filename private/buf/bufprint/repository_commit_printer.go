@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 )
@@ -35,8 +36,8 @@ func newRepositoryCommitPrinter(
 	}
 }
 
-func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, format Format, message *modulev1.Commit) error {
-	outCommit := registryCommitToOutputCommit(message)
+func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *modulev1.Commit) error {
+	outCommit := registryCommitToOutputCommit(repositoryCommit)
 	switch format {
 	case FormatText:
 		return p.printRepositoryCommitsText([]outputRepositoryCommit{outCommit})
@@ -47,12 +48,12 @@ func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, for
 	}
 }
 
-func (p *repositoryCommitPrinter) PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, messages ...*modulev1.Commit) error {
-	if len(messages) == 0 {
+func (p *repositoryCommitPrinter) PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*modulev1.Commit) error {
+	if len(repositoryCommits) == 0 {
 		return nil
 	}
 	var outputRepositoryCommits []outputRepositoryCommit
-	for _, repositoryCommit := range messages {
+	for _, repositoryCommit := range repositoryCommits {
 		outputRepositoryCommit := registryCommitToOutputCommit(repositoryCommit)
 		outputRepositoryCommits = append(outputRepositoryCommits, outputRepositoryCommit)
 	}
@@ -74,11 +75,13 @@ func (p *repositoryCommitPrinter) printRepositoryCommitsText(outputRepositoryCom
 		p.writer,
 		[]string{
 			"Commit",
+			"Create Time", // TODO: this should be a constant
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepositoryCommit := range outputRepositoryCommits {
 				if err := tabWriter.Write(
 					outputRepositoryCommit.Commit,
+					outputRepositoryCommit.CreateTime.Format(time.RFC3339),
 				); err != nil {
 					return err
 				}
@@ -89,11 +92,13 @@ func (p *repositoryCommitPrinter) printRepositoryCommitsText(outputRepositoryCom
 }
 
 type outputRepositoryCommit struct {
-	Commit string `json:"commit,omitempty"`
+	Commit     string    `json:"commit,omitempty"`
+	CreateTime time.Time `json:"create_time,omitempty"`
 }
 
 func registryCommitToOutputCommit(repositoryCommit *modulev1.Commit) outputRepositoryCommit {
 	return outputRepositoryCommit{
-		Commit: repositoryCommit.Id,
+		Commit:     repositoryCommit.Id,
+		CreateTime: repositoryCommit.CreateTime.AsTime(),
 	}
 }
