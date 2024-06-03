@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Allow user to override `--source-control-url` and `--create-default-label` when using
+  `--git-metadata` with `buf push`.
 
 ## [v1.32.2] - 2024-05-28
 
