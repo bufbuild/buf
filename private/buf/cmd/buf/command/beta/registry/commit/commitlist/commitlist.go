@@ -115,8 +115,8 @@ func run(
 	clientProvider := bufapi.NewClientProvider(clientConfig)
 	commitServiceClient := clientProvider.V1CommitServiceClient(moduleRef.ModuleFullName().Registry())
 	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
-	// The moduleRef is a module, ListCommits returns all the commits.
 	if moduleRef.Ref() == "" {
+		// The moduleRef is a module, ListCommits returns all the commits.
 		commitOrder := modulev1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
 		if flags.Reverse {
 			commitOrder = modulev1.ListCommitsRequest_ORDER_CREATE_TIME_DESC
@@ -157,7 +157,7 @@ func run(
 		return bufprint.NewRepositoryCommitPrinter(container.Stdout()).PrintRepositoryCommits(ctx, format, "", commit)
 	}
 	if label == nil {
-		// This should be impossible.
+		// This should be impossible because getLabelOrCommitForRef would've returned an error.
 		return syserror.Newf("%s is neither a commit nor a label", moduleRef.String())
 	}
 	// The ref is a label. Call ListLabelHistory to get all the commits.
@@ -201,7 +201,7 @@ func run(
 		PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, commits...)
 }
 
-// A ref string could either be a label or a commit.
+// A non-empty ref string could be either a label or a commit.
 //
 // If the ref is a label or both, returns a non-nil label.
 // If the ref is a commit, returns a non-nil commit.
