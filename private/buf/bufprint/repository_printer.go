@@ -138,8 +138,8 @@ func (p *repositoryPrinter) printRepositoriesText(outputRepositories []outputRep
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Full name",
-			"Created",
+			"Full Name",
+			"Create Time",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepository := range outputRepositories {
