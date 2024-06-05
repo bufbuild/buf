@@ -78,7 +78,7 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 		p.writer,
 		[]string{
 			"Full name",
-			"Created Time",
+			"Create Time",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputOrganization := range outputOrganizations {
