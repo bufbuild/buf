@@ -63,7 +63,8 @@ func (a *adder) addForPathf(path []int32, format string, args ...interface{}) {
 	a.addFunc(
 		a.field,
 		a.field.OptionExtensionLocation(validate.E_Field, append(combinedPath, path...)...),
-		nil,
+		// It is OK if a.field.Location() is nil per the docs of IgnoreFunc.
+		[]bufprotosource.Location{a.field.Location()},
 		format,
 		args...,
 	)
@@ -83,7 +84,8 @@ func (a *adder) addForPathsf(paths [][]int32, format string, args ...interface{}
 		a.addFunc(
 			a.field,
 			location,
-			nil,
+			// It is OK if a.field.Location() is nil per the docs of IgnoreFunc.
+			[]bufprotosource.Location{a.field.Location()},
 			format,
 			args...,
 		)
