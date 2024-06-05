@@ -2,7 +2,22 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Allow user to override `--source-control-url` and `--create-default-label` when using
+  `--git-metadata` with `buf push`.
+- Fix `buf push --git-metadata` when local tags point to different objects than
+  the remote tags.
+- Add `buf beta registry label {create,get,list}` to replace `buf beta registry {draft, tag}`
+  commands.
+- Update `buf beta commit {get,list}` command outputs to display create time and stop
+  displaying associated tags.
+- Change the behavior of `buf beta commit list <buf.build/owner/repository>` when the
+  reference is empty. It now lists commits in the repository instead of listing commits
+  of the default label.
+
+## [v1.32.2] - 2024-05-28
+
+- Update `buf generate` to warn instead of error when proto3 optional is required but not
+  supported by a plugin.
 
 ## [v1.32.1] - 2024-05-21
 
@@ -1122,7 +1137,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.2...HEAD
+[v1.32.2]: https://github.com/bufbuild/buf/compare/v1.32.1...v1.32.2
 [v1.32.1]: https://github.com/bufbuild/buf/compare/v1.32.0...v1.32.1
 [v1.32.0]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...v1.32.0
 [v1.32.0-beta.1]: https://github.com/bufbuild/buf/compare/v1.31.0...v1.32.0-beta.1

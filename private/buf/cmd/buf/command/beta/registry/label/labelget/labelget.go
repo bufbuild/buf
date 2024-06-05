@@ -12,30 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package taglist
+package labelget
 
 import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
-const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -44,8 +39,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "List repository tags",
+		Use:   name + " <buf.build/owner/repository:label>",
+		Short: "Get label details",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -57,10 +52,7 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	Format string
 }
 
 func newFlags() *flags {
@@ -68,21 +60,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
-	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
-		false,
-		`Reverse the results`,
-	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -97,10 +74,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	if container.Arg(0) == "" {
-		return appcmd.NewInvalidArgumentError("repository is required")
-	}
-	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -108,43 +82,39 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	repositoryService := connectclient.Make(
-		clientConfig,
-		moduleFullName.Registry(),
-		registryv1alpha1connect.NewRepositoryServiceClient,
-	)
-	resp, err := repositoryService.GetRepositoryByFullName(ctx,
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	resp, err := labelServiceClient.GetLabels(
+		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GetRepositoryByFullNameRequest{
-				FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
+			&modulev1.GetLabelsRequest{
+				LabelRefs: []*modulev1.LabelRef{
+					{
+						Value: &modulev1.LabelRef_Name_{
+							Name: &modulev1.LabelRef_Name{
+								Owner:  moduleRef.ModuleFullName().Owner(),
+								Module: moduleRef.ModuleFullName().Name(),
+								Label:  moduleRef.Ref(),
+							},
+						},
+					},
+				},
 			},
 		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+			return bufcli.NewLabelNotFoundError(moduleRef)
 		}
 		return err
 	}
-	repositoryTagService := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewRepositoryTagServiceClient)
-	tagsResp, err := repositoryTagService.ListRepositoryTags(
-		ctx,
-		connect.NewRequest(
-			&registryv1alpha1.ListRepositoryTagsRequest{
-				RepositoryId: resp.Msg.Repository.Id,
-				PageSize:     flags.PageSize,
-				PageToken:    flags.PageToken,
-				Reverse:      flags.Reverse,
-			},
-		),
-	)
-	if err != nil {
-		return err
+	labels := resp.Msg.Labels
+	if len(labels) != 1 {
+		return syserror.Newf("expect 1 label from response, got %d", len(labels))
 	}
-	return bufprint.NewRepositoryTagPrinter(container.Stdout()).PrintRepositoryTags(ctx, format, tagsResp.Msg.NextPageToken, tagsResp.Msg.RepositoryTags...)
+	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabel(ctx, format, labels[0])
 }

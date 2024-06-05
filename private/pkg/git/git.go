@@ -34,9 +34,9 @@ import (
 
 const (
 	gitCommand      = "git"
-	gitOriginRemote = "origin"
 	tagsPrefix      = "refs/tags/"
 	headsPrefix     = "refs/heads/"
+	psuedoRefSuffix = "^{}"
 )
 
 var (
@@ -233,7 +233,7 @@ func CheckDirectoryIsValidGitCheckout(
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			if exitErr.ProcessState.ExitCode() == 128 {
+			if exitErr.ExitCode() == 128 {
 				return fmt.Errorf("dir %s: %w", dir, ErrInvalidGitCheckout)
 			}
 		}
@@ -261,7 +261,7 @@ func CheckForUncommittedGitChanges(
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
 	); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get unstaged changes: %w: %s", err, stderr.String())
 	}
 	modifiedFiles = append(modifiedFiles, getAllTrimmedLinesFromBuffer(stdout)...)
 
@@ -276,7 +276,7 @@ func CheckForUncommittedGitChanges(
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
 	); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get staged changes: %w: %s", err, stderr.String())
 	}
 
 	modifiedFiles = append(modifiedFiles, getAllTrimmedLinesFromBuffer(stdout)...)
@@ -299,7 +299,7 @@ func GetCurrentHEADGitCommit(
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
 	); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get current HEAD commit: %w: %s", err, stderr.String())
 	}
 	return strings.TrimSpace(stdout.String()), nil
 }
@@ -320,13 +320,13 @@ func GetRefsForGitCommitAndRemote(
 	if err := runner.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("ls-remote", "--heads", "--tags", "--refs", remote),
+		command.RunWithArgs("ls-remote", "--heads", "--tags", remote),
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get refs for remote %s: %w: %s", remote, err, stderr.String())
 	}
 	scanner := bufio.NewScanner(stdout)
 	var refs []string
@@ -335,6 +335,8 @@ func GetRefsForGitCommitAndRemote(
 		if ref, found := strings.CutPrefix(line, gitCommitSha); found {
 			ref = strings.TrimSpace(ref)
 			if tag, isTag := strings.CutPrefix(ref, tagsPrefix); isTag {
+				// Remove the ^{} suffix for pseudo-ref tags
+				tag, _ = strings.CutSuffix(tag, psuedoRefSuffix)
 				refs = append(refs, tag)
 				continue
 			}

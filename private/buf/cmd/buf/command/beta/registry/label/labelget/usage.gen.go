@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package taglist
+package labelget
 
 import _ "github.com/bufbuild/buf/private/usage"

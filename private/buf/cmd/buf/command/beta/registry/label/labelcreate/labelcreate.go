@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commitget
+package labelcreate
 
 import (
 	"context"
@@ -30,7 +30,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
+const (
+	updateExistingFlagName = "update-existing"
+	formatFlagName         = "format"
+)
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -39,9 +42,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]>",
-		Short: "Get commit details",
-		Args:  appcmd.ExactArgs(1),
+		Use:   name + " <buf.build/owner/repository:commit> <label>",
+		Short: "Create a label for a specified commit",
+		Args:  appcmd.ExactArgs(2),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -52,7 +55,8 @@ func NewCommand(
 }
 
 type flags struct {
-	Format string
+	Format         string
+	UpdateExisting bool
 }
 
 func newFlags() *flags {
@@ -60,6 +64,12 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(
+		&f.UpdateExisting,
+		updateExistingFlagName,
+		false,
+		`Update the label if it already exists`,
+	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -78,46 +88,70 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
+	if moduleRef.Ref() == "" {
+		return appcmd.NewInvalidArgumentError("commit is required")
+	}
+	label := container.Arg(1)
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	commitServiceClient := bufapi.NewClientProvider(clientConfig).V1CommitServiceClient(moduleRef.ModuleFullName().Registry())
-	resp, err := commitServiceClient.GetCommits(
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	labelRef := &modulev1.LabelRef{
+		Value: &modulev1.LabelRef_Name_{
+			Name: &modulev1.LabelRef_Name{
+				Owner:  moduleRef.ModuleFullName().Owner(),
+				Module: moduleRef.ModuleFullName().Name(),
+				Label:  label,
+			},
+		},
+	}
+	if !flags.UpdateExisting {
+		// Check that the label does not already exist
+		_, err := labelServiceClient.GetLabels(
+			ctx,
+			connect.NewRequest(
+				&modulev1.GetLabelsRequest{
+					LabelRefs: []*modulev1.LabelRef{
+						labelRef,
+					},
+				},
+			),
+		)
+		if err == nil {
+			// Wrap the error with NewInvalidArgumentError to print the help text,
+			// which mentions the --update-existing flag.
+			return appcmd.NewInvalidArgumentError(bufcli.NewLabelNameAlreadyExistsError(label).Error())
+		}
+		if connect.CodeOf(err) != connect.CodeNotFound {
+			return err
+		}
+	}
+	resp, err := labelServiceClient.CreateOrUpdateLabels(
 		ctx,
 		connect.NewRequest(
-			&modulev1.GetCommitsRequest{
-				ResourceRefs: []*modulev1.ResourceRef{
+			&modulev1.CreateOrUpdateLabelsRequest{
+				Values: []*modulev1.CreateOrUpdateLabelsRequest_Value{
 					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
-								},
-							},
-						},
+						LabelRef: labelRef,
+						CommitId: moduleRef.Ref(),
 					},
 				},
 			},
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
-		}
+		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found, commit not found or misformatted commit id.
 		return err
 	}
-	commits := resp.Msg.Commits
-	if len(commits) != 1 {
-		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
+	labels := resp.Msg.Labels
+	if len(labels) != 1 {
+		return syserror.Newf("expected 1 label from response, got %d", len(labels))
 	}
-	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
-		PrintRepositoryCommit(ctx, format, commits[0])
+	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabel(ctx, format, labels[0])
 }
