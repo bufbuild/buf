@@ -6,6 +6,7 @@
   `--git-metadata` with `buf push`.
 - Fix `buf push --git-metadata` when local tags point to different objects than
   the remote tags.
+- Fix issue where comment ignores were not respected for `PROTOVALIDATE` lint rule violations.
 
 ## [v1.32.2] - 2024-05-28
 
