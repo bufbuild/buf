@@ -86,7 +86,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	organizationServiceClient := bufapi.NewClientProvider(clientConfig).V1OrganizationServiceClient(moduleOwner.Registry())
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	resp, err := organizationServiceClient.GetOrganizations(
 		ctx,
 		connect.NewRequest(

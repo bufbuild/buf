@@ -85,7 +85,8 @@ func run(
 			return err
 		}
 	}
-	organizationServiceClient := bufapi.NewClientProvider(clientConfig).V1OrganizationServiceClient(moduleOwner.Registry())
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	if _, err := organizationServiceClient.DeleteOrganizations(
 		ctx,
 		connect.NewRequest(

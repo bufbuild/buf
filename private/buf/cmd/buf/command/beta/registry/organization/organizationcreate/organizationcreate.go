@@ -86,7 +86,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	organizationServiceClient := bufapi.NewClientProvider(clientConfig).V1OrganizationServiceClient(moduleOwner.Registry())
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	resp, err := organizationServiceClient.CreateOrganizations(
 		ctx,
 		connect.NewRequest(
@@ -100,9 +101,8 @@ func run(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			return bufcli.NewOrganizationNameAlreadyExistsError(container.Arg(0))
-		}
+		// Not explicitly handling error with connect.AlreadyExists as it can be a user or an
+		// organization that already exists with that name.
 		return err
 	}
 	organizations := resp.Msg.GetOrganizations()
