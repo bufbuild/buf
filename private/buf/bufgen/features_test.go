@@ -23,6 +23,9 @@ import (
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -93,32 +96,58 @@ func TestCheckRequiredFeatures(t *testing.T) {
 	}
 
 	// Successful cases
-	testCheckRequiredFeatures(t, noRequiredFeatures, supportsNoFeatures, "")
-	testCheckRequiredFeatures(t, requiresProto3Optional, supportsBoth, "")
-	testCheckRequiredFeatures(t, requiresEditions, supportsBoth, "")
-	testCheckRequiredFeatures(t, requiresBoth, supportsBoth, "")
+	testCheckRequiredFeatures(t, noRequiredFeatures, supportsNoFeatures, "", "")
+	testCheckRequiredFeatures(t, requiresProto3Optional, supportsBoth, "", "")
+	testCheckRequiredFeatures(t, requiresEditions, supportsBoth, "", "")
+	testCheckRequiredFeatures(t, requiresBoth, supportsBoth, "", "")
 
 	// Error cases
-	testCheckRequiredFeatures(t, requiresProto3Optional, supportsNoFeatures,
-		`plugin "test" does not support feature "proto3 optional" which is required by "proto3_optional.proto"`)
-	testCheckRequiredFeatures(t, requiresEditions, supportsNoFeatures,
-		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`)
-	testCheckRequiredFeatures(t, requiresBoth, supportsNoFeatures,
-		`plugin "test" does not support feature "proto3 optional" which is required by "proto3_optional.proto"; `+
-			`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`)
-	testCheckRequiredFeatures(t, requiresEditions, supportsEditionsButOutOfRange,
-		`plugin "test" does not support edition "2023" which is required by "editions.proto"`)
+	testCheckRequiredFeatures(
+		t,
+		requiresProto3Optional,
+		supportsNoFeatures,
+		`plugin "test" does not support required features.
+  Feature "proto3 optional" is required by 1 file(s):
+    proto3_optional.proto`,
+		"", // No error expected
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresEditions,
+		supportsNoFeatures,
+		"", // No stderr expected
+		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`,
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresBoth,
+		supportsNoFeatures,
+		`plugin "test" does not support required features.
+  Feature "proto3 optional" is required by 1 file(s):
+    proto3_optional.proto`,
+		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`,
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresEditions,
+		supportsEditionsButOutOfRange,
+		"", // No stderr expected
+		`plugin "test" does not support edition "2023" which is required by "editions.proto"`,
+	)
 }
 
 func testCheckRequiredFeatures(
 	t *testing.T,
 	image bufimage.Image,
 	codeGenResponse *pluginpb.CodeGeneratorResponse,
+	expectedStdErr string,
 	expectedErr string,
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
+	observed, logs := observer.New(zapcore.WarnLevel)
 	err := checkRequiredFeatures(
+		zap.New(observed),
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
@@ -134,6 +163,12 @@ func testCheckRequiredFeatures(
 			newMockPluginConfig("never_fails"),
 		},
 	)
+	if expectedStdErr != "" {
+		require.NotEmpty(t, logs.All())
+		require.Equal(t, expectedStdErr, logs.All()[0].Message)
+	} else {
+		require.Empty(t, logs.All())
+	}
 	if expectedErr != "" {
 		require.ErrorContains(t, err, expectedErr)
 	} else {

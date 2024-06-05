@@ -33,6 +33,10 @@ const (
 
 	publicVisibility  = "public"
 	privateVisibility = "private"
+
+	archivedArchiveStatus   = "archived"
+	unarchivedArchiveStatus = "unarchived"
+	allArchiveStatus        = "all"
 )
 
 var (
@@ -40,6 +44,11 @@ var (
 	allVisibiltyStrings = []string{
 		publicVisibility,
 		privateVisibility,
+	}
+	allArchiveStatusStrings = []string{
+		archivedArchiveStatus,
+		unarchivedArchiveStatus,
+		allArchiveStatus,
 	}
 )
 
@@ -153,6 +162,17 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 	)
 }
 
+// BindArchiveStatus binds the archive-status flag. Kept in this package so we can
+// keep allArchiveStatusStrings private.
+func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
+	flagSet.StringVar(
+		addr,
+		flagName,
+		unarchivedArchiveStatus,
+		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, stringutil.SliceToString(allArchiveStatusStrings)),
+	)
+}
+
 // GetInputLong gets the long command description for an input-based command.
 func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(
@@ -249,6 +269,20 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (modulev1.Mod
 		return modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED, nil
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
+	}
+}
+
+// ArchiveStatusFlagToArchiveStatusFilter parses the given string as a modulev1.ListLabelsRequest_ArchiveFilter.
+func ArchiveStatusFlagToArchiveStatusFilter(archiveStatus string) (modulev1.ListLabelsRequest_ArchiveFilter, error) {
+	switch archiveStatus {
+	case archivedArchiveStatus:
+		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_ARCHIVED_ONLY, nil
+	case unarchivedArchiveStatus:
+		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
+	case allArchiveStatus:
+		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
+	default:
+		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
 	}
 }
 

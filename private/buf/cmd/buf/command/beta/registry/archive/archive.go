@@ -78,7 +78,7 @@ func run(
 	flags *flags,
 ) error {
 	if len(flags.Labels) < 1 {
-		return appcmd.NewInvalidArgumentError("must archive at last one label")
+		return appcmd.NewInvalidArgumentError("must archive at least one label")
 	}
 	controller, err := bufcli.NewController(container)
 	if err != nil {
