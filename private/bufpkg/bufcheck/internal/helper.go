@@ -110,10 +110,17 @@ func (h *Helper) addFileAnnotationf(
 	format string,
 	args ...interface{},
 ) {
+	baseLocs := []bufprotosource.Location{location}
+	if locDescriptor, ok := descriptor.(bufprotosource.LocationDescriptor); ok {
+		if descLocation := locDescriptor.Location(); descLocation != location {
+			// Include the location of the descriptor itself as a source of ignores.
+			baseLocs = append(baseLocs, descLocation)
+		}
+	}
 	if h.ignoreFunc != nil && h.ignoreFunc(
 		h.id,
 		append([]bufprotosource.Descriptor{descriptor}, extraIgnoreDescriptors...),
-		append([]bufprotosource.Location{location}, extraIgnoreLocations...),
+		append(baseLocs, extraIgnoreLocations...),
 	) {
 		return
 	}
