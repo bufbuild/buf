@@ -9,8 +9,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/mikefarah/yq/releases 20240225 checked 20240320
-YQ_VERSION ?= v4.42.1
+# https://github.com/mikefarah/yq/releases 20240511 checked 20240524
+YQ_VERSION ?= v4.44.1
 
 ifeq ($(UNAME_OS),Darwin)
 YQ_OS := darwin

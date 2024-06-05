@@ -1,0 +1,6 @@
+version: v2
+modules:
+  - path: fail
+lint:
+  use:
+    - PACKAGE_DIRECTORY_MATCH

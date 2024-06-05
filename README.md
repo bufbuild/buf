@@ -93,7 +93,7 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 
 ## Next steps
 
-Once you've installed `buf`, we recommend completing the [Tour of Buf][tour], which provides a broad but hands-on overview of the core functionality of both the CLI and the [BSR]. The tour takes about 10 minutes to complete.
+Once you've installed `buf`, we recommend completing the [CLI tutorial][cli-tutorial], which provides a broad but hands-on overview of the core functionality of the CLI. The tour takes about 10 minutes to complete.
 
 After completing the tour, check out the remainder of the [docs] for your specific areas of interest.
 
@@ -118,6 +118,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [buf]: https://buf.build
 [build_config]: https://docs.buf.build/build/usage/#configuration
 [build_usage]: https://docs.buf.build/build/usage
+[cli-tutorial]: https://buf.build/docs/tutorials/getting-started-with-buf-cli
 [compiler]: https://docs.buf.build/build/internal-compiler
 [contact]: https://docs.buf.build/contact
 [docker]: https://docs.buf.build/installation#use-the-docker-image
@@ -150,7 +151,6 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [source]: https://docs.buf.build/installation#from-source
 [tarball]: https://docs.buf.build/installation#tarball
 [templates]: https://docs.buf.build/configuration/v1/buf-gen-yaml
-[tour]: https://docs.buf.build/tour/introduction
 [users]: https://docs.buf.build/bsr/user-management#organization-roles
 [verifying]: https://docs.buf.build/installation#verifying-a-release
 [windows]: https://docs.buf.build/installation#windows-support

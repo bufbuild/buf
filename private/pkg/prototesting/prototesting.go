@@ -71,6 +71,8 @@ func GetProtocFileDescriptorSet(
 		nil,
 		nil,
 		fmt.Sprintf("--descriptor_set_out=%s", tempFilePath),
+		// Needed to maintain consistency with buf as of v27.0
+		`--retain_options`,
 	); err != nil {
 		return nil, err
 	}
