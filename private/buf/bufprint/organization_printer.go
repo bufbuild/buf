@@ -39,8 +39,8 @@ func newOrganizationPrinter(
 	}
 }
 
-func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, message *ownerv1.Organization) error {
-	outOrganization := registryOrganizationToOutputOrganization(p.address, message)
+func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error {
+	outOrganization := registryOrganizationToOutputOrganization(p.address, organization)
 	switch format {
 	case FormatText:
 		return p.printOrganizationsText([]outputOrganization{outOrganization})
@@ -51,12 +51,12 @@ func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Form
 	}
 }
 
-func (p *organizationPrinter) PrintOrganizations(ctx context.Context, format Format, nextPageToken string, messages ...*ownerv1.Organization) error {
-	if len(messages) == 0 {
+func (p *organizationPrinter) PrintOrganizations(ctx context.Context, format Format, nextPageToken string, organizations ...*ownerv1.Organization) error {
+	if len(organizations) == 0 {
 		return nil
 	}
 	var outputOrganizations []outputOrganization
-	for _, organization := range messages {
+	for _, organization := range organizations {
 		outputOrganization := registryOrganizationToOutputOrganization(p.address, organization)
 		outputOrganizations = append(outputOrganizations, outputOrganization)
 	}
@@ -78,7 +78,7 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 		p.writer,
 		[]string{
 			"Full name",
-			"Created",
+			"Created Time",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputOrganization := range outputOrganizations {
