@@ -1,0 +1,14 @@
+name: Other
+description: Anything else.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for getting in touch, we really appreciate it! If your issue isn't a bug or feature request, we'd highly recommend to talk to us on the [Buf Slack](https://buf.build/links/slack). If you think the issue is more appropriate for a GitHub issue, please file it below!
+  - type: textarea
+    id: feature
+    attributes:
+      label: What's up?
+      description: Tell us what's on your mind!
+    validations:
+      required: true

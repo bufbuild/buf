@@ -1,0 +1,15 @@
+name: Feature Request
+description: Let us know about a feature you'd like us to add.
+labels: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your suggestions on how to improve Buf, we really appreciate it!
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature
+      description: Tell us what you'd like to see!
+    validations:
+      required: true
