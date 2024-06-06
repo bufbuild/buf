@@ -5,7 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping us improve Buf by filing bugs, we really appreciate it! For us to investigate your issue, we need a specific, reproducible example. We find that the easiest way to do this is by linking to a GitHub repository with the setup, as well as a set of commands for us to run on this GitHub repository to reproduce the issue. You can use an existing GitHub repository, or a temporary GitHub repository you create.
+        **Thanks for helping us improve Buf by filing bugs, we really appreciate it! For us to investigate your issue, we need a minimal reproducible example. We find that the easiest way to do this is by linking to a GitHub repository with the setup of the example, as well as a set of commands for us to run on this GitHub repository to reproduce the issue. You can use an existing GitHub repository, or a temporary GitHub repository you create.**
+
+        **[This article](https://stackoverflow.com/help/minimal-reproducible-example) on minimal reproducible examples may be of use!**
   - type: input
     id: github-repository
     attributes:
