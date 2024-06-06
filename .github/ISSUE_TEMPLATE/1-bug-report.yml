@@ -19,6 +19,9 @@ body:
     attributes:
       label: Commands
       description: Please provide the commands to run from the root of this repository to reproduce the issue.
+      placeholder: |
+        cd ./proto
+        buf lint
       render: shell
     validations:
       required: true
@@ -27,6 +30,8 @@ body:
     attributes:
       label: Output
       description: What is the output of running these commands?
+      placeholder: |
+        foo/bar/v1/bar.proto:37:29:Field name "CreateTime" should be lower_snake_case, such as "create_time".
       render: shell
     validations:
       required: true
@@ -35,6 +40,7 @@ body:
     attributes:
       label: Expected Output
       description: What did you expect instead?
+      placeholder: I expected no lint failures.
     validations:
       required: true
   - type: textarea
