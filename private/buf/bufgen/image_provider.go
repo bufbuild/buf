@@ -48,7 +48,7 @@ func (p *imageProvider) GetImages(strategy Strategy) ([]bufimage.Image, error) {
 		defer p.lock.Unlock()
 		if p.imagesByDir == nil {
 			var err error
-			p.imagesByDir, err = bufimage.ImageByDir(p.image)
+			p.imagesByDir, err = bufimage.ImageByDir(p.image, bufimage.ImageByDirWithSplitImports())
 			if err != nil {
 				return nil, err
 			}

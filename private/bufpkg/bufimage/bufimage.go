@@ -514,17 +514,36 @@ func ImageWithOnlyPathsAllowNotExist(
 	return imageWithOnlyPaths(image, paths, excludePaths, true)
 }
 
-// ImageByDir returns multiple images that have non-imports split
-// by directory.
+// ImageByDirOption is an option for ImageByDir.
+type ImageByDirOption func(*imageByDirOptions)
+
+// ImageByDirWithSplitImports splits imports by directories as well.
+func ImageByDirWithSplitImports() ImageByDirOption {
+	return func(options *imageByDirOptions) {
+		options.splitImports = true
+	}
+}
+
+type imageByDirOptions struct {
+	splitImports bool
+}
+
+// ImageByDir returns multiple images that have files split
+// by directory. By default, it does not split imports.
 //
 // That is, each Image will only contain a single directory's files
 // as it's non-imports, along with all required imports for the
-// files in that directory.
-func ImageByDir(image Image) ([]Image, error) {
+// files in that directory. Or, with splitImports set to true, imports
+// are split the same way as non-imports.
+func ImageByDir(image Image, options ...ImageByDirOption) ([]Image, error) {
+	imageByDirOptions := imageByDirOptions{}
+	for _, option := range options {
+		option(&imageByDirOptions)
+	}
 	imageFiles := image.Files()
 	paths := make([]string, 0, len(imageFiles))
 	for _, imageFile := range imageFiles {
-		if !imageFile.IsImport() {
+		if !imageFile.IsImport() || imageByDirOptions.splitImports {
 			paths = append(paths, imageFile.Path())
 		}
 	}
