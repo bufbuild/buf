@@ -1259,7 +1259,7 @@ func testLintWithOptions(
 		assert.NoError(t, err)
 	} else {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		require.True(t, errors.As(err, &fileAnnotationSet))
+		require.True(t, errors.As(err, &fileAnnotationSet), "error has unexpected type: %T", err)
 		bufanalysistesting.AssertFileAnnotationsEqual(
 			t,
 			expectedFileAnnotations,
