@@ -30,9 +30,12 @@ import (
 
 // formatter writes an *ast.FileNode as a .proto file.
 type formatter struct {
-	writer           io.Writer
-	fileNode         *ast.FileNode
-	trailingComments map[ast.Node]ast.Comments
+	writer   io.Writer
+	fileNode *ast.FileNode
+
+	// Used to adjust comments when we remove superfluous
+	// separators tp canonicalize message literals
+	overrideTrailingComments map[ast.Node]ast.Comments
 
 	// Current level of indentation.
 	indent int
@@ -74,9 +77,9 @@ func newFormatter(
 	fileNode *ast.FileNode,
 ) *formatter {
 	return &formatter{
-		writer:           writer,
-		fileNode:         fileNode,
-		trailingComments: map[ast.Node]ast.Comments{},
+		writer:                   writer,
+		fileNode:                 fileNode,
+		overrideTrailingComments: map[ast.Node]ast.Comments{},
 	}
 }
 
@@ -2273,12 +2276,12 @@ func (f *formatter) nodeHasComment(node ast.Node) bool {
 }
 
 func (f *formatter) setTrailingComments(node ast.Node, comments ast.Comments) {
-	f.trailingComments[node] = comments
+	f.overrideTrailingComments[node] = comments
 }
 
 func (f *formatter) nodeInfo(node ast.Node) nodeInfo {
 	info := f.fileNode.NodeInfo(node)
-	if trailingComments, ok := f.trailingComments[node]; ok {
+	if trailingComments, ok := f.overrideTrailingComments[node]; ok {
 		return infoWithTrailingComments{info, trailingComments}
 	}
 	return info
