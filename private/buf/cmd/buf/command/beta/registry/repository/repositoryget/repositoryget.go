@@ -111,7 +111,7 @@ func run(
 		}
 		return err
 	}
-	repositories := resp.Msg.GetModules()
+	repositories := resp.Msg.Modules
 	if len(repositories) != 1 {
 		return syserror.Newf("unexpected nubmer of repositories returned from server: %d", len(repositories))
 	}
