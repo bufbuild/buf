@@ -118,8 +118,8 @@ func run(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
+			return bufcli.NewRepositoryNameAlreadyExistsError(moduleFullName.String())
 		}
 		return err
 	}
