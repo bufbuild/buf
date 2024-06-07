@@ -93,7 +93,7 @@ enum Type {
       // Trailing comment on message literal.
 
       // Leading comment on foo.
-      foo: 1
+      foo: 1 // Trailing comment on foo.
       // Leading comment on bar.
       bar: 2 // Trailing comment on bar.
       // Leading comment on recursive.

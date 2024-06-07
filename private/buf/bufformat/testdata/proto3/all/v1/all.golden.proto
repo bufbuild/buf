@@ -67,7 +67,9 @@ message One {
   int64 one_one = 1 [(custom.field_option) = true];
   Two one_two = 2 [
     (custom.field_option) = false,
-    (custom.field_thing_option) = {foo: 6}
+    (custom.field_thing_option) = {
+      foo: 6  // comment after foo
+    }
   ]; // field-option-inline comment
 
   Three one_three = 3; /* field-inline c-style comment */
