@@ -1622,9 +1622,6 @@ func (f *formatter) writeKeyword(keywordNode *ast.KeywordNode) {
 
 // writeRune writes a rune (e.g. '=').
 func (f *formatter) writeRune(runeNode *ast.RuneNode) {
-	if runeNode.Rune == 0 {
-		return
-	}
 	if strings.ContainsRune("{[(<", runeNode.Rune) {
 		f.pendingIndent++
 	} else if strings.ContainsRune("}])>", runeNode.Rune) {
