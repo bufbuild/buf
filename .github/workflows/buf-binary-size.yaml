@@ -5,27 +5,23 @@ on: push
 permissions: read-all
 env:
   MAKEFLAGS: "-j 2"
+  GOBIN: ${HOME}/.cache/buf/gobin
+  GOCACHE: ${HOME}/.cache/buf/gocache
 jobs:
   buf-binary-size:
     runs-on: ubuntu-latest
     steps:
+      - run: |
+          echo $GOBIN
+          echo $GOCACHE
       - name: checkout
         uses: actions/checkout@v4
       - name: setup-go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22.x'
-      - name: cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/buf/${{ runner.os }}/x86_64/bin
-            ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
-            ~/.cache/buf/${{ runner.os }}/x86_64/gocache
-            ~/.cache/buf/${{ runner.os }}/x86_64/include
-            ~/.cache/buf/${{ runner.os }}/x86_64/versions
-          key: ${{ runner.os }}-buf-${{ hashFiles('**/go.sum', 'make/**') }}
-          restore-keys: |
-            ${{ runner.os }}-buf-
+          cache-dependency-path: |
+            **/go.sum
+            make/**
       - name: make-bufbinarysize
         run: make bufbinarysize
