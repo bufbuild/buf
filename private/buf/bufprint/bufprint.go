@@ -95,8 +95,8 @@ func NewOrganizationPrinter(address string, writer io.Writer) OrganizationPrinte
 
 // RepositoryPrinter is a repository printer.
 type RepositoryPrinter interface {
-	PrintRepository(ctx context.Context, format Format, repository *registryv1alpha1.Repository) error
-	PrintRepositories(ctx context.Context, format Format, nextPageToken string, repositories ...*registryv1alpha1.Repository) error
+	PrintRepository(ctx context.Context, format Format, repository *modulev1.Module) error
+	PrintRepositories(ctx context.Context, format Format, nextPageToken string, repositories ...*modulev1.Module) error
 }
 
 // NewRepositoryPrinter returns a new RepositoryPrinter.

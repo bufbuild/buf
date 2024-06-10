@@ -60,6 +60,12 @@ func NewOrganizationNotFoundError(name string) error {
 	return fmt.Errorf(`an organization named %q does not exist, use "buf beta registry organization create" to create one`, name)
 }
 
+// NewOrganizationOrUserNotFoundError informs the user that an organization or user with
+// that name does not exist.
+func NewOrganizationOrUserNotFoundError(name string) error {
+	return fmt.Errorf(`an organization or user named %q does not exist`, name)
+}
+
 // NewRepositoryNotFoundError informs the user that a repository with
 // that name does not exist.
 func NewRepositoryNotFoundError(name string) error {

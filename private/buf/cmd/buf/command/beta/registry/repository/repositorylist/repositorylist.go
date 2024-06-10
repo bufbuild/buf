@@ -18,14 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/spf13/pflag"
 )
@@ -110,25 +109,25 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		registryHostname,
-		registryv1alpha1connect.NewRepositoryServiceClient,
-	)
-	resp, err := service.ListRepositories(
+	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(registryHostname)
+	order := modulev1.ListModulesRequest_ORDER_CREATE_TIME_ASC
+	if flags.Reverse {
+		order = modulev1.ListModulesRequest_ORDER_CREATE_TIME_DESC
+	}
+	resp, err := moduleServiceClient.ListModules(
 		ctx,
-		connect.NewRequest(
-			&registryv1alpha1.ListRepositoriesRequest{
+		&connect.Request[modulev1.ListModulesRequest]{
+			Msg: &modulev1.ListModulesRequest{
 				PageSize:  flags.PageSize,
 				PageToken: flags.PageToken,
-				Reverse:   flags.Reverse,
+				Order:     order,
 			},
-		),
+		},
 	)
 	if err != nil {
 		return err
 	}
-	repositories, nextPageToken := resp.Msg.Repositories, resp.Msg.NextPageToken
+	repositories, nextPageToken := resp.Msg.Modules, resp.Msg.NextPageToken
 	return bufprint.NewRepositoryPrinter(
 		clientConfig,
 		registryHostname,

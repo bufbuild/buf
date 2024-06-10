@@ -21,10 +21,13 @@ import (
 	"io"
 	"time"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 type repositoryPrinter struct {
@@ -45,7 +48,7 @@ func newRepositoryPrinter(
 	}
 }
 
-func (p *repositoryPrinter) PrintRepository(ctx context.Context, format Format, message *registryv1alpha1.Repository) error {
+func (p *repositoryPrinter) PrintRepository(ctx context.Context, format Format, message *modulev1.Module) error {
 	outputRepositories, err := p.registryRepositoriesToOutRepositories(ctx, message)
 	if err != nil {
 		return err
@@ -63,7 +66,7 @@ func (p *repositoryPrinter) PrintRepository(ctx context.Context, format Format, 
 	}
 }
 
-func (p *repositoryPrinter) PrintRepositories(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.Repository) error {
+func (p *repositoryPrinter) PrintRepositories(ctx context.Context, format Format, nextPageToken string, messages ...*modulev1.Module) error {
 	if len(messages) == 0 {
 		return nil
 	}
@@ -84,46 +87,49 @@ func (p *repositoryPrinter) PrintRepositories(ctx context.Context, format Format
 	}
 }
 
-func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Context, messages ...*registryv1alpha1.Repository) ([]outputRepository, error) {
-	var outputRepositories []outputRepository
-	for _, repository := range messages {
-		var ownerName string
-		switch owner := repository.Owner.(type) {
-		case *registryv1alpha1.Repository_OrganizationId:
-			organizationService := connectclient.Make(p.clientConfig, p.address, registryv1alpha1connect.NewOrganizationServiceClient)
-			resp, err := organizationService.GetOrganization(
-				ctx,
-				connect.NewRequest(&registryv1alpha1.GetOrganizationRequest{
-					Id: owner.OrganizationId,
-				}),
-			)
-			if err != nil {
-				return nil, err
-			}
-			ownerName = resp.Msg.Organization.Name
-		case *registryv1alpha1.Repository_UserId:
-			userService := connectclient.Make(p.clientConfig, p.address, registryv1alpha1connect.NewUserServiceClient)
-			resp, err := userService.GetUser(
-				ctx,
-				connect.NewRequest(&registryv1alpha1.GetUserRequest{
-					Id: owner.UserId,
-				}),
-			)
-			if err != nil {
-				return nil, err
-			}
-			ownerName = resp.Msg.User.Username
-		default:
-			return nil, fmt.Errorf("unknown owner: %T", owner)
+func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Context, messages ...*modulev1.Module) ([]outputRepository, error) {
+	ownerRefs := slicesext.Map(messages, func(module *modulev1.Module) *ownerv1.OwnerRef {
+		return &ownerv1.OwnerRef{
+			Value: &ownerv1.OwnerRef_Id{
+				Id: module.OwnerId,
+			},
 		}
-		outputRepository := outputRepository{
-			ID:         repository.Id,
+	})
+	ownerServiceClient := bufapi.NewClientProvider(p.clientConfig).V1OwnerServiceClient(p.address)
+	resp, err := ownerServiceClient.GetOwners(
+		ctx,
+		&connect.Request[ownerv1.GetOwnersRequest]{
+			Msg: &ownerv1.GetOwnersRequest{
+				OwnerRefs: ownerRefs,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	owners := resp.Msg.GetOwners()
+	if len(owners) != len(messages) {
+		return nil, syserror.Newf("expected %d owners from response, got %d", len(messages), len(owners))
+	}
+	outputRepositories := make([]outputRepository, len(messages))
+	for i, module := range messages {
+		var ownerName string
+		owner := owners[i]
+		switch {
+		case owner.GetUser() != nil:
+			ownerName = owner.GetUser().Name
+		case owner.GetOrganization() != nil:
+			ownerName = owner.GetOrganization().Name
+		default:
+			return nil, syserror.Newf("owner with id %s is neither a user nor an organization", messages[i].GetOwnerId())
+		}
+		outputRepositories[i] = outputRepository{
+			ID:         module.GetId(),
 			Remote:     p.address,
 			Owner:      ownerName,
-			Name:       repository.Name,
-			CreateTime: repository.CreateTime.AsTime(),
+			Name:       module.GetName(),
+			CreateTime: module.GetCreateTime().AsTime(),
 		}
-		outputRepositories = append(outputRepositories, outputRepository)
 	}
 	return outputRepositories, nil
 }
@@ -132,8 +138,8 @@ func (p *repositoryPrinter) printRepositoriesText(outputRepositories []outputRep
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Full name",
-			"Created",
+			"Full Name",
+			"Create Time",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepository := range outputRepositories {

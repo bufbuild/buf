@@ -18,15 +18,15 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -87,16 +87,21 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleFullName.Registry(),
-		registryv1alpha1connect.NewRepositoryServiceClient,
-	)
-	resp, err := service.GetRepositoryByFullName(
+	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	resp, err := moduleServiceClient.GetModules(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GetRepositoryByFullNameRequest{
-				FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
+			&modulev1.GetModulesRequest{
+				ModuleRefs: []*modulev1.ModuleRef{
+					{
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+							},
+						},
+					},
+				},
 			},
 		),
 	)
@@ -106,10 +111,13 @@ func run(
 		}
 		return err
 	}
-	repository := resp.Msg.Repository
+	repositories := resp.Msg.Modules
+	if len(repositories) != 1 {
+		return syserror.Newf("unexpected nubmer of repositories returned from server: %d", len(repositories))
+	}
 	return bufprint.NewRepositoryPrinter(
 		clientConfig,
 		moduleFullName.Registry(),
 		container.Stdout(),
-	).PrintRepository(ctx, format, repository)
+	).PrintRepository(ctx, format, repositories[0])
 }
