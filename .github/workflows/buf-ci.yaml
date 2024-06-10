@@ -3,9 +3,11 @@ on:
   push:
     paths:
       - 'proto/**'
+      - '.github/workflows/buf-ci.yaml'
   pull_request:
     paths:
       - 'proto/**'
+      - '.github/workflows/buf-ci.yaml'
     types: [opened, synchronize, reopened, labeled, unlabeled]
   delete:
 permissions:
