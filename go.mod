@@ -8,7 +8,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.1-20240606161333-696c2cfeae8c.1
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.0
-	github.com/bufbuild/protocompile v0.13.1-0.20240510201809-752249dfc37f
+	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
 	github.com/bufbuild/protovalidate-go v0.6.2
 	github.com/bufbuild/protoyaml-go v0.1.9
@@ -42,7 +42,7 @@ require (
 	golang.org/x/sync v0.7.0
 	golang.org/x/term v0.21.0
 	golang.org/x/tools v0.22.0
-	google.golang.org/protobuf v1.34.1
+  google.golang.org/protobuf v1.34.2-0.20240529085009-ca837e5c658b
 	gopkg.in/yaml.v3 v3.0.1
 )
 

@@ -81,6 +81,11 @@ type V1ModuleServiceClientProvider interface {
 	V1ModuleServiceClient(registry string) modulev1connect.ModuleServiceClient
 }
 
+// V1ResourceServiceClientProvider provides ResourceServiceClients.
+type V1ResourceServiceClientProvider interface {
+	V1ResourceServiceClient(registry string) modulev1connect.ResourceServiceClient
+}
+
 // V1UploadServiceClientProvider provides UploadServiceClients.
 type V1UploadServiceClientProvider interface {
 	V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient
@@ -138,6 +143,7 @@ type ClientProvider interface {
 	V1GraphServiceClientProvider
 	V1LabelServiceClientProvider
 	V1ModuleServiceClientProvider
+	V1ResourceServiceClientProvider
 	V1UploadServiceClientProvider
 	V1OrganizationServiceClientProvider
 	V1OwnerServiceClientProvider
@@ -204,6 +210,14 @@ func (c *clientProvider) V1ModuleServiceClient(registry string) modulev1connect.
 		c.clientConfig,
 		registry,
 		modulev1connect.NewModuleServiceClient,
+	)
+}
+
+func (c *clientProvider) V1ResourceServiceClient(registry string) modulev1connect.ResourceServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewResourceServiceClient,
 	)
 }
 
@@ -307,6 +321,10 @@ func (nopClientProvider) V1LabelServiceClient(registry string) modulev1connect.L
 
 func (nopClientProvider) V1ModuleServiceClient(registry string) modulev1connect.ModuleServiceClient {
 	return modulev1connect.UnimplementedModuleServiceHandler{}
+}
+
+func (nopClientProvider) V1ResourceServiceClient(registry string) modulev1connect.ResourceServiceClient {
+	return modulev1connect.UnimplementedResourceServiceHandler{}
 }
 
 func (nopClientProvider) V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient {
