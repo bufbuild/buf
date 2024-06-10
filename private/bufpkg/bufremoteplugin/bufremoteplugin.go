@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugin
+package bufremoteplugin
 
 import (
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
@@ -39,12 +39,12 @@ type Plugin interface {
 	//
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
-	Dependencies() []bufpluginref.PluginReference
+	Dependencies() []bufremotepluginref.PluginReference
 	// Registry is the registry configuration, which lets the user specify
 	// registry dependencies, and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
 	// etc).
-	Registry() *bufpluginconfig.RegistryConfig
+	Registry() *bufremotepluginconfig.RegistryConfig
 	// ContainerImageDigest returns the plugin's source image digest.
 	//
 	// For now, we only support docker image sources, but this
@@ -55,8 +55,8 @@ type Plugin interface {
 // NewPlugin creates a new plugin from the given configuration and image digest.
 func NewPlugin(
 	version string,
-	dependencies []bufpluginref.PluginReference,
-	registryConfig *bufpluginconfig.RegistryConfig,
+	dependencies []bufremotepluginref.PluginReference,
+	registryConfig *bufremotepluginconfig.RegistryConfig,
 	imageDigest string,
 	sourceURL string,
 	description string,
@@ -115,13 +115,13 @@ func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.Plu
 	return protoLanguages, nil
 }
 
-// PluginRegistryToProtoRegistryConfig converts a bufpluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
-func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.RegistryConfig) (*registryv1alpha1.RegistryConfig, error) {
+// PluginRegistryToProtoRegistryConfig converts a bufremotepluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
+func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.RegistryConfig) (*registryv1alpha1.RegistryConfig, error) {
 	if pluginRegistry == nil {
 		return nil, nil
 	}
 	registryConfig := &registryv1alpha1.RegistryConfig{
-		Options: bufpluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
+		Options: bufremotepluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
 	}
 	if pluginRegistry.Go != nil {
 		goConfig := &registryv1alpha1.GoConfig{}
@@ -152,7 +152,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	} else if pluginRegistry.Maven != nil {
 		mavenConfig := &registryv1alpha1.MavenConfig{}
 		var javaCompilerConfig *registryv1alpha1.MavenConfig_CompilerJavaConfig
-		if compiler := pluginRegistry.Maven.Compiler.Java; compiler != (bufpluginconfig.MavenCompilerJavaConfig{}) {
+		if compiler := pluginRegistry.Maven.Compiler.Java; compiler != (bufremotepluginconfig.MavenCompilerJavaConfig{}) {
 			javaCompilerConfig = &registryv1alpha1.MavenConfig_CompilerJavaConfig{
 				Encoding: compiler.Encoding,
 				Release:  int32(compiler.Release),
@@ -161,7 +161,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			}
 		}
 		var kotlinCompilerConfig *registryv1alpha1.MavenConfig_CompilerKotlinConfig
-		if compiler := pluginRegistry.Maven.Compiler.Kotlin; compiler != (bufpluginconfig.MavenCompilerKotlinConfig{}) {
+		if compiler := pluginRegistry.Maven.Compiler.Kotlin; compiler != (bufremotepluginconfig.MavenCompilerKotlinConfig{}) {
 			kotlinCompilerConfig = &registryv1alpha1.MavenConfig_CompilerKotlinConfig{
 				Version:         compiler.Version,
 				ApiVersion:      compiler.APIVersion,
@@ -207,8 +207,8 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	return registryConfig, nil
 }
 
-// MavenDependencyConfigToProtoRuntimeLibrary converts a bufpluginconfig.MavenDependencyConfig to an equivalent registryv1alpha1.MavenConfig_RuntimeLibrary.
-func MavenDependencyConfigToProtoRuntimeLibrary(dependency bufpluginconfig.MavenDependencyConfig) *registryv1alpha1.MavenConfig_RuntimeLibrary {
+// MavenDependencyConfigToProtoRuntimeLibrary converts a bufremotepluginconfig.MavenDependencyConfig to an equivalent registryv1alpha1.MavenConfig_RuntimeLibrary.
+func MavenDependencyConfigToProtoRuntimeLibrary(dependency bufremotepluginconfig.MavenDependencyConfig) *registryv1alpha1.MavenConfig_RuntimeLibrary {
 	return &registryv1alpha1.MavenConfig_RuntimeLibrary{
 		GroupId:    dependency.GroupID,
 		ArtifactId: dependency.ArtifactID,
@@ -218,20 +218,20 @@ func MavenDependencyConfigToProtoRuntimeLibrary(dependency bufpluginconfig.Maven
 	}
 }
 
-// ProtoRegistryConfigToPluginRegistry converts a registryv1alpha1.RegistryConfig to a bufpluginconfig.RegistryConfig .
-func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig) (*bufpluginconfig.RegistryConfig, error) {
+// ProtoRegistryConfigToPluginRegistry converts a registryv1alpha1.RegistryConfig to a bufremotepluginconfig.RegistryConfig .
+func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig) (*bufremotepluginconfig.RegistryConfig, error) {
 	if config == nil {
 		return nil, nil
 	}
-	registryConfig := &bufpluginconfig.RegistryConfig{
-		Options: bufpluginconfig.OptionsSliceToPluginOptions(config.Options),
+	registryConfig := &bufremotepluginconfig.RegistryConfig{
+		Options: bufremotepluginconfig.OptionsSliceToPluginOptions(config.Options),
 	}
 	if config.GetGoConfig() != nil {
-		goConfig := &bufpluginconfig.GoRegistryConfig{}
+		goConfig := &bufremotepluginconfig.GoRegistryConfig{}
 		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
 		runtimeLibraries := config.GetGoConfig().GetRuntimeLibraries()
 		if runtimeLibraries != nil {
-			goConfig.Deps = make([]*bufpluginconfig.GoRegistryDependencyConfig, 0, len(runtimeLibraries))
+			goConfig.Deps = make([]*bufremotepluginconfig.GoRegistryDependencyConfig, 0, len(runtimeLibraries))
 			for _, library := range runtimeLibraries {
 				goConfig.Deps = append(goConfig.Deps, protoGoRuntimeLibraryToGoRuntimeDependency(library))
 			}
@@ -242,13 +242,13 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		if err != nil {
 			return nil, err
 		}
-		npmConfig := &bufpluginconfig.NPMRegistryConfig{
+		npmConfig := &bufremotepluginconfig.NPMRegistryConfig{
 			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
 			ImportStyle:             importStyle,
 		}
 		runtimeLibraries := config.GetNpmConfig().GetRuntimeLibraries()
 		if runtimeLibraries != nil {
-			npmConfig.Deps = make([]*bufpluginconfig.NPMRegistryDependencyConfig, 0, len(runtimeLibraries))
+			npmConfig.Deps = make([]*bufremotepluginconfig.NPMRegistryDependencyConfig, 0, len(runtimeLibraries))
 			for _, library := range runtimeLibraries {
 				npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))
 			}
@@ -282,13 +282,13 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	return registryConfig, nil
 }
 
-// ProtoCargoConfigToCargoRegistryConfig converts protoCargoConfig to an equivalent [*bufpluginconfig.CargoRegistryConfig].
-func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.CargoConfig) (*bufpluginconfig.CargoRegistryConfig, error) {
-	cargoConfig := &bufpluginconfig.CargoRegistryConfig{
+// ProtoCargoConfigToCargoRegistryConfig converts protoCargoConfig to an equivalent [*bufremotepluginconfig.CargoRegistryConfig].
+func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.CargoConfig) (*bufremotepluginconfig.CargoRegistryConfig, error) {
+	cargoConfig := &bufremotepluginconfig.CargoRegistryConfig{
 		RustVersion: protoCargoConfig.RustVersion,
 	}
 	for _, dependency := range protoCargoConfig.RuntimeLibraries {
-		cargoConfig.Deps = append(cargoConfig.Deps, bufpluginconfig.CargoRegistryDependency{
+		cargoConfig.Deps = append(cargoConfig.Deps, bufremotepluginconfig.CargoRegistryDependency{
 			Name:               dependency.Name,
 			VersionRequirement: dependency.VersionRequirement,
 			DefaultFeatures:    dependency.DefaultFeatures,
@@ -299,7 +299,7 @@ func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.Ca
 }
 
 // CargoRegistryConfigToProtoCargoConfig converts cargoConfig to an equivalent [*registryv1alpha1.CargoConfig].
-func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufpluginconfig.CargoRegistryConfig) (*registryv1alpha1.CargoConfig, error) {
+func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufremotepluginconfig.CargoRegistryConfig) (*registryv1alpha1.CargoConfig, error) {
 	protoCargoConfig := &registryv1alpha1.CargoConfig{
 		RustVersion: cargoConfig.RustVersion,
 	}
@@ -314,9 +314,9 @@ func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufpluginconfig.CargoReg
 	return protoCargoConfig, nil
 }
 
-// ProtoPythonConfigToPythonRegistryConfig converts protoPythonConfig to an equivalent [*bufpluginconfig.PythonRegistryConfig].
-func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1.PythonConfig) (*bufpluginconfig.PythonRegistryConfig, error) {
-	pythonConfig := &bufpluginconfig.PythonRegistryConfig{
+// ProtoPythonConfigToPythonRegistryConfig converts protoPythonConfig to an equivalent [*bufremotepluginconfig.PythonRegistryConfig].
+func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1.PythonConfig) (*bufremotepluginconfig.PythonRegistryConfig, error) {
+	pythonConfig := &bufremotepluginconfig.PythonRegistryConfig{
 		RequiresPython: protoPythonConfig.RequiresPython,
 	}
 	switch protoPythonConfig.GetPackageType() {
@@ -334,7 +334,7 @@ func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1
 }
 
 // PythonRegistryConfigToProtoPythonConfig converts pythonConfig to an equivalent [*registryv1alpha1.PythonConfig].
-func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.PythonRegistryConfig) (*registryv1alpha1.PythonConfig, error) {
+func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufremotepluginconfig.PythonRegistryConfig) (*registryv1alpha1.PythonConfig, error) {
 	protoPythonConfig := &registryv1alpha1.PythonConfig{
 		RequiresPython: pythonConfig.RequiresPython,
 	}
@@ -354,14 +354,14 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 	return protoPythonConfig, nil
 }
 
-// ProtoSwiftConfigToSwiftRegistryConfig converts protoSwiftConfig to an equivalent [*bufpluginconfig.SwiftRegistryConfig].
-func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufpluginconfig.SwiftRegistryConfig, error) {
-	swiftConfig := &bufpluginconfig.SwiftRegistryConfig{}
+// ProtoSwiftConfigToSwiftRegistryConfig converts protoSwiftConfig to an equivalent [*bufremotepluginconfig.SwiftRegistryConfig].
+func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufremotepluginconfig.SwiftRegistryConfig, error) {
+	swiftConfig := &bufremotepluginconfig.SwiftRegistryConfig{}
 	runtimeLibs := protoSwiftConfig.GetRuntimeLibraries()
 	if runtimeLibs != nil {
-		swiftConfig.Dependencies = make([]bufpluginconfig.SwiftRegistryDependencyConfig, 0, len(runtimeLibs))
+		swiftConfig.Dependencies = make([]bufremotepluginconfig.SwiftRegistryDependencyConfig, 0, len(runtimeLibs))
 		for _, runtimeLib := range runtimeLibs {
-			dependencyConfig := bufpluginconfig.SwiftRegistryDependencyConfig{
+			dependencyConfig := bufremotepluginconfig.SwiftRegistryDependencyConfig{
 				Source:        runtimeLib.GetSource(),
 				Package:       runtimeLib.GetPackage(),
 				Version:       runtimeLib.GetVersion(),
@@ -390,7 +390,7 @@ func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.Sw
 }
 
 // SwiftRegistryConfigToProtoSwiftConfig converts swiftConfig to an equivalent [*registryv1alpha1.SwiftConfig].
-func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftRegistryConfig) *registryv1alpha1.SwiftConfig {
+func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufremotepluginconfig.SwiftRegistryConfig) *registryv1alpha1.SwiftConfig {
 	protoSwiftConfig := &registryv1alpha1.SwiftConfig{}
 	if swiftConfig.Dependencies != nil {
 		protoSwiftConfig.RuntimeLibraries = make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary, 0, len(swiftConfig.Dependencies))
@@ -432,13 +432,13 @@ func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftReg
 	return protoSwiftConfig
 }
 
-// ProtoMavenConfigToMavenRegistryConfig converts a registryv1alpha1.MavenConfig to a bufpluginconfig.MavenRegistryConfig.
-func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.MavenConfig) (*bufpluginconfig.MavenRegistryConfig, error) {
-	mavenConfig := &bufpluginconfig.MavenRegistryConfig{}
+// ProtoMavenConfigToMavenRegistryConfig converts a registryv1alpha1.MavenConfig to a bufremotepluginconfig.MavenRegistryConfig.
+func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.MavenConfig) (*bufremotepluginconfig.MavenRegistryConfig, error) {
+	mavenConfig := &bufremotepluginconfig.MavenRegistryConfig{}
 	if protoCompiler := protoMavenConfig.GetCompiler(); protoCompiler != nil {
-		mavenConfig.Compiler = bufpluginconfig.MavenCompilerConfig{}
+		mavenConfig.Compiler = bufremotepluginconfig.MavenCompilerConfig{}
 		if protoJavaCompiler := protoCompiler.GetJava(); protoJavaCompiler != nil {
-			mavenConfig.Compiler.Java = bufpluginconfig.MavenCompilerJavaConfig{
+			mavenConfig.Compiler.Java = bufremotepluginconfig.MavenCompilerJavaConfig{
 				Encoding: protoJavaCompiler.GetEncoding(),
 				Release:  int(protoJavaCompiler.GetRelease()),
 				Source:   int(protoJavaCompiler.GetSource()),
@@ -446,7 +446,7 @@ func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.Ma
 			}
 		}
 		if protoKotlinCompiler := protoCompiler.GetKotlin(); protoKotlinCompiler != nil {
-			mavenConfig.Compiler.Kotlin = bufpluginconfig.MavenCompilerKotlinConfig{
+			mavenConfig.Compiler.Kotlin = bufremotepluginconfig.MavenCompilerKotlinConfig{
 				APIVersion:      protoKotlinCompiler.GetApiVersion(),
 				JVMTarget:       protoKotlinCompiler.GetJvmTarget(),
 				LanguageVersion: protoKotlinCompiler.GetLanguageVersion(),
@@ -456,14 +456,14 @@ func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.Ma
 	}
 	runtimeLibraries := protoMavenConfig.GetRuntimeLibraries()
 	if runtimeLibraries != nil {
-		mavenConfig.Deps = make([]bufpluginconfig.MavenDependencyConfig, len(runtimeLibraries))
+		mavenConfig.Deps = make([]bufremotepluginconfig.MavenDependencyConfig, len(runtimeLibraries))
 		for i, library := range runtimeLibraries {
 			mavenConfig.Deps[i] = ProtoMavenRuntimeLibraryToDependencyConfig(library)
 		}
 	}
 	additionalRuntimes := protoMavenConfig.GetAdditionalRuntimes()
 	if additionalRuntimes != nil {
-		mavenConfig.AdditionalRuntimes = make([]bufpluginconfig.MavenRuntimeConfig, len(additionalRuntimes))
+		mavenConfig.AdditionalRuntimes = make([]bufremotepluginconfig.MavenRuntimeConfig, len(additionalRuntimes))
 		for i, additionalRuntime := range additionalRuntimes {
 			runtime, err := MavenProtoRuntimeConfigToRuntimeConfig(additionalRuntime)
 			if err != nil {
@@ -475,22 +475,22 @@ func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.Ma
 	return mavenConfig, nil
 }
 
-// MavenProtoRuntimeConfigToRuntimeConfig converts a registryv1alpha1.MavenConfig_RuntimeConfig to a bufpluginconfig.MavenRuntimeConfig.
-func MavenProtoRuntimeConfigToRuntimeConfig(proto *registryv1alpha1.MavenConfig_RuntimeConfig) (bufpluginconfig.MavenRuntimeConfig, error) {
+// MavenProtoRuntimeConfigToRuntimeConfig converts a registryv1alpha1.MavenConfig_RuntimeConfig to a bufremotepluginconfig.MavenRuntimeConfig.
+func MavenProtoRuntimeConfigToRuntimeConfig(proto *registryv1alpha1.MavenConfig_RuntimeConfig) (bufremotepluginconfig.MavenRuntimeConfig, error) {
 	libraries := proto.GetRuntimeLibraries()
-	var dependencies []bufpluginconfig.MavenDependencyConfig
+	var dependencies []bufremotepluginconfig.MavenDependencyConfig
 	for _, library := range libraries {
 		dependencies = append(dependencies, ProtoMavenRuntimeLibraryToDependencyConfig(library))
 	}
-	return bufpluginconfig.MavenRuntimeConfig{
+	return bufremotepluginconfig.MavenRuntimeConfig{
 		Name:    proto.GetName(),
 		Deps:    dependencies,
 		Options: proto.GetOptions(),
 	}, nil
 }
 
-// MavenRuntimeConfigToProtoRuntimeConfig converts a bufpluginconfig.MavenRuntimeConfig to a registryv1alpha1.MavenConfig_RuntimeLibrary.
-func MavenRuntimeConfigToProtoRuntimeConfig(runtime bufpluginconfig.MavenRuntimeConfig) *registryv1alpha1.MavenConfig_RuntimeConfig {
+// MavenRuntimeConfigToProtoRuntimeConfig converts a bufremotepluginconfig.MavenRuntimeConfig to a registryv1alpha1.MavenConfig_RuntimeLibrary.
+func MavenRuntimeConfigToProtoRuntimeConfig(runtime bufremotepluginconfig.MavenRuntimeConfig) *registryv1alpha1.MavenConfig_RuntimeConfig {
 	var libraries []*registryv1alpha1.MavenConfig_RuntimeLibrary
 	for _, dependency := range runtime.Deps {
 		libraries = append(libraries, MavenDependencyConfigToProtoRuntimeLibrary(dependency))
@@ -502,9 +502,9 @@ func MavenRuntimeConfigToProtoRuntimeConfig(runtime bufpluginconfig.MavenRuntime
 	}
 }
 
-// ProtoMavenRuntimeLibraryToDependencyConfig converts a registryv1alpha1 to a bufpluginconfig.MavenDependencyConfig.
-func ProtoMavenRuntimeLibraryToDependencyConfig(proto *registryv1alpha1.MavenConfig_RuntimeLibrary) bufpluginconfig.MavenDependencyConfig {
-	return bufpluginconfig.MavenDependencyConfig{
+// ProtoMavenRuntimeLibraryToDependencyConfig converts a registryv1alpha1 to a bufremotepluginconfig.MavenDependencyConfig.
+func ProtoMavenRuntimeLibraryToDependencyConfig(proto *registryv1alpha1.MavenConfig_RuntimeLibrary) bufremotepluginconfig.MavenDependencyConfig {
+	return bufremotepluginconfig.MavenDependencyConfig{
 		GroupID:    proto.GetGroupId(),
 		ArtifactID: proto.GetArtifactId(),
 		Version:    proto.GetVersion(),
@@ -533,40 +533,40 @@ func npmProtoImportStyleToNPMImportStyle(importStyle registryv1alpha1.NPMImportS
 	return "", fmt.Errorf("unknown import style: %v", importStyle)
 }
 
-// goRuntimeDependencyToProtoGoRuntimeLibrary converts a bufpluginconfig.GoRegistryDependencyConfig to a registryv1alpha1.GoConfig_RuntimeLibrary.
-func goRuntimeDependencyToProtoGoRuntimeLibrary(config *bufpluginconfig.GoRegistryDependencyConfig) *registryv1alpha1.GoConfig_RuntimeLibrary {
+// goRuntimeDependencyToProtoGoRuntimeLibrary converts a bufremotepluginconfig.GoRegistryDependencyConfig to a registryv1alpha1.GoConfig_RuntimeLibrary.
+func goRuntimeDependencyToProtoGoRuntimeLibrary(config *bufremotepluginconfig.GoRegistryDependencyConfig) *registryv1alpha1.GoConfig_RuntimeLibrary {
 	return &registryv1alpha1.GoConfig_RuntimeLibrary{
 		Module:  config.Module,
 		Version: config.Version,
 	}
 }
 
-// protoGoRuntimeLibraryToGoRuntimeDependency converts a registryv1alpha1.GoConfig_RuntimeLibrary to a bufpluginconfig.GoRegistryDependencyConfig.
-func protoGoRuntimeLibraryToGoRuntimeDependency(config *registryv1alpha1.GoConfig_RuntimeLibrary) *bufpluginconfig.GoRegistryDependencyConfig {
-	return &bufpluginconfig.GoRegistryDependencyConfig{
+// protoGoRuntimeLibraryToGoRuntimeDependency converts a registryv1alpha1.GoConfig_RuntimeLibrary to a bufremotepluginconfig.GoRegistryDependencyConfig.
+func protoGoRuntimeLibraryToGoRuntimeDependency(config *registryv1alpha1.GoConfig_RuntimeLibrary) *bufremotepluginconfig.GoRegistryDependencyConfig {
+	return &bufremotepluginconfig.GoRegistryDependencyConfig{
 		Module:  config.Module,
 		Version: config.Version,
 	}
 }
 
-// npmRuntimeDependencyToProtoNPMRuntimeLibrary converts a bufpluginconfig.NPMRegistryConfig to a registryv1alpha1.NPMConfig_RuntimeLibrary.
-func npmRuntimeDependencyToProtoNPMRuntimeLibrary(config *bufpluginconfig.NPMRegistryDependencyConfig) *registryv1alpha1.NPMConfig_RuntimeLibrary {
+// npmRuntimeDependencyToProtoNPMRuntimeLibrary converts a bufremotepluginconfig.NPMRegistryConfig to a registryv1alpha1.NPMConfig_RuntimeLibrary.
+func npmRuntimeDependencyToProtoNPMRuntimeLibrary(config *bufremotepluginconfig.NPMRegistryDependencyConfig) *registryv1alpha1.NPMConfig_RuntimeLibrary {
 	return &registryv1alpha1.NPMConfig_RuntimeLibrary{
 		Package: config.Package,
 		Version: config.Version,
 	}
 }
 
-// protoNPMRuntimeLibraryToNPMRuntimeDependency converts a registryv1alpha1.NPMConfig_RuntimeLibrary to a bufpluginconfig.NPMRegistryDependencyConfig.
-func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMConfig_RuntimeLibrary) *bufpluginconfig.NPMRegistryDependencyConfig {
-	return &bufpluginconfig.NPMRegistryDependencyConfig{
+// protoNPMRuntimeLibraryToNPMRuntimeDependency converts a registryv1alpha1.NPMConfig_RuntimeLibrary to a bufremotepluginconfig.NPMRegistryDependencyConfig.
+func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMConfig_RuntimeLibrary) *bufremotepluginconfig.NPMRegistryDependencyConfig {
+	return &bufremotepluginconfig.NPMRegistryDependencyConfig{
 		Package: config.Package,
 		Version: config.Version,
 	}
 }
 
-// PluginReferencesToCuratedProtoPluginReferences converts a slice of bufpluginref.PluginReference to a slice of registryv1alpha1.CuratedPluginReference.
-func PluginReferencesToCuratedProtoPluginReferences(references []bufpluginref.PluginReference) []*registryv1alpha1.CuratedPluginReference {
+// PluginReferencesToCuratedProtoPluginReferences converts a slice of bufremotepluginref.PluginReference to a slice of registryv1alpha1.CuratedPluginReference.
+func PluginReferencesToCuratedProtoPluginReferences(references []bufremotepluginref.PluginReference) []*registryv1alpha1.CuratedPluginReference {
 	if references == nil {
 		return nil
 	}
@@ -577,8 +577,8 @@ func PluginReferencesToCuratedProtoPluginReferences(references []bufpluginref.Pl
 	return protoReferences
 }
 
-// PluginReferenceToProtoCuratedPluginReference converts a bufpluginref.PluginReference to a registryv1alpha1.CuratedPluginReference.
-func PluginReferenceToProtoCuratedPluginReference(reference bufpluginref.PluginReference) *registryv1alpha1.CuratedPluginReference {
+// PluginReferenceToProtoCuratedPluginReference converts a bufremotepluginref.PluginReference to a registryv1alpha1.CuratedPluginReference.
+func PluginReferenceToProtoCuratedPluginReference(reference bufremotepluginref.PluginReference) *registryv1alpha1.CuratedPluginReference {
 	if reference == nil {
 		return nil
 	}
@@ -590,10 +590,10 @@ func PluginReferenceToProtoCuratedPluginReference(reference bufpluginref.PluginR
 	}
 }
 
-// PluginIdentityToProtoCuratedPluginReference converts a bufpluginref.PluginIdentity to a registryv1alpha1.CuratedPluginReference.
+// PluginIdentityToProtoCuratedPluginReference converts a bufremotepluginref.PluginIdentity to a registryv1alpha1.CuratedPluginReference.
 //
 // The returned CuratedPluginReference contains no Version/Revision information.
-func PluginIdentityToProtoCuratedPluginReference(identity bufpluginref.PluginIdentity) *registryv1alpha1.CuratedPluginReference {
+func PluginIdentityToProtoCuratedPluginReference(identity bufremotepluginref.PluginIdentity) *registryv1alpha1.CuratedPluginReference {
 	if identity == nil {
 		return nil
 	}

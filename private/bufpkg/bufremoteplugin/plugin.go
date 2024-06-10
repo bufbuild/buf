@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugin
+package bufremoteplugin
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"golang.org/x/mod/semver"
 )
 
 type plugin struct {
 	version              string
-	dependencies         []bufpluginref.PluginReference
-	registry             *bufpluginconfig.RegistryConfig
+	dependencies         []bufremotepluginref.PluginReference
+	registry             *bufremotepluginconfig.RegistryConfig
 	containerImageDigest string
 	sourceURL            string
 	description          string
@@ -36,8 +36,8 @@ var _ Plugin = (*plugin)(nil)
 
 func newPlugin(
 	version string,
-	dependencies []bufpluginref.PluginReference,
-	registryConfig *bufpluginconfig.RegistryConfig,
+	dependencies []bufremotepluginref.PluginReference,
+	registryConfig *bufremotepluginconfig.RegistryConfig,
 	containerImageDigest string,
 	sourceURL string,
 	description string,
@@ -47,7 +47,7 @@ func newPlugin(
 	}
 	if !semver.IsValid(version) {
 		// This will probably already be validated in other call-sites
-		// (e.g. when we construct a *bufpluginconfig.Config or when we
+		// (e.g. when we construct a *bufremotepluginconfig.Config or when we
 		// map from the Protobuf representation), but we may as well
 		// include it at the lowest common denominator, too.
 		return nil, fmt.Errorf("plugin version %q must be a valid semantic version", version)
@@ -71,12 +71,12 @@ func (p *plugin) Version() string {
 }
 
 // Dependencies returns the plugin's dependencies on other plugins.
-func (p *plugin) Dependencies() []bufpluginref.PluginReference {
+func (p *plugin) Dependencies() []bufremotepluginref.PluginReference {
 	return p.dependencies
 }
 
 // Registry returns the plugin's registry configuration.
-func (p *plugin) Registry() *bufpluginconfig.RegistryConfig {
+func (p *plugin) Registry() *bufremotepluginconfig.RegistryConfig {
 	return p.registry
 }
 
