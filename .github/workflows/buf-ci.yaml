@@ -2,10 +2,16 @@ name: Buf CI
 on:
   push:
     paths:
+      - buf.yaml
+      - LICENSE
+      - README.md
       - 'proto/**'
       - '.github/workflows/buf-ci.yaml'
   pull_request:
     paths:
+      - buf.yaml
+      - LICENSE
+      - README.md
       - 'proto/**'
       - '.github/workflows/buf-ci.yaml'
     types: [opened, synchronize, reopened, labeled, unlabeled]
