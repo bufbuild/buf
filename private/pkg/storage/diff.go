@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -121,6 +122,26 @@ func Diff(
 	two ReadBucket,
 	options ...DiffOption,
 ) error {
+	_, err := DiffWithFilenames(ctx, runner, writer, one, two, options...)
+	return err
+}
+
+// DiffWithFilenames writes a diff of the ReadBuckets to the Writer and returns
+// the names of any file paths that contained differences. The returned paths
+// are in sorted (ascending) order.
+//
+// Note that the returned paths are determined by comparing the before and after
+// bytes, not just based on whether the configured diff tool reports something.
+// This can be used to avoid re-writing files whose contents don't actually need
+// to change.
+func DiffWithFilenames(
+	ctx context.Context,
+	runner command.Runner,
+	writer io.Writer,
+	one ReadBucket,
+	two ReadBucket,
+	options ...DiffOption,
+) ([]string, error) {
 	diffOptions := newDiffOptions()
 	for _, option := range options {
 		option(diffOptions)
@@ -131,16 +152,17 @@ func Diff(
 
 	oneObjectInfos, err := allObjectInfos(ctx, one, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	twoObjectInfos, err := allObjectInfos(ctx, two, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sortObjectInfos(oneObjectInfos)
 	sortObjectInfos(twoObjectInfos)
 	onePathToObjectInfo := pathToObjectInfo(oneObjectInfos)
 	twoPathToObjectInfo := pathToObjectInfo(twoObjectInfos)
+	var changedPaths []string
 
 	for _, oneObjectInfo := range oneObjectInfos {
 		path := oneObjectInfo.Path()
@@ -150,18 +172,18 @@ func Diff(
 			oneExternalPathPrefix,
 		)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		oneData, err := ReadPath(ctx, one, path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		var twoData []byte
 		var twoDiffPath string
 		if twoObjectInfo, ok := twoPathToObjectInfo[path]; ok {
 			twoData, err = ReadPath(ctx, two, path)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			twoDiffPath, err = getDiffPathForObjectInfo(
 				twoObjectInfo,
@@ -169,9 +191,13 @@ func Diff(
 				twoExternalPathPrefix,
 			)
 			if err != nil {
-				return err
+				return nil, err
+			}
+			if !bytes.Equal(oneData, twoData) {
+				changedPaths = append(changedPaths, path)
 			}
 		} else {
+			changedPaths = append(changedPaths, path)
 			twoDiffPath, err = getDiffPathForNotFound(
 				oneObjectInfo,
 				externalPaths,
@@ -179,7 +205,7 @@ func Diff(
 				twoExternalPathPrefix,
 			)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 		for _, transform := range diffOptions.transforms {
@@ -196,20 +222,21 @@ func Diff(
 			diffOptions.toDiffPackageOptions()...,
 		)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffData) > 0 {
 			if _, err := writer.Write(diffData); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 	for _, twoObjectInfo := range twoObjectInfos {
 		path := twoObjectInfo.Path()
 		if _, ok := onePathToObjectInfo[path]; !ok {
+			changedPaths = append(changedPaths, path)
 			twoData, err := ReadPath(ctx, two, path)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			oneDiffPath, err := getDiffPathForNotFound(
 				twoObjectInfo,
@@ -218,7 +245,7 @@ func Diff(
 				oneExternalPathPrefix,
 			)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			twoDiffPath, err := getDiffPathForObjectInfo(
 				twoObjectInfo,
@@ -226,7 +253,7 @@ func Diff(
 				twoExternalPathPrefix,
 			)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			diffData, err := diff.Diff(
 				ctx,
@@ -238,16 +265,20 @@ func Diff(
 				diffOptions.toDiffPackageOptions()...,
 			)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if len(diffData) > 0 {
 				if _, err := writer.Write(diffData); err != nil {
-					return err
+					return nil, err
 				}
 			}
 		}
 	}
-	return nil
+	// changedPaths will be *mostly* sorted. But paths in "two" that were not present
+	// in "one" will appear last, even if sort order would have them interleaved.
+	// So we must sort explicitly.
+	sort.Strings(changedPaths)
+	return changedPaths, nil
 }
 
 func getDiffPathForObjectInfo(

@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/protocompile/options"
+	"github.com/bufbuild/protoplugin/protopluginutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -985,7 +985,7 @@ func newImageFilterOptions() *imageFilterOptions {
 }
 
 func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage.ImageFile, error) {
-	updatedFileDescriptor, err := options.StripSourceRetentionOptionsFromFile(imageFile.FileDescriptorProto())
+	updatedFileDescriptor, err := protopluginutil.StripSourceRetentionOptions(imageFile.FileDescriptorProto())
 	if err != nil {
 		return nil, err
 	}
