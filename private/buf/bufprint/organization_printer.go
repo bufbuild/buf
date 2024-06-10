@@ -77,7 +77,7 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Full name",
+			"Full Name",
 			"Create Time",
 		},
 		func(tabWriter TabWriter) error {
