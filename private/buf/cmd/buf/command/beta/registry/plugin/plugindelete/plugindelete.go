@@ -21,7 +21,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -64,12 +64,12 @@ func run(
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	identity, version, _ := strings.Cut(container.Arg(0), ":")
-	pluginIdentity, err := bufpluginref.PluginIdentityForString(identity)
+	pluginIdentity, err := bufremotepluginref.PluginIdentityForString(identity)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	if version != "" {
-		if err := bufpluginref.ValidatePluginVersion(version); err != nil {
+		if err := bufremotepluginref.ValidatePluginVersion(version); err != nil {
 			return appcmd.NewInvalidArgumentError(err.Error())
 		}
 	}
