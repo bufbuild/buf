@@ -18,5 +18,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-action@v0.1
         with:
-          version: "1.32.2"
           token: ${{ secrets.BUF_TOKEN }}
