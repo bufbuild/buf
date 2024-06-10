@@ -37,7 +37,7 @@ message Foo {
     foo: 1
     bar: 2
     baz: 3
-    buzz: <
+    buzz: {
       a: "abc"
       b: "xyz"
       c: [
@@ -47,19 +47,19 @@ message Foo {
         "baz"
         /*trail*/
       ]
-      d [
-        <foo: 99>,
-        <foo: 98>,
-        <
+      d: [
+        {foo: 99},
+        {foo: 98},
+        {
           /*lead*/
           foo: 97
           /*trail*/
-        >
+        }
       ]
-      e []
-      f {}
+      e: []
+      f: {}
       g: [1]
-    >
-    frobnitz: <foo: 1>
+    }
+    frobnitz: {foo: 1}
   };
 }
