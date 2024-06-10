@@ -107,18 +107,6 @@ func NewRepositoryPrinter(
 	return newRepositoryPrinter(clientConfig, address, writer)
 }
 
-// RepositoryTagPrinter is a repository tag printer.
-type RepositoryTagPrinter interface {
-	PrintRepositoryTag(ctx context.Context, format Format, repositoryTag *registryv1alpha1.RepositoryTag) error
-	PrintRepositoryTags(ctx context.Context, format Format, nextPageToken string, repositoryTags ...*registryv1alpha1.RepositoryTag) error
-}
-
-// NewRepositoryTagPrinter returns a new RepositoryTagPrinter.
-func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
-	return newRepositoryTagPrinter(writer)
-}
-
-// RepositoryLabelPrinter is a repository label printer.
 // TODO: perhaps rename this to LabelPrinter along with other printers
 type RepositoryLabelPrinter interface {
 	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
@@ -132,24 +120,13 @@ func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
 
 // RepositoryCommitPrinter is a repository commit printer.
 type RepositoryCommitPrinter interface {
-	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
-	PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *modulev1.Commit) error
+	PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*modulev1.Commit) error
 }
 
 // NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
 func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 	return newRepositoryCommitPrinter(writer)
-}
-
-// RepositoryDraftPrinter is a repository draft printer.
-type RepositoryDraftPrinter interface {
-	PrintRepositoryDraft(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
-	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
-}
-
-// NewRepositoryDraftPrinter returns a new RepositoryDraftPrinter.
-func NewRepositoryDraftPrinter(writer io.Writer) RepositoryDraftPrinter {
-	return newRepositoryDraftPrinter(writer)
 }
 
 // TokenPrinter is a token printer.
