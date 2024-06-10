@@ -310,8 +310,6 @@ type externalGeneratePluginConfigV1 struct {
 	Plugin string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
 	// Name is the key for a local plugin.
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-	// Remote is the key for alpha remote plugin name, which is deprecated now.
-	Remote string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Out is required.
 	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
 	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`
@@ -509,7 +507,7 @@ type externalGeneratePluginConfigV2 struct {
 	Opt            interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	IncludeImports bool        `json:"include_imports,omitempty" yaml:"include_imports,omitempty"`
 	IncludeWKT     bool        `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
-	// Strategy is only valid with ProtoBuiltin and Binary.
+	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 

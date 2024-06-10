@@ -246,21 +246,32 @@ func newMessageCheckFunc(
 func newFieldCheckFunc(
 	f func(addFunc, bufprotosource.Field) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return newMessageCheckFunc(
-		func(add addFunc, message bufprotosource.Message) error {
-			for _, field := range message.Fields() {
-				if err := f(add, field); err != nil {
-					return err
+	return combine(
+		newMessageCheckFunc(
+			func(add addFunc, message bufprotosource.Message) error {
+				for _, field := range message.Fields() {
+					if err := f(add, field); err != nil {
+						return err
+					}
 				}
-			}
-			// TODO: is this right?
-			for _, field := range message.Extensions() {
-				if err := f(add, field); err != nil {
-					return err
+				for _, field := range message.Extensions() {
+					if err := f(add, field); err != nil {
+						return err
+					}
 				}
-			}
-			return nil
-		},
+				return nil
+			},
+		),
+		newFileCheckFunc(
+			func(add addFunc, file bufprotosource.File) error {
+				for _, field := range file.Extensions() {
+					if err := f(add, field); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		),
 	)
 }
 
@@ -307,4 +318,20 @@ func newMethodCheckFunc(
 			return nil
 		},
 	)
+}
+
+func combine(
+	checks ...func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error),
+) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+		var annotations []bufanalysis.FileAnnotation
+		for _, check := range checks {
+			checkAnnotations, err := check(id, ignoreFunc, files)
+			if err != nil {
+				return nil, err
+			}
+			annotations = append(annotations, checkAnnotations...)
+		}
+		return annotations, nil
+	}
 }

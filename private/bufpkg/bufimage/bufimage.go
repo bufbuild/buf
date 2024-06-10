@@ -238,6 +238,9 @@ type Image interface {
 	// The path is expected to be normalized and validated.
 	// Note that all values of GetDependency() can be used here.
 	GetFile(path string) ImageFile
+	// Resolver returns a resolver backed by this image.
+	Resolver() protoencoding.Resolver
+
 	isImage()
 }
 
@@ -247,7 +250,7 @@ type Image interface {
 // TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 // If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
-	return newImage(imageFiles, false)
+	return newImage(imageFiles, false, nil)
 }
 
 // BuildImage runs compilation.
@@ -340,49 +343,6 @@ func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
 	)
 }
 
-// MergeImages returns a new Image for the given Images. ImageFiles
-// treated as non-imports in at least one of the given Images will
-// be treated as non-imports in the returned Image. The first non-import
-// version of a file will be used in the result.
-//
-// Reorders the ImageFiles to be in DAG order.
-// Duplicates can exist across the Images, but only if duplicates are non-imports.
-func MergeImages(images ...Image) (Image, error) {
-	switch len(images) {
-	case 0:
-		return nil, nil
-	case 1:
-		return images[0], nil
-	default:
-		var paths []string
-		imageFileSet := make(map[string]ImageFile)
-		for _, image := range images {
-			for _, currentImageFile := range image.Files() {
-				storedImageFile, ok := imageFileSet[currentImageFile.Path()]
-				if !ok {
-					imageFileSet[currentImageFile.Path()] = currentImageFile
-					paths = append(paths, currentImageFile.Path())
-					continue
-				}
-				if !storedImageFile.IsImport() && !currentImageFile.IsImport() {
-					return nil, fmt.Errorf("%s is a non-import in multiple images", currentImageFile.Path())
-				}
-				if storedImageFile.IsImport() && !currentImageFile.IsImport() {
-					imageFileSet[currentImageFile.Path()] = currentImageFile
-				}
-			}
-		}
-		// We need to preserve order for deterministic results, so we add
-		// the files in the order they're given, but base our selection
-		// on the imageFileSet.
-		imageFiles := make([]ImageFile, 0, len(imageFileSet))
-		for _, path := range paths {
-			imageFiles = append(imageFiles, imageFileSet[path] /* Guaranteed to exist */)
-		}
-		return newImage(imageFiles, true)
-	}
-}
-
 // NewImageForProto returns a new Image for the given proto Image.
 //
 // The input Files are expected to be in correct DAG order!
@@ -397,8 +357,10 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	if newImageOptions.noReparse && newImageOptions.computeUnusedImports {
 		return nil, fmt.Errorf("cannot use both WithNoReparse and WithComputeUnusedImports options; they are mutually exclusive")
 	}
+	var resolver protoencoding.Resolver
 	if !newImageOptions.noReparse {
-		if err := reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
+		var err error
+		if resolver, err = reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
 		}
 	}
@@ -452,7 +414,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		}
 		imageFiles[i] = imageFile
 	}
-	return NewImage(imageFiles)
+	return newImage(imageFiles, false, resolver)
 }
 
 // NewImageForCodeGeneratorRequest returns a new Image from a given CodeGeneratorRequest.
@@ -707,12 +669,12 @@ type newImageForProtoOptions struct {
 	computeUnusedImports bool
 }
 
-func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) error {
+func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) (protoencoding.Resolver, error) {
 	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
 	resolver := protoencoding.NewLazyResolver(protoImage.File...)
 	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
-		return fmt.Errorf("could not reparse image: %v", err)
+		return nil, fmt.Errorf("could not reparse image: %v", err)
 	}
 	if computeUnusedImports {
 		tracker := &importTracker{
@@ -746,7 +708,7 @@ func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) err
 			}
 		}
 	}
-	return nil
+	return resolver, nil
 }
 
 // We pass in the pathToImageFileInfo here because we also call this in

@@ -53,12 +53,27 @@ type Rule interface {
 	//
 	// Full sentence.
 	Purpose() string
+
+	// Deprecated returns whether or not this rule is deprecated.
+	//
+	// If it is, it may be replaced by 0 or more rules. These will be denoted with Replacements.
+	Deprecated() bool
+	// ReplacementIDs returns the IDs of the Rules that replace this Rule.
+	//
+	// This means that the combination of the Rules specified by ReplacementIDs replace this Rule entirely,
+	// and this Rule is considered equivalent to the AND of the rules specified by ReplacementIDs.
+	//
+	// This will only be non-empty if Deprecated is true.
+	//
+	// Is it not valid for a Deprecated Rule to specify another Deprecated Rule as a replacement. We verify
+	// that this does not happen for any VersionSpec in testing. TODO
+	ReplacementIDs() []string
 }
 
 // PrintRules prints the rules to the writer.
 //
 // The empty string defaults to text.
-func PrintRules(writer io.Writer, rules []Rule, formatString string) (retErr error) {
+func PrintRules(writer io.Writer, rules []Rule, formatString string, includeDeprecated bool) (retErr error) {
 	if len(rules) == 0 {
 		return nil
 	}
@@ -82,6 +97,9 @@ func PrintRules(writer io.Writer, rules []Rule, formatString string) (retErr err
 		}
 	}
 	for _, rule := range rules {
+		if !includeDeprecated && rule.Deprecated() {
+			continue
+		}
 		if err := printRule(writer, rule, asJSON); err != nil {
 			return err
 		}

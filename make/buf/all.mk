@@ -1,5 +1,11 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-#GO_GET_PKGS := $(GO_GET_PKGS)
+# TODO: Remove go-winio v0.6.1 and otel v1.24.0 when we no longer need to support Golang <1.21
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	github.com/Microsoft/go-winio@v0.6.1 \
+	go.opentelemetry.io/otel@v1.24.0 \
+	go.opentelemetry.io/otel/sdk@v1.24.0 \
+	go.opentelemetry.io/otel/trace@v1.24.0 \
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.24.0
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -35,6 +41,8 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+# Required for protocompile v0.10.0
+PROTOC_GEN_GO_VERSION := v1.33.1-0.20240408130810-98873a205002
 PROTOVALIDATE_VERSION := v0.6.0
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf

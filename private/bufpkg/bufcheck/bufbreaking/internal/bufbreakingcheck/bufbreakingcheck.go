@@ -658,13 +658,6 @@ func checkFileSamePyGenericServices(add addFunc, corpus *corpus, previousFile bu
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.PyGenericServices()), strconv.FormatBool(file.PyGenericServices()), file, file.PyGenericServicesLocation(), `option "py_generic_services"`)
 }
 
-// CheckFileSamePhpGenericServices is a check function.
-var CheckFileSamePhpGenericServices = newFilePairCheckFunc(checkFileSamePhpGenericServices)
-
-func checkFileSamePhpGenericServices(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
-	return checkFileSameValue(add, strconv.FormatBool(previousFile.PhpGenericServices()), strconv.FormatBool(file.PhpGenericServices()), file, file.PhpGenericServicesLocation(), `option "php_generic_services"`)
-}
-
 // CheckFileSameCcEnableArenas is a check function.
 var CheckFileSameCcEnableArenas = newFilePairCheckFunc(checkFileSameCcEnableArenas)
 

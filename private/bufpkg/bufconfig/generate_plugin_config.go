@@ -26,12 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-const (
-	remoteAlphaPluginDeprecationMessage = "the remote field no longer works as " +
-		"the remote generation alpha has been deprecated, see the migration guide to " +
-		"now-stable remote plugins: https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins"
-)
-
 // GenerateStrategy is the generation strategy for a protoc plugin.
 type GenerateStrategy int
 
@@ -281,11 +275,6 @@ func newPluginConfigFromExternalV1Beta1(
 func newPluginConfigFromExternalV1(
 	externalConfig externalGeneratePluginConfigV1,
 ) (GeneratePluginConfig, error) {
-	if externalConfig.Remote != "" {
-		return nil, errors.New(remoteAlphaPluginDeprecationMessage)
-	}
-	// In v1 config, only plugin and name are allowed, since remote alpha plugin
-	// has been deprecated.
 	if externalConfig.Plugin == "" && externalConfig.Name == "" {
 		return nil, fmt.Errorf("one of plugin or name is required")
 	}
@@ -296,17 +285,10 @@ func newPluginConfigFromExternalV1(
 	switch {
 	case externalConfig.Plugin != "":
 		pluginIdentifier = externalConfig.Plugin
-		if _, _, _, _, err := bufremotepluginref.V1ParsePluginVersionPath(pluginIdentifier); err == nil {
-			// A remote alpha plugin name is not a valid remote plugin reference.
-			return nil, fmt.Errorf("invalid remote plugin reference: %s", pluginIdentifier)
-		}
 	case externalConfig.Name != "":
 		pluginIdentifier = externalConfig.Name
-		if _, _, _, _, err := bufremotepluginref.V1ParsePluginVersionPath(pluginIdentifier); err == nil {
-			return nil, fmt.Errorf("invalid plugin name %s, did you mean to use a remote plugin?", pluginIdentifier)
-		}
 		if bufremotepluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-			// A remote alpha plugin name is not a valid local plugin name.
+			// A plugin reference is not a valid local plugin name.
 			return nil, fmt.Errorf("invalid local plugin name: %s", pluginIdentifier)
 		}
 	}
@@ -398,6 +380,9 @@ func newPluginConfigFromExternalV2(
 	}
 	if pluginTypeCount > 1 {
 		return nil, errors.New("only one of remote, local or protoc_builtin")
+	}
+	if externalConfig.Out == "" {
+		return nil, errors.New("must specify out")
 	}
 	var strategy string
 	if externalConfig.Strategy != nil {

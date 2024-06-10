@@ -14,7 +14,10 @@
 
 package bufprotosource
 
-import "google.golang.org/protobuf/types/descriptorpb"
+import (
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+)
 
 type field struct {
 	namedDescriptor
@@ -206,4 +209,8 @@ func (f *field) PackedLocation() Location {
 
 func (f *field) ExtendeeLocation() Location {
 	return f.getLocation(f.extendeePath)
+}
+
+func (f *field) AsDescriptor() (protoreflect.FieldDescriptor, error) {
+	return asDescriptor[protoreflect.FieldDescriptor](&f.descriptor, f.FullName(), "a field")
 }

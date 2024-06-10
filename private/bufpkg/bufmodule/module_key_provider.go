@@ -23,7 +23,7 @@ type ModuleKeyProvider interface {
 	// GetModuleKeysForModuleRefs gets the ModuleKeys for the given ModuleRefs.
 	//
 	// Returned ModuleKeys will be in the same order as the input ModuleRefs.
-
+	//
 	// The input ModuleRefs are expected to be unique by ModuleFullName. The implementation
 	// may error if this is not the case.
 	//

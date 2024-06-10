@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protosource defines minimal interfaces for Protobuf descriptor types.
+// Package bufprotosource defines minimal interfaces for Protobuf descriptor types.
 //
 // This is done so that the backing package can be swapped out easily.
 //
@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -254,7 +253,6 @@ type File interface {
 	CcGenericServices() bool
 	JavaGenericServices() bool
 	PyGenericServices() bool
-	PhpGenericServices() bool
 	CcEnableArenas() bool
 
 	SyntaxLocation() Location
@@ -276,7 +274,6 @@ type File interface {
 	CcGenericServicesLocation() Location
 	JavaGenericServicesLocation() Location
 	PyGenericServicesLocation() Location
-	PhpGenericServicesLocation() Location
 	CcEnableArenasLocation() Location
 
 	// FileDescriptor returns the backing FileDescriptor for this File.
@@ -359,6 +356,11 @@ type Enum interface {
 
 	// Will return nil if this is a top-level Enum
 	Parent() Message
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.EnumDescriptor, error)
 }
 
 // EnumValue is an enum value descriptor.
@@ -399,6 +401,11 @@ type Message interface {
 	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.MessageDescriptor, error)
 }
 
 // Field is a field descriptor.
@@ -436,6 +443,11 @@ type Field interface {
 	CTypeLocation() Location
 	PackedLocation() Location
 	ExtendeeLocation() Location
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.FieldDescriptor, error)
 }
 
 // Oneof is a oneof descriptor.
@@ -445,6 +457,11 @@ type Oneof interface {
 
 	Message() Message
 	Fields() []Field
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.OneofDescriptor, error)
 }
 
 // Service is a service descriptor.
@@ -472,11 +489,6 @@ type Method interface {
 	Deprecated() bool
 	IdempotencyLevel() descriptorpb.MethodOptions_IdempotencyLevel
 	IdempotencyLevelLocation() Location
-}
-
-// NewFile returns a new File.
-func NewFile(imageFile bufimage.ImageFile) (File, error) {
-	return newFile(imageFile)
 }
 
 // NewFiles converts the input Image into Files.
@@ -1054,63 +1066,6 @@ func TagRangeString(tagRange TagRange) string {
 	return fmt.Sprintf("[%d,%d]", start, end)
 }
 
-// FreeMessageRangeString returns the string representation of the free ranges for the message.
-func FreeMessageRangeString(message Message) string {
-	freeRanges := FreeMessageRanges(message)
-	if len(freeRanges) == 0 {
-		return ""
-	}
-	suffixes := make([]string, len(freeRanges))
-	for i, freeRange := range freeRanges {
-		suffixes[i] = freeMessageRangeStringSuffix(freeRange)
-	}
-	return fmt.Sprintf(
-		"%- 35s free: %s",
-		freeRanges[0].Message().FullName(),
-		strings.Join(suffixes, " "),
-	)
-}
-
-// FreeMessageRanges returns the free message ranges for the given message.
-//
-// Not recursive.
-func FreeMessageRanges(message Message) []MessageRange {
-	used := append(
-		message.ReservedMessageRanges(),
-		message.ExtensionMessageRanges()...,
-	)
-	for _, field := range message.Fields() {
-		used = append(
-			used,
-			newFreeMessageRange(message, field.Number(), field.Number()),
-		)
-	}
-	sort.Slice(used, func(i, j int) bool {
-		return used[i].Start() < used[j].Start()
-	})
-	// now compute the inverse (unused ranges)
-	unused := make([]MessageRange, 0, len(used)+1)
-	last := 0
-	for _, r := range used {
-		if r.Start() <= last+1 {
-			last = r.End()
-			continue
-		}
-		unused = append(
-			unused,
-			newFreeMessageRange(message, last+1, r.Start()-1),
-		)
-		last = r.End()
-	}
-	if last < messageRangeInclusiveMax {
-		unused = append(
-			unused,
-			newFreeMessageRange(message, last+1, messageRangeInclusiveMax),
-		)
-	}
-	return unused
-}
-
 // CheckTagRangeIsSubset checks if supersetRanges is a superset of subsetRanges.
 // If so, it returns true and nil. If not, it returns false with a slice of failing ranges from subsetRanges.
 func CheckTagRangeIsSubset(supersetRanges []TagRange, subsetRanges []TagRange) (bool, []TagRange) {
@@ -1193,18 +1148,6 @@ func sortTagRanges(ranges []TagRange) []TagRange {
 	})
 
 	return rangesCopy
-}
-
-func freeMessageRangeStringSuffix(freeRange MessageRange) string {
-	start := freeRange.Start()
-	end := freeRange.End()
-	if start == end {
-		return fmt.Sprintf("%d", start)
-	}
-	if freeRange.Max() {
-		return fmt.Sprintf("%d-INF", start)
-	}
-	return fmt.Sprintf("%d-%d", start, end)
 }
 
 func mapFiles(files []File, getKey func(File) string) (map[string][]File, error) {

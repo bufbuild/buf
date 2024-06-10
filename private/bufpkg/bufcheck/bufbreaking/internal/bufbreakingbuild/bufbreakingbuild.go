@@ -243,10 +243,10 @@ var (
 		bufbreakingcheck.CheckFileSamePyGenericServices,
 	)
 	// FileSamePhpGenericServicesRuleBuilder is a rule builder.
-	FileSamePhpGenericServicesRuleBuilder = internal.NewNopRuleBuilder(
+	FileSamePhpGenericServicesRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FILE_SAME_PHP_GENERIC_SERVICES",
 		"files have the same value for the php_generic_services option",
-		bufbreakingcheck.CheckFileSamePhpGenericServices,
+		nil,
 	)
 	// FileSameCcEnableArenasRuleBuilder is a rule builder.
 	FileSameCcEnableArenasRuleBuilder = internal.NewNopRuleBuilder(

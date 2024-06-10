@@ -32,10 +32,11 @@ import (
 )
 
 const (
-	allFlagName     = "all"
-	configFlagName  = "config"
-	formatFlagName  = "format"
-	versionFlagName = "version"
+	allFlagName               = "all"
+	configFlagName            = "config"
+	includeDeprecatedFlagName = "include-deprecated"
+	formatFlagName            = "format"
+	versionFlagName           = "version"
 )
 
 // NewLSCommand returns a new ls Command.
@@ -52,7 +53,7 @@ func NewLSCommand(
 		Use:        name,
 		Short:      fmt.Sprintf("List %s rules", ruleType),
 		Args:       appcmd.NoArgs,
-		Deprecated: fmt.Sprintf(`use "buf config %s" instead. However, "buf mod %s will continue to work."`, name, name),
+		Deprecated: fmt.Sprintf(`use "buf config %s" instead. However, "buf mod %s" will continue to work.`, name, name),
 		Hidden:     true,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -72,10 +73,11 @@ func NewLSCommand(
 }
 
 type flags struct {
-	All     bool
-	Config  string
-	Format  string
-	Version string
+	All               bool
+	Config            string
+	IncludeDeprecated bool
+	Format            string
+	Version           string
 }
 
 func newFlags() *flags {
@@ -97,6 +99,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			`The buf.yaml file or data to use for configuration. Ignored if --%s or --%s is specified`,
 			allFlagName,
 			versionFlagName,
+		),
+	)
+	flagSet.BoolVar(
+		&f.IncludeDeprecated,
+		includeDeprecatedFlagName,
+		false,
+		fmt.Sprintf(
+			`Also print deprecated rules. Has no effect if --%s is not set.`,
+			allFlagName,
 		),
 	)
 	flagSet.StringVar(
@@ -200,5 +211,6 @@ func lsRun(
 		container.Stdout(),
 		rules,
 		flags.Format,
+		flags.IncludeDeprecated,
 	)
 }
