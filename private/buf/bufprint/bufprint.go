@@ -20,6 +20,7 @@ import (
 	"io"
 	"strconv"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -115,6 +116,18 @@ type RepositoryTagPrinter interface {
 // NewRepositoryTagPrinter returns a new RepositoryTagPrinter.
 func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
 	return newRepositoryTagPrinter(writer)
+}
+
+// RepositoryLabelPrinter is a repository label printer.
+// TODO: perhaps rename this to LabelPrinter along with other printers
+type RepositoryLabelPrinter interface {
+	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
+	PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, labels ...*modulev1.Label) error
+}
+
+// NewRepositoryLabelPrinter returns a new RepositoryLabelPrinter.
+func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
+	return newRepositoryLabelPrinter(writer)
 }
 
 // RepositoryCommitPrinter is a repository commit printer.
