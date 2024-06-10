@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -126,7 +127,8 @@ func Diff(
 }
 
 // DiffWithFilenames writes a diff of the ReadBuckets to the Writer and returns
-// the names of any file paths that contained differences.
+// the names of any file paths that contained differences. The returned paths
+// are in sorted (ascending) order.
 //
 // Note that the returned paths are determined by comparing the before and after
 // bytes, not just based on whether the configured diff tool reports something.
@@ -272,6 +274,10 @@ func DiffWithFilenames(
 			}
 		}
 	}
+	// changedPaths will be *mostly* sorted. But paths in "two" that were not present
+	// in "one" will appear last, even if sort order would have them interleaved.
+	// So we must sort explicitly.
+	sort.Strings(changedPaths)
 	return changedPaths, nil
 }
 
