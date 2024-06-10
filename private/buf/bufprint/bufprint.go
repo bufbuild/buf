@@ -107,7 +107,6 @@ func NewRepositoryPrinter(
 	return newRepositoryPrinter(clientConfig, address, writer)
 }
 
-// RepositoryLabelPrinter is a repository label printer.
 // TODO: perhaps rename this to LabelPrinter along with other printers
 type RepositoryLabelPrinter interface {
 	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
