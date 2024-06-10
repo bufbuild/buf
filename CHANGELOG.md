@@ -14,6 +14,14 @@
 - Change the behavior of `buf beta commit list <buf.build/owner/repository>` when the
   reference is empty. It now lists commits in the repository instead of listing commits
   of the default label.
+- Update output of `buf format` to canonicalize the punctuation used in message literals
+  in option values. The output now always uses `{` and `}` instead of `<` and `>`; it
+  adds `:` separators between field names and message values if the source omitted them,
+  and it removes unnecessary separators between fields (`,` and `;` are allowed, but
+  neither is needed).
+- Update `buf format -w` so that it does not touch files whose contents don't actually
+  change. This eliminates noisy notifications to file-system-watcher tools that are
+  watching the directory that contains proto sources.
 
 ## [v1.32.2] - 2024-05-28
 

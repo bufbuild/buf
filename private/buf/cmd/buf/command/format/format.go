@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -323,14 +324,15 @@ func run(
 	}
 
 	diffBuffer := bytes.NewBuffer(nil)
-	if err := storage.Diff(
+	changedPaths, err := storage.DiffWithFilenames(
 		ctx,
 		runner,
 		diffBuffer,
 		originalReadBucket,
 		formattedReadBucket,
 		storage.DiffWithExternalPaths(), // No need to set prefixes as the buckets are from the same location.
-	); err != nil {
+	)
+	if err != nil {
 		return err
 	}
 	diffExists := diffBuffer.Len() > 0
@@ -346,17 +348,22 @@ func run(
 				return err
 			}
 		}
-		// If we haven't overridden the output flag and havent set write, we can stop here.
+		// If we haven't overridden the output flag and haven't set write, we can stop here.
 		if flags.Output == "-" && !flags.Write {
 			return nil
 		}
 	}
 	if flags.Write {
+		changedPathSet := slicesext.ToStructMap(changedPaths)
 		return storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
 			"",
 			func(readObject storage.ReadObject) error {
+				if _, ok := changedPathSet[readObject.Path()]; !ok {
+					// no change, nothing to re-write
+					return nil
+				}
 				// TODO FUTURE: This is a legacy hack that we shouldn't use. We should not
 				// rely on external paths being writable.
 				//
