@@ -242,5 +242,5 @@ func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) (bufconfig.L
 		"",
 		false,
 		nil,
-	), nil
+	)
 }

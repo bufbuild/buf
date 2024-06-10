@@ -77,42 +77,18 @@ message Annotation {
 }
 
 message LintRequest {
-  message Lint {
-    repeated File files = 1;
-  }
-
-  oneof method {
-    Lint lint = 1;
-  }
+  repeated File files = 1;
 }
 
 message LintResponse {
-  message Lint {
-    repeated Annotation annotations = 1;
-  }
-
-  oneof method {
-    Lint lint = 1;
-  }
+  repeated Annotation annotations = 1;
 }
 
 message BreakingRequest {
-  message Breaking {
-    repeated File files = 1;
-    repeated File against_files = 2;
-  }
-
-  oneof method {
-    Breaking breaking = 1;
-  }
+  repeated File files = 1;
+  repeated File against_files = 2;
 }
 
 message BreakingResponse {
-  message Breaking {
-    repeated Annotation annotations = 1;
-  }
-
-  oneof method {
-    Breaking breaking = 1;
-  }
+  repeated Annotation annotations = 1;
 }

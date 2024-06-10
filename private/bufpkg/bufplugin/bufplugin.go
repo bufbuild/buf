@@ -78,7 +78,7 @@ func NewAnnotationForDescriptor(descriptor protoreflect.Descriptor, id string, m
 	// a slice. This is just a mess. Also need to reconcile the zero-indexing.
 	_ = sourceLocation
 	panic("TODO")
-	return annotation
+	//return annotation
 }
 
 type File interface {
@@ -96,7 +96,7 @@ type LintResponseWriter interface {
 
 func NewLintResponseWriter() LintResponseWriter {
 	panic("TODO")
-	return nil
+	//return nil
 }
 
 type LintRequest interface {
