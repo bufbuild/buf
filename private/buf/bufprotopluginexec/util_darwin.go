@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+//go:build darwin
+// +build darwin
 
-package bufpluginexec
+package bufprotopluginexec
 
-import _ "github.com/bufbuild/buf/private/usage"
+const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. On Mac, the default is 256, which is very low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
