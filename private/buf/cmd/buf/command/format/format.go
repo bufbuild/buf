@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -353,10 +354,7 @@ func run(
 		}
 	}
 	if flags.Write {
-		changedPathSet := make(map[string]struct{}, len(changedPaths))
-		for _, path := range changedPaths {
-			changedPathSet[path] = struct{}{}
-		}
+		changedPathSet := slicesext.ToStructMap(changedPaths)
 		return storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
