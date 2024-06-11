@@ -22,6 +22,11 @@
 - Update `buf format -w` so that it does not touch files whose contents don't actually
   change. This eliminates noisy notifications to file-system-watcher tools that are
   watching the directory that contains proto sources.
+- Update `buf generate` to work with plugins provided by protoc for versions v24.0
+  to v25.3. Editions support was experimental in these releases, and the plugins
+  advertise incomplete support for editions, which triggers `buf` to report an error.
+  With this fix, these plugins can be used again as long as none of the input files use
+  editions syntax.
 
 ## [v1.32.2] - 2024-05-28
 
