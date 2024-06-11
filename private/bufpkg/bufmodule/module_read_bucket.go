@@ -658,7 +658,7 @@ func (t *targetedModuleReadBucket) WalkFileInfos(
 			return fn(fileInfo)
 		},
 		append(
-			options,
+			slicesext.Copy(options),
 			WalkFileInfosWithOnlyTargetFiles(),
 		)...,
 	)
