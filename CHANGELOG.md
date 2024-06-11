@@ -22,6 +22,7 @@
 - Update `buf format -w` so that it does not touch files whose contents don't actually
   change. This eliminates noisy notifications to file-system-watcher tools that are
   watching the directory that contains proto sources.
+- Fixes issue where `buf lint` fails when the message is deeply nested.
 
 ## [v1.32.2] - 2024-05-28
 

@@ -65,5 +65,7 @@ func testMessageName(t *testing.T, nameToExpectedNestedName map[string]string, m
 	require.Equal(t, expectedName, message.NestedName())
 	for _, nestedMessage := range message.Messages() {
 		testMessageName(t, nameToExpectedNestedName, nestedMessage)
+		_, err := message.AsDescriptor()
+		require.NoError(t, err)
 	}
 }
