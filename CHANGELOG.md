@@ -22,8 +22,6 @@
 - Update `buf format -w` so that it does not touch files whose contents don't actually
   change. This eliminates noisy notifications to file-system-watcher tools that are
   watching the directory that contains proto sources.
-- Fixes issue where `buf breaking` or `buf lint` might fail when a `.proto` file contains
-  a message or field definition nested deeply in other message definitions.
 
 ## [v1.32.2] - 2024-05-28
 
