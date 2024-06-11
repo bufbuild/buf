@@ -1318,7 +1318,7 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		// TODO FUTURE: failing test, fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed
-		t.Skip()
+		// t.Skip()
 	}
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
@@ -1358,7 +1358,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		// TODO FUTURE: failing test, fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed
-		t.Skip()
+		// t.Skip()
 	}
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
