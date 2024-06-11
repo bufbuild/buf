@@ -150,6 +150,40 @@ func Copy[T any](s []T) []T {
 	return sc
 }
 
+// Grow increases the slice's capacity, if necessary, to guarantee space for
+// another n elements. After Grow(n), at least n elements can be appended
+// to the slice without another allocation. If n is negative or too large to
+// allocate the memory, Grow panics.
+//
+// TODO FUTURE: Delete this in favor of slices.Grow.
+func Grow[S ~[]E, E any](s S, n int) S {
+	if n < 0 {
+		panic("cannot be negative")
+	}
+	if n -= cap(s) - len(s); n > 0 {
+		s = append(s[:cap(s)], make([]E, n)...)[:len(s)]
+	}
+	return s
+}
+
+// Concat returns a new slice concatenating the passed in slices.
+//
+// TODO FUTURE: Delete this in favor of slices.Concat.
+func Concat[S ~[]E, E any](slices ...S) S {
+	size := 0
+	for _, s := range slices {
+		size += len(s)
+		if size < 0 {
+			panic("len out of range")
+		}
+	}
+	newslice := Grow[S](nil, size)
+	for _, s := range slices {
+		newslice = append(newslice, s...)
+	}
+	return newslice
+}
+
 // Equal reports whether two slices are equal: the same length and all
 // elements equal. If the lengths are different, Equal returns false.
 // Otherwise, the elements are compared in increasing index order, and the
