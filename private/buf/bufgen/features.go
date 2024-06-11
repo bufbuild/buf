@@ -129,7 +129,7 @@ func checkRequiredFeatures(
 			}
 			if response.GetMaximumEdition() < response.GetMinimumEdition() {
 				return fmt.Errorf(
-					"plugin %q indicates a maximum supported edition (%d) that is less than its minimum supported edition (%d)",
+					"plugin %q indicates a maximum supported edition (%v) that is less than its minimum supported edition (%v)",
 					pluginName,
 					descriptorpb.Edition(response.GetMaximumEdition()),
 					descriptorpb.Edition(response.GetMinimumEdition()),
