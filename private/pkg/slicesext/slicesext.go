@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copied from https://github.com/golang/go/blob/b788e91badd523e5bb0fc8d50cd76b8ae04ffb20/LICENSE:
+// Some implementations are copied from "slices", and hence
+// https://github.com/golang/go/blob/b788e91badd523e5bb0fc8d50cd76b8ae04ffb20/LICENSE:
 // Copyright (c) 2009 The Go Authors. All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
