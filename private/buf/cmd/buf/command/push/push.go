@@ -244,7 +244,9 @@ func run(
 	if err != nil {
 		return err
 	}
-
+	if len(commits) == 0 {
+		return nil
+	}
 	if workspace.IsV2() {
 		_, err := container.Stdout().Write(
 			[]byte(
@@ -262,15 +264,13 @@ func run(
 		return err
 	}
 	// v1 workspace, fallback to old behavior for backwards compatibility.
-	switch len(commits) {
-	case 0:
-		return nil
-	case 1:
-		_, err := container.Stdout().Write([]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"))
-		return err
-	default:
+	if len(commits) > 1 {
 		return syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
 	}
+	_, err = container.Stdout().Write(
+		[]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"),
+	)
+	return err
 }
 
 func getBuildableWorkspace(
