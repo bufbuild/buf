@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message A {
+  message B {
+    message C {
+      message D {
+        message E {
+          message F {
+            message Message10 {
+              message Message11 {}
+            }
+            message Message20 {
+              message Message21 {}
+            }
+          }
+        }
+      }
+    }
+  }
+}
