@@ -94,12 +94,26 @@ func TestCheckRequiredFeatures(t *testing.T) {
 		MinimumEdition:    (*int32)(descriptorpb.Edition_EDITION_2024.Enum()),
 		MaximumEdition:    (*int32)(descriptorpb.Edition_EDITION_MAX.Enum()),
 	}
+	supportsEditionsButNoRange := &pluginpb.CodeGeneratorResponse{
+		SupportedFeatures: proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS)),
+	}
+	supportsEditionsButMalformedRange := &pluginpb.CodeGeneratorResponse{
+		SupportedFeatures: proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS)),
+		MinimumEdition:    (*int32)(descriptorpb.Edition_EDITION_2024.Enum()),
+		MaximumEdition:    (*int32)(descriptorpb.Edition_EDITION_2023.Enum()),
+	}
 
 	// Successful cases
 	testCheckRequiredFeatures(t, noRequiredFeatures, supportsNoFeatures, "", "")
 	testCheckRequiredFeatures(t, requiresProto3Optional, supportsBoth, "", "")
 	testCheckRequiredFeatures(t, requiresEditions, supportsBoth, "", "")
 	testCheckRequiredFeatures(t, requiresBoth, supportsBoth, "", "")
+	// These are successful because we intentionally don't validate the editions range unless the
+	// file uses editions. This is to work around known issue in older versions of plugins in protoc
+	// from when editions were still experimental. These plugins advertise supported for plugins but
+	// don't correctly set the min and max edition fields.
+	testCheckRequiredFeatures(t, noRequiredFeatures, supportsEditionsButNoRange, "", "")
+	testCheckRequiredFeatures(t, noRequiredFeatures, supportsEditionsButMalformedRange, "", "")
 
 	// Error cases
 	testCheckRequiredFeatures(
@@ -133,6 +147,20 @@ func TestCheckRequiredFeatures(t *testing.T) {
 		supportsEditionsButOutOfRange,
 		"", // No stderr expected
 		`plugin "test" does not support edition "2023" which is required by "editions.proto"`,
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresEditions,
+		supportsEditionsButNoRange,
+		"", // No stderr expected
+		`plugin "test" advertises that it supports editions but did not indicate a minimum supported edition`,
+	)
+	testCheckRequiredFeatures(
+		t,
+		requiresEditions,
+		supportsEditionsButMalformedRange,
+		"", // No stderr expected
+		`plugin "test" indicates a maximum supported edition (EDITION_2023) that is less than its minimum supported edition (EDITION_2024)`,
 	)
 }
 

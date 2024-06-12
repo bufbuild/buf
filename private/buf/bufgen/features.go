@@ -111,9 +111,32 @@ func checkRequiredFeatures(
 				failedFeatures = append(failedFeatures, feature)
 			}
 		}
+		pluginName := configs[responseIndex].Name()
 		if supported&uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS) != 0 && len(required.editionToFilenames) > 0 {
-			// Plugin supports editions, and files include editions. So make sure
-			// the plugin supports precisely the right editions.
+			// Plugin supports editions, and files include editions.
+			// First, let's make sure that the plugin set the min/max edition fields correctly.
+			if response.MinimumEdition == nil {
+				return fmt.Errorf(
+					"plugin %q advertises that it supports editions but did not indicate a minimum supported edition",
+					pluginName,
+				)
+			}
+			if response.MaximumEdition == nil {
+				return fmt.Errorf(
+					"plugin %q advertises that it supports editions but did not indicate a maximum supported edition",
+					pluginName,
+				)
+			}
+			if response.GetMaximumEdition() < response.GetMinimumEdition() {
+				return fmt.Errorf(
+					"plugin %q indicates a maximum supported edition (%v) that is less than its minimum supported edition (%v)",
+					pluginName,
+					descriptorpb.Edition(response.GetMaximumEdition()),
+					descriptorpb.Edition(response.GetMinimumEdition()),
+				)
+			}
+
+			// And also make sure the plugin supports precisely the right editions.
 			requiredEditions := make([]descriptorpb.Edition, 0, len(required.editionToFilenames))
 			for edition := range required.editionToFilenames {
 				requiredEditions = append(requiredEditions, edition)
@@ -130,7 +153,6 @@ func checkRequiredFeatures(
 			}
 		}
 
-		pluginName := configs[responseIndex].Name()
 		if len(failedFeatures) > 0 {
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i] < failedFeatures[j]
