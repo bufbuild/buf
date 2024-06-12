@@ -109,7 +109,7 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 	// Only push named modules to the registry. Any dependencies for named modules must have a name.
-	// Local unnamed modules are ignored.
+	// Local unnamed modules can be ignored if the IgnoreUnnamed option is set.
 	contentModules, err = slicesext.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
 		moduleName := module.ModuleFullName()
 		if moduleName == nil {
