@@ -171,7 +171,7 @@ If you set the --%s flag and/or --%s flag yourself, then the value(s) will be us
 		&f.IgnoredUnnamed,
 		ignoreUnnamedFlagName,
 		false,
-		"Ignore unnamed modules. Unnamed modules must not be depended on by any named modules.",
+		"Ignore unnamed modules. Named modules must not have any unnamed dependencies.",
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
