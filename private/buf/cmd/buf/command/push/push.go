@@ -171,7 +171,7 @@ If you set the --%s flag and/or --%s flag yourself, then the value(s) will be us
 		&f.SkipUnnamed,
 		skipUnnamedFlagName,
 		false,
-		"Skip unnamed modules will only push named modules. Named modules must not have any unnamed dependencies.",
+		"Only push named modules to the BSR. Named modules must not have any unnamed dependencies.",
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
