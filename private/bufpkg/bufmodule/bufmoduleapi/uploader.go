@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -106,6 +107,34 @@ func (a *uploader) Upload(
 	contentModules, err := bufmodule.ModuleSetTargetLocalModulesAndTransitiveLocalDeps(moduleSet)
 	if err != nil {
 		return nil, err
+	}
+	// Only push named modules to the registry. Any dependencies for named modules must have a name.
+	// Local unnamed modules are ignored.
+	contentModules, err = slicesext.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
+		moduleName := module.ModuleFullName()
+		if moduleName == nil {
+			return false, nil
+		}
+		deps, err := module.ModuleDeps()
+		if err != nil {
+			return false, err
+		}
+		if err := slicesext.Reduce(deps, func(err error, dep bufmodule.ModuleDep) error {
+			if moduleName := dep.ModuleFullName(); moduleName == nil {
+				return multierr.Append(err, fmt.Errorf("dependency %q does not have a name", dep.OpaqueID()))
+			}
+			return err
+		}, nil); err != nil {
+			return false, fmt.Errorf("All dependencies for module %s must have a name: %w.", moduleName.String(), err)
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(contentModules) == 0 {
+		// Nothing to upload.
+		return nil, nil
 	}
 	primaryRegistry, err := getSingleRegistryForContentModules(contentModules)
 	if err != nil {
@@ -417,7 +446,7 @@ func getV1Beta1ProtoUploadRequestContent(
 		return nil, syserror.New("expected local Module in getProtoLegacyFederationUploadRequestContent")
 	}
 	if module.ModuleFullName() == nil {
-		return nil, syserror.Wrap(newRequireModuleFullNameOnUploadError(module))
+		return nil, syserror.Newf("expected module name for local module %q", module.OpaqueID())
 	}
 	if module.ModuleFullName().Registry() != primaryRegistry {
 		// This should never happen - the upload Modules should already be verified above to come from one registry.
@@ -451,7 +480,7 @@ func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 	remoteDep bufmodule.RemoteDep,
 ) (*modulev1beta1.UploadRequest_DepRef, error) {
 	if remoteDep.ModuleFullName() == nil {
-		return nil, newRequireModuleFullNameOnUploadError(remoteDep)
+		return nil, syserror.Newf("expected module name for remote module dependency %q", remoteDep.OpaqueID())
 	}
 	depCommitID := remoteDep.CommitID()
 	if depCommitID.IsNil() {
@@ -461,9 +490,4 @@ func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 		CommitId: uuidutil.ToDashless(depCommitID),
 		Registry: remoteDep.ModuleFullName().Registry(),
 	}, nil
-}
-
-func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
-	// This error will likely actually go back to users.
-	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push. All modules that are being pushed, and all of their dependencies that are part of the workspace, must have a name.", module.OpaqueID())
 }
