@@ -78,10 +78,10 @@ func UploadWithSourceControlURL(sourceControlURL string) UploadOption {
 	}
 }
 
-// UploadWithIgnoreUnnamed returns a new UploadOption that will ignore unnamed modules.
-func UploadWithIgnoreUnnamed() UploadOption {
+// UploadWithSkipUnnamed returns a new UploadOption that will skip unnamed modules.
+func UploadWithSkipUnnamed() UploadOption {
 	return func(uploadOptions *uploadOptions) {
-		uploadOptions.ignoreUnnamed = true
+		uploadOptions.skipUnnamed = true
 	}
 }
 
@@ -116,8 +116,8 @@ type UploadOptions interface {
 	// SourceControlURL returns the source control URL set by the user for the module
 	// contents uploaded. We set the same source control URL for all module contents.
 	SourceControlURL() string
-	// IgnoreUnnamed returns whether to ignore unnamed modules.
-	IgnoreUnnamed() bool
+	// SkipUnnamed returns whether to skip unnamed modules.
+	SkipUnnamed() bool
 
 	isUploadOptions()
 }
@@ -149,7 +149,7 @@ type uploadOptions struct {
 	createModuleVisibility ModuleVisibility
 	createDefaultLabel     string
 	sourceControlURL       string
-	ignoreUnnamed          bool
+	skipUnnamed            bool
 }
 
 func newUploadOptions() *uploadOptions {
@@ -180,8 +180,8 @@ func (u *uploadOptions) SourceControlURL() string {
 	return u.sourceControlURL
 }
 
-func (u *uploadOptions) IgnoreUnnamed() bool {
-	return u.ignoreUnnamed
+func (u *uploadOptions) SkipUnnamed() bool {
+	return u.skipUnnamed
 }
 
 func (u *uploadOptions) validate() error {

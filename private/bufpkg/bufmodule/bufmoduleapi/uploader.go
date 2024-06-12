@@ -113,8 +113,8 @@ func (a *uploader) Upload(
 	contentModules, err = slicesext.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
 		moduleName := module.ModuleFullName()
 		if moduleName == nil {
-			if uploadOptions.IgnoreUnnamed() {
-				a.logger.Warn("Ignoring unnamed module", zap.String("module", module.OpaqueID()))
+			if uploadOptions.SkipUnnamed() {
+				a.logger.Warn("Skipping unnamed module", zap.String("module", module.OpaqueID()))
 				return false, nil
 			}
 			return false, fmt.Errorf("A name must be specified in buf.yaml to push module %q.", module.OpaqueID())
