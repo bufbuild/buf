@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -123,13 +122,13 @@ func (a *uploader) Upload(
 		if err != nil {
 			return false, err
 		}
-		if err := slicesext.Reduce(deps, func(err error, dep bufmodule.ModuleDep) error {
+		if allDepModuleOpaqueIDs := slicesext.Reduce(deps, func(allDepModuleOpaqueIDs []string, dep bufmodule.ModuleDep) []string {
 			if moduleName := dep.ModuleFullName(); moduleName == nil {
-				return multierr.Append(err, fmt.Errorf("dependency %q does not have a name", dep.OpaqueID()))
+				return append(allDepModuleOpaqueIDs, dep.OpaqueID())
 			}
-			return err
-		}, nil); err != nil {
-			return false, fmt.Errorf("All dependencies for module %s must have a name: %w.", moduleName.String(), err)
+			return allDepModuleOpaqueIDs
+		}, nil); len(allDepModuleOpaqueIDs) > 0 {
+			return false, fmt.Errorf("All dependencies for module %q must be named but modules %s had no name.", moduleName.String(), strings.Join(allDepModuleOpaqueIDs, ", "))
 		}
 		return true, nil
 	})
