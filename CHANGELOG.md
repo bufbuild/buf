@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.33.0] - 2024-06-13
 
 - Allow user to override `--source-control-url` and `--create-default-label` when using
   `--git-metadata` with `buf push`.
@@ -1152,7 +1152,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.2...HEAD
+[v1.33.0]: https://github.com/bufbuild/buf/compare/v1.32.2...v1.33.0
 [v1.32.2]: https://github.com/bufbuild/buf/compare/v1.32.1...v1.32.2
 [v1.32.1]: https://github.com/bufbuild/buf/compare/v1.32.0...v1.32.1
 [v1.32.0]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...v1.32.0
