@@ -60,6 +60,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsmodules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
@@ -137,6 +138,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					configmigrate.NewCommand("migrate", builder),
 					configlslintrules.NewCommand("ls-lint-rules", builder),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
+					configlsmodules.NewCommand("ls-modules", builder),
 				},
 			},
 			{

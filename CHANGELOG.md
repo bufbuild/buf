@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf config ls-modules` command to list configured modules.
 
 ## [v1.33.0] - 2024-06-13
 
