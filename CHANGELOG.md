@@ -27,6 +27,7 @@
   advertise incomplete support for editions, which triggers `buf` to report an error.
   With this fix, these plugins can be used again as long as none of the input files use
   editions syntax.
+- Add `buf push --exclude-unnamed` flag to exclude unnamed modules when pushing to the BSR.
 
 ## [v1.32.2] - 2024-05-28
 

@@ -118,11 +118,14 @@ func getRegistries[T hasModuleFullName](s []T) ([]string, error) {
 //
 // Returns error if there is more than one module.
 func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (string, error) {
+	if len(contentModules) == 0 {
+		return "", syserror.New("requires at least one module to resolve registry")
+	}
 	var registry string
 	for _, module := range contentModules {
 		moduleFullName := module.ModuleFullName()
 		if moduleFullName == nil {
-			return "", newRequireModuleFullNameOnUploadError(module)
+			return "", syserror.Newf("expected module name for %q", module.OpaqueID())
 		}
 		moduleRegistry := moduleFullName.Registry()
 		if registry != "" && moduleRegistry != registry {

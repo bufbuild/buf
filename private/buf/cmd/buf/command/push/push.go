@@ -47,6 +47,7 @@ const (
 	createDefaultLabelFlagName = "create-default-label"
 	sourceControlURLFlagName   = "source-control-url"
 	gitMetadataFlagName        = "git-metadata"
+	excludeUnnamedFlagName     = "exclude-unnamed"
 
 	// All deprecated.
 	tagFlagName      = "tag"
@@ -92,6 +93,7 @@ type flags struct {
 	CreateVisibility   string
 	CreateDefaultLabel string
 	SourceControlURL   string
+	ExcludeUnnamed     bool
 	GitMetadata        bool
 	// special
 	InputHashtag string
@@ -165,6 +167,12 @@ If you set the --%s flag and/or --%s flag yourself, then the value(s) will be us
 			createDefaultLabelFlagName,
 		),
 	)
+	flagSet.BoolVar(
+		&f.ExcludeUnnamed,
+		excludeUnnamedFlagName,
+		false,
+		"Only push named modules to the BSR. Named modules must not have any unnamed dependencies.",
+	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
 	_ = flagSet.MarkHidden(tagFlagName)
@@ -228,12 +236,17 @@ func run(
 	if flags.SourceControlURL != "" {
 		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
 	}
+	if flags.ExcludeUnnamed {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithExcludeUnnamed())
+	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
 	if err != nil {
 		return err
 	}
-
+	if len(commits) == 0 {
+		return nil
+	}
 	if workspace.IsV2() {
 		_, err := container.Stdout().Write(
 			[]byte(
@@ -251,15 +264,13 @@ func run(
 		return err
 	}
 	// v1 workspace, fallback to old behavior for backwards compatibility.
-	switch len(commits) {
-	case 0:
-		return nil
-	case 1:
-		_, err := container.Stdout().Write([]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"))
-		return err
-	default:
+	if len(commits) > 1 {
 		return syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
 	}
+	_, err = container.Stdout().Write(
+		[]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"),
+	)
+	return err
 }
 
 func getBuildableWorkspace(
