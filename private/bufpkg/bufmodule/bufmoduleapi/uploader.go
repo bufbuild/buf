@@ -108,12 +108,12 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 	// Only push named modules to the registry. Any dependencies for named modules must have a name.
-	// Local unnamed modules can be skipped if the UploadWithSkipUnnamed option is set.
+	// Local unnamed modules can be excluded if the UploadWithExcludeUnnamed option is set.
 	contentModules, err = slicesext.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
 		moduleName := module.ModuleFullName()
 		if moduleName == nil {
-			if uploadOptions.SkipUnnamed() {
-				a.logger.Warn("Skipping unnamed module", zap.String("module", module.OpaqueID()))
+			if uploadOptions.ExcludeUnnamed() {
+				a.logger.Warn("Excluding unnamed module", zap.String("module", module.OpaqueID()))
 				return false, nil
 			}
 			return false, fmt.Errorf("A name must be specified in buf.yaml to push module %q.", module.OpaqueID())

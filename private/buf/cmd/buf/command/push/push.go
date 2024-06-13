@@ -47,7 +47,7 @@ const (
 	createDefaultLabelFlagName = "create-default-label"
 	sourceControlURLFlagName   = "source-control-url"
 	gitMetadataFlagName        = "git-metadata"
-	skipUnnamedFlagName        = "skip-unnamed"
+	excludeUnnamedFlagName     = "exclude-unnamed"
 
 	// All deprecated.
 	tagFlagName      = "tag"
@@ -93,7 +93,7 @@ type flags struct {
 	CreateVisibility   string
 	CreateDefaultLabel string
 	SourceControlURL   string
-	SkipUnnamed        bool
+	ExcludeUnnamed     bool
 	GitMetadata        bool
 	// special
 	InputHashtag string
@@ -168,8 +168,8 @@ If you set the --%s flag and/or --%s flag yourself, then the value(s) will be us
 		),
 	)
 	flagSet.BoolVar(
-		&f.SkipUnnamed,
-		skipUnnamedFlagName,
+		&f.ExcludeUnnamed,
+		excludeUnnamedFlagName,
 		false,
 		"Only push named modules to the BSR. Named modules must not have any unnamed dependencies.",
 	)
@@ -236,8 +236,8 @@ func run(
 	if flags.SourceControlURL != "" {
 		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
 	}
-	if flags.SkipUnnamed {
-		uploadOptions = append(uploadOptions, bufmodule.UploadWithSkipUnnamed())
+	if flags.ExcludeUnnamed {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithExcludeUnnamed())
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
