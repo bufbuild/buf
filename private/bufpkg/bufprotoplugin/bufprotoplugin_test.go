@@ -123,6 +123,36 @@ at varied indentation levels
 
 		assert.Equal(t, expectContent, postInsertionContent)
 	})
+	t.Run("invalid_empty", func(t *testing.T) {
+		t.Parallel()
+		insertionPointName := "missing"
+		insertionPointContent := ""
+		insertionPointConsumer := &pluginpb.CodeGeneratorResponse_File{
+			Name:           &targetFileName,
+			InsertionPoint: &insertionPointName,
+			Content:        &insertionPointContent,
+		}
+		_, err := writeInsertionPoint(
+			context.Background(),
+			insertionPointConsumer,
+			strings.NewReader(targetFileContent),
+		)
+		require.ErrorContains(t, err, "could not find insertion point")
+	})
+	t.Run("invalid_not_found", func(t *testing.T) {
+		insertionPointName := "not_found"
+		insertionPointConsumer := &pluginpb.CodeGeneratorResponse_File{
+			Name:           &targetFileName,
+			InsertionPoint: &insertionPointName,
+			Content:        &insertionPointContent,
+		}
+		_, err := writeInsertionPoint(
+			context.Background(),
+			insertionPointConsumer,
+			strings.NewReader(targetFileContent),
+		)
+		require.ErrorContains(t, err, "could not find insertion point")
+	})
 }
 
 func BenchmarkWriteInsertionPoint(b *testing.B) {
