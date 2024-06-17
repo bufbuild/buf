@@ -140,6 +140,7 @@ at varied indentation levels
 		require.ErrorContains(t, err, "could not find insertion point")
 	})
 	t.Run("invalid_not_found", func(t *testing.T) {
+		t.Parallel()
 		insertionPointName := "not_found"
 		insertionPointConsumer := &pluginpb.CodeGeneratorResponse_File{
 			Name:           &targetFileName,
