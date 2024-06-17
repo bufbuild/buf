@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
 	"unicode"
@@ -108,6 +109,7 @@ func writeInsertionPoint(
 	// doing 2 full scans of the file (if it is a single line), or implementing
 	// bufio.Scanner.Scan() inline
 	newline := []byte{'\n'}
+	var found bool
 	for targetScanner.Scan() {
 		targetLine := targetScanner.Bytes()
 		if !bytes.Contains(targetLine, match) {
@@ -137,15 +139,19 @@ func writeInsertionPoint(
 		// allocate
 		_, _ = postInsertionContent.Write(targetLine)
 		_, _ = postInsertionContent.Write(newline)
+		found = true
 	}
 
 	if err := targetScanner.Err(); err != nil {
 		return nil, err
 	}
 
+	if !found {
+		return nil, fmt.Errorf("could not find insertion point %q in %q", insertionPointFile.GetInsertionPoint(), insertionPointFile.GetName())
+	}
 	// trim the trailing newline
 	postInsertionBytes := postInsertionContent.Bytes()
-	return postInsertionBytes[:len(postInsertionBytes)-1], nil
+	return bytes.TrimSuffix(postInsertionBytes, newline), nil
 }
 
 // leadingWhitespace iterates through the given string,
