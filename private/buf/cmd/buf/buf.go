@@ -317,14 +317,29 @@ func wrapError(err error) error {
 		connectCode := connectErr.Code()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
-			if authErr, ok := bufconnect.AsAuthError(err); ok && authErr.TokenEnvKey() != "" {
-				return fmt.Errorf("Failure: the %[1]s environment variable is set, but is not valid. "+
-					"Set %[1]s to a valid Buf API key, or unset it. For details, "+
-					"visit https://docs.buf.build/bsr/authentication", authErr.TokenEnvKey())
+			if authErr, ok := bufconnect.AsAuthError(err); ok {
+				if authErr.HasToken() && authErr.TokenEnvKey() != "" {
+					return fmt.Errorf("Failure: the %[1]s environment variable is set, but is not valid. "+
+						"Set %[1]s to a valid Buf API key, or unset it. For details, "+
+						"visit https://buf.build/docs/bsr/authentication",
+						authErr.TokenEnvKey(),
+					)
+				}
+				if authErr.HasToken() {
+					return fmt.Errorf("Failure: invalid token for %s found in netrc. "+
+						"Set it to a valid Buf API key. For details, visit https://buf.build/docs/bsr/authentication",
+						authErr.Remote(),
+					)
+				}
+				return fmt.Errorf("Failure: you are not authenticated for %s. Create a new entry in your netrc, "+
+					"using a Buf API Key as the password. If you already have an entry in your netrc, check "+
+					"to see that your token is not expired. For details, visit https://buf.build/docs/bsr/authentication",
+					authErr.Remote(),
+				)
 			}
 			return errors.New("Failure: you are not authenticated. Create a new entry in your netrc, " +
 				"using a Buf API Key as the password. If you already have an entry in your netrc, check " +
-				"to see that your token is not expired. For details, visit https://docs.buf.build/bsr/authentication")
+				"to see that your token is not expired. For details, visit https://buf.build/docs/bsr/authentication")
 		case connectCode == connect.CodeUnavailable:
 			msg := `Failure: the server hosted at that remote is unavailable.`
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so,
