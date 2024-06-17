@@ -116,7 +116,6 @@ func writeInsertionPoint(
 			// These writes cannot fail, they will panic if they cannot allocate.
 			_, _ = postInsertionContent.Write(newline)
 		}
-
 		targetLine := targetScanner.Bytes()
 		if !bytes.Contains(targetLine, match) {
 			// These writes cannot fail, they will panic if they cannot allocate.

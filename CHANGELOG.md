@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where `buf generate` would succeed on missing insertion points and 
+  panic on empty insertion point files.
 
 ## [v1.33.0] - 2024-06-13
 
