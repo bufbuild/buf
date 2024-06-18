@@ -2,7 +2,6 @@ version: v2
 modules:
   - path: proto
     name: buf.build/bufbuild/buf
-  - path: make
 lint:
   use:
     - DEFAULT
