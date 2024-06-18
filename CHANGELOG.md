@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update `buf generate` to allow the use of Editions syntax when doing local code
+  generation by proxying to a `protoc` binary (for languages where code gen is
+  implemented inside of `protoc` instead of in a plugin: Java, C++, Python, etc).
 
 ## [v1.33.0] - 2024-06-13
 
