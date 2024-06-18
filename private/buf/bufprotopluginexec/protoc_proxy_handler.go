@@ -167,8 +167,8 @@ func (h *protocProxyHandler) Handle(
 	if getFeatureProto3OptionalSupported(protocVersion) {
 		responseWriter.SetFeatureProto3Optional()
 	}
-	if supported, min, max := getFeatureEditionsSupported(protocVersion); supported {
-		responseWriter.SetFeatureSupportsEditions(min, max)
+	if supported, maxEdition := getFeatureEditionsSupported(protocVersion); supported {
+		responseWriter.SetFeatureSupportsEditions(descriptorpb.Edition_EDITION_PROTO2, maxEdition)
 	}
 	// no need for symlinks here, and don't want to support
 	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())

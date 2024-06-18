@@ -58,29 +58,27 @@ func TestGetFeatureProto3OptionalSupported(t *testing.T) {
 
 func TestGetFeatureEditionsSupported(t *testing.T) {
 	t.Parallel()
-	assertEditionsNotSupported(t, newVersion(2, 12, 4, ""))
-	assertEditionsNotSupported(t, newVersion(3, 11, 4, ""))
-	assertEditionsNotSupported(t, newVersion(4, 21, 1, ""))
-	assertEditionsNotSupported(t, newVersion(4, 21, 1, "buf"))
-	assertEditionsNotSupported(t, newVersion(5, 25, 0, ""))
-	assertEditionsNotSupported(t, newVersion(5, 26, 3, ""))
+	assertEditionsNotSupported(t, newVersion(3, 20, 0, ""))
+	assertEditionsNotSupported(t, newVersion(3, 20, 0, "buf"))
+	assertEditionsNotSupported(t, newVersion(21, 0, 0, ""))
+	assertEditionsNotSupported(t, newVersion(3, 21, 0, "buf"))
+	assertEditionsNotSupported(t, newVersion(26, 3, 0, ""))
 	assertEditionsNotSupported(t, newVersion(5, 26, 3, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(5, 27, 0, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
+
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
+		newVersion(27, 0, 0, ""))
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
 		newVersion(5, 27, 0, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(5, 27, 1, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(5, 27, 1, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(5, 30, 0, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(5, 30, 0, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(8, 9, 0, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023,
-		newVersion(8, 9, 0, "buf"))
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
+		newVersion(27, 0, 0, "buf"))
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
+		newVersion(27, 1, 0, ""))
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
+		newVersion(27, 1, 0, "buf"))
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
+		newVersion(30, 0, 0, ""))
+	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
+		newVersion(30, 0, 0, "buf"))
 }
 
 func TestGetKotlinSupportedAsBuiltin(t *testing.T) {
@@ -155,13 +153,12 @@ func testParseVersionForCLIVersionError(
 }
 
 func assertEditionsNotSupported(t *testing.T, version *pluginpb.Version) {
-	supported, _, _ := getFeatureEditionsSupported(version)
+	supported, _ := getFeatureEditionsSupported(version)
 	assert.False(t, supported)
 }
 
-func assertEditionsSupported(t *testing.T, min, max descriptorpb.Edition, version *pluginpb.Version) {
-	supported, actualMin, actualMax := getFeatureEditionsSupported(version)
+func assertEditionsSupported(t *testing.T, max descriptorpb.Edition, version *pluginpb.Version) {
+	supported, actualMax := getFeatureEditionsSupported(version)
 	assert.True(t, supported)
-	assert.Equal(t, actualMin, min)
 	assert.Equal(t, actualMax, max)
 }
