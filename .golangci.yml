@@ -276,3 +276,9 @@ issues:
       # This greatly simplifies creation of descriptors, and it's safe enough since
       # it's just test code.
       path: private/bufpkg/bufimage/source_retention_options_test\.go
+    - linters:
+        - paralleltest
+      path: private/buf/cmd/buf/buf_test.go
+      # The LsModules tests call chdir and cannot be parallelized.
+      text: "LsModules"
+      
