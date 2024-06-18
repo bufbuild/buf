@@ -1466,6 +1466,29 @@ func TestLsModulesBothConfig(t *testing.T) {
 	)
 }
 
+func TestLsModulesInvalidVersion(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspaceinvalid")))
+	testRunStderr(
+		t,
+		nil,
+		1,
+		`Failure: buf.work.yaml pointed to directory "proto" which has a v2 buf.yaml file`,
+		"config",
+		"ls-modules",
+	)
+}
+
 func TestLsModulesConfigFlag(t *testing.T) {
 	t.Parallel()
 
