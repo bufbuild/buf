@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	// tokenEnvKey is the environment variable key for the auth token
-	tokenEnvKey = "BUF_TOKEN"
+	// TokenEnvKey is the environment variable key for the auth token
+	TokenEnvKey = "BUF_TOKEN"
 )
 
 // NewAugmentedConnectErrorInterceptor returns a new Connect Interceptor that wraps
@@ -125,7 +125,7 @@ func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(s
 				if err != nil {
 					var envKey string
 					if usingTokenEnvKey {
-						envKey = tokenEnvKey
+						envKey = TokenEnvKey
 					}
 					err = &AuthError{
 						cause:       err,
