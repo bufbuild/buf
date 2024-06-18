@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -118,6 +119,23 @@ func getFeatureProto3OptionalSupported(version *pluginpb.Version) bool {
 	}
 	// version.GetMajor() > 3
 	return true
+}
+
+// Should I notify that I am OK with editions (and, if so, which ones)?
+func getFeatureEditionsSupported(version *pluginpb.Version) (supported bool, min, max descriptorpb.Edition) {
+	if version.GetMajor() > 5 || (version.GetMajor() == 5 && version.GetMinor() >= 27) {
+		// TODO: Update this to include later editions as they are supported in later versions of protoc.
+		return true, descriptorpb.Edition_EDITION_2023, descriptorpb.Edition_EDITION_2023
+	}
+	return false, 0, 0
+	// TODO: We will likely want to add a getSetExperimentalEditionsFlag() in the future.
+	//       But we don't need it now because the versions in which it was available
+	//       (v24.0 - v26.x) are not really suitable for using it since the implementation
+	//       of Editions actually underwent considerable changes between v26 and the final
+	//       product in v27. So the earlier experimental support is not desirable to enable.
+	//       Most of the changes were in Editions itself, not in Edition 2023. So future
+	//       editions may go smoother, so it may be useful to enable experimental editions
+	//       for code gen in future versions of protoc.
 }
 
 // Is kotlin supported as a builtin plugin?
