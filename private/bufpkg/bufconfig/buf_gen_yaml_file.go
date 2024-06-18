@@ -316,9 +316,9 @@ type externalGeneratePluginConfigV1 struct {
 	// Opt can be one string or multiple strings.
 	Opt interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	// Path can be one string or multiple strings.
-	Path       interface{} `json:"path,omitempty" yaml:"path,omitempty"`
-	ProtocPath string      `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
-	Strategy   string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Path       any    `json:"path,omitempty" yaml:"path,omitempty"`
+	ProtocPath any    `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	Strategy   string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
 // externalGenerateManagedConfigV1 represents the managed mode config in a v1 buf.gen.yaml file.
@@ -496,11 +496,12 @@ type externalGeneratePluginConfigV2 struct {
 	// Local is the local path (either relative or absolute) to a binary or other runnable program which
 	// implements the protoc plugin interface. This can be one string (the program) or multiple (remaining
 	// strings are arguments to the program).
-	Local interface{} `json:"local,omitempty" yaml:"local,omitempty"`
+	Local any `json:"local,omitempty" yaml:"local,omitempty"`
 	// ProtocBuiltin is the protoc built-in plugin name, in the form of 'java' instead of 'protoc-gen-java'.
 	ProtocBuiltin *string `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
-	// ProtocPath is only valid with ProtocBuiltin
-	ProtocPath *string `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	// ProtocPath is only valid with ProtocBuiltin. This can be one string (the path to protoc) or multiple
+	// (remaining strings are extra args to pass to protoc).
+	ProtocPath any `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
 	// Out is required.
 	Out string `json:"out,omitempty" yaml:"out,omitempty"`
 	// Opt can be one string or multiple strings.

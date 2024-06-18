@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -54,31 +53,6 @@ func TestGetFeatureProto3OptionalSupported(t *testing.T) {
 	assert.True(t, getFeatureProto3OptionalSupported(newVersion(3, 14, 1, "")))
 	assert.True(t, getFeatureProto3OptionalSupported(newVersion(3, 15, 0, "")))
 	assert.True(t, getFeatureProto3OptionalSupported(newVersion(21, 0, 0, "")))
-}
-
-func TestGetFeatureEditionsSupported(t *testing.T) {
-	t.Parallel()
-	assertEditionsNotSupported(t, newVersion(3, 20, 0, ""))
-	assertEditionsNotSupported(t, newVersion(3, 20, 0, "buf"))
-	assertEditionsNotSupported(t, newVersion(21, 0, 0, ""))
-	assertEditionsNotSupported(t, newVersion(3, 21, 0, "buf"))
-	assertEditionsNotSupported(t, newVersion(26, 3, 0, ""))
-	assertEditionsNotSupported(t, newVersion(5, 26, 3, "buf"))
-
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(27, 0, 0, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(5, 27, 0, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(27, 0, 0, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(27, 1, 0, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(27, 1, 0, "buf"))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(30, 0, 0, ""))
-	assertEditionsSupported(t, descriptorpb.Edition_EDITION_2023,
-		newVersion(30, 0, 0, "buf"))
 }
 
 func TestGetKotlinSupportedAsBuiltin(t *testing.T) {
@@ -150,15 +124,4 @@ func testParseVersionForCLIVersionError(
 ) {
 	_, err := parseVersionForCLIVersion(value)
 	assert.Error(t, err)
-}
-
-func assertEditionsNotSupported(t *testing.T, version *pluginpb.Version) {
-	supported, _ := getFeatureEditionsSupported(version)
-	assert.False(t, supported)
-}
-
-func assertEditionsSupported(t *testing.T, max descriptorpb.Edition, version *pluginpb.Version) {
-	supported, actualMax := getFeatureEditionsSupported(version)
-	assert.True(t, supported)
-	assert.Equal(t, actualMax, max)
 }

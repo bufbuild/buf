@@ -43,6 +43,7 @@ type protocProxyHandler struct {
 	runner            command.Runner
 	tracer            tracing.Tracer
 	protocPath        string
+	protocExtraArgs   []string
 	pluginName        string
 }
 
@@ -51,6 +52,7 @@ func newProtocProxyHandler(
 	runner command.Runner,
 	tracer tracing.Tracer,
 	protocPath string,
+	protocExtraArgs []string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
@@ -58,6 +60,7 @@ func newProtocProxyHandler(
 		runner:            runner,
 		tracer:            tracer,
 		protocPath:        protocPath,
+		protocExtraArgs:   protocExtraArgs,
 		pluginName:        pluginName,
 	}
 }
@@ -128,10 +131,10 @@ func (h *protocProxyHandler) Handle(
 	defer func() {
 		retErr = multierr.Append(retErr, tmpDir.Close())
 	}()
-	args := []string{
+	args := append(h.protocExtraArgs,
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
-	}
+	)
 	if getSetExperimentalAllowProto3OptionalFlag(protocVersion) {
 		args = append(
 			args,
@@ -167,9 +170,12 @@ func (h *protocProxyHandler) Handle(
 	if getFeatureProto3OptionalSupported(protocVersion) {
 		responseWriter.SetFeatureProto3Optional()
 	}
-	if supported, maxEdition := getFeatureEditionsSupported(protocVersion); supported {
-		responseWriter.SetFeatureSupportsEditions(descriptorpb.Edition_EDITION_PROTO2, maxEdition)
-	}
+	// We always claim support for all Editions in the response because the invocation to
+	// "protoc" will fail if it can't handle the input editions. That way, we don't have to
+	// track which protoc versions support which editions and synthesize this information.
+	// And that also lets us supports users passing "--experimental_editions" to protoc.
+	responseWriter.SetFeatureSupportsEditions(descriptorpb.Edition_EDITION_PROTO2, descriptorpb.Edition_EDITION_MAX)
+
 	// no need for symlinks here, and don't want to support
 	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
 	if err != nil {
@@ -198,7 +204,7 @@ func (h *protocProxyHandler) getProtocVersion(
 	if err := h.runner.Run(
 		ctx,
 		h.protocPath,
-		command.RunWithArgs("--version"),
+		command.RunWithArgs(append(h.protocExtraArgs, "--version")...),
 		command.RunWithEnviron(pluginEnv.Environ),
 		command.RunWithStdout(stdoutBuffer),
 	); err != nil {

@@ -308,7 +308,7 @@ func (g *generator) execLocalPlugin(
 		pluginConfig.Name(),
 		requests,
 		bufprotopluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
-		bufprotopluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()),
+		bufprotopluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()...),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
