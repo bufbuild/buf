@@ -140,7 +140,15 @@ func getExternalModules(
 		// This handles both buf.yaml file and no file courtesy of the above logic.
 		return getExternalModulesForBufYAMLFile(ctx, bufYAMLFile)
 	}
-	// We did have a buf.work.yaml file, handle it.
+	// We did have a buf.work.yaml file, but before handling it, check there is not a buf.yaml.
+	_, err = bufcli.GetBufYAMLFileForDirPath(ctx, ".")
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	if err == nil {
+		return nil, errors.New("found both buf.work.yaml and buf.yaml")
+	}
+	// Handle the buf.work.yaml.
 	return getExternalModulesForBufWorkYAMLFile(ctx, bufWorkYAMLFile)
 }
 
