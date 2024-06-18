@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -131,10 +132,10 @@ func (h *protocProxyHandler) Handle(
 	defer func() {
 		retErr = multierr.Append(retErr, tmpDir.Close())
 	}()
-	args := append(h.protocExtraArgs,
+	args := slicesext.Concat(h.protocExtraArgs, []string{
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
-	)
+	})
 	if getSetExperimentalAllowProto3OptionalFlag(protocVersion) {
 		args = append(
 			args,
@@ -173,7 +174,7 @@ func (h *protocProxyHandler) Handle(
 	// We always claim support for all Editions in the response because the invocation to
 	// "protoc" will fail if it can't handle the input editions. That way, we don't have to
 	// track which protoc versions support which editions and synthesize this information.
-	// And that also lets us supports users passing "--experimental_editions" to protoc.
+	// And that also lets us support users passing "--experimental_editions" to protoc.
 	responseWriter.SetFeatureSupportsEditions(descriptorpb.Edition_EDITION_PROTO2, descriptorpb.Edition_EDITION_MAX)
 
 	// no need for symlinks here, and don't want to support
@@ -204,7 +205,7 @@ func (h *protocProxyHandler) getProtocVersion(
 	if err := h.runner.Run(
 		ctx,
 		h.protocPath,
-		command.RunWithArgs(append(h.protocExtraArgs, "--version")...),
+		command.RunWithArgs(slicesext.Concat(h.protocExtraArgs, []string{"--version"})...),
 		command.RunWithEnviron(pluginEnv.Environ),
 		command.RunWithStdout(stdoutBuffer),
 	); err != nil {
