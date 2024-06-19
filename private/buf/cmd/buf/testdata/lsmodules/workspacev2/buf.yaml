@@ -1,0 +1,8 @@
+version: v2
+modules:
+  - path: d_no_name
+  - path: c
+    name: buf.build/bar/baz
+  - path: a
+    name: buf.build/foo/bar
+  - path: b_no_name
