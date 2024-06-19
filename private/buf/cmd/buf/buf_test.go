@@ -1446,21 +1446,21 @@ func TestLsModulesBothConfig(t *testing.T) {
 	}()
 
 	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "extraconfigv1")))
-	testRunStderr(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"Failure: found both buf.work.yaml and buf.yaml",
+		[]string{"buf.yaml", "buf.work.yaml"},
 		"config",
 		"ls-modules",
 	)
 
 	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "extraconfigv2")))
-	testRunStderr(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"Failure: found both buf.work.yaml and buf.yaml",
+		[]string{"buf.yaml", "buf.work.yaml"},
 		"config",
 		"ls-modules",
 	)
