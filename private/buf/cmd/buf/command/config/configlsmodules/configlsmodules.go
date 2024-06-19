@@ -146,7 +146,7 @@ func getExternalModules(
 		return nil, err
 	}
 	if err == nil {
-		return nil, errors.New("found both buf.work.yaml and buf.yaml")
+		return nil, errors.New("Both buf.work.yaml and buf.yaml found. It is not valid to have a buf.work.yaml and buf.yaml in the same directory, buf.work.yaml specifies a workspace of modules, while buf.yaml either specifies a single module or a workspace of modules itself.")
 	}
 	// Handle the buf.work.yaml.
 	return getExternalModulesForBufWorkYAMLFile(ctx, bufWorkYAMLFile)
