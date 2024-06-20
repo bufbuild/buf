@@ -36,9 +36,6 @@ const (
 	// an unreasonable amount of memory to reserve each time we process an insertion
 	// point and will save a significant number of allocations.
 	averageGeneratedFileSize = 15 * 1024
-	// We don't use insertion points internally, but assume they are smaller than
-	// entire generated files.
-	averageInsertionPointSize = 1024
 )
 
 // Generator executes the Handler using protoc's plugin execution logic.
