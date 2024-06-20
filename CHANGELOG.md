@@ -7,6 +7,9 @@
 - Update `buf generate` to allow the use of Editions syntax when doing local code
   generation by proxying to a `protoc` binary (for languages where code gen is
   implemented inside of `protoc` instead of in a plugin: Java, C++, Python, etc).
+- Allow use of an array of strings for the `protoc_path` property of for `buf.gen.yaml`,
+  where the first array element is the actual path and other array elements are extra
+  arguments that are passed to `protoc` each time it is invoked.
 
 ## [v1.33.0] - 2024-06-13
 
