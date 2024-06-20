@@ -98,7 +98,7 @@ func GenerateWithPluginPath(pluginPath ...string) GenerateOption {
 
 // GenerateWithProtocPath returns a new GenerateOption that uses the given protoc
 // path to the plugin.
-func GenerateWithProtocPath(protocPath string) GenerateOption {
+func GenerateWithProtocPath(protocPath ...string) GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.protocPath = protocPath
 	}
@@ -139,14 +139,15 @@ func NewHandler(
 	// Initialize builtin protoc plugin handler. We always look for protoc-gen-X first,
 	// but if not, check the builtins.
 	if _, ok := bufconfig.ProtocProxyPluginNames[pluginName]; ok {
-		if handlerOptions.protocPath == "" {
-			handlerOptions.protocPath = "protoc"
+		if len(handlerOptions.protocPath) == 0 {
+			handlerOptions.protocPath = []string{"protoc"}
 		}
-		if protocPath, err := unsafeLookPath(handlerOptions.protocPath); err != nil {
+		protocPath, protocExtraArgs := handlerOptions.protocPath[0], handlerOptions.protocPath[1:]
+		protocPath, err := unsafeLookPath(protocPath)
+		if err != nil {
 			return nil, err
-		} else {
-			return newProtocProxyHandler(storageosProvider, runner, tracer, protocPath, pluginName), nil
 		}
+		return newProtocProxyHandler(storageosProvider, runner, tracer, protocPath, protocExtraArgs, pluginName), nil
 	}
 	return nil, fmt.Errorf(
 		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
@@ -162,7 +163,7 @@ type HandlerOption func(*handlerOptions)
 //
 // The default is to do exec.LookPath on "protoc".
 // protocPath is expected to be unnormalized.
-func HandlerWithProtocPath(protocPath string) HandlerOption {
+func HandlerWithProtocPath(protocPath ...string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.protocPath = protocPath
 	}
@@ -190,8 +191,8 @@ func NewBinaryHandler(runner command.Runner, tracer tracing.Tracer, pluginPath s
 }
 
 type handlerOptions struct {
-	protocPath string
 	pluginPath []string
+	protocPath []string
 }
 
 func newHandlerOptions() *handlerOptions {
