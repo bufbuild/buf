@@ -113,6 +113,14 @@ func getExternalModules(
 	ctx context.Context,
 	configOverride string,
 ) ([]*externalModule, error) {
+	// If an override is specified, read buf.yaml from it.
+	if configOverride != "" {
+		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(configOverride)
+		if err != nil {
+			return nil, err
+		}
+		return getExternalModulesForBufYAMLFile(ctx, bufYAMLFile)
+	}
 	// First, look for a buf.work.yaml file.
 	bufWorkYAMLFile, err := bufcli.GetBufWorkYAMLFileForDirPath(ctx, ".")
 	if err != nil {
@@ -120,7 +128,7 @@ func getExternalModules(
 			return nil, err
 		}
 		// We do not have a buf.work.yaml file, attempt to read a buf.yaml file.
-		bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(ctx, ".", configOverride)
+		bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPath(ctx, ".")
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err

@@ -1540,6 +1540,37 @@ func TestLsModulesConfigFlag(t *testing.T) {
 	)
 }
 
+func TestLsModulesConfigPrecedence(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		`
+a
+b_no_name
+c
+d_no_name
+`,
+		"config",
+		"ls-modules",
+		"--config",
+		filepath.Join(pwd, "testdata", "lsmodules", "workspacev2", "buf.yaml"),
+	)
+}
+
 func TestLsBreakingRulesDeprecated(t *testing.T) {
 	t.Parallel()
 
