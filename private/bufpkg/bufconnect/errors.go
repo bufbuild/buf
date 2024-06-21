@@ -18,8 +18,9 @@ import "errors"
 
 // AuthError wraps the error returned in the auth provider to add additional context.
 type AuthError struct {
-	cause error
-
+	cause       error
+	remote      string
+	hasToken    bool
 	tokenEnvKey string
 }
 
@@ -34,6 +35,16 @@ func (e *AuthError) Error() string {
 		return "unknown error"
 	}
 	return e.cause.Error()
+}
+
+// Remote returns the remote the request was sent to.
+func (e *AuthError) Remote() string {
+	return e.remote
+}
+
+// HasToken returns whether a token was included in the request.
+func (e *AuthError) HasToken() bool {
+	return e.hasToken
 }
 
 // TokenEnvKey returns the environment variable used, if any, for authentication.
