@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `buf config ls-modules` command to list configured modules.
 - Fix issue where `buf generate` would succeed on missing insertion points and 
   panic on empty insertion point files.
 - Update `buf generate` to allow the use of Editions syntax when doing local code
