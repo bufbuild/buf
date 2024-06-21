@@ -443,7 +443,7 @@ func getGitMetadataUploadOptions(
 	if err := validateInputIsValidDirAndGitCheckout(ctx, runner, container, input); err != nil {
 		return nil, err
 	}
-	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, input)
+	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, container, input)
 	if err != nil {
 		return nil, err
 	}
@@ -457,7 +457,7 @@ func getGitMetadataUploadOptions(
 		}
 		return nil, err
 	}
-	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, input)
+	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, container, input)
 	if err != nil {
 		return nil, err
 	}

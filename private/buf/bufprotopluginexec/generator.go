@@ -60,7 +60,7 @@ func (g *generator) Generate(
 	}
 	handlerOptions := []HandlerOption{
 		HandlerWithPluginPath(generateOptions.pluginPath...),
-		HandlerWithProtocPath(generateOptions.protocPath),
+		HandlerWithProtocPath(generateOptions.protocPath...),
 	}
 	handler, err := NewHandler(
 		g.storageosProvider,
@@ -84,7 +84,7 @@ func (g *generator) Generate(
 
 type generateOptions struct {
 	pluginPath []string
-	protocPath string
+	protocPath []string
 }
 
 func newGenerateOptions() *generateOptions {

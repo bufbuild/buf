@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	// tokenEnvKey is the environment variable key for the auth token
-	tokenEnvKey = "BUF_TOKEN"
+	// TokenEnvKey is the environment variable key for the auth token
+	TokenEnvKey = "BUF_TOKEN"
 )
 
 // NewAugmentedConnectErrorInterceptor returns a new Connect Interceptor that wraps
@@ -112,16 +112,27 @@ func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(s
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 				usingTokenEnvKey := false
+				hasToken := false
 				for _, tf := range tokenProviders {
 					if token := tf.RemoteToken(address); token != "" {
 						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 						usingTokenEnvKey = tf.IsFromEnvVar()
+						hasToken = true
 						break
 					}
 				}
 				response, err := next(ctx, req)
-				if err != nil && usingTokenEnvKey {
-					err = &AuthError{cause: err, tokenEnvKey: tokenEnvKey}
+				if err != nil {
+					var envKey string
+					if usingTokenEnvKey {
+						envKey = TokenEnvKey
+					}
+					err = &AuthError{
+						cause:       err,
+						remote:      address,
+						hasToken:    hasToken,
+						tokenEnvKey: envKey,
+					}
 				}
 				return response, err
 			})

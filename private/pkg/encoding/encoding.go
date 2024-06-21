@@ -183,7 +183,7 @@ func InterfaceSliceOrStringToStringSlice(in interface{}) ([]string, error) {
 	switch t := in.(type) {
 	case string:
 		return []string{t}, nil
-	case []interface{}:
+	case []any:
 		if len(t) == 0 {
 			return nil, nil
 		}

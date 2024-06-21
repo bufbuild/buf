@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -110,13 +111,15 @@ func writeInsertionPoint(
 	// bufio.Scanner.Scan() inline
 	newline := []byte{'\n'}
 	var found bool
-	for targetScanner.Scan() {
+	for i := 0; targetScanner.Scan(); i++ {
+		if i > 0 {
+			// These writes cannot fail, they will panic if they cannot allocate.
+			_, _ = postInsertionContent.Write(newline)
+		}
 		targetLine := targetScanner.Bytes()
 		if !bytes.Contains(targetLine, match) {
-			// these writes cannot fail, they will panic if they cannot
-			// allocate
+			// These writes cannot fail, they will panic if they cannot allocate.
 			_, _ = postInsertionContent.Write(targetLine)
-			_, _ = postInsertionContent.Write(newline)
 			continue
 		}
 		// For each line in then new content, apply the
@@ -124,13 +127,10 @@ func writeInsertionPoint(
 		// for specific languages, e.g. Python.
 		whitespace := leadingWhitespace(targetLine)
 
-		// Create another scanner so that we can seamlessly handle
-		// newlines in a platform-agnostic manner.
-		insertedContentScanner := bufio.NewScanner(bytes.NewBufferString(insertionPointFile.GetContent()))
-		insertedContent := scanWithPrefixAndLineEnding(insertedContentScanner, whitespace, newline)
-		// This write cannot fail, it will panic if it cannot
-		// allocate
-		_, _ = postInsertionContent.Write(insertedContent)
+		// Insert the content from the insertion point file. Handle newlines in
+		// a platform-agnostic manner.
+		insertedContentReader := strings.NewReader(insertionPointFile.GetContent())
+		writeWithPrefixAndLineEnding(postInsertionContent, insertedContentReader, whitespace, newline)
 
 		// Code inserted at this point is placed immediately
 		// above the line containing the insertion point, so
@@ -138,20 +138,15 @@ func writeInsertionPoint(
 		// These writes cannot fail, they will panic if they cannot
 		// allocate
 		_, _ = postInsertionContent.Write(targetLine)
-		_, _ = postInsertionContent.Write(newline)
 		found = true
 	}
-
 	if err := targetScanner.Err(); err != nil {
 		return nil, err
 	}
-
 	if !found {
 		return nil, fmt.Errorf("could not find insertion point %q in %q", insertionPointFile.GetInsertionPoint(), insertionPointFile.GetName())
 	}
-	// trim the trailing newline
-	postInsertionBytes := postInsertionContent.Bytes()
-	return bytes.TrimSuffix(postInsertionBytes, newline), nil
+	return postInsertionContent.Bytes(), nil
 }
 
 // leadingWhitespace iterates through the given string,
@@ -179,19 +174,16 @@ func leadingWhitespace(buf []byte) []byte {
 	return buf
 }
 
-// scanWithPrefixAndLineEnding iterates over each of the given scanner's lines
+// writeWithPrefixAndLineEnding iterates over each of the given reader's lines
 // prepends prefix, and appends the newline sequence.
-func scanWithPrefixAndLineEnding(scanner *bufio.Scanner, prefix []byte, newline []byte) []byte {
-	result := bytes.NewBuffer(nil)
-	result.Grow(averageInsertionPointSize)
+func writeWithPrefixAndLineEnding(dst *bytes.Buffer, src io.Reader, prefix, newline []byte) {
+	scanner := bufio.NewScanner(src)
 	for scanner.Scan() {
-		// These writes cannot fail, they will panic if they cannot
-		// allocate
-		_, _ = result.Write(prefix)
-		_, _ = result.Write(scanner.Bytes())
-		_, _ = result.Write(newline)
+		// These writes cannot fail, they will panic if they cannot allocate.
+		_, _ = dst.Write(prefix)
+		_, _ = dst.Write(scanner.Bytes())
+		_, _ = dst.Write(newline)
 	}
-	return result.Bytes()
 }
 
 type writeResponseOptions struct {
