@@ -247,11 +247,13 @@ func CheckDirectoryIsValidGitCheckout(
 func CheckForUncommittedGitChanges(
 	ctx context.Context,
 	runner command.Runner,
+	envContainer app.EnvContainer,
 	dir string,
 ) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	var modifiedFiles []string
+	envMap := app.EnvironMap(envContainer)
 	// Unstaged changes
 	if err := runner.Run(
 		ctx,
@@ -260,6 +262,7 @@ func CheckForUncommittedGitChanges(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
+		command.RunWithEnv(envMap),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get unstaged changes: %w: %s", err, stderr.String())
 	}
@@ -275,6 +278,7 @@ func CheckForUncommittedGitChanges(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
+		command.RunWithEnv(envMap),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get staged changes: %w: %s", err, stderr.String())
 	}
@@ -287,6 +291,7 @@ func CheckForUncommittedGitChanges(
 func GetCurrentHEADGitCommit(
 	ctx context.Context,
 	runner command.Runner,
+	envContainer app.EnvContainer,
 	dir string,
 ) (string, error) {
 	stdout := bytes.NewBuffer(nil)
@@ -298,6 +303,7 @@ func GetCurrentHEADGitCommit(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
 		return "", fmt.Errorf("failed to get current HEAD commit: %w: %s", err, stderr.String())
 	}
