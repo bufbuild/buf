@@ -322,7 +322,7 @@ func wrapError(err error) error {
 			if !ok {
 				// This code should be unreachable.
 				return fmt.Errorf("Failure: you are not authenticated. "+
-					"Set the %[1]s environment varialbe or run %q, using a Buf API token as the password. "+
+					"Set the %[1]s environment variable or run %q, using a Buf API token as the password. "+
 					"If you have set the %[1]s or run the login command, "+
 					"your token may have expired. "+
 					"For details, visit https://buf.build/docs/bsr/authentication",
