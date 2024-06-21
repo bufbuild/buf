@@ -1061,7 +1061,7 @@ f_no_name_v1beta1
 		t,
 		nil,
 		0,
-		// sort by path
+		// format as path
 		`
 a_v1
 b_no_name_v1
@@ -1079,7 +1079,7 @@ f_no_name_v1beta1
 		t,
 		nil,
 		0,
-		// sort by name
+		// format as name
 		`
 buf.build/bar/baz
 buf.build/foo/bar
@@ -1093,7 +1093,7 @@ buf.build/foo/bar
 		t,
 		nil,
 		0,
-		// sort by path
+		// format as json, sort by path
 		`
 {"path":"a_v1","name":"buf.build/foo/bar"}
 {"path":"b_no_name_v1","name":""}
@@ -1140,7 +1140,7 @@ d_no_name
 		t,
 		nil,
 		0,
-		// sort by path
+		// format as path
 		`
 a
 b_no_name
@@ -1156,7 +1156,7 @@ d_no_name
 		t,
 		nil,
 		0,
-		// sort by name
+		// format as name
 		`
 buf.build/bar/baz
 buf.build/foo/bar
@@ -1170,7 +1170,7 @@ buf.build/foo/bar
 		t,
 		nil,
 		0,
-		// sort by path
+		// format as json, sort by path
 		`
 {"path":"a","name":"buf.build/foo/bar"}
 {"path":"b_no_name","name":""}
