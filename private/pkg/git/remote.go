@@ -134,15 +134,16 @@ func getRemote(
 	hostname, repositoryPath, err := getRemoteURLMetadata(
 		ctx,
 		runner,
+		envContainer,
 		dir,
 		name,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get remote URL metadata: %w", err)
 	}
 	headBranch, err := getRemoteHEADBranch(ctx, runner, envContainer, dir, name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get remote HEAD branch: %w", err)
 	}
 	return newRemote(
 		name,
@@ -185,6 +186,7 @@ func validateRemoteExists(
 func getRemoteURLMetadata(
 	ctx context.Context,
 	runner command.Runner,
+	envContainer app.EnvContainer,
 	dir string,
 	remote string,
 ) (string, string, error) {
@@ -199,6 +201,7 @@ func getRemoteURLMetadata(
 		command.RunWithStdout(stdout),
 		command.RunWithStderr(stderr),
 		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
 		return "", "", err
 	}
