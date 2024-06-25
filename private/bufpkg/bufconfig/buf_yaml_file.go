@@ -74,6 +74,18 @@ type BufYAMLFile interface {
 	// All ModuleConfigs will have unique ModuleFullNames.
 	// Sorted by DirPath.
 	ModuleConfigs() []ModuleConfig
+	// DefaultLintConfig returns the DefaultLintConfig for the File.
+	//
+	// For v1 buf.yaml files, this will be the default v1 lint config.
+	// For v2 buf.yaml files, if a top-level lint config exists, then it will be the top-level
+	// lint config. Otherwise it is the default v2 lint config.
+	DefaultLintConfig() LintConfig
+	// DefaultBreakingConfig returns the DefaultBreakingConfig for the File.
+	//
+	// For v1 buf.yaml, this will be the default v1 breaking config.
+	// For v2 buf.yaml files, if a top-level breaking config exists, then it will be the top-level
+	// breaking config. Otherwise it is the default v2 breaking config.
+	DefaultBreakingConfig() BreakingConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -93,7 +105,14 @@ func NewBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (BufYAMLFile, error) {
-	return newBufYAMLFile(fileVersion, nil, moduleConfigs, configuredDepModuleRefs)
+	return newBufYAMLFile(
+		fileVersion,
+		nil,
+		moduleConfigs,
+		nil, // Do not set default lint config, use only module configs
+		nil, // Do not set default breaking config, use only module configs
+		configuredDepModuleRefs,
+	)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
@@ -190,6 +209,8 @@ type bufYAMLFile struct {
 	fileVersion             FileVersion
 	objectData              ObjectData
 	moduleConfigs           []ModuleConfig
+	defaultLintConfig       LintConfig
+	defaultBreakingConfig   BreakingConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 }
 
@@ -197,6 +218,8 @@ func newBufYAMLFile(
 	fileVersion FileVersion,
 	objectData ObjectData,
 	moduleConfigs []ModuleConfig,
+	defaultLintConfig LintConfig,
+	defaultBreakingConfig BreakingConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
@@ -255,6 +278,8 @@ func newBufYAMLFile(
 		fileVersion:             fileVersion,
 		objectData:              objectData,
 		moduleConfigs:           moduleConfigs,
+		defaultLintConfig:       defaultLintConfig,
+		defaultBreakingConfig:   defaultBreakingConfig,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil
 }
@@ -273,6 +298,14 @@ func (c *bufYAMLFile) ObjectData() ObjectData {
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
 	return slicesext.Copy(c.moduleConfigs)
+}
+
+func (c *bufYAMLFile) DefaultLintConfig() LintConfig {
+	return c.defaultLintConfig
+}
+
+func (c *bufYAMLFile) DefaultBreakingConfig() BreakingConfig {
+	return c.defaultBreakingConfig
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
@@ -351,6 +384,8 @@ func readBufYAMLFile(
 			[]ModuleConfig{
 				moduleConfig,
 			},
+			DefaultLintConfigV1,
+			DefaultBreakingConfigV1,
 			configuredDepModuleRefs,
 		)
 	case FileVersionV2:
@@ -464,6 +499,24 @@ func readBufYAMLFile(
 			}
 			moduleConfigs = append(moduleConfigs, moduleConfig)
 		}
+		defaultLintConfig, err := getLintConfigForExternalLintV2(
+			fileVersion,
+			defaultExternalLintConfig,
+			".",   // The top-level module config always has the root "."
+			false, // Not module-specific configuration
+		)
+		if err != nil {
+			return nil, err
+		}
+		defaultBreakingConfig, err := getBreakingConfigForExternalBreaking(
+			fileVersion,
+			defaultExternalBreakingConfig,
+			".",   // The top-level module config always has the root "."
+			false, // Not module-specific configuration
+		)
+		if err != nil {
+			return nil, err
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -472,6 +525,8 @@ func readBufYAMLFile(
 			fileVersion,
 			objectData,
 			moduleConfigs,
+			defaultLintConfig,
+			defaultBreakingConfig,
 			configuredDepModuleRefs,
 		)
 	default:

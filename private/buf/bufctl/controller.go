@@ -378,8 +378,8 @@ func (c *controller) GetTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		lintConfig := bufconfig.DefaultLintConfigV1
-		breakingConfig := bufconfig.DefaultBreakingConfigV1
+		lintConfig := bufconfig.DefaultLintConfigV2
+		breakingConfig := bufconfig.DefaultBreakingConfigV2
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
 			bucket,
@@ -402,9 +402,12 @@ func (c *controller) GetTargetImageWithConfigs(
 				lintConfig = moduleConfigs[0].LintConfig()
 				breakingConfig = moduleConfigs[0].BreakingConfig()
 			case bufconfig.FileVersionV2:
-				// Do nothing. Use the default LintConfig and BreakingConfig. With
-				// the new buf.yamls with multiple modules, we don't know what lint or
+				// Use the default LintConfig and BreakingConfig from the file. This is
+				// the top-level lint and/or breaking config(s) if any are set or the default v2
+				// configs. v2 buf.yamls may contain multiple modules, we don't know what lint or
 				// breaking config to apply.
+				lintConfig = bufYAMLFile.DefaultLintConfig()
+				breakingConfig = bufYAMLFile.DefaultBreakingConfig()
 			default:
 				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 			}
