@@ -76,13 +76,13 @@ type BufYAMLFile interface {
 	ModuleConfigs() []ModuleConfig
 	// DefaultLintConfig returns the DefaultLintConfig for the File.
 	//
-	// For v1 buf.yaml files, this will be the default v1 lint config.
+	// For v1 buf.yaml files, there is only ever a single ModuleConfig, so that is returned.
 	// For v2 buf.yaml files, if a top-level lint config exists, then it will be the top-level
 	// lint config. Otherwise it is the default v2 lint config.
 	DefaultLintConfig() LintConfig
 	// DefaultBreakingConfig returns the DefaultBreakingConfig for the File.
 	//
-	// For v1 buf.yaml, this will be the default v1 breaking config.
+	// For v1 buf.yaml files, there is only ever a single ModuleConfig, so that is returned.
 	// For v2 buf.yaml files, if a top-level breaking config exists, then it will be the top-level
 	// breaking config. Otherwise it is the default v2 breaking config.
 	DefaultBreakingConfig() BreakingConfig
@@ -301,10 +301,16 @@ func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
 }
 
 func (c *bufYAMLFile) DefaultLintConfig() LintConfig {
+	if c.defaultLintConfig == nil {
+		return c.moduleConfigs[0].LintConfig()
+	}
 	return c.defaultLintConfig
 }
 
 func (c *bufYAMLFile) DefaultBreakingConfig() BreakingConfig {
+	if c.defaultBreakingConfig == nil {
+		return c.moduleConfigs[0].BreakingConfig()
+	}
 	return c.defaultBreakingConfig
 }
 

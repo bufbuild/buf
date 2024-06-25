@@ -378,8 +378,8 @@ func (c *controller) GetTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		lintConfig := bufconfig.DefaultLintConfigV2
-		breakingConfig := bufconfig.DefaultBreakingConfigV2
+		lintConfig := bufconfig.DefaultLintConfigV1
+		breakingConfig := bufconfig.DefaultBreakingConfigV1
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
 			bucket,
