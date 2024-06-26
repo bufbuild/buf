@@ -209,13 +209,18 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 					listener.Close()
 					return
 				default:
-					err := listener.SetDeadline(time.Now().Add(time.Second))
-					require.NoError(t, err)
+					// Do not call require.NoError to handle errors because it calls t.FailNow,
+					// which is not safe from a goroutine, see https://pkg.go.dev/testing#T.FailNow
+					if err := listener.SetDeadline(time.Now().Add(time.Millisecond * 10)); err != nil {
+						continue
+					}
 					conn, err := listener.Accept()
 					if err != nil {
 						continue
 					}
-					require.NoError(t, conn.Close())
+					if err := conn.Close(); err != nil {
+						continue
+					}
 				}
 			}
 		}()
