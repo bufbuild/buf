@@ -54,7 +54,9 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input> --against <against-input>",
 		Short: "Verify no breaking changes have been made",
-		Long: `buf breaking makes sure that the <input> location has no breaking changes compared to the <against-input> location. ` +
+		Long: `This command makes sure that the <input> location has no breaking changes compared to the <against-input> location.
+
+` +
 			bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
