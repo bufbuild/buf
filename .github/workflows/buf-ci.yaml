@@ -4,12 +4,16 @@ on:
     paths:
       - buf.yaml
       - buf.lock
+      - README.md
+      - LICENSE
       - 'proto/**'
       - '.github/workflows/buf-ci.yaml'
   pull_request:
     paths:
       - buf.yaml
       - buf.lock
+      - README.md
+      - LICENSE
       - 'proto/**'
       - '.github/workflows/buf-ci.yaml'
     types: [opened, synchronize, reopened, labeled, unlabeled]
