@@ -212,13 +212,18 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 					// Do not call require.NoError to handle errors because it calls t.FailNow,
 					// which is not safe from a goroutine, see https://pkg.go.dev/testing#T.FailNow
 					if err := listener.SetDeadline(time.Now().Add(time.Millisecond * 10)); err != nil {
+						t.Error(err)
 						continue
 					}
 					conn, err := listener.Accept()
 					if err != nil {
+						if err, ok := err.(net.Error); !ok || !err.Timeout() {
+							t.Error(err)
+						}
 						continue
 					}
 					if err := conn.Close(); err != nil {
+						t.Error(err)
 						continue
 					}
 				}
