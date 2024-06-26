@@ -111,7 +111,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatText,
 		fmt.Sprintf(
 			`The format to print the Protofile files. Must be one of %s`,
-			strings.Join(allFormats, ", "),
+			stringutil.SliceToString(allFormats),
 		),
 	)
 	flagSet.BoolVar(
