@@ -517,7 +517,7 @@ func readBufYAMLFile(
 			topLevelModuleConfig, err = newModuleConfig(
 				".", // The top-level module path is always "."
 				topLevelModuleFullName,
-				map[string][]string{".": []string{}}, // No top-level module config for excludes
+				map[string][]string{".": {}}, // No top-level module config for excludes
 				topLevelLintConfig,
 				topLevelBreakingConfig,
 			)

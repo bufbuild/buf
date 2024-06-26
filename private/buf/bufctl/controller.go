@@ -411,7 +411,7 @@ func (c *controller) GetTargetImageWithConfigs(
 				case ".json", ".yaml", ".yml":
 					configInfo = functionOptions.configOverride
 				default:
-					configInfo = fmt.Sprintf("from --config")
+					configInfo = "from --config"
 				}
 			} else {
 				// Otherwise we use the file path
