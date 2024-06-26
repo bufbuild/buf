@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -196,9 +197,30 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		listener, err := net.Listen("tcp", "127.0.0.1:")
 		require.NoError(t, err)
 		go func() {
-			conn, err := listener.Accept()
-			require.NoError(t, err)
-			require.NoError(t, conn.Close())
+			for i := 0; i < 10; i++ {
+				fmt.Println("before accept")
+				conn, err := listener.Accept()
+				if err != nil {
+					if opErr, ok := err.(*net.OpError); ok {
+						fmt.Println("op---:", opErr)
+						continue
+					}
+					fmt.Println("err---:", err)
+					continue
+				}
+				fmt.Println("local", conn.LocalAddr())
+				fmt.Println("remote", conn.RemoteAddr())
+				b := make([]byte, 0, 1000)
+				x, err := conn.Read(b)
+				if err != nil {
+					fmt.Println("fail to read", err)
+					continue
+				}
+				fmt.Printf("read %d bytes\n", x)
+				require.NoError(t, conn.Close())
+				fmt.Println("after accept")
+			}
+			t.Fail()
 		}()
 		defer listener.Close()
 
@@ -212,10 +234,18 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
 		request.Header.Set("Content-Type", "text/plain")
+		fmt.Println("agent url", agentServer.URL)
+		fmt.Println("calling do")
 		response, err := agentServer.Client().Do(request)
+		fmt.Println("called do")
 		require.NoError(t, err)
-		defer response.Body.Close()
+		defer func() {
+			err := response.Body.Close()
+			fmt.Println("closing err", err)
+		}()
+
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
+		fmt.Println("bye")
 	})
 }
 
