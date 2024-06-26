@@ -74,13 +74,20 @@ type BufYAMLFile interface {
 	// All ModuleConfigs will have unique ModuleFullNames.
 	// Sorted by DirPath.
 	ModuleConfigs() []ModuleConfig
-	// TopLevelModuleConfig returns the top-level ModuleConfig for the File.
+	// TopLevelLintConfig returns the top-level LintConfig for the File.
 	//
-	// For v1 buf.yaml files, there is only ever a single ModuleConfig, so this is returned.
-	// For v2 buf.yaml files, if a top-level module config exists, then it will be the top-level
-	// module config. Otherwise, this will return nil, so callers should be aware this may be
+	// For v1 buf.yaml files, there is only ever a single LintConfig, so this is returned.
+	// For v2 buf.yaml files, if a top-level lint config exists, then it will be the top-level
+	// lint config. Otherwise, this will return nil, so callers should be aware this may be
 	// empty.
-	TopLevelModuleConfig() ModuleConfig
+	TopLevelLintConfig() LintConfig
+	// TopLevelBreakingConfig returns the top-level BreakingConfig for the File.
+	//
+	// For v1 buf.yaml files, there is only ever a single BreakingConfig, so this is returned.
+	// For v2 buf.yaml files, if a top-level breaking config exists, then it will be the top-level
+	// breaking config. Otherwise, this will return nil, so callers should be aware this may be
+	// empty.
+	TopLevelBreakingConfig() BreakingConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -104,7 +111,8 @@ func NewBufYAMLFile(
 		fileVersion,
 		nil,
 		moduleConfigs,
-		nil, // Do not set top-level module config, use only module configs
+		nil, // Do not set top-level lint config, use only module configs
+		nil, // Do not set top-level breaking config, use only module configs
 		configuredDepModuleRefs,
 	)
 }
@@ -203,7 +211,8 @@ type bufYAMLFile struct {
 	fileVersion             FileVersion
 	objectData              ObjectData
 	moduleConfigs           []ModuleConfig
-	topLevelModuleConfig    ModuleConfig
+	topLevelLintConfig      LintConfig
+	topLevelBreakingConfig  BreakingConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 }
 
@@ -211,7 +220,8 @@ func newBufYAMLFile(
 	fileVersion FileVersion,
 	objectData ObjectData,
 	moduleConfigs []ModuleConfig,
-	topLevelModuleConfig ModuleConfig,
+	topLevelLintConfig LintConfig,
+	topLevelBreakingConfig BreakingConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
@@ -270,7 +280,8 @@ func newBufYAMLFile(
 		fileVersion:             fileVersion,
 		objectData:              objectData,
 		moduleConfigs:           moduleConfigs,
-		topLevelModuleConfig:    topLevelModuleConfig,
+		topLevelLintConfig:      topLevelLintConfig,
+		topLevelBreakingConfig:  topLevelBreakingConfig,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil
 }
@@ -291,8 +302,12 @@ func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
 	return slicesext.Copy(c.moduleConfigs)
 }
 
-func (c *bufYAMLFile) TopLevelModuleConfig() ModuleConfig {
-	return c.topLevelModuleConfig
+func (c *bufYAMLFile) TopLevelLintConfig() LintConfig {
+	return c.topLevelLintConfig
+}
+
+func (c *bufYAMLFile) TopLevelBreakingConfig() BreakingConfig {
+	return c.topLevelBreakingConfig
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
@@ -371,7 +386,8 @@ func readBufYAMLFile(
 			[]ModuleConfig{
 				moduleConfig,
 			},
-			moduleConfig,
+			lintConfig,
+			breakingConfig,
 			configuredDepModuleRefs,
 		)
 	case FileVersionV2:
@@ -485,11 +501,9 @@ func readBufYAMLFile(
 			}
 			moduleConfigs = append(moduleConfigs, moduleConfig)
 		}
-		// If either the top-level name, lint or breaking config is non-empty, we construct a top-level
-		// module config.
-		var topLevelModuleConfig ModuleConfig
-		if externalBufYAMLFile.Name != "" || !defaultExternalLintConfig.isEmpty() || !defaultExternalBreakingConfig.isEmpty() {
-			topLevelLintConfig, err := getLintConfigForExternalLintV2(
+		var topLevelLintConfig LintConfig
+		if !defaultExternalLintConfig.isEmpty() {
+			topLevelLintConfig, err = getLintConfigForExternalLintV2(
 				fileVersion,
 				defaultExternalLintConfig,
 				".",   // The top-level module config always has the root "."
@@ -498,28 +512,14 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, err
 			}
-			topLevelBreakingConfig, err := getBreakingConfigForExternalBreaking(
+		}
+		var topLevelBreakingConfig BreakingConfig
+		if !defaultExternalBreakingConfig.isEmpty() {
+			topLevelBreakingConfig, err = getBreakingConfigForExternalBreaking(
 				fileVersion,
 				defaultExternalBreakingConfig,
 				".",   // The top-level module config always has the root "."
 				false, // Not module-specific configuration
-			)
-			if err != nil {
-				return nil, err
-			}
-			var topLevelModuleFullName bufmodule.ModuleFullName
-			if externalBufYAMLFile.Name != "" {
-				topLevelModuleFullName, err = bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
-				if err != nil {
-					return nil, err
-				}
-			}
-			topLevelModuleConfig, err = newModuleConfig(
-				".", // The top-level module path is always "."
-				topLevelModuleFullName,
-				map[string][]string{".": {}}, // No top-level module config for excludes
-				topLevelLintConfig,
-				topLevelBreakingConfig,
 			)
 			if err != nil {
 				return nil, err
@@ -533,7 +533,8 @@ func readBufYAMLFile(
 			fileVersion,
 			objectData,
 			moduleConfigs,
-			topLevelModuleConfig,
+			topLevelLintConfig,
+			topLevelBreakingConfig,
 			configuredDepModuleRefs,
 		)
 	default:

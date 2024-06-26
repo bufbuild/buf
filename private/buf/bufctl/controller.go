@@ -21,7 +21,6 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"path/filepath"
 	"sort"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -394,49 +393,24 @@ func (c *controller) GetTargetImageWithConfigs(
 			// We did not find a buf.yaml in our current directory, and there was no config override.
 			// Use the defaults.
 		} else {
-			// We take the top-level lint and breaking config from buf.yaml.
-			//
-			// In the case of v1 buf.yaml files, there is only ever one top-level config, so it
-			// should be populated and we use that.
-			// In the case of v2 buf.yaml files, this may be empty, since there may not be a
-			// top-level config. If that happens, we print a warning to the user and let them
-			// know that we are using v2 defaults.
-			// In the case where there is a top-level config and individual module configs, we
-			// print out a message to the user to let them know we are using the top-level config.
-			var configInfo string
-			// If configuration is read from an override, we determine if it was a raw config or
-			// a path to a valid override file.
-			if override := functionOptions.configOverride; override != "" {
-				switch filepath.Ext(override) {
-				case ".json", ".yaml", ".yml":
-					configInfo = functionOptions.configOverride
-				default:
-					configInfo = "from --config"
-				}
-			} else {
-				// Otherwise we use the file path
-				configInfo = bufYAMLFile.ObjectData().Name()
-			}
-			if topLevelModuleConfig := bufYAMLFile.TopLevelModuleConfig(); topLevelModuleConfig != nil {
-				if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 && len(bufYAMLFile.ModuleConfigs()) > 1 {
-					c.logger.Sugar().Warnf(
-						`Configuration %s has multiple modules. The top-level lint/breaking configuration is used with your image, since Buf cannot deduce which specific module configuration to use otherwise.`,
-						configInfo,
-					)
-				}
-				lintConfig = topLevelModuleConfig.LintConfig()
-				breakingConfig = topLevelModuleConfig.BreakingConfig()
-			} else {
+			if topLevelLintConfig := bufYAMLFile.TopLevelLintConfig(); topLevelLintConfig == nil {
 				// Ensure that this is a v2 config
 				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
-					return nil, syserror.Newf("non-v2 version with no top-level module config: %s", fileVersion)
+					return nil, syserror.Newf("non-v2 version with no top-level lint config: %s", fileVersion)
 				}
-				c.logger.Sugar().Warnf(
-					`Configuration %s does not have a top-level lint/breaking configuration. Buf cannot deduce which specific module configuration to use with your image, so the default configuration is used instead.`,
-					configInfo,
-				)
+				// v2 config without a top-level lint config, use v2 default
 				lintConfig = bufconfig.DefaultLintConfigV2
+			} else {
+				lintConfig = topLevelLintConfig
+			}
+			if topLevelBreakingConfig := bufYAMLFile.TopLevelBreakingConfig(); topLevelBreakingConfig == nil {
+				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
+					return nil, syserror.Newf("non-v2 version with no top-level breaking config: %s", fileVersion)
+				}
+				// v2 config without a top-level breaking config, use v2 default
 				breakingConfig = bufconfig.DefaultBreakingConfigV2
+			} else {
+				breakingConfig = topLevelBreakingConfig
 			}
 		}
 		return []ImageWithConfig{
