@@ -47,7 +47,11 @@ type Module interface {
 	// An OpaqueID can be used to denote expected uniqueness of content; if two Modules
 	// have different IDs, they should be expected to be logically different Modules.
 	//
-	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
+	// An OpaqueID can be used as a human-readable identifier of the Module, suitable for printing
+	// to a console. However, the OpaqueID may contain information on local directory structure, so
+	// do not log or print it in contexts where such information may be sensitive.
+	//
+	// An OpaqueID's structure should not be relied upon, and is not a globally-unique identifier.
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
 	// Modules commonly built from a ModuleSetBuilder.
 	//
@@ -61,9 +65,12 @@ type Module interface {
 	//
 	// A BucketID will be unique within a given ModuleSet.
 	//
-	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
+	// A BucketID's structure should not be relied upon, and is not a globally-unique identifier.
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
 	// Modules commonly built from a ModuleSetBuilder.
+	//
+	// A BucketID may contain information on local directory structure, so do not log or print it
+	// in contexts where such information may be sensitive.
 	//
 	// May be empty if a Module was not constructed with a Bucket via a ModuleSetProvider.
 	BucketID() string

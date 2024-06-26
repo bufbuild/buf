@@ -78,6 +78,13 @@ func UploadWithSourceControlURL(sourceControlURL string) UploadOption {
 	}
 }
 
+// UploadWithExcludeUnnamed returns a new UploadOption that will exclude unnamed modules.
+func UploadWithExcludeUnnamed() UploadOption {
+	return func(uploadOptions *uploadOptions) {
+		uploadOptions.excludeUnnamed = true
+	}
+}
+
 // UploadOptions are the possible options for upload.
 //
 // This is used by Uploader implementations.
@@ -109,6 +116,8 @@ type UploadOptions interface {
 	// SourceControlURL returns the source control URL set by the user for the module
 	// contents uploaded. We set the same source control URL for all module contents.
 	SourceControlURL() string
+	// ExcludeUnnamed returns whether to exclude unnamed modules.
+	ExcludeUnnamed() bool
 
 	isUploadOptions()
 }
@@ -140,6 +149,7 @@ type uploadOptions struct {
 	createModuleVisibility ModuleVisibility
 	createDefaultLabel     string
 	sourceControlURL       string
+	excludeUnnamed         bool
 }
 
 func newUploadOptions() *uploadOptions {
@@ -168,6 +178,10 @@ func (u *uploadOptions) CreateDefaultLabel() string {
 
 func (u *uploadOptions) SourceControlURL() string {
 	return u.sourceControlURL
+}
+
+func (u *uploadOptions) ExcludeUnnamed() bool {
+	return u.excludeUnnamed
 }
 
 func (u *uploadOptions) validate() error {

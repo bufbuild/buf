@@ -22,8 +22,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
+	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -73,10 +73,12 @@ Additional flags:
 		BindFlags:     flagsBuilder.Bind,
 		NormalizeFlag: flagsBuilder.Normalize,
 		Version: fmt.Sprintf(
-			"%v.%v.%v-buf",
-			bufpluginexec.DefaultVersion.GetMajor(),
-			bufpluginexec.DefaultVersion.GetMinor(),
-			bufpluginexec.DefaultVersion.GetPatch(),
+			"%v.%v-buf",
+			// DefaultVersion has an extra major version that corresponds to
+			// backwards-compatibility level of C++ runtime. The actual version
+			// of the compiler is just the minor and patch versions.
+			bufprotopluginexec.DefaultVersion.GetMinor(),
+			bufprotopluginexec.DefaultVersion.GetPatch(),
 		),
 	}
 }

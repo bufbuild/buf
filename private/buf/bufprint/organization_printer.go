@@ -21,7 +21,7 @@ import (
 	"io"
 	"time"
 
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 )
 
 type organizationPrinter struct {
@@ -39,8 +39,8 @@ func newOrganizationPrinter(
 	}
 }
 
-func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, message *registryv1alpha1.Organization) error {
-	outOrganization := registryOrganizationToOutputOrganization(p.address, message)
+func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error {
+	outOrganization := registryOrganizationToOutputOrganization(p.address, organization)
 	switch format {
 	case FormatText:
 		return p.printOrganizationsText([]outputOrganization{outOrganization})
@@ -51,12 +51,12 @@ func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Form
 	}
 }
 
-func (p *organizationPrinter) PrintOrganizations(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.Organization) error {
-	if len(messages) == 0 {
+func (p *organizationPrinter) PrintOrganizations(ctx context.Context, format Format, nextPageToken string, organizations ...*ownerv1.Organization) error {
+	if len(organizations) == 0 {
 		return nil
 	}
 	var outputOrganizations []outputOrganization
-	for _, organization := range messages {
+	for _, organization := range organizations {
 		outputOrganization := registryOrganizationToOutputOrganization(p.address, organization)
 		outputOrganizations = append(outputOrganizations, outputOrganization)
 	}
@@ -77,8 +77,8 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Full name",
-			"Created",
+			"Full Name",
+			"Create Time",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputOrganization := range outputOrganizations {
@@ -101,7 +101,7 @@ type outputOrganization struct {
 	CreateTime time.Time `json:"create_time,omitempty"`
 }
 
-func registryOrganizationToOutputOrganization(address string, organization *registryv1alpha1.Organization) outputOrganization {
+func registryOrganizationToOutputOrganization(address string, organization *ownerv1.Organization) outputOrganization {
 	return outputOrganization{
 		ID:         organization.Id,
 		Remote:     address,

@@ -34,8 +34,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/archive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -48,8 +49,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/unarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
@@ -61,6 +60,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsmodules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
@@ -138,6 +138,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					configmigrate.NewCommand("migrate", builder),
 					configlslintrules.NewCommand("ls-lint-rules", builder),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
+					configlsmodules.NewCommand("ls-modules", builder),
 				},
 			},
 			{
@@ -214,14 +215,6 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:   "tag",
-								Short: "Manage a repository's tags",
-								SubCommands: []*appcmd.Command{
-									tagcreate.NewCommand("create", builder),
-									taglist.NewCommand("list", builder),
-								},
-							},
-							{
 								Use:   "commit",
 								Short: "Manage a repository's commits",
 								SubCommands: []*appcmd.Command{
@@ -230,11 +223,12 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:   "draft",
-								Short: "Manage a repository's drafts",
+								Use:   "label",
+								Short: "Manage a repository's labels",
 								SubCommands: []*appcmd.Command{
-									draftdelete.NewCommand("delete", builder),
-									draftlist.NewCommand("list", builder),
+									labelcreate.NewCommand("create", builder),
+									labelget.NewCommand("get", builder),
+									labellist.NewCommand("list", builder),
 								},
 							},
 							{
@@ -325,14 +319,48 @@ func wrapError(err error) error {
 		connectCode := connectErr.Code()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
-			if authErr, ok := bufconnect.AsAuthError(err); ok && authErr.TokenEnvKey() != "" {
-				return fmt.Errorf("Failure: the %[1]s environment variable is set, but is not valid. "+
-					"Set %[1]s to a valid Buf API key, or unset it. For details, "+
-					"visit https://docs.buf.build/bsr/authentication", authErr.TokenEnvKey())
+			loginCommand := "buf registry login"
+			authErr, ok := bufconnect.AsAuthError(err)
+			if !ok {
+				// This code should be unreachable.
+				return fmt.Errorf("Failure: you are not authenticated. "+
+					"Set the %[1]s environment variable or run %q, using a Buf API token as the password. "+
+					"If you have set the %[1]s or run the login command, "+
+					"your token may have expired. "+
+					"For details, visit https://buf.build/docs/bsr/authentication",
+					bufconnect.TokenEnvKey,
+					loginCommand,
+				)
 			}
-			return errors.New("Failure: you are not authenticated. Create a new entry in your netrc, " +
-				"using a Buf API Key as the password. If you already have an entry in your netrc, check " +
-				"to see that your token is not expired. For details, visit https://docs.buf.build/bsr/authentication")
+			// Invalid token found in env var.
+			if authErr.HasToken() && authErr.TokenEnvKey() != "" {
+				return fmt.Errorf("Failure: the %[1]s environment variable is set, but is not valid. "+
+					"Set %[1]s to a valid Buf API token, or unset it. "+
+					"For details, visit https://buf.build/docs/bsr/authentication",
+					authErr.TokenEnvKey(),
+				)
+			}
+			if authErr.Remote() != bufconnect.DefaultRemote {
+				loginCommand = fmt.Sprintf("%s %s", loginCommand, authErr.Remote())
+			}
+			// Invalid token found in netrc.
+			if authErr.HasToken() {
+				return fmt.Errorf("Failure: your Buf API token for %s is invalid. "+
+					"Run %q using a valid Buf API token. "+
+					"For details, visit https://buf.build/docs/bsr/authentication",
+					authErr.Remote(),
+					loginCommand,
+				)
+			}
+			// No token found.
+			return fmt.Errorf("Failure: you are not authenticated for %s. "+
+				"Set the %s environment variable or run %q, "+
+				"using a Buf API token as the password. "+
+				"For details, visit https://buf.build/docs/bsr/authentication",
+				authErr.Remote(),
+				bufconnect.TokenEnvKey,
+				loginCommand,
+			)
 		case connectCode == connect.CodeUnavailable:
 			msg := `Failure: the server hosted at that remote is unavailable.`
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so,

@@ -48,16 +48,22 @@ func NewRepositoryNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a repository named %q already exists", name)
 }
 
-// NewTagOrDraftNameAlreadyExistsError informs the user that a tag
-// or draft with that name already exists.
-func NewTagOrDraftNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("a tag or draft named %q already exists", name)
+// NewLabelNameAlreadyExistsError informs the user that a label
+// with that name already exists.
+func NewLabelNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a label named %q already exists", name)
 }
 
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
 	return fmt.Errorf(`an organization named %q does not exist, use "buf beta registry organization create" to create one`, name)
+}
+
+// NewOrganizationOrUserNotFoundError informs the user that an organization or user with
+// that name does not exist.
+func NewOrganizationOrUserNotFoundError(name string) error {
+	return fmt.Errorf(`an organization or user named %q does not exist`, name)
 }
 
 // NewRepositoryNotFoundError informs the user that a repository with
@@ -69,6 +75,11 @@ func NewRepositoryNotFoundError(name string) error {
 // NewModuleRefNotFoundError informs the user that a ModuleRef does not exist.
 func NewModuleRefNotFoundError(moduleRef bufmodule.ModuleRef) error {
 	return fmt.Errorf("%q does not exist", moduleRef)
+}
+
+// NewLabelNotFoundError informs the user that a ModuleRef does not exist as a label.
+func NewLabelNotFoundError(moduleRef bufmodule.ModuleRef) error {
+	return fmt.Errorf("label %q does not exist", moduleRef)
 }
 
 // NewTokenNotFoundError informs the user that a token with

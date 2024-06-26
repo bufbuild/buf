@@ -67,7 +67,9 @@ message One {
   int64 one_one = 1 [(custom.field_option) = true];
   Two one_two = 2 [
     (custom.field_option) = false,
-    (custom.field_thing_option) = {foo: 6}
+    (custom.field_thing_option) = {
+      foo: 6 // comment after foo
+    }
   ]; // field-option-inline comment
 
   Three one_three = 3; /* field-inline c-style comment */
@@ -97,16 +99,16 @@ message One {
   ];
   int64 integer_field_two = 13 [
     (custom.field_thing_option) = {
-      foo: 9,
+      foo: 9
       repeated_foo: [
         1,
         2
       ]
     },
     (custom.repeated_field_thing_option) = {
-      foo: 1,
+      foo: 1
       recursive: {
-        foo: 2,
+        foo: 2
         repeated_foo: [
           3,
           4
@@ -114,9 +116,9 @@ message One {
       }
     },
     (custom.repeated_field_thing_option) = {
-      foo: 5,
+      foo: 5
       recursive: {
-        foo: 6,
+        foo: 6
         repeated_foo: [
           7,
           8
@@ -124,17 +126,17 @@ message One {
       }
     },
     (custom.repeated_field_thing_option) = {
-      foo: 1,
+      foo: 1
       repeated_thing: [
         {
-          foo: 1,
+          foo: 1
           repeated_foo: [
             1,
             2
           ]
         },
         {
-          foo: 3,
+          foo: 3
           repeated_foo: [
             3,
             4
@@ -178,10 +180,10 @@ enum OtherEnum {
   OTHER_ENUM_UNSPECIFIED = 0 [
     (custom.enum_value_option) = true,
     (custom.enum_value_thing_option) = {
-      foo: 1,
-      bar: 2,
+      foo: 1
+      bar: 2
       recursive: {
-        foo: 3,
+        foo: 3
         recursive: {bar: 2}
       }
     }
@@ -202,10 +204,10 @@ service ExampleService {
   rpc Example(One) returns (Two) {
     option (custom.method_option) = true;
     option (custom.method_thing_option) = {
-      foo: 1,
-      bar: 2,
+      foo: 1
+      bar: 2
       recursive: {
-        foo: 3,
+        foo: 3
         recursive: {bar: 2}
       }
     }; // service-option-inline comment 2

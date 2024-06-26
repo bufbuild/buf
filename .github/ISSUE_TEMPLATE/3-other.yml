@@ -1,0 +1,24 @@
+name: Other
+description: Anything else.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thanks for getting in touch, we really appreciate it! If your issue isn't a bug or feature request, we'd highly recommend to talk to us on the [Buf Slack](https://buf.build/links/slack). If you think the issue is more appropriate for a GitHub issue, please file it below!**
+
+        **If this is a question about some behavior you are witnessing, we will need a minimal reproducible example. We find that the easiest way to do this is by linking to a GitHub repository with the setup of the example, as well as a set of commands for us to run on this GitHub repository to reproduce the issue. You can use an existing GitHub repository, or a temporary GitHub repository you create.**
+
+        **[This article](https://stackoverflow.com/help/minimal-reproducible-example) on minimal reproducible examples may be of use!**
+  - type: input
+    id: github-repository
+    attributes:
+      label: GitHub Repository
+      description: If this is a question about some behavior you are witnessing, provide us with a link to the GitHub repository that contains the setup needed to reproduce the issue.
+      placeholder: https://github.com/foo/bar
+  - type: textarea
+    id: feature
+    attributes:
+      label: What's up?
+      description: Tell us what's on your mind!
+    validations:
+      required: true

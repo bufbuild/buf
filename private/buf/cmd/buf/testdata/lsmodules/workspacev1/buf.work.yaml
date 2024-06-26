@@ -1,0 +1,8 @@
+version: v1
+directories:
+  - e_no_file
+  - c_v1beta1
+  - f_no_name_v1beta1
+  - a_v1
+  - d_no_file
+  - b_no_name_v1

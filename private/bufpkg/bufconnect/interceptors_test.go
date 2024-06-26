@@ -97,7 +97,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	tokenSet, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
-		tokenEnvKey: "default",
+		TokenEnvKey: "default",
 	}))
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -105,7 +105,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	authErr, ok := AsAuthError(err)
 	assert.True(t, ok)
-	assert.Equal(t, tokenEnvKey, authErr.tokenEnvKey)
+	assert.Equal(t, TokenEnvKey, authErr.tokenEnvKey)
 }
 
 func TestCLIWarningInterceptor(t *testing.T) {

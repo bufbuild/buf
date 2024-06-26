@@ -21,7 +21,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -100,10 +100,10 @@ type GeneratePluginConfig interface {
 	//
 	// This is not empty only when the plugin is local.
 	Path() []string
-	// ProtocPath returns a path to protoc.
+	// ProtocPath returns a path to protoc, including any extra arguments.
 	//
-	// This is not empty only when the plugin is protoc-builtin
-	ProtocPath() string
+	// This is not empty only when the plugin is protoc-builtin.
+	ProtocPath() []string
 	// RemoteHost returns the remote host of the remote plugin.
 	//
 	// This is not empty only when the plugin is remote.
@@ -184,7 +184,7 @@ func NewProtocBuiltinPluginConfig(
 	includeImports bool,
 	includeWKT bool,
 	strategy *GenerateStrategy,
-	protocPath string,
+	protocPath []string,
 ) (GeneratePluginConfig, error) {
 	return newProtocBuiltinPluginConfig(
 		name,
@@ -229,7 +229,7 @@ type pluginConfig struct {
 	includeWKT       bool
 	strategy         *GenerateStrategy
 	path             []string
-	protocPath       string
+	protocPath       []string
 	remoteHost       string
 	revision         int
 }
@@ -287,7 +287,7 @@ func newPluginConfigFromExternalV1(
 		pluginIdentifier = externalConfig.Plugin
 	case externalConfig.Name != "":
 		pluginIdentifier = externalConfig.Name
-		if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+		if bufremotepluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
 			// A plugin reference is not a valid local plugin name.
 			return nil, fmt.Errorf("invalid local plugin name: %s", pluginIdentifier)
 		}
@@ -307,14 +307,18 @@ func newPluginConfigFromExternalV1(
 	if err != nil {
 		return nil, err
 	}
-	if externalConfig.Plugin != "" && bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+	protocPath, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.ProtocPath)
+	if err != nil {
+		return nil, err
+	}
+	if externalConfig.Plugin != "" && bufremotepluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
 		if externalConfig.Path != nil {
 			return nil, fmt.Errorf("cannot specify path for remote plugin %s", externalConfig.Plugin)
 		}
 		if externalConfig.Strategy != "" {
 			return nil, fmt.Errorf("cannot specify strategy for remote plugin %s", externalConfig.Plugin)
 		}
-		if externalConfig.ProtocPath != "" {
+		if externalConfig.ProtocPath != nil {
 			return nil, fmt.Errorf("cannot specify protoc_path for remote plugin %s", externalConfig.Plugin)
 		}
 		return newRemotePluginConfig(
@@ -339,7 +343,7 @@ func newPluginConfigFromExternalV1(
 			path,
 		)
 	}
-	if externalConfig.ProtocPath != "" {
+	if externalConfig.ProtocPath != nil {
 		return newProtocBuiltinPluginConfig(
 			pluginIdentifier,
 			externalConfig.Out,
@@ -347,7 +351,7 @@ func newPluginConfigFromExternalV1(
 			false,
 			false,
 			strategy,
-			externalConfig.ProtocPath,
+			protocPath,
 		)
 	}
 	// It could be either local or protoc built-in. We defer to the plugin executor
@@ -438,9 +442,9 @@ func newPluginConfigFromExternalV2(
 			path,
 		)
 	case externalConfig.ProtocBuiltin != nil:
-		var protocPath string
-		if externalConfig.ProtocPath != nil {
-			protocPath = *externalConfig.ProtocPath
+		protocPath, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.ProtocPath)
+		if err != nil {
+			return nil, err
 		}
 		if externalConfig.Revision != nil {
 			return nil, fmt.Errorf("cannot specify revision for protoc built-in plugin %s", *externalConfig.ProtocBuiltin)
@@ -545,7 +549,7 @@ func newProtocBuiltinPluginConfig(
 	includeImports bool,
 	includeWKT bool,
 	strategy *GenerateStrategy,
-	protocPath string,
+	protocPath []string,
 ) (*pluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
@@ -597,7 +601,7 @@ func (p *pluginConfig) Path() []string {
 	return p.path
 }
 
-func (p *pluginConfig) ProtocPath() string {
+func (p *pluginConfig) ProtocPath() []string {
 	return p.protocPath
 }
 
@@ -653,8 +657,12 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		}
 	case PluginConfigTypeProtocBuiltin:
 		externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
-		if protocPath := generatePluginConfig.ProtocPath(); protocPath != "" {
-			externalPluginConfigV2.ProtocPath = &protocPath
+		if protocPath := generatePluginConfig.ProtocPath(); len(protocPath) > 0 {
+			if len(protocPath) == 1 {
+				externalPluginConfigV2.ProtocPath = protocPath[0]
+			} else {
+				externalPluginConfigV2.ProtocPath = protocPath
+			}
 		}
 	case PluginConfigTypeLocalOrProtocBuiltin:
 		binaryName := "protoc-gen-" + generatePluginConfig.Name()
@@ -691,10 +699,10 @@ func parseStrategy(s string) (*GenerateStrategy, error) {
 }
 
 func parseRemoteHostName(fullName string) (string, error) {
-	if identity, err := bufpluginref.PluginIdentityForString(fullName); err == nil {
+	if identity, err := bufremotepluginref.PluginIdentityForString(fullName); err == nil {
 		return identity.Remote(), nil
 	}
-	reference, err := bufpluginref.PluginReferenceForString(fullName, 0)
+	reference, err := bufremotepluginref.PluginReferenceForString(fullName, 0)
 	if err == nil {
 		return reference.Remote(), nil
 	}
