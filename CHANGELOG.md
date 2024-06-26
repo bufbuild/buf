@@ -7,6 +7,8 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
+- Update `buf registry login` to complete the login flow in the browser. This allows users to log in
+  with their browser and have the token automatically provided to the CLI.
 
 ## [v1.34.0] - 2024-06-21
 

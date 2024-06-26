@@ -19,9 +19,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"runtime"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -30,12 +34,16 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netrc"
+	"github.com/bufbuild/buf/private/pkg/oauth2"
+	"github.com/bufbuild/buf/private/pkg/open"
+	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/spf13/pflag"
 )
 
 const (
 	usernameFlagName   = "username"
 	tokenStdinFlagName = "token-stdin"
+	noBrowserFlagName  = "no-browser"
 )
 
 // NewCommand returns a new Command.
@@ -62,6 +70,7 @@ The <domain> argument will default to buf.build if not specified.`, netrc.Filena
 type flags struct {
 	Username   string
 	TokenStdin bool
+	NoBrowser  bool
 }
 
 func newFlags() *flags {
@@ -82,6 +91,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		tokenStdinFlagName,
 		false,
 		"Read the token from stdin. This command prompts for a token by default",
+	)
+	flagSet.BoolVar(
+		&f.NoBrowser,
+		noBrowserFlagName,
+		false,
+		fmt.Sprintf(
+			"Do not open a browser to complete the login process. This command opens a browser by default. %s must be set to false to use this flag.",
+			tokenStdinFlagName,
+		),
 	)
 }
 
@@ -136,15 +154,8 @@ func inner(
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
 	}
-	// Do not print unless we are prompting
-	if !flags.TokenStdin {
-		if _, err := fmt.Fprintf(
-			container.Stdout(),
-			"Enter the BSR token created at https://%s/settings/user.\n\n",
-			remote,
-		); err != nil {
-			return err
-		}
+	if flags.TokenStdin && flags.NoBrowser {
+		return fmt.Errorf("cannot use both --%s and --%s flags", tokenStdinFlagName, noBrowserFlagName)
 	}
 	var token string
 	if flags.TokenStdin {
@@ -153,7 +164,15 @@ func inner(
 			return err
 		}
 		token = string(data)
-	} else {
+	} else if flags.NoBrowser {
+		// Do not print unless we are prompting
+		if _, err := fmt.Fprintf(
+			container.Stdout(),
+			"Enter the BSR token created at https://%s/settings/user.\n\n",
+			remote,
+		); err != nil {
+			return err
+		}
 		var err error
 		token, err = bufcli.PromptUserForPassword(container, "Token: ")
 		if err != nil {
@@ -161,6 +180,12 @@ func inner(
 				return errors.New("cannot perform an interactive login from a non-TTY device")
 			}
 			return err
+		}
+	} else {
+		var err error
+		token, err = doBrowserLogin(ctx, container, remote)
+		if err != nil {
+			return fmt.Errorf("unable to complete authorize device grant: %w", err)
 		}
 	}
 	// Remove leading and trailing spaces from user-supplied token to avoid
@@ -207,11 +232,102 @@ func inner(
 	}
 	loggedInMessage := fmt.Sprintf("Logged in as %s. Credentials saved to %s.\n", user.Username, netrcFilePath)
 	// Unless we did not prompt at all, print a newline first
-	if !flags.TokenStdin {
+	if !flags.TokenStdin || !flags.NoBrowser {
 		loggedInMessage = "\n" + loggedInMessage
 	}
 	if _, err := container.Stdout().Write([]byte(loggedInMessage)); err != nil {
 		return err
 	}
 	return nil
+}
+
+// doBrowserLogin performs the device authorization grant flow via the browser.
+func doBrowserLogin(
+	ctx context.Context,
+	container appext.Container,
+	remote string,
+) (string, error) {
+	baseURL := "https://" + remote
+	clientName, err := getClientName()
+	if err != nil {
+		return "", err
+	}
+	externalConfig := bufapp.ExternalConfig{}
+	if err := appext.ReadConfig(container, &externalConfig); err != nil {
+		return "", err
+	}
+	appConfig, err := bufapp.NewConfig(container, externalConfig)
+	if err != nil {
+		return "", err
+	}
+	client := httpclient.NewClient(appConfig.TLS)
+	oauth2Client := oauth2.NewClient(baseURL, client)
+	// Register the device.
+	deviceRegistration, err := oauth2Client.RegisterDevice(ctx, &oauth2.DeviceRegistrationRequest{
+		ClientName: clientName,
+	})
+	if err != nil {
+		var oauth2Err *oauth2.Error
+		if errors.As(err, &oauth2Err) {
+			return "", fmt.Errorf("authorization failed: %s", oauth2Err.ErrorDescription)
+		}
+		return "", err
+	}
+	// Request a device authorization code.
+	deviceAuthorization, err := oauth2Client.AuthorizeDevice(ctx, &oauth2.DeviceAuthorizationRequest{
+		ClientID:     deviceRegistration.ClientID,
+		ClientSecret: deviceRegistration.ClientSecret,
+	})
+	if err != nil {
+		var oauth2Err *oauth2.Error
+		if errors.As(err, &oauth2Err) {
+			return "", fmt.Errorf("authorization failed: %s", oauth2Err.ErrorDescription)
+		}
+		return "", err
+	}
+	// Open the browser to the verification URI.
+	if err := open.Open(ctx, container, deviceAuthorization.VerificationURIComplete); err != nil {
+		return "", fmt.Errorf("failed to open browser: %w", err)
+	}
+	if _, err := fmt.Fprintf(
+		container.Stdout(),
+		`Opening your browser to complete authorization process.
+
+If your browser doesn't open automatically,
+please open this URL in a browser to complete the process:
+	%s
+`,
+		deviceAuthorization.VerificationURIComplete,
+	); err != nil {
+		return "", err
+	}
+	// Poll the token endpoint until the user has authorized the device.
+	deviceToken, err := oauth2Client.AccessDeviceToken(ctx, &oauth2.DeviceAccessTokenRequest{
+		ClientID:     deviceRegistration.ClientID,
+		ClientSecret: deviceRegistration.ClientSecret,
+		DeviceCode:   deviceAuthorization.DeviceCode,
+		GrantType:    oauth2.DeviceAuthorizationGrantType,
+	}, oauth2.AccessDeviceTokenWithPollingInterval(time.Duration(deviceAuthorization.Interval)*time.Second))
+	if err != nil {
+		var oauth2Err *oauth2.Error
+		if errors.As(err, &oauth2Err) {
+			return "", fmt.Errorf("authorization failed: %s", oauth2Err.ErrorDescription)
+		}
+		return "", err
+	}
+	return deviceToken.AccessToken, nil
+}
+
+// getClientName returns the client name for the device registration.
+func getClientName() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "", err
+	}
+	switch runtime.GOOS {
+	case "darwin":
+		// macOS uses .local for the hostname.
+		hostname = strings.TrimSuffix(hostname, ".local")
+	}
+	return hostname, nil
 }
