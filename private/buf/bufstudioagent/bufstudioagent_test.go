@@ -199,6 +199,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		listener, err := net.ListenTCP("tcp", tcpAddr)
 		require.NoError(t, err)
 		done := make(chan struct{})
+		t.Cleanup(func() {
+			done <- struct{}{}
+		})
 		go func() {
 			for {
 				select {
@@ -229,9 +232,10 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
-		defer response.Body.Close()
+		t.Cleanup(func() {
+			response.Body.Close()
+		})
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
-		done <- struct{}{}
 	})
 }
 
