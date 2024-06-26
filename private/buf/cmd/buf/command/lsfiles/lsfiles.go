@@ -110,7 +110,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatFlagName,
 		formatText,
 		fmt.Sprintf(
-			`The format to print the Protofile files. Must be one of %s`,
+			`The format to print the .proto files. Must be one of %s`,
 			stringutil.SliceToString(allFormats),
 		),
 	)
@@ -125,7 +125,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		includeImportableFlagName,
 		false,
 		fmt.Sprintf(
-			"Include all .proto file that are importable by the input. --%s is redundant if this is set",
+			"Include all .proto files that are importable by the input. --%s is redundant if this is set",
 			includeImportsFlagName,
 		),
 	)
