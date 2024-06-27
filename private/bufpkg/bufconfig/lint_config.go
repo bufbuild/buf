@@ -34,7 +34,7 @@ var (
 		false,
 		false,
 		"",
-		false,
+		true, // We default to allowing comment ignores in v2
 	)
 )
 

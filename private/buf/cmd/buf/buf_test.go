@@ -2464,6 +2464,23 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 		"--exclude-path",
 		filepath.Join("a", "v3", "foo"),
 	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		`a/v3/a.proto:6:3:Field "1" with name "key" on message "Foo" changed type from "string" to "int32". See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules.`,
+		"",
+		"breaking",
+		filepath.Join(tempDir, "current.binpb"),
+		"--against",
+		filepath.Join(tempDir, "previous.binpb"),
+		"--path",
+		filepath.Join("a", "v3"),
+		"--exclude-path",
+		filepath.Join("a", "v3", "foo"),
+		"--config",
+		`{"version":"v2","breaking":{"use":["WIRE"]}}`,
+	)
 }
 
 func TestVersion(t *testing.T) {

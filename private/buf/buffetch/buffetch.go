@@ -94,7 +94,7 @@ type Ref interface {
 	internalRef() internal.Ref
 }
 
-// MessageRef is an message file reference.
+// MessageRef is a message file reference.
 type MessageRef interface {
 	Ref
 	MessageEncoding() MessageEncoding
