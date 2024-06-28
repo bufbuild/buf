@@ -41,6 +41,7 @@ const (
 	fromFlagName            = "from"
 	toFlagName              = "to"
 	validateFlagName        = "validate"
+	disallowUnknownFlagName = "disallow-unknown"
 	disableSymlinksFlagName = "disable-symlinks"
 )
 
@@ -99,6 +100,7 @@ type flags struct {
 	Type            string
 	From            string
 	To              string
+	DisallowUnknown bool
 	Validate        bool
 	DisableSymlinks bool
 
@@ -145,6 +147,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			`The output location of the conversion. Supported formats are %s`,
 			buffetch.MessageFormatsString,
 		),
+	)
+	flagSet.BoolVar(
+		&f.DisallowUnknown,
+		disallowUnknownFlagName,
+		false,
+		// TODO: Update when https://github.com/bufbuild/protoyaml-go/issues/37 is complete.
+		`Error if there are unknown fields or enum name values in the input. This is only implemented for binpb,json,txtpb inputs, and is not yet implemented for yaml inputs.`,
 	)
 	flagSet.BoolVar(
 		&f.Validate,
@@ -214,6 +223,9 @@ func run(
 	var fromFunctionOptions []bufctl.FunctionOption
 	if flags.Validate {
 		fromFunctionOptions = append(fromFunctionOptions, bufctl.WithMessageValidation())
+	}
+	if flags.DisallowUnknown {
+		fromFunctionOptions = append(fromFunctionOptions, bufctl.WithMessageDisallowUnknown())
 	}
 	fromMessage, fromMessageEncoding, err := controller.GetMessage(
 		ctx,

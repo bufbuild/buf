@@ -19,18 +19,24 @@ import (
 )
 
 type wireUnmarshaler struct {
-	resolver Resolver
+	resolver        Resolver
+	disallowUnknown bool
 }
 
-func newWireUnmarshaler(resolver Resolver) Unmarshaler {
-	return &wireUnmarshaler{
+func newWireUnmarshaler(resolver Resolver, options ...WireUnmarshalerOption) Unmarshaler {
+	wireUnmarshaler := &wireUnmarshaler{
 		resolver: resolver,
 	}
+	for _, option := range options {
+		option(wireUnmarshaler)
+	}
+	return wireUnmarshaler
 }
 
 func (m *wireUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 	options := proto.UnmarshalOptions{
-		Resolver: m.resolver,
+		Resolver:       m.resolver,
+		DiscardUnknown: !m.disallowUnknown,
 	}
 	return options.Unmarshal(data, message)
 }

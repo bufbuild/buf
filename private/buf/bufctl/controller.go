@@ -616,12 +616,37 @@ func (c *controller) GetMessage(
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageEncoding {
 	case buffetch.MessageEncodingBinpb:
-		unmarshaler = protoencoding.NewWireUnmarshaler(schemaImage.Resolver())
+		var options []protoencoding.WireUnmarshalerOption
+		if functionOptions.messageDisallowUnknown {
+			options = append(
+				options,
+				protoencoding.WireUnmarshalerWithDisallowUnknown(),
+			)
+		}
+		unmarshaler = protoencoding.NewWireUnmarshaler(schemaImage.Resolver(), options...)
 	case buffetch.MessageEncodingJSON:
-		unmarshaler = protoencoding.NewJSONUnmarshaler(schemaImage.Resolver())
+		var options []protoencoding.JSONUnmarshalerOption
+		if functionOptions.messageDisallowUnknown {
+			options = append(
+				options,
+				protoencoding.JSONUnmarshalerWithDisallowUnknown(),
+			)
+		}
+		unmarshaler = protoencoding.NewJSONUnmarshaler(schemaImage.Resolver(), options...)
 	case buffetch.MessageEncodingTxtpb:
+		var options []protoencoding.TxtpbUnmarshalerOption
+		if functionOptions.messageDisallowUnknown {
+			options = append(
+				options,
+				protoencoding.TxtpbUnmarshalerWithDisallowUnknown(),
+			)
+		}
 		unmarshaler = protoencoding.NewTxtpbUnmarshaler(schemaImage.Resolver())
 	case buffetch.MessageEncodingYAML:
+		if functionOptions.messageDisallowUnknown {
+			// TODO: implement after https://github.com/bufbuild/protoyaml-go/issues/37 is resolved
+			return nil, 0, errors.New("--disallow-unknown with yaml inputs still needs to be implemented")
+		}
 		unmarshaler = protoencoding.NewYAMLUnmarshaler(
 			schemaImage.Resolver(),
 			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),

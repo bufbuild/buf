@@ -163,8 +163,18 @@ type Unmarshaler interface {
 // NewWireUnmarshaler returns a new Unmarshaler for wire.
 //
 // resolver can be nil if unknown and are only needed for extensions.
-func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
-	return newWireUnmarshaler(resolver)
+func NewWireUnmarshaler(resolver Resolver, options ...WireUnmarshalerOption) Unmarshaler {
+	return newWireUnmarshaler(resolver, options...)
+}
+
+// WireUnmarshalerOption is an option for a new WireUnmarshaler.
+type WireUnmarshalerOption func(*wireUnmarshaler)
+
+// WireUnmarshalerWithDisallowUnknown says to disallow unrecognized fields.
+func WireUnmarshalerWithDisallowUnknown() WireUnmarshalerOption {
+	return func(wireUnmarshaler *wireUnmarshaler) {
+		wireUnmarshaler.disallowUnknown = true
+	}
 }
 
 // NewJSONUnmarshaler returns a new Unmarshaler for json.
@@ -187,8 +197,18 @@ func JSONUnmarshalerWithDisallowUnknown() JSONUnmarshalerOption {
 // NewTxtpbUnmarshaler returns a new Unmarshaler for txtpb.
 //
 // resolver can be nil if unknown and are only needed for extensions.
-func NewTxtpbUnmarshaler(resolver Resolver) Unmarshaler {
-	return newTxtpbUnmarshaler(resolver)
+func NewTxtpbUnmarshaler(resolver Resolver, options ...TxtpbUnmarshalerOption) Unmarshaler {
+	return newTxtpbUnmarshaler(resolver, options...)
+}
+
+// TxtpbUnmarshalerOption is an option for a new TxtpbUnmarshaler.
+type TxtpbUnmarshalerOption func(*txtpbUnmarshaler)
+
+// TxtpbUnmarshalerWithDisallowUnknown says to disallow unrecognized fields.
+func TxtpbUnmarshalerWithDisallowUnknown() TxtpbUnmarshalerOption {
+	return func(txtpbUnmarshaler *txtpbUnmarshaler) {
+		txtpbUnmarshaler.disallowUnknown = true
+	}
 }
 
 // YAMLUnmarshalerOption is an option for a new YAMLUnmarshaler.

@@ -124,6 +124,14 @@ func WithMessageValidation() FunctionOption {
 	}
 }
 
+// WithMessageDisallowUnknown returns a new FunctionOption that says to disallow
+// unknown fields or enum name values in the message as it is being read.
+func WithMessageDisallowUnknown() FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.messageDisallowUnknown = true
+	}
+}
+
 // *** PRIVATE ***
 
 type functionOptions struct {
@@ -138,6 +146,7 @@ type functionOptions struct {
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool
 	messageValidation               bool
+	messageDisallowUnknown          bool
 }
 
 func newFunctionOptions(controller *controller) *functionOptions {
