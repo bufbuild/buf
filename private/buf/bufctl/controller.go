@@ -641,7 +641,7 @@ func (c *controller) GetMessage(
 				protoencoding.TxtpbUnmarshalerWithDisallowUnknown(),
 			)
 		}
-		unmarshaler = protoencoding.NewTxtpbUnmarshaler(schemaImage.Resolver())
+		unmarshaler = protoencoding.NewTxtpbUnmarshaler(schemaImage.Resolver(), options...)
 	case buffetch.MessageEncodingYAML:
 		if functionOptions.messageDisallowUnknown {
 			// TODO: implement after https://github.com/bufbuild/protoyaml-go/issues/37 is resolved
