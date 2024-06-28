@@ -20,20 +20,24 @@ import (
 )
 
 type txtpbUnmarshaler struct {
-	resolver Resolver
+	resolver        Resolver
+	disallowUnknown bool
 }
 
-func newTxtpbUnmarshaler(resolver Resolver) Unmarshaler {
-	return &txtpbUnmarshaler{
+func newTxtpbUnmarshaler(resolver Resolver, options ...TxtpbUnmarshalerOption) Unmarshaler {
+	txtpbUnmarshaler := &txtpbUnmarshaler{
 		resolver: resolver,
 	}
+	for _, option := range options {
+		option(txtpbUnmarshaler)
+	}
+	return txtpbUnmarshaler
 }
 
 func (m *txtpbUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 	options := prototext.UnmarshalOptions{
-		Resolver: m.resolver,
-		// TODO: make this an option
-		DiscardUnknown: true,
+		Resolver:       m.resolver,
+		DiscardUnknown: !m.disallowUnknown,
 	}
 	return options.Unmarshal(data, message)
 }

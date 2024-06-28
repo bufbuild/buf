@@ -400,6 +400,46 @@ func TestConvertWKTImport(t *testing.T) {
 	)
 }
 
+func TestConvertWKTImportWithUnknown(t *testing.T) {
+	t.Parallel()
+	input := `{"syntax":"SYNTAX_PROTO3","foo":"bar"}`
+	expected := `{"syntax":"SYNTAX_PROTO3"}`
+	stdin := strings.NewReader(input)
+	appcmdtesting.RunCommandExitCodeStdout(
+		t,
+		testNewCommand,
+		0,
+		expected,
+		nil,
+		stdin,
+		"--type=google.protobuf.Type",
+		"--from=-#format=json",
+		"--to",
+		"-#format=json",
+	)
+}
+
+func TestConvertWKTImportWithUnknownAndDisallowUnknown(t *testing.T) {
+	t.Parallel()
+	input := `{"syntax":"SYNTAX_PROTO3","foo":"bar"}`
+	stdin := strings.NewReader(input)
+	appcmdtesting.RunCommandExitCodeStderrContains(
+		t,
+		testNewCommand,
+		1,
+		[]string{
+			`unknown field "foo"`,
+		},
+		nil,
+		stdin,
+		"--type=google.protobuf.Type",
+		"--from=-#format=json",
+		"--to",
+		"-#format=json",
+		"--disallow-unknown",
+	)
+}
+
 func testNewCommand(use string) *appcmd.Command {
 	return NewCommand("convert", appext.NewBuilder("convert"))
 }

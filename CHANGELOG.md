@@ -2,12 +2,13 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf convert --disallow-unknown` flag to error if unknown fields or enum name values
+  are contained within the input to `buf convert`.
 
 ## [v1.34.0] - 2024-06-21
 
 - Add `buf config ls-modules` command to list configured modules.
-- Fix issue where `buf generate` would succeed on missing insertion points and 
+- Fix issue where `buf generate` would succeed on missing insertion points and
   panic on empty insertion point files.
 - Update `buf generate` to allow the use of Editions syntax when doing local code
   generation by proxying to a `protoc` binary (for languages where code gen is
