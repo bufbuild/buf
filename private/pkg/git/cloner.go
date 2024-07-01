@@ -33,15 +33,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// bufCloneOrigin is the name for the remote. It helps distinguish the origin of
-	// the repo we're cloning from the "origin" of our clone (which is the repo
-	// being cloned).
-	// We can fetch directly from an origin URL, but without any remote set git LFS
-	// will fail to fetch so we need to pick something.
-	bufCloneOrigin = "bufCloneOrigin"
-)
-
 type cloner struct {
 	logger            *zap.Logger
 	tracer            tracing.Tracer
@@ -97,51 +88,38 @@ func (c *cloner) CloneToBucket(
 
 	depthArg := strconv.Itoa(int(depth))
 
-	bareDir, err := tmp.NewDir()
+	baseDir, err := tmp.NewDir()
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, bareDir.Close())
-	}()
-	worktreeDir, err := tmp.NewDir()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, worktreeDir.Close())
+		retErr = multierr.Append(retErr, baseDir.Close())
 	}()
 
 	buffer := bytes.NewBuffer(nil)
 	if err := c.runner.Run(
 		ctx,
 		"git",
-		command.RunWithArgs("init", "--bare"),
+		command.RunWithArgs("init"),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
-		command.RunWithDir(bareDir.AbsPath()),
+		command.RunWithDir(baseDir.AbsPath()),
 	); err != nil {
-		return newGitCommandError(err, buffer, bareDir)
+		return newGitCommandError(err, buffer)
 	}
 
 	buffer.Reset()
-	remoteArgs := []string{
-		"--git-dir=" + bareDir.AbsPath(),
-		"remote",
-		"add",
-		bufCloneOrigin,
-		url,
-	}
 	if err := c.runner.Run(
 		ctx,
 		"git",
-		command.RunWithArgs(remoteArgs...),
+		command.RunWithArgs("remote", "add", "origin", url),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
+		command.RunWithDir(baseDir.AbsPath()),
 	); err != nil {
-		return newGitCommandError(err, buffer, bareDir)
+		return newGitCommandError(err, buffer)
 	}
 
 	var gitConfigAuthArgs []string
@@ -154,15 +132,6 @@ func (c *cloner) CloneToBucket(
 		}
 		gitConfigAuthArgs = append(gitConfigAuthArgs, extraArgs...)
 	}
-	fetchRef, worktreeRef, checkoutRef := getRefspecsForName(options.Name)
-	fetchArgs := append(
-		gitConfigAuthArgs,
-		"--git-dir="+bareDir.AbsPath(),
-		"fetch",
-		"--depth", depthArg,
-		bufCloneOrigin,
-		fetchRef,
-	)
 
 	if strings.HasPrefix(url, "ssh://") {
 		envContainer, err = c.getEnvContainerWithGitSSHCommand(envContainer)
@@ -170,81 +139,95 @@ func (c *cloner) CloneToBucket(
 			return err
 		}
 	}
+	// First, try to fetch the fetchRef directly. If the ref is not found, we
+	// will try to fetch the fallback ref with a depth to allow resolving partial
+	// refs locally. If the fetch fails, we will return an error.
+	fetchRef, fallbackRef, checkoutRef := getRefspecsForName(options.Name)
 	buffer.Reset()
 	if err := c.runner.Run(
 		ctx,
 		"git",
-		command.RunWithArgs(fetchArgs...),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-	); err != nil {
-		return newGitCommandError(err, buffer, bareDir)
-	}
-
-	buffer.Reset()
-	args := append(
-		gitConfigAuthArgs,
-		"--git-dir="+bareDir.AbsPath(),
-		"worktree",
-		"add",
-		worktreeDir.AbsPath(),
-		worktreeRef,
-	)
-	if err := c.runner.Run(
-		ctx,
-		"git",
-		command.RunWithArgs(args...),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-	); err != nil {
-		return newGitCommandError(err, buffer, worktreeDir)
-	}
-
-	if checkoutRef != "" {
-		buffer.Reset()
-		args := append(
+		command.RunWithArgs(append(
 			gitConfigAuthArgs,
-			"checkout",
-			checkoutRef,
-		)
+			"fetch", "--depth", depthArg, "origin", fetchRef,
+		)...),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+		command.RunWithStderr(buffer),
+		command.RunWithDir(baseDir.AbsPath()),
+	); err != nil {
+		// If the ref fetch failed, without a fallback, return the error.
+		if fallbackRef == "" || !strings.Contains(buffer.String(), "couldn't find remote ref") {
+			return newGitCommandError(err, buffer)
+		}
+		// Failed to fetch the ref directly, try to fetch the fallback ref.
+		buffer.Reset()
 		if err := c.runner.Run(
 			ctx,
 			"git",
-			command.RunWithArgs(args...),
+			command.RunWithArgs(append(
+				gitConfigAuthArgs,
+				"fetch", "--depth", depthArg, "origin", fallbackRef,
+			)...),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 			command.RunWithStderr(buffer),
-			command.RunWithDir(worktreeDir.AbsPath()),
+			command.RunWithDir(baseDir.AbsPath()),
 		); err != nil {
-			return newGitCommandError(err, buffer, worktreeDir)
+			return newGitCommandError(err, buffer)
+		}
+	}
+
+	// Always checkout the FETCH_HEAD to populate the working directory.
+	// This allows for referencing HEAD in checkouts.
+	buffer.Reset()
+	if err := c.runner.Run(
+		ctx,
+		"git",
+		command.RunWithArgs("checkout", "--force", "FETCH_HEAD"),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+		command.RunWithStderr(buffer),
+		command.RunWithDir(baseDir.AbsPath()),
+	); err != nil {
+		return newGitCommandError(err, buffer)
+	}
+	if checkoutRef != "" {
+		buffer.Reset()
+		if err := c.runner.Run(
+			ctx,
+			"git",
+			command.RunWithArgs("checkout", "--force", checkoutRef),
+			command.RunWithEnv(app.EnvironMap(envContainer)),
+			command.RunWithStderr(buffer),
+			command.RunWithDir(baseDir.AbsPath()),
+		); err != nil {
+			return newGitCommandError(err, buffer)
 		}
 	}
 
 	if options.RecurseSubmodules {
-		submoduleArgs := append(
-			gitConfigAuthArgs,
-			"submodule",
-			"update",
-			"--init",
-			"--recursive",
-			"--depth",
-			depthArg,
-		)
 		buffer.Reset()
 		if err := c.runner.Run(
 			ctx,
 			"git",
-			command.RunWithArgs(submoduleArgs...),
+			command.RunWithArgs(append(
+				gitConfigAuthArgs,
+				"submodule",
+				"update",
+				"--init",
+				"--recursive",
+				"--force",
+				"--depth",
+				depthArg,
+			)...),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 			command.RunWithStderr(buffer),
-			command.RunWithDir(worktreeDir.AbsPath()),
+			command.RunWithDir(baseDir.AbsPath()),
 		); err != nil {
-			// Suppress printing of temp path
-			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), worktreeDir.AbsPath(), "", -1))
+			return newGitCommandError(err, buffer)
 		}
 	}
 
 	// we do NOT want to read in symlinks
-	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(worktreeDir.AbsPath())
+	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(baseDir.AbsPath())
 	if err != nil {
 		return err
 	}
@@ -344,41 +327,39 @@ func getSSHKnownHostsFilePaths(sshKnownHostsFiles string) []string {
 	return filePaths
 }
 
-// getRefspecsForName decides the refspecs to use in the subsequent git fetch,
-// git worktree add and git checkout. When checkoutRefspec is empty, Name
-// explicitly refer to a named ref and the checkout isn't a necessary step.
-func getRefspecsForName(gitName Name) (fetchRefSpec string, worktreeRefSpec string, checkoutRefspec string) {
+// getRefspecsForName returns the refs to fetch and checkout. A fallback ref is
+// used for partial refs. If the first fetch fails, the fallback ref is fetched
+// to allow resolving partial refs locally. The checkout ref is the ref to
+// checkout after the fetch.
+func getRefspecsForName(gitName Name) (fetchRef string, fallbackRef string, checkoutRef string) {
+	// Default to fetching HEAD and checking out FETCH_HEAD.
 	if gitName == nil {
-		return "HEAD", "FETCH_HEAD", ""
+		return "HEAD", "", ""
 	}
-	if gitName.cloneBranch() != "" && gitName.checkout() != "" {
-		// When doing branch/tag clones, make sure we use a
-		// refspec that creates a local referece in `refs/` even if the ref
-		// is remote tracking, so that the checkoutRefs may reference it,
-		// for example:
-		//   branch=origin/main,ref=origin/main~1
-		fetchRefSpec := gitName.cloneBranch() + ":" + gitName.cloneBranch()
-		return fetchRefSpec, "FETCH_HEAD", gitName.checkout()
-	} else if gitName.cloneBranch() != "" {
-		return gitName.cloneBranch(), "FETCH_HEAD", ""
-	} else if gitName.checkout() != "" {
-		// After fetch we won't have checked out any refs. This
-		// will cause `refs=` containing "HEAD" to fail, as HEAD
-		// is a special case that is not fetched into a ref but
-		// instead refers to the current commit checked out. By
-		// checking out "FETCH_HEAD" before checking out the
-		// user supplied ref, we behave similarly to git clone.
-		return "HEAD", "FETCH_HEAD", gitName.checkout()
-	} else {
-		return "HEAD", "FETCH_HEAD", ""
+	checkout, cloneBranch := gitName.checkout(), gitName.cloneBranch()
+	if checkout != "" && cloneBranch != "" {
+		// If a branch, tag, or commit is specified, we fetch the ref directly.
+		return createFetchRefSpec(cloneBranch), "", checkout
+	} else if cloneBranch != "" {
+		// If a branch is specified, we fetch the branch directly.
+		return createFetchRefSpec(cloneBranch), "", cloneBranch
+	} else if checkout != "" && checkout != "HEAD" {
+		// If a checkout ref is specified, we fetch the ref directly.
+		// We fallback to fetching the HEAD to resolve partial refs.
+		return createFetchRefSpec(checkout), "HEAD", checkout
 	}
+	return "HEAD", "", ""
 }
 
-func newGitCommandError(
-	err error,
-	buffer *bytes.Buffer,
-	tmpDir tmp.Dir,
-) error {
-	// Suppress printing of temp path
-	return fmt.Errorf("%v\n%v", err, strings.TrimSpace(strings.Replace(buffer.String(), tmpDir.AbsPath(), "", -1)))
+// createFetchRefSpec create a refspec to ensure a local reference is created
+// when fetching a branch or tag. This allows to checkout the ref with
+// `git checkout` even if the ref is remote tracking. For example:
+//
+//	+origin/main:origin/main
+func createFetchRefSpec(fetchRef string) string {
+	return "+" + fetchRef + ":" + fetchRef
+}
+
+func newGitCommandError(err error, buffer *bytes.Buffer) error {
+	return fmt.Errorf("%v\n%v", err, buffer.String())
 }
