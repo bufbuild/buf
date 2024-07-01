@@ -13,7 +13,7 @@ require (
 	github.com/bufbuild/protovalidate-go v0.6.2
 	github.com/bufbuild/protoyaml-go v0.1.9
 	github.com/docker/docker v27.0.0+incompatible
-	github.com/go-chi/chi/v5 v5.0.14
+	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.2.0
 	github.com/google/cel-go v0.20.1
