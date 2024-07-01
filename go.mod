@@ -14,7 +14,7 @@ require (
 	github.com/bufbuild/protoyaml-go v0.1.9
 	github.com/docker/docker v27.0.0+incompatible
 	github.com/go-chi/chi/v5 v5.0.14
-	github.com/gofrs/flock v0.8.1
+	github.com/gofrs/flock v0.11.0
 	github.com/gofrs/uuid/v5 v5.2.0
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
@@ -69,7 +69,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/pprof v0.0.0-20240622144329-c177fd99eaa9 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
