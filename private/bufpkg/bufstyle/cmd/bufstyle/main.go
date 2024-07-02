@@ -15,7 +15,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle"
@@ -66,7 +68,7 @@ func readExternalConfig() (bufstyle.ExternalConfig, error) {
 	var externalConfig bufstyle.ExternalConfig
 	data, err := os.ReadFile(externalConfigPath)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return externalConfig, nil
 		}
 		return externalConfig, err

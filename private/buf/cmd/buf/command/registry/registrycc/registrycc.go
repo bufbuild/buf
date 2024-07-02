@@ -16,7 +16,9 @@ package registrycc
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -69,7 +71,7 @@ func run(
 		dirPath := filepath.Join(container.CacheDirPath(), normalpath.Unnormalize(cacheModuleRelDirPath))
 		fileInfo, err := os.Stat(dirPath)
 		if err != nil {
-			if os.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				continue
 			}
 			return err

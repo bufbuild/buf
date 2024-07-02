@@ -16,7 +16,9 @@ package bufprotopluginos
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -193,7 +195,7 @@ func (w *responseWriter) writeZip(
 	// OK to use os.Stat instead of os.Lstat here.
 	fileInfo, err := os.Stat(outDirPath)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			if createOutDirIfNotExists {
 				if err := os.MkdirAll(outDirPath, 0755); err != nil {
 					return err

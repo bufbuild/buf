@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -732,7 +733,7 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 		format = formatGit
 	case ".proto":
 		fileInfo, err := os.Stat(rawRef.Path)
-		if err != nil && !os.IsNotExist(err) {
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
 		}
 		if fileInfo != nil && fileInfo.IsDir() {

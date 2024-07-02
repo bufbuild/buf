@@ -16,6 +16,7 @@
 package netrc
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -93,7 +94,7 @@ func GetFilePath(envContainer app.EnvContainer) (string, error) {
 // Returns nil if no such Machine or no such file.
 func GetMachineForNameAndFilePath(name string, filePath string) (_ Machine, retErr error) {
 	if _, err := os.Stat(filePath); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, err
@@ -126,7 +127,7 @@ func putMachinesForFilePath(machines []Machine, filePath string) (retErr error) 
 	fileInfo, err := os.Stat(filePath)
 	var fileMode fs.FileMode
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			netrcStruct = &netrc.Netrc{}
 			fileMode = 0600
 		} else {
@@ -155,7 +156,7 @@ func putMachinesForFilePath(machines []Machine, filePath string) (retErr error) 
 func deleteMachineForFilePath(name string, filePath string) (_ bool, retErr error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			// If a netrc file does not already exist, there's nothing to be done.
 			return false, nil
 		}

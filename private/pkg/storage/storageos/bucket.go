@@ -122,7 +122,7 @@ func (b *bucket) Walk(
 			if err != nil {
 				// this can happen if a symlink is broken
 				// in this case, we just want to continue the walk
-				if b.symlinks && os.IsNotExist(err) {
+				if b.symlinks && errors.Is(err, fs.ErrNotExist) {
 					return nil
 				}
 				return err
@@ -159,7 +159,7 @@ func (b *bucket) Walk(
 		},
 		walkOptions...,
 	); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			// Should be a no-op according to the spec.
 			return nil
 		}
@@ -181,7 +181,7 @@ func (b *bucket) Put(ctx context.Context, path string, options ...storage.PutOpt
 		fileInfo, err = os.Lstat(externalDir)
 	}
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			if err := os.MkdirAll(externalDir, 0755); err != nil {
 				return nil, err
 			}
@@ -217,7 +217,7 @@ func (b *bucket) Delete(ctx context.Context, path string) error {
 	// leave orphan parent directories around that were
 	// created by the MkdirAll in Put.
 	if err := os.Remove(externalPath); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		return err
@@ -232,7 +232,7 @@ func (b *bucket) DeleteAll(ctx context.Context, prefix string) error {
 	}
 	if err := os.RemoveAll(externalPrefix); err != nil {
 		// this is a no-nop per the documentation
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return err
@@ -268,7 +268,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 		fileInfo, err = os.Lstat(externalPath)
 	}
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		// The path might have a regular file in one of its

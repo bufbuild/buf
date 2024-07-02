@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -77,7 +78,7 @@ func createDirIfNotExists(dirPath string) error {
 	if _, err := os.Stat(dirPath); err != nil {
 		// We don't need to check fileInfo.IsDir() because it's
 		// already handled by the storageosProvider.
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			if err := os.MkdirAll(dirPath, 0755); err != nil {
 				return err
 			}

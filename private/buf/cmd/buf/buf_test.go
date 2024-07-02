@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -3087,7 +3088,7 @@ func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 		filepath.Join(tempDir, "formatted", "invalid"), // Directory output.
 	)
 	_, err := os.Stat(filepath.Join(tempDir, "formatted", "invalid"))
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, errors.Is(err, fs.ErrNotExist))
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -3100,7 +3101,7 @@ func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 		filepath.Join(tempDir, "formatted", "invalid", "invalid.proto"), // Single file output.
 	)
 	_, err = os.Stat(filepath.Join(tempDir, "formatted", "invalid"))
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, errors.Is(err, fs.ErrNotExist))
 }
 
 func TestConvertRoundTrip(t *testing.T) {

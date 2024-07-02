@@ -159,7 +159,7 @@ func run(
 			return err
 		}
 		defer func() {
-			if err := os.RemoveAll(tmpDir); !os.IsNotExist(err) {
+			if err := os.RemoveAll(tmpDir); !errors.Is(err, fs.ErrNotExist) {
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
