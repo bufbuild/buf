@@ -16,6 +16,8 @@ package bufmodulecache
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -23,8 +25,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {
@@ -214,6 +219,53 @@ func TestModuleDataProviderBasic(t *testing.T) {
 	)
 }
 
+func TestConcurrentCacheReadWrite(t *testing.T) {
+	t.Parallel()
+
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
+	tempDir := t.TempDir()
+	cacheDir := filepath.Join(tempDir, "cache")
+
+	for i := 0; i < 100; i++ {
+		require.NoError(t, os.MkdirAll(cacheDir, 0755))
+		errs, ctx := errgroup.WithContext(context.Background())
+
+		for j := 0; j < 10; j++ {
+			bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
+			require.NoError(t, err)
+
+			cacheProvider := newModuleDataProvider(
+				zap.NewNop(),
+				bsrProvider,
+				bufmodulestore.NewModuleDataStore(
+					zap.NewNop(),
+					bucket,
+				),
+			)
+
+			errs.Go(func() error {
+				moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
+					ctx,
+					moduleKeys,
+				)
+				if err != nil {
+					return err
+				}
+				for _, moduleData := range moduleDatas {
+					// Calling moduleData.Bucket() checks the digest
+					if _, err := moduleData.Bucket(); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+		}
+
+		assert.NoError(t, errs.Wait()) // Waits for all go routines to finish and returns the first error, if any
+		require.NoError(t, os.RemoveAll(cacheDir))
+	}
+}
+
 func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmoduletesting.OmniProvider, []bufmodule.ModuleKey) {
 	bsrProvider, err := bufmoduletesting.NewOmniProvider(
 		bufmoduletesting.ModuleData{
@@ -235,7 +287,10 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/mod3",
 			PathToData: map[string][]byte{
-				"mod3.proto": []byte(
+				"mod3a.proto": []byte(
+					`syntax = proto3; package mod3;`,
+				),
+				"mod3b.proto": []byte(
 					`syntax = proto3; package mod3;`,
 				),
 			},
