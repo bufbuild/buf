@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -166,12 +167,17 @@ func newModuleDataProvider(
 	if err != nil {
 		return nil, err
 	}
+	filelocker, err := filelock.NewLocker(fullCacheDirPath)
+	if err != nil {
+		return nil, err
+	}
 	return bufmodulecache.NewModuleDataProvider(
 		container.Logger(),
 		delegateModuleDataProvider,
 		bufmodulestore.NewModuleDataStore(
 			container.Logger(),
 			cacheBucket,
+			bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
 		),
 	), nil
 }

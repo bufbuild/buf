@@ -62,6 +62,6 @@ func newModuleDataProvider(
 func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) ([]bufmodule.ModuleData, error) {
+) (_ []bufmodule.ModuleData, retErr error) {
 	return p.baseProvider.getValuesForKeys(ctx, moduleKeys)
 }

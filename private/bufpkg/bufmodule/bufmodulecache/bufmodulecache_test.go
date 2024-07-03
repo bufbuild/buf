@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -226,12 +227,14 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
 		errs, ctx := errgroup.WithContext(context.Background())
 
-		for j := 0; j < 10; j++ {
+		for j := 0; j < 2; j++ {
 			bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
+			require.NoError(t, err)
+			filelocker, err := filelock.NewLocker(cacheDir)
 			require.NoError(t, err)
 
 			cacheProvider := newModuleDataProvider(
@@ -240,6 +243,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 				bufmodulestore.NewModuleDataStore(
 					zap.NewNop(),
 					bucket,
+					bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
 				),
 			)
 

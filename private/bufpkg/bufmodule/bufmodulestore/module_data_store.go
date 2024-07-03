@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -96,13 +97,27 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 	}
 }
 
+// TODO(doria): clean up GoDoc.
+// ModuleDataStoreWithFileLocker returns a new ModuleDataStoreOption that sets a filelock.Locker.
+//
+// If a filelocker is set, then the module data store will use this to grab a file lock on
+// module.yaml to synchronize reading and writing to the cache.
+//
+// If ModuleDataStoreWithTar is set, then this is ignored.
+func ModuleDataStoreWithFileLocker(filelocker filelock.Locker) ModuleDataStoreOption {
+	return func(moduleDataStore *moduleDataStore) {
+		moduleDataStore.filelocker = filelocker
+	}
+}
+
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
 	logger *zap.Logger
 	bucket storage.ReadWriteBucket
 
-	tar bool
+	tar        bool
+	filelocker filelock.Locker
 }
 
 func newModuleDataStore(
@@ -167,10 +182,25 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return nil, err
 		}
 	} else {
-		moduleCacheBucket, err = p.getReadWriteBucketForDir(moduleKey)
-		// Not checking for fs.ErrNotExist. Function only returns error on actual system error.
+		dirPath, err := getModuleDataStoreDirPath(moduleKey)
 		if err != nil {
 			return nil, err
+		}
+		p.logDebugModuleKey(
+			moduleKey,
+			"module data store dir read write bucket",
+			zap.String("dirPath", dirPath),
+		)
+		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
+		// Only attempt to get a file lock when storing individual files
+		if p.filelocker != nil {
+			unlocker, err := p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataFileName)
+			if err != nil {
+				return nil, err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, unlocker.Unlock())
+			}()
 		}
 	}
 	defer func() {
@@ -297,6 +327,15 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 	if err != nil {
 		return err
 	}
+	if p.filelocker != nil {
+		unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataFileName)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			retErr = multierr.Append(retErr, unlocker.Unlock())
+		}()
+	}
 	return p.bucket.DeleteAll(ctx, dirPath)
 }
 
@@ -317,9 +356,25 @@ func (p *moduleDataStore) putModuleData(
 			}
 		}()
 	} else {
-		moduleCacheBucket, err = p.getReadWriteBucketForDir(moduleKey)
+		dirPath, err := getModuleDataStoreDirPath(moduleKey)
 		if err != nil {
 			return err
+		}
+		p.logDebugModuleKey(
+			moduleKey,
+			"module data store dir read write bucket",
+			zap.String("dirPath", dirPath),
+		)
+		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
+		// Only attempt to get a file lock when storing individual files
+		if p.filelocker != nil {
+			unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataFileName)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, unlocker.Unlock())
+			}()
 		}
 	}
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
@@ -389,22 +444,6 @@ func (p *moduleDataStore) putModuleData(
 	// We can use the existence of the module.yaml file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
 	return storage.PutPath(ctx, moduleCacheBucket, externalModuleDataFileName, data)
-}
-
-// Only returns error on actual system error.
-func (p *moduleDataStore) getReadWriteBucketForDir(
-	moduleKey bufmodule.ModuleKey,
-) (storage.ReadWriteBucket, error) {
-	dirPath, err := getModuleDataStoreDirPath(moduleKey)
-	if err != nil {
-		return nil, err
-	}
-	p.logDebugModuleKey(
-		moduleKey,
-		"module data store dir read write bucket",
-		zap.String("dirPath", dirPath),
-	)
-	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath)), nil
 }
 
 // May return fs.ErrNotExist error if tar not found.
