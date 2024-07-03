@@ -118,6 +118,14 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 	}
 }
 
+// GenerateWithDeleteOuts returns a new GenerateOption that results in the
+// output directories, zip files, or jar files being deleted before generation is run.
+func GenerateWithDeleteOuts() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.deleteOuts = true
+	}
+}
+
 // GenerateWithIncludeImportsOverride is a strict override on whether imports are
 // generated. This overrides IncludeImports from the GeneratePluginConfig.
 //

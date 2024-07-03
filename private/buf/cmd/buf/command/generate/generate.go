@@ -42,6 +42,7 @@ const (
 	templateFlagName            = "template"
 	baseOutDirPathFlagName      = "output"
 	baseOutDirPathFlagShortName = "o"
+	deleteOutsFlagName          = "rm"
 	errorFormatFlagName         = "error-format"
 	configFlagName              = "config"
 	pathsFlagName               = "path"
@@ -372,6 +373,7 @@ Insertion points are processed in the order the plugins are specified in the tem
 type flags struct {
 	Template               string
 	BaseOutDirPath         string
+	DeleteOuts             bool
 	ErrorFormat            string
 	Files                  []string
 	Config                 string
@@ -424,6 +426,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		baseOutDirPathFlagShortName,
 		".",
 		`The base directory to generate to. This is prepended to the out directories in the generation template`,
+	)
+	flagSet.BoolVar(
+		&f.DeleteOuts,
+		deleteOutsFlagName,
+		false,
+		`Prior to generation, delete the output locations (usually directories)`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -513,6 +521,12 @@ func run(
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+	}
+	if flags.DeleteOuts {
+		generateOptions = append(
+			generateOptions,
+			bufgen.GenerateWithDeleteOuts(),
+		)
 	}
 	if flags.IncludeImportsOverride != nil {
 		generateOptions = append(
