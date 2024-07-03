@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -550,6 +551,19 @@ func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 func TestGenerateDeleteOutDir(t *testing.T) {
 	t.Parallel()
 	testGenerateDeleteOuts(t, "", "foo")
+	testGenerateDeleteOuts(t, "base", "foo")
+	testGenerateDeleteOuts(t, "", "foo", "bar")
+	testGenerateDeleteOuts(t, "", "foo", "bar", "foo")
+	testGenerateDeleteOuts(t, "base", "foo", "bar")
+	testGenerateDeleteOuts(t, "base", "foo", "bar", "foo")
+	testGenerateDeleteOuts(t, "", "foo.jar")
+	testGenerateDeleteOuts(t, "", "foo.zip")
+	testGenerateDeleteOuts(t, "", "foo/bar.jar")
+	testGenerateDeleteOuts(t, "", "foo/bar.zip")
+	testGenerateDeleteOuts(t, "base", "foo.jar")
+	testGenerateDeleteOuts(t, "base", "foo.zip")
+	testGenerateDeleteOuts(t, "base", "foo/bar.jar")
+	testGenerateDeleteOuts(t, "base", "foo/bar.zip")
 }
 
 func TestBoolPointerFlagTrue(t *testing.T) {
@@ -895,6 +909,8 @@ func testGenerateDeleteOuts(
 	baseOutDirPath string,
 	outputPaths ...string,
 ) {
+	// Just add more builtins to the plugins slice below if this goes off
+	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
 	if baseOutDirPath != "" && baseOutDirPath != "." {
 		fullOutputPaths = slicesext.Map(
@@ -939,9 +955,12 @@ func testGenerateDeleteOuts(
 plugins:
 `)
 
-	for _, outputPath := range outputPaths {
-		_, _ = templateBuilder.WriteString(`  - protoc_builtin: java
-  out: `)
+	plugins := []string{"java", "cpp", "ruby"}
+	for i, outputPath := range outputPaths {
+		_, _ = templateBuilder.WriteString(`  - protoc_builtin: `)
+		_, _ = templateBuilder.WriteString(plugins[i])
+		_, _ = templateBuilder.WriteString("\n")
+		_, _ = templateBuilder.WriteString(`    out: `)
 		_, _ = templateBuilder.WriteString(outputPath)
 		_, _ = templateBuilder.WriteString("\n")
 	}
@@ -958,6 +977,25 @@ plugins:
 		filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
 		"--rm",
 	)
+	for _, fullOutputPath := range fullOutputPaths {
+		switch normalpath.Ext(fullOutputPath) {
+		case ".jar", ".zip":
+			data, err := storage.ReadPath(
+				ctx,
+				storageBucket,
+				fullOutputPath,
+			)
+			require.NoError(t, err)
+			require.True(t, len(data) > 1, "expected non-fake data at %q", fullOutputPath)
+		default:
+			_, err := storage.ReadPath(
+				ctx,
+				storageBucket,
+				normalpath.Join(fullOutputPath, "foo.txt"),
+			)
+			require.ErrorIs(t, err, fs.ErrNotExist)
+		}
+	}
 }
 
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {

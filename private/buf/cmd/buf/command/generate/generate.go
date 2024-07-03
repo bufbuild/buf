@@ -527,6 +527,7 @@ func run(
 			generateOptions,
 			bufgen.GenerateWithDeleteOuts(),
 		)
+
 	}
 	if flags.IncludeImportsOverride != nil {
 		generateOptions = append(

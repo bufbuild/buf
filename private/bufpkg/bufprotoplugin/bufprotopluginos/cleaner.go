@@ -20,7 +20,9 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/pkg/filepathext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -41,11 +43,20 @@ func (c *cleaner) DeleteOuts(
 	ctx context.Context,
 	pluginOuts []string,
 ) error {
+	pwd, err := osext.Getwd()
+	if err != nil {
+		return err
+	}
+	pwd, err = reallyCleanPath(pwd)
+	if err != nil {
+		return err
+	}
 	for _, pluginOut := range pluginOuts {
-		if pluginOut == "" {
-			// This is just triple-making sure.
-			return syserror.New("got empty pluginOut in bufprotopluginos.Cleaner")
+		if err := validatePluginOut(pwd, pluginOut); err != nil {
+			return err
 		}
+	}
+	for _, pluginOut := range pluginOuts {
 		if err := c.deleteOut(ctx, pluginOut); err != nil {
 			return err
 		}
@@ -71,9 +82,43 @@ func (c *cleaner) deleteOut(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			return err
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
 		}
+		return err
 	}
 	return bucket.DeleteAll(ctx, removePath)
+}
+
+func validatePluginOut(pwd string, pluginOut string) error {
+	if pluginOut == "" {
+		// This is just triple-making sure.
+		return syserror.New("got empty pluginOut in bufprotopluginos.Cleaner")
+	}
+	if pluginOut == "." {
+		// This is just a really defensive safety check. We can't see a reason you'd want to delete
+		// your current working directory other than something like a (cd proto && buf generate), so
+		// until and unless someone complains, we're just going to outlaw this.
+		return errors.New("cannot use --rm if your plugin will output to the current directory")
+	}
+	cleanedPluginOut, err := reallyCleanPath(pluginOut)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	if cleanedPluginOut == pwd {
+		// Same thing, more defense for now.
+		return errors.New("cannot use --rm if your plugin will output to the current directory")
+	}
+	return nil
+}
+
+func reallyCleanPath(path string) (string, error) {
+	path, err := filepathext.RealClean(path)
+	if err != nil {
+		return "", err
+	}
+	return filepath.EvalSymlinks(path)
 }
