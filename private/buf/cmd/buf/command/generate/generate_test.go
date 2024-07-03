@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buftesting"
@@ -30,6 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -544,6 +547,11 @@ func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 	testGenerateInsertionPointMixedPathsFailV2(t, wd, ".")
 }
 
+func TestGenerateDeleteOutDir(t *testing.T) {
+	t.Parallel()
+	testGenerateDeleteOuts(t, "", "foo")
+}
+
 func TestBoolPointerFlagTrue(t *testing.T) {
 	t.Parallel()
 	expected := true
@@ -879,6 +887,76 @@ func testRunSuccess(t *testing.T, args ...string) {
 		nil,
 		nil,
 		args...,
+	)
+}
+
+func testGenerateDeleteOuts(
+	t *testing.T,
+	baseOutDirPath string,
+	outputPaths ...string,
+) {
+	fullOutputPaths := outputPaths
+	if baseOutDirPath != "" && baseOutDirPath != "." {
+		fullOutputPaths = slicesext.Map(
+			outputPaths,
+			func(outputPath string) string {
+				return normalpath.Join(baseOutDirPath, outputPath)
+			},
+		)
+	}
+	ctx := context.Background()
+	tmpDirPath := t.TempDir()
+	storageBucket, err := storageos.NewProvider().NewReadWriteBucket(tmpDirPath)
+	require.NoError(t, err)
+	for _, fullOutputPath := range fullOutputPaths {
+		switch normalpath.Ext(fullOutputPath) {
+		case ".jar", ".zip":
+			// Write a one-byte file to the location. We'll compare the size below as a simple test.
+			require.NoError(
+				t,
+				storage.PutPath(
+					ctx,
+					storageBucket,
+					fullOutputPath,
+					[]byte(`1`),
+				),
+			)
+		default:
+			// Write a file that won't be generated to the location.
+			require.NoError(
+				t,
+				storage.PutPath(
+					ctx,
+					storageBucket,
+					normalpath.Join(fullOutputPath, "foo.txt"),
+					[]byte(`1`),
+				),
+			)
+		}
+	}
+	var templateBuilder strings.Builder
+	_, _ = templateBuilder.WriteString(`version: v2
+plugins:
+`)
+
+	for _, outputPath := range outputPaths {
+		_, _ = templateBuilder.WriteString(`  - protoc_builtin: java
+  out: `)
+		_, _ = templateBuilder.WriteString(outputPath)
+		_, _ = templateBuilder.WriteString("\n")
+	}
+	testRunStdoutStderr(
+		t,
+		nil,
+		0,
+		``,
+		``,
+		filepath.Join("testdata", "simple"),
+		"--template",
+		templateBuilder.String(),
+		"-o",
+		filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
+		"--rm",
 	)
 }
 
