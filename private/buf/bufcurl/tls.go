@@ -38,6 +38,8 @@ type TLSSettings struct {
 	// "h2", and exclude "http/1.1". If the server does not pick a
 	// protocol, "h2" is assumed as the default.
 	HTTP2PriorKnowledge bool
+
+	HTTP3 bool
 }
 
 // MakeVerboseTLSConfig constructs a *tls.Config that logs information to the
@@ -46,6 +48,8 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 	var conf tls.Config
 	if settings.HTTP2PriorKnowledge {
 		conf.NextProtos = []string{"h2"}
+	} else if settings.HTTP3 {
+		conf.NextProtos = []string{"h3"}
 	} else {
 		conf.NextProtos = []string{"h2", "http/1.1"}
 	}
@@ -59,6 +63,8 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 		if state.NegotiatedProtocol == "" {
 			if settings.HTTP2PriorKnowledge {
 				printer.Printf("* ALPN: server did not agree on a protocol. Using default h2")
+			} else if settings.HTTP3 {
+				printer.Printf("* ALPN: server did not agree on a protocol. Still attempting h3")
 			} else {
 				printer.Printf("* ALPN: server did not agree on a protocol. Using default http/1.1.")
 			}
