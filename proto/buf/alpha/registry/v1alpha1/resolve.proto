@@ -220,7 +220,7 @@ message GetCmakeVersionRequest {
 }
 
 message GetCmakeVersionResponse {
-  // version is the resolved version to be used with the cargo registry.
+  // version is the resolved version to be used with the cmake registry.
   string version = 1;
 }
 
