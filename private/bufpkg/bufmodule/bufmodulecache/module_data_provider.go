@@ -16,10 +16,13 @@ package bufmodulecache
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/gofrs/uuid/v5"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -30,20 +33,23 @@ func NewModuleDataProvider(
 	logger *zap.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
+	filelocker filelock.Locker,
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(logger, delegate, store)
+	return newModuleDataProvider(logger, delegate, store, filelocker)
 }
 
 /// *** PRIVATE ***
 
 type moduleDataProvider struct {
 	*baseProvider[bufmodule.ModuleKey, bufmodule.ModuleData]
+	filelocker filelock.Locker
 }
 
 func newModuleDataProvider(
 	logger *zap.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
+	filelocker filelock.Locker,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
 		baseProvider: newBaseProvider(
@@ -56,12 +62,35 @@ func newModuleDataProvider(
 				return moduleData.ModuleKey().CommitID()
 			},
 		),
+		filelocker: filelocker,
 	}
 }
 
 func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) ([]bufmodule.ModuleData, error) {
+) (_ []bufmodule.ModuleData, retErr error) {
+	for _, moduleKey := range moduleKeys {
+		digest, err := moduleKey.Digest()
+		if err != nil {
+			return nil, err
+		}
+		path := fmt.Sprintf(
+			"%s/%s/%s/%s/%s/module.yaml", //TODO(doria): may want to export for bufmodulestore
+			digest.Type().String(),
+			moduleKey.ModuleFullName().Registry(),
+			moduleKey.ModuleFullName().Owner(),
+			moduleKey.ModuleFullName().Name(),
+			moduleKey.CommitID().String(),
+		)
+		unlocker, err := p.filelocker.Lock(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			retErr = multierr.Append(retErr, unlocker.Unlock())
+		}()
+	}
+
 	return p.baseProvider.getValuesForKeys(ctx, moduleKeys)
 }
