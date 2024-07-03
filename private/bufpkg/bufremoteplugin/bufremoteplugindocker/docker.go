@@ -29,6 +29,7 @@ import (
 	"github.com/docker/docker/api/types"
 	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	imagev1 "github.com/docker/docker/image/v1"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	"go.uber.org/multierr"
@@ -128,7 +129,7 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 				d.logger.Warn("Unsupported image digest", zap.String("imageID", loadedImageID))
 				continue
 			}
-			if err := stringid.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
+			if err := imagev1.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
 				d.logger.Warn("Invalid image id", zap.String("imageID", loadedImageID))
 				continue
 			}

@@ -1,20 +1,22 @@
 module github.com/bufbuild/buf
 
-go 1.20
+go 1.21.0
+
+toolchain go1.22.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240610164129-660609bc46d3.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240610164129-660609bc46d3.2
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240626210909-c9e875a41f74.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240626210909-c9e875a41f74.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
 	github.com/bufbuild/protovalidate-go v0.6.2
 	github.com/bufbuild/protoyaml-go v0.1.9
-	github.com/docker/docker v27.0.0+incompatible
-	github.com/go-chi/chi/v5 v5.0.14
-	github.com/gofrs/flock v0.8.1
+	github.com/docker/docker v27.0.3+incompatible
+	github.com/go-chi/chi/v5 v5.1.0
+	github.com/gofrs/flock v0.12.0
 	github.com/gofrs/uuid/v5 v5.2.0
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
@@ -56,7 +58,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v26.1.4+incompatible // indirect
+	github.com/docker/cli v27.0.3+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -67,9 +69,8 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/pprof v0.0.0-20240622144329-c177fd99eaa9 // indirect
+	github.com/google/pprof v0.0.0-20240625030939-27f56978b8b0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
@@ -89,6 +90,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240617180043-68d350f18fd4 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 // indirect
+	google.golang.org/grpc v1.65.0 // indirect
 )
