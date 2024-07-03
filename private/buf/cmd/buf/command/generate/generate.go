@@ -431,7 +431,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.DeleteOuts,
 		deleteOutsFlagName,
 		false,
-		`Prior to generation, delete the output locations (usually directories)`,
+		`Prior to generation, delete the directories, jar files, or zip files that the plugins will write to. Allows cleaning of existing assets without having to call rm -rf`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
