@@ -40,6 +40,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_SWIFT = 4;
   PLUGIN_REGISTRY_TYPE_PYTHON = 5;
   PLUGIN_REGISTRY_TYPE_CARGO = 7;
+  PLUGIN_REGISTRY_TYPE_CMAKE = 8;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
