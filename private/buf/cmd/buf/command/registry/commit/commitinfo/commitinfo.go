@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commitget
+package commitinfo
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
@@ -39,8 +40,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]>",
-		Short: "Get commit details",
+		Use:   name + " <remote/owner/repository:commit>",
+		Short: "Get commit information",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -73,10 +74,16 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	if moduleRef.Ref() == "" {
+		return appcmd.NewInvalidArgumentErrorf("%q does not have a commit specified", moduleRef.String())
+	}
+	commitID := moduleRef.Ref()
+	if _, err := uuidutil.FromDashless(commitID); err != nil {
+		return appcmd.NewInvalidArgumentErrorf("invalid commit: %w", err)
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -94,14 +101,8 @@ func run(
 			&modulev1.GetCommitsRequest{
 				ResourceRefs: []*modulev1.ResourceRef{
 					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
-								},
-							},
+						Value: &modulev1.ResourceRef_Id{
+							Id: moduleRef.Ref(),
 						},
 					},
 				},
