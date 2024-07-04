@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commitget
+package commitaddlabel
 
 import (
 	"context"
@@ -26,11 +26,15 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
+const (
+	formatFlagName = "format"
+	labelsFlagName = "label"
+)
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -39,8 +43,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]>",
-		Short: "Get commit details",
+		Use:   name + " <remote/owner/module:commit> --label <label>",
+		Short: "Add labels to a commit",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -53,6 +57,7 @@ func NewCommand(
 
 type flags struct {
 	Format string
+	Labels []string
 }
 
 func newFlags() *flags {
@@ -66,6 +71,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
+	flagSet.StringSliceVar(
+		&f.Labels,
+		labelsFlagName,
+		nil,
+		"The labels to add to the commit. Must have at least one",
+	)
 }
 
 func run(
@@ -73,51 +84,63 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	if moduleRef.Ref() == "" {
+		return appcmd.NewInvalidArgumentError("commit is required")
+	}
+	commitID := moduleRef.Ref()
+	if _, err := uuidutil.FromDashless(commitID); err != nil {
+		return appcmd.NewInvalidArgumentErrorf("invalid commit: %w", err)
+	}
+	labels := flags.Labels
+	if len(labels) == 0 {
+		return appcmd.NewInvalidArgumentError("must create at least one label")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	commitServiceClient := bufapi.NewClientProvider(clientConfig).V1CommitServiceClient(moduleRef.ModuleFullName().Registry())
-	resp, err := commitServiceClient.GetCommits(
-		ctx,
-		connect.NewRequest(
-			&modulev1.GetCommitsRequest{
-				ResourceRefs: []*modulev1.ResourceRef{
-					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
-								},
-							},
-						},
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	requestValues := slicesext.Map(labels, func(label string) *modulev1.CreateOrUpdateLabelsRequest_Value {
+		return &modulev1.CreateOrUpdateLabelsRequest_Value{
+			LabelRef: &modulev1.LabelRef{
+				Value: &modulev1.LabelRef_Name_{
+					Name: &modulev1.LabelRef_Name{
+						Owner:  moduleRef.ModuleFullName().Owner(),
+						Module: moduleRef.ModuleFullName().Name(),
+						Label:  label,
 					},
 				},
+			},
+			CommitId: commitID,
+		}
+	})
+	resp, err := labelServiceClient.CreateOrUpdateLabels(
+		ctx,
+		connect.NewRequest(
+			&modulev1.CreateOrUpdateLabelsRequest{
+				Values: requestValues,
 			},
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
-		}
+		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or commit not found.
+		// It can also be a misformatted commit ID error.
 		return err
 	}
-	commits := resp.Msg.Commits
-	if len(commits) != 1 {
-		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
+	if format == bufprint.FormatText {
+		for _, label := range resp.Msg.Labels {
+			fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.ModuleFullName(), label.Name)
+		}
+		return nil
 	}
-	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
-		PrintRepositoryCommit(ctx, format, commits[0])
+	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabels(ctx, format, "", resp.Msg.Labels...)
 }

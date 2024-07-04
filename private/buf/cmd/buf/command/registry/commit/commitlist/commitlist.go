@@ -45,9 +45,14 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]>",
-		Short: "List repository commits",
-		Args:  appcmd.ExactArgs(1),
+		Use:   name + " <remote/owner/repository[:ref]>",
+		Short: "List modules commits",
+		Long: `This command lists commits in a module based on the reference specified.
+If the reference is a commit ID, it lists the commit itself.
+If the reference is a label, it lists the current and past commits associated with this label.
+If the reference is not specified, it lists all commits in this module.
+`,
+		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -82,7 +87,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.BoolVar(&f.Reverse,
 		reverseFlagName,
 		false,
-		`Reverse the results`,
+		`Reverse the results. By default, they are ordered with the newest first`,
 	)
 	flagSet.StringVar(
 		&f.Format,
@@ -97,7 +102,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -153,9 +157,9 @@ func run(
 	}
 	if resource.GetModule() != nil {
 		// The ref is a module, ListCommits returns all the commits.
-		commitOrder := modulev1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
+		commitOrder := modulev1.ListCommitsRequest_ORDER_CREATE_TIME_DESC
 		if flags.Reverse {
-			commitOrder = modulev1.ListCommitsRequest_ORDER_CREATE_TIME_DESC
+			commitOrder = modulev1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
 		}
 		resp, err := commitServiceClient.ListCommits(
 			ctx,
@@ -190,9 +194,9 @@ func run(
 		return syserror.Newf("%s is neither a commit nor a label", moduleRef.String())
 	}
 	// The ref is a label. Call ListLabelHistory to get all commits.
-	labelHistoryOrder := modulev1.ListLabelHistoryRequest_ORDER_ASC
+	labelHistoryOrder := modulev1.ListLabelHistoryRequest_ORDER_DESC
 	if flags.Reverse {
-		labelHistoryOrder = modulev1.ListLabelHistoryRequest_ORDER_DESC
+		labelHistoryOrder = modulev1.ListLabelHistoryRequest_ORDER_ASC
 	}
 	resp, err := labelServiceClient.ListLabelHistory(
 		ctx,
