@@ -31,12 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/archive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelcreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -49,7 +45,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/unarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -76,6 +71,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labellist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -177,6 +176,16 @@ func NewRootCommand(name string) *appcmd.Command {
 							version.NewCommand("version", builder),
 						},
 					},
+					{
+						Use:   "label",
+						Short: "Manage a module's labels",
+						SubCommands: []*appcmd.Command{
+							labelarchive.NewCommand("archive", builder),
+							labelget.NewCommand("get", builder),
+							labellist.NewCommand("list", builder),
+							labelunarchive.NewCommand("unarchive", builder),
+						},
+					},
 				},
 			},
 			{
@@ -190,8 +199,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
-							archive.NewCommand("archive", builder),
-							unarchive.NewCommand("unarchive", builder),
+
 							{
 								Use:   "organization",
 								Short: "Manage organizations",
@@ -220,15 +228,6 @@ func NewRootCommand(name string) *appcmd.Command {
 								SubCommands: []*appcmd.Command{
 									commitget.NewCommand("get", builder),
 									commitlist.NewCommand("list", builder),
-								},
-							},
-							{
-								Use:   "label",
-								Short: "Manage a repository's labels",
-								SubCommands: []*appcmd.Command{
-									labelcreate.NewCommand("create", builder),
-									labelget.NewCommand("get", builder),
-									labellist.NewCommand("list", builder),
 								},
 							},
 							{
