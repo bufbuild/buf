@@ -22,7 +22,7 @@ import (
 // ErrorCode is an OAuth2 error code.
 type ErrorCode string
 
-// The folowing error codes are defined by RFC 6749 Section 5.2 Error Response.
+// The following error codes are defined by RFC 6749 Section 5.2 Error Response.
 const (
 	// ErrorCodeInvalidRequest is an invalid or malformed request error.
 	ErrorCodeInvalidRequest ErrorCode = "invalid_request"
