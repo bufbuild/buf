@@ -24,7 +24,7 @@ const (
 	// DeviceAuthorizationPath is the path for the device authorization endpoint.
 	DeviceAuthorizationPath = "/oauth2/device/authorization"
 	// DeviceTokenPath is the path for the device token endpoint.
-	TokenPath = "/oauth2/device/token"
+	DeviceTokenPath = "/oauth2/device/token"
 )
 
 const (
