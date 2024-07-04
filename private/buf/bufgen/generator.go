@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -105,14 +104,13 @@ func (g *generator) Generate(
 			return err
 		}
 	}
-	if generateOptions.deleteOuts {
-		if err := g.deleteOuts(
-			ctx,
-			generateOptions.baseOutDirPath,
-			config.GeneratePluginConfigs(),
-		); err != nil {
-			return err
-		}
+	if err := g.deleteOuts(
+		ctx,
+		generateOptions.baseOutDirPath,
+		generateOptions.deleteOuts,
+		config.GeneratePluginConfigs(),
+	); err != nil {
+		return err
 	}
 	for _, image := range images {
 		if err := g.generateCode(
@@ -133,21 +131,20 @@ func (g *generator) Generate(
 func (g *generator) deleteOuts(
 	ctx context.Context,
 	baseOutDir string,
+	deleteAllOuts bool,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
 ) error {
-	return bufprotopluginos.NewCleaner(g.storageosProvider).DeleteOuts(
-		ctx,
-		slicesext.Map(
-			pluginConfigs,
-			func(pluginConfig bufconfig.GeneratePluginConfig) string {
-				out := pluginConfig.Out()
-				if baseOutDir != "" && baseOutDir != "." {
-					return filepath.Join(baseOutDir, out)
-				}
-				return out
-			},
-		),
-	)
+	var pluginOuts []string
+	for _, pluginConfig := range pluginConfigs {
+		if deleteAllOuts || pluginConfig.Clean() {
+			if baseOutDir != "" && baseOutDir != "." {
+				pluginOuts = append(pluginOuts, filepath.Join(baseOutDir, pluginConfig.Out()))
+			} else {
+				pluginOuts = append(pluginOuts, pluginConfig.Out())
+			}
+		}
+	}
+	return bufprotopluginos.NewCleaner(g.storageosProvider).DeleteOuts(ctx, pluginOuts)
 }
 
 func (g *generator) generateCode(

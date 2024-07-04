@@ -504,6 +504,9 @@ type externalGeneratePluginConfigV2 struct {
 	ProtocPath any `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
 	// Out is required.
 	Out string `json:"out,omitempty" yaml:"out,omitempty"`
+	// Clean, if set to true, will delete the output directories, zip files, or jar files
+	// before generation is run.
+	Clean bool `json:"clean,omitempty" yaml:"clean,omitempty"`
 	// Opt can be one string or multiple strings.
 	Opt            any  `json:"opt,omitempty" yaml:"opt,omitempty"`
 	IncludeImports bool `json:"include_imports,omitempty" yaml:"include_imports,omitempty"`

@@ -550,20 +550,37 @@ func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 
 func TestGenerateDeleteOutDir(t *testing.T) {
 	t.Parallel()
-	testGenerateDeleteOuts(t, "", "foo")
-	testGenerateDeleteOuts(t, "base", "foo")
-	testGenerateDeleteOuts(t, "", "foo", "bar")
-	testGenerateDeleteOuts(t, "", "foo", "bar", "foo")
-	testGenerateDeleteOuts(t, "base", "foo", "bar")
-	testGenerateDeleteOuts(t, "base", "foo", "bar", "foo")
-	testGenerateDeleteOuts(t, "", "foo.jar")
-	testGenerateDeleteOuts(t, "", "foo.zip")
-	testGenerateDeleteOuts(t, "", "foo/bar.jar")
-	testGenerateDeleteOuts(t, "", "foo/bar.zip")
-	testGenerateDeleteOuts(t, "base", "foo.jar")
-	testGenerateDeleteOuts(t, "base", "foo.zip")
-	testGenerateDeleteOuts(t, "base", "foo/bar.jar")
-	testGenerateDeleteOuts(t, "base", "foo/bar.zip")
+	// Use --clean flag
+	testGenerateDeleteOuts(t, true, "", "foo")
+	testGenerateDeleteOuts(t, true, "base", "foo")
+	testGenerateDeleteOuts(t, true, "", "foo", "bar")
+	testGenerateDeleteOuts(t, true, "", "foo", "bar", "foo")
+	testGenerateDeleteOuts(t, true, "base", "foo", "bar")
+	testGenerateDeleteOuts(t, true, "base", "foo", "bar", "foo")
+	testGenerateDeleteOuts(t, true, "", "foo.jar")
+	testGenerateDeleteOuts(t, true, "", "foo.zip")
+	testGenerateDeleteOuts(t, true, "", "foo/bar.jar")
+	testGenerateDeleteOuts(t, true, "", "foo/bar.zip")
+	testGenerateDeleteOuts(t, true, "base", "foo.jar")
+	testGenerateDeleteOuts(t, true, "base", "foo.zip")
+	testGenerateDeleteOuts(t, true, "base", "foo/bar.jar")
+	testGenerateDeleteOuts(t, true, "base", "foo/bar.zip")
+
+	// Only set clean in plugin configs
+	testGenerateDeleteOuts(t, false, "", "foo")
+	testGenerateDeleteOuts(t, false, "base", "foo")
+	testGenerateDeleteOuts(t, false, "", "foo", "bar")
+	testGenerateDeleteOuts(t, false, "", "foo", "bar", "foo")
+	testGenerateDeleteOuts(t, false, "base", "foo", "bar")
+	testGenerateDeleteOuts(t, false, "base", "foo", "bar", "foo")
+	testGenerateDeleteOuts(t, false, "", "foo.jar")
+	testGenerateDeleteOuts(t, false, "", "foo.zip")
+	testGenerateDeleteOuts(t, false, "", "foo/bar.jar")
+	testGenerateDeleteOuts(t, false, "", "foo/bar.zip")
+	testGenerateDeleteOuts(t, false, "base", "foo.jar")
+	testGenerateDeleteOuts(t, false, "base", "foo.zip")
+	testGenerateDeleteOuts(t, false, "base", "foo/bar.jar")
+	testGenerateDeleteOuts(t, false, "base", "foo/bar.zip")
 }
 
 func TestBoolPointerFlagTrue(t *testing.T) {
@@ -906,11 +923,13 @@ func testRunSuccess(t *testing.T, args ...string) {
 
 func testGenerateDeleteOuts(
 	t *testing.T,
+	useCleanFlag bool,
 	baseOutDirPath string,
 	outputPaths ...string,
 ) {
-	// Just add more builtins to the plugins slice below if this goes off
-	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
+	plugins := []string{"java", "cpp", "ruby"}
+	// Just add more builtins to the plugins slice above if this goes off
+	require.True(t, len(outputPaths) <= len(plugins), "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
 	if baseOutDirPath != "" && baseOutDirPath != "." {
 		fullOutputPaths = slicesext.Map(
@@ -955,28 +974,59 @@ func testGenerateDeleteOuts(
 plugins:
 `)
 
-	plugins := []string{"java", "cpp", "ruby"}
-	for i, outputPath := range outputPaths {
-		_, _ = templateBuilder.WriteString(`  - protoc_builtin: `)
-		_, _ = templateBuilder.WriteString(plugins[i])
-		_, _ = templateBuilder.WriteString("\n")
-		_, _ = templateBuilder.WriteString(`    out: `)
-		_, _ = templateBuilder.WriteString(outputPath)
-		_, _ = templateBuilder.WriteString("\n")
+	var expectedPluginConfigCleanOut string
+	if useCleanFlag {
+		// When using the --clean flag, we do not set clean in the plugin configs at all
+		for i, outputPath := range outputPaths {
+			_, _ = templateBuilder.WriteString(`  - protoc_builtin: `)
+			_, _ = templateBuilder.WriteString(plugins[i])
+			_, _ = templateBuilder.WriteString("\n")
+			_, _ = templateBuilder.WriteString(`    out: `)
+			_, _ = templateBuilder.WriteString(outputPath)
+			_, _ = templateBuilder.WriteString("\n")
+		}
+		testRunStdoutStderr(
+			t,
+			nil,
+			0,
+			``,
+			``,
+			filepath.Join("testdata", "simple"),
+			"--template",
+			templateBuilder.String(),
+			"-o",
+			filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
+			"--clean",
+		)
+	} else {
+		for i, outputPath := range outputPaths {
+			_, _ = templateBuilder.WriteString(`  - protoc_builtin: `)
+			_, _ = templateBuilder.WriteString(plugins[i])
+			_, _ = templateBuilder.WriteString("\n")
+			_, _ = templateBuilder.WriteString(`    out: `)
+			_, _ = templateBuilder.WriteString(outputPath)
+			_, _ = templateBuilder.WriteString("\n")
+			// Only set "clean: true" for the first plugin (java), and we expect that only the
+			// output for the first plugin to be cleaned
+			if i == 0 { // plugins[0] == "java"
+				_, _ = templateBuilder.WriteString(`    clean: true`)
+				_, _ = templateBuilder.WriteString("\n")
+				expectedPluginConfigCleanOut = fullOutputPaths[i]
+			}
+		}
+		testRunStdoutStderr(
+			t,
+			nil,
+			0,
+			``,
+			``,
+			filepath.Join("testdata", "simple"),
+			"--template",
+			templateBuilder.String(),
+			"-o",
+			filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
+		)
 	}
-	testRunStdoutStderr(
-		t,
-		nil,
-		0,
-		``,
-		``,
-		filepath.Join("testdata", "simple"),
-		"--template",
-		templateBuilder.String(),
-		"-o",
-		filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
-		"--clean",
-	)
 	for _, fullOutputPath := range fullOutputPaths {
 		switch normalpath.Ext(fullOutputPath) {
 		case ".jar", ".zip":
@@ -986,14 +1036,23 @@ plugins:
 				fullOutputPath,
 			)
 			require.NoError(t, err)
-			require.True(t, len(data) > 1, "expected non-fake data at %q", fullOutputPath)
+			if useCleanFlag || fullOutputPath == expectedPluginConfigCleanOut {
+				require.True(t, len(data) > 1, "expected non-fake data at %q", fullOutputPath)
+			} else {
+				require.True(t, len(data) == 1, "expected fake data at %q", fullOutputPath)
+			}
 		default:
-			_, err := storage.ReadPath(
+			data, err := storage.ReadPath(
 				ctx,
 				storageBucket,
 				normalpath.Join(fullOutputPath, "foo.txt"),
 			)
-			require.ErrorIs(t, err, fs.ErrNotExist)
+			if useCleanFlag || fullOutputPath == expectedPluginConfigCleanOut {
+				require.ErrorIs(t, err, fs.ErrNotExist)
+			} else {
+				require.NotNil(t, data, "expected foo.txt at %q", fullOutputPath)
+				require.NoError(t, err, "expected foo.txt at %q", fullOutputPath)
+			}
 		}
 	}
 }
