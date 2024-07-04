@@ -42,7 +42,7 @@ const (
 	templateFlagName            = "template"
 	baseOutDirPathFlagName      = "output"
 	baseOutDirPathFlagShortName = "o"
-	deleteOutsFlagName          = "rm"
+	deleteOutsFlagName          = "clean"
 	errorFormatFlagName         = "error-format"
 	configFlagName              = "config"
 	pathsFlagName               = "path"

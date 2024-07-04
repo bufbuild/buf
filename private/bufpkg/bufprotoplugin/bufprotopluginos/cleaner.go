@@ -99,7 +99,7 @@ func validatePluginOut(pwd string, pluginOut string) error {
 		// This is just a really defensive safety check. We can't see a reason you'd want to delete
 		// your current working directory other than something like a (cd proto && buf generate), so
 		// until and unless someone complains, we're just going to outlaw this.
-		return errors.New("cannot use --rm if your plugin will output to the current directory")
+		return errors.New("cannot use --clean if your plugin will output to the current directory")
 	}
 	cleanedPluginOut, err := reallyCleanPath(pluginOut)
 	if err != nil {
@@ -110,7 +110,7 @@ func validatePluginOut(pwd string, pluginOut string) error {
 	}
 	if cleanedPluginOut == pwd {
 		// Same thing, more defense for now.
-		return errors.New("cannot use --rm if your plugin will output to the current directory")
+		return errors.New("cannot use --clean if your plugin will output to the current directory")
 	}
 	return nil
 }

@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add `buf generate --rm` flag that will delete the directories, jar files, or zip files that the
+- Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
   plugins will write to, prior to generation. Allows cleaning of existing assets without having
   to call `rm -rf`.
 

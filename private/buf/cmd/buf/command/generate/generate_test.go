@@ -975,7 +975,7 @@ plugins:
 		templateBuilder.String(),
 		"-o",
 		filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
-		"--rm",
+		"--clean",
 	)
 	for _, fullOutputPath := range fullOutputPaths {
 		switch normalpath.Ext(fullOutputPath) {
