@@ -26,6 +26,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginlint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -271,6 +272,13 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
+						},
+					},
+					{
+						Use:   "plugin",
+						Short: "POC for custom plugins",
+						SubCommands: []*appcmd.Command{
+							pluginlint.NewCommand("lint", builder),
 						},
 					},
 				},
