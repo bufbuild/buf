@@ -36,9 +36,8 @@ func NewLintClient(
 	runner command.Runner,
 	programName string,
 ) LintClient {
-	return nil
-	//return newLintClient(
-	//runner,
-	//programName,
-	//)
+	return newLintClient(
+		newRunner(runner),
+		programName,
+	)
 }

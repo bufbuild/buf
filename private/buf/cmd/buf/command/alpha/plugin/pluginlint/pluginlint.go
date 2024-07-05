@@ -16,19 +16,23 @@ package pluginlint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
 
 const (
 	errorFormatFlagName     = "error-format"
+	pluginFlagName          = "plugin"
 	pathsFlagName           = "path"
 	configFlagName          = "config"
 	excludePathsFlagName    = "exclude-path"
@@ -57,6 +61,7 @@ func NewCommand(
 
 type flags struct {
 	ErrorFormat     string
+	Plugin          string
 	Paths           []string
 	Config          string
 	ExcludePaths    []string
@@ -84,6 +89,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	flagSet.StringVar(
+		&f.Plugin,
+		pluginFlagName,
+		"",
+		`The plugin to use`,
+	)
+	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
@@ -96,6 +107,9 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
+	if err := bufcli.ValidateRequiredFlag(pluginFlagName, flags.Plugin); err != nil {
+		return err
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
@@ -117,6 +131,18 @@ func run(
 	if err != nil {
 		return err
 	}
-	_ = image
+	if err := bufplugin.NewLintClient(command.NewRunner(), flags.Plugin).Lint(ctx, image); err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			if err := bufanalysis.PrintFileAnnotationSet(
+				container.Stdout(),
+				fileAnnotationSet,
+				flags.ErrorFormat,
+			); err != nil {
+				return err
+			}
+			return bufctl.ErrFileAnnotation
+		}
+	}
 	return nil
 }
