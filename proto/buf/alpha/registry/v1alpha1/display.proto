@@ -92,6 +92,8 @@ message DisplayRepositoryElementsResponse {
   bool delete = 2;
   // Display write repository element if true.
   bool write = 3;
+  // Display limited write repository element if true.
+  bool limited_write = 4;
 }
 
 message DisplayUserElementsRequest {}
