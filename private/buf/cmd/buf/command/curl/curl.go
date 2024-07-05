@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -37,12 +38,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -67,6 +70,10 @@ const (
 	serverNameFlagName    = "servername"
 	insecureFlagName      = "insecure"
 	insecureFlagShortName = "k"
+
+	// Action flags
+	listFlagName     = "list"
+	describeFlagName = "describe"
 
 	// Timeout flags
 	noKeepAliveFlagName    = "no-keepalive"
@@ -178,7 +185,7 @@ If an error occurs that is due to incorrect usage or other unexpected error, thi
 return an exit code that is less than 8. If the RPC fails otherwise, this program will return an
 exit code that is the gRPC code, shifted three bits to the left.
 `,
-		Args: appcmd.ExactArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -206,6 +213,10 @@ type flags struct {
 	Key, Cert, CACert, ServerName string
 	Insecure                      bool
 	// TODO: CRLFile, CertStatus
+
+	// Actions
+	ListServices    bool
+	DescribeElement string
 
 	// Timeouts
 	NoKeepAlive           bool
@@ -387,6 +398,32 @@ specified, the default is the origin host in the URL or the value in a "Host" he
 one is provided`,
 	)
 
+	flagSet.BoolVar(
+		&f.ListServices,
+		listFlagName,
+		false,
+		fmt.Sprintf(`When set, the command lists supported services and then exits. If server reflection is used
+to provide the RPC schema, then the given URL must be a base URL, not including a service
+or method name. If the schema source is not server reflection, the URL is not used and
+may be omitted. This flag may not be used with the --%s flag.`,
+			describeFlagName,
+		),
+	)
+	flagSet.StringVar(
+		&f.DescribeElement,
+		describeFlagName,
+		"",
+		fmt.Sprintf(`When set, the command describes the named element and then exits. The value must be
+the fully-qualified name of an element in the schema (but may not be a package name).
+The element is described in a format that looks like proto source code, but is not
+necessarily the actual or exact source used to define the element. If server reflection
+is used to provide the RPC schema, then the given URL must be a base URL, not including
+a service or method name. If the schema source is not server reflection, the URL is not
+used and may be omitted. This flag may not be used with the --%s flag.`,
+			listFlagName,
+		),
+	)
+
 	flagSet.StringVarP(
 		&f.UserAgent,
 		userAgentFlagName,
@@ -479,7 +516,22 @@ provided via stdin as a file descriptor set or image`,
 	)
 }
 
-func (f *flags) validate(isSecure bool) error {
+func (f *flags) validate(hasURL, isSecure bool) error {
+	if len(f.Schemas) > 0 && f.Reflect && !f.flagSet.Changed(reflectFlagName) {
+		// Reflect just has default value; unset it since we're going to use --schema instead.
+		f.Reflect = false
+	}
+	if !f.Reflect && len(f.Schemas) == 0 {
+		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
+	}
+
+	if !hasURL && ((!f.ListServices && f.DescribeElement == "") || f.Reflect) {
+		// If we are trying to use reflection for anything or if we are invoking an RPC (which
+		// means we aren't listing services, listing methods, or describing an element), then
+		// a URL is required.
+		return appcmd.NewInvalidArgumentError("URL positional argument is missing")
+	}
+
 	if (f.Key != "" || f.Cert != "" || f.CACert != "" || f.ServerName != "" || f.flagSet.Changed(insecureFlagName)) &&
 		!isSecure {
 		return fmt.Errorf(
@@ -501,13 +553,6 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
 
-	if len(f.Schemas) > 0 && f.Reflect && !f.flagSet.Changed(reflectFlagName) {
-		// Reflect just has default value; unset it since we're going to use --schema instead
-		f.Reflect = false
-	}
-	if !f.Reflect && len(f.Schemas) == 0 {
-		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
-	}
 	var schemaIsStdin bool
 	for _, schema := range f.Schemas {
 		isStdin := strings.HasPrefix(schema, "-")
@@ -741,38 +786,56 @@ func validateHeaders(flags []string, flagName string, schemaIsStdin bool, allowA
 	return nil
 }
 
-func verifyEndpointURL(urlArg string) (endpointURL *url.URL, service, method, baseURL string, err error) {
-	endpointURL, err = url.Parse(urlArg)
+func verifyEndpointURL(urlArg string) (host string, isSecure bool, err error) {
+	endpointURL, err := url.Parse(urlArg)
 	if err != nil {
-		return nil, "", "", "", fmt.Errorf("%q is not a valid endpoint URL: %w", urlArg, err)
+		return "", false, fmt.Errorf("%q is not a valid endpoint URL: %w", urlArg, err)
 	}
 	if endpointURL.Scheme != "http" && endpointURL.Scheme != "https" {
-		return nil, "", "", "", fmt.Errorf("invalid endpoint URL: scheme %q is not supported", endpointURL.Scheme)
+		return "", false, fmt.Errorf("invalid endpoint URL: scheme %q is not supported", endpointURL.Scheme)
 	}
+	return endpointURL.Host, endpointURL.Scheme == "https", nil
+}
 
-	if strings.HasSuffix(endpointURL.Path, "/") {
-		return nil, "", "", "", fmt.Errorf("invalid endpoint URL: path %q should not end with a slash (/)", endpointURL.Path)
+func parseEndpointURL(urlArg string) (service, method, baseURL string, err error) {
+	if strings.HasSuffix(urlArg, "/") {
+		return "", "", "", fmt.Errorf("invalid endpoint URL: %q should not end with a slash (/)", urlArg)
 	}
-	parts := strings.Split(endpointURL.Path, "/")
-	if len(parts) < 2 || parts[len(parts)-1] == "" || parts[len(parts)-2] == "" {
-		return nil, "", "", "", fmt.Errorf("invalid endpoint URL: path %q should end with two non-empty components indicating service and method", endpointURL.Path)
+	parts := strings.Split(urlArg, "/")
+	if len(parts) < 3 || parts[len(parts)-1] == "" || parts[len(parts)-2] == "" {
+		return "", "", "", fmt.Errorf("invalid endpoint URL: %q should end with two non-empty components indicating service and method", urlArg)
 	}
 	service, method = parts[len(parts)-2], parts[len(parts)-1]
 	baseURL = strings.TrimSuffix(urlArg, service+"/"+method)
 	if baseURL == urlArg {
 		// should not be possible due to above checks
-		return nil, "", "", "", fmt.Errorf("failed to extract base URL from %q", urlArg)
+		return "", "", "", fmt.Errorf("failed to extract base URL from %q", urlArg)
 	}
-	return endpointURL, service, method, baseURL, nil
+	return service, method, baseURL, nil
 }
 
 func run(ctx context.Context, container appext.Container, f *flags) (err error) {
-	endpointURL, service, method, baseURL, err := verifyEndpointURL(container.Arg(0))
-	if err != nil {
+	var urlArg, host string
+	var isSecure bool
+	if container.NumArgs() != 0 {
+		urlArg = container.Arg(0)
+		var err error
+		host, isSecure, err = verifyEndpointURL(urlArg)
+		if err != nil {
+			return err
+		}
+	}
+	if err := f.validate(urlArg != "", isSecure); err != nil {
 		return err
 	}
-	isSecure := endpointURL.Scheme == "https"
-	if err := f.validate(isSecure); err != nil {
+	var service, method, baseURL string
+	switch {
+	case f.ListServices, f.DescribeElement != "":
+		baseURL = urlArg
+	default:
+		service, method, baseURL, err = parseEndpointURL(urlArg)
+	}
+	if err != nil {
 		return err
 	}
 
@@ -818,7 +881,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	var basicCreds *string
 	if len(requestHeaders.Values("authorization")) == 0 {
-		creds, err := f.determineCredentials(ctx, container, endpointURL.Host)
+		creds, err := f.determineCredentials(ctx, container, host)
 		if err != nil {
 			return err
 		}
@@ -848,10 +911,19 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}()
 
-	transport, err := makeHTTPClient(f, isSecure, bufcurl.GetAuthority(endpointURL, requestHeaders), container.VerbosePrinter())
-	if err != nil {
-		return err
-	}
+	// TODO: when we can use go 1.21, use sync.OnceValues and remove memoizeFunc
+	makeTransportOnce := memoizeFunc(func() (connect.HTTPClient, error) {
+		// We do this lazily since some commands don't need a transport, like listing
+		// services and methods and describing elements when the schema source is
+		// something other than server reflection. We memoize the result to use the
+		// same transport for multiple operations where useful (like for both server
+		// reflection and for subsequently invoking an RPC).
+		if urlArg == "" {
+			// This shouldn't be possible since we check in flags.validate, but just in case
+			return nil, errors.New("URL positional argument is missing")
+		}
+		return makeHTTPClient(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+	})
 
 	output := container.Stdout()
 	if f.Output != "" {
@@ -861,7 +933,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}
 
-	resolvers := make([]protoencoding.Resolver, 0, len(f.Schemas)+1)
+	resolvers := make([]bufcurl.Resolver, 0, len(f.Schemas)+1)
 	if f.Reflect {
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
@@ -872,7 +944,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			if basicCreds != nil {
 				creds = *basicCreds
 			} else {
-				if creds, err = f.determineCredentials(ctx, container, endpointURL.Host); err != nil {
+				if creds, err = f.determineCredentials(ctx, container, host); err != nil {
 					return err
 				}
 			}
@@ -884,6 +956,10 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			reflectHeaders.Set("user-agent", userAgent)
 		}
 		reflectProtocol, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol)
+		if err != nil {
+			return err
+		}
+		transport, err := makeTransportOnce()
 		if err != nil {
 			return err
 		}
@@ -900,18 +976,56 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		resolvers = append(resolvers, image.Resolver())
+		resolvers = append(resolvers, bufcurl.ResolverFromImage(image))
 	}
-	res := protoencoding.CombineResolvers(resolvers...)
+	res := bufcurl.CombineResolvers(resolvers...)
 
-	methodDescriptor, err := bufcurl.ResolveMethodDescriptor(res, service, method)
-	if err != nil {
+	switch {
+	case f.ListServices:
+		serviceNames, err := res.ListServices()
+		if err != nil {
+			return err
+		}
+		for _, serviceName := range serviceNames {
+			if _, err := fmt.Fprintf(container.Stdout(), "%s\n", serviceName); err != nil {
+				return err
+			}
+		}
+		return nil
+
+	case f.DescribeElement != "":
+		descriptor, err := res.FindDescriptorByName(protoreflect.FullName(f.DescribeElement))
+		if err != nil {
+			return err
+		}
+		printer := &protoprint.Printer{
+			OmitComments:             protoprint.CommentsDetached,
+			ForceFullyQualifiedNames: true,
+		}
+		wrappedDescriptor, err := desc.WrapDescriptor(descriptor)
+		if err != nil {
+			return err
+		}
+		description, err := printer.PrintProtoToString(wrappedDescriptor)
+		if err != nil {
+			return err
+		}
+		_, err = container.Stdout().Write([]byte(description))
 		return err
-	}
 
-	// Now we can finally issue the RPC
-	invoker := bufcurl.NewInvoker(container, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, container.Arg(0), output)
-	return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
+	default:
+		// Invoke RPC
+		methodDescriptor, err := bufcurl.ResolveMethodDescriptor(res, service, method)
+		if err != nil {
+			return err
+		}
+		transport, err := makeTransportOnce()
+		if err != nil {
+			return err
+		}
+		invoker := bufcurl.NewInvoker(container, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, urlArg, output)
+		return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
+	}
 }
 
 func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.Printer) (connect.HTTPClient, error) {
@@ -998,4 +1112,17 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 
 func secondsToDuration(secs float64) time.Duration {
 	return time.Duration(float64(time.Second) * secs)
+}
+
+func memoizeFunc(action func() (connect.HTTPClient, error)) func() (connect.HTTPClient, error) {
+	var once sync.Once
+	var result connect.HTTPClient
+	var err error
+	// Only invokes action once and memoizes the results.
+	return func() (connect.HTTPClient, error) {
+		once.Do(func() {
+			result, err = action()
+		})
+		return result, err
+	}
 }
