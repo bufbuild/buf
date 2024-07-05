@@ -72,7 +72,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelarchive"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
@@ -166,6 +166,16 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "registry",
 				Short: "Manage assets on the Buf Schema Registry",
 				SubCommands: []*appcmd.Command{
+					{
+						Use:   "label",
+						Short: "Manage a module's labels",
+						SubCommands: []*appcmd.Command{
+							labelarchive.NewCommand("archive", builder),
+							labelinfo.NewCommand("info", builder),
+							labellist.NewCommand("list", builder),
+							labelunarchive.NewCommand("unarchive", builder),
+						},
+					},
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
 					registrycc.NewCommand("cc", builder, ``, false),
@@ -174,16 +184,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						Short: "Manage Generated SDKs",
 						SubCommands: []*appcmd.Command{
 							version.NewCommand("version", builder),
-						},
-					},
-					{
-						Use:   "label",
-						Short: "Manage a module's labels",
-						SubCommands: []*appcmd.Command{
-							labelarchive.NewCommand("archive", builder),
-							labelget.NewCommand("get", builder),
-							labellist.NewCommand("list", builder),
-							labelunarchive.NewCommand("unarchive", builder),
 						},
 					},
 				},

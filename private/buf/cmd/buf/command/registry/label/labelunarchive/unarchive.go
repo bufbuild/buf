@@ -16,21 +16,16 @@ package labelunarchive
 
 import (
 	"context"
+	"fmt"
 
-	v1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/spf13/pflag"
-)
-
-const (
-	labelFlagName = "label"
 )
 
 // NewCommand returns a new Command.
@@ -40,9 +35,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input> --label <label>",
-		Short: "Unarchive one or more labels for the given input",
-		Args:  appcmd.MaximumNArgs(1),
+		Use:   name + " <remote/owner/module:label>",
+		Short: "Unarchive a module label",
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -53,9 +48,6 @@ func NewCommand(
 }
 
 type flags struct {
-	Labels []string
-	// special
-	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -63,74 +55,51 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
-	flagSet.StringSliceVar(
-		&f.Labels,
-		labelFlagName,
-		nil,
-		"Label(s) to unarchive. Must have at least one.",
-	)
 }
 
 func run(
 	ctx context.Context,
 	container appext.Container,
-	flags *flags,
+	_ *flags,
 ) error {
-	if len(flags.Labels) < 1 {
-		return appcmd.NewInvalidArgumentError("must unarchive at last one label")
-	}
-	controller, err := bufcli.NewController(container)
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
-		return err
+		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
-	if err != nil {
-		return err
-	}
-	workspace, err := controller.GetWorkspace(
-		ctx,
-		source,
-		// If we do not set this configuration, we would allow users to run `buf beta registry unarchive`
-		// against a v1 workspace. This is somewhat safe, since unarchiving labels does not need
-		// to happen in any special order, however, it would create an inconsistency with
-		// `buf push`, where we do have that constraint.
-		bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs(),
-	)
-	if err != nil {
-		return err
+	labelName := moduleRef.Ref()
+	if labelName == "" {
+		return appcmd.NewInvalidArgumentError("label is required")
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	registryToModuleFullNames := map[string][]bufmodule.ModuleFullName{}
-	for _, module := range workspace.Modules() {
-		if !module.IsTarget() {
-			continue
-		}
-		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
-			moduleFullNames, ok := registryToModuleFullNames[moduleFullName.Registry()]
-			if !ok {
-				registryToModuleFullNames[moduleFullName.Registry()] = []bufmodule.ModuleFullName{moduleFullName}
-				continue
-			}
-			registryToModuleFullNames[moduleFullName.Registry()] = append(moduleFullNames, moduleFullName)
-		}
-	}
-	for registry, moduleFullNames := range registryToModuleFullNames {
-		labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(registry)
-		// UnarchiveLabelsResponse is empty.
-		if _, err := labelServiceClient.UnarchiveLabels(
-			ctx,
-			connect.NewRequest(
-				&v1.UnarchiveLabelsRequest{
-					LabelRefs: internal.GetLabelRefsForModuleFullNamesAndLabels(moduleFullNames, flags.Labels),
+	moduleFullName := moduleRef.ModuleFullName()
+	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleFullName.Registry())
+	// UnarchiveLabelsResponse is empty.
+	if _, err := labelServiceClient.UnarchiveLabels(
+		ctx,
+		connect.NewRequest(
+			&modulev1.UnarchiveLabelsRequest{
+				LabelRefs: []*modulev1.LabelRef{
+					{
+						Value: &modulev1.LabelRef_Name_{
+							Name: &modulev1.LabelRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+								Label:  labelName,
+							},
+						},
+					},
 				},
-			),
-		); err != nil {
-			return err
+			},
+		),
+	); err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewLabelNotFoundError(moduleRef)
 		}
+		return err
 	}
+	fmt.Fprintf(container.Stdout(), "Unarchived %s.\n", moduleRef)
 	return nil
 }
