@@ -35,6 +35,8 @@ const (
 	pageTokenFlagName = "page-token"
 	reverseFlagName   = "reverse"
 	formatFlagName    = "format"
+
+	defaultPageSize = 10
 )
 
 // NewCommand returns a new Command
@@ -44,8 +46,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]>",
-		Short: "List repository labels",
+		Use:   name + " <remote/owner/module[:ref]>",
+		Short: "List module labels",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -73,7 +75,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.Uint32Var(
 		&f.PageSize,
 		pageSizeFlagName,
-		10,
+		defaultPageSize,
 		`The page size.`,
 	)
 	flagSet.StringVar(
@@ -101,7 +103,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -119,10 +120,11 @@ func run(
 		return err
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
-	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
-	order := modulev1.ListLabelsRequest_ORDER_CREATE_TIME_ASC
+	moduleFullName := moduleRef.ModuleFullName()
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleFullName.Registry())
+	order := modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_DESC
 	if flags.Reverse {
-		order = modulev1.ListLabelsRequest_ORDER_CREATE_TIME_DESC
+		order = modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_ASC
 	}
 	resp, err := labelServiceClient.ListLabels(
 		ctx,
@@ -133,8 +135,8 @@ func run(
 				ResourceRef: &modulev1.ResourceRef{
 					Value: &modulev1.ResourceRef_Name_{
 						Name: &modulev1.ResourceRef_Name{
-							Owner:  moduleRef.ModuleFullName().Owner(),
-							Module: moduleRef.ModuleFullName().Name(),
+							Owner:  moduleFullName.Owner(),
+							Module: moduleFullName.Name(),
 							Child: &modulev1.ResourceRef_Name_Ref{
 								Ref: moduleRef.Ref(),
 							},
@@ -152,5 +154,31 @@ func run(
 		}
 		return err
 	}
-	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabels(ctx, format, resp.Msg.NextPageToken, resp.Msg.Labels...)
+	return bufprint.NewLabelPrinter(container.Stdout(), moduleFullName).PrintLabelPage(
+		ctx,
+		format,
+		nextPageCommand(container, flags, resp.Msg.NextPageToken),
+		resp.Msg.NextPageToken,
+		resp.Msg.Labels,
+	)
+}
+
+func nextPageCommand(container appext.Container, flags *flags, nextPageToken string) string {
+	if nextPageToken == "" {
+		return ""
+	}
+	command := fmt.Sprintf("buf registry label list %s", container.Arg(0))
+	if flags.ArchiveStatus != "" {
+		command = fmt.Sprintf("%s --%s %s", command, archiveStatusName, flags.ArchiveStatus)
+	}
+	if flags.PageSize != defaultPageSize {
+		command = fmt.Sprintf("%s --%s %d", command, pageSizeFlagName, flags.PageSize)
+	}
+	if flags.Reverse {
+		command = fmt.Sprintf("%s --%s", command, reverseFlagName)
+	}
+	if flags.Format != bufprint.FormatText.String() {
+		command = fmt.Sprintf("%s --%s %s", command, formatFlagName, flags.Format)
+	}
+	return fmt.Sprintf("%s --%s %s", command, pageTokenFlagName, nextPageToken)
 }

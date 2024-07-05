@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package labelget
+package labelinfo
 
 import (
 	"context"
@@ -39,8 +39,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository:label>",
-		Short: "Get label details",
+		Use:   name + " <remote/owner/module:label>",
+		Short: "Show label information",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -73,10 +73,13 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	labelName := moduleRef.Ref()
+	if labelName == "" {
+		return appcmd.NewInvalidArgumentError("label is required")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -87,7 +90,8 @@ func run(
 		return err
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
-	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	moduleFullName := moduleRef.ModuleFullName()
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleFullName.Registry())
 	resp, err := labelServiceClient.GetLabels(
 		ctx,
 		connect.NewRequest(
@@ -96,9 +100,9 @@ func run(
 					{
 						Value: &modulev1.LabelRef_Name_{
 							Name: &modulev1.LabelRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Label:  moduleRef.Ref(),
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+								Label:  labelName,
 							},
 						},
 					},
@@ -116,5 +120,5 @@ func run(
 	if len(labels) != 1 {
 		return syserror.Newf("expect 1 label from response, got %d", len(labels))
 	}
-	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabel(ctx, format, labels[0])
+	return bufprint.NewLabelPrinter(container.Stdout(), moduleFullName).PrintLabelInfo(ctx, format, labels[0])
 }
