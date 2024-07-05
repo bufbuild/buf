@@ -18,6 +18,8 @@ github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migc
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
+github.com/bufbuild/bufplugin-go v0.0.0-20240704210943-f1caf8f07ea8 h1:xu+GBQLQCUWryAkSP8Ijo4ao6la+PAmvr7IJ3R7C35s=
+github.com/bufbuild/bufplugin-go v0.0.0-20240704210943-f1caf8f07ea8/go.mod h1:F0uqn4exwM3HjxpYEXJd4wA4oKsOv4Fum4doS8rMpy4=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240704183252-c762588190c6 h1:R6KALrSJ6LNuyNtG4vitb6yh57tJFlRspFz4rO453lc=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240704183252-c762588190c6/go.mod h1:/e5Tp6wgqlAzxmtgcGp9Dw2gv5byKu0qG/dP8mP9mN0=
 github.com/bufbuild/protocompile v0.14.0 h1:z3DW4IvXE5G/uTOnSQn+qwQQxvhckkTWLS/0No/o7KU=
