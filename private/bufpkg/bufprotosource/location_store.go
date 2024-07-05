@@ -27,6 +27,12 @@ type locationStore struct {
 	pathToLocation map[string]Location
 }
 
+func newLocationStoreForFileDescriptorProto(
+	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+) *locationStore {
+	return newLocationStore(fileDescriptorProto.GetSourceCodeInfo().GetLocation())
+}
+
 func newLocationStore(sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location) *locationStore {
 	return &locationStore{
 		sourceCodeInfoLocations: sourceCodeInfoLocations,

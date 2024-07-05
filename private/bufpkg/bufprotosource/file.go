@@ -229,7 +229,7 @@ func (f *file) SyntaxLocation() Location {
 // does not validation of the fileDescriptorProto - this is assumed to be done elsewhere
 // does no duplicate checking by name - could just have maps ie importToFileImport, enumNameToEnum, etc
 func newFile(imageFile bufimage.ImageFile, resolver protoencoding.Resolver) (*file, error) {
-	locationStore := newLocationStore(imageFile.FileDescriptorProto().GetSourceCodeInfo().GetLocation())
+	locationStore := newLocationStoreForFileDescriptorProto(imageFile.FileDescriptorProto())
 	f := &file{
 		FileInfo:       imageFile,
 		resolver:       resolver,

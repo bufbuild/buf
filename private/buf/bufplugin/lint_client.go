@@ -23,6 +23,9 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/pluginrpc/buf/plugin/check/v1beta1/v1beta1pluginrpc"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/pluginrpc-go"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 type lintClient struct {
@@ -53,11 +56,18 @@ func (l *lintClient) Lint(ctx context.Context, image bufimage.Image) error {
 		return err
 	}
 	if protoAnnotations := response.GetAnnotations(); len(protoAnnotations) > 0 {
-		return bufanalysis.NewFileAnnotationSet(
-			protoAnnotationsToFileAnnotations(
-				protoAnnotations,
-			)...,
+		protoregistryFiles, err := protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(image))
+		if err != nil {
+			return err
+		}
+		fileAnnotatations, err := protoAnnotationsToFileAnnotations(
+			protoregistryFiles,
+			protoAnnotations,
 		)
+		if err != nil {
+			return err
+		}
+		return bufanalysis.NewFileAnnotationSet(fileAnnotatations...)
 	}
 	return nil
 }
@@ -73,27 +83,55 @@ func imageFileToProtoFile(imageFile bufimage.ImageFile) *checkv1beta1.File {
 	}
 }
 
-func protoAnnotationsToFileAnnotations(protoAnnotations []*checkv1beta1.Annotation) []bufanalysis.FileAnnotation {
-	return slicesext.Map(protoAnnotations, protoAnnotationToFileAnnotation)
+func protoAnnotationsToFileAnnotations(
+	protoregistryFiles *protoregistry.Files,
+	protoAnnotations []*checkv1beta1.Annotation,
+) ([]bufanalysis.FileAnnotation, error) {
+	return slicesext.MapError(
+		protoAnnotations,
+		func(protoAnnotation *checkv1beta1.Annotation) (bufanalysis.FileAnnotation, error) {
+			return protoAnnotationToFileAnnotation(protoregistryFiles, protoAnnotation)
+		},
+	)
 }
 
-func protoAnnotationToFileAnnotation(protoAnnotation *checkv1beta1.Annotation) bufanalysis.FileAnnotation {
+func protoAnnotationToFileAnnotation(
+	protoregistryFiles *protoregistry.Files,
+	protoAnnotation *checkv1beta1.Annotation,
+) (bufanalysis.FileAnnotation, error) {
 	if protoAnnotation == nil {
-		return nil
+		return nil, nil
 	}
 	var fileInfo *fileInfo
-	if fileName := protoAnnotation.GetFileName(); fileName != "" {
-		fileInfo = newFileInfo(fileName)
+	var startLine int
+	var startColumn int
+	var endLine int
+	var endColumn int
+	if location := protoAnnotation.GetLocation(); location != nil {
+		name := location.GetName()
+		fileInfo = newFileInfo(name)
+		if path := location.GetPath(); len(path) > 0 {
+			fileDescriptor, err := protoregistryFiles.FindFileByPath(name)
+			if err != nil {
+				return nil, err
+			}
+			if sourceLocation := fileDescriptor.SourceLocations().ByPath(path); !isSourceLocationEqualToZeroValue(sourceLocation) {
+				startLine = sourceLocation.StartLine + 1
+				startColumn = sourceLocation.StartColumn + 1
+				endLine = sourceLocation.EndLine + 1
+				endColumn = sourceLocation.EndColumn + 1
+			}
+		}
 	}
 	return bufanalysis.NewFileAnnotation(
 		fileInfo,
-		int(protoAnnotation.GetStartLine()),
-		int(protoAnnotation.GetStartColumn()),
-		int(protoAnnotation.GetEndLine()),
-		int(protoAnnotation.GetEndColumn()),
+		startLine,
+		startColumn,
+		endLine,
+		endColumn,
 		protoAnnotation.GetId(),
 		protoAnnotation.GetMessage(),
-	)
+	), nil
 }
 
 type fileInfo struct {
@@ -112,4 +150,19 @@ func (f *fileInfo) Path() string {
 
 func (f *fileInfo) ExternalPath() string {
 	return f.path
+}
+
+// The protoreflect API is a disaster. It says that "If there is no SourceLocation,
+// the zero value is returned", but equality is not easy because SourceLocation contains
+// slices. This is just a mess.
+func isSourceLocationEqualToZeroValue(sourceLocation protoreflect.SourceLocation) bool {
+	return len(sourceLocation.Path) == 0 &&
+		sourceLocation.StartLine == 0 &&
+		sourceLocation.StartColumn == 0 &&
+		sourceLocation.EndLine == 0 &&
+		sourceLocation.EndColumn == 0 &&
+		len(sourceLocation.LeadingDetachedComments) == 0 &&
+		sourceLocation.LeadingComments == "" &&
+		sourceLocation.TrailingComments == "" &&
+		sourceLocation.Next == 0
 }
