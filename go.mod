@@ -1,13 +1,17 @@
 module github.com/bufbuild/buf
 
-go 1.20
+go 1.21
+
+toolchain go1.22.5
 
 require (
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240704181222-aa2c4d5899e2.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240610164129-660609bc46d3.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240610164129-660609bc46d3.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.0
+	github.com/bufbuild/pluginrpc-go v0.0.0-20240704183252-c762588190c6
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
 	github.com/bufbuild/protovalidate-go v0.6.2
@@ -47,6 +51,7 @@ require (
 )
 
 require (
+	buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240704170143-a5926109f837.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
@@ -70,6 +75,7 @@ require (
 	github.com/google/pprof v0.0.0-20240622144329-c177fd99eaa9 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect

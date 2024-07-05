@@ -1,0 +1,14 @@
+version: v2
+inputs:
+  - module: buf.build/bufbuild/bufplugin
+managed:
+  enabled: true
+  disable:
+    - file_option: go_package_prefix
+      module: buf.build/bufbuild/bufplugin
+    - file_option: go_package_prefix
+      module: buf.build/bufbuild/protovalidate
+plugins:
+  - local: protoc-gen-pluginrpc-go
+    out: private/gen/proto/pluginrpc
+    opt: paths=source_relative
