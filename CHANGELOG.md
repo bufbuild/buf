@@ -5,6 +5,9 @@
 - Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
   plugins will write to, prior to generation. Allows cleaning of existing assets without having
   to call `rm -rf`.
+- Add `--list` and `--describe` flags to `buf curl`, which trigger the command to list
+  known services in the RPC schema or to describe an element (such as a method, message,
+  etc), instead of invoking an RPC method.
 
 ## [v1.34.0] - 2024-06-21
 
