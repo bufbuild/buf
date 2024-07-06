@@ -42,14 +42,19 @@ func newLintClient(
 }
 
 func (l *lintClient) Lint(ctx context.Context, image bufimage.Image) error {
-	lintServiceClient, err := v1beta1pluginrpc.NewLintServiceClient(l.client)
+	checkServiceClient, err := l.newCheckServiceClient()
 	if err != nil {
 		return err
 	}
-	response, err := lintServiceClient.Lint(
+	protoRules, err := listProtoRules(ctx, checkServiceClient)
+	if err != nil {
+		return err
+	}
+	response, err := checkServiceClient.Check(
 		ctx,
-		&checkv1beta1.LintRequest{
-			Files: imageToProtoFiles(image),
+		&checkv1beta1.CheckRequest{
+			RuleIds: slicesext.Map(protoRules, func(protoRule *checkv1beta1.Rule) string { return protoRule.GetId() }),
+			Files:   imageToProtoFiles(image),
 		},
 	)
 	if err != nil {
@@ -70,6 +75,50 @@ func (l *lintClient) Lint(ctx context.Context, image bufimage.Image) error {
 		return bufanalysis.NewFileAnnotationSet(fileAnnotatations...)
 	}
 	return nil
+}
+
+func (l *lintClient) newCheckServiceClient() (v1beta1pluginrpc.CheckServiceClient, error) {
+	return v1beta1pluginrpc.NewCheckServiceClient(l.client)
+}
+
+func listProtoRules(ctx context.Context, checkServiceClient v1beta1pluginrpc.CheckServiceClient) ([]*checkv1beta1.Rule, error) {
+	var protoRules []*checkv1beta1.Rule
+	var pageToken string
+	for {
+		response, err := checkServiceClient.ListRules(
+			ctx,
+			&checkv1beta1.ListRulesRequest{
+				PageToken: pageToken,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		protoRules = append(protoRules, response.GetRules()...)
+		pageToken = response.GetNextPageToken()
+		if pageToken == "" {
+			break
+		}
+	}
+	return protoRules, nil
+}
+
+type fileInfo struct {
+	path string
+}
+
+func newFileInfo(path string) *fileInfo {
+	return &fileInfo{
+		path: path,
+	}
+}
+
+func (f *fileInfo) Path() string {
+	return f.path
+}
+
+func (f *fileInfo) ExternalPath() string {
+	return f.path
 }
 
 func imageToProtoFiles(image bufimage.Image) []*checkv1beta1.File {
@@ -132,24 +181,6 @@ func protoAnnotationToFileAnnotation(
 		protoAnnotation.GetId(),
 		protoAnnotation.GetMessage(),
 	), nil
-}
-
-type fileInfo struct {
-	path string
-}
-
-func newFileInfo(path string) *fileInfo {
-	return &fileInfo{
-		path: path,
-	}
-}
-
-func (f *fileInfo) Path() string {
-	return f.path
-}
-
-func (f *fileInfo) ExternalPath() string {
-	return f.path
 }
 
 // The protoreflect API is a disaster. It says that "If there is no SourceLocation,
