@@ -62,7 +62,11 @@ func (s CheckServiceSpecBuilder) Build() pluginrpc_go.Spec {
 
 // CheckServiceClient is a client for the buf.plugin.check.v1beta1.CheckService service.
 type CheckServiceClient interface {
+	// Check a set of files for failures.
+	//
+	// All Annotations returned will have an ID that is contained within a Rule listed by ListRules.
 	Check(context.Context, *v1beta1.CheckRequest) (*v1beta1.CheckResponse, error)
+	// List all rules that this service implements.
 	ListRules(context.Context, *v1beta1.ListRulesRequest) (*v1beta1.ListRulesResponse, error)
 }
 
@@ -75,13 +79,21 @@ func NewCheckServiceClient(client pluginrpc_go.Client) (CheckServiceClient, erro
 
 // CheckServiceHandler is an implementation of the buf.plugin.check.v1beta1.CheckService service.
 type CheckServiceHandler interface {
+	// Check a set of files for failures.
+	//
+	// All Annotations returned will have an ID that is contained within a Rule listed by ListRules.
 	Check(context.Context, *v1beta1.CheckRequest) (*v1beta1.CheckResponse, error)
+	// List all rules that this service implements.
 	ListRules(context.Context, *v1beta1.ListRulesRequest) (*v1beta1.ListRulesResponse, error)
 }
 
 // CheckServiceServer serves the buf.plugin.check.v1beta1.CheckService service.
 type CheckServiceServer interface {
+	// Check a set of files for failures.
+	//
+	// All Annotations returned will have an ID that is contained within a Rule listed by ListRules.
 	Check(context.Context, pluginrpc_go.Env) error
+	// List all rules that this service implements.
 	ListRules(context.Context, pluginrpc_go.Env) error
 }
 

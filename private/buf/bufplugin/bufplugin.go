@@ -21,22 +21,23 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 )
 
-type LintClient interface {
-	// Lint lints the image.
+type CheckClient interface {
+	// Check checks the image.
 	//
 	// The image should have source code info for this to work properly.
 	//
 	// Images should *not* be filtered with regards to imports before passing to this function.
+	// TODO: reconcile with bufbreaking.
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
-	Lint(ctx context.Context, image bufimage.Image) error
+	Check(ctx context.Context, image bufimage.Image, againstImage bufimage.Image) error
 }
 
-func NewLintClient(
+func NewCheckClient(
 	runner command.Runner,
 	programName string,
-) LintClient {
-	return newLintClient(
+) CheckClient {
+	return newCheckClient(
 		newRunner(runner),
 		programName,
 	)

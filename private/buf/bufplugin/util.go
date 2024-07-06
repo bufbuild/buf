@@ -15,111 +15,13 @@
 package bufplugin
 
 import (
-	"context"
-
 	checkv1beta1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/check/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/gen/proto/pluginrpc/buf/plugin/check/v1beta1/v1beta1pluginrpc"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/pluginrpc-go"
-	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
-
-type lintClient struct {
-	client pluginrpc.Client
-}
-
-func newLintClient(
-	runner pluginrpc.Runner,
-	programName string,
-) *lintClient {
-	return &lintClient{
-		client: pluginrpc.NewClient(runner, programName),
-	}
-}
-
-func (l *lintClient) Lint(ctx context.Context, image bufimage.Image) error {
-	checkServiceClient, err := l.newCheckServiceClient()
-	if err != nil {
-		return err
-	}
-	protoRules, err := listProtoRules(ctx, checkServiceClient)
-	if err != nil {
-		return err
-	}
-	response, err := checkServiceClient.Check(
-		ctx,
-		&checkv1beta1.CheckRequest{
-			RuleIds: slicesext.Map(protoRules, func(protoRule *checkv1beta1.Rule) string { return protoRule.GetId() }),
-			Files:   imageToProtoFiles(image),
-		},
-	)
-	if err != nil {
-		return err
-	}
-	if protoAnnotations := response.GetAnnotations(); len(protoAnnotations) > 0 {
-		protoregistryFiles, err := protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(image))
-		if err != nil {
-			return err
-		}
-		fileAnnotatations, err := protoAnnotationsToFileAnnotations(
-			protoregistryFiles,
-			protoAnnotations,
-		)
-		if err != nil {
-			return err
-		}
-		return bufanalysis.NewFileAnnotationSet(fileAnnotatations...)
-	}
-	return nil
-}
-
-func (l *lintClient) newCheckServiceClient() (v1beta1pluginrpc.CheckServiceClient, error) {
-	return v1beta1pluginrpc.NewCheckServiceClient(l.client)
-}
-
-func listProtoRules(ctx context.Context, checkServiceClient v1beta1pluginrpc.CheckServiceClient) ([]*checkv1beta1.Rule, error) {
-	var protoRules []*checkv1beta1.Rule
-	var pageToken string
-	for {
-		response, err := checkServiceClient.ListRules(
-			ctx,
-			&checkv1beta1.ListRulesRequest{
-				PageToken: pageToken,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		protoRules = append(protoRules, response.GetRules()...)
-		pageToken = response.GetNextPageToken()
-		if pageToken == "" {
-			break
-		}
-	}
-	return protoRules, nil
-}
-
-type fileInfo struct {
-	path string
-}
-
-func newFileInfo(path string) *fileInfo {
-	return &fileInfo{
-		path: path,
-	}
-}
-
-func (f *fileInfo) Path() string {
-	return f.path
-}
-
-func (f *fileInfo) ExternalPath() string {
-	return f.path
-}
 
 func imageToProtoFiles(image bufimage.Image) []*checkv1beta1.File {
 	return slicesext.Map(image.Files(), imageFileToProtoFile)
