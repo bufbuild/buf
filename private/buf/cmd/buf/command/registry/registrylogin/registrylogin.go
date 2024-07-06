@@ -75,8 +75,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The username to use.",
 	)
-	flagSet.MarkDeprecated(usernameFlagName, "This flag no longer has any effect")
-	flagSet.MarkHidden(usernameFlagName)
+	_ = flagSet.MarkDeprecated(usernameFlagName, "This flag no longer has any effect")
+	_ = flagSet.MarkHidden(usernameFlagName)
 	flagSet.BoolVar(
 		&f.TokenStdin,
 		tokenStdinFlagName,
