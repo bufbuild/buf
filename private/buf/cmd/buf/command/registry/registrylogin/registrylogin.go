@@ -188,9 +188,6 @@ func inner(
 	if user == nil {
 		return errors.New("no user found for provided token")
 	}
-	if flags.Username != "" && user.Username != flags.Username {
-		return errors.New("the username associated with the provided token does not match the provided username")
-	}
 	if err := netrc.PutMachines(
 		container,
 		netrc.NewMachine(
