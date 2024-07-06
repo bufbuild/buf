@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"go.uber.org/zap"
 )
 
 type CheckClient interface {
@@ -34,10 +35,12 @@ type CheckClient interface {
 }
 
 func NewCheckClient(
+	logger *zap.Logger,
 	runner command.Runner,
 	programName string,
 ) CheckClient {
 	return newCheckClient(
+		logger,
 		newRunner(runner),
 		programName,
 	)

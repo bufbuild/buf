@@ -131,7 +131,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	if err := bufplugin.NewCheckClient(command.NewRunner(), flags.Plugin).Check(ctx, image, nil); err != nil {
+	if err := bufplugin.NewCheckClient(
+		container.Logger(),
+		command.NewRunner(),
+		flags.Plugin,
+	).Check(ctx, image, nil); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
 			if err := bufanalysis.PrintFileAnnotationSet(

@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/pluginrpc/buf/plugin/check/v1beta1/v1beta1pluginrpc"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/pluginrpc-go"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
@@ -34,15 +35,18 @@ const (
 )
 
 type checkClient struct {
+	logger      *zap.Logger
 	client      pluginrpc.Client
 	programName string
 }
 
 func newCheckClient(
+	logger *zap.Logger,
 	runner pluginrpc.Runner,
 	programName string,
 ) *checkClient {
 	return &checkClient{
+		logger:      logger,
 		client:      pluginrpc.NewClient(runner, programName),
 		programName: programName,
 	}
