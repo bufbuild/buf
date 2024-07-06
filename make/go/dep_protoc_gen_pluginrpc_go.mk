@@ -11,7 +11,7 @@ PLUGINRPC_GO_VERSION ?= c762588190c665dc853e0ab190888f251d717e84
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/bufbuild/pluginrpc-go@$(PLUGINRPC_GO_VERSION)
 
-PROTOC_GEN_PLUGINRPC_GO := $(CACHE_VERSIONS)/connect-go/$(PLUGINRPC_GO_VERSION)
+PROTOC_GEN_PLUGINRPC_GO := $(CACHE_VERSIONS)/protoc-gen-pluginrpc-go/$(PLUGINRPC_GO_VERSION)
 $(PROTOC_GEN_PLUGINRPC_GO):
 	@rm -f $(CACHE_BIN)/protoc-gen-pluginrpc-go
 	GOBIN=$(CACHE_BIN) go install github.com/bufbuild/pluginrpc-go/cmd/protoc-gen-pluginrpc-go@$(PLUGINRPC_GO_VERSION)
