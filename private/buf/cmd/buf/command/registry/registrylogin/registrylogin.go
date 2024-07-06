@@ -73,8 +73,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Username,
 		usernameFlagName,
 		"",
-		"The username to use. If provided, the command will validate that the token is associated with this username",
+		"The username to use.",
 	)
+	flagSet.MarkDeprecated(usernameFlagName, "This flag no longer has any effect")
+	flagSet.MarkHidden(usernameFlagName)
 	flagSet.BoolVar(
 		&f.TokenStdin,
 		tokenStdinFlagName,
