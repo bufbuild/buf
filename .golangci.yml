@@ -281,4 +281,7 @@ issues:
       path: private/buf/cmd/buf/buf_test.go
       # The LsModules tests call chdir and cannot be parallelized.
       text: "LsModules"
-      
+    - linters:
+        - forbidigo
+      # We are using errgroup in a test for concurrent reads/writes to the cache.
+      path: private/bufpkg/bufmodule/bufmodulecache/bufmodulecache_test.go
