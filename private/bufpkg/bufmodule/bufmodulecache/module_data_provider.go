@@ -70,26 +70,29 @@ func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) (_ []bufmodule.ModuleData, retErr error) {
-	for _, moduleKey := range moduleKeys {
-		digest, err := moduleKey.Digest()
-		if err != nil {
-			return nil, err
+	if p.filelocker != nil {
+		// If a file locker exists, take a file lock for all requested module keys
+		for _, moduleKey := range moduleKeys {
+			digest, err := moduleKey.Digest()
+			if err != nil {
+				return nil, err
+			}
+			path := fmt.Sprintf(
+				"%s/%s/%s/%s/%s/module.yaml", //TODO(doria): may want to export for bufmodulestore
+				digest.Type().String(),
+				moduleKey.ModuleFullName().Registry(),
+				moduleKey.ModuleFullName().Owner(),
+				moduleKey.ModuleFullName().Name(),
+				moduleKey.CommitID().String(),
+			)
+			unlocker, err := p.filelocker.Lock(ctx, path)
+			if err != nil {
+				return nil, err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, unlocker.Unlock())
+			}()
 		}
-		path := fmt.Sprintf(
-			"%s/%s/%s/%s/%s/module.yaml", //TODO(doria): may want to export for bufmodulestore
-			digest.Type().String(),
-			moduleKey.ModuleFullName().Registry(),
-			moduleKey.ModuleFullName().Owner(),
-			moduleKey.ModuleFullName().Name(),
-			moduleKey.CommitID().String(),
-		)
-		unlocker, err := p.filelocker.Lock(ctx, path)
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			retErr = multierr.Append(retErr, unlocker.Unlock())
-		}()
 	}
 
 	return p.baseProvider.getValuesForKeys(ctx, moduleKeys)

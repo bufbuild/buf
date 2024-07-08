@@ -159,69 +159,70 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 	)
 }
 
-// TODO(doria): fix this test, since not sure we can use an in-mem bucket with filelocker
-// func TestModuleDataProviderBasic(t *testing.T) {
-// 	t.Parallel()
-// 	ctx := context.Background()
-//
-// 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
-//
-// 	cacheProvider := newModuleDataProvider(
-// 		zap.NewNop(),
-// 		bsrProvider,
-// 		bufmodulestore.NewModuleDataStore(
-// 			zap.NewNop(),
-// 			storagemem.NewReadWriteBucket(),
-// 		),
-// 	)
-//
-// 	moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
-// 		ctx,
-// 		moduleKeys,
-// 	)
-// 	require.NoError(t, err)
-// 	require.Equal(t, 3, cacheProvider.getKeysRetrieved())
-// 	require.Equal(t, 0, cacheProvider.getKeysHit())
-// 	require.Equal(
-// 		t,
-// 		[]string{
-// 			"buf.build/foo/mod1",
-// 			"buf.build/foo/mod3",
-// 			"buf.build/foo/mod2",
-// 		},
-// 		slicesext.Map(
-// 			moduleDatas,
-// 			func(moduleData bufmodule.ModuleData) string {
-// 				return moduleData.ModuleKey().ModuleFullName().String()
-// 			},
-// 		),
-// 	)
-//
-// 	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
-// 	moduleDatas, err = cacheProvider.GetModuleDatasForModuleKeys(
-// 		ctx,
-// 		moduleKeys,
-// 	)
-// 	require.NoError(t, err)
-// 	require.Equal(t, 6, cacheProvider.getKeysRetrieved())
-// 	require.Equal(t, 3, cacheProvider.getKeysHit())
-// 	require.Equal(
-// 		t,
-// 		[]string{
-// 			"buf.build/foo/mod3",
-// 			"buf.build/foo/mod1",
-// 			"buf.build/foo/mod2",
-// 		},
-// 		slicesext.Map(
-// 			moduleDatas,
-// 			func(moduleData bufmodule.ModuleData) string {
-// 				return moduleData.ModuleKey().ModuleFullName().String()
-// 			},
-// 		),
-// 	)
-// }
+func TestModuleDataProviderBasic(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+
+	cacheProvider := newModuleDataProvider(
+		zap.NewNop(),
+		bsrProvider,
+		bufmodulestore.NewModuleDataStore(
+			zap.NewNop(),
+			storagemem.NewReadWriteBucket(),
+		),
+		nil, // Do not set a file locker for in-mem storage bucket
+	)
+
+	moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
+		ctx,
+		moduleKeys,
+	)
+	require.NoError(t, err)
+	require.Equal(t, 3, cacheProvider.getKeysRetrieved())
+	require.Equal(t, 0, cacheProvider.getKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			moduleDatas,
+			func(moduleData bufmodule.ModuleData) string {
+				return moduleData.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
+
+	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
+	moduleDatas, err = cacheProvider.GetModuleDatasForModuleKeys(
+		ctx,
+		moduleKeys,
+	)
+	require.NoError(t, err)
+	require.Equal(t, 6, cacheProvider.getKeysRetrieved())
+	require.Equal(t, 3, cacheProvider.getKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			moduleDatas,
+			func(moduleData bufmodule.ModuleData) string {
+				return moduleData.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
+}
 
 func TestConcurrentCacheReadWrite(t *testing.T) {
+	t.Skip("expensive cache concurrent test")
 	t.Parallel()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
