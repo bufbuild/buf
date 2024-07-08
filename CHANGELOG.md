@@ -5,6 +5,8 @@
 - Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
   plugins will write to, prior to generation. Allows cleaning of existing assets without having
   to call `rm -rf`.
+- Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
+  required to log in.
 - Add `--list` and `--describe` flags to `buf curl`, which trigger the command to list
   known services in the RPC schema or to describe an element (such as a method, message,
   etc), instead of invoking an RPC method.
