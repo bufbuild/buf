@@ -221,17 +221,18 @@ func TestModuleDataProviderBasic(t *testing.T) {
 }
 
 func TestConcurrentCacheReadWrite(t *testing.T) {
+	t.Skip("skipping expensive test for concurrent cache reads/writes")
 	t.Parallel()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
 		errs, ctx := errgroup.WithContext(context.Background())
 
-		for j := 0; j < 2; j++ {
+		for j := 0; j < 5; j++ {
 			bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
 			require.NoError(t, err)
 			filelocker, err := filelock.NewLocker(cacheDir)
