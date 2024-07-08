@@ -90,9 +90,9 @@ message DisplayRepositoryElementsResponse {
   bool settings = 1;
   // Display delete repository element if true.
   bool delete = 2;
-  // Display write repository element if true.
+  // Display write repository elements if true. It includes all elements from limited_write.
   bool write = 3;
-  // Similar to write but displays a more restrictive set of repository elements if true.
+  // Display limited_write repository elements if true. This is a subset of write elements.
   bool limited_write = 4;
 }
 
