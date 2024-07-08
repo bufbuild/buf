@@ -40,12 +40,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -72,8 +69,7 @@ const (
 	insecureFlagShortName = "k"
 
 	// Action flags
-	listFlagName     = "list"
-	describeFlagName = "describe"
+	listServicesFlagName = "list-services"
 
 	// Timeout flags
 	noKeepAliveFlagName    = "no-keepalive"
@@ -215,8 +211,7 @@ type flags struct {
 	// TODO: CRLFile, CertStatus
 
 	// Actions
-	ListServices    bool
-	DescribeElement string
+	ListServices bool
 
 	// Timeouts
 	NoKeepAlive           bool
@@ -400,30 +395,13 @@ one is provided`,
 
 	flagSet.BoolVar(
 		&f.ListServices,
-		listFlagName,
+		listServicesFlagName,
 		false,
-		fmt.Sprintf(`When set, the command lists supported services and then exits. If server reflection is used
+		`When set, the command lists supported services and then exits. If server reflection is used
 to provide the RPC schema, then the given URL must be a base URL, not including a service
 or method name. If the schema source is not server reflection, the URL is not used and
-may be omitted. This flag may not be used with the --%s flag.`,
-			describeFlagName,
-		),
+may be omitted.`,
 	)
-	flagSet.StringVar(
-		&f.DescribeElement,
-		describeFlagName,
-		"",
-		fmt.Sprintf(`When set, the command describes the named element and then exits. The value must be
-the fully-qualified name of an element in the schema (but may not be a package name).
-The element is described in a format that looks like proto source code, but is not
-necessarily the actual or exact source used to define the element. If server reflection
-is used to provide the RPC schema, then the given URL must be a base URL, not including
-a service or method name. If the schema source is not server reflection, the URL is not
-used and may be omitted. This flag may not be used with the --%s flag.`,
-			listFlagName,
-		),
-	)
-
 	flagSet.StringVarP(
 		&f.UserAgent,
 		userAgentFlagName,
@@ -525,7 +503,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
 	}
 
-	if !hasURL && ((!f.ListServices && f.DescribeElement == "") || f.Reflect) {
+	if !hasURL && (!f.ListServices || f.Reflect) {
 		// If we are trying to use reflection for anything or if we are invoking an RPC (which
 		// means we aren't listing services, listing methods, or describing an element), then
 		// a URL is required.
@@ -830,7 +808,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	var service, method, baseURL string
 	switch {
-	case f.ListServices, f.DescribeElement != "":
+	case f.ListServices:
 		baseURL = urlArg
 	default:
 		service, method, baseURL, err = parseEndpointURL(urlArg)
@@ -991,27 +969,6 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			}
 		}
 		return nil
-
-	case f.DescribeElement != "":
-		descriptor, err := res.FindDescriptorByName(protoreflect.FullName(f.DescribeElement))
-		if err != nil {
-			return err
-		}
-		printer := &protoprint.Printer{
-			OmitComments:             protoprint.CommentsDetached,
-			ForceFullyQualifiedNames: true,
-		}
-		wrappedDescriptor, err := desc.WrapDescriptor(descriptor)
-		if err != nil {
-			return err
-		}
-		description, err := printer.PrintProtoToString(wrappedDescriptor)
-		if err != nil {
-			return err
-		}
-		_, err = container.Stdout().Write([]byte(description))
-		return err
-
 	default:
 		// Invoke RPC
 		methodDescriptor, err := bufcurl.ResolveMethodDescriptor(res, service, method)
