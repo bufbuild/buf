@@ -218,7 +218,7 @@ type DisplayRepositoryElementsResponse struct {
 	Delete bool `protobuf:"varint,2,opt,name=delete,proto3" json:"delete,omitempty"`
 	// Display write repository element if true.
 	Write bool `protobuf:"varint,3,opt,name=write,proto3" json:"write,omitempty"`
-	// Display limited write repository element if true.
+	// Similar to write but displays a more restrictive set of repository elements if true.
 	LimitedWrite bool `protobuf:"varint,4,opt,name=limited_write,json=limitedWrite,proto3" json:"limited_write,omitempty"`
 }
 
