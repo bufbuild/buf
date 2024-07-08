@@ -29,8 +29,8 @@ type Resolver interface {
 	ListServices() ([]protoreflect.FullName, error)
 }
 
-// ResolverFromImage returns a Resolver backed by the given image.
-func ResolverFromImage(image bufimage.Image) Resolver {
+// ResolverForImage returns a Resolver backed by the given image.
+func ResolverForImage(image bufimage.Image) Resolver {
 	return &imageResolver{
 		Resolver: image.Resolver(),
 		image:    image,

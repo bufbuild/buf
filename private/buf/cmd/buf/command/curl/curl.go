@@ -28,7 +28,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -39,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
@@ -911,8 +911,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}()
 
-	// TODO: when we can use go 1.21, use sync.OnceValues and remove memoizeFunc
-	makeTransportOnce := memoizeFunc(func() (connect.HTTPClient, error) {
+	makeTransportOnce := syncext.OnceValues(func() (connect.HTTPClient, error) {
 		// We do this lazily since some commands don't need a transport, like listing
 		// services and methods and describing elements when the schema source is
 		// something other than server reflection. We memoize the result to use the
@@ -976,7 +975,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		resolvers = append(resolvers, bufcurl.ResolverFromImage(image))
+		resolvers = append(resolvers, bufcurl.ResolverForImage(image))
 	}
 	res := bufcurl.CombineResolvers(resolvers...)
 
@@ -1112,17 +1111,4 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 
 func secondsToDuration(secs float64) time.Duration {
 	return time.Duration(float64(time.Second) * secs)
-}
-
-func memoizeFunc(action func() (connect.HTTPClient, error)) func() (connect.HTTPClient, error) {
-	var once sync.Once
-	var result connect.HTTPClient
-	var err error
-	// Only invokes action once and memoizes the results.
-	return func() (connect.HTTPClient, error) {
-		once.Do(func() {
-			result, err = action()
-		})
-		return result, err
-	}
 }
