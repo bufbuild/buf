@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -97,7 +98,6 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 	}
 }
 
-// TODO(doria): clean up GoDoc.
 // ModuleDataStoreWithFileLocker returns a new ModuleDataStoreOption that sets a filelock.Locker.
 //
 // If a filelocker is set, then the module data store will use this to grab a file lock on
@@ -196,15 +196,20 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		if p.filelocker != nil {
 			unlocker, err := p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataFileName)
 			if err != nil {
+				p.logger.Debug("failed_get_rlock", zap.Error(err))
 				return nil, err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, unlocker.Unlock())
+				if err := unlocker.Unlock(); err != nil {
+					p.logger.Debug("failed_get_runlock", zap.Error(err))
+					retErr = multierr.Append(retErr, err)
+				}
 			}()
 		}
 	}
 	defer func() {
-		if retErr != nil {
+		// If the module.yaml file was not found, then we do not run the clean-up
+		if retErr != nil && !errors.Is(retErr, fs.ErrNotExist) {
 			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
 		}
 	}()
@@ -214,9 +219,15 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
 		zap.Bool("found", err == nil),
 		zap.Error(err),
+		zap.Int("data_len", len(data)),
 	)
 	if err != nil {
 		return nil, err
+	}
+	// Grabbing a filelock creates an empty module.yaml file, we consider an empty module.yaml
+	// as not found
+	if len(data) == 0 {
+		return nil, fs.ErrNotExist
 	}
 	var externalModuleData externalModuleData
 	if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
@@ -330,13 +341,39 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 	if p.filelocker != nil {
 		unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataFileName)
 		if err != nil {
+			p.logger.Debug("failed_delete_lock", zap.Error(err))
 			return err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, unlocker.Unlock())
+			if err := unlocker.Unlock(); err != nil {
+				p.logger.Debug("failed_delete_unlock", zap.Error(err))
+				retErr = multierr.Append(retErr, err)
+			}
 		}()
 	}
-	return p.bucket.DeleteAll(ctx, dirPath)
+	moduleDir, err := os.Open(dirPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := moduleDir.Close(); err != nil {
+			p.logger.Debug("failed_delete_close_module_dir", zap.Error(err))
+			retErr = multierr.Append(retErr, err)
+		}
+	}()
+	fileNames, err := moduleDir.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	// Delete all contents except for module.yaml first
+	for _, fileName := range fileNames {
+		if fileName != externalModuleDataFileName {
+			if err := p.bucket.Delete(ctx, dirPath+"/"+fileName); err != nil {
+				return err
+			}
+		}
+	}
+	return p.bucket.Delete(ctx, dirPath+"/"+externalModuleDataFileName)
 }
 
 func (p *moduleDataStore) putModuleData(
@@ -370,10 +407,14 @@ func (p *moduleDataStore) putModuleData(
 		if p.filelocker != nil {
 			unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataFileName)
 			if err != nil {
+				p.logger.Debug("failed_put_lock", zap.Error(err))
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, unlocker.Unlock())
+				if err := unlocker.Unlock(); err != nil {
+					p.logger.Debug("failed_put_unlock", zap.Error(err))
+					retErr = multierr.Append(retErr, err)
+				}
 			}()
 		}
 	}

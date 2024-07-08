@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -221,12 +222,12 @@ func TestModuleDataProviderBasic(t *testing.T) {
 }
 
 func TestConcurrentCacheReadWrite(t *testing.T) {
-	t.Skip("skipping expensive test for concurrent cache reads/writes")
 	t.Parallel()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
+	logger := zaptest.NewLogger(t)
 
 	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
@@ -239,10 +240,10 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 			require.NoError(t, err)
 
 			cacheProvider := newModuleDataProvider(
-				zap.NewNop(),
+				logger,
 				bsrProvider,
 				bufmodulestore.NewModuleDataStore(
-					zap.NewNop(),
+					logger,
 					bucket,
 					bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
 				),
