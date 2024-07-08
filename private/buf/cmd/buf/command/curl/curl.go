@@ -566,6 +566,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("--%s cannot be used with --%s", unixSocketFlagName, http3FlagName)
 	}
 
+	// NOTE: This can be removed once trailer support lands for quic-go: https://github.com/quic-go/quic-go/issues/2266
 	if f.Protocol == connect.ProtocolGRPC && f.HTTP3 {
 		return fmt.Errorf("--%s cannot be used with --%s=%s", http3FlagName, protocolFlagName, connect.ProtocolGRPC)
 	}
@@ -1101,7 +1102,6 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 		if err != nil {
 			return nil, err
 		}
-
 		dialTLSFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			conn, err := dialFunc(ctx, network, addr)
 			if err != nil {
