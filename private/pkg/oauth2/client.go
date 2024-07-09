@@ -24,6 +24,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"go.uber.org/multierr"
 )
 
 // Client is an OAuth 2.0 client that can register a device, authorize a device,
@@ -36,13 +38,13 @@ type Client struct {
 // NewClient returns a new Client with the given base URL and HTTP client.
 func NewClient(baseURL string, client *http.Client) *Client {
 	return &Client{
-		baseURL: baseURL,
+		baseURL: strings.TrimSuffix(baseURL, "/"),
 		client:  client,
 	}
 }
 
 // RegisterDevice registers a new device with the authorization server.
-func (c *Client) RegisterDevice(ctx context.Context, args *DeviceRegistrationRequest) (*DeviceRegistrationResponse, error) {
+func (c *Client) RegisterDevice(ctx context.Context, args *DeviceRegistrationRequest) (_ *DeviceRegistrationResponse, retErr error) {
 	input, err := json.Marshal(args)
 	if err != nil {
 		return nil, err
@@ -54,23 +56,25 @@ func (c *Client) RegisterDevice(ctx context.Context, args *DeviceRegistrationReq
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	rsp, err := c.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer rsp.Body.Close()
+	defer func() {
+		retErr = multierr.Append(retErr, resp.Body.Close())
+	}()
 
 	payload := &struct {
 		Error
 		DeviceRegistrationResponse
 	}{}
-	if err := c.parseJSONResponse(rsp, payload); err != nil {
+	if err := c.parseJSONResponse(resp, payload); err != nil {
 		return nil, fmt.Errorf("oauth2: invalid response: %w", err)
 	}
 	if payload.ErrorCode != "" {
 		return nil, &payload.Error
 	}
-	if code := rsp.StatusCode; code != http.StatusOK {
+	if code := resp.StatusCode; code != http.StatusOK {
 		return nil, fmt.Errorf("oauth2: invalid status: %v", code)
 	}
 	return &payload.DeviceRegistrationResponse, nil
@@ -78,7 +82,7 @@ func (c *Client) RegisterDevice(ctx context.Context, args *DeviceRegistrationReq
 
 // AuthorizeDevice authorizes a device with the authorization server. The authorization server
 // will return a device code and a user code that the user must use to authorize the device.
-func (c *Client) AuthorizeDevice(ctx context.Context, args *DeviceAuthorizationRequest) (*DeviceAuthorizationResponse, error) {
+func (c *Client) AuthorizeDevice(ctx context.Context, args *DeviceAuthorizationRequest) (_ *DeviceAuthorizationResponse, retErr error) {
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+DeviceAuthorizationPath, strings.NewReader(args.ToValues().Encode()))
 	if err != nil {
 		return nil, err
@@ -86,23 +90,25 @@ func (c *Client) AuthorizeDevice(ctx context.Context, args *DeviceAuthorizationR
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
-	rsp, err := c.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer rsp.Body.Close()
+	defer func() {
+		retErr = multierr.Append(retErr, resp.Body.Close())
+	}()
 
 	payload := &struct {
 		Error
 		DeviceAuthorizationResponse
 	}{}
-	if err := c.parseJSONResponse(rsp, payload); err != nil {
+	if err := c.parseJSONResponse(resp, payload); err != nil {
 		return nil, fmt.Errorf("oauth2: invalid response: %w", err)
 	}
 	if payload.ErrorCode != "" {
 		return nil, &payload.Error
 	}
-	if code := rsp.StatusCode; code != http.StatusOK {
+	if code := resp.StatusCode; code != http.StatusOK {
 		return nil, fmt.Errorf("oauth2: invalid status: %v", code)
 	}
 	return &payload.DeviceAuthorizationResponse, nil
@@ -140,10 +146,14 @@ func (c *Client) AccessDeviceToken(ctx context.Context, interval int, args *Devi
 				DeviceAccessTokenResponse
 			}{}
 			if err := c.parseJSONResponse(rsp, payload); err != nil {
-				_ = rsp.Body.Close()
+				if closeErr := rsp.Body.Close(); closeErr != nil {
+					err = multierr.Append(err, closeErr)
+				}
 				return nil, fmt.Errorf("oauth2: invalid response: %w", err)
 			}
-			_ = rsp.Body.Close()
+			if err := rsp.Body.Close(); err != nil {
+				return nil, fmt.Errorf("oauth2: failed to close response body: %w", err)
+			}
 			if rsp.StatusCode == http.StatusOK && payload.ErrorCode == "" {
 				return &payload.DeviceAccessTokenResponse, nil
 			}
@@ -156,8 +166,8 @@ func (c *Client) AccessDeviceToken(ctx context.Context, interval int, args *Devi
 				// If the user has not yet authorized the device, continue polling.
 				continue
 			case ErrorCodeAccessDenied, ErrorCodeExpiredToken:
-				// If the user has denied the device or the token has expired, return an error.
-				fallthrough
+				// If the user has denied the device or the token has expired, return the error.
+				return nil, &payload.Error
 			default:
 				return nil, &payload.Error
 			}

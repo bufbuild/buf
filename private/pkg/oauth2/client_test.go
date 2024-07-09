@@ -240,6 +240,21 @@ func TestAccessDeviceToken(t *testing.T) {
 			ErrorCode:        ErrorCodeInvalidRequest,
 			ErrorDescription: "invalid request",
 		},
+	}, {
+		name: "expired token",
+		input: &DeviceAccessTokenRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+			DeviceCode:   "deviceCode",
+			GrantType:    "urn:ietf:params:oauth:grant-type:device_code",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			return newJSONResponse(t, http.StatusBadRequest, `{"error":"expired_token","error_description":"token expired"}`), nil
+		},
+		err: &Error{
+			ErrorCode:        ErrorCodeExpiredToken,
+			ErrorDescription: "token expired",
+		},
 	}}
 	for _, test := range tests {
 		test := test
