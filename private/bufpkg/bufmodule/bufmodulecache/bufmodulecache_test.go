@@ -16,6 +16,7 @@ package bufmodulecache
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -232,7 +233,8 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
 		jobs, err := slicesext.MapError(
 			[]int{0, 1, 2, 3, 4},
-			func(_ int) (func(ctx context.Context) error, error) {
+			func(i int) (func(ctx context.Context) error, error) {
+				logger := logger.Named(fmt.Sprintf("job-%d", i))
 				bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
 				if err != nil {
 					return nil, err

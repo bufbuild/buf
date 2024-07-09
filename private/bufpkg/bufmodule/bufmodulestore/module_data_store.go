@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -345,35 +344,29 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 			}
 		}()
 	}
-	moduleDir, err := os.Open(dirPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		// If the moduleDir was already closed, that is fine
-		if err := moduleDir.Close(); err != nil && err != fs.ErrClosed {
-			p.logger.Debug("failed_delete_close_module_dir", zap.Error(err))
-			retErr = multierr.Append(retErr, err)
+	var deleted map[string]struct{}
+	if err := p.bucket.Walk(ctx, dirPath, func(objectInfo storage.ObjectInfo) error {
+		components := normalpath.Components(objectInfo.Path())
+		if len(components) < 1 {
+			return fmt.Errorf("invalid object info path: %s", objectInfo.Path())
 		}
-	}()
-	fileNames, err := moduleDir.Readdirnames(-1)
-	if err != nil {
-		return err
-	}
-	// Close the moduleDir first before doing other operations
-	if err := moduleDir.Close(); err != nil {
-		return err
-	}
-	// Delete all contents except the lock file
-	for _, fileName := range fileNames {
-		if fileName != externalModuleDataLockFileName {
-			if err := p.bucket.Delete(ctx, dirPath+"/"+fileName); err != nil {
-				return err
-			}
+		topLevelPath := components[0]
+		if topLevelPath == externalModuleDataLockFileName {
+			return nil
 		}
+		if _, ok := deleted[topLevelPath]; ok {
+			return nil
+		}
+		if err := p.bucket.DeleteAll(ctx, topLevelPath); err != nil {
+			return err
+		}
+		deleted[topLevelPath] = struct{}{}
+		return nil
+	}); err != nil {
+		return err
 	}
-	// Delete the lock file
-	return p.bucket.Delete(ctx, dirPath+"/"+externalModuleDataLockFileName)
+	// Delete the entire dirPath
+	return p.bucket.DeleteAll(ctx, dirPath)
 }
 
 func (p *moduleDataStore) putModuleData(
@@ -517,7 +510,6 @@ func (p *moduleDataStore) putModuleData(
 		ctx,
 		filesBucket,
 		storage.MapWriteBucket(moduleCacheBucket, storage.MapOnPrefix(externalModuleDataFilesDir)),
-		storage.CopyWithAtomic(),
 	); err != nil {
 		return err
 	}
