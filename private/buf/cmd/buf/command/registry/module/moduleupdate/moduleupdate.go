@@ -30,7 +30,10 @@ import (
 )
 
 const (
-	visibilityFlagName = "visibility"
+	visibilityFlagName   = "visibility"
+	descriptionFlagName  = "description"
+	urlFlagName          = "url"
+	defaultLabelFlagName = "default-label-name"
 )
 
 // NewCommand returns a new Command
@@ -51,7 +54,10 @@ func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 
 // TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
-	Visibility string
+	Visibility   string
+	Description  *string
+	Url          *string
+	DefaultLabel string
 }
 
 func newFlags() *flags {
@@ -60,6 +66,24 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName, true)
+	bufcli.BindStringPointer(
+		flagSet,
+		descriptionFlagName,
+		&f.Description,
+		"The new description for the module",
+	)
+	bufcli.BindStringPointer(
+		flagSet,
+		urlFlagName,
+		&f.Url,
+		"The new URL for the module",
+	)
+	flagSet.StringVar(
+		&f.DefaultLabel,
+		defaultLabelFlagName,
+		"",
+		"The label that commits are pushed to by default",
+	)
 }
 
 func run(
@@ -84,6 +108,10 @@ func run(
 	if visibility == modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED {
 		visibilityUpdate = nil
 	}
+	defaultLabelUpdate := &flags.DefaultLabel
+	if flags.DefaultLabel == "" {
+		defaultLabelUpdate = nil
+	}
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
 		&connect.Request[modulev1.UpdateModulesRequest]{
@@ -98,7 +126,10 @@ func run(
 								},
 							},
 						},
-						Visibility: visibilityUpdate,
+						Description:      flags.Description,
+						Url:              flags.Url,
+						Visibility:       visibilityUpdate,
+						DefaultLabelName: defaultLabelUpdate,
 					},
 				},
 			},
@@ -109,7 +140,7 @@ func run(
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module Updated."); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil
