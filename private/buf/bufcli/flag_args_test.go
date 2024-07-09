@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package organizationupdate
+package bufcli
 
 import (
 	"testing"
@@ -41,7 +41,7 @@ func TestStringPointerFlagNotSet(t *testing.T) {
 func testParseStringPointer(t *testing.T, flagName string, expectedResult *string, args ...string) {
 	var stringPointer *string
 	flagSet := pflag.NewFlagSet("test flag set", pflag.ContinueOnError)
-	bindStringPointer(flagSet, flagName, &stringPointer, "test usage")
+	BindStringPointer(flagSet, flagName, &stringPointer, "test usage")
 	err := flagSet.Parse(args)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, stringPointer)
