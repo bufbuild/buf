@@ -40,6 +40,7 @@ var (
 	externalModuleDataFilesDir     = "files"
 	externalModuleDataV1BufYAMLDir = "v1_buf_yaml"
 	externalModuleDataV1BufLockDir = "v1_buf_lock"
+	externalModuleDataLockFileName = "module.lock"
 )
 
 // ModuleDatasResult is a result for a get of ModuleDatas.
@@ -194,7 +195,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		// Only attempt to get a file lock when storing individual files
 		if p.filelocker != nil {
-			unlocker, err := p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataFileName)
+			unlocker, err := p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataLockFileName)
 			if err != nil {
 				p.logger.Debug("failed_get_rlock", zap.Error(err))
 				return nil, err
@@ -208,8 +209,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		}
 	}
 	defer func() {
-		// If the module.yaml file was not found, then we do not run the clean-up
-		if retErr != nil && !errors.Is(retErr, fs.ErrNotExist) {
+		if retErr != nil && !errors.Is(err, fs.ErrNotExist) {
 			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
 		}
 	}()
@@ -219,15 +219,9 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
 		zap.Bool("found", err == nil),
 		zap.Error(err),
-		zap.Int("data_len", len(data)),
 	)
 	if err != nil {
 		return nil, err
-	}
-	// Grabbing a filelock creates an empty module.yaml file, we consider an empty module.yaml
-	// as not found
-	if len(data) == 0 {
-		return nil, fs.ErrNotExist
 	}
 	var externalModuleData externalModuleData
 	if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
@@ -339,7 +333,7 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 		return err
 	}
 	if p.filelocker != nil {
-		unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataFileName)
+		unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataLockFileName)
 		if err != nil {
 			p.logger.Debug("failed_delete_lock", zap.Error(err))
 			return err
@@ -370,15 +364,16 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 	if err := moduleDir.Close(); err != nil {
 		return err
 	}
-	// Delete all contents except for module.yaml first
+	// Delete all contents except the lock file
 	for _, fileName := range fileNames {
-		if fileName != externalModuleDataFileName {
+		if fileName != externalModuleDataLockFileName {
 			if err := p.bucket.Delete(ctx, dirPath+"/"+fileName); err != nil {
 				return err
 			}
 		}
 	}
-	return p.bucket.Delete(ctx, dirPath+"/"+externalModuleDataFileName)
+	// Delete the lock file
+	return p.bucket.Delete(ctx, dirPath+"/"+externalModuleDataLockFileName)
 }
 
 func (p *moduleDataStore) putModuleData(
@@ -410,7 +405,7 @@ func (p *moduleDataStore) putModuleData(
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		// Only attempt to get a file lock when storing individual files
 		if p.filelocker != nil {
-			unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataFileName)
+			unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataLockFileName)
 			if err != nil {
 				p.logger.Debug("failed_put_lock", zap.Error(err))
 				return err
