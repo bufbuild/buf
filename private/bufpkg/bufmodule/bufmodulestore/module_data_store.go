@@ -356,13 +356,18 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 		return err
 	}
 	defer func() {
-		if err := moduleDir.Close(); err != nil {
+		// If the moduleDir was already closed, that is fine
+		if err := moduleDir.Close(); err != nil && err != fs.ErrClosed {
 			p.logger.Debug("failed_delete_close_module_dir", zap.Error(err))
 			retErr = multierr.Append(retErr, err)
 		}
 	}()
 	fileNames, err := moduleDir.Readdirnames(-1)
 	if err != nil {
+		return err
+	}
+	// Close the moduleDir first before doing other operations
+	if err := moduleDir.Close(); err != nil {
 		return err
 	}
 	// Delete all contents except for module.yaml first
