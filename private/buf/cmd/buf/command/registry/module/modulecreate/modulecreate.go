@@ -143,9 +143,9 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.NewRepositoryPrinter(
+	return bufprint.NewModulePrinter(
 		clientConfig,
 		moduleFullName.Registry(),
 		container.Stdout(),
-	).PrintRepository(ctx, format, modules[0])
+	).PrintModule(ctx, format, modules[0])
 }
