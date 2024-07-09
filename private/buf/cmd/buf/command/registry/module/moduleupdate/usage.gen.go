@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package repositoryundeprecate
+package moduleupdate
 
 import _ "github.com/bufbuild/buf/private/usage"

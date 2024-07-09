@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorydelete
+package moduleupdate
 
 import (
 	"context"
@@ -29,17 +29,16 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const forceFlagName = "force"
+const (
+	visibilityFlagName = "visibility"
+)
 
 // NewCommand returns a new Command
-func NewCommand(
-	name string,
-	builder appext.SubCommandBuilder,
-) *appcmd.Command {
+func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Delete a BSR repository",
+		Use:   name + " <remote/owner/module>",
+		Short: "Update BSR module settings",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -50,8 +49,9 @@ func NewCommand(
 	}
 }
 
+// TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
-	Force bool
+	Visibility string
 }
 
 func newFlags() *flags {
@@ -59,12 +59,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(
-		&f.Force,
-		forceFlagName,
-		false,
-		"Force deletion without confirming. Use with caution",
-	)
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName, true)
 }
 
 func run(
@@ -72,8 +67,11 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -81,35 +79,37 @@ func run(
 	if err != nil {
 		return err
 	}
-	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", moduleFullName.Name()); err != nil {
-			return err
-		}
-	}
 	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
-	if _, err := moduleServiceClient.DeleteModules(
+	visibilityUpdate := &visibility
+	if visibility == modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED {
+		visibilityUpdate = nil
+	}
+	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
-		connect.NewRequest(
-			&modulev1.DeleteModulesRequest{
-				ModuleRefs: []*modulev1.ModuleRef{
+		&connect.Request[modulev1.UpdateModulesRequest]{
+			Msg: &modulev1.UpdateModulesRequest{
+				Values: []*modulev1.UpdateModulesRequest_Value{
 					{
-						Value: &modulev1.ModuleRef_Name_{
-							Name: &modulev1.ModuleRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
+						ModuleRef: &modulev1.ModuleRef{
+							Value: &modulev1.ModuleRef_Name_{
+								Name: &modulev1.ModuleRef_Name{
+									Owner:  moduleFullName.Owner(),
+									Module: moduleFullName.Name(),
+								},
 							},
 						},
+						Visibility: visibilityUpdate,
 					},
 				},
 			},
-		),
+		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil

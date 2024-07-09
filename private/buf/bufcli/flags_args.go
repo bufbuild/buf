@@ -142,12 +142,16 @@ By default, symlinks are followed in this CLI, but never followed on the Buf Sch
 }
 
 // BindVisibility binds the visibility flag.
-func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
+func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, emptyDefault bool) {
+	defaultVisibility := privateVisibility
+	if emptyDefault {
+		defaultVisibility = ""
+	}
 	flagSet.StringVar(
 		addr,
 		flagName,
-		"",
-		fmt.Sprintf(`The repository's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+		defaultVisibility,
+		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -158,7 +162,7 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 		addr,
 		flagName,
 		privateVisibility,
-		fmt.Sprintf(`The repository's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -280,18 +284,6 @@ func GetInputValue(
 		return arg, nil
 	}
 	return defaultValue, nil
-}
-
-// VisibilityFlagToVisibility parses the given string as a modulev1.ModuleVisibility
-func VisibilityFlagToVisibility(visibility string) (modulev1.ModuleVisibility, error) {
-	switch visibility {
-	case publicVisibility:
-		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
-	case privateVisibility:
-		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
-	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
-	}
 }
 
 // VisibilityFlagToVisibilityAllowUnspecified parses the given string as a modulev1.ModuleVisibility

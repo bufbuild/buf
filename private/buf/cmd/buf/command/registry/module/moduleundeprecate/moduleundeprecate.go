@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositoryupdate
+package moduleundeprecate
 
 import (
 	"context"
@@ -26,53 +26,20 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/spf13/pflag"
-)
-
-const (
-	visibilityFlagName = "visibility"
 )
 
 // NewCommand returns a new Command
 func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
-	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Update BSR repository settings",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Undeprecate a BSR module",
 		Args:  appcmd.ExactArgs(1),
-		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appext.Container) error {
-				return run(ctx, container, flags)
-			},
-		),
-		BindFlags: flags.Bind,
+		Run:   builder.NewRunFunc(run),
 	}
 }
 
-// TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
-type flags struct {
-	Visibility string
-}
-
-func newFlags() *flags {
-	return &flags{}
-}
-
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-}
-
-func run(
-	ctx context.Context,
-	container appext.Container,
-	flags *flags,
-) error {
-	bufcli.WarnBetaCommand(ctx, container)
+func run(ctx context.Context, container appext.Container) error {
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -80,11 +47,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
-	visibilityUpdate := &visibility
-	if visibility == modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED {
-		visibilityUpdate = nil
-	}
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	moduleServiceClient := clientProvider.V1ModuleServiceClient(moduleFullName.Registry())
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
 		&connect.Request[modulev1.UpdateModulesRequest]{
@@ -99,18 +63,18 @@ func run(
 								},
 							},
 						},
-						Visibility: visibilityUpdate,
+						State: modulev1.ModuleState_MODULE_STATE_ACTIVE.Enum(),
 					},
 				},
 			},
 		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module undeprecated."); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil

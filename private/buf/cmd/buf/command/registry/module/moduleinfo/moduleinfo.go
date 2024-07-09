@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorycreate
+package moduleinfo
 
 import (
 	"context"
 	"fmt"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
-	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -31,10 +30,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	formatFlagName     = "format"
-	visibilityFlagName = "visibility"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -43,8 +39,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Create a BSR repository",
+		Use:   name + " <remote/owner/module>",
+		Short: "Get a BSR module",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -56,8 +52,7 @@ func NewCommand(
 }
 
 type flags struct {
-	Format     string
-	Visibility string
+	Format string
 }
 
 func newFlags() *flags {
@@ -65,8 +60,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -80,12 +73,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	visibility, err := bufcli.VisibilityFlagToVisibility(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -99,37 +87,36 @@ func run(
 		return err
 	}
 	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
-	resp, err := moduleServiceClient.CreateModules(
+	resp, err := moduleServiceClient.GetModules(
 		ctx,
 		connect.NewRequest(
-			&modulev1.CreateModulesRequest{
-				Values: []*modulev1.CreateModulesRequest_Value{
+			&modulev1.GetModulesRequest{
+				ModuleRefs: []*modulev1.ModuleRef{
 					{
-						OwnerRef: &ownerv1.OwnerRef{
-							Value: &ownerv1.OwnerRef_Name{
-								Name: moduleFullName.Owner(),
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
 							},
 						},
-						Name:       moduleFullName.Name(),
-						Visibility: visibility,
 					},
 				},
 			},
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			return bufcli.NewRepositoryNameAlreadyExistsError(moduleFullName.String())
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	repositories := resp.Msg.Modules
-	if len(repositories) != 1 {
-		return syserror.Newf("unexpected nubmer of repositories returned from server: %d", len(repositories))
+	modules := resp.Msg.Modules
+	if len(modules) != 1 {
+		return syserror.Newf("unexpected nubmer of modules returned from server: %d", len(modules))
 	}
 	return bufprint.NewRepositoryPrinter(
 		clientConfig,
 		moduleFullName.Registry(),
 		container.Stdout(),
-	).PrintRepository(ctx, format, repositories[0])
+	).PrintRepository(ctx, format, modules[0])
 }
