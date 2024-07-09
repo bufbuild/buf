@@ -232,7 +232,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	}
 	// We don't want to do this lazily (or anything else in this function) as we want to
 	// make sure everything we have is valid before returning so we can auto-correct
-	// the cache if necessary.
+	// the cache if necessary.i'll leave the office
 	declaredDepModuleKeys, err := slicesext.MapError(
 		externalModuleData.Deps,
 		getDeclaredDepModuleKeyForExternalModuleDataDep,
@@ -381,7 +381,7 @@ func (p *moduleDataStore) putModuleData(
 	moduleData bufmodule.ModuleData,
 ) (retErr error) {
 	moduleKey := moduleData.ModuleKey()
-	var moduleCacheBucket storage.WriteBucket
+	var moduleCacheBucket storage.ReadWriteBucket
 	var err error
 	if p.tar {
 		var callback func(ctx context.Context) error
@@ -403,7 +403,55 @@ func (p *moduleDataStore) putModuleData(
 			zap.String("dirPath", dirPath),
 		)
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
-		// Only attempt to get a file lock when storing individual files
+
+		// Only attempt to get a file locks when storing individual files.
+		// Before writing to the module directory, first get a shared lock and check module.yaml
+		var readUnlocker filelock.Unlocker
+		var readLocked bool
+		if p.filelocker != nil {
+			readUnlocker, err = p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataLockFileName)
+			if err != nil {
+				p.logger.Debug("failed_put_rlock", zap.Error(err))
+				return err
+			}
+			readLocked = true
+			defer func() {
+				if readLocked && readUnlocker != nil {
+					if err := readUnlocker.Unlock(); err != nil {
+						p.logger.Debug("failed_put_runlock", zap.Error(err))
+						retErr = multierr.Append(retErr, err)
+					}
+				}
+			}()
+		}
+		data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
+		p.logDebugModuleKey(
+			moduleKey,
+			fmt.Sprintf("module data store put read check %s", externalModuleDataFileName),
+			zap.Bool("found", err == nil),
+			zap.Error(err),
+		)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if err == nil {
+			var externalModuleData externalModuleData
+			if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
+				return err
+			}
+			// If module.yaml contains valid data, then no data needs to be written.
+			if externalModuleData.isValid() {
+				return nil
+			}
+		}
+		// Otherwise, release shared lock and upgrade to an exclusive lock for writes.
+		if readUnlocker != nil {
+			err := readUnlocker.Unlock()
+			readLocked = false
+			if err != nil {
+				return err
+			}
+		}
 		if p.filelocker != nil {
 			unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataLockFileName)
 			if err != nil {
@@ -417,7 +465,29 @@ func (p *moduleDataStore) putModuleData(
 				}
 			}()
 		}
+		// Before we write, we check module.yaml with the exclusive lock.
+		data, err = storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
+		p.logDebugModuleKey(
+			moduleKey,
+			fmt.Sprintf("module data store put check %s", externalModuleDataFileName),
+			zap.Bool("found", err == nil),
+			zap.Error(err),
+		)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if err == nil {
+			var externalModuleData externalModuleData
+			if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
+				return err
+			}
+			// If module.yaml contains valid data, then no data needs to be written.
+			if externalModuleData.isValid() {
+				return nil
+			}
+		}
 	}
+
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
 		return err
@@ -525,7 +595,7 @@ func (p *moduleDataStore) getReadBucketForTar(
 
 func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	moduleKey bufmodule.ModuleKey,
-) (storage.WriteBucket, func(context.Context) error) {
+) (storage.ReadWriteBucket, func(context.Context) error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	return readWriteBucket, func(ctx context.Context) (retErr error) {
 		tarPath, err := getModuleDataStoreTarPath(moduleKey)
