@@ -52,7 +52,6 @@ func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	}
 }
 
-// TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
 	Visibility   string
 	Description  *string
