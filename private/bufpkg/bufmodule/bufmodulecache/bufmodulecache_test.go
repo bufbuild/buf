@@ -27,11 +27,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/stretchr/testify/assert"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
-	"golang.org/x/sync/errgroup"
 )
 
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {
@@ -231,43 +230,46 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 
 	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
-		errs, ctx := errgroup.WithContext(context.Background())
-
-		for j := 0; j < 5; j++ {
-			bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
-			require.NoError(t, err)
-			filelocker, err := filelock.NewLocker(cacheDir)
-			require.NoError(t, err)
-
-			cacheProvider := newModuleDataProvider(
-				logger,
-				bsrProvider,
-				bufmodulestore.NewModuleDataStore(
-					logger,
-					bucket,
-					bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
-				),
-			)
-
-			errs.Go(func() error {
-				moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
-					ctx,
-					moduleKeys,
-				)
+		jobs, err := slicesext.MapError(
+			[]int{0, 1, 2, 3, 4},
+			func(_ int) (func(ctx context.Context) error, error) {
+				bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
 				if err != nil {
-					return err
+					return nil, err
 				}
-				for _, moduleData := range moduleDatas {
-					// Calling moduleData.Bucket() checks the digest
-					if _, err := moduleData.Bucket(); err != nil {
+				filelocker, err := filelock.NewLocker(cacheDir)
+				if err != nil {
+					return nil, err
+				}
+				cacheProvider := newModuleDataProvider(
+					logger,
+					bsrProvider,
+					bufmodulestore.NewModuleDataStore(
+						logger,
+						bucket,
+						bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
+					),
+				)
+				return func(ctx context.Context) error {
+					moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
+						ctx,
+						moduleKeys,
+					)
+					if err != nil {
 						return err
 					}
-				}
-				return nil
-			})
-		}
-
-		assert.NoError(t, errs.Wait()) // Waits for all go routines to finish and returns the first error, if any
+					for _, moduleData := range moduleDatas {
+						// Calling moduleData.Bucket() checks the digest
+						if _, err := moduleData.Bucket(); err != nil {
+							return err
+						}
+					}
+					return nil
+				}, nil
+			},
+		)
+		require.NoError(t, err)
+		require.NoError(t, thread.Parallelize(context.Background(), jobs))
 		require.NoError(t, os.RemoveAll(cacheDir))
 	}
 }
