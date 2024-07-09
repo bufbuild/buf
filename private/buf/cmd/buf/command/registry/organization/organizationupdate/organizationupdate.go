@@ -62,13 +62,13 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bindStringPointer(
+	bufcli.BindStringPointer(
 		flagSet,
 		descriptionFlagName,
 		&f.description,
 		"The new description for the organization",
 	)
-	bindStringPointer(
+	bufcli.BindStringPointer(
 		flagSet,
 		urlFlagName,
 		&f.url,
@@ -117,38 +117,5 @@ func run(
 	if _, err := fmt.Fprintln(container.Stdout(), "Organization updated."); err != nil {
 		return syserror.Wrap(err)
 	}
-	return nil
-}
-
-// Value must not be nil.
-func bindStringPointer(flagSet *pflag.FlagSet, name string, value **string, usage string) {
-	flagSet.Var(
-		&stringPointerValue{
-			valuePointer: value,
-		},
-		name,
-		usage,
-	)
-}
-
-// Implements pflag.Value.
-type stringPointerValue struct {
-	// This must not be nil at construction time.
-	valuePointer **string
-}
-
-func (b *stringPointerValue) Type() string {
-	return "string"
-}
-
-func (b *stringPointerValue) String() string {
-	if *b.valuePointer == nil {
-		return ""
-	}
-	return **b.valuePointer
-}
-
-func (b *stringPointerValue) Set(value string) error {
-	*b.valuePointer = &value
 	return nil
 }
