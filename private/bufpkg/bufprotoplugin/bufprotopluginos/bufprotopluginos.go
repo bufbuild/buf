@@ -66,3 +66,16 @@ func ResponseWriterWithCreateOutDirIfNotExists() ResponseWriterOption {
 		responseWriterOptions.createOutDirIfNotExists = true
 	}
 }
+
+// Cleaner deletes output locations prior to generation.
+//
+// This must be done before any interaction with  ResponseWriters, as multiple plugins may output to a single
+// location.
+type Cleaner interface {
+	DeleteOuts(ctx context.Context, pluginOuts []string) error
+}
+
+// NewCleaner returns a new Cleaner.
+func NewCleaner(storageosProvider storageos.Provider) Cleaner {
+	return newCleaner(storageosProvider)
+}

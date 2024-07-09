@@ -336,10 +336,10 @@ func wrapError(err error) error {
 			}
 			// Invalid token found in env var.
 			if authErr.HasToken() && authErr.TokenEnvKey() != "" {
-				return fmt.Errorf("Failure: the %[1]s environment variable is set, but is not valid. "+
+				return fmt.Errorf("Failure: the %[1]s environment variable is not valid for %[2]s. "+
 					"Set %[1]s to a valid Buf API token, or unset it. "+
 					"For details, visit https://buf.build/docs/bsr/authentication",
-					authErr.TokenEnvKey(),
+					authErr.TokenEnvKey(), authErr.Remote(),
 				)
 			}
 			if authErr.Remote() != bufconnect.DefaultRemote {
