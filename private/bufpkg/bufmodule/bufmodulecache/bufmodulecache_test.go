@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
@@ -239,7 +240,10 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 				if err != nil {
 					return nil, err
 				}
-				filelocker, err := filelock.NewLocker(cacheDir)
+				filelocker, err := filelock.NewLocker(
+					cacheDir,
+					filelock.LockerWithLockRetryDelay(10*time.Millisecond),
+				)
 				if err != nil {
 					return nil, err
 				}

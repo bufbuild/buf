@@ -18,15 +18,18 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 type locker struct {
-	rootDirPath string
+	rootDirPath    string
+	lockTimeout    time.Duration
+	lockRetryDelay time.Duration
 }
 
-func newLocker(rootDirPath string) (*locker, error) {
+func newLocker(rootDirPath string, options ...LockerOption) (*locker, error) {
 	// allow symlinks
 	fileInfo, err := os.Stat(normalpath.Unnormalize(rootDirPath))
 	if err != nil {
@@ -35,9 +38,15 @@ func newLocker(rootDirPath string) (*locker, error) {
 	if !fileInfo.IsDir() {
 		return nil, fmt.Errorf("%q is not a directory", rootDirPath)
 	}
+	lockerOptions := newLockerOptions()
+	for _, option := range options {
+		option(lockerOptions)
+	}
 	return &locker{
 		// do not validate - allow anything including absolute paths and jumping context
-		rootDirPath: normalpath.Normalize(rootDirPath),
+		rootDirPath:    normalpath.Normalize(rootDirPath),
+		lockTimeout:    lockerOptions.lockTimeout,
+		lockRetryDelay: lockerOptions.lockRetryDelay,
 	}, nil
 }
 
@@ -45,6 +54,13 @@ func (l *locker) Lock(ctx context.Context, path string, options ...LockOption) (
 	if err := validatePath(path); err != nil {
 		return nil, err
 	}
+	options = append(
+		[]LockOption{
+			LockWithTimeout(l.lockTimeout),
+			LockWithRetryDelay(l.lockRetryDelay),
+		},
+		options..., // Any additional options set will be applied last
+	)
 	return lock(
 		ctx,
 		normalpath.Unnormalize(normalpath.Join(l.rootDirPath, path)),
@@ -56,10 +72,17 @@ func (l *locker) RLock(ctx context.Context, path string, options ...LockOption) 
 	if err := validatePath(path); err != nil {
 		return nil, err
 	}
+	options = append(
+		[]LockOption{
+			LockWithTimeout(l.lockTimeout),
+			LockWithRetryDelay(l.lockRetryDelay),
+		},
+		options..., // Any additional options set will be applied last
+	)
 	return rlock(
 		ctx,
 		normalpath.Unnormalize(normalpath.Join(l.rootDirPath, path)),
-		options...,
+		options..., // Any additional options set will be applied last
 	)
 }
 
@@ -73,4 +96,16 @@ func validatePath(path string) error {
 		return fmt.Errorf("expected file lock path %q to be equal to normalized path %q", path, normalPath)
 	}
 	return nil
+}
+
+type lockerOptions struct {
+	lockTimeout    time.Duration
+	lockRetryDelay time.Duration
+}
+
+func newLockerOptions() *lockerOptions {
+	return &lockerOptions{
+		lockTimeout:    DefaultLockTimeout,
+		lockRetryDelay: DefaultLockRetryDelay,
+	}
 }

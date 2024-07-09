@@ -63,8 +63,32 @@ type Locker interface {
 //
 // The root directory path should generally be a data directory path.
 // The root directory must exist.
-func NewLocker(rootDirPath string) (Locker, error) {
-	return newLocker(rootDirPath)
+func NewLocker(rootDirPath string, options ...LockerOption) (Locker, error) {
+	return newLocker(rootDirPath, options...)
+}
+
+// LockerOption is an option for a new Locker.
+type LockerOption func(*lockerOptions)
+
+// LockerWithLockTimeout sets the default lock timeout for the Locker.
+//
+// If Lock/RLock is called with LockWithTimeout, that will override this default timeout.
+// If this is not set, the default lock timeout is 3s.
+func LockerWithLockTimeout(lockTimeout time.Duration) LockerOption {
+	return func(lockerOptions *lockerOptions) {
+		lockerOptions.lockTimeout = lockTimeout
+	}
+}
+
+// LockerWithLockRetryDelay sets the default lock retry delay for the Locker.
+//
+// If Lock/RLock is called with LockWithRetryDelay, that will override the default lock
+// retry delay.
+// If this is not set, the default lock retry delay is 200ms.
+func LockerWithLockRetryDelay(lockRetryDelay time.Duration) LockerOption {
+	return func(lockerOptions *lockerOptions) {
+		lockerOptions.lockRetryDelay = lockRetryDelay
+	}
 }
 
 // LockOption is an option for lock.
