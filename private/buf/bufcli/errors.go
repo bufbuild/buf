@@ -57,7 +57,7 @@ func NewLabelNameAlreadyExistsError(name string) error {
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
-	return fmt.Errorf(`an organization named %q does not exist, use "buf beta registry organization create" to create one`, name)
+	return fmt.Errorf(`an organization named %q does not exist, use "buf registry organization create" to create one`, name)
 }
 
 // NewOrganizationOrUserNotFoundError informs the user that an organization or user with

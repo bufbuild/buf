@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package organizationget
+package organizationcreate
 
 import (
 	"context"
@@ -38,8 +38,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/organization>",
-		Short: "Get a BSR organization",
+		Use:   name + " <remote/organization>",
+		Short: "Create a new BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -72,7 +72,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -88,29 +87,32 @@ func run(
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
 	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
-	resp, err := organizationServiceClient.GetOrganizations(
+	resp, err := organizationServiceClient.CreateOrganizations(
 		ctx,
 		connect.NewRequest(
-			&ownerv1.GetOrganizationsRequest{
-				OrganizationRefs: []*ownerv1.OrganizationRef{
+			&ownerv1.CreateOrganizationsRequest{
+				Values: []*ownerv1.CreateOrganizationsRequest_Value{
 					{
-						Value: &ownerv1.OrganizationRef_Name{
-							Name: moduleOwner.Owner(),
-						},
+						Name: moduleOwner.Owner(),
 					},
 				},
 			},
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewOrganizationNotFoundError(container.Arg(0))
-		}
+		// Not explicitly handling error with connect.AlreadyExists as it can be a user or an
+		// organization that already exists with that name.
 		return err
 	}
 	organizations := resp.Msg.GetOrganizations()
 	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations returned from server: %d", len(organizations))
+		return syserror.Newf("unexpected nubmer of organizations created by server: %d", len(organizations))
+	}
+	if format == bufprint.FormatText {
+		if _, err := fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleOwner); err != nil {
+			return syserror.Wrap(err)
+		}
+		return nil
 	}
 	return bufprint.NewOrganizationPrinter(
 		moduleOwner.Registry(),

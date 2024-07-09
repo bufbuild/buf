@@ -37,9 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labellist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
@@ -76,6 +73,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -177,6 +178,16 @@ func NewRootCommand(name string) *appcmd.Command {
 							version.NewCommand("version", builder),
 						},
 					},
+					{
+						Use:   "organization",
+						Short: "Manage organizations",
+						SubCommands: []*appcmd.Command{
+							organizationcreate.NewCommand("create", builder),
+							organizationdelete.NewCommand("delete", builder),
+							organizationinfo.NewCommand("info", builder),
+							organizationupdate.NewCommand("update", builder),
+						},
+					},
 				},
 			},
 			{
@@ -192,15 +203,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						SubCommands: []*appcmd.Command{
 							archive.NewCommand("archive", builder),
 							unarchive.NewCommand("unarchive", builder),
-							{
-								Use:   "organization",
-								Short: "Manage organizations",
-								SubCommands: []*appcmd.Command{
-									organizationcreate.NewCommand("create", builder),
-									organizationget.NewCommand("get", builder),
-									organizationdelete.NewCommand("delete", builder),
-								},
-							},
 							{
 								Use:   "repository",
 								Short: "Manage repositories",

@@ -37,7 +37,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/organization>",
+		Use:   name + " <remote/organization>",
 		Short: "Delete a BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -71,19 +71,18 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
 	}
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "organization", moduleOwner.Owner()); err != nil {
 			return err
 		}
+	}
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
 	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
