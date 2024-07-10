@@ -194,7 +194,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		// Only attempt to get a file lock when storing individual files
 		if p.filelocker != nil {
-			unlocker, err := p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataLockFileName)
+			unlocker, err := p.filelocker.RLock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 			if err != nil {
 				p.logger.Debug("failed_get_rlock", zap.Error(err))
 				return nil, err
@@ -332,7 +332,7 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 		return err
 	}
 	if p.filelocker != nil {
-		unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataLockFileName)
+		unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 		if err != nil {
 			p.logger.Debug("failed_delete_lock", zap.Error(err))
 			return err
@@ -344,26 +344,18 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 			}
 		}()
 	}
-	var deleted map[string]struct{}
-	if err := p.bucket.Walk(ctx, dirPath, func(objectInfo storage.ObjectInfo) error {
-		components := normalpath.Components(objectInfo.Path())
-		if len(components) < 1 {
-			return fmt.Errorf("invalid object info path: %s", objectInfo.Path())
-		}
-		topLevelPath := components[0]
-		if topLevelPath == externalModuleDataLockFileName {
-			return nil
-		}
-		if _, ok := deleted[topLevelPath]; ok {
-			return nil
-		}
-		if err := p.bucket.DeleteAll(ctx, topLevelPath); err != nil {
+	// Delete everything except the lock file while the lock is being held
+	toDelete := []string{
+		externalModuleDataFileName,
+		externalModuleDataFilesDir,
+		externalModuleDataV1BufYAMLDir,
+		externalModuleDataV1BufLockDir,
+	}
+	// Delete all known top-level paths
+	for _, topLevelPath := range toDelete {
+		if err := p.bucket.DeleteAll(ctx, normalpath.Join(dirPath, topLevelPath)); err != nil {
 			return err
 		}
-		deleted[topLevelPath] = struct{}{}
-		return nil
-	}); err != nil {
-		return err
 	}
 	// Delete the entire dirPath
 	return p.bucket.DeleteAll(ctx, dirPath)
@@ -400,16 +392,14 @@ func (p *moduleDataStore) putModuleData(
 		// Only attempt to get a file locks when storing individual files.
 		// Before writing to the module directory, first get a shared lock and check module.yaml
 		var readUnlocker filelock.Unlocker
-		var readLocked bool
 		if p.filelocker != nil {
-			readUnlocker, err = p.filelocker.RLock(ctx, dirPath+"/"+externalModuleDataLockFileName)
+			readUnlocker, err = p.filelocker.RLock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 			if err != nil {
 				p.logger.Debug("failed_put_rlock", zap.Error(err))
 				return err
 			}
-			readLocked = true
 			defer func() {
-				if readLocked && readUnlocker != nil {
+				if readUnlocker != nil {
 					if err := readUnlocker.Unlock(); err != nil {
 						p.logger.Debug("failed_put_runlock", zap.Error(err))
 						retErr = multierr.Append(retErr, err)
@@ -440,13 +430,13 @@ func (p *moduleDataStore) putModuleData(
 		// Otherwise, release shared lock and upgrade to an exclusive lock for writes.
 		if readUnlocker != nil {
 			err := readUnlocker.Unlock()
-			readLocked = false
 			if err != nil {
 				return err
 			}
+			readUnlocker = nil // unset the readUnlocker since we are upgrading the lock
 		}
 		if p.filelocker != nil {
-			unlocker, err := p.filelocker.Lock(ctx, dirPath+"/"+externalModuleDataLockFileName)
+			unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 			if err != nil {
 				p.logger.Debug("failed_put_lock", zap.Error(err))
 				return err

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 type locker struct {
@@ -54,12 +55,12 @@ func (l *locker) Lock(ctx context.Context, path string, options ...LockOption) (
 	if err := validatePath(path); err != nil {
 		return nil, err
 	}
-	options = append(
+	options = slicesext.Concat(
 		[]LockOption{
 			LockWithTimeout(l.lockTimeout),
 			LockWithRetryDelay(l.lockRetryDelay),
 		},
-		options..., // Any additional options set will be applied last
+		options, // Any additional options set will be applied last
 	)
 	return lock(
 		ctx,
@@ -72,17 +73,17 @@ func (l *locker) RLock(ctx context.Context, path string, options ...LockOption) 
 	if err := validatePath(path); err != nil {
 		return nil, err
 	}
-	options = append(
+	options = slicesext.Concat(
 		[]LockOption{
 			LockWithTimeout(l.lockTimeout),
 			LockWithRetryDelay(l.lockRetryDelay),
 		},
-		options..., // Any additional options set will be applied last
+		options, // Any additional options set will be applied last
 	)
 	return rlock(
 		ctx,
 		normalpath.Unnormalize(normalpath.Join(l.rootDirPath, path)),
-		options..., // Any additional options set will be applied last
+		options...,
 	)
 }
 

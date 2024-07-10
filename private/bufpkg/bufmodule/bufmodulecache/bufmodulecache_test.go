@@ -242,7 +242,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 				}
 				filelocker, err := filelock.NewLocker(
 					cacheDir,
-					filelock.LockerWithLockRetryDelay(10*time.Millisecond),
+					filelock.LockerWithLockRetryDelay(10*time.Millisecond), // Drops test time from ~16s to ~1s
 				)
 				if err != nil {
 					return nil, err
