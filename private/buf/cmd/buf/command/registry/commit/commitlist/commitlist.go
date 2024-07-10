@@ -45,7 +45,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/repository[:ref]>",
+		Use:   name + " <remote/owner/module[:ref]>",
 		Short: "List modules commits",
 		Long: `This command lists commits in a module based on the reference specified.
 If the reference is a commit ID, it lists the commit itself.
@@ -150,10 +150,15 @@ func run(
 		return syserror.Newf("expect 1 resource from response, got %d", len(resources))
 	}
 	resource := resources[0]
-	repositoryCommitPrinter := bufprint.NewRepositoryCommitPrinter(container.Stdout())
+	commitPrinter := bufprint.NewCommitPrinter(container.Stdout(), moduleRef.ModuleFullName())
 	if commit := resource.GetCommit(); commit != nil {
 		// If the ref is a commit, the commit is the only result and there is no next page.
-		return repositoryCommitPrinter.PrintRepositoryCommits(ctx, format, "", commit)
+		return commitPrinter.PrintCommitPage(
+			ctx,
+			format,
+			"",
+			[]*modulev1.Commit{commit},
+		)
 	}
 	if resource.GetModule() != nil {
 		// The ref is a module, ListCommits returns all the commits.
@@ -185,8 +190,12 @@ func run(
 			}
 			return err
 		}
-		return repositoryCommitPrinter.
-			PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, resp.Msg.Commits...)
+		return commitPrinter.PrintCommitPage(
+			ctx,
+			format,
+			resp.Msg.NextPageToken,
+			resp.Msg.Commits,
+		)
 	}
 	label := resource.GetLabel()
 	if label == nil {
@@ -230,5 +239,10 @@ func run(
 			return value.Commit
 		},
 	)
-	return repositoryCommitPrinter.PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, commits...)
+	return commitPrinter.PrintCommitPage(
+		ctx,
+		format,
+		resp.Msg.NextPageToken,
+		commits,
+	)
 }

@@ -22,25 +22,29 @@ import (
 	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
-type repositoryCommitPrinter struct {
-	writer io.Writer
+type commitPrinter struct {
+	writer         io.Writer
+	moduleFullName bufmodule.ModuleFullName
 }
 
-func newRepositoryCommitPrinter(
+func newCommitPrinter(
 	writer io.Writer,
-) *repositoryCommitPrinter {
-	return &repositoryCommitPrinter{
-		writer: writer,
+	moduleFullName bufmodule.ModuleFullName,
+) *commitPrinter {
+	return &commitPrinter{
+		writer:         writer,
+		moduleFullName: moduleFullName,
 	}
 }
 
-func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *modulev1.Commit) error {
-	outCommit := registryCommitToOutputCommit(repositoryCommit)
+func (p *commitPrinter) PrintCommitInfo(ctx context.Context, format Format, commit *modulev1.Commit) error {
+	outCommit := commitToOutputCommit(commit)
 	switch format {
 	case FormatText:
-		return p.printRepositoryCommitsText([]outputRepositoryCommit{outCommit})
+		return p.printCommitsInfo([]outputCommit{outCommit})
 	case FormatJSON:
 		return json.NewEncoder(p.writer).Encode(outCommit)
 	default:
@@ -48,29 +52,54 @@ func (p *repositoryCommitPrinter) PrintRepositoryCommit(ctx context.Context, for
 	}
 }
 
-func (p *repositoryCommitPrinter) PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*modulev1.Commit) error {
-	if len(repositoryCommits) == 0 {
+func (p *commitPrinter) PrintCommits(ctx context.Context, format Format, commits ...*modulev1.Commit) error {
+	switch format {
+	case FormatText:
+		// Print a label name on each line.
+		for _, commit := range commits {
+			if _, err := fmt.Fprintf(p.writer, "%s:%s\n", p.moduleFullName, commit.Id); err != nil {
+				return err
+			}
+		}
+		return nil
+	case FormatJSON:
+		// Print a json object on each line.
+		for _, commit := range commits {
+			if err := json.NewEncoder(p.writer).Encode(
+				commitToOutputCommit(commit),
+			); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		return fmt.Errorf("unknown format: %v", format)
+	}
+}
+
+func (p *commitPrinter) PrintCommitPage(ctx context.Context, format Format, nextPageToken string, commits []*modulev1.Commit) error {
+	if len(commits) == 0 {
 		return nil
 	}
-	var outputRepositoryCommits []outputRepositoryCommit
-	for _, repositoryCommit := range repositoryCommits {
-		outputRepositoryCommit := registryCommitToOutputCommit(repositoryCommit)
-		outputRepositoryCommits = append(outputRepositoryCommits, outputRepositoryCommit)
+	var outputCommits []outputCommit
+	for _, commit := range commits {
+		outputCommit := commitToOutputCommit(commit)
+		outputCommits = append(outputCommits, outputCommit)
 	}
 	switch format {
 	case FormatText:
-		return p.printRepositoryCommitsText(outputRepositoryCommits)
+		return p.printCommitsInfo(outputCommits)
 	case FormatJSON:
 		return json.NewEncoder(p.writer).Encode(paginationWrapper{
 			NextPage: nextPageToken,
-			Results:  outputRepositoryCommits,
+			Results:  outputCommits,
 		})
 	default:
 		return fmt.Errorf("unknown format: %v", format)
 	}
 }
 
-func (p *repositoryCommitPrinter) printRepositoryCommitsText(outputRepositoryCommits []outputRepositoryCommit) error {
+func (p *commitPrinter) printCommitsInfo(outputCommits []outputCommit) error {
 	return WithTabWriter(
 		p.writer,
 		[]string{
@@ -78,10 +107,10 @@ func (p *repositoryCommitPrinter) printRepositoryCommitsText(outputRepositoryCom
 			"Create Time", // TODO: this should be a constant
 		},
 		func(tabWriter TabWriter) error {
-			for _, outputRepositoryCommit := range outputRepositoryCommits {
+			for _, outputCommit := range outputCommits {
 				if err := tabWriter.Write(
-					outputRepositoryCommit.Commit,
-					outputRepositoryCommit.CreateTime.Format(time.RFC3339),
+					outputCommit.Commit,
+					outputCommit.CreateTime.Format(time.RFC3339),
 				); err != nil {
 					return err
 				}
@@ -91,14 +120,14 @@ func (p *repositoryCommitPrinter) printRepositoryCommitsText(outputRepositoryCom
 	)
 }
 
-type outputRepositoryCommit struct {
+type outputCommit struct {
 	Commit     string    `json:"commit,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty"`
 }
 
-func registryCommitToOutputCommit(repositoryCommit *modulev1.Commit) outputRepositoryCommit {
-	return outputRepositoryCommit{
-		Commit:     repositoryCommit.Id,
-		CreateTime: repositoryCommit.CreateTime.AsTime(),
+func commitToOutputCommit(commit *modulev1.Commit) outputCommit {
+	return outputCommit{
+		Commit:     commit.Id,
+		CreateTime: commit.CreateTime.AsTime(),
 	}
 }

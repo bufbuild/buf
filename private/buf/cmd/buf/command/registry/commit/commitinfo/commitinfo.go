@@ -119,6 +119,6 @@ func run(
 	if len(commits) != 1 {
 		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
 	}
-	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
-		PrintRepositoryCommit(ctx, format, commits[0])
+	commitPrinter := bufprint.NewCommitPrinter(container.Stdout(), moduleRef.ModuleFullName())
+	return commitPrinter.PrintCommitInfo(ctx, format, commits[0])
 }

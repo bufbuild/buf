@@ -122,6 +122,6 @@ func run(
 		fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.ModuleFullName(), commit.Id)
 		return nil
 	}
-	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
-		PrintRepositoryCommit(ctx, format, commit)
+	commitPrinter := bufprint.NewCommitPrinter(container.Stdout(), moduleRef.ModuleFullName())
+	return commitPrinter.PrintCommits(ctx, format, commit)
 }
