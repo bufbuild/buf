@@ -207,8 +207,12 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			}()
 		}
 	}
+	// We want to avoid calling deleteInvalidModuleData if no module.yaml file was found,
+	// since it is an expensive operation and there is no valid module data, so the cache
+	// will be overwritten.
+	var externalModuleDataFileNotFound bool
 	defer func() {
-		if retErr != nil && !errors.Is(err, fs.ErrNotExist) {
+		if retErr != nil && !externalModuleDataFileNotFound {
 			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
 		}
 	}()
@@ -220,6 +224,9 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		zap.Error(err),
 	)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			externalModuleDataFileNotFound = true
+		}
 		return nil, err
 	}
 	var externalModuleData externalModuleData
@@ -430,10 +437,10 @@ func (p *moduleDataStore) putModuleData(
 		// Otherwise, release shared lock and upgrade to an exclusive lock for writes.
 		if readUnlocker != nil {
 			err := readUnlocker.Unlock()
+			readUnlocker = nil // unset the readUnlocker since we are upgrading the lock
 			if err != nil {
 				return err
 			}
-			readUnlocker = nil // unset the readUnlocker since we are upgrading the lock
 		}
 		if p.filelocker != nil {
 			unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
