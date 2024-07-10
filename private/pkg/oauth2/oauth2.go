@@ -50,6 +50,9 @@ type Error struct {
 
 // Error implements error.
 func (e *Error) Error() string {
+	if e == nil {
+		return ""
+	}
 	s := fmt.Sprintf("oauth2: %q", e.ErrorCode)
 	if e.ErrorDescription != "" {
 		s += fmt.Sprintf(" %q", e.ErrorDescription)
