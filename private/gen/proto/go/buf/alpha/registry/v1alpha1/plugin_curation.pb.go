@@ -405,6 +405,8 @@ func (PythonPackageType) EnumDescriptor() ([]byte, []int) {
 }
 
 // DotnetTargetFramework specifies the target framework for dotnet plugins.
+// This is not meant to be an exhaustive list - most plugins should target a
+// netstandard version.
 // Reference: https://learn.microsoft.com/en-us/dotnet/standard/frameworks
 type DotnetTargetFramework int32
 
@@ -687,7 +689,7 @@ func (x *MavenConfig) GetAdditionalRuntimes() []*MavenConfig_RuntimeConfig {
 	return nil
 }
 
-// NugetConfig is the configuration for a nuget C# plugin.
+// NugetConfig is the configuration for a NuGet C# plugin.
 type NugetConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2781,15 +2783,17 @@ func (x *MavenConfig_RuntimeConfig) GetOptions() []string {
 	return nil
 }
 
-// RuntimeLibrary describes a runtime dependency of the generated code.
+// RuntimeLibrary describes a NuGet package dependency of the generated code.
+// Ref: https://learn.microsoft.com/en-us/dotnet/core/tools/dependencies#the-packagereference-element
 type NugetConfig_RuntimeLibrary struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The name of the nuget package.
+	// The name of the NuGet package (also known as the package ID).
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The version of the nuget package.
+	// The version of the NuGet package (supports ranges).
+	// Ref: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	// Optional target frameworks. If specified, these dependencies will be
 	// conditionally added when building for the specified target framework.

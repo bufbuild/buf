@@ -91,6 +91,8 @@ enum PythonPackageType {
 }
 
 // DotnetTargetFramework specifies the target framework for dotnet plugins.
+// This is not meant to be an exhaustive list - most plugins should target a
+// netstandard version.
 // Reference: https://learn.microsoft.com/en-us/dotnet/standard/frameworks
 enum DotnetTargetFramework {
   DOTNET_TARGET_FRAMEWORK_UNSPECIFIED = 0;
@@ -203,13 +205,15 @@ message MavenConfig {
   repeated RuntimeConfig additional_runtimes = 3;
 }
 
-// NugetConfig is the configuration for a nuget C# plugin.
+// NugetConfig is the configuration for a NuGet C# plugin.
 message NugetConfig {
-  // RuntimeLibrary describes a runtime dependency of the generated code.
+  // RuntimeLibrary describes a NuGet package dependency of the generated code.
+  // Ref: https://learn.microsoft.com/en-us/dotnet/core/tools/dependencies#the-packagereference-element
   message RuntimeLibrary {
-    // The name of the nuget package.
+    // The name of the NuGet package (also known as the package ID).
     string name = 1;
-    // The version of the nuget package.
+    // The version of the NuGet package (supports ranges).
+    // Ref: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges
     string version = 2;
     // Optional target frameworks. If specified, these dependencies will be
     // conditionally added when building for the specified target framework.
