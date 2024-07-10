@@ -124,11 +124,11 @@ func NewLabelPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) 
 	return newLabelPrinter(writer, moduleFullName)
 }
 
-// CommitPrinter is a repository commit printer.
+// CommitPrinter is a commit printer.
 type CommitPrinter interface {
 	PrintCommitInfo(ctx context.Context, format Format, commit *modulev1.Commit) error
 	PrintCommits(ctx context.Context, format Format, commits ...*modulev1.Commit) error
-	PrintCommitPage(ctx context.Context, format Format, nextPageToken string, commits []*modulev1.Commit) error
+	PrintCommitPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, commits []*modulev1.Commit) error
 }
 
 // NewCommitPrinter returns a new RepositoryCommitPrinter.
