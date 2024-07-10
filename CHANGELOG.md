@@ -5,6 +5,8 @@
 - Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
   plugins will write to, prior to generation. Allows cleaning of existing assets without having
   to call `rm -rf`.
+- Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
+  required to log in.
 
 ## [v1.34.0] - 2024-06-21
 
