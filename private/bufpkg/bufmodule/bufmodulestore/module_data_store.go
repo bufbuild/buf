@@ -231,7 +231,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	}
 	// We don't want to do this lazily (or anything else in this function) as we want to
 	// make sure everything we have is valid before returning so we can auto-correct
-	// the cache if necessary.i'll leave the office
+	// the cache if necessary.
 	declaredDepModuleKeys, err := slicesext.MapError(
 		externalModuleData.Deps,
 		getDeclaredDepModuleKeyForExternalModuleDataDep,
