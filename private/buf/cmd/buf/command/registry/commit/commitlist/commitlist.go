@@ -36,6 +36,8 @@ const (
 	pageTokenFlagName = "page-token"
 	reverseFlagName   = "reverse"
 	formatFlagName    = "format"
+
+	defaultPageSize = 10
 )
 
 // NewCommand returns a new Command
@@ -48,9 +50,9 @@ func NewCommand(
 		Use:   name + " <remote/owner/module[:ref]>",
 		Short: "List modules commits",
 		Long: `This command lists commits in a module based on the reference specified.
-If the reference is a commit ID, it lists the commit itself.
-If the reference is a label, it lists the current and past commits associated with this label.
-If the reference is not specified, it lists all commits in this module.
+For a commit reference, it lists the commit itself.
+For a label reference, it lists the current and past commits associated with this label.
+If no reference is specified, it lists all commits in this module.
 `,
 		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -76,7 +78,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.Uint32Var(&f.PageSize,
 		pageSizeFlagName,
-		10,
+		defaultPageSize,
 		`The page size`,
 	)
 	flagSet.StringVar(&f.PageToken,
@@ -157,6 +159,7 @@ func run(
 			ctx,
 			format,
 			"",
+			"",
 			[]*modulev1.Commit{commit},
 		)
 	}
@@ -193,6 +196,7 @@ func run(
 		return commitPrinter.PrintCommitPage(
 			ctx,
 			format,
+			nextPageCommand(container, flags, resp.Msg.NextPageToken),
 			resp.Msg.NextPageToken,
 			resp.Msg.Commits,
 		)
@@ -242,7 +246,25 @@ func run(
 	return commitPrinter.PrintCommitPage(
 		ctx,
 		format,
+		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		resp.Msg.NextPageToken,
 		commits,
 	)
+}
+
+func nextPageCommand(container appext.Container, flags *flags, nextPageToken string) string {
+	if nextPageToken == "" {
+		return ""
+	}
+	command := fmt.Sprintf("buf registry commit list %s", container.Arg(0))
+	if flags.PageSize != defaultPageSize {
+		command = fmt.Sprintf("%s --%s %d", command, pageSizeFlagName, flags.PageSize)
+	}
+	if flags.Reverse {
+		command = fmt.Sprintf("%s --%s", command, reverseFlagName)
+	}
+	if flags.Format != bufprint.FormatText.String() {
+		command = fmt.Sprintf("%s --%s %s", command, formatFlagName, flags.Format)
+	}
+	return fmt.Sprintf("%s --%s %s", command, pageTokenFlagName, nextPageToken)
 }

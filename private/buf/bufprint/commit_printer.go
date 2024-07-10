@@ -77,7 +77,7 @@ func (p *commitPrinter) PrintCommits(ctx context.Context, format Format, commits
 	}
 }
 
-func (p *commitPrinter) PrintCommitPage(ctx context.Context, format Format, nextPageToken string, commits []*modulev1.Commit) error {
+func (p *commitPrinter) PrintCommitPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, commits []*modulev1.Commit) error {
 	if len(commits) == 0 {
 		return nil
 	}
@@ -88,7 +88,19 @@ func (p *commitPrinter) PrintCommitPage(ctx context.Context, format Format, next
 	}
 	switch format {
 	case FormatText:
-		return p.printCommitsInfo(outputCommits)
+		if err := p.PrintCommits(ctx, FormatText, commits...); err != nil {
+			return err
+		}
+		if nextPageToken == "" {
+			return nil
+		}
+		_, err := fmt.Fprintf(
+			p.writer,
+			"\nMore than %d commits found, run %q to list more\n",
+			len(commits),
+			nextPageCommand,
+		)
+		return err
 	case FormatJSON:
 		return json.NewEncoder(p.writer).Encode(paginationWrapper{
 			NextPage: nextPageToken,
