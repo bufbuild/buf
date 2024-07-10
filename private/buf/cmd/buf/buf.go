@@ -166,16 +166,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "registry",
 				Short: "Manage assets on the Buf Schema Registry",
 				SubCommands: []*appcmd.Command{
-					{
-						Use:   "label",
-						Short: "Manage a module's labels",
-						SubCommands: []*appcmd.Command{
-							labelarchive.NewCommand("archive", builder),
-							labelinfo.NewCommand("info", builder),
-							labellist.NewCommand("list", builder),
-							labelunarchive.NewCommand("unarchive", builder),
-						},
-					},
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
 					registrycc.NewCommand("cc", builder, ``, false),
@@ -184,6 +174,16 @@ func NewRootCommand(name string) *appcmd.Command {
 						Short: "Manage Generated SDKs",
 						SubCommands: []*appcmd.Command{
 							version.NewCommand("version", builder),
+						},
+					},
+					{
+						Use:   "label",
+						Short: "Manage a module's labels",
+						SubCommands: []*appcmd.Command{
+							labelarchive.NewCommand("archive", builder),
+							labelinfo.NewCommand("info", builder),
+							labellist.NewCommand("list", builder),
+							labelunarchive.NewCommand("unarchive", builder),
 						},
 					},
 					{

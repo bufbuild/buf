@@ -168,7 +168,7 @@ func nextPageCommand(container appext.Container, flags *flags, nextPageToken str
 		return ""
 	}
 	command := fmt.Sprintf("buf registry label list %s", container.Arg(0))
-	if flags.ArchiveStatus != "" {
+	if flags.ArchiveStatus != bufcli.DefaultArchiveStatus {
 		command = fmt.Sprintf("%s --%s %s", command, archiveStatusName, flags.ArchiveStatus)
 	}
 	if flags.PageSize != defaultPageSize {
