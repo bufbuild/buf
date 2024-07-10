@@ -108,16 +108,19 @@ func NewModulePrinter(
 	return newModulePrinter(clientConfig, address, writer)
 }
 
-// RepositoryLabelPrinter is a repository label printer.
-// TODO: perhaps rename this to LabelPrinter along with other printers
-type RepositoryLabelPrinter interface {
-	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
-	PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, labels ...*modulev1.Label) error
+// LabelPrinter is a repository label printer.
+type LabelPrinter interface {
+	// PrintLabels prints each label on a new line.
+	PrintLabels(ctx context.Context, format Format, label ...*modulev1.Label) error
+	// PrintLabels prints information about a label.
+	PrintLabelInfo(ctx context.Context, format Format, label *modulev1.Label) error
+	// PrintLabelPage prints a page of labels.
+	PrintLabelPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, labels []*modulev1.Label) error
 }
 
-// NewRepositoryLabelPrinter returns a new RepositoryLabelPrinter.
-func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
-	return newRepositoryLabelPrinter(writer)
+// NewLabelPrinter returns a new RepositoryLabelPrinter.
+func NewLabelPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) LabelPrinter {
+	return newLabelPrinter(writer, moduleFullName)
 }
 
 // CommitPrinter is a repository commit printer.

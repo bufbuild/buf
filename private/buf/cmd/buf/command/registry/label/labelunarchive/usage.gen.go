@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package unarchive
+package labelunarchive
 
 import _ "github.com/bufbuild/buf/private/usage"

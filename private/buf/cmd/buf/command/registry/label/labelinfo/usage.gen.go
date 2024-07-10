@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package labelget
+package labelinfo
 
 import _ "github.com/bufbuild/buf/private/usage"
