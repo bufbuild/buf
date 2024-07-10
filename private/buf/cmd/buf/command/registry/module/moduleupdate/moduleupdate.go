@@ -55,7 +55,7 @@ func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 type flags struct {
 	Visibility   string
 	Description  *string
-	Url          *string
+	URL          *string
 	DefaultLabel string
 }
 
@@ -74,7 +74,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindStringPointer(
 		flagSet,
 		urlFlagName,
-		&f.Url,
+		&f.URL,
 		"The new URL for the module",
 	)
 	flagSet.StringVar(
@@ -126,7 +126,7 @@ func run(
 							},
 						},
 						Description:      flags.Description,
-						Url:              flags.Url,
+						Url:              flags.URL,
 						Visibility:       visibilityUpdate,
 						DefaultLabelName: defaultLabelUpdate,
 					},
