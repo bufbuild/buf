@@ -448,7 +448,6 @@ func validateNugetTargetFrameworks(targetFrameworks []string) ([]string, error) 
 		}
 	}
 	return slices.Clone(targetFrameworks), nil
-
 }
 
 func validateNugetTargetFramework(targetFramework string) error {

@@ -27,6 +27,7 @@ import (
 
 func TestDotnetTargetPlatformMapping(t *testing.T) {
 	t.Parallel()
+	assert.Len(t, stringToDotnetTargetFramework, len(registryv1alpha1.DotnetTargetFramework_name)-1)
 	for value := range registryv1alpha1.DotnetTargetFramework_name {
 		targetFramework := registryv1alpha1.DotnetTargetFramework(value)
 		if targetFramework == registryv1alpha1.DotnetTargetFramework_DOTNET_TARGET_FRAMEWORK_UNSPECIFIED {
