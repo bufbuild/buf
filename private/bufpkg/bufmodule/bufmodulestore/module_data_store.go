@@ -138,9 +138,7 @@ func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	for _, moduleKey := range moduleKeys {
 		moduleData, err := p.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, nil, err
-			}
+			// Treat any error returned as a cache miss
 			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
 		} else {
 			foundModuleDatas = append(foundModuleDatas, moduleData)
@@ -171,7 +169,18 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket, err = p.getReadBucketForTar(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, p.deleteInvalidModuleData(ctx, moduleKey, err)
+				// If there is an error fetching the tar bucket that is not because the path
+				// does not exist, we assume this is corrupted, remove the file, and return the
+				// error.
+				tarPath, err := getModuleDataStoreTarPath(moduleKey)
+				if err != nil {
+					return nil, err
+				}
+				if err := p.bucket.Delete(ctx, tarPath); err != nil {
+					return nil, err
+				}
+				// Return a path error indicating the module data was not found
+				return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
 			}
 			return nil, err
 		}
@@ -201,15 +210,6 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			}()
 		}
 	}
-	// We want to avoid calling deleteInvalidModuleData if no module.yaml file was found,
-	// since it is an expensive operation and there is no valid module data, so the cache
-	// will be overwritten.
-	var externalModuleDataFileNotFound bool
-	defer func() {
-		if retErr != nil && !externalModuleDataFileNotFound {
-			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
-		}
-	}()
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
 		moduleKey,
@@ -218,9 +218,6 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		zap.Error(err),
 	)
 	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			externalModuleDataFileNotFound = true
-		}
 		return nil, err
 	}
 	var externalModuleData externalModuleData
@@ -296,70 +293,6 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return v1BufLockObjectData, nil
 		},
 	), nil
-}
-
-func (p *moduleDataStore) deleteInvalidModuleData(
-	ctx context.Context,
-	moduleKey bufmodule.ModuleKey,
-	invalidErr error,
-) (retErr error) {
-	p.logDebugModuleKey(
-		moduleKey,
-		"module data store invalid module data",
-		zap.Error(invalidErr),
-	)
-	defer func() {
-		if retErr != nil {
-			// Do not return error, just log. We always returns a file not found error.
-			p.logDebugModuleKey(
-				moduleKey,
-				"module data store could not delete module data",
-				zap.Error(retErr),
-			)
-		}
-		// This will act as if the file is not found.
-		retErr = &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
-	}()
-
-	if p.tar {
-		tarPath, err := getModuleDataStoreTarPath(moduleKey)
-		if err != nil {
-			return err
-		}
-		return p.bucket.Delete(ctx, tarPath)
-	}
-	dirPath, err := getModuleDataStoreDirPath(moduleKey)
-	if err != nil {
-		return err
-	}
-	if p.filelocker != nil {
-		unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
-		if err != nil {
-			p.logger.Debug("failed to get lock for deleteInvalidModuleData", zap.Error(err))
-			return err
-		}
-		defer func() {
-			if err := unlocker.Unlock(); err != nil {
-				p.logger.Debug("failed to unlock for deleteInvalidModuleData", zap.Error(err))
-				retErr = multierr.Append(retErr, err)
-			}
-		}()
-	}
-	// Delete everything except the lock file while the lock is being held
-	toDelete := []string{
-		externalModuleDataFileName,
-		externalModuleDataFilesDir,
-		externalModuleDataV1BufYAMLDir,
-		externalModuleDataV1BufLockDir,
-	}
-	// Delete all known top-level paths
-	for _, topLevelPath := range toDelete {
-		if err := p.bucket.DeleteAll(ctx, normalpath.Join(dirPath, topLevelPath)); err != nil {
-			return err
-		}
-	}
-	// Delete the entire dirPath
-	return p.bucket.DeleteAll(ctx, dirPath)
 }
 
 func (p *moduleDataStore) putModuleData(
