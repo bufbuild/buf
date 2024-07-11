@@ -30,6 +30,9 @@ func TestPluginToProtoPluginRegistryType(t *testing.T) {
 	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{NPM: &bufremotepluginconfig.NPMRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM)
 	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Maven: &bufremotepluginconfig.MavenRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN)
 	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Swift: &bufremotepluginconfig.SwiftRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Python: &bufremotepluginconfig.PythonRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Cargo: &bufremotepluginconfig.CargoRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Nuget: &bufremotepluginconfig.NugetRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET)
 }
 
 func assertPluginToPluginRegistryType(t testing.TB, config *bufremotepluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
@@ -183,6 +186,22 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 					VersionRequirement: "0.12.3",
 					DefaultFeatures:    true,
 					Features:           []string{"some/feature"},
+				},
+			},
+		},
+	})
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Nuget: &bufremotepluginconfig.NugetRegistryConfig{
+			TargetFrameworks: []string{"netstandard2.0", "netstandard2.1"},
+			Deps: []bufremotepluginconfig.NugetDependencyConfig{
+				{
+					Name:    "Grpc.Core.Api",
+					Version: "1.2.3",
+				},
+				{
+					Name:             "Grpc.Other.Api",
+					Version:          "4.5.6",
+					TargetFrameworks: []string{"netstandard2.1"},
 				},
 			},
 		},
