@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // Plugin represents a plugin defined by a buf.plugin.yaml.
@@ -67,19 +68,22 @@ func NewPlugin(
 // PluginToProtoPluginRegistryType determines the appropriate registryv1alpha1.PluginRegistryType for the plugin.
 func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegistryType {
 	registryType := registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED
-	if plugin.Registry() != nil {
-		if plugin.Registry().Go != nil {
+	if registry := plugin.Registry(); registry != nil {
+		switch {
+		case registry.Go != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO
-		} else if plugin.Registry().NPM != nil {
+		case registry.NPM != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM
-		} else if plugin.Registry().Maven != nil {
+		case registry.Maven != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN
-		} else if plugin.Registry().Swift != nil {
+		case registry.Swift != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
-		} else if plugin.Registry().Python != nil {
+		case registry.Python != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON
-		} else if plugin.Registry().Cargo != nil {
+		case registry.Cargo != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO
+		case registry.Nuget != nil:
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET
 		}
 	}
 	return registryType
@@ -123,7 +127,8 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 	registryConfig := &registryv1alpha1.RegistryConfig{
 		Options: bufremotepluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
 	}
-	if pluginRegistry.Go != nil {
+	switch {
+	case pluginRegistry.Go != nil:
 		goConfig := &registryv1alpha1.GoConfig{}
 		goConfig.MinimumVersion = pluginRegistry.Go.MinVersion
 		if pluginRegistry.Go.Deps != nil {
@@ -133,7 +138,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
-	} else if pluginRegistry.NPM != nil {
+	case pluginRegistry.NPM != nil:
 		importStyle, err := npmImportStyleToNPMProtoImportStyle(pluginRegistry.NPM.ImportStyle)
 		if err != nil {
 			return nil, err
@@ -149,7 +154,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
-	} else if pluginRegistry.Maven != nil {
+	case pluginRegistry.Maven != nil:
 		mavenConfig := &registryv1alpha1.MavenConfig{}
 		var javaCompilerConfig *registryv1alpha1.MavenConfig_CompilerJavaConfig
 		if compiler := pluginRegistry.Maven.Compiler.Java; compiler != (bufremotepluginconfig.MavenCompilerJavaConfig{}) {
@@ -188,21 +193,27 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
-	} else if pluginRegistry.Swift != nil {
+	case pluginRegistry.Swift != nil:
 		swiftConfig := SwiftRegistryConfigToProtoSwiftConfig(pluginRegistry.Swift)
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_SwiftConfig{SwiftConfig: swiftConfig}
-	} else if pluginRegistry.Python != nil {
+	case pluginRegistry.Python != nil:
 		pythonConfig, err := PythonRegistryConfigToProtoPythonConfig(pluginRegistry.Python)
 		if err != nil {
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
-	} else if pluginRegistry.Cargo != nil {
+	case pluginRegistry.Cargo != nil:
 		cargoConfig, err := CargoRegistryConfigToProtoCargoConfig(pluginRegistry.Cargo)
 		if err != nil {
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_CargoConfig{CargoConfig: cargoConfig}
+	case pluginRegistry.Nuget != nil:
+		nugetConfig, err := NugetRegistryConfigToProtoNugetConfig(pluginRegistry.Nuget)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NugetConfig{NugetConfig: nugetConfig}
 	}
 	return registryConfig, nil
 }
@@ -226,7 +237,8 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	registryConfig := &bufremotepluginconfig.RegistryConfig{
 		Options: bufremotepluginconfig.OptionsSliceToPluginOptions(config.Options),
 	}
-	if config.GetGoConfig() != nil {
+	switch {
+	case config.GetGoConfig() != nil:
 		goConfig := &bufremotepluginconfig.GoRegistryConfig{}
 		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
 		runtimeLibraries := config.GetGoConfig().GetRuntimeLibraries()
@@ -237,7 +249,7 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			}
 		}
 		registryConfig.Go = goConfig
-	} else if config.GetNpmConfig() != nil {
+	case config.GetNpmConfig() != nil:
 		importStyle, err := npmProtoImportStyleToNPMImportStyle(config.GetNpmConfig().GetImportStyle())
 		if err != nil {
 			return nil, err
@@ -254,30 +266,36 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			}
 		}
 		registryConfig.NPM = npmConfig
-	} else if protoMavenConfig := config.GetMavenConfig(); protoMavenConfig != nil {
-		mavenConfig, err := ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig)
+	case config.GetMavenConfig() != nil:
+		mavenConfig, err := ProtoMavenConfigToMavenRegistryConfig(config.GetMavenConfig())
 		if err != nil {
 			return nil, err
 		}
 		registryConfig.Maven = mavenConfig
-	} else if protoSwiftConfig := config.GetSwiftConfig(); protoSwiftConfig != nil {
-		swiftConfig, err := ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig)
+	case config.GetSwiftConfig() != nil:
+		swiftConfig, err := ProtoSwiftConfigToSwiftRegistryConfig(config.GetSwiftConfig())
 		if err != nil {
 			return nil, err
 		}
 		registryConfig.Swift = swiftConfig
-	} else if protoPythonConfig := config.GetPythonConfig(); protoPythonConfig != nil {
-		pythonConfig, err := ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig)
+	case config.GetPythonConfig() != nil:
+		pythonConfig, err := ProtoPythonConfigToPythonRegistryConfig(config.GetPythonConfig())
 		if err != nil {
 			return nil, err
 		}
 		registryConfig.Python = pythonConfig
-	} else if protoCargoConfig := config.GetCargoConfig(); protoCargoConfig != nil {
-		cargoConfig, err := ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig)
+	case config.GetCargoConfig() != nil:
+		cargoConfig, err := ProtoCargoConfigToCargoRegistryConfig(config.GetCargoConfig())
 		if err != nil {
 			return nil, err
 		}
 		registryConfig.Cargo = cargoConfig
+	case config.GetNugetConfig() != nil:
+		nugetConfig, err := ProtoNugetConfigToNugetRegistryConfig(config.GetNugetConfig())
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Nuget = nugetConfig
 	}
 	return registryConfig, nil
 }
@@ -298,6 +316,32 @@ func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.Ca
 	return cargoConfig, nil
 }
 
+// ProtoNugetConfigToNugetRegistryConfig converts protoConfig to an equivalent [*bufremotepluginconfig.NugetRegistryConfig].
+func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetConfig) (*bufremotepluginconfig.NugetRegistryConfig, error) {
+	targetFrameworks, err := slicesext.MapError(protoConfig.TargetFrameworks, dotnetTargetFrameworkToString)
+	if err != nil {
+		return nil, err
+	}
+	config := &bufremotepluginconfig.NugetRegistryConfig{
+		TargetFrameworks: targetFrameworks,
+	}
+	for _, dependency := range protoConfig.RuntimeLibraries {
+		var depTargetFrameworks []string
+		if len(dependency.TargetFrameworks) > 0 {
+			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, dotnetTargetFrameworkToString)
+			if err != nil {
+				return nil, err
+			}
+		}
+		config.Deps = append(config.Deps, bufremotepluginconfig.NugetDependencyConfig{
+			Name:             dependency.Name,
+			Version:          dependency.Version,
+			TargetFrameworks: depTargetFrameworks,
+		})
+	}
+	return config, err
+}
+
 // CargoRegistryConfigToProtoCargoConfig converts cargoConfig to an equivalent [*registryv1alpha1.CargoConfig].
 func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufremotepluginconfig.CargoRegistryConfig) (*registryv1alpha1.CargoConfig, error) {
 	protoCargoConfig := &registryv1alpha1.CargoConfig{
@@ -312,6 +356,32 @@ func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufremotepluginconfig.Ca
 		})
 	}
 	return protoCargoConfig, nil
+}
+
+// NugetRegistryConfigToProtoNugetConfig converts nugetConfig to an equivalent [*registryv1alpha1.NugetConfig].
+func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.NugetRegistryConfig) (*registryv1alpha1.NugetConfig, error) {
+	targetFrameworks, err := slicesext.MapError(nugetConfig.TargetFrameworks, dotnetTargetFrameworkFromString)
+	if err != nil {
+		return nil, err
+	}
+	protoNugetConfig := &registryv1alpha1.NugetConfig{
+		TargetFrameworks: targetFrameworks,
+	}
+	for _, dependency := range nugetConfig.Deps {
+		var depTargetFrameworks []registryv1alpha1.DotnetTargetFramework
+		if len(dependency.TargetFrameworks) > 0 {
+			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, dotnetTargetFrameworkFromString)
+			if err != nil {
+				return nil, err
+			}
+		}
+		protoNugetConfig.RuntimeLibraries = append(protoNugetConfig.RuntimeLibraries, &registryv1alpha1.NugetConfig_RuntimeLibrary{
+			Name:             dependency.Name,
+			Version:          dependency.Version,
+			TargetFrameworks: depTargetFrameworks,
+		})
+	}
+	return protoNugetConfig, nil
 }
 
 // ProtoPythonConfigToPythonRegistryConfig converts protoPythonConfig to an equivalent [*bufremotepluginconfig.PythonRegistryConfig].

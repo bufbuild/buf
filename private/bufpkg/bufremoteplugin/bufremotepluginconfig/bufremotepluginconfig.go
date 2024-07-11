@@ -93,6 +93,7 @@ type RegistryConfig struct {
 	Swift  *SwiftRegistryConfig
 	Python *PythonRegistryConfig
 	Cargo  *CargoRegistryConfig
+	Nuget  *NugetRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -267,6 +268,27 @@ type CargoRegistryConfig struct {
 	Deps []CargoRegistryDependency
 }
 
+// NugetDependencyConfig defines a runtime dependency for a generated nuget package.
+type NugetDependencyConfig struct {
+	// Name specifies the name of the dependency.
+	Name string
+	// Version specifies the version of the dependency.
+	// This can be an exact version or a version range.
+	Version string
+	// TargetFrameworks specify the optional target frameworks for the dependency.
+	// If specified, the dependency will be added only for the specified framework.
+	TargetFrameworks []string
+}
+
+// NugetRegistryConfig defines the configuration for a nuget registry.
+type NugetRegistryConfig struct {
+	// TargetFrameworks specify the frameworks to build.
+	// At least one target framework must be specified.
+	TargetFrameworks []string
+	// Deps specifies the dependencies for the generated SDK.
+	Deps []NugetDependencyConfig
+}
+
 // ConfigOption is an optional option used when loading a Config.
 type ConfigOption func(*configOptions)
 
@@ -398,6 +420,7 @@ type ExternalRegistryConfig struct {
 	Swift  *ExternalSwiftRegistryConfig  `json:"swift,omitempty" yaml:"swift,omitempty"`
 	Python *ExternalPythonRegistryConfig `json:"python,omitempty" yaml:"python,omitempty"`
 	Cargo  *ExternalCargoRegistryConfig  `json:"cargo,omitempty" yaml:"cargo,omitempty"`
+	Nuget  *ExternalNugetRegistryConfig  `json:"nuget,omitempty" yaml:"nuget,omitempty"`
 	Opts   []string                      `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
@@ -537,6 +560,24 @@ type ExternalCargoRegistryConfig struct {
 	RustVersion string `json:"rust_version,omitempty" yaml:"rust_version,omitempty"`
 	// Deps specifies the dependencies for the generated SDK.
 	Deps []ExternalCargoDependency `json:"deps,omitempty" yaml:"deps,omitempty"`
+}
+
+// ExternalNugetDependency defines a nuget package dependency.
+type ExternalNugetDependency struct {
+	// Name specifies the name of the dependency.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Version specifies the version of the dependency.
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	// TargetFrameworks specify the optional target frameworks for the dependency.
+	TargetFrameworks []string `json:"target_frameworks" yaml:"target_frameworks,omitempty"`
+}
+
+// ExternalNugetRegistryConfig defines the configuration for a nuget registry.
+type ExternalNugetRegistryConfig struct {
+	// TargetFrameworks specify the frameworks to build.
+	TargetFrameworks []string `json:"target_frameworks" yaml:"target_frameworks,omitempty"`
+	// Deps specifies the dependencies for the generated SDK.
+	Deps []ExternalNugetDependency `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 type externalConfigVersion struct {
