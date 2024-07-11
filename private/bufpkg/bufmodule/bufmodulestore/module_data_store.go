@@ -169,9 +169,8 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket, err = p.getReadBucketForTar(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				// If there is an error fetching the tar bucket that is not because the path
-				// does not exist, we assume this is corrupted, remove the file, and return the
-				// error.
+				// If there is an error fetching the tar bucket that is not because the path does
+				// not exist, we assume this is corrupted and delete the tar.
 				tarPath, err := getModuleDataStoreTarPath(moduleKey)
 				if err != nil {
 					return nil, err
@@ -180,7 +179,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 					return nil, err
 				}
 				// Return a path error indicating the module data was not found
-				return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+				return nil, &fs.PathError{Op: "read", Path: tarPath, Err: fs.ErrNotExist}
 			}
 			return nil, err
 		}
