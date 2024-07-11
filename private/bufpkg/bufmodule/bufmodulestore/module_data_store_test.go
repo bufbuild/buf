@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -35,6 +36,8 @@ func TestModuleDataStoreBasicDir(t *testing.T) {
 	testModuleDataStoreBasic(t, false)
 }
 
+// TODO(doria): add test using storageos bucket and filelocker
+
 func TestModuleDataStoreBasicTar(t *testing.T) {
 	t.Parallel()
 	testModuleDataStoreBasic(t, true)
@@ -48,7 +51,7 @@ func testModuleDataStoreBasic(t *testing.T, tar bool) {
 		moduleDataStoreOptions = append(moduleDataStoreOptions, ModuleDataStoreWithTar())
 	}
 	logger := zaputil.NewLogger(os.Stderr, zapcore.DebugLevel, zaputil.NewTextEncoder())
-	moduleDataStore := NewModuleDataStore(logger, bucket, moduleDataStoreOptions...)
+	moduleDataStore := NewModuleDataStore(logger, bucket, filelock.NewNopLocker(), moduleDataStoreOptions...)
 	moduleKeys, moduleDatas := testGetModuleKeysAndModuleDatas(t, ctx)
 
 	foundModuleDatas, notFoundModuleKeys, err := moduleDataStore.GetModuleDatasForModuleKeys(

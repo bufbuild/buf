@@ -173,6 +173,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		bufmodulestore.NewModuleDataStore(
 			zap.NewNop(),
 			storagemem.NewReadWriteBucket(),
+			filelock.NewNopLocker(),
 		),
 	)
 
@@ -253,7 +254,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 					bufmodulestore.NewModuleDataStore(
 						logger,
 						bucket,
-						bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
+						filelocker,
 					),
 				)
 				return func(ctx context.Context) error {

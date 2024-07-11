@@ -177,7 +177,7 @@ func newModuleDataProvider(
 		bufmodulestore.NewModuleDataStore(
 			container.Logger(),
 			cacheBucket,
-			bufmodulestore.ModuleDataStoreWithFileLocker(filelocker),
+			filelocker,
 		),
 	), nil
 }

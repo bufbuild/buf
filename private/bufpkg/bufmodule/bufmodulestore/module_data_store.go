@@ -80,9 +80,10 @@ type ModuleDataStore interface {
 func NewModuleDataStore(
 	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
+	filelocker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) ModuleDataStore {
-	return newModuleDataStore(logger, bucket, options...)
+	return newModuleDataStore(logger, bucket, filelocker, options...)
 }
 
 // ModuleDataStoreOption is an option for a new ModuleDataStore.
@@ -91,6 +92,9 @@ type ModuleDataStoreOption func(*moduleDataStore)
 // ModuleDataStoreWithTar returns a new ModuleDataStoreOption that reads and stores
 // tar files instead of storing individual files in a directory in the bucket.
 //
+// The filelocker will be ignored when this is set, since we are storing all files associated
+// with the module in a single tar file.
+//
 // The default is to store individual files in a directory.
 func ModuleDataStoreWithTar() ModuleDataStoreOption {
 	return func(moduleDataStore *moduleDataStore) {
@@ -98,36 +102,26 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 	}
 }
 
-// ModuleDataStoreWithFileLocker returns a new ModuleDataStoreOption that sets a filelock.Locker.
-//
-// If a filelocker is set, then the module data store will use this to grab a file lock on
-// module.yaml to synchronize reading and writing to the cache.
-//
-// If ModuleDataStoreWithTar is set, then this is ignored.
-func ModuleDataStoreWithFileLocker(filelocker filelock.Locker) ModuleDataStoreOption {
-	return func(moduleDataStore *moduleDataStore) {
-		moduleDataStore.filelocker = filelocker
-	}
-}
-
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
-	logger *zap.Logger
-	bucket storage.ReadWriteBucket
-
-	tar        bool
+	logger     *zap.Logger
+	bucket     storage.ReadWriteBucket
 	filelocker filelock.Locker
+
+	tar bool
 }
 
 func newModuleDataStore(
 	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
+	filelocker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
 	moduleDataStore := &moduleDataStore{
-		logger: logger,
-		bucket: bucket,
+		logger:     logger,
+		bucket:     bucket,
+		filelocker: filelocker,
 	}
 	for _, option := range options {
 		option(moduleDataStore)
@@ -196,12 +190,12 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		if p.filelocker != nil {
 			unlocker, err := p.filelocker.RLock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 			if err != nil {
-				p.logger.Debug("failed_get_rlock", zap.Error(err))
+				p.logger.Debug("failed to get rlock for getModuleDataForModuleKey", zap.Error(err))
 				return nil, err
 			}
 			defer func() {
 				if err := unlocker.Unlock(); err != nil {
-					p.logger.Debug("failed_get_runlock", zap.Error(err))
+					p.logger.Debug("failed to runlock for getModuleDataForModuleKey", zap.Error(err))
 					retErr = multierr.Append(retErr, err)
 				}
 			}()
@@ -341,12 +335,12 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 	if p.filelocker != nil {
 		unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 		if err != nil {
-			p.logger.Debug("failed_delete_lock", zap.Error(err))
+			p.logger.Debug("failed to get lock for deleteInvalidModuleData", zap.Error(err))
 			return err
 		}
 		defer func() {
 			if err := unlocker.Unlock(); err != nil {
-				p.logger.Debug("failed_delete_unlock", zap.Error(err))
+				p.logger.Debug("failed to unlock for deleteInvalidModuleData", zap.Error(err))
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
@@ -402,13 +396,13 @@ func (p *moduleDataStore) putModuleData(
 		if p.filelocker != nil {
 			readUnlocker, err = p.filelocker.RLock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 			if err != nil {
-				p.logger.Debug("failed_put_rlock", zap.Error(err))
+				p.logger.Debug("failed to get rlock for putModuleData", zap.Error(err))
 				return err
 			}
 			defer func() {
 				if readUnlocker != nil {
 					if err := readUnlocker.Unlock(); err != nil {
-						p.logger.Debug("failed_put_runlock", zap.Error(err))
+						p.logger.Debug("failed to runlock for putModuleData", zap.Error(err))
 						retErr = multierr.Append(retErr, err)
 					}
 				}
@@ -445,12 +439,12 @@ func (p *moduleDataStore) putModuleData(
 		if p.filelocker != nil {
 			unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
 			if err != nil {
-				p.logger.Debug("failed_put_lock", zap.Error(err))
+				p.logger.Debug("failed to get lock for putModuleData", zap.Error(err))
 				return err
 			}
 			defer func() {
 				if err := unlocker.Unlock(); err != nil {
-					p.logger.Debug("failed_put_unlock", zap.Error(err))
+					p.logger.Debug("failed to unlock for putModuleData", zap.Error(err))
 					retErr = multierr.Append(retErr, err)
 				}
 			}()
