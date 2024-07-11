@@ -70,6 +70,9 @@ const (
 	// ResolveServiceGetCargoVersionProcedure is the fully-qualified name of the ResolveService's
 	// GetCargoVersion RPC.
 	ResolveServiceGetCargoVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetCargoVersion"
+	// ResolveServiceGetNugetVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetNugetVersion RPC.
+	ResolveServiceGetNugetVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetNugetVersion"
 	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
 	// LocalResolveService's GetLocalModulePins RPC.
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
@@ -85,6 +88,7 @@ var (
 	resolveServiceGetNPMVersionMethodDescriptor           = resolveServiceServiceDescriptor.Methods().ByName("GetNPMVersion")
 	resolveServiceGetPythonVersionMethodDescriptor        = resolveServiceServiceDescriptor.Methods().ByName("GetPythonVersion")
 	resolveServiceGetCargoVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetCargoVersion")
+	resolveServiceGetNugetVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetNugetVersion")
 	localResolveServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService")
 	localResolveServiceGetLocalModulePinsMethodDescriptor = localResolveServiceServiceDescriptor.Methods().ByName("GetLocalModulePins")
 )
@@ -111,6 +115,8 @@ type ResolveServiceClient interface {
 	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
 	// GetCargoVersion resolves the given plugin and module references to a version.
 	GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error)
+	// GetNugetVersion resolves the given plugin and module references to a version.
+	GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error)
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
@@ -172,6 +178,13 @@ func NewResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		getNugetVersion: connect.NewClient[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetNugetVersionProcedure,
+			connect.WithSchema(resolveServiceGetNugetVersionMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -184,6 +197,7 @@ type resolveServiceClient struct {
 	getNPMVersion    *connect.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
 	getPythonVersion *connect.Client[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse]
 	getCargoVersion  *connect.Client[v1alpha1.GetCargoVersionRequest, v1alpha1.GetCargoVersionResponse]
+	getNugetVersion  *connect.Client[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse]
 }
 
 // GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
@@ -221,6 +235,11 @@ func (c *resolveServiceClient) GetCargoVersion(ctx context.Context, req *connect
 	return c.getCargoVersion.CallUnary(ctx, req)
 }
 
+// GetNugetVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion.
+func (c *resolveServiceClient) GetNugetVersion(ctx context.Context, req *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error) {
+	return c.getNugetVersion.CallUnary(ctx, req)
+}
+
 // ResolveServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ResolveService
 // service.
 type ResolveServiceHandler interface {
@@ -244,6 +263,8 @@ type ResolveServiceHandler interface {
 	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
 	// GetCargoVersion resolves the given plugin and module references to a version.
 	GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error)
+	// GetNugetVersion resolves the given plugin and module references to a version.
+	GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error)
 }
 
 // NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -301,6 +322,13 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	resolveServiceGetNugetVersionHandler := connect.NewUnaryHandler(
+		ResolveServiceGetNugetVersionProcedure,
+		svc.GetNugetVersion,
+		connect.WithSchema(resolveServiceGetNugetVersionMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.ResolveService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ResolveServiceGetModulePinsProcedure:
@@ -317,6 +345,8 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 			resolveServiceGetPythonVersionHandler.ServeHTTP(w, r)
 		case ResolveServiceGetCargoVersionProcedure:
 			resolveServiceGetCargoVersionHandler.ServeHTTP(w, r)
+		case ResolveServiceGetNugetVersionProcedure:
+			resolveServiceGetNugetVersionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -352,6 +382,10 @@ func (UnimplementedResolveServiceHandler) GetPythonVersion(context.Context, *con
 
 func (UnimplementedResolveServiceHandler) GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion is not implemented"))
+}
+
+func (UnimplementedResolveServiceHandler) GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion is not implemented"))
 }
 
 // LocalResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.LocalResolveService
