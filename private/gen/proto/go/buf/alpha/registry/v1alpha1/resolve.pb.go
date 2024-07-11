@@ -1003,7 +1003,7 @@ func (x *GetCargoVersionResponse) GetVersion() string {
 	return ""
 }
 
-type GetCmakeVersionRequest struct {
+type GetNugetVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1014,8 +1014,8 @@ type GetCmakeVersionRequest struct {
 	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
 }
 
-func (x *GetCmakeVersionRequest) Reset() {
-	*x = GetCmakeVersionRequest{}
+func (x *GetNugetVersionRequest) Reset() {
+	*x = GetNugetVersionRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1023,13 +1023,13 @@ func (x *GetCmakeVersionRequest) Reset() {
 	}
 }
 
-func (x *GetCmakeVersionRequest) String() string {
+func (x *GetNugetVersionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetCmakeVersionRequest) ProtoMessage() {}
+func (*GetNugetVersionRequest) ProtoMessage() {}
 
-func (x *GetCmakeVersionRequest) ProtoReflect() protoreflect.Message {
+func (x *GetNugetVersionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1041,36 +1041,36 @@ func (x *GetCmakeVersionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCmakeVersionRequest.ProtoReflect.Descriptor instead.
-func (*GetCmakeVersionRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetNugetVersionRequest.ProtoReflect.Descriptor instead.
+func (*GetNugetVersionRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_resolve_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *GetCmakeVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
+func (x *GetNugetVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
 		return x.PluginReference
 	}
 	return nil
 }
 
-func (x *GetCmakeVersionRequest) GetModuleReference() *LocalModuleReference {
+func (x *GetNugetVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
 		return x.ModuleReference
 	}
 	return nil
 }
 
-type GetCmakeVersionResponse struct {
+type GetNugetVersionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// version is the resolved version to be used with the cmake registry.
+	// version is the resolved version to be used with the nuget registry.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 
-func (x *GetCmakeVersionResponse) Reset() {
-	*x = GetCmakeVersionResponse{}
+func (x *GetNugetVersionResponse) Reset() {
+	*x = GetNugetVersionResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1078,13 +1078,13 @@ func (x *GetCmakeVersionResponse) Reset() {
 	}
 }
 
-func (x *GetCmakeVersionResponse) String() string {
+func (x *GetNugetVersionResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetCmakeVersionResponse) ProtoMessage() {}
+func (*GetNugetVersionResponse) ProtoMessage() {}
 
-func (x *GetCmakeVersionResponse) ProtoReflect() protoreflect.Message {
+func (x *GetNugetVersionResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1096,12 +1096,12 @@ func (x *GetCmakeVersionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCmakeVersionResponse.ProtoReflect.Descriptor instead.
-func (*GetCmakeVersionResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetNugetVersionResponse.ProtoReflect.Descriptor instead.
+func (*GetNugetVersionResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_resolve_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *GetCmakeVersionResponse) GetVersion() string {
+func (x *GetNugetVersionResponse) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
@@ -1366,7 +1366,7 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = []byte{
 	0x43, 0x61, 0x72, 0x67, 0x6f, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0xdd,
-	0x01, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x43, 0x6d, 0x61, 0x6b, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69,
+	0x01, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x67, 0x65, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69,
 	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x65, 0x0a, 0x10, 0x70, 0x6c, 0x75,
 	0x67, 0x69, 0x6e, 0x5f, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
@@ -1380,7 +1380,7 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = []byte{
 	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x4d, 0x6f,
 	0x64, 0x75, 0x6c, 0x65, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x0f, 0x6d,
 	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x22, 0x33,
-	0x0a, 0x17, 0x47, 0x65, 0x74, 0x43, 0x6d, 0x61, 0x6b, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x0a, 0x17, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x67, 0x65, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
 	0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72,
 	0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73,
 	0x69, 0x6f, 0x6e, 0x22, 0x7f, 0x0a, 0x1d, 0x47, 0x65, 0x74, 0x52, 0x65, 0x6d, 0x6f, 0x74, 0x65,
@@ -1464,14 +1464,14 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = []byte{
 	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
 	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x61, 0x72, 0x67, 0x6f, 0x56, 0x65,
 	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90,
-	0x02, 0x01, 0x12, 0x81, 0x01, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x43, 0x6d, 0x61, 0x6b, 0x65, 0x56,
+	0x02, 0x01, 0x12, 0x81, 0x01, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x67, 0x65, 0x74, 0x56,
 	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x33, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
 	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6d, 0x61, 0x6b, 0x65, 0x56, 0x65, 0x72,
+	0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x67, 0x65, 0x74, 0x56, 0x65, 0x72,
 	0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x34, 0x2e, 0x62, 0x75,
 	0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6d, 0x61,
-	0x6b, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x67,
+	0x65, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
 	0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x32, 0xa2, 0x01, 0x0a, 0x13, 0x4c, 0x6f, 0x63, 0x61, 0x6c,
 	0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x8a,
 	0x01, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x4d, 0x6f, 0x64, 0x75, 0x6c,
@@ -1536,8 +1536,8 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_goTypes = []any{
 	(*GetPythonVersionResponse)(nil),      // 15: buf.alpha.registry.v1alpha1.GetPythonVersionResponse
 	(*GetCargoVersionRequest)(nil),        // 16: buf.alpha.registry.v1alpha1.GetCargoVersionRequest
 	(*GetCargoVersionResponse)(nil),       // 17: buf.alpha.registry.v1alpha1.GetCargoVersionResponse
-	(*GetCmakeVersionRequest)(nil),        // 18: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest
-	(*GetCmakeVersionResponse)(nil),       // 19: buf.alpha.registry.v1alpha1.GetCmakeVersionResponse
+	(*GetNugetVersionRequest)(nil),        // 18: buf.alpha.registry.v1alpha1.GetNugetVersionRequest
+	(*GetNugetVersionResponse)(nil),       // 19: buf.alpha.registry.v1alpha1.GetNugetVersionResponse
 	(*GetRemotePackageVersionPlugin)(nil), // 20: buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
 	(*v1alpha1.ModuleReference)(nil),      // 21: buf.alpha.module.v1alpha1.ModuleReference
 	(*v1alpha1.ModulePin)(nil),            // 22: buf.alpha.module.v1alpha1.ModulePin
@@ -1566,8 +1566,8 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_depIdxs = []int32{
 	23, // 18: buf.alpha.registry.v1alpha1.GetPythonVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	20, // 19: buf.alpha.registry.v1alpha1.GetCargoVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
 	23, // 20: buf.alpha.registry.v1alpha1.GetCargoVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
-	20, // 21: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	23, // 22: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	20, // 21: buf.alpha.registry.v1alpha1.GetNugetVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
+	23, // 22: buf.alpha.registry.v1alpha1.GetNugetVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	1,  // 23: buf.alpha.registry.v1alpha1.ResolveService.GetModulePins:input_type -> buf.alpha.registry.v1alpha1.GetModulePinsRequest
 	6,  // 24: buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion:input_type -> buf.alpha.registry.v1alpha1.GetGoVersionRequest
 	12, // 25: buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion:input_type -> buf.alpha.registry.v1alpha1.GetSwiftVersionRequest
@@ -1575,7 +1575,7 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_depIdxs = []int32{
 	10, // 27: buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion:input_type -> buf.alpha.registry.v1alpha1.GetNPMVersionRequest
 	14, // 28: buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion:input_type -> buf.alpha.registry.v1alpha1.GetPythonVersionRequest
 	16, // 29: buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion:input_type -> buf.alpha.registry.v1alpha1.GetCargoVersionRequest
-	18, // 30: buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion:input_type -> buf.alpha.registry.v1alpha1.GetCmakeVersionRequest
+	18, // 30: buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion:input_type -> buf.alpha.registry.v1alpha1.GetNugetVersionRequest
 	3,  // 31: buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins:input_type -> buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest
 	2,  // 32: buf.alpha.registry.v1alpha1.ResolveService.GetModulePins:output_type -> buf.alpha.registry.v1alpha1.GetModulePinsResponse
 	7,  // 33: buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion:output_type -> buf.alpha.registry.v1alpha1.GetGoVersionResponse
@@ -1584,7 +1584,7 @@ var file_buf_alpha_registry_v1alpha1_resolve_proto_depIdxs = []int32{
 	11, // 36: buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion:output_type -> buf.alpha.registry.v1alpha1.GetNPMVersionResponse
 	15, // 37: buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion:output_type -> buf.alpha.registry.v1alpha1.GetPythonVersionResponse
 	17, // 38: buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion:output_type -> buf.alpha.registry.v1alpha1.GetCargoVersionResponse
-	19, // 39: buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion:output_type -> buf.alpha.registry.v1alpha1.GetCmakeVersionResponse
+	19, // 39: buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion:output_type -> buf.alpha.registry.v1alpha1.GetNugetVersionResponse
 	5,  // 40: buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins:output_type -> buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse
 	32, // [32:41] is the sub-list for method output_type
 	23, // [23:32] is the sub-list for method input_type
@@ -1805,7 +1805,7 @@ func file_buf_alpha_registry_v1alpha1_resolve_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*GetCmakeVersionRequest); i {
+			switch v := v.(*GetNugetVersionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1817,7 +1817,7 @@ func file_buf_alpha_registry_v1alpha1_resolve_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*GetCmakeVersionResponse); i {
+			switch v := v.(*GetNugetVersionResponse); i {
 			case 0:
 				return &v.state
 			case 1:

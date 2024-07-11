@@ -363,6 +363,47 @@ func TestParsePluginConfigCargoYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigNugetYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "nuget", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufremotepluginref.PluginIdentityForString("buf.build/grpc/csharp")
+	require.NoError(t, err)
+	depPluginRef, err := bufremotepluginref.PluginReferenceForString("buf.build/protocolbuffers/csharp:v26.1", 0)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:            pluginIdentity,
+			PluginVersion:   "v1.65.0",
+			Dependencies:    []bufremotepluginref.PluginReference{depPluginRef},
+			SourceURL:       "https://github.com/grpc/grpc",
+			Description:     "Generates C# client and server stubs for the gRPC framework.",
+			SPDXLicenseID:   "Apache-2.0",
+			LicenseURL:      "https://github.com/grpc/grpc/blob/v1.65.0/LICENSE",
+			OutputLanguages: []string{"csharp"},
+			Registry: &RegistryConfig{
+				Nuget: &NugetRegistryConfig{
+					TargetFrameworks: []string{"netstandard2.0", "netstandard2.1"},
+					Deps: []NugetDependencyConfig{
+						{
+							Name:    "Grpc.Core.Api",
+							Version: "2.63.0",
+						},
+						{
+							Name:             "Grpc.Other.Api",
+							Version:          "1.0.31",
+							TargetFrameworks: []string{"netstandard2.1"},
+						},
+					},
+				},
+				Options: map[string]string{"base_namespace": ""},
+			},
+		},
+		pluginConfig,
+	)
+}
+
 func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))

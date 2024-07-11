@@ -40,7 +40,8 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_SWIFT = 4;
   PLUGIN_REGISTRY_TYPE_PYTHON = 5;
   PLUGIN_REGISTRY_TYPE_CARGO = 7;
-  PLUGIN_REGISTRY_TYPE_CMAKE = 8;
+  PLUGIN_REGISTRY_TYPE_NUGET = 8;
+  PLUGIN_REGISTRY_TYPE_CMAKE = 9;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -88,6 +89,27 @@ enum PythonPackageType {
   // Stub-only package, containing only `.pyi` files.
   // Ref: https://peps.python.org/pep-0561/#stub-only-packages
   PYTHON_PACKAGE_TYPE_STUB_ONLY = 2;
+}
+
+// DotnetTargetFramework specifies the target framework for dotnet plugins.
+// This is not meant to be an exhaustive list - most plugins should target a
+// netstandard version.
+// Reference: https://learn.microsoft.com/en-us/dotnet/standard/frameworks
+enum DotnetTargetFramework {
+  DOTNET_TARGET_FRAMEWORK_UNSPECIFIED = 0;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_0 = 1;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_1 = 2;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_2 = 3;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_3 = 4;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_4 = 5;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_5 = 6;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_1_6 = 7;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_2_0 = 8;
+  DOTNET_TARGET_FRAMEWORK_NETSTANDARD_2_1 = 9;
+  DOTNET_TARGET_FRAMEWORK_NET_5_0 = 10;
+  DOTNET_TARGET_FRAMEWORK_NET_6_0 = 11;
+  DOTNET_TARGET_FRAMEWORK_NET_7_0 = 12;
+  DOTNET_TARGET_FRAMEWORK_NET_8_0 = 13;
 }
 
 // GoConfig is the configuration for a Go plugin.
@@ -184,6 +206,26 @@ message MavenConfig {
   repeated RuntimeConfig additional_runtimes = 3;
 }
 
+// NugetConfig is the configuration for a NuGet C# plugin.
+message NugetConfig {
+  // RuntimeLibrary describes a NuGet package dependency of the generated code.
+  // Ref: https://learn.microsoft.com/en-us/dotnet/core/tools/dependencies#the-packagereference-element
+  message RuntimeLibrary {
+    // The name of the NuGet package (also known as the package ID).
+    string name = 1;
+    // The version of the NuGet package (supports ranges).
+    // Ref: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges
+    string version = 2;
+    // Optional target frameworks. If specified, these dependencies will be
+    // conditionally added when building for the specified target framework.
+    repeated DotnetTargetFramework target_frameworks = 3;
+  }
+  // Target frameworks to build. At least one target framework is required.
+  repeated DotnetTargetFramework target_frameworks = 1;
+  // Optional runtime libraries required by the plugin's generated code.
+  repeated RuntimeLibrary runtime_libraries = 2;
+}
+
 message SwiftConfig {
   // RuntimeLibrary describes a runtime library dependency of the generated code.
   message RuntimeLibrary {
@@ -261,9 +303,10 @@ message RegistryConfig {
     SwiftConfig swift_config = 4;
     PythonConfig python_config = 5;
     CargoConfig cargo_config = 6;
+    NugetConfig nuget_config = 7;
   }
   // Reserved for future remote registry types.
-  reserved 7 to 9;
+  reserved 8 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;

@@ -70,9 +70,15 @@ const (
 	// ResolveServiceGetCargoVersionProcedure is the fully-qualified name of the ResolveService's
 	// GetCargoVersion RPC.
 	ResolveServiceGetCargoVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetCargoVersion"
+<<<<<<< HEAD
 	// ResolveServiceGetCmakeVersionProcedure is the fully-qualified name of the ResolveService's
 	// GetCmakeVersion RPC.
 	ResolveServiceGetCmakeVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetCmakeVersion"
+=======
+	// ResolveServiceGetNugetVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetNugetVersion RPC.
+	ResolveServiceGetNugetVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetNugetVersion"
+>>>>>>> main
 	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
 	// LocalResolveService's GetLocalModulePins RPC.
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
@@ -88,7 +94,11 @@ var (
 	resolveServiceGetNPMVersionMethodDescriptor           = resolveServiceServiceDescriptor.Methods().ByName("GetNPMVersion")
 	resolveServiceGetPythonVersionMethodDescriptor        = resolveServiceServiceDescriptor.Methods().ByName("GetPythonVersion")
 	resolveServiceGetCargoVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetCargoVersion")
+<<<<<<< HEAD
 	resolveServiceGetCmakeVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetCmakeVersion")
+=======
+	resolveServiceGetNugetVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetNugetVersion")
+>>>>>>> main
 	localResolveServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService")
 	localResolveServiceGetLocalModulePinsMethodDescriptor = localResolveServiceServiceDescriptor.Methods().ByName("GetLocalModulePins")
 )
@@ -115,8 +125,13 @@ type ResolveServiceClient interface {
 	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
 	// GetCargoVersion resolves the given plugin and module references to a version.
 	GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error)
+<<<<<<< HEAD
 	// GetCmakeVersion resolves the given plugin and module references to a version.
 	GetCmakeVersion(context.Context, *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error)
+=======
+	// GetNugetVersion resolves the given plugin and module references to a version.
+	GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error)
+>>>>>>> main
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
@@ -178,10 +193,17 @@ func NewResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+<<<<<<< HEAD
 		getCmakeVersion: connect.NewClient[v1alpha1.GetCmakeVersionRequest, v1alpha1.GetCmakeVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetCmakeVersionProcedure,
 			connect.WithSchema(resolveServiceGetCmakeVersionMethodDescriptor),
+=======
+		getNugetVersion: connect.NewClient[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetNugetVersionProcedure,
+			connect.WithSchema(resolveServiceGetNugetVersionMethodDescriptor),
+>>>>>>> main
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -197,7 +219,11 @@ type resolveServiceClient struct {
 	getNPMVersion    *connect.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
 	getPythonVersion *connect.Client[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse]
 	getCargoVersion  *connect.Client[v1alpha1.GetCargoVersionRequest, v1alpha1.GetCargoVersionResponse]
+<<<<<<< HEAD
 	getCmakeVersion  *connect.Client[v1alpha1.GetCmakeVersionRequest, v1alpha1.GetCmakeVersionResponse]
+=======
+	getNugetVersion  *connect.Client[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse]
+>>>>>>> main
 }
 
 // GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
@@ -235,9 +261,15 @@ func (c *resolveServiceClient) GetCargoVersion(ctx context.Context, req *connect
 	return c.getCargoVersion.CallUnary(ctx, req)
 }
 
+<<<<<<< HEAD
 // GetCmakeVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion.
 func (c *resolveServiceClient) GetCmakeVersion(ctx context.Context, req *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error) {
 	return c.getCmakeVersion.CallUnary(ctx, req)
+=======
+// GetNugetVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion.
+func (c *resolveServiceClient) GetNugetVersion(ctx context.Context, req *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error) {
+	return c.getNugetVersion.CallUnary(ctx, req)
+>>>>>>> main
 }
 
 // ResolveServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ResolveService
@@ -263,8 +295,13 @@ type ResolveServiceHandler interface {
 	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
 	// GetCargoVersion resolves the given plugin and module references to a version.
 	GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error)
+<<<<<<< HEAD
 	// GetCmakeVersion resolves the given plugin and module references to a version.
 	GetCmakeVersion(context.Context, *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error)
+=======
+	// GetNugetVersion resolves the given plugin and module references to a version.
+	GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error)
+>>>>>>> main
 }
 
 // NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -322,10 +359,17 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+<<<<<<< HEAD
 	resolveServiceGetCmakeVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetCmakeVersionProcedure,
 		svc.GetCmakeVersion,
 		connect.WithSchema(resolveServiceGetCmakeVersionMethodDescriptor),
+=======
+	resolveServiceGetNugetVersionHandler := connect.NewUnaryHandler(
+		ResolveServiceGetNugetVersionProcedure,
+		svc.GetNugetVersion,
+		connect.WithSchema(resolveServiceGetNugetVersionMethodDescriptor),
+>>>>>>> main
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -345,8 +389,13 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 			resolveServiceGetPythonVersionHandler.ServeHTTP(w, r)
 		case ResolveServiceGetCargoVersionProcedure:
 			resolveServiceGetCargoVersionHandler.ServeHTTP(w, r)
+<<<<<<< HEAD
 		case ResolveServiceGetCmakeVersionProcedure:
 			resolveServiceGetCmakeVersionHandler.ServeHTTP(w, r)
+=======
+		case ResolveServiceGetNugetVersionProcedure:
+			resolveServiceGetNugetVersionHandler.ServeHTTP(w, r)
+>>>>>>> main
 		default:
 			http.NotFound(w, r)
 		}
@@ -384,8 +433,13 @@ func (UnimplementedResolveServiceHandler) GetCargoVersion(context.Context, *conn
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion is not implemented"))
 }
 
+<<<<<<< HEAD
 func (UnimplementedResolveServiceHandler) GetCmakeVersion(context.Context, *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion is not implemented"))
+=======
+func (UnimplementedResolveServiceHandler) GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion is not implemented"))
+>>>>>>> main
 }
 
 // LocalResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.LocalResolveService

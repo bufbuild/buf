@@ -57,8 +57,13 @@ service ResolveService {
   rpc GetCargoVersion(GetCargoVersionRequest) returns (GetCargoVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+<<<<<<< HEAD
   // GetCmakeVersion resolves the given plugin and module references to a version.
   rpc GetCmakeVersion(GetCmakeVersionRequest) returns (GetCmakeVersionResponse) {
+=======
+  // GetNugetVersion resolves the given plugin and module references to a version.
+  rpc GetNugetVersion(GetNugetVersionRequest) returns (GetNugetVersionResponse) {
+>>>>>>> main
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -209,6 +214,18 @@ message GetCargoVersionRequest {
 
 message GetCargoVersionResponse {
   // version is the resolved version to be used with the cargo registry.
+  string version = 1;
+}
+
+message GetNugetVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetNugetVersionResponse {
+  // version is the resolved version to be used with the nuget registry.
   string version = 1;
 }
 
