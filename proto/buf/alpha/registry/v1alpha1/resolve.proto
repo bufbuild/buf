@@ -57,13 +57,12 @@ service ResolveService {
   rpc GetCargoVersion(GetCargoVersionRequest) returns (GetCargoVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-<<<<<<< HEAD
-  // GetCmakeVersion resolves the given plugin and module references to a version.
-  rpc GetCmakeVersion(GetCmakeVersionRequest) returns (GetCmakeVersionResponse) {
-=======
   // GetNugetVersion resolves the given plugin and module references to a version.
   rpc GetNugetVersion(GetNugetVersionRequest) returns (GetNugetVersionResponse) {
->>>>>>> main
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetCmakeVersion resolves the given plugin and module references to a version.
+  rpc GetCmakeVersion(GetCmakeVersionRequest) returns (GetCmakeVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
