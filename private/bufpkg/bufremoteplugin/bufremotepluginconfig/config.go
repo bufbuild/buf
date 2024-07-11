@@ -17,7 +17,6 @@ package bufremotepluginconfig
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
@@ -447,7 +446,7 @@ func validateNugetTargetFrameworks(targetFrameworks []string) ([]string, error) 
 			return nil, fmt.Errorf("target framework %d: %w", i, err)
 		}
 	}
-	return slices.Clone(targetFrameworks), nil
+	return slicesext.Copy(targetFrameworks), nil
 }
 
 func validateNugetTargetFramework(targetFramework string) error {
