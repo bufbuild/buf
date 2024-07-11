@@ -543,7 +543,13 @@ func (p *moduleDataStore) putModuleData(
 	// Put the module.yaml last, so that we only have a module.yaml if the cache is finished writing.
 	// We can use the existence of the module.yaml file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
-	return storage.PutPath(ctx, moduleCacheBucket, externalModuleDataFileName, data)
+	return storage.PutPath(
+		ctx,
+		moduleCacheBucket,
+		externalModuleDataFileName,
+		data,
+		storage.PutWithAtomic(),
+	)
 }
 
 // May return fs.ErrNotExist error if tar not found.

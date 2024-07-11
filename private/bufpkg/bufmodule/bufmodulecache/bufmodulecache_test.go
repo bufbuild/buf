@@ -228,7 +228,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
-	logger := zaptest.NewLogger(t)
+	logger := zaptest.NewLogger(t, zaptest.Level(zap.InfoLevel))
 
 	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
