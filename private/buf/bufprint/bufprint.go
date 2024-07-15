@@ -81,7 +81,7 @@ func (f Format) String() string {
 // OutputEntity is an entity printed structurally by functions in bufprint package.
 //
 // An implementation of OutputEntity must also be a struct. If a field should be printed
-// in table form, add a field tag with bufprint:"<field name><,omitempty>".
+// in table form, add a field tag with bufprint:"<field name>[,omitempty]".
 type OutputEntity interface {
 	fullName() string
 	// This should return "labels" for label type, "commits" for commit type etc.
