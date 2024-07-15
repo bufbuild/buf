@@ -173,7 +173,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					registrycc.NewCommand("cc", builder, ``, false),
 					{
 						Use:   "commit",
-						Short: "Manage a repository's commits",
+						Short: "Manage a module's commits",
 						SubCommands: []*appcmd.Command{
 							commitaddlabel.NewCommand("add-label", builder),
 							commitinfo.NewCommand("info", builder),
