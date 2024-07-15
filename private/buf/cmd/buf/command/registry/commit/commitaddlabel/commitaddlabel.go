@@ -142,5 +142,5 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabels(ctx, format, "", resp.Msg.Labels...)
+	return bufprint.NewLabelPrinter(container.Stdout(), moduleRef.ModuleFullName()).PrintLabels(ctx, format, resp.Msg.Labels...)
 }

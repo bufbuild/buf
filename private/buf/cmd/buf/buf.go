@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/label/labelget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -233,22 +232,6 @@ func NewRootCommand(name string) *appcmd.Command {
 									repositorydeprecate.NewCommand("deprecate", builder),
 									repositoryundeprecate.NewCommand("undeprecate", builder),
 									repositoryupdate.NewCommand("update", builder),
-								},
-							},
-							{
-								Use:   "commit",
-								Short: "Manage a repository's commits",
-								SubCommands: []*appcmd.Command{
-									commitinfo.NewCommand("info", builder),
-									commitlist.NewCommand("list", builder),
-								},
-							},
-							{
-								Use:   "label",
-								Short: "Manage a repository's labels",
-								SubCommands: []*appcmd.Command{
-									labelget.NewCommand("get", builder),
-									labellist.NewCommand("list", builder),
 								},
 							},
 							{
