@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240610164129-660609bc46d3.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240710174705-f2077dee5ad4.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240610164129-660609bc46d3.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.0
