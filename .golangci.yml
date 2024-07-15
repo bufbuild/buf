@@ -281,3 +281,9 @@ issues:
       path: private/buf/cmd/buf/buf_test.go
       # The LsModules tests call chdir and cannot be parallelized.
       text: "LsModules"
+    - linters:
+        - gosec
+      # G101 checks for hardcoded credentials, and the variables named "*Token*
+      # trip this off.
+      path: private/pkg/oauth2/device.go
+      text: "G101:"
