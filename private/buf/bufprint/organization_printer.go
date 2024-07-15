@@ -94,13 +94,6 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 	)
 }
 
-type outputOrganization struct {
-	ID         string    `json:"id,omitempty"`
-	Remote     string    `json:"remote,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty"`
-}
-
 func registryOrganizationToOutputOrganization(address string, organization *ownerv1.Organization) outputOrganization {
 	return outputOrganization{
 		ID:         organization.Id,
