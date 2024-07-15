@@ -28,6 +28,25 @@ import (
 	"go.uber.org/multierr"
 )
 
+const (
+	defaultPollingInterval   = 5 * time.Second
+	incrementPollingInterval = 5 * time.Second
+	maxPollingInterval       = 30 * time.Second
+	maxPayloadSize           = 1 << 20 // 1 MB
+)
+
+// AccessDeviceTokenOption is an option for AccessDeviceToken.
+type AccessDeviceTokenOption func(*accessDeviceTokenOptions)
+
+// AccessDeviceTokenWithPollingInterval returns a new AccessDeviceTokenOption that sets the polling interval.
+//
+// The default is 5 seconds. Polling may not be longer than 30 seconds.
+func AccessDeviceTokenWithPollingInterval(pollingInterval time.Duration) AccessDeviceTokenOption {
+	return func(accessDeviceTokenOptions *accessDeviceTokenOptions) {
+		accessDeviceTokenOptions.pollingInterval = pollingInterval
+	}
+}
+
 // Client is an OAuth 2.0 client that can register a device, authorize a device,
 // and poll for the device access token.
 type Client struct {
@@ -44,37 +63,41 @@ func NewClient(baseURL string, client *http.Client) *Client {
 }
 
 // RegisterDevice registers a new device with the authorization server.
-func (c *Client) RegisterDevice(ctx context.Context, args *DeviceRegistrationRequest) (_ *DeviceRegistrationResponse, retErr error) {
-	input, err := json.Marshal(args)
+func (c *Client) RegisterDevice(
+	ctx context.Context,
+	deviceRegistrationRequest *DeviceRegistrationRequest,
+) (_ *DeviceRegistrationResponse, retErr error) {
+	input, err := json.Marshal(deviceRegistrationRequest)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+DeviceRegistrationPath, bytes.NewBuffer(input))
+	body := bytes.NewReader(input)
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+DeviceRegistrationPath, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Accept", "application/json")
 
-	resp, err := c.client.Do(req)
+	response, err := c.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, resp.Body.Close())
+		retErr = multierr.Append(retErr, response.Body.Close())
 	}()
 
 	payload := &struct {
 		Error
 		DeviceRegistrationResponse
 	}{}
-	if err := c.parseJSONResponse(resp, payload); err != nil {
-		return nil, fmt.Errorf("oauth2: invalid response: %w", err)
+	if err := parseJSONResponse(response, payload); err != nil {
+		return nil, err
 	}
 	if payload.ErrorCode != "" {
 		return nil, &payload.Error
 	}
-	if code := resp.StatusCode; code != http.StatusOK {
+	if code := response.StatusCode; code != http.StatusOK {
 		return nil, fmt.Errorf("oauth2: invalid status: %v", code)
 	}
 	return &payload.DeviceRegistrationResponse, nil
@@ -82,33 +105,37 @@ func (c *Client) RegisterDevice(ctx context.Context, args *DeviceRegistrationReq
 
 // AuthorizeDevice authorizes a device with the authorization server. The authorization server
 // will return a device code and a user code that the user must use to authorize the device.
-func (c *Client) AuthorizeDevice(ctx context.Context, args *DeviceAuthorizationRequest) (_ *DeviceAuthorizationResponse, retErr error) {
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+DeviceAuthorizationPath, strings.NewReader(args.ToValues().Encode()))
+func (c *Client) AuthorizeDevice(
+	ctx context.Context,
+	deviceAuthorizationRequest *DeviceAuthorizationRequest,
+) (_ *DeviceAuthorizationResponse, retErr error) {
+	body := strings.NewReader(deviceAuthorizationRequest.ToValues().Encode())
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+DeviceAuthorizationPath, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Accept", "application/json")
 
-	resp, err := c.client.Do(req)
+	response, err := c.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, resp.Body.Close())
+		retErr = multierr.Append(retErr, response.Body.Close())
 	}()
 
 	payload := &struct {
 		Error
 		DeviceAuthorizationResponse
 	}{}
-	if err := c.parseJSONResponse(resp, payload); err != nil {
-		return nil, fmt.Errorf("oauth2: invalid response: %w", err)
+	if err := parseJSONResponse(response, payload); err != nil {
+		return nil, err
 	}
 	if payload.ErrorCode != "" {
 		return nil, &payload.Error
 	}
-	if code := resp.StatusCode; code != http.StatusOK {
+	if code := response.StatusCode; code != http.StatusOK {
 		return nil, fmt.Errorf("oauth2: invalid status: %v", code)
 	}
 	return &payload.DeviceAuthorizationResponse, nil
@@ -116,28 +143,38 @@ func (c *Client) AuthorizeDevice(ctx context.Context, args *DeviceAuthorizationR
 
 // AccessDeviceToken polls the authorization server for the device access token. The interval
 // parameter specifies the polling interval in seconds.
-func (c *Client) AccessDeviceToken(ctx context.Context, interval int, args *DeviceAccessTokenRequest) (*DeviceAccessTokenResponse, error) {
-	encodedValues := args.ToValues().Encode()
-	if interval <= 0 {
-		interval = 5 // Default polling interval of 5 seconds.
-	} else if interval > 30 {
-		return nil, fmt.Errorf("oauth2: interval is too large: %v", interval)
+func (c *Client) AccessDeviceToken(
+	ctx context.Context,
+	deviceAccessTokenRequest *DeviceAccessTokenRequest,
+	options ...AccessDeviceTokenOption,
+) (*DeviceAccessTokenResponse, error) {
+	accessOptions := newAccessDeviceTokenOption()
+	for _, option := range options {
+		option(accessOptions)
 	}
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	if accessOptions.pollingInterval < 0 {
+		return nil, fmt.Errorf("oauth2: polling interval must be greater than 0")
+	}
+	if accessOptions.pollingInterval > maxPollingInterval {
+		return nil, fmt.Errorf("oauth2: polling interval must be less than or equal to %v", maxPollingInterval)
+	}
+	encodedValues := deviceAccessTokenRequest.ToValues().Encode()
+	pollingInterval := accessOptions.pollingInterval
+	ticker := time.NewTicker(accessOptions.pollingInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+DeviceTokenPath, strings.NewReader(encodedValues))
+			request, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+DeviceTokenPath, strings.NewReader(encodedValues))
 			if err != nil {
 				return nil, err
 			}
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			req.Header.Set("Accept", "application/json")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.Header.Set("Accept", "application/json")
 
-			rsp, err := c.client.Do(req)
+			response, err := c.client.Do(request)
 			if err != nil {
 				return nil, err
 			}
@@ -145,23 +182,23 @@ func (c *Client) AccessDeviceToken(ctx context.Context, interval int, args *Devi
 				Error
 				DeviceAccessTokenResponse
 			}{}
-			if err := c.parseJSONResponse(rsp, payload); err != nil {
-				if closeErr := rsp.Body.Close(); closeErr != nil {
+			if err := parseJSONResponse(response, payload); err != nil {
+				if closeErr := response.Body.Close(); closeErr != nil {
 					err = multierr.Append(err, closeErr)
 				}
-				return nil, fmt.Errorf("oauth2: invalid response: %w", err)
+				return nil, err
 			}
-			if err := rsp.Body.Close(); err != nil {
+			if err := response.Body.Close(); err != nil {
 				return nil, fmt.Errorf("oauth2: failed to close response body: %w", err)
 			}
-			if rsp.StatusCode == http.StatusOK && payload.ErrorCode == "" {
+			if response.StatusCode == http.StatusOK && payload.ErrorCode == "" {
 				return &payload.DeviceAccessTokenResponse, nil
 			}
 			switch payload.ErrorCode {
 			case ErrorCodeSlowDown:
 				// If the server is rate limiting the client, increase the polling interval.
-				interval += 5
-				ticker.Reset(time.Duration(interval) * time.Second)
+				pollingInterval += incrementPollingInterval
+				ticker.Reset(pollingInterval)
 			case ErrorCodeAuthorizationPending:
 				// If the user has not yet authorized the device, continue polling.
 				continue
@@ -175,17 +212,28 @@ func (c *Client) AccessDeviceToken(ctx context.Context, interval int, args *Devi
 	}
 }
 
-func (c *Client) parseJSONResponse(rsp *http.Response, payload any) error {
-	body, err := io.ReadAll(io.LimitReader(rsp.Body, 1<<20))
-	if err != nil {
-		return err
+// *** PRIVATE ***
+
+type accessDeviceTokenOptions struct {
+	pollingInterval time.Duration
+}
+
+func newAccessDeviceTokenOption() *accessDeviceTokenOptions {
+	return &accessDeviceTokenOptions{
+		pollingInterval: defaultPollingInterval,
 	}
-	contentType, _, _ := mime.ParseMediaType(rsp.Header.Get("Content-Type"))
-	if contentType != "application/json" {
-		return fmt.Errorf("%d %s", rsp.StatusCode, body)
+}
+
+func parseJSONResponse(response *http.Response, payload any) error {
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxPayloadSize))
+	if err != nil {
+		return fmt.Errorf("oauth2: failed to read response body: %w", err)
+	}
+	if contentType, _, _ := mime.ParseMediaType(response.Header.Get("Content-Type")); contentType != "application/json" {
+		return fmt.Errorf("oauth2: invalid response: %d %s", response.StatusCode, body)
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
-		return err
+		return fmt.Errorf("oauth2: failed to unmarshal response: %w: %s", err, body)
 	}
 	return nil
 }

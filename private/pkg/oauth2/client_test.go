@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -42,7 +43,7 @@ func TestRegisterDevice(t *testing.T) {
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			assertJSONRequest(t, r, `{"client_name":"nameOfClient"}`)
-			return newJSONResponse(t, http.StatusOK, `{"client_id":"clientID","client_secret":"clientSecret","client_id_issued_at":10,"client_secret_expires_at":100}`), nil
+			return testNewJSONResponse(t, http.StatusOK, `{"client_id":"clientID","client_secret":"clientSecret","client_id_issued_at":10,"client_secret_expires_at":100}`), nil
 		},
 		output: &DeviceRegistrationResponse{
 			ClientID:              "clientID",
@@ -57,7 +58,7 @@ func TestRegisterDevice(t *testing.T) {
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			assertJSONRequest(t, r, `{"client_name":"nameOfClient"}`)
-			return newJSONResponse(t, http.StatusBadRequest, `{"error":"invalid_request","error_description":"invalid request"}`), nil
+			return testNewJSONResponse(t, http.StatusBadRequest, `{"error":"invalid_request","error_description":"invalid request"}`), nil
 		},
 		err: &Error{
 			ErrorCode:        ErrorCodeInvalidRequest,
@@ -86,7 +87,7 @@ func TestRegisterDevice(t *testing.T) {
 				Body:       io.NopCloser(strings.NewReader(`server error`)),
 			}, nil
 		},
-		err: fmt.Errorf("oauth2: invalid response: %w", fmt.Errorf("500 server error")),
+		err: fmt.Errorf("oauth2: invalid response: 500 server error"),
 	}}
 	for _, test := range tests {
 		test := test
@@ -126,7 +127,7 @@ func TestAuthorizeDevice(t *testing.T) {
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			assertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
-			return newJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"https://example.com","verification_uri_complete":"https://example.com?code=userCode","expires_in":10,"interval":5}`), nil
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"https://example.com","verification_uri_complete":"https://example.com?code=userCode","expires_in":10,"interval":5}`), nil
 		},
 		output: &DeviceAuthorizationResponse{
 			DeviceCode:              "deviceCode",
@@ -144,7 +145,7 @@ func TestAuthorizeDevice(t *testing.T) {
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			assertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
-			return newJSONResponse(t, http.StatusBadRequest, `{"error":"invalid_request","error_description":"invalid request"}`), nil
+			return testNewJSONResponse(t, http.StatusBadRequest, `{"error":"invalid_request","error_description":"invalid request"}`), nil
 		},
 		err: &Error{
 			ErrorCode:        ErrorCodeInvalidRequest,
@@ -192,7 +193,7 @@ func TestAccessDeviceToken(t *testing.T) {
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			assertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}, "device_code": {"deviceCode"}, "grant_type": {"urn:ietf:params:oauth:grant-type:device_code"}})
-			return newJSONResponse(t, http.StatusOK, `{"access_token":"accessToken","token_type":"bearer","expires_in":100,"refresh_token":"refreshToken","scope":"scope"}`), nil
+			return testNewJSONResponse(t, http.StatusOK, `{"access_token":"accessToken","token_type":"bearer","expires_in":100,"refresh_token":"refreshToken","scope":"scope"}`), nil
 		},
 		output: &DeviceAccessTokenResponse{
 			AccessToken:  "accessToken",
@@ -213,9 +214,9 @@ func TestAccessDeviceToken(t *testing.T) {
 			assertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}, "device_code": {"deviceCode"}, "grant_type": {"urn:ietf:params:oauth:grant-type:device_code"}})
 			if pollingCount == 0 {
 				pollingCount++
-				return newJSONResponse(t, http.StatusBadRequest, `{"error":"authorization_pending","error_description":"authorization pending"}`), nil
+				return testNewJSONResponse(t, http.StatusBadRequest, `{"error":"authorization_pending","error_description":"authorization pending"}`), nil
 			}
-			return newJSONResponse(t, http.StatusOK, `{"access_token":"accessToken","token_type":"bearer","expires_in":100,"refresh_token":"refreshToken","scope":"scope"}`), nil
+			return testNewJSONResponse(t, http.StatusOK, `{"access_token":"accessToken","token_type":"bearer","expires_in":100,"refresh_token":"refreshToken","scope":"scope"}`), nil
 		},
 		output: &DeviceAccessTokenResponse{
 			AccessToken:  "accessToken",
@@ -234,7 +235,7 @@ func TestAccessDeviceToken(t *testing.T) {
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			assertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}, "device_code": {"deviceCode"}, "grant_type": {"urn:ietf:params:oauth:grant-type:device_code"}})
-			return newJSONResponse(t, http.StatusBadRequest, `{"error":"invalid_request","error_description":"invalid request"}`), nil
+			return testNewJSONResponse(t, http.StatusBadRequest, `{"error":"invalid_request","error_description":"invalid request"}`), nil
 		},
 		err: &Error{
 			ErrorCode:        ErrorCodeInvalidRequest,
@@ -249,7 +250,7 @@ func TestAccessDeviceToken(t *testing.T) {
 			GrantType:    "urn:ietf:params:oauth:grant-type:device_code",
 		},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
-			return newJSONResponse(t, http.StatusBadRequest, `{"error":"expired_token","error_description":"token expired"}`), nil
+			return testNewJSONResponse(t, http.StatusBadRequest, `{"error":"expired_token","error_description":"token expired"}`), nil
 		},
 		err: &Error{
 			ErrorCode:        ErrorCodeExpiredToken,
@@ -270,7 +271,7 @@ func TestAccessDeviceToken(t *testing.T) {
 					return test.transport(t, r)
 				}),
 			})
-			output, err := c.AccessDeviceToken(ctx, 1, test.input)
+			output, err := c.AccessDeviceToken(ctx, test.input, AccessDeviceTokenWithPollingInterval(time.Millisecond))
 			assert.Equal(t, test.output, output)
 			assert.Equal(t, err, test.err)
 		})
@@ -283,7 +284,7 @@ func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return s(r)
 }
 
-func newJSONResponse(t *testing.T, statusCode int, body string) *http.Response {
+func testNewJSONResponse(t *testing.T, statusCode int, body string) *http.Response {
 	t.Helper()
 	return &http.Response{
 		StatusCode: statusCode,
