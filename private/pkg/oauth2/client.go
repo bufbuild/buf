@@ -167,7 +167,8 @@ func (c *Client) AccessDeviceToken(
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			request, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+DeviceTokenPath, strings.NewReader(encodedValues))
+			body := strings.NewReader(encodedValues)
+			request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+DeviceTokenPath, body)
 			if err != nil {
 				return nil, err
 			}
