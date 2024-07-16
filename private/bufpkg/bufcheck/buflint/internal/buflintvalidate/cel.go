@@ -73,6 +73,7 @@ func checkCELForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 	fieldDescriptor protoreflect.FieldDescriptor,
+	// forItems is true if the CEL rule is defined on a non-repeated field or on each item of a repeated field.
 	forItems bool,
 ) error {
 	if len(fieldConstraints.GetCel()) == 0 {
