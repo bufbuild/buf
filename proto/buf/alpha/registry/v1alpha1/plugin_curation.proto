@@ -226,7 +226,7 @@ message NugetConfig {
   repeated RuntimeLibrary runtime_libraries = 2;
 }
 
-// CmakeConfig is the configuration a Cmake C++ plugin
+// CmakeConfig is the configuration for a Cmake C++ plugin.
 message CmakeConfig {}
 
 message SwiftConfig {
