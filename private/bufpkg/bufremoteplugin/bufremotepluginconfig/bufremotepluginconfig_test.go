@@ -404,6 +404,31 @@ func TestParsePluginConfigNugetYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigCmakeYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "cmake", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufremotepluginref.PluginIdentityForString("buf.build/grpc/cpp")
+	require.NoError(t, err)
+	depPluginRef, err := bufremotepluginref.PluginReferenceForString("buf.build/protocolbuffers/cpp:v26.1", 0)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:            pluginIdentity,
+			PluginVersion:   "v1.65.0",
+			Dependencies:    []bufremotepluginref.PluginReference{depPluginRef},
+			SourceURL:       "https://github.com/grpc/grpc",
+			Description:     "Generates C++ client and server stubs for the gRPC framework.",
+			SPDXLicenseID:   "Apache-2.0",
+			LicenseURL:      "https://github.com/grpc/grpc/blob/v1.65.0/LICENSE",
+			OutputLanguages: []string{"cpp"},
+			Registry:        nil,
+		},
+		pluginConfig,
+	)
+}
+
 func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))
