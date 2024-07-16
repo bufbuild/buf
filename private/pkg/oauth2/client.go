@@ -35,18 +35,6 @@ const (
 	maxPayloadSize           = 1 << 20 // 1 MB
 )
 
-// AccessDeviceTokenOption is an option for AccessDeviceToken.
-type AccessDeviceTokenOption func(*accessDeviceTokenOptions)
-
-// AccessDeviceTokenWithPollingInterval returns a new AccessDeviceTokenOption that sets the polling interval.
-//
-// The default is 5 seconds. Polling may not be longer than 30 seconds.
-func AccessDeviceTokenWithPollingInterval(pollingInterval time.Duration) AccessDeviceTokenOption {
-	return func(accessDeviceTokenOptions *accessDeviceTokenOptions) {
-		accessDeviceTokenOptions.pollingInterval = pollingInterval
-	}
-}
-
 // Client is an OAuth 2.0 client that can register a device, authorize a device,
 // and poll for the device access token.
 type Client struct {
@@ -211,6 +199,18 @@ func (c *Client) AccessDeviceToken(
 				return nil, &payload.Error
 			}
 		}
+	}
+}
+
+// AccessDeviceTokenOption is an option for AccessDeviceToken.
+type AccessDeviceTokenOption func(*accessDeviceTokenOptions)
+
+// AccessDeviceTokenWithPollingInterval returns a new AccessDeviceTokenOption that sets the polling interval.
+//
+// The default is 5 seconds. Polling may not be longer than 30 seconds.
+func AccessDeviceTokenWithPollingInterval(pollingInterval time.Duration) AccessDeviceTokenOption {
+	return func(accessDeviceTokenOptions *accessDeviceTokenOptions) {
+		accessDeviceTokenOptions.pollingInterval = pollingInterval
 	}
 }
 
