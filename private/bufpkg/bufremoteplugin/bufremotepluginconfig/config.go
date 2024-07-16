@@ -95,6 +95,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isPythonEmpty = externalRegistryConfig.Python == nil
 		isCargoEmpty  = externalRegistryConfig.Cargo == nil
 		isNugetEmpty  = externalRegistryConfig.Nuget == nil
+		isCmakeEmpty  = externalRegistryConfig.Cmake == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -105,6 +106,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isPythonEmpty,
 		isCargoEmpty,
 		isNugetEmpty,
+		isCmakeEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -182,6 +184,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Nuget:   nugetRegistryConfig,
+			Options: options,
+		}, nil
+	case !isCmakeEmpty:
+		cmakeRegistryConfig, err := newCmakeRegistryConfig(externalRegistryConfig.Cmake)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Cmake:   cmakeRegistryConfig,
 			Options: options,
 		}, nil
 	default:
@@ -468,6 +479,13 @@ func validateNugetTargetFramework(targetFramework string) error {
 		return fmt.Errorf("invalid target framework: %q", targetFramework)
 	}
 	return nil
+}
+
+func newCmakeRegistryConfig(externalCmakeRegistryConfig *ExternalCmakeRegistryConfig) (*CmakeRegistryConfig, error) {
+	if externalCmakeRegistryConfig == nil {
+		return nil, nil
+	}
+	return &CmakeRegistryConfig{}, nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufremotepluginref.PluginIdentity, error) {
