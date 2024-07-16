@@ -423,7 +423,10 @@ func TestParsePluginConfigCmakeYAML(t *testing.T) {
 			SPDXLicenseID:   "Apache-2.0",
 			LicenseURL:      "https://github.com/grpc/grpc/blob/v1.65.0/LICENSE",
 			OutputLanguages: []string{"cpp"},
-			Registry:        nil,
+			Registry: &RegistryConfig{
+				Cmake:   &CmakeRegistryConfig{},
+				Options: nil,
+			},
 		},
 		pluginConfig,
 	)
