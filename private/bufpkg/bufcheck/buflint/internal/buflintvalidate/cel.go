@@ -73,6 +73,7 @@ func checkCELForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 	fieldDescriptor protoreflect.FieldDescriptor,
+	forItems bool,
 ) error {
 	if len(fieldConstraints.GetCel()) == 0 {
 		return nil
@@ -84,7 +85,7 @@ func checkCELForField(
 	celEnv, err = celEnv.Extend(
 		append(
 			celext.RequiredCELEnvOptions(fieldDescriptor),
-			cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, fieldDescriptor.IsList())),
+			cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, forItems)),
 		)...,
 	)
 	if err != nil {
