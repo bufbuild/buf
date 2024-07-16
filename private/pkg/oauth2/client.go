@@ -152,15 +152,16 @@ func (c *Client) AccessDeviceToken(
 	for _, option := range options {
 		option(accessOptions)
 	}
-	if accessOptions.pollingInterval < 0 {
+	pollingInterval := accessOptions.pollingInterval
+	if pollingInterval == 0 {
+		pollingInterval = defaultPollingInterval
+	} else if pollingInterval < 0 {
 		return nil, fmt.Errorf("oauth2: polling interval must be greater than 0")
-	}
-	if accessOptions.pollingInterval > maxPollingInterval {
+	} else if pollingInterval > maxPollingInterval {
 		return nil, fmt.Errorf("oauth2: polling interval must be less than or equal to %v", maxPollingInterval)
 	}
 	encodedValues := deviceAccessTokenRequest.ToValues().Encode()
-	pollingInterval := accessOptions.pollingInterval
-	ticker := time.NewTicker(accessOptions.pollingInterval)
+	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for {
 		select {
