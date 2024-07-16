@@ -403,8 +403,8 @@ func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.Nu
 	return protoNugetConfig, nil
 }
 
-// CmakeRegistryConfigToProtoCmakeConfig converts cargoConfig to an equivalent [*registryv1alpha1.CmakeConfig].
-func CmakeRegistryConfigToProtoCmakeConfig(cargoConfig *bufremotepluginconfig.CmakeRegistryConfig) (*registryv1alpha1.CmakeConfig, error) {
+// CmakeRegistryConfigToProtoCmakeConfig converts cmakeConfig to an equivalent [*registryv1alpha1.CmakeConfig].
+func CmakeRegistryConfigToProtoCmakeConfig(cmakeConfig *bufremotepluginconfig.CmakeRegistryConfig) (*registryv1alpha1.CmakeConfig, error) {
 	return &registryv1alpha1.CmakeConfig{}, nil
 }
 
