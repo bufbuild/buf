@@ -750,7 +750,7 @@ func (x *NugetConfig) GetRuntimeLibraries() []*NugetConfig_RuntimeLibrary {
 	return nil
 }
 
-// CmakeConfig is the configuration a Cmake C++ plugin
+// CmakeConfig is the configuration for a Cmake C++ plugin.
 type CmakeConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
