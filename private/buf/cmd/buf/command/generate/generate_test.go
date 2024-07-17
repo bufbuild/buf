@@ -956,15 +956,6 @@ func testGenerateDeleteOutsWithArgAndConfig(
 					[]byte(`1`),
 				),
 			)
-
-			// TODO: remove
-			data, err := storage.ReadPath(
-				ctx,
-				storageBucket,
-				fullOutputPath,
-			)
-			require.NoError(t, err)
-			require.Len(t, data, 1)
 		default:
 			// Write a file that won't be generated to the location.
 			require.NoError(
