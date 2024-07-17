@@ -41,6 +41,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_PYTHON = 5;
   PLUGIN_REGISTRY_TYPE_CARGO = 7;
   PLUGIN_REGISTRY_TYPE_NUGET = 8;
+  PLUGIN_REGISTRY_TYPE_CMAKE = 9;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -225,6 +226,9 @@ message NugetConfig {
   repeated RuntimeLibrary runtime_libraries = 2;
 }
 
+// CmakeConfig is the configuration for a Cmake C++ plugin.
+message CmakeConfig {}
+
 message SwiftConfig {
   // RuntimeLibrary describes a runtime library dependency of the generated code.
   message RuntimeLibrary {
@@ -303,9 +307,10 @@ message RegistryConfig {
     PythonConfig python_config = 5;
     CargoConfig cargo_config = 6;
     NugetConfig nuget_config = 7;
+    CmakeConfig cmake_config = 8;
   }
   // Reserved for future remote registry types.
-  reserved 8 to 9;
+  reserved 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;

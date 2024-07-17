@@ -84,6 +84,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO
 		case registry.Nuget != nil:
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET
+		case registry.Cmake != nil:
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CMAKE
 		}
 	}
 	return registryType
@@ -214,6 +216,12 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NugetConfig{NugetConfig: nugetConfig}
+	case pluginRegistry.Cmake != nil:
+		cmakeConfig, err := CmakeRegistryConfigToProtoCmakeConfig(pluginRegistry.Cmake)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_CmakeConfig{CmakeConfig: cmakeConfig}
 	}
 	return registryConfig, nil
 }
@@ -296,6 +304,12 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Nuget = nugetConfig
+	case config.GetCmakeConfig() != nil:
+		cmakeConfig, err := ProtoCmakeConfigToCmakeRegistryConfig(config.GetCmakeConfig())
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Cmake = cmakeConfig
 	}
 	return registryConfig, nil
 }
@@ -318,7 +332,7 @@ func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.Ca
 
 // ProtoNugetConfigToNugetRegistryConfig converts protoConfig to an equivalent [*bufremotepluginconfig.NugetRegistryConfig].
 func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetConfig) (*bufremotepluginconfig.NugetRegistryConfig, error) {
-	targetFrameworks, err := slicesext.MapError(protoConfig.TargetFrameworks, dotnetTargetFrameworkToString)
+	targetFrameworks, err := slicesext.MapError(protoConfig.TargetFrameworks, DotnetTargetFrameworkToString)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +342,7 @@ func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetCo
 	for _, dependency := range protoConfig.RuntimeLibraries {
 		var depTargetFrameworks []string
 		if len(dependency.TargetFrameworks) > 0 {
-			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, dotnetTargetFrameworkToString)
+			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, DotnetTargetFrameworkToString)
 			if err != nil {
 				return nil, err
 			}
@@ -340,6 +354,11 @@ func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetCo
 		})
 	}
 	return config, err
+}
+
+// ProtoCmakeConfigToCmakeRegistryConfig converts protoCmakeConfig to an equivalent [*bufremotepluginconfig.CmakeRegistryConfig].
+func ProtoCmakeConfigToCmakeRegistryConfig(protoCmakeConfig *registryv1alpha1.CmakeConfig) (*bufremotepluginconfig.CmakeRegistryConfig, error) {
+	return &bufremotepluginconfig.CmakeRegistryConfig{}, nil
 }
 
 // CargoRegistryConfigToProtoCargoConfig converts cargoConfig to an equivalent [*registryv1alpha1.CargoConfig].
@@ -360,7 +379,7 @@ func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufremotepluginconfig.Ca
 
 // NugetRegistryConfigToProtoNugetConfig converts nugetConfig to an equivalent [*registryv1alpha1.NugetConfig].
 func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.NugetRegistryConfig) (*registryv1alpha1.NugetConfig, error) {
-	targetFrameworks, err := slicesext.MapError(nugetConfig.TargetFrameworks, dotnetTargetFrameworkFromString)
+	targetFrameworks, err := slicesext.MapError(nugetConfig.TargetFrameworks, DotnetTargetFrameworkFromString)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +389,7 @@ func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.Nu
 	for _, dependency := range nugetConfig.Deps {
 		var depTargetFrameworks []registryv1alpha1.DotnetTargetFramework
 		if len(dependency.TargetFrameworks) > 0 {
-			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, dotnetTargetFrameworkFromString)
+			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, DotnetTargetFrameworkFromString)
 			if err != nil {
 				return nil, err
 			}
@@ -382,6 +401,11 @@ func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.Nu
 		})
 	}
 	return protoNugetConfig, nil
+}
+
+// CmakeRegistryConfigToProtoCmakeConfig converts cmakeConfig to an equivalent [*registryv1alpha1.CmakeConfig].
+func CmakeRegistryConfigToProtoCmakeConfig(cmakeConfig *bufremotepluginconfig.CmakeRegistryConfig) (*registryv1alpha1.CmakeConfig, error) {
+	return &registryv1alpha1.CmakeConfig{}, nil
 }
 
 // ProtoPythonConfigToPythonRegistryConfig converts protoPythonConfig to an equivalent [*bufremotepluginconfig.PythonRegistryConfig].
