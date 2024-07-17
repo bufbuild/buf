@@ -83,9 +83,6 @@ type GeneratePluginConfig interface {
 	Name() string
 	// Out returns the output directory for generation. This is never empty.
 	Out() string
-	// Clean, if true, will delete the output directories, zip files, or jar files before
-	// generation is run.
-	Clean() bool
 	// Opt returns the plugin options as a comma separated string.
 	Opt() string
 	// IncludeImports returns whether to generate code for imported files. This
@@ -123,7 +120,6 @@ type GeneratePluginConfig interface {
 func NewRemotePluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -132,7 +128,6 @@ func NewRemotePluginConfig(
 	return newRemotePluginConfig(
 		name,
 		out,
-		clean,
 		opt,
 		includeImports,
 		includeWKT,
@@ -145,7 +140,6 @@ func NewLocalOrProtocBuiltinPluginConfig(
 	name string,
 	out string,
 	opt []string,
-	clean bool,
 	includeImports bool,
 	includeWKT bool,
 	strategy *GenerateStrategy,
@@ -153,7 +147,6 @@ func NewLocalOrProtocBuiltinPluginConfig(
 	return newLocalOrProtocBuiltinPluginConfig(
 		name,
 		out,
-		clean,
 		opt,
 		includeImports,
 		includeWKT,
@@ -165,7 +158,6 @@ func NewLocalOrProtocBuiltinPluginConfig(
 func NewLocalPluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -175,7 +167,6 @@ func NewLocalPluginConfig(
 	return newLocalPluginConfig(
 		name,
 		out,
-		clean,
 		opt,
 		includeImports,
 		includeWKT,
@@ -189,7 +180,6 @@ func NewLocalPluginConfig(
 func NewProtocBuiltinPluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -199,7 +189,6 @@ func NewProtocBuiltinPluginConfig(
 	return newProtocBuiltinPluginConfig(
 		name,
 		out,
-		clean,
 		opt,
 		includeImports,
 		includeWKT,
@@ -235,7 +224,6 @@ type pluginConfig struct {
 	pluginConfigType PluginConfigType
 	name             string
 	out              string
-	clean            bool
 	opts             []string
 	includeImports   bool
 	includeWKT       bool
@@ -267,7 +255,6 @@ func newPluginConfigFromExternalV1Beta1(
 		return newLocalPluginConfig(
 			externalConfig.Name,
 			externalConfig.Out,
-			false, // Clean is not available on <v2 plugin configs
 			opt,
 			false,
 			false,
@@ -278,7 +265,6 @@ func newPluginConfigFromExternalV1Beta1(
 	return newLocalOrProtocBuiltinPluginConfig(
 		externalConfig.Name,
 		externalConfig.Out,
-		false, // Clean is not available on <v2 plugin configs
 		opt,
 		false,
 		false,
@@ -338,7 +324,6 @@ func newPluginConfigFromExternalV1(
 		return newRemotePluginConfig(
 			externalConfig.Plugin,
 			externalConfig.Out,
-			false, // Clean is not available on <v2 plugin configs
 			opt,
 			false,
 			false,
@@ -351,7 +336,6 @@ func newPluginConfigFromExternalV1(
 		return newLocalPluginConfig(
 			pluginIdentifier,
 			externalConfig.Out,
-			false, // Clean is not available on <v2 plugin configs
 			opt,
 			false,
 			false,
@@ -363,7 +347,6 @@ func newPluginConfigFromExternalV1(
 		return newProtocBuiltinPluginConfig(
 			pluginIdentifier,
 			externalConfig.Out,
-			false, // Clean is not available on <v2 plugin configs
 			opt,
 			false,
 			false,
@@ -376,7 +359,6 @@ func newPluginConfigFromExternalV1(
 	return newLocalOrProtocBuiltinPluginConfig(
 		pluginIdentifier,
 		externalConfig.Out,
-		false, // Clean is not available on <v2 plugin configs
 		opt,
 		false,
 		false,
@@ -433,7 +415,6 @@ func newPluginConfigFromExternalV2(
 		return newRemotePluginConfig(
 			*externalConfig.Remote,
 			externalConfig.Out,
-			externalConfig.Clean,
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
@@ -454,7 +435,6 @@ func newPluginConfigFromExternalV2(
 		return newLocalPluginConfig(
 			strings.Join(path, " "),
 			externalConfig.Out,
-			externalConfig.Clean,
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
@@ -472,7 +452,6 @@ func newPluginConfigFromExternalV2(
 		return newProtocBuiltinPluginConfig(
 			*externalConfig.ProtocBuiltin,
 			externalConfig.Out,
-			externalConfig.Clean,
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
@@ -487,7 +466,6 @@ func newPluginConfigFromExternalV2(
 func newRemotePluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -509,7 +487,6 @@ func newRemotePluginConfig(
 		remoteHost:       remoteHost,
 		revision:         revision,
 		out:              out,
-		clean:            clean,
 		opts:             opt,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
@@ -519,7 +496,6 @@ func newRemotePluginConfig(
 func newLocalOrProtocBuiltinPluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -533,7 +509,6 @@ func newLocalOrProtocBuiltinPluginConfig(
 		name:             name,
 		strategy:         strategy,
 		out:              out,
-		clean:            clean,
 		opts:             opt,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
@@ -543,7 +518,6 @@ func newLocalOrProtocBuiltinPluginConfig(
 func newLocalPluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -562,7 +536,6 @@ func newLocalPluginConfig(
 		path:             path,
 		strategy:         strategy,
 		out:              out,
-		clean:            clean,
 		opts:             opt,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
@@ -572,7 +545,6 @@ func newLocalPluginConfig(
 func newProtocBuiltinPluginConfig(
 	name string,
 	out string,
-	clean bool,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
@@ -587,7 +559,6 @@ func newProtocBuiltinPluginConfig(
 		name:             name,
 		protocPath:       protocPath,
 		out:              out,
-		clean:            clean,
 		opts:             opt,
 		strategy:         strategy,
 		includeImports:   includeImports,
@@ -605,10 +576,6 @@ func (p *pluginConfig) Name() string {
 
 func (p *pluginConfig) Out() string {
 	return p.out
-}
-
-func (p *pluginConfig) Clean() bool {
-	return p.clean
 }
 
 func (p *pluginConfig) Opt() string {
@@ -657,7 +624,6 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 	}
 	externalPluginConfigV2 := externalGeneratePluginConfigV2{
 		Out:            generatePluginConfig.Out(),
-		Clean:          generatePluginConfig.Clean(),
 		IncludeImports: generatePluginConfig.IncludeImports(),
 		IncludeWKT:     generatePluginConfig.IncludeWKT(),
 	}
