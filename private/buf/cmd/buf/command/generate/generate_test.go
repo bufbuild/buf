@@ -1017,7 +1017,7 @@ plugins:
 			// behavior.
 			require.True(t, len(data) > 1, "expected non-fake data at %q", fullOutputPath)
 		default:
-			_, err := storage.ReadPath(
+			data, err := storage.ReadPath(
 				ctx,
 				storageBucket,
 				normalpath.Join(fullOutputPath, "foo.txt"),
@@ -1025,7 +1025,8 @@ plugins:
 			if expectedClean {
 				require.ErrorIs(t, err, fs.ErrNotExist)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, err, "expected foo.txt at %q", fullOutputPath)
+				require.NotNil(t, data, "expected foo.txt at %q", fullOutputPath)
 			}
 		}
 	}
