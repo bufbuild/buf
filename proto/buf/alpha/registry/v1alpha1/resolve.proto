@@ -61,6 +61,10 @@ service ResolveService {
   rpc GetNugetVersion(GetNugetVersionRequest) returns (GetNugetVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetCmakeVersion resolves the given plugin and module references to a version.
+  rpc GetCmakeVersion(GetCmakeVersionRequest) returns (GetCmakeVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetModulePinsRequest {
@@ -221,6 +225,18 @@ message GetNugetVersionRequest {
 
 message GetNugetVersionResponse {
   // version is the resolved version to be used with the nuget registry.
+  string version = 1;
+}
+
+message GetCmakeVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetCmakeVersionResponse {
+  // version is the resolved version to be used with the cmake registry.
   string version = 1;
 }
 
