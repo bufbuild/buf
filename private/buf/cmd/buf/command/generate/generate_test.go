@@ -557,13 +557,13 @@ func TestGenerateDeleteOutDir(t *testing.T) {
 	testGenerateDeleteOuts(t, "", "foo", "bar", "foo")
 	testGenerateDeleteOuts(t, "base", "foo", "bar")
 	testGenerateDeleteOuts(t, "base", "foo", "bar", "foo")
-	// testGenerateDeleteOuts(t, "", "foo.jar")
+	testGenerateDeleteOuts(t, "", "foo.jar")
 	testGenerateDeleteOuts(t, "", "foo.zip")
-	// testGenerateDeleteOuts(t, "", "foo/bar.jar")
+	testGenerateDeleteOuts(t, "", "foo/bar.jar")
 	testGenerateDeleteOuts(t, "", "foo/bar.zip")
-	// testGenerateDeleteOuts(t, "base", "foo.jar")
+	testGenerateDeleteOuts(t, "base", "foo.jar")
 	testGenerateDeleteOuts(t, "base", "foo.zip")
-	// testGenerateDeleteOuts(t, "base", "foo/bar.jar")
+	testGenerateDeleteOuts(t, "base", "foo/bar.jar")
 	testGenerateDeleteOuts(t, "base", "foo/bar.zip")
 }
 
