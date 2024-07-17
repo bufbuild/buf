@@ -34,9 +34,9 @@ func TestDotnetTargetPlatformMapping(t *testing.T) {
 			continue
 		}
 		// Verify round trip
-		strTargetFramework, err := dotnetTargetFrameworkToString(targetFramework)
+		strTargetFramework, err := DotnetTargetFrameworkToString(targetFramework)
 		require.NoErrorf(t, err, "missing mapping for target framework %v", targetFramework)
-		targetFrameworkFromStr, err := dotnetTargetFrameworkFromString(strTargetFramework)
+		targetFrameworkFromStr, err := DotnetTargetFrameworkFromString(strTargetFramework)
 		require.NoError(t, err)
 		assert.Equal(t, targetFramework, targetFrameworkFromStr)
 	}

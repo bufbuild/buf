@@ -332,7 +332,7 @@ func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.Ca
 
 // ProtoNugetConfigToNugetRegistryConfig converts protoConfig to an equivalent [*bufremotepluginconfig.NugetRegistryConfig].
 func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetConfig) (*bufremotepluginconfig.NugetRegistryConfig, error) {
-	targetFrameworks, err := slicesext.MapError(protoConfig.TargetFrameworks, dotnetTargetFrameworkToString)
+	targetFrameworks, err := slicesext.MapError(protoConfig.TargetFrameworks, DotnetTargetFrameworkToString)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetCo
 	for _, dependency := range protoConfig.RuntimeLibraries {
 		var depTargetFrameworks []string
 		if len(dependency.TargetFrameworks) > 0 {
-			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, dotnetTargetFrameworkToString)
+			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, DotnetTargetFrameworkToString)
 			if err != nil {
 				return nil, err
 			}
@@ -379,7 +379,7 @@ func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufremotepluginconfig.Ca
 
 // NugetRegistryConfigToProtoNugetConfig converts nugetConfig to an equivalent [*registryv1alpha1.NugetConfig].
 func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.NugetRegistryConfig) (*registryv1alpha1.NugetConfig, error) {
-	targetFrameworks, err := slicesext.MapError(nugetConfig.TargetFrameworks, dotnetTargetFrameworkFromString)
+	targetFrameworks, err := slicesext.MapError(nugetConfig.TargetFrameworks, DotnetTargetFrameworkFromString)
 	if err != nil {
 		return nil, err
 	}
@@ -389,7 +389,7 @@ func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.Nu
 	for _, dependency := range nugetConfig.Deps {
 		var depTargetFrameworks []registryv1alpha1.DotnetTargetFramework
 		if len(dependency.TargetFrameworks) > 0 {
-			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, dotnetTargetFrameworkFromString)
+			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, DotnetTargetFrameworkFromString)
 			if err != nil {
 				return nil, err
 			}

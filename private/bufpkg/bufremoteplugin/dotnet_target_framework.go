@@ -38,7 +38,9 @@ var (
 	}
 )
 
-func dotnetTargetFrameworkFromString(framework string) (registryv1alpha1.DotnetTargetFramework, error) {
+// DotnetTargetFrameworkFromString converts the target framework name to the equivalent enum.
+// It returns an error if the specified string is unknown.
+func DotnetTargetFrameworkFromString(framework string) (registryv1alpha1.DotnetTargetFramework, error) {
 	frameworkEnum, ok := stringToDotnetTargetFramework[framework]
 	if !ok {
 		return 0, fmt.Errorf("unknown target framework %q", framework)
@@ -46,7 +48,9 @@ func dotnetTargetFrameworkFromString(framework string) (registryv1alpha1.DotnetT
 	return frameworkEnum, nil
 }
 
-func dotnetTargetFrameworkToString(framework registryv1alpha1.DotnetTargetFramework) (string, error) {
+// DotnetTargetFrameworkToString converts the target framework enum to the equivalent string.
+// It returns an error if the specified enum is unspecified or unknown.
+func DotnetTargetFrameworkToString(framework registryv1alpha1.DotnetTargetFramework) (string, error) {
 	// This isn't performance critical code - just scan the existing mapping instead of storing in both directions.
 	for frameworkStr, frameworkEnum := range stringToDotnetTargetFramework {
 		if frameworkEnum == framework {
