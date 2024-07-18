@@ -22,9 +22,9 @@ import (
 
 // GenerateConfig is a generation configuration.
 type GenerateConfig interface {
-	// Clean is whether to delete the output directories, zip files, or jar files before
+	// DeleteOuts is whether to delete the output directories, zip files, or jar files before
 	// generation is run.
-	Clean() bool
+	DeleteOuts() bool
 	// GeneratePluginConfigs returns the plugin configurations. This will always be
 	// non-empty. Zero plugin configs will cause an error at construction time.
 	GeneratePluginConfigs() []GeneratePluginConfig
@@ -50,7 +50,7 @@ func NewGenerateConfig(
 		return nil, newNoPluginsError()
 	}
 	return &generateConfig{
-		clean:         clean,
+		deleteOuts:    clean,
 		pluginConfigs: pluginConfigs,
 		managedConfig: managedConfig,
 		typeConfig:    typeConfig,
@@ -60,7 +60,7 @@ func NewGenerateConfig(
 // *** PRIVATE ***
 
 type generateConfig struct {
-	clean         bool
+	deleteOuts    bool
 	pluginConfigs []GeneratePluginConfig
 	managedConfig GenerateManagedConfig
 	typeConfig    GenerateTypeConfig
@@ -128,14 +128,14 @@ func newGenerateConfigFromExternalFileV2(
 		return nil, err
 	}
 	return &generateConfig{
-		clean:         externalFile.Clean,
+		deleteOuts:    externalFile.DeleteOuts,
 		managedConfig: managedConfig,
 		pluginConfigs: pluginConfigs,
 	}, nil
 }
 
-func (g *generateConfig) Clean() bool {
-	return g.clean
+func (g *generateConfig) DeleteOuts() bool {
+	return g.deleteOuts
 }
 
 func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {

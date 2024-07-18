@@ -984,7 +984,7 @@ plugins:
 		_, _ = templateBuilder.WriteString("\n")
 	}
 	if cleanOptionInConfig {
-		templateBuilder.WriteString("clean: true\n")
+		templateBuilder.WriteString("clean_plugin_outs: true\n")
 	}
 	testRunStdoutStderr(
 		t,

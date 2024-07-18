@@ -257,11 +257,11 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 		return err
 	}
 	externalBufGenYAMLFileV2 := externalBufGenYAMLFileV2{
-		Version: FileVersionV2.String(),
-		Clean:   bufGenYAMLFile.GenerateConfig().Clean(),
-		Plugins: externalPluginConfigsV2,
-		Managed: externalManagedConfigV2,
-		Inputs:  externalInputConfigsV2,
+		Version:    FileVersionV2.String(),
+		DeleteOuts: bufGenYAMLFile.GenerateConfig().DeleteOuts(),
+		Plugins:    externalPluginConfigsV2,
+		Managed:    externalManagedConfigV2,
+		Inputs:     externalInputConfigsV2,
 	}
 	data, err := encoding.MarshalYAML(&externalBufGenYAMLFileV2)
 	if err != nil {
@@ -484,11 +484,11 @@ type externalTypesConfigV1 struct {
 type externalBufGenYAMLFileV2 struct {
 	Version string                          `json:"version,omitempty" yaml:"version,omitempty"`
 	Managed externalGenerateManagedConfigV2 `json:"managed,omitempty" yaml:"managed,omitempty"`
-	// Clean, if set to true, will delete the output directories, zip files, or jar files
+	// DeleteOuts, if set to true, will delete the output directories, zip files, or jar files
 	// before generation is run.
-	Clean   bool                             `json:"clean,omitempty" yaml:"clean,omitempty"`
-	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
-	Inputs  []externalInputConfigV2          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	DeleteOuts bool                             `json:"clean_plugin_outs,omitempty" yaml:"clean_plugin_outs,omitempty"`
+	Plugins    []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Inputs     []externalInputConfigV2          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }
 
 // externalGeneratePluginConfigV2 represents a single plugin config in a v2 buf.gen.yaml file.
