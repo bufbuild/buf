@@ -85,7 +85,7 @@ func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
 
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
-	PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error
+	PrintOrganizationInfo(ctx context.Context, format Format, organization *ownerv1.Organization) error
 }
 
 // NewOrganizationPrinter returns a new OrganizationPrinter.

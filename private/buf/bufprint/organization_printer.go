@@ -39,7 +39,7 @@ func newOrganizationPrinter(
 	}
 }
 
-func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error {
+func (p *organizationPrinter) PrintOrganizationInfo(ctx context.Context, format Format, organization *ownerv1.Organization) error {
 	outOrganization := registryOrganizationToOutputOrganization(p.address, organization)
 	switch format {
 	case FormatText:

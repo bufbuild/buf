@@ -117,5 +117,5 @@ func run(
 	return bufprint.NewOrganizationPrinter(
 		moduleOwner.Registry(),
 		container.Stdout(),
-	).PrintOrganization(ctx, format, organizations[0])
+	).PrintOrganizationInfo(ctx, format, organizations[0])
 }
