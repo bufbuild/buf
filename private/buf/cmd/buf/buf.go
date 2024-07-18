@@ -221,7 +221,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
-
 							{
 								Use:   "commit",
 								Short: "Manage a repository's commits",
