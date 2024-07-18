@@ -97,6 +97,12 @@ var (
 	//
 	// Normalized.
 	v3CacheWKTRelDirPath = normalpath.Join("v3", "wellknowntypes")
+	// v3CacheModuleLockRelDirPath is the relative path to the lock files directory for module data. This path
+	// is relative to the files cache directory for module data and is used to store lock files for
+	// synchronizing reading and writing module data from the cache.
+	//
+	// Noramlized.
+	v3CacheModuleLockRelDirPath = "lock"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -167,7 +173,11 @@ func newModuleDataProvider(
 	if err != nil {
 		return nil, err
 	}
-	filelocker, err := filelock.NewLocker(fullCacheDirPath)
+	// Create filelocker directory and filelocker
+	if err := createCacheDir(container.CacheDirPath(), normalpath.Join(v3CacheModuleRelDirPath, v3CacheModuleLockRelDirPath)); err != nil {
+		return nil, err
+	}
+	filelocker, err := filelock.NewLocker(normalpath.Join(fullCacheDirPath, v3CacheModuleLockRelDirPath))
 	if err != nil {
 		return nil, err
 	}
