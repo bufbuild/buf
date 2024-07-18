@@ -114,7 +114,7 @@ for os in Darwin Linux Windows; do
     fi
     dir="${os}/${arch}/${BASE_NAME}"
     cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
-    if [ "${os}" == "Darwin" ] || [ "${os}" == "Linux"]; then
+    if [ "${os}" == "Darwin" ] || [ "${os}" == "Linux" ]; then
       mkdir -p "${dir}/etc/bash_completion.d"
       mkdir -p "${dir}/share/fish/vendor_completions.d"
       mkdir -p "${dir}/share/zsh/site-functions"
