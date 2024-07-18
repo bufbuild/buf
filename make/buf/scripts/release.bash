@@ -149,7 +149,7 @@ for os in Windows; do
     zipfile="${BASE_NAME}-${os}-${arch}.zip"
     pushd "${zip_context_dir}" >/dev/null
     zip -r "${zipfile}" "${zip_dir}"
-    popd
+    popd >/dev/null
     mv "${zip_context_dir}/${zipfile}" "${zipfile}"
   done
 done
