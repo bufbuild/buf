@@ -5,8 +5,8 @@
 - Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
   plugins will write to, prior to generation. Allows cleaning of existing assets without having
   to call `rm -rf`.
-- Add `clean` as an option for plugin configurations in `buf.gen.yaml`. If set to true, this
-  will delete the directories, jar files, or zip files set to `out` for the plugin.
+- Add `clean_plugin_outs` as a top-level option in `buf.gen.yaml`. If set to true, this will delete the directories,
+  jar files, or zip files set to `out` for each plugin.
 
 ## [v1.34.0] - 2024-06-21
 

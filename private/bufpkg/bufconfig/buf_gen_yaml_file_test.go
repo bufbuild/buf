@@ -106,19 +106,19 @@ plugins:
 		t,
 		// input
 		`version: v2
+clean_plugin_outs: true
 plugins:
   - local: custom-gen-go
     out: gen/go
-    clean: true
     opt: paths=source_relative
     strategy: directory
 `,
 		// expected output
 		`version: v2
+clean_plugin_outs: true
 plugins:
   - local: custom-gen-go
     out: gen/go
-    clean: true
     opt: paths=source_relative
     strategy: directory
 `,
