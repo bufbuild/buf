@@ -22,26 +22,30 @@ import (
 	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
-type repositoryLabelPrinter struct {
-	writer io.Writer
+type labelPrinter struct {
+	writer         io.Writer
+	moduleFullName bufmodule.ModuleFullName
 }
 
-func newRepositoryLabelPrinter(
+func newLabelPrinter(
 	writer io.Writer,
-) *repositoryLabelPrinter {
-	return &repositoryLabelPrinter{
-		writer: writer,
+	moduleFullName bufmodule.ModuleFullName,
+) *labelPrinter {
+	return &labelPrinter{
+		writer:         writer,
+		moduleFullName: moduleFullName,
 	}
 }
 
-func (p *repositoryLabelPrinter) PrintRepositoryLabel(ctx context.Context, format Format, message *modulev1.Label) error {
-	outRepositoryLabel := registryLabelToOutputLabel(message)
+func (p *labelPrinter) PrintLabelInfo(ctx context.Context, format Format, label *modulev1.Label) error {
+	outRepositoryLabel := registryLabelToOutputLabel(label)
 	switch format {
 	case FormatText:
-		return p.printRepositoryLabelsText([]outputRepositoryLabel{outRepositoryLabel})
+		return p.printRepositoryLabelsTable([]outputRepositoryLabel{outRepositoryLabel})
 	case FormatJSON:
 		return json.NewEncoder(p.writer).Encode(outRepositoryLabel)
 	default:
@@ -49,25 +53,68 @@ func (p *repositoryLabelPrinter) PrintRepositoryLabel(ctx context.Context, forma
 	}
 }
 
-func (p *repositoryLabelPrinter) PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, messages ...*modulev1.Label) error {
-	if len(messages) == 0 {
-		return nil
-	}
-	outputRepositoryLabels := registryLabelsToOutputLabels(messages)
+func (p *labelPrinter) PrintLabels(ctx context.Context, format Format, labels ...*modulev1.Label) error {
 	switch format {
 	case FormatText:
-		return p.printRepositoryLabelsText(outputRepositoryLabels)
+		// Print a label name on each line.
+		for _, label := range labels {
+			if _, err := fmt.Fprintf(p.writer, "%s:%s\n", p.moduleFullName, label.Name); err != nil {
+				return err
+			}
+		}
+		return nil
 	case FormatJSON:
-		return json.NewEncoder(p.writer).Encode(paginationWrapper{
+		// Print a json object on each line.
+		for _, label := range labels {
+			if err := json.NewEncoder(p.writer).Encode(
+				registryLabelToOutputLabel(label),
+			); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		return fmt.Errorf("unknown format: %v", format)
+	}
+}
+
+func (p *labelPrinter) PrintLabelPage(
+	ctx context.Context,
+	format Format,
+	nextPageCommand string,
+	nextPageToken string,
+	labels []*modulev1.Label,
+) error {
+	if len(labels) == 0 {
+		return nil
+	}
+	outputRepositoryLabels := registryLabelsToOutputLabels(labels)
+	switch format {
+	case FormatText:
+		if err := p.PrintLabels(ctx, FormatText, labels...); err != nil {
+			return err
+		}
+		if nextPageToken == "" {
+			return nil
+		}
+		_, err := fmt.Fprintf(
+			p.writer,
+			"\nMore than %d commits found, run %q to list more\n",
+			len(labels),
+			nextPageCommand,
+		)
+		return err
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(labelPage{
 			NextPage: nextPageToken,
-			Results:  outputRepositoryLabels,
+			Labels:   outputRepositoryLabels,
 		})
 	default:
 		return fmt.Errorf("unknown format: %v", format)
 	}
 }
 
-func (p *repositoryLabelPrinter) printRepositoryLabelsText(outputRepositoryLabels []outputRepositoryLabel) error {
+func (p *labelPrinter) printRepositoryLabelsTable(outputRepositoryLabels []outputRepositoryLabel) error {
 	archivedLabelCount := slicesext.Count(outputRepositoryLabels, func(label outputRepositoryLabel) bool {
 		return label.ArchiveTime != nil
 	})
@@ -148,4 +195,9 @@ func registryLabelsToOutputLabels(labels []*modulev1.Label) []outputRepositoryLa
 		outputRepositoryLabels[i] = registryLabelToOutputLabel(repositoryLabel)
 	}
 	return outputRepositoryLabels
+}
+
+type labelPage struct {
+	NextPage string                  `json:"next_page,omitempty"`
+	Labels   []outputRepositoryLabel `json:"labels"`
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package labellist
+package labelinfo
 
 import (
 	"context"
@@ -26,16 +26,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
-const (
-	archiveStatusName = "archive-status"
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -44,8 +39,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]>",
-		Short: "List repository labels",
+		Use:   name + " <remote/owner/module:label>",
+		Short: "Show label information",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -57,11 +52,7 @@ func NewCommand(
 }
 
 type flags struct {
-	ArchiveStatus string
-	PageSize      uint32
-	PageToken     string
-	Reverse       bool
-	Format        string
+	Format string
 }
 
 func newFlags() *flags {
@@ -69,25 +60,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindArchiveStatus(flagSet, &f.ArchiveStatus, archiveStatusName)
-	flagSet.Uint32Var(
-		&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(
-		&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
-	)
-	flagSet.BoolVar(
-		&f.Reverse,
-		reverseFlagName,
-		false,
-		`Reverse the results`,
-	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -101,14 +73,13 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	archiveStatusFitler, err := bufcli.ArchiveStatusFlagToArchiveStatusFilter(flags.ArchiveStatus)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+	labelName := moduleRef.Ref()
+	if labelName == "" {
+		return appcmd.NewInvalidArgumentError("label is required")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -119,38 +90,35 @@ func run(
 		return err
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
-	labelServiceClient := clientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
-	order := modulev1.ListLabelsRequest_ORDER_CREATE_TIME_ASC
-	if flags.Reverse {
-		order = modulev1.ListLabelsRequest_ORDER_CREATE_TIME_DESC
-	}
-	resp, err := labelServiceClient.ListLabels(
+	moduleFullName := moduleRef.ModuleFullName()
+	labelServiceClient := clientProvider.V1LabelServiceClient(moduleFullName.Registry())
+	resp, err := labelServiceClient.GetLabels(
 		ctx,
 		connect.NewRequest(
-			&modulev1.ListLabelsRequest{
-				PageSize:  flags.PageSize,
-				PageToken: flags.PageToken,
-				ResourceRef: &modulev1.ResourceRef{
-					Value: &modulev1.ResourceRef_Name_{
-						Name: &modulev1.ResourceRef_Name{
-							Owner:  moduleRef.ModuleFullName().Owner(),
-							Module: moduleRef.ModuleFullName().Name(),
-							Child: &modulev1.ResourceRef_Name_Ref{
-								Ref: moduleRef.Ref(),
+			&modulev1.GetLabelsRequest{
+				LabelRefs: []*modulev1.LabelRef{
+					{
+						Value: &modulev1.LabelRef_Name_{
+							Name: &modulev1.LabelRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+								Label:  labelName,
 							},
 						},
 					},
 				},
-				Order:         order,
-				ArchiveFilter: archiveStatusFitler,
 			},
 		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
+			return bufcli.NewLabelNotFoundError(moduleRef)
 		}
 		return err
 	}
-	return bufprint.NewRepositoryLabelPrinter(container.Stdout()).PrintRepositoryLabels(ctx, format, resp.Msg.NextPageToken, resp.Msg.Labels...)
+	labels := resp.Msg.Labels
+	if len(labels) != 1 {
+		return syserror.Newf("expect 1 label from response, got %d", len(labels))
+	}
+	return bufprint.NewLabelPrinter(container.Stdout(), moduleFullName).PrintLabelInfo(ctx, format, labels[0])
 }

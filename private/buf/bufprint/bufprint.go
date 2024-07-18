@@ -22,6 +22,7 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -107,16 +108,19 @@ func NewModulePrinter(
 	return newModulePrinter(clientConfig, address, writer)
 }
 
-// RepositoryLabelPrinter is a repository label printer.
-// TODO: perhaps rename this to LabelPrinter along with other printers
-type RepositoryLabelPrinter interface {
-	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
-	PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, labels ...*modulev1.Label) error
+// LabelPrinter is a repository label printer.
+type LabelPrinter interface {
+	// PrintLabels prints each label on a new line.
+	PrintLabels(ctx context.Context, format Format, label ...*modulev1.Label) error
+	// PrintLabels prints information about a label.
+	PrintLabelInfo(ctx context.Context, format Format, label *modulev1.Label) error
+	// PrintLabelPage prints a page of labels.
+	PrintLabelPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, labels []*modulev1.Label) error
 }
 
-// NewRepositoryLabelPrinter returns a new RepositoryLabelPrinter.
-func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
-	return newRepositoryLabelPrinter(writer)
+// NewLabelPrinter returns a new RepositoryLabelPrinter.
+func NewLabelPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) LabelPrinter {
+	return newLabelPrinter(writer, moduleFullName)
 }
 
 // RepositoryCommitPrinter is a repository commit printer.

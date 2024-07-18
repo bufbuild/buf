@@ -28,6 +28,8 @@ import (
 )
 
 const (
+	DefaultArchiveStatus = unarchivedArchiveStatus
+
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
 
@@ -172,7 +174,7 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	flagSet.StringVar(
 		addr,
 		flagName,
-		unarchivedArchiveStatus,
+		DefaultArchiveStatus,
 		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, stringutil.SliceToString(allArchiveStatusStrings)),
 	)
 }
