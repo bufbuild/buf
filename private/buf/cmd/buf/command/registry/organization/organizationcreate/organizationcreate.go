@@ -106,7 +106,7 @@ func run(
 	}
 	organizations := resp.Msg.GetOrganizations()
 	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations created by server: %d", len(organizations))
+		return syserror.Newf("unexpected number of organizations created by server: %d", len(organizations))
 	}
 	if format == bufprint.FormatText {
 		if _, err := fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleOwner); err != nil {

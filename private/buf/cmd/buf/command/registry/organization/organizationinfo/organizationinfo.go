@@ -109,7 +109,7 @@ func run(
 	}
 	organizations := resp.Msg.GetOrganizations()
 	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations returned from server: %d", len(organizations))
+		return syserror.Newf("unexpected number of organizations returned from server: %d", len(organizations))
 	}
 	return bufprint.NewOrganizationPrinter(
 		moduleOwner.Registry(),
