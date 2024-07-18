@@ -105,7 +105,7 @@ func (g *generator) Generate(
 			return err
 		}
 	}
-	shouldDeleteOuts := config.DeleteOuts()
+	shouldDeleteOuts := config.CleanPluginOuts()
 	if generateOptions.deleteOuts != nil {
 		shouldDeleteOuts = *generateOptions.deleteOuts
 	}

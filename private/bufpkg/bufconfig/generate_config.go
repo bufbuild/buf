@@ -22,9 +22,9 @@ import (
 
 // GenerateConfig is a generation configuration.
 type GenerateConfig interface {
-	// DeleteOuts is whether to delete the output directories, zip files, or jar files before
+	// CleanPluginOuts is whether to delete the output directories, zip files, or jar files before
 	// generation is run.
-	DeleteOuts() bool
+	CleanPluginOuts() bool
 	// GeneratePluginConfigs returns the plugin configurations. This will always be
 	// non-empty. Zero plugin configs will cause an error at construction time.
 	GeneratePluginConfigs() []GeneratePluginConfig
@@ -41,7 +41,7 @@ type GenerateConfig interface {
 
 // NewGenerateConfig returns a validated GenerateConfig.
 func NewGenerateConfig(
-	clean bool,
+	cleanPluginOuts bool,
 	pluginConfigs []GeneratePluginConfig,
 	managedConfig GenerateManagedConfig,
 	typeConfig GenerateTypeConfig,
@@ -50,20 +50,20 @@ func NewGenerateConfig(
 		return nil, newNoPluginsError()
 	}
 	return &generateConfig{
-		deleteOuts:    clean,
-		pluginConfigs: pluginConfigs,
-		managedConfig: managedConfig,
-		typeConfig:    typeConfig,
+		cleanPluginOuts: cleanPluginOuts,
+		pluginConfigs:   pluginConfigs,
+		managedConfig:   managedConfig,
+		typeConfig:      typeConfig,
 	}, nil
 }
 
 // *** PRIVATE ***
 
 type generateConfig struct {
-	deleteOuts    bool
-	pluginConfigs []GeneratePluginConfig
-	managedConfig GenerateManagedConfig
-	typeConfig    GenerateTypeConfig
+	cleanPluginOuts bool
+	pluginConfigs   []GeneratePluginConfig
+	managedConfig   GenerateManagedConfig
+	typeConfig      GenerateTypeConfig
 }
 
 func newGenerateConfigFromExternalFileV1Beta1(
@@ -128,14 +128,14 @@ func newGenerateConfigFromExternalFileV2(
 		return nil, err
 	}
 	return &generateConfig{
-		deleteOuts:    externalFile.DeleteOuts,
-		managedConfig: managedConfig,
-		pluginConfigs: pluginConfigs,
+		cleanPluginOuts: externalFile.CleanPluginOuts,
+		managedConfig:   managedConfig,
+		pluginConfigs:   pluginConfigs,
 	}, nil
 }
 
-func (g *generateConfig) DeleteOuts() bool {
-	return g.deleteOuts
+func (g *generateConfig) CleanPluginOuts() bool {
+	return g.cleanPluginOuts
 }
 
 func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {

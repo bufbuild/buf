@@ -550,7 +550,6 @@ func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 
 func TestGenerateDeleteOutDir(t *testing.T) {
 	t.Parallel()
-	// Use --clean flag
 	testGenerateDeleteOuts(t, "", "foo")
 	testGenerateDeleteOuts(t, "base", "foo")
 	testGenerateDeleteOuts(t, "", "foo", "bar")
