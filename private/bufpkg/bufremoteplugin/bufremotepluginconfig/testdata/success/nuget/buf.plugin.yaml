@@ -1,0 +1,25 @@
+version: v1
+name: buf.build/grpc/csharp
+plugin_version: v1.65.0
+source_url: https://github.com/grpc/grpc
+description: Generates C# client and server stubs for the gRPC framework.
+deps:
+  - plugin: buf.build/protocolbuffers/csharp:v26.1
+output_languages:
+  - csharp
+spdx_license_id: Apache-2.0
+license_url: https://github.com/grpc/grpc/blob/v1.65.0/LICENSE
+registry:
+  nuget:
+    target_frameworks:
+      - netstandard2.0
+      - netstandard2.1
+    deps:
+      - name: Grpc.Core.Api
+        version: 2.63.0
+      - name: Grpc.Other.Api
+        version: 1.0.31
+        target_frameworks:
+          - netstandard2.1
+  opts:
+    - base_namespace=

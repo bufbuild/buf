@@ -197,6 +197,7 @@ func checkConstraintsForField(
 		adder,
 		fieldConstraints,
 		fieldDescriptor,
+		!expectRepeatedRule,
 	); err != nil {
 		return err
 	}

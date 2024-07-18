@@ -1,0 +1,13 @@
+version: v1
+name: buf.build/grpc/cpp
+plugin_version: v1.65.0
+source_url: https://github.com/grpc/grpc
+description: Generates C++ client and server stubs for the gRPC framework.
+deps:
+  - plugin: buf.build/protocolbuffers/cpp:v26.1
+output_languages:
+  - cpp
+spdx_license_id: Apache-2.0
+license_url: https://github.com/grpc/grpc/blob/v1.65.0/LICENSE
+registry:
+  cmake: {}

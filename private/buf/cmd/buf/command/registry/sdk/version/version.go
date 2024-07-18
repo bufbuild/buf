@@ -228,6 +228,34 @@ func run(
 			return err
 		}
 		version = cargoVersionResponse.Msg.Version
+	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET:
+		nugetVersionResponse, err := resolveServiceClient.GetNugetVersion(
+			ctx,
+			connect.NewRequest(
+				&registryv1alpha1.GetNugetVersionRequest{
+					ModuleReference: moduleReference,
+					PluginReference: pluginReference,
+				},
+			),
+		)
+		if err != nil {
+			return err
+		}
+		version = nugetVersionResponse.Msg.Version
+	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CMAKE:
+		cmakeVersionResponse, err := resolveServiceClient.GetCmakeVersion(
+			ctx,
+			connect.NewRequest(
+				&registryv1alpha1.GetCmakeVersionRequest{
+					ModuleReference: moduleReference,
+					PluginReference: pluginReference,
+				},
+			),
+		)
+		if err != nil {
+			return err
+		}
+		version = cmakeVersionResponse.Msg.Version
 	default:
 		return syserror.Newf("unknown PluginRegistryType: %v", pluginRegistryType)
 	}

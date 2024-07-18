@@ -8,140 +8,155 @@ import "google/protobuf/timestamp.proto";
 
 message Foo {
   required double compile_fail = 1 [(buf.validate.field).cel = {
-    id: "Foo.compile_fail",
-    message: "compile_fail_message",
+    id: "Foo.compile_fail"
+    message: "compile_fail_message"
     expression: "this > '1'"
   }];
   optional string some_expressions_fail = 2 [
     // this one fails
     (buf.validate.field).cel = {
-      id: "Foo.some_expressions_fail_1",
-      message: "some_expressions_fail_1_message",
+      id: "Foo.some_expressions_fail_1"
+      message: "some_expressions_fail_1_message"
       expression: "this > 5"
     },
     // this one succeeds
     (buf.validate.field).cel = {
-      id: "Foo.some_expressions_fail_2",
-      message: "some_expressions_fail_2_message",
+      id: "Foo.some_expressions_fail_2"
+      message: "some_expressions_fail_2_message"
       expression: "size(this) > 5"
     },
     // this one fails
     (buf.validate.field).cel = {
-      id: "Foo.some_expressions_fail_3",
-      message: "some_expressions_fail_3_message",
+      id: "Foo.some_expressions_fail_3"
+      message: "some_expressions_fail_3_message"
       expression: "this * 2"
     }
   ];
   required int32 bad_return_type = 3 [(buf.validate.field).cel = {
-    id: "Foo.bad_return_type",
-    message: "some_expressions_fail_3_message",
+    id: "Foo.bad_return_type"
+    message: "some_expressions_fail_3_message"
     expression: "this + 1"
   }];
   optional string no_validate = 4;
   optional string no_cel = 5 [(buf.validate.field).string.email = true];
   required string expressions_succeed = 6 [
     (buf.validate.field).cel = {
-      id: "Foo.expressions_succeed",
-      message: "expression_succeed_message",
+      id: "Foo.expressions_succeed"
+      message: "expression_succeed_message"
       expression: "this.startsWith('foo') && this.endsWith('bar')"
     },
     (buf.validate.field).cel = {
-      id: "Foo.expressions_succeed_2",
-      message: "expression_succeed_message_2",
+      id: "Foo.expressions_succeed_2"
+      message: "expression_succeed_message_2"
       expression: "'bar' < this && this < 'foo'"
     }
   ];
   required string bar = 8;
   option (buf.validate.message).cel = {
-    id: "Foo.bar.1",
-    message: "bar",
+    id: "Foo.bar.1"
+    message: "bar"
     expression: "this.bar.matches('foo')"
   };
   option (buf.validate.message).cel = {
-    id: "Foo.bar.2",
-    message: "bar",
+    id: "Foo.bar.2"
+    message: "bar"
     expression: "size(this.bar)"
   };
   required google.protobuf.Api transitive_dependency_succeed = 9 [(buf.validate.field).cel = {
-    id: "Foo.api",
-    message: "api",
+    id: "Foo.api"
+    message: "api"
     expression: "this.source_context.file_name.contains('foo')"
   }];
   required google.protobuf.Duration duration = 10 [
     (buf.validate.field).cel = {
-      id: "Foo.duration",
-      message: "duration",
+      id: "Foo.duration"
+      message: "duration"
       expression: "this <= duration('23h59m59s')"
     },
     (buf.validate.field).cel = {
-      id: "Foo.duration.fail",
-      message: "duration_fail",
+      id: "Foo.duration.fail"
+      message: "duration_fail"
       expression: "this <= 1"
     }
   ];
   required google.protobuf.Timestamp timestamp = 11 [
     (buf.validate.field).cel = {
-      id: "Foo.timestamp",
-      message: "timestamp",
+      id: "Foo.timestamp"
+      message: "timestamp"
       expression: "this < timestamp('1900-01-01T00:00:00+00:00')"
     },
     (buf.validate.field).cel = {
-      id: "Foo.timestamp.fail",
-      message: "duration_fail",
+      id: "Foo.timestamp.fail"
+      message: "duration_fail"
       expression: "this < 1"
     }
   ];
   required google.protobuf.Any any = 12 [(buf.validate.field).cel = {
-    id: "Foo.any",
-    message: "any fail",
+    id: "Foo.any"
+    message: "any fail"
     // This is valid.
     expression: "this == this"
   }];
   map<int32, string> invalid_map = 13 [
     (buf.validate.field).map.keys.cel = {
-      id: "map_keys_valid",
+      id: "map_keys_valid"
       message: "foo"
       expression: "this > 5"
     },
     (buf.validate.field).map.keys.cel = {
-      id: "map_keys_invalid",
+      id: "map_keys_invalid"
       message: "foo"
       expression: "this"
     },
     (buf.validate.field).map.values.cel = {
-      id: "map_values_valid",
+      id: "map_values_valid"
       message: "foo"
       expression: "size(this) < 100"
     },
     (buf.validate.field).map.values.cel = {
-      id: "map_values_invalid",
-      message: "foo",
+      id: "map_values_invalid"
+      message: "foo"
       expression: "this * this"
     }
   ];
   // Valid CEL expressions for repeated fields.
   repeated string allow_cidr = 14 [(buf.validate.field).repeated = {
-    min_items: 1,
+    min_items: 1
     items: {
       cel: [
         {
-          id: "ip_prefix",
-          message: "value must be IPv4 prefix",
-          expression: "this.isIpPrefix(4, true)",
+          id: "ip_prefix"
+          message: "value must be IPv4 prefix"
+          expression: "this.isIpPrefix(4, true)"
         }
-      ],
-    },
+      ]
+    }
   }];
   // Valid CEL expressions for map fields.
   map<string, bool> allow_cidr_map = 15 [(buf.validate.field).map = {
     keys: {
       cel: [
         {
-          id: "ip_prefix",
-          message: "key must be IPv4 prefix",
-          expression: "this.isIpPrefix(4, true)",
+          id: "ip_prefix"
+          message: "key must be IPv4 prefix"
+          expression: "this.isIpPrefix(4, true)"
         }
-      ],
-    },
+      ]
+    }
   }];
+  // CEL expression defined on the field itself (not each element) should treat
+  // "this" as a list, not the element type.
+  repeated int32 values = 16 [
+    (buf.validate.field).cel = {
+      id: "min_len_and_min_value"
+      message: "must have at least one value and all values must be greater than 2"
+      expression: "size(this) > 0 && this.all(x, x >= 2)"
+    },
+    // This is incorrect because "this" is not an int32 but a list of int32.
+    (buf.validate.field).cel = {
+      id: "min_value"
+      message: "each value must be greater than 2"
+      expression: "this > 2"
+    }
+  ];
 }

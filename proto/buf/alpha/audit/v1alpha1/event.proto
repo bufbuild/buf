@@ -57,6 +57,7 @@ enum ResourceType {
   RESOURCE_TYPE_SCIM_TOKEN = 11;
   RESOURCE_TYPE_REPOSITORY_LABEL = 12;
   RESOURCE_TYPE_SERVER = 13;
+  RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
 }
 
 // Resource is the affected resource by the audited event.
@@ -112,6 +113,8 @@ enum EventType {
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
   EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
+  EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED = 41;
+  EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED = 42;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -183,6 +186,8 @@ message Event {
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
+    PayloadDeviceAuthorizationGrantApproved device_authorization_grant_approved = 47;
+    PayloadDeviceAuthorizationGrantDenied device_authorization_grant_denied = 48;
   }
 }
 
@@ -485,3 +490,12 @@ message PayloadServerBreakingChangePolicyDisabled {}
 message PayloadServerUniquenessPolicyEnabled {}
 
 message PayloadServerUniquenessPolicyDisabled {}
+
+message PayloadDeviceAuthorizationGrantApproved {
+  // client_id is the id of the registered oauth2 client of the grant.
+  string client_id = 1;
+}
+message PayloadDeviceAuthorizationGrantDenied {
+  // client_id is the id of the registered oauth2 client of the grant.
+  string client_id = 1;
+}

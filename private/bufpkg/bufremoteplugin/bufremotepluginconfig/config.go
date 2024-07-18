@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/data/dataspdx"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 )
@@ -93,6 +94,8 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isSwiftEmpty  = externalRegistryConfig.Swift == nil
 		isPythonEmpty = externalRegistryConfig.Python == nil
 		isCargoEmpty  = externalRegistryConfig.Cargo == nil
+		isNugetEmpty  = externalRegistryConfig.Nuget == nil
+		isCmakeEmpty  = externalRegistryConfig.Cmake == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -102,6 +105,8 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isSwiftEmpty,
 		isPythonEmpty,
 		isCargoEmpty,
+		isNugetEmpty,
+		isCmakeEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -170,6 +175,24 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Cargo:   cargoRegistryConfig,
+			Options: options,
+		}, nil
+	case !isNugetEmpty:
+		nugetRegistryConfig, err := newNugetRegistryConfig(externalRegistryConfig.Nuget)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Nuget:   nugetRegistryConfig,
+			Options: options,
+		}, nil
+	case !isCmakeEmpty:
+		cmakeRegistryConfig, err := newCmakeRegistryConfig(externalRegistryConfig.Cmake)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Cmake:   cmakeRegistryConfig,
 			Options: options,
 		}, nil
 	default:
@@ -385,6 +408,84 @@ func newCargoRegistryConfig(externalCargoRegistryConfig *ExternalCargoRegistryCo
 		config.Deps = append(config.Deps, CargoRegistryDependency(dependency))
 	}
 	return config, nil
+}
+
+func newNugetRegistryConfig(externalConfig *ExternalNugetRegistryConfig) (*NugetRegistryConfig, error) {
+	if len(externalConfig.TargetFrameworks) == 0 {
+		return nil, errors.New("nuget registry target frameworks required")
+	}
+	targetFrameworks, err := validateNugetTargetFrameworks(externalConfig.TargetFrameworks)
+	if err != nil {
+		return nil, fmt.Errorf("nuget registry: %w", err)
+	}
+	var deps []NugetDependencyConfig
+	if len(externalConfig.Deps) > 0 {
+		deps = make([]NugetDependencyConfig, 0, len(externalConfig.Deps))
+		for i, externalDep := range externalConfig.Deps {
+			if externalDep.Name == "" {
+				return nil, fmt.Errorf("nuget registry dependency %d: empty name", i)
+			}
+			if externalDep.Version == "" {
+				return nil, fmt.Errorf("nuget registry dependency %d: empty version", i)
+			}
+			depTargetFrameworks, err := validateNugetTargetFrameworks(externalDep.TargetFrameworks)
+			if err != nil {
+				return nil, fmt.Errorf("nuget registry dependency %d: %w", i, err)
+			}
+			deps = append(deps, NugetDependencyConfig{
+				Name:             externalDep.Name,
+				Version:          externalDep.Version,
+				TargetFrameworks: depTargetFrameworks,
+			})
+		}
+	}
+	return &NugetRegistryConfig{
+		TargetFrameworks: targetFrameworks,
+		Deps:             deps,
+	}, nil
+}
+
+func validateNugetTargetFrameworks(targetFrameworks []string) ([]string, error) {
+	if len(targetFrameworks) == 0 {
+		return nil, nil
+	}
+	if dups := slicesext.Duplicates(targetFrameworks); len(dups) > 0 {
+		return nil, fmt.Errorf("duplicate target frameworks: %v", dups)
+	}
+	for i, targetFramework := range targetFrameworks {
+		if err := validateNugetTargetFramework(targetFramework); err != nil {
+			return nil, fmt.Errorf("target framework %d: %w", i, err)
+		}
+	}
+	return slicesext.Copy(targetFrameworks), nil
+}
+
+func validateNugetTargetFramework(targetFramework string) error {
+	switch targetFramework {
+	case "netstandard1.0":
+	case "netstandard1.1":
+	case "netstandard1.2":
+	case "netstandard1.3":
+	case "netstandard1.4":
+	case "netstandard1.5":
+	case "netstandard1.6":
+	case "netstandard2.0":
+	case "netstandard2.1":
+	case "net5.0":
+	case "net6.0":
+	case "net7.0":
+	case "net8.0":
+	default:
+		return fmt.Errorf("invalid target framework: %q", targetFramework)
+	}
+	return nil
+}
+
+func newCmakeRegistryConfig(externalCmakeRegistryConfig *ExternalCmakeRegistryConfig) (*CmakeRegistryConfig, error) {
+	if externalCmakeRegistryConfig == nil {
+		return nil, nil
+	}
+	return &CmakeRegistryConfig{}, nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufremotepluginref.PluginIdentity, error) {
