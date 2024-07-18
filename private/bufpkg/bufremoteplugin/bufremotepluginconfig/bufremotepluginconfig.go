@@ -94,6 +94,7 @@ type RegistryConfig struct {
 	Python *PythonRegistryConfig
 	Cargo  *CargoRegistryConfig
 	Nuget  *NugetRegistryConfig
+	Cmake  *CmakeRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -289,6 +290,9 @@ type NugetRegistryConfig struct {
 	Deps []NugetDependencyConfig
 }
 
+// CmakeRegistryConfig defines the configuration for a cmake registry.
+type CmakeRegistryConfig struct{}
+
 // ConfigOption is an optional option used when loading a Config.
 type ConfigOption func(*configOptions)
 
@@ -421,6 +425,7 @@ type ExternalRegistryConfig struct {
 	Python *ExternalPythonRegistryConfig `json:"python,omitempty" yaml:"python,omitempty"`
 	Cargo  *ExternalCargoRegistryConfig  `json:"cargo,omitempty" yaml:"cargo,omitempty"`
 	Nuget  *ExternalNugetRegistryConfig  `json:"nuget,omitempty" yaml:"nuget,omitempty"`
+	Cmake  *ExternalCmakeRegistryConfig  `json:"cmake,omitempty" yaml:"cmake,omitempty"`
 	Opts   []string                      `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
@@ -579,6 +584,9 @@ type ExternalNugetRegistryConfig struct {
 	// Deps specifies the dependencies for the generated SDK.
 	Deps []ExternalNugetDependency `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
+
+// ExternalCmakeRegistryConfig defines the configuration for a cmake registry.
+type ExternalCmakeRegistryConfig struct{}
 
 type externalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
