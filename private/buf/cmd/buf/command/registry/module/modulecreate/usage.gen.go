@@ -14,10 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-<<<<<<<< HEAD:private/buf/cmd/buf/command/registry/module/modulecreate/usage.gen.go
 package modulecreate
-========
-package oauth2
->>>>>>>> origin/osun/promote-beta-cmds:private/pkg/oauth2/usage.gen.go
 
 import _ "github.com/bufbuild/buf/private/usage"
