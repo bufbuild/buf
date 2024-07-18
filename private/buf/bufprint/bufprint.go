@@ -16,20 +16,25 @@ package bufprint
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
+	"strings"
+	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protostat"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -73,6 +78,151 @@ func (f Format) String() string {
 	}
 }
 
+// OutputEntity is an entity printed structurally by functions in bufprint package.
+//
+// An implementation of OutputEntity must also be a struct. If a field should be printed
+// in table form, add a field tag with bufprint:"<field name>[,omitempty]".
+type OutputEntity interface {
+	fullName() string
+	// This should return "labels" for label type, "commits" for commit type etc.
+	pluralEntityName() string
+}
+
+// Print prints entities' names.
+//
+// If format is FormatJSON, this also prints information about each entity, the
+// same as calling PrintInfo on each entity.
+func Print[T OutputEntity](writer io.Writer, format Format, entities ...T) error {
+	switch format {
+	case FormatJSON:
+		for _, entity := range entities {
+			if err := json.NewEncoder(writer).Encode(entity); err != nil {
+				return err
+			}
+		}
+		return nil
+	case FormatText:
+		for _, entity := range entities {
+			if _, err := fmt.Fprintln(writer, entity.fullName()); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		return syserror.Newf("unknown format: %s", format)
+	}
+}
+
+// PrintPage prints a page of entities.
+func PrintPage(
+	writer io.Writer,
+	format Format,
+	nextPageToken string,
+	nextPageCommand string,
+	entities []OutputEntity,
+) error {
+	if len(entities) == 0 {
+		return nil
+	}
+	switch format {
+	case FormatText:
+		if err := Print(writer, format, entities...); err != nil {
+			return err
+		}
+		if nextPageToken == "" {
+			return nil
+		}
+		_, err := fmt.Fprintf(
+			writer,
+			"\nMore than %d commits found, run %q to list more\n",
+			len(entities),
+			nextPageCommand,
+		)
+		return err
+	case FormatJSON:
+		return json.NewEncoder(writer).Encode(&entityPage{
+			NextPage:         nextPageToken,
+			Entities:         entities,
+			pluralEntityName: entities[0].pluralEntityName(),
+		})
+	default:
+		return syserror.Newf("unknown format: %v", format)
+	}
+}
+
+// Print prints an entity's information.
+//
+// If format is FormatText, this prints the information in a table.
+// If format is FormatJSON, this prints the information as a JSON object.
+func PrintInfo(writer io.Writer, format Format, entity OutputEntity) error {
+	switch format {
+	case FormatJSON:
+		return json.NewEncoder(writer).Encode(entity)
+	case FormatText:
+		fieldNames, fieldValues, err := getFieldNamesAndValuesForInfo(entity)
+		if err != nil {
+			return err
+		}
+		return WithTabWriter(
+			writer,
+			fieldNames,
+			func(tabWriter TabWriter) error {
+				return tabWriter.Write(fieldValues...)
+			},
+		)
+	default:
+		return syserror.Newf("unknown format: %s", format)
+	}
+}
+
+// NewLabel returns a new label to print.
+func NewLabel(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) OutputEntity {
+	var archiveTime *time.Time
+	if label.ArchiveTime != nil {
+		timeValue := label.ArchiveTime.AsTime()
+		archiveTime = &timeValue
+	}
+	return outputLabel{
+		Name:           label.Name,
+		Commit:         label.CommitId,
+		CreateTime:     label.CreateTime.AsTime(),
+		ArchiveTime:    archiveTime,
+		moduleFullName: moduleFullName,
+	}
+}
+
+// NewCommit returns a new commit to print.
+func NewCommit(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName) OutputEntity {
+	return outputCommit{
+		Commit:         commit.Id,
+		CreateTime:     commit.CreateTime.AsTime(),
+		moduleFullName: moduleFullName,
+	}
+}
+
+// NewModule returns a new module to print.
+func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) OutputEntity {
+	return outputModule{
+		ID:         module.Id,
+		Remote:     moduleFullName.Registry(),
+		Owner:      moduleFullName.Owner(),
+		Name:       moduleFullName.Name(),
+		FullName:   moduleFullName.String(),
+		CreateTime: module.CreateTime.AsTime(),
+	}
+}
+
+// NewOrganization returns a new organization to print.
+func NewOrganization(organization *ownerv1.Organization, remote string) OutputEntity {
+	return outputOrganization{
+		ID:         organization.Id,
+		Remote:     remote,
+		Name:       organization.Name,
+		FullName:   fmt.Sprintf("%s/%s", remote, organization.Name),
+		CreateTime: organization.CreateTime.AsTime(),
+	}
+}
+
 // CuratedPluginPrinter is a printer for curated plugins.
 type CuratedPluginPrinter interface {
 	PrintCuratedPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.CuratedPlugin) error
@@ -82,57 +232,6 @@ type CuratedPluginPrinter interface {
 // NewCuratedPluginPrinter returns a new CuratedPluginPrinter.
 func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
 	return newCuratedPluginPrinter(writer)
-}
-
-// OrganizationPrinter is an organization printer.
-type OrganizationPrinter interface {
-	PrintOrganizationInfo(ctx context.Context, format Format, organization *ownerv1.Organization) error
-}
-
-// NewOrganizationPrinter returns a new OrganizationPrinter.
-func NewOrganizationPrinter(address string, writer io.Writer) OrganizationPrinter {
-	return newOrganizationPrinter(address, writer)
-}
-
-// ModulePrinter is a module printer.
-type ModulePrinter interface {
-	PrintModuleInfo(ctx context.Context, format Format, repository *modulev1.Module) error
-}
-
-// NewModulePrinter returns a new ModulePrinter.
-func NewModulePrinter(
-	clientConfig *connectclient.Config,
-	address string,
-	writer io.Writer,
-) ModulePrinter {
-	return newModulePrinter(clientConfig, address, writer)
-}
-
-// LabelPrinter is a repository label printer.
-type LabelPrinter interface {
-	// PrintLabels prints each label on a new line.
-	PrintLabels(ctx context.Context, format Format, label ...*modulev1.Label) error
-	// PrintLabels prints information about a label.
-	PrintLabelInfo(ctx context.Context, format Format, label *modulev1.Label) error
-	// PrintLabelPage prints a page of labels.
-	PrintLabelPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, labels []*modulev1.Label) error
-}
-
-// NewLabelPrinter returns a new RepositoryLabelPrinter.
-func NewLabelPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) LabelPrinter {
-	return newLabelPrinter(writer, moduleFullName)
-}
-
-// CommitPrinter is a commit printer.
-type CommitPrinter interface {
-	PrintCommitInfo(ctx context.Context, format Format, commit *modulev1.Commit) error
-	PrintCommits(ctx context.Context, format Format, commits ...*modulev1.Commit) error
-	PrintCommitPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, commits []*modulev1.Commit) error
-}
-
-// NewCommitPrinter returns a new RepositoryCommitPrinter.
-func NewCommitPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) CommitPrinter {
-	return newCommitPrinter(writer, moduleFullName)
 }
 
 // TokenPrinter is a token printer.
@@ -197,4 +296,150 @@ func printProtoMessageJSON(writer io.Writer, message proto.Message) error {
 	}
 	_, err = writer.Write(append(data, []byte("\n")...))
 	return err
+}
+
+func getFieldNamesAndValuesForInfo(entity any) ([]string, []string, error) {
+	reflectType := reflect.TypeOf(entity)
+	if reflectType.Kind() != reflect.Struct {
+		return nil, nil, syserror.Newf("%T is not a struct", entity)
+	}
+	numField := reflectType.NumField()
+	reflectValue := reflect.ValueOf(entity)
+	var fieldNames []string
+	var fieldValues []string
+	for i := 0; i < numField; i++ {
+		field := reflectType.Field(i)
+		bufprintTag, ok := field.Tag.Lookup("bufprint")
+		if !ok {
+			continue
+		}
+		var fieldName string
+		var omitEmpty bool
+		parts := strings.SplitN(bufprintTag, ",", 2)
+		switch len(parts) {
+		case 1:
+			fieldName = parts[0]
+		case 2:
+			fieldName = parts[0]
+			if parts[1] != "omitempty" {
+				return nil, nil, syserror.Newf("unknown bufprint tag value: %s", parts[1])
+			}
+			omitEmpty = true
+		default:
+			return nil, nil, syserror.Newf("unexpected number of parts in bufprint tag: %s", bufprintTag)
+		}
+		value := reflectValue.Field(i)
+		switch t := value.Interface().(type) {
+		case string:
+			if omitEmpty && t == "" {
+				continue
+			}
+			fieldValues = append(fieldValues, t)
+		case *time.Time:
+			if omitEmpty && t == nil {
+				continue
+			}
+			var value string
+			if t != nil {
+				value = t.Format(time.RFC3339)
+			}
+			fieldValues = append(fieldValues, value)
+		case time.Time:
+			if omitEmpty && (t.Equal(time.Time{}) || t.Equal((&timestamppb.Timestamp{}).AsTime())) {
+				continue
+			}
+			fieldValues = append(fieldValues, t.Format(time.RFC3339))
+		default:
+			return nil, nil, syserror.Newf("unexpected data type: %T", t)
+		}
+		fieldNames = append(fieldNames, fieldName)
+	}
+	return fieldNames, fieldValues, nil
+}
+
+type entityPage struct {
+	NextPage string         `json:"next_page,omitempty"`
+	Entities []OutputEntity `json:"entities"`
+
+	pluralEntityName string
+}
+
+func (p *entityPage) MarshalJSON() ([]byte, error) {
+	value := reflect.ValueOf(*p)
+	t := value.Type()
+	fields := make([]reflect.StructField, 0)
+	for i := 0; i < t.NumField(); i++ {
+		fields = append(fields, t.Field(i))
+		if t.Field(i).Name == "Entities" {
+			fields[i].Tag = reflect.StructTag(fmt.Sprintf(`json:"%s"`, p.pluralEntityName))
+		}
+	}
+	newType := reflect.StructOf(fields)
+	newValue := value.Convert(newType)
+	return json.Marshal(newValue.Interface())
+}
+
+type outputLabel struct {
+	Name        string     `json:"name,omitempty" bufprint:"Name"`
+	Commit      string     `json:"commit,omitempty" bufprint:"Commit"`
+	CreateTime  time.Time  `json:"create_time,omitempty" bufprint:"Create Time"`
+	ArchiveTime *time.Time `json:"archive_time,omitempty" bufprint:"Archive Time,omitempty"`
+
+	moduleFullName bufmodule.ModuleFullName
+}
+
+func (l outputLabel) fullName() string {
+	return fmt.Sprintf("%s:%s", l.moduleFullName.String(), l.Name)
+}
+
+func (outputLabel) pluralEntityName() string {
+	return "labels"
+}
+
+type outputCommit struct {
+	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
+	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+
+	moduleFullName bufmodule.ModuleFullName
+}
+
+func (c outputCommit) fullName() string {
+	return fmt.Sprintf("%s:%s", c.moduleFullName.String(), c.Commit)
+}
+
+func (outputCommit) pluralEntityName() string {
+	return "commits"
+}
+
+type outputModule struct {
+	ID         string    `json:"id,omitempty"`
+	Remote     string    `json:"remote,omitempty"`
+	Owner      string    `json:"owner,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	FullName   string    `json:"-" bufprint:"Full Name"`
+	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+}
+
+func (m outputModule) fullName() string {
+	return m.FullName
+}
+
+func (outputModule) pluralEntityName() string {
+	return "modules"
+}
+
+type outputOrganization struct {
+	ID         string    `json:"id,omitempty"`
+	Remote     string    `json:"remote,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	FullName   string    `json:"-" bufprint:"Full Name"`
+	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+}
+
+func (o outputOrganization) fullName() string {
+	return o.FullName
+}
+
+func (outputOrganization) pluralEntityName() string {
+	return "organizations"
 }

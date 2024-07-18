@@ -142,5 +142,11 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.NewLabelPrinter(container.Stdout(), moduleRef.ModuleFullName()).PrintLabels(ctx, format, resp.Msg.Labels...)
+	return bufprint.Print(
+		container.Stdout(),
+		format,
+		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.OutputEntity {
+			return bufprint.NewLabel(label, moduleRef.ModuleFullName())
+		})...,
+	)
 }

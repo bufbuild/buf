@@ -114,14 +114,9 @@ func run(
 		}
 		return nil
 	}
-	if format == bufprint.FormatText {
-		if _, err := fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleOwner); err != nil {
-			return syserror.Wrap(err)
-		}
-		return nil
-	}
-	return bufprint.NewOrganizationPrinter(
-		moduleOwner.Registry(),
+	return bufprint.Print(
 		container.Stdout(),
-	).PrintOrganizationInfo(ctx, format, organizations[0])
+		format,
+		bufprint.NewOrganization(organizations[0], moduleOwner.Registry()),
+	)
 }
