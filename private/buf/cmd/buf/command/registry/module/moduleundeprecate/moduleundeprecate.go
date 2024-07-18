@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorydelete
+package moduleundeprecate
 
 import (
 	"context"
@@ -26,53 +26,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/spf13/pflag"
 )
 
-const forceFlagName = "force"
-
 // NewCommand returns a new Command
-func NewCommand(
-	name string,
-	builder appext.SubCommandBuilder,
-) *appcmd.Command {
-	flags := newFlags()
+func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Delete a BSR repository",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Undeprecate a BSR module",
 		Args:  appcmd.ExactArgs(1),
-		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appext.Container) error {
-				return run(ctx, container, flags)
-			},
-		),
-		BindFlags: flags.Bind,
+		Run:   builder.NewRunFunc(run),
 	}
 }
 
-type flags struct {
-	Force bool
-}
-
-func newFlags() *flags {
-	return &flags{}
-}
-
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(
-		&f.Force,
-		forceFlagName,
-		false,
-		"Force deletion without confirming. Use with caution",
-	)
-}
-
-func run(
-	ctx context.Context,
-	container appext.Container,
-	flags *flags,
-) error {
-	bufcli.WarnBetaCommand(ctx, container)
+func run(ctx context.Context, container appext.Container) error {
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -81,35 +47,34 @@ func run(
 	if err != nil {
 		return err
 	}
-	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", moduleFullName.Name()); err != nil {
-			return err
-		}
-	}
-	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
-	if _, err := moduleServiceClient.DeleteModules(
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	moduleServiceClient := clientProvider.V1ModuleServiceClient(moduleFullName.Registry())
+	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
-		connect.NewRequest(
-			&modulev1.DeleteModulesRequest{
-				ModuleRefs: []*modulev1.ModuleRef{
+		&connect.Request[modulev1.UpdateModulesRequest]{
+			Msg: &modulev1.UpdateModulesRequest{
+				Values: []*modulev1.UpdateModulesRequest_Value{
 					{
-						Value: &modulev1.ModuleRef_Name_{
-							Name: &modulev1.ModuleRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
+						ModuleRef: &modulev1.ModuleRef{
+							Value: &modulev1.ModuleRef_Name_{
+								Name: &modulev1.ModuleRef_Name{
+									Owner:  moduleFullName.Owner(),
+									Module: moduleFullName.Name(),
+								},
 							},
 						},
+						State: modulev1.ModuleState_MODULE_STATE_ACTIVE.Enum(),
 					},
 				},
 			},
-		),
+		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module undeprecated."); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil

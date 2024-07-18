@@ -31,18 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -77,6 +67,16 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelunarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduledelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduledeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleundeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -198,6 +198,28 @@ func NewRootCommand(name string) *appcmd.Command {
 							labelunarchive.NewCommand("unarchive", builder),
 						},
 					},
+					{
+						Use:   "organization",
+						Short: "Manage organizations",
+						SubCommands: []*appcmd.Command{
+							organizationcreate.NewCommand("create", builder),
+							organizationdelete.NewCommand("delete", builder),
+							organizationinfo.NewCommand("info", builder),
+							organizationupdate.NewCommand("update", builder),
+						},
+					},
+					{
+						Use:   "module",
+						Short: "Manage BSR modules",
+						SubCommands: []*appcmd.Command{
+							modulecreate.NewCommand("create", builder),
+							moduleinfo.NewCommand("info", builder),
+							moduledelete.NewCommand("delete", builder),
+							moduledeprecate.NewCommand("deprecate", builder),
+							moduleundeprecate.NewCommand("undeprecate", builder),
+							moduleupdate.NewCommand("update", builder),
+						},
+					},
 				},
 			},
 			{
@@ -211,29 +233,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
-
-							{
-								Use:   "organization",
-								Short: "Manage organizations",
-								SubCommands: []*appcmd.Command{
-									organizationcreate.NewCommand("create", builder),
-									organizationget.NewCommand("get", builder),
-									organizationdelete.NewCommand("delete", builder),
-								},
-							},
-							{
-								Use:   "repository",
-								Short: "Manage repositories",
-								SubCommands: []*appcmd.Command{
-									repositorycreate.NewCommand("create", builder),
-									repositoryget.NewCommand("get", builder),
-									repositorylist.NewCommand("list", builder),
-									repositorydelete.NewCommand("delete", builder),
-									repositorydeprecate.NewCommand("deprecate", builder),
-									repositoryundeprecate.NewCommand("undeprecate", builder),
-									repositoryupdate.NewCommand("update", builder),
-								},
-							},
 							{
 								Use:   "webhook",
 								Short: "Manage webhooks for a repository on the Buf Schema Registry",

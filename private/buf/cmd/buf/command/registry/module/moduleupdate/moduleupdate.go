@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositoryupdate
+package moduleupdate
 
 import (
 	"context"
@@ -30,15 +30,18 @@ import (
 )
 
 const (
-	visibilityFlagName = "visibility"
+	visibilityFlagName   = "visibility"
+	descriptionFlagName  = "description"
+	urlFlagName          = "url"
+	defaultLabelFlagName = "default-label-name"
 )
 
 // NewCommand returns a new Command
 func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Update BSR repository settings",
+		Use:   name + " <remote/owner/module>",
+		Short: "Update BSR module settings",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -49,9 +52,11 @@ func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	}
 }
 
-// TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
-	Visibility string
+	Visibility   string
+	Description  *string
+	URL          *string
+	DefaultLabel string
 }
 
 func newFlags() *flags {
@@ -59,7 +64,25 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName, true)
+	bufcli.BindStringPointer(
+		flagSet,
+		descriptionFlagName,
+		&f.Description,
+		"The new description for the module",
+	)
+	bufcli.BindStringPointer(
+		flagSet,
+		urlFlagName,
+		&f.URL,
+		"The new URL for the module",
+	)
+	flagSet.StringVar(
+		&f.DefaultLabel,
+		defaultLabelFlagName,
+		"",
+		"The label that commits are pushed to by default",
+	)
 }
 
 func run(
@@ -67,7 +90,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -85,6 +107,10 @@ func run(
 	if visibility == modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED {
 		visibilityUpdate = nil
 	}
+	defaultLabelUpdate := &flags.DefaultLabel
+	if flags.DefaultLabel == "" {
+		defaultLabelUpdate = nil
+	}
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
 		&connect.Request[modulev1.UpdateModulesRequest]{
@@ -99,18 +125,21 @@ func run(
 								},
 							},
 						},
-						Visibility: visibilityUpdate,
+						Description:      flags.Description,
+						Url:              flags.URL,
+						Visibility:       visibilityUpdate,
+						DefaultLabelName: defaultLabelUpdate,
 					},
 				},
 			},
 		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module Updated."); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil

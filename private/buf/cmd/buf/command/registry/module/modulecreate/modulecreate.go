@@ -12,24 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package organizationcreate
+package modulecreate
 
 import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
+const (
+	formatFlagName      = "format"
+	visibilityFlagName  = "visibility"
+	defaultLabeFlagName = "default-label-name"
+
+	defaultDefaultLabel = "main"
+)
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -38,8 +46,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/organization>",
-		Short: "Create a new BSR organization",
+		Use:   name + " <remote/owner/module>",
+		Short: "Create a BSR module",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -51,7 +59,9 @@ func NewCommand(
 }
 
 type flags struct {
-	Format string
+	Format       string
+	Visibility   string
+	DefautlLabel string
 }
 
 func newFlags() *flags {
@@ -59,11 +69,18 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName, false)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	)
+	flagSet.StringVar(
+		&f.DefautlLabel,
+		defaultLabeFlagName,
+		defaultDefaultLabel,
+		"The default label name of the module",
 	)
 }
 
@@ -72,8 +89,11 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
-	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
+	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -86,31 +106,46 @@ func run(
 	if err != nil {
 		return err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
-	resp, err := organizationServiceClient.CreateOrganizations(
+	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	resp, err := moduleServiceClient.CreateModules(
 		ctx,
 		connect.NewRequest(
-			&ownerv1.CreateOrganizationsRequest{
-				Values: []*ownerv1.CreateOrganizationsRequest_Value{
+			&modulev1.CreateModulesRequest{
+				Values: []*modulev1.CreateModulesRequest_Value{
 					{
-						Name: moduleOwner.Owner(),
+						OwnerRef: &ownerv1.OwnerRef{
+							Value: &ownerv1.OwnerRef_Name{
+								Name: moduleFullName.Owner(),
+							},
+						},
+						Name:             moduleFullName.Name(),
+						Visibility:       visibility,
+						DefaultLabelName: flags.DefautlLabel,
 					},
 				},
 			},
 		),
 	)
 	if err != nil {
-		// Not explicitly handling error with connect.AlreadyExists as it can be a user or an
-		// organization that already exists with that name.
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
+			return bufcli.NewModuleNameAlreadyExistsError(moduleFullName.String())
+		}
 		return err
 	}
-	organizations := resp.Msg.GetOrganizations()
-	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations created by server: %d", len(organizations))
+	modules := resp.Msg.Modules
+	if len(modules) != 1 {
+		return syserror.Newf("unexpected number of modules returned from server: %d", len(modules))
 	}
-	return bufprint.NewOrganizationPrinter(
-		moduleOwner.Registry(),
+	if format == bufprint.FormatText {
+		_, err = fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleFullName)
+		if err != nil {
+			return syserror.Wrap(err)
+		}
+		return nil
+	}
+	return bufprint.NewModulePrinter(
+		clientConfig,
+		moduleFullName.Registry(),
 		container.Stdout(),
-	).PrintOrganization(ctx, format, organizations[0])
+	).PrintModuleInfo(ctx, format, modules[0])
 }

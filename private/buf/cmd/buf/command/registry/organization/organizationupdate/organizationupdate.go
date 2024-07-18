@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package organizationget
+package organizationupdate
 
 import (
 	"context"
@@ -21,7 +21,6 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -29,7 +28,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
+const (
+	descriptionFlagName = "description"
+	urlFlagName         = "url"
+)
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -38,8 +40,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/organization>",
-		Short: "Get a BSR organization",
+		Use:   name + " <remote/organization>",
+		Short: "Update a BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -51,7 +53,8 @@ func NewCommand(
 }
 
 type flags struct {
-	Format string
+	url         *string
+	description *string
 }
 
 func newFlags() *flags {
@@ -59,11 +62,17 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	bufcli.BindStringPointer(
+		flagSet,
+		descriptionFlagName,
+		&f.description,
+		"The new description for the organization",
+	)
+	bufcli.BindStringPointer(
+		flagSet,
+		urlFlagName,
+		&f.url,
+		"The new URL for the organization",
 	)
 }
 
@@ -72,48 +81,41 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	format, err := bufprint.ParseFormat(flags.Format)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
 	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
-	resp, err := organizationServiceClient.GetOrganizations(
+	if _, err := organizationServiceClient.UpdateOrganizations(
 		ctx,
 		connect.NewRequest(
-			&ownerv1.GetOrganizationsRequest{
-				OrganizationRefs: []*ownerv1.OrganizationRef{
+			&ownerv1.UpdateOrganizationsRequest{
+				Values: []*ownerv1.UpdateOrganizationsRequest_Value{
 					{
-						Value: &ownerv1.OrganizationRef_Name{
-							Name: moduleOwner.Owner(),
+						OrganizationRef: &ownerv1.OrganizationRef{
+							Value: &ownerv1.OrganizationRef_Name{
+								Name: moduleOwner.Owner(),
+							},
 						},
+						Description: flags.description,
+						Url:         flags.url,
 					},
 				},
 			},
 		),
-	)
-	if err != nil {
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewOrganizationNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	organizations := resp.Msg.GetOrganizations()
-	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations returned from server: %d", len(organizations))
+	if _, err := fmt.Fprintln(container.Stdout(), "Organization updated."); err != nil {
+		return syserror.Wrap(err)
 	}
-	return bufprint.NewOrganizationPrinter(
-		moduleOwner.Registry(),
-		container.Stdout(),
-	).PrintOrganization(ctx, format, organizations[0])
+	return nil
 }
