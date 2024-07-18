@@ -24,6 +24,11 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 )
 
+const (
+	organizationFullNameHeader   = "Full Name"
+	organizationCreateTimeHeader = "Create Time"
+)
+
 type organizationPrinter struct {
 	address string
 	writer  io.Writer
@@ -77,8 +82,8 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Full Name",
-			"Create Time",
+			organizationFullNameHeader,
+			organizationCreateTimeHeader,
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputOrganization := range outputOrganizations {

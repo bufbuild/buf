@@ -26,6 +26,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
+const (
+	labelNameHeader       = "Name"
+	labelCommitHeader     = "Commit"
+	labelCreateTimeHeader = "Create Time"
+)
+
 type labelPrinter struct {
 	writer         io.Writer
 	moduleFullName bufmodule.ModuleFullName
@@ -122,9 +128,9 @@ func (p *labelPrinter) printRepositoryLabelsTable(outputRepositoryLabels []outpu
 		return WithTabWriter(
 			p.writer,
 			[]string{
-				"Name",
-				"Commit",
-				"Create Time",
+				labelNameHeader,
+				labelCommitHeader,
+				labelCreateTimeHeader,
 			},
 			func(tabWriter TabWriter) error {
 				for _, outputRepositoryLabel := range outputRepositoryLabels {

@@ -25,6 +25,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
+const (
+	commitIDHeader         = "Commit"
+	commitCreateTimeHeader = "Create Time"
+)
+
 type commitPrinter struct {
 	writer         io.Writer
 	moduleFullName bufmodule.ModuleFullName
@@ -115,8 +120,8 @@ func (p *commitPrinter) printCommitsInfo(outputCommits []outputCommit) error {
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Commit",
-			"Create Time", // TODO: this should be a constant
+			commitIDHeader,
+			commitCreateTimeHeader,
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputCommit := range outputCommits {
