@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package organizationget
+package organizationinfo
 
 import (
 	"context"
@@ -38,8 +38,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/organization>",
-		Short: "Get a BSR organization",
+		Use:   name + " <remote/organization>",
+		Short: "Show information about a BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -72,7 +72,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -110,7 +109,7 @@ func run(
 	}
 	organizations := resp.Msg.GetOrganizations()
 	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations returned from server: %d", len(organizations))
+		return syserror.Newf("unexpected number of organizations returned from server: %d", len(organizations))
 	}
 	return bufprint.NewOrganizationPrinter(
 		moduleOwner.Registry(),

@@ -173,6 +173,43 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	)
 }
 
+// Binds a string pointer flag, which indicates flag presence, i.e. `--flag ""` is not the same as not passing the flag.
+//
+// This is useful for buf registry organization/module update, where we only modify the fields specified.
+//
+// Value must not be nil.
+func BindStringPointer(flagSet *pflag.FlagSet, name string, value **string, usage string) {
+	flagSet.Var(
+		&stringPointerValue{
+			valuePointer: value,
+		},
+		name,
+		usage,
+	)
+}
+
+// Implements pflag.Value.
+type stringPointerValue struct {
+	// This must not be nil at construction time.
+	valuePointer **string
+}
+
+func (b *stringPointerValue) Type() string {
+	return "string"
+}
+
+func (b *stringPointerValue) String() string {
+	if *b.valuePointer == nil {
+		return ""
+	}
+	return **b.valuePointer
+}
+
+func (b *stringPointerValue) Set(value string) error {
+	*b.valuePointer = &value
+	return nil
+}
+
 // GetInputLong gets the long command description for an input-based command.
 func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(

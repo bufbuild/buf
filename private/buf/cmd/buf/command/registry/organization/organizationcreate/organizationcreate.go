@@ -38,7 +38,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/organization>",
+		Use:   name + " <remote/organization>",
 		Short: "Create a new BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -72,7 +72,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
@@ -107,7 +106,13 @@ func run(
 	}
 	organizations := resp.Msg.GetOrganizations()
 	if len(organizations) != 1 {
-		return syserror.Newf("unexpected nubmer of organizations created by server: %d", len(organizations))
+		return syserror.Newf("unexpected number of organizations created by server: %d", len(organizations))
+	}
+	if format == bufprint.FormatText {
+		if _, err := fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleOwner); err != nil {
+			return syserror.Wrap(err)
+		}
+		return nil
 	}
 	return bufprint.NewOrganizationPrinter(
 		moduleOwner.Registry(),
