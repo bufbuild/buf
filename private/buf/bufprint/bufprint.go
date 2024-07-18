@@ -95,7 +95,7 @@ func NewOrganizationPrinter(address string, writer io.Writer) OrganizationPrinte
 
 // ModulePrinter is a module printer.
 type ModulePrinter interface {
-	PrintModule(ctx context.Context, format Format, repository *modulev1.Module) error
+	PrintModuleInfo(ctx context.Context, format Format, repository *modulev1.Module) error
 }
 
 // NewModulePrinter returns a new ModulePrinter.

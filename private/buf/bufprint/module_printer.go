@@ -48,7 +48,7 @@ func newModulePrinter(
 	}
 }
 
-func (p *modulePrinter) PrintModule(ctx context.Context, format Format, message *modulev1.Module) error {
+func (p *modulePrinter) PrintModuleInfo(ctx context.Context, format Format, message *modulev1.Module) error {
 	outputModules, err := p.modulesToOutputModules(ctx, message)
 	if err != nil {
 		return err
@@ -58,7 +58,24 @@ func (p *modulePrinter) PrintModule(ctx context.Context, format Format, message 
 	}
 	switch format {
 	case FormatText:
-		return p.printModuleInfo(outputModules)
+		return WithTabWriter(
+			p.writer,
+			[]string{
+				"Full Name",
+				"Create Time",
+			},
+			func(tabWriter TabWriter) error {
+				for _, outputModule := range outputModules {
+					if err := tabWriter.Write(
+						outputModule.Remote+"/"+outputModule.Owner+"/"+outputModule.Name,
+						outputModule.CreateTime.Format(time.RFC3339),
+					); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		)
 	case FormatJSON:
 		return json.NewEncoder(p.writer).Encode(outputModules[0])
 	default:
@@ -112,27 +129,6 @@ func (p *modulePrinter) modulesToOutputModules(ctx context.Context, modules ...*
 		}
 	}
 	return outputModules, nil
-}
-
-func (p *modulePrinter) printModuleInfo(outputModules []outputModule) error {
-	return WithTabWriter(
-		p.writer,
-		[]string{
-			"Full Name",
-			"Create Time",
-		},
-		func(tabWriter TabWriter) error {
-			for _, outputModule := range outputModules {
-				if err := tabWriter.Write(
-					outputModule.Remote+"/"+outputModule.Owner+"/"+outputModule.Name,
-					outputModule.CreateTime.Format(time.RFC3339),
-				); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	)
 }
 
 type outputModule struct {

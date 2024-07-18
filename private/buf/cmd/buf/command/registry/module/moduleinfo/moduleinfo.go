@@ -118,5 +118,5 @@ func run(
 		clientConfig,
 		moduleFullName.Registry(),
 		container.Stdout(),
-	).PrintModule(ctx, format, modules[0])
+	).PrintModuleInfo(ctx, format, modules[0])
 }
