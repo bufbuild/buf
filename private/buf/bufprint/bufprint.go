@@ -86,7 +86,7 @@ func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
 
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
-	PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error
+	PrintOrganizationInfo(ctx context.Context, format Format, organization *ownerv1.Organization) error
 }
 
 // NewOrganizationPrinter returns a new OrganizationPrinter.
@@ -94,19 +94,18 @@ func NewOrganizationPrinter(address string, writer io.Writer) OrganizationPrinte
 	return newOrganizationPrinter(address, writer)
 }
 
-// RepositoryPrinter is a repository printer.
-type RepositoryPrinter interface {
-	PrintRepository(ctx context.Context, format Format, repository *modulev1.Module) error
-	PrintRepositories(ctx context.Context, format Format, nextPageToken string, repositories ...*modulev1.Module) error
+// ModulePrinter is a module printer.
+type ModulePrinter interface {
+	PrintModuleInfo(ctx context.Context, format Format, repository *modulev1.Module) error
 }
 
-// NewRepositoryPrinter returns a new RepositoryPrinter.
-func NewRepositoryPrinter(
+// NewModulePrinter returns a new ModulePrinter.
+func NewModulePrinter(
 	clientConfig *connectclient.Config,
 	address string,
 	writer io.Writer,
-) RepositoryPrinter {
-	return newRepositoryPrinter(clientConfig, address, writer)
+) ModulePrinter {
+	return newModulePrinter(clientConfig, address, writer)
 }
 
 // LabelPrinter is a repository label printer.

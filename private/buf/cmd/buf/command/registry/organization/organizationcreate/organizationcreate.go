@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorylist
+package organizationcreate
 
 import (
 	"context"
 	"fmt"
 
-	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/netext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
-const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -43,8 +38,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build>",
-		Short: "List BSR repositories",
+		Use:   name + " <remote/organization>",
+		Short: "Create a new BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -56,10 +51,7 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	Format string
 }
 
 func newFlags() *flags {
@@ -67,21 +59,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
-	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
-		false,
-		`Reverse the results`,
-	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -95,10 +72,9 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
-	registryHostname := container.Arg(0)
-	if _, err := netext.ValidateHostname(registryHostname); err != nil {
-		return err
+	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -109,28 +85,43 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(registryHostname)
-	order := modulev1.ListModulesRequest_ORDER_CREATE_TIME_ASC
-	if flags.Reverse {
-		order = modulev1.ListModulesRequest_ORDER_CREATE_TIME_DESC
-	}
-	resp, err := moduleServiceClient.ListModules(
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
+	resp, err := organizationServiceClient.CreateOrganizations(
 		ctx,
-		&connect.Request[modulev1.ListModulesRequest]{
-			Msg: &modulev1.ListModulesRequest{
-				PageSize:  flags.PageSize,
-				PageToken: flags.PageToken,
-				Order:     order,
+		connect.NewRequest(
+			&ownerv1.CreateOrganizationsRequest{
+				Values: []*ownerv1.CreateOrganizationsRequest_Value{
+					{
+						Name: moduleOwner.Owner(),
+					},
+				},
 			},
-		},
+		),
 	)
 	if err != nil {
+		// Not explicitly handling error with connect.AlreadyExists as it can be a user or an
+		// organization that already exists with that name.
 		return err
 	}
-	repositories, nextPageToken := resp.Msg.Modules, resp.Msg.NextPageToken
-	return bufprint.NewRepositoryPrinter(
-		clientConfig,
-		registryHostname,
+	organizations := resp.Msg.GetOrganizations()
+	if len(organizations) != 1 {
+		return syserror.Newf("unexpected number of organizations created by server: %d", len(organizations))
+	}
+	if format == bufprint.FormatText {
+		if _, err := fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleOwner); err != nil {
+			return syserror.Wrap(err)
+		}
+		return nil
+	}
+	if format == bufprint.FormatText {
+		if _, err := fmt.Fprintf(container.Stdout(), "Created %s.\n", moduleOwner); err != nil {
+			return syserror.Wrap(err)
+		}
+		return nil
+	}
+	return bufprint.NewOrganizationPrinter(
+		moduleOwner.Registry(),
 		container.Stdout(),
-	).PrintRepositories(ctx, format, nextPageToken, repositories...)
+	).PrintOrganizationInfo(ctx, format, organizations[0])
 }

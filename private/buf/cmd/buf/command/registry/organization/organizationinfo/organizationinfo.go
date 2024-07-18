@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorycreate
+package organizationinfo
 
 import (
 	"context"
 	"fmt"
 
-	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
-const (
-	formatFlagName     = "format"
-	visibilityFlagName = "visibility"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -43,8 +38,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Create a BSR repository",
+		Use:   name + " <remote/organization>",
+		Short: "Show information about a BSR organization",
 		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -56,8 +51,7 @@ func NewCommand(
 }
 
 type flags struct {
-	Format     string
-	Visibility string
+	Format string
 }
 
 func newFlags() *flags {
@@ -65,8 +59,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -80,12 +72,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
-	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	visibility, err := bufcli.VisibilityFlagToVisibility(flags.Visibility)
+	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -98,38 +85,34 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
-	resp, err := moduleServiceClient.CreateModules(
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
+	resp, err := organizationServiceClient.GetOrganizations(
 		ctx,
 		connect.NewRequest(
-			&modulev1.CreateModulesRequest{
-				Values: []*modulev1.CreateModulesRequest_Value{
+			&ownerv1.GetOrganizationsRequest{
+				OrganizationRefs: []*ownerv1.OrganizationRef{
 					{
-						OwnerRef: &ownerv1.OwnerRef{
-							Value: &ownerv1.OwnerRef_Name{
-								Name: moduleFullName.Owner(),
-							},
+						Value: &ownerv1.OrganizationRef_Name{
+							Name: moduleOwner.Owner(),
 						},
-						Name:       moduleFullName.Name(),
-						Visibility: visibility,
 					},
 				},
 			},
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			return bufcli.NewRepositoryNameAlreadyExistsError(moduleFullName.String())
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewOrganizationNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	repositories := resp.Msg.Modules
-	if len(repositories) != 1 {
-		return syserror.Newf("unexpected nubmer of repositories returned from server: %d", len(repositories))
+	organizations := resp.Msg.GetOrganizations()
+	if len(organizations) != 1 {
+		return syserror.Newf("unexpected number of organizations returned from server: %d", len(organizations))
 	}
-	return bufprint.NewRepositoryPrinter(
-		clientConfig,
-		moduleFullName.Registry(),
+	return bufprint.NewOrganizationPrinter(
+		moduleOwner.Registry(),
 		container.Stdout(),
-	).PrintRepository(ctx, format, repositories[0])
+	).PrintOrganizationInfo(ctx, format, organizations[0])
 }
