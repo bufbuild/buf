@@ -31,8 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
@@ -61,6 +59,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitaddlabel"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitresolve"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labellist"
@@ -170,6 +172,16 @@ func NewRootCommand(name string) *appcmd.Command {
 					registrylogout.NewCommand("logout", builder),
 					registrycc.NewCommand("cc", builder, ``, false),
 					{
+						Use:   "commit",
+						Short: "Manage a repository's commits",
+						SubCommands: []*appcmd.Command{
+							commitaddlabel.NewCommand("add-label", builder),
+							commitinfo.NewCommand("info", builder),
+							commitlist.NewCommand("list", builder),
+							commitresolve.NewCommand("resolve", builder),
+						},
+					},
+					{
 						Use:   "sdk",
 						Short: "Manage Generated SDKs",
 						SubCommands: []*appcmd.Command{
@@ -221,14 +233,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
-							{
-								Use:   "commit",
-								Short: "Manage a repository's commits",
-								SubCommands: []*appcmd.Command{
-									commitget.NewCommand("get", builder),
-									commitlist.NewCommand("list", builder),
-								},
-							},
 							{
 								Use:   "webhook",
 								Short: "Manage webhooks for a repository on the Buf Schema Registry",
