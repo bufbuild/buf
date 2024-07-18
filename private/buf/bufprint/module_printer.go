@@ -30,6 +30,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+const (
+	moduleFullNameHeader   = "Full Name"
+	moduleCreateTimeHeader = "Create Time"
+)
+
 type modulePrinter struct {
 	clientConfig *connectclient.Config
 	address      string
@@ -61,8 +66,8 @@ func (p *modulePrinter) PrintModuleInfo(ctx context.Context, format Format, mess
 		return WithTabWriter(
 			p.writer,
 			[]string{
-				"Full Name",
-				"Create Time",
+				moduleFullNameHeader,
+				moduleCreateTimeHeader,
 			},
 			func(tabWriter TabWriter) error {
 				for _, outputModule := range outputModules {
