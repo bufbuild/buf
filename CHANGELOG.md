@@ -7,6 +7,8 @@
   to call `rm -rf`.
 - Add `clean_plugin_outs` as a top-level option in `buf.gen.yaml`. If set to true, this will delete the directories,
   jar files, or zip files set to `out` for each plugin.
+- Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
+  required to log in.
 
 ## [v1.34.0] - 2024-06-21
 
