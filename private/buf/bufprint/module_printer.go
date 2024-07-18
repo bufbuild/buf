@@ -30,65 +30,67 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-type repositoryPrinter struct {
+const (
+	moduleFullNameHeader   = "Full Name"
+	moduleCreateTimeHeader = "Create Time"
+)
+
+type modulePrinter struct {
 	clientConfig *connectclient.Config
 	address      string
 	writer       io.Writer
 }
 
-func newRepositoryPrinter(
+func newModulePrinter(
 	clientConfig *connectclient.Config,
 	address string,
 	writer io.Writer,
-) *repositoryPrinter {
-	return &repositoryPrinter{
+) *modulePrinter {
+	return &modulePrinter{
 		clientConfig: clientConfig,
 		address:      address,
 		writer:       writer,
 	}
 }
 
-func (p *repositoryPrinter) PrintRepository(ctx context.Context, format Format, message *modulev1.Module) error {
-	outputRepositories, err := p.registryRepositoriesToOutRepositories(ctx, message)
+func (p *modulePrinter) PrintModuleInfo(ctx context.Context, format Format, message *modulev1.Module) error {
+	outputModules, err := p.modulesToOutputModules(ctx, message)
 	if err != nil {
 		return err
 	}
-	if len(outputRepositories) != 1 {
-		return fmt.Errorf("error converting repositories: expected 1 got %d", len(outputRepositories))
+	if len(outputModules) != 1 {
+		return fmt.Errorf("error converting modules: expected 1 got %d", len(outputModules))
 	}
 	switch format {
 	case FormatText:
-		return p.printRepositoriesText(outputRepositories)
+		return WithTabWriter(
+			p.writer,
+			[]string{
+				moduleFullNameHeader,
+				moduleCreateTimeHeader,
+			},
+			func(tabWriter TabWriter) error {
+				for _, outputModule := range outputModules {
+					if err := tabWriter.Write(
+						outputModule.Remote+"/"+outputModule.Owner+"/"+outputModule.Name,
+						outputModule.CreateTime.Format(time.RFC3339),
+					); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		)
 	case FormatJSON:
-		return json.NewEncoder(p.writer).Encode(outputRepositories[0])
+		return json.NewEncoder(p.writer).Encode(outputModules[0])
 	default:
 		return fmt.Errorf("unknown format: %v", format)
 	}
 }
 
-func (p *repositoryPrinter) PrintRepositories(ctx context.Context, format Format, nextPageToken string, messages ...*modulev1.Module) error {
-	if len(messages) == 0 {
-		return nil
-	}
-	outputRepositories, err := p.registryRepositoriesToOutRepositories(ctx, messages...)
-	if err != nil {
-		return err
-	}
-	switch format {
-	case FormatText:
-		return p.printRepositoriesText(outputRepositories)
-	case FormatJSON:
-		return json.NewEncoder(p.writer).Encode(paginationWrapper{
-			NextPage: nextPageToken,
-			Results:  outputRepositories,
-		})
-	default:
-		return fmt.Errorf("unknown format: %v", format)
-	}
-}
-
-func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Context, messages ...*modulev1.Module) ([]outputRepository, error) {
-	ownerRefs := slicesext.Map(messages, func(module *modulev1.Module) *ownerv1.OwnerRef {
+// Leaving this in the plural form in case we want `buf registry module list`.
+func (p *modulePrinter) modulesToOutputModules(ctx context.Context, modules ...*modulev1.Module) ([]outputModule, error) {
+	ownerRefs := slicesext.Map(modules, func(module *modulev1.Module) *ownerv1.OwnerRef {
 		return &ownerv1.OwnerRef{
 			Value: &ownerv1.OwnerRef_Id{
 				Id: module.OwnerId,
@@ -108,11 +110,11 @@ func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Co
 		return nil, err
 	}
 	owners := resp.Msg.GetOwners()
-	if len(owners) != len(messages) {
-		return nil, syserror.Newf("expected %d owners from response, got %d", len(messages), len(owners))
+	if len(owners) != len(modules) {
+		return nil, syserror.Newf("expected %d owners from response, got %d", len(modules), len(owners))
 	}
-	outputRepositories := make([]outputRepository, len(messages))
-	for i, module := range messages {
+	outputModules := make([]outputModule, len(modules))
+	for i, module := range modules {
 		var ownerName string
 		owner := owners[i]
 		switch {
@@ -121,9 +123,9 @@ func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Co
 		case owner.GetOrganization() != nil:
 			ownerName = owner.GetOrganization().Name
 		default:
-			return nil, syserror.Newf("owner with id %s is neither a user nor an organization", messages[i].GetOwnerId())
+			return nil, syserror.Newf("owner with id %s is neither a user nor an organization", modules[i].GetOwnerId())
 		}
-		outputRepositories[i] = outputRepository{
+		outputModules[i] = outputModule{
 			ID:         module.GetId(),
 			Remote:     p.address,
 			Owner:      ownerName,
@@ -131,31 +133,10 @@ func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Co
 			CreateTime: module.GetCreateTime().AsTime(),
 		}
 	}
-	return outputRepositories, nil
+	return outputModules, nil
 }
 
-func (p *repositoryPrinter) printRepositoriesText(outputRepositories []outputRepository) error {
-	return WithTabWriter(
-		p.writer,
-		[]string{
-			"Full Name",
-			"Create Time",
-		},
-		func(tabWriter TabWriter) error {
-			for _, outputRepository := range outputRepositories {
-				if err := tabWriter.Write(
-					outputRepository.Remote+"/"+outputRepository.Owner+"/"+outputRepository.Name,
-					outputRepository.CreateTime.Format(time.RFC3339),
-				); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	)
-}
-
-type outputRepository struct {
+type outputModule struct {
 	ID         string    `json:"id,omitempty"`
 	Remote     string    `json:"remote,omitempty"`
 	Owner      string    `json:"owner,omitempty"`

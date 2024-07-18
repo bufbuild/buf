@@ -42,10 +42,10 @@ func NewOrganizationNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("an organization named %q already exists", name)
 }
 
-// NewRepositoryNameAlreadyExistsError informs the user that a repository
+// NewModuleNameAlreadyExistsError informs the user that a module
 // with that name already exists.
-func NewRepositoryNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("a repository named %q already exists", name)
+func NewModuleNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a module named %q already exists", name)
 }
 
 // NewLabelNameAlreadyExistsError informs the user that a label
@@ -66,10 +66,10 @@ func NewOrganizationOrUserNotFoundError(name string) error {
 	return fmt.Errorf(`an organization or user named %q does not exist`, name)
 }
 
-// NewRepositoryNotFoundError informs the user that a repository with
+// NewModuleNotFoundError informs the user that a module with
 // that name does not exist.
-func NewRepositoryNotFoundError(name string) error {
-	return fmt.Errorf(`a repository named %q does not exist, use "buf beta registry repository create" to create one`, name)
+func NewModuleNotFoundError(name string) error {
+	return fmt.Errorf(`a module named %q does not exist, use "buf registry module create" to create one`, name)
 }
 
 // NewModuleRefNotFoundError informs the user that a ModuleRef does not exist.
