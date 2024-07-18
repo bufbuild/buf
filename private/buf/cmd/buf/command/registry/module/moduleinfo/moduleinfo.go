@@ -112,7 +112,7 @@ func run(
 	}
 	modules := resp.Msg.Modules
 	if len(modules) != 1 {
-		return syserror.Newf("unexpected nubmer of modules returned from server: %d", len(modules))
+		return syserror.Newf("unexpected number of modules returned from server: %d", len(modules))
 	}
 	return bufprint.NewModulePrinter(
 		clientConfig,
