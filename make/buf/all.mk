@@ -61,7 +61,6 @@ include make/go/dep_minisign.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_connect_go.mk
-include make/go/dep_protoc_gen_pluginrpc_go.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
@@ -124,7 +123,7 @@ privateusage:
 
 postprepostgenerate:: privateusage
 
-bufgeneratedeps:: $(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO) $(PROTOC_GEN_PLUGINRPC_GO)
+bufgeneratedeps:: $(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango
 bufgeneratecleango:
@@ -142,7 +141,6 @@ bufgenerateclean:: \
 bufgeneratego:
 	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
-	$(BUF_BIN) generate --template data/template/buf.plugin.gen.yaml
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
