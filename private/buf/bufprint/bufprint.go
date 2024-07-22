@@ -79,20 +79,20 @@ func (f Format) String() string {
 }
 
 // OutputEntity is an entity printed structurally by functions in bufprint package.
+// It's used in "buf registry" commands where the CLI prints a page of entities, such as
+// commits, an entity's info or simply an entity's full name.
 //
 // An implementation of OutputEntity must also be a struct. If a field should be printed
 // in table form, add a field tag with bufprint:"<field name>[,omitempty]".
 type OutputEntity interface {
 	fullName() string
-	// This should return "labels" for label type, "commits" for commit type etc.
-	pluralEntityName() string
 }
 
 // Print prints entities' names.
 //
 // If format is FormatJSON, this also prints information about each entity, the
 // same as calling PrintInfo on each entity.
-func Print[T OutputEntity](writer io.Writer, format Format, entities ...T) error {
+func Print(writer io.Writer, format Format, entities ...OutputEntity) error {
 	switch format {
 	case FormatJSON:
 		for _, entity := range entities {
@@ -140,10 +140,30 @@ func PrintPage(
 		)
 		return err
 	case FormatJSON:
+		var entitiesName string
+		for _, entity := range entities {
+			var currentEntitiesName string
+			switch entity.(type) {
+			case outputLabel:
+				currentEntitiesName = "labels"
+			case outputCommit:
+				currentEntitiesName = "commits"
+			case outputModule:
+				currentEntitiesName = "modules"
+			case outputOrganization:
+				currentEntitiesName = "organizations"
+			default:
+				return syserror.Newf("unknown implementation of OutputEntity: %T", entity)
+			}
+			if currentEntitiesName != entitiesName && entitiesName != "" {
+				syserror.Newf("the page has both %s and %s", currentEntitiesName, entitiesName)
+			}
+			entitiesName = currentEntitiesName
+		}
 		return json.NewEncoder(writer).Encode(&entityPage{
 			NextPage:         nextPageToken,
 			Entities:         entities,
-			pluralEntityName: entities[0].pluralEntityName(),
+			pluralEntityName: entitiesName,
 		})
 	default:
 		return syserror.Newf("unknown format: %v", format)
@@ -288,6 +308,8 @@ func WithTabWriter(
 	return f(tabWriter)
 }
 
+// *** PRIVATE ***
+
 // printProtoMessageJSON prints the Protobuf message as JSON.
 func printProtoMessageJSON(writer io.Writer, message proto.Message) error {
 	data, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(message)
@@ -392,10 +414,6 @@ func (l outputLabel) fullName() string {
 	return fmt.Sprintf("%s:%s", l.moduleFullName.String(), l.Name)
 }
 
-func (outputLabel) pluralEntityName() string {
-	return "labels"
-}
-
 type outputCommit struct {
 	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
@@ -405,10 +423,6 @@ type outputCommit struct {
 
 func (c outputCommit) fullName() string {
 	return fmt.Sprintf("%s:%s", c.moduleFullName.String(), c.Commit)
-}
-
-func (outputCommit) pluralEntityName() string {
-	return "commits"
 }
 
 type outputModule struct {
@@ -424,10 +438,6 @@ func (m outputModule) fullName() string {
 	return m.FullName
 }
 
-func (outputModule) pluralEntityName() string {
-	return "modules"
-}
-
 type outputOrganization struct {
 	ID         string    `json:"id,omitempty"`
 	Remote     string    `json:"remote,omitempty"`
@@ -438,8 +448,4 @@ type outputOrganization struct {
 
 func (o outputOrganization) fullName() string {
 	return o.FullName
-}
-
-func (outputOrganization) pluralEntityName() string {
-	return "organizations"
 }
