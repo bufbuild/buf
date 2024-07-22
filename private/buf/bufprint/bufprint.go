@@ -156,7 +156,7 @@ func PrintPage(
 				return syserror.Newf("unknown implementation of OutputEntity: %T", entity)
 			}
 			if currentEntitiesName != entitiesName && entitiesName != "" {
-				syserror.Newf("the page has both %s and %s", currentEntitiesName, entitiesName)
+				return syserror.Newf("the page has both %s and %s", currentEntitiesName, entitiesName)
 			}
 			entitiesName = currentEntitiesName
 		}
