@@ -15,8 +15,6 @@
 package bufcurl
 
 import (
-	"sort"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -96,8 +94,5 @@ func (c *combinedResolver) ListServices() ([]protoreflect.FullName, error) {
 	for serviceName := range names {
 		serviceNames = append(serviceNames, serviceName)
 	}
-	sort.Slice(serviceNames, func(i, j int) bool {
-		return serviceNames[i] < serviceNames[j]
-	})
 	return serviceNames, nil
 }

@@ -27,6 +27,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -43,6 +44,7 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -70,6 +72,7 @@ const (
 
 	// Action flags
 	listServicesFlagName = "list-services"
+	listMethodsFlagName  = "list-methods"
 
 	// Timeout flags
 	noKeepAliveFlagName    = "no-keepalive"
@@ -211,7 +214,7 @@ type flags struct {
 	// TODO: CRLFile, CertStatus
 
 	// Actions
-	ListServices bool
+	ListServices, ListMethods bool
 
 	// Timeouts
 	NoKeepAlive           bool
@@ -402,6 +405,16 @@ to provide the RPC schema, then the given URL must be a base URL, not including 
 or method name. If the schema source is not server reflection, the URL is not used and
 may be omitted.`,
 	)
+	flagSet.BoolVar(
+		&f.ListMethods,
+		listMethodsFlagName,
+		false,
+		`When set, the command lists supported methods and then exits. If server reflection is used
+to provide the RPC schema, then the given URL must be a base URL, not including a service
+or method name. If the schema source is not server reflection, the URL is not used and
+may be omitted.`,
+	)
+
 	flagSet.StringVarP(
 		&f.UserAgent,
 		userAgentFlagName,
@@ -503,11 +516,15 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
 	}
 
-	if !hasURL && (!f.ListServices || f.Reflect) {
+	if !hasURL && ((!f.ListServices && !f.ListMethods) || f.Reflect) {
 		// If we are trying to use reflection for anything or if we are invoking an RPC (which
 		// means we aren't listing services, listing methods, or describing an element), then
 		// a URL is required.
 		return appcmd.NewInvalidArgumentError("URL positional argument is missing")
+	}
+
+	if f.ListServices && f.ListMethods {
+		return fmt.Errorf("flags --%s and --%s are mutually exclusive", listServicesFlagName, listMethodsFlagName)
 	}
 
 	if (f.Key != "" || f.Cert != "" || f.CACert != "" || f.ServerName != "" || f.flagSet.Changed(insecureFlagName)) &&
@@ -808,7 +825,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	var service, method, baseURL string
 	switch {
-	case f.ListServices:
+	case f.ListServices || f.ListMethods:
 		baseURL = urlArg
 	default:
 		service, method, baseURL, err = parseEndpointURL(urlArg)
@@ -958,14 +975,38 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	res := bufcurl.CombineResolvers(resolvers...)
 
 	switch {
-	case f.ListServices:
+	case f.ListServices || f.ListMethods:
 		serviceNames, err := res.ListServices()
 		if err != nil {
 			return err
 		}
+		sort.Slice(serviceNames, func(i, j int) bool {
+			return serviceNames[i] < serviceNames[j]
+		})
 		for _, serviceName := range serviceNames {
-			if _, err := fmt.Fprintf(container.Stdout(), "%s\n", serviceName); err != nil {
-				return err
+			if f.ListServices {
+				if _, err := fmt.Fprintf(container.Stdout(), "%s\n", serviceName); err != nil {
+					return err
+				}
+			} else {
+				serviceDescriptor, err := bufcurl.ResolveServiceDescriptor(res, string(serviceName))
+				if err != nil {
+					return err
+				}
+				methods := serviceDescriptor.Methods()
+				length := methods.Len()
+				methodNames := make([]protoreflect.Name, length)
+				for i := 0; i < length; i++ {
+					methodNames[i] = methods.Get(i).Name()
+				}
+				sort.Slice(methodNames, func(i, j int) bool {
+					return methodNames[i] < methodNames[j]
+				})
+				for _, methodName := range methodNames {
+					if _, err := fmt.Fprintf(container.Stdout(), "%s/%s\n", serviceName, methodName); err != nil {
+						return err
+					}
+				}
 			}
 		}
 		return nil
