@@ -7,6 +7,8 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
+- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
+  of branch names, tag names, and commit hashes.
 
 ## [v1.34.0] - 2024-06-21
 
