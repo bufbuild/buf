@@ -149,7 +149,11 @@ func (c *cloner) CloneToBucket(
 		"git",
 		command.RunWithArgs(append(
 			gitConfigAuthArgs,
-			"fetch", "--depth", depthArg, "origin", fetchRef,
+			"fetch",
+			"--depth", depthArg,
+			"--update-head-ok", // This flag is required for Apple git versions.
+			"origin",
+			fetchRef,
 		)...),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
@@ -166,7 +170,11 @@ func (c *cloner) CloneToBucket(
 			"git",
 			command.RunWithArgs(append(
 				gitConfigAuthArgs,
-				"fetch", "--depth", depthArg, "origin", fallbackRef,
+				"fetch",
+				"--depth", depthArg,
+				"--update-head-ok", // This flag is required for Apple git versions.
+				"origin",
+				fallbackRef,
 			)...),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 			command.RunWithStderr(buffer),
