@@ -140,6 +140,11 @@ for os in Darwin Linux; do
   done
 done
 
+apt-get -y update
+apt-get -y autoremove
+apt-get clean
+apt-get install -y zip
+
 for os in Windows; do
   for arch in x86_64 arm64; do
     dir="${os}/${arch}/${BASE_NAME}"
