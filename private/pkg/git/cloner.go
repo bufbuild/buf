@@ -151,7 +151,7 @@ func (c *cloner) CloneToBucket(
 			gitConfigAuthArgs,
 			"fetch",
 			"--depth", depthArg,
-			"--update-head-ok", // This flag is required for Apple git versions.
+			"--update-head-ok", // Required on branches matching the current branch of git init.
 			"origin",
 			fetchRef,
 		)...),
@@ -172,7 +172,7 @@ func (c *cloner) CloneToBucket(
 				gitConfigAuthArgs,
 				"fetch",
 				"--depth", depthArg,
-				"--update-head-ok", // This flag is required for Apple git versions.
+				"--update-head-ok", // Required on branches matching the current branch of git init.
 				"origin",
 				fallbackRef,
 			)...),
