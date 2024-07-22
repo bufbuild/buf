@@ -73,8 +73,10 @@ Additional flags:
 		BindFlags:     flagsBuilder.Bind,
 		NormalizeFlag: flagsBuilder.Normalize,
 		Version: fmt.Sprintf(
-			"%v.%v.%v-buf",
-			bufprotopluginexec.DefaultVersion.GetMajor(),
+			"%v.%v-buf",
+			// DefaultVersion has an extra major version that corresponds to
+			// backwards-compatibility level of C++ runtime. The actual version
+			// of the compiler is just the minor and patch versions.
 			bufprotopluginexec.DefaultVersion.GetMinor(),
 			bufprotopluginexec.DefaultVersion.GetPatch(),
 		),

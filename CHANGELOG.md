@@ -2,8 +2,23 @@
 
 ## [Unreleased]
 
-- Fix issue where `buf generate` would succeed on missing insertion points and 
+- Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
+  plugins will write to, prior to generation. Allows cleaning of existing assets without having
+  to call `rm -rf`.
+- Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
+  required to log in.
+
+## [v1.34.0] - 2024-06-21
+
+- Add `buf config ls-modules` command to list configured modules.
+- Fix issue where `buf generate` would succeed on missing insertion points and
   panic on empty insertion point files.
+- Update `buf generate` to allow the use of Editions syntax when doing local code
+  generation by proxying to a `protoc` binary (for languages where code gen is
+  implemented inside of `protoc` instead of in a plugin: Java, C++, Python, etc).
+- Allow use of an array of strings for the `protoc_path` property of for `buf.gen.yaml`,
+  where the first array element is the actual path and other array elements are extra
+  arguments that are passed to `protoc` each time it is invoked.
 
 ## [v1.33.0] - 2024-06-13
 
@@ -1157,7 +1172,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.33.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.34.0...HEAD
+[v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0
 [v1.33.0]: https://github.com/bufbuild/buf/compare/v1.32.2...v1.33.0
 [v1.32.2]: https://github.com/bufbuild/buf/compare/v1.32.1...v1.32.2
 [v1.32.1]: https://github.com/bufbuild/buf/compare/v1.32.0...v1.32.1
