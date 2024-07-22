@@ -19,8 +19,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
+	"github.com/bufbuild/bufplugin-go/bufplugincheck"
 )
 
 func imageToProtoFiles(image bufimage.Image) []*checkv1beta1.File {
@@ -34,45 +33,25 @@ func imageFileToProtoFile(imageFile bufimage.ImageFile) *checkv1beta1.File {
 	}
 }
 
-func protoAnnotationsToFileAnnotations(
-	protoregistryFiles *protoregistry.Files,
-	protoAnnotations []*checkv1beta1.Annotation,
-) ([]bufanalysis.FileAnnotation, error) {
-	return slicesext.MapError(
-		protoAnnotations,
-		func(protoAnnotation *checkv1beta1.Annotation) (bufanalysis.FileAnnotation, error) {
-			return protoAnnotationToFileAnnotation(protoregistryFiles, protoAnnotation)
-		},
-	)
+func annotationsToFileAnnotations(annotations []bufplugincheck.Annotation) []bufanalysis.FileAnnotation {
+	return slicesext.Map(annotations, annotationToFileAnnotation)
 }
 
-func protoAnnotationToFileAnnotation(
-	protoregistryFiles *protoregistry.Files,
-	protoAnnotation *checkv1beta1.Annotation,
-) (bufanalysis.FileAnnotation, error) {
-	if protoAnnotation == nil {
-		return nil, nil
+func annotationToFileAnnotation(annotation bufplugincheck.Annotation) bufanalysis.FileAnnotation {
+	if annotation == nil {
+		return nil
 	}
 	var fileInfo *fileInfo
 	var startLine int
 	var startColumn int
 	var endLine int
 	var endColumn int
-	if location := protoAnnotation.GetLocation(); location != nil {
-		name := location.GetName()
-		fileInfo = newFileInfo(name)
-		if path := location.GetPath(); len(path) > 0 {
-			fileDescriptor, err := protoregistryFiles.FindFileByPath(name)
-			if err != nil {
-				return nil, err
-			}
-			if sourceLocation := fileDescriptor.SourceLocations().ByPath(path); !isSourceLocationEqualToZeroValue(sourceLocation) {
-				startLine = sourceLocation.StartLine + 1
-				startColumn = sourceLocation.StartColumn + 1
-				endLine = sourceLocation.EndLine + 1
-				endColumn = sourceLocation.EndColumn + 1
-			}
-		}
+	if location := annotation.Location(); location != nil {
+		fileInfo = newFileInfo(location.FileName())
+		startLine = location.StartLine() + 1
+		startColumn = location.StartColumn() + 1
+		endLine = location.EndLine() + 1
+		endColumn = location.EndColumn() + 1
 	}
 	return bufanalysis.NewFileAnnotation(
 		fileInfo,
@@ -80,22 +59,7 @@ func protoAnnotationToFileAnnotation(
 		startColumn,
 		endLine,
 		endColumn,
-		protoAnnotation.GetId(),
-		protoAnnotation.GetMessage(),
-	), nil
-}
-
-// The protoreflect API is a disaster. It says that "If there is no SourceLocation,
-// the zero value is returned", but equality is not easy because SourceLocation contains
-// slices. This is just a mess.
-func isSourceLocationEqualToZeroValue(sourceLocation protoreflect.SourceLocation) bool {
-	return len(sourceLocation.Path) == 0 &&
-		sourceLocation.StartLine == 0 &&
-		sourceLocation.StartColumn == 0 &&
-		sourceLocation.EndLine == 0 &&
-		sourceLocation.EndColumn == 0 &&
-		len(sourceLocation.LeadingDetachedComments) == 0 &&
-		sourceLocation.LeadingComments == "" &&
-		sourceLocation.TrailingComments == "" &&
-		sourceLocation.Next == 0
+		annotation.ID(),
+		annotation.Message(),
+	)
 }

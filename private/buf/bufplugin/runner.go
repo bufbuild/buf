@@ -24,21 +24,24 @@ import (
 )
 
 type runner struct {
-	delegate command.Runner
+	delegate    command.Runner
+	programName string
 }
 
 func newRunner(
 	delegate command.Runner,
+	programName string,
 ) *runner {
 	return &runner{
-		delegate: delegate,
+		delegate:    delegate,
+		programName: programName,
 	}
 }
 
-func (r *runner) Run(ctx context.Context, programName string, env pluginrpc.Env) error {
+func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 	if err := r.delegate.Run(
 		ctx,
-		programName,
+		r.programName,
 		command.RunWithArgs(env.Args...),
 		command.RunWithStdin(env.Stdin),
 		command.RunWithStdout(env.Stdout),

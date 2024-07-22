@@ -41,7 +41,6 @@ func NewCheckClient(
 ) CheckClient {
 	return newCheckClient(
 		logger,
-		newRunner(runner),
-		programName,
+		newRunner(runner, programName),
 	)
 }

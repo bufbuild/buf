@@ -5,16 +5,17 @@ go 1.21
 toolchain go1.22.5
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240706193232-1f20b352b651.2
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240626210909-c9e875a41f74.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240626210909-c9e875a41f74.2
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240722152425-8e24f402aa3b.2
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240710174705-f2077dee5ad4.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240710174705-f2077dee5ad4.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.0
-	github.com/bufbuild/pluginrpc-go v0.0.0-20240704183252-c762588190c6
+	github.com/bufbuild/bufplugin-go v0.0.0-20240722202312-9601543f0d2d
+	github.com/bufbuild/pluginrpc-go v0.0.0-20240722135336-d4e98b503b96
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
-	github.com/bufbuild/protovalidate-go v0.6.2
+	github.com/bufbuild/protovalidate-go v0.6.3
 	github.com/bufbuild/protoyaml-go v0.1.9
 	github.com/docker/docker v27.0.0+incompatible
 	github.com/go-chi/chi/v5 v5.0.14
@@ -93,7 +94,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240617180043-68d350f18fd4 // indirect
