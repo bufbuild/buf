@@ -16,9 +16,11 @@ package bufplugin
 
 import (
 	"context"
+	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/pluginrpc-go"
 	"go.uber.org/zap"
 )
 
@@ -36,11 +38,15 @@ type CheckClient interface {
 
 func NewCheckClient(
 	logger *zap.Logger,
+	stderr io.Writer,
 	runner command.Runner,
 	programName string,
 ) CheckClient {
 	return newCheckClient(
 		logger,
-		newRunner(runner, programName),
+		pluginrpc.NewClient(
+			newRunner(runner, programName),
+			pluginrpc.ClientWithStderr(stderr),
+		),
 	)
 }

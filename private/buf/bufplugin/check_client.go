@@ -31,11 +31,11 @@ type checkClient struct {
 
 func newCheckClient(
 	logger *zap.Logger,
-	runner pluginrpc.Runner,
+	pluginrpcClient pluginrpc.Client,
 ) *checkClient {
 	return &checkClient{
 		logger: logger,
-		client: bufplugincheck.NewCheckClient(runner),
+		client: bufplugincheck.NewCheckClient(pluginrpcClient),
 	}
 }
 

@@ -133,6 +133,7 @@ func run(
 	}
 	if err := bufplugin.NewCheckClient(
 		container.Logger(),
+		container.Stderr(),
 		command.NewRunner(),
 		flags.Plugin,
 	).Check(ctx, image, nil); err != nil {
