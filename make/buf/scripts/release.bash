@@ -3,6 +3,8 @@
 set -eo pipefail
 set -x
 
+RELEASE_DOCKER_FILE="make/buf/dockerfiles/Dockerfile.release"
+RELEASE_DOCKER_IMAGE="bufrelease-tag"
 DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
 
@@ -48,15 +50,13 @@ if [ -z "${INSIDE_DOCKER}" ]; then
       fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
     fi
   fi
-  if [ -z "${DOCKER_IMAGE}" ]; then
-    fail "DOCKER_IMAGE must be set"
-  fi
+  docker build -f "${RELEASE_DOCKER_FILE}" -t "${RELEASE_DOCKER_IMAGE}" .
   docker run --volume \
     "${DIR}:/app" \
     --workdir "/app" \
     --rm \
     -e INSIDE_DOCKER=1 \
-    "${DOCKER_IMAGE}" \
+    "${RELEASE_DOCKER_IMAGE}" \
     bash -x make/buf/scripts/release.bash
   if [ "$(uname -s)" == "Linux" ]; then
     sudo chown -R "$(id -u):$(id -g)" .build
