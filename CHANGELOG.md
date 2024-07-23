@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf registry organization {create, delete, info, update}` commands to manage BSR organizations. Remove `buf beta registry organization` commands.
+- Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to manage BSR modules. Remove `buf beta registry repository` commands.
+- Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels. Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
+- Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove `buf beta registry commit` commands.
 
 ## [v1.35.0] - 2024-07-22
 
@@ -11,10 +14,6 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
-- Add `buf registry organization {create, delete, info, update}` commands to manage BSR organizations. Remove `buf beta registry organization` commands.
-- Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to manage BSR modules. Remove `buf beta registry repository` commands.
-- Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels. Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
-- Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove `buf beta registry commit` commands.
 
 ## [v1.34.0] - 2024-06-21
 
