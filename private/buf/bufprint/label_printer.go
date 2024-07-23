@@ -105,7 +105,7 @@ func (p *labelPrinter) PrintLabelPage(
 		}
 		_, err := fmt.Fprintf(
 			p.writer,
-			"\nMore than %d commits found, run %q to list more\n",
+			"\nMore than %d labels found, run %q to list more\n",
 			len(labels),
 			nextPageCommand,
 		)
