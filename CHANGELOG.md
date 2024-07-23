@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
+  of branch names, tag names, and commit hashes.
 
 ## [v1.35.0] - 2024-07-22
 
