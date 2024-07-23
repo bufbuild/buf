@@ -44,6 +44,7 @@ const (
 	// we released with it, however.
 	oldBufYAMLFileName        = "buf.mod"
 	defaultBufYAMLFileVersion = FileVersionV1Beta1
+	docsLinkComment           = "# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/%s/buf-yaml"
 )
 
 var (
@@ -95,6 +96,9 @@ type BufYAMLFile interface {
 	// The ModuleRefs in this list will be unique by ModuleFullName.
 	// Sorted by ModuleFullName.
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
+	//IncludeDocsLink specifies whether a top-level comment with a link to our public docs
+	// should be included at the top of the buf.yaml file.
+	IncludeDocsLink() bool
 
 	isBufYAMLFile()
 }
@@ -106,7 +110,12 @@ func NewBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
+	options ...BufYAMLFileOption,
 ) (BufYAMLFile, error) {
+	bufYAMLFileOptions := newBufYAMLFileOptions()
+	for _, option := range options {
+		option(bufYAMLFileOptions)
+	}
 	return newBufYAMLFile(
 		fileVersion,
 		nil,
@@ -114,7 +123,20 @@ func NewBufYAMLFile(
 		nil, // Do not set top-level lint config, use only module configs
 		nil, // Do not set top-level breaking config, use only module configs
 		configuredDepModuleRefs,
+		bufYAMLFileOptions.includeDocsLink,
 	)
+}
+
+// BufYAMLFileOption is an option for a new BufYAMLFile
+type BufYAMLFileOption func(*bufYAMLFileOptions)
+
+// BufYAMLFileWithIncludeDocsLink returns a new BufYAMLFileOption that specifies including
+// a comment with a link to the public docs at the top of the buf.yaml file. The comment
+// is included when set to true.
+func BufYAMLFileWithIncludeDocsLink(includeDocsLink bool) BufYAMLFileOption {
+	return func(bufYAMLFileOptions *bufYAMLFileOptions) {
+		bufYAMLFileOptions.includeDocsLink = includeDocsLink
+	}
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
@@ -214,6 +236,7 @@ type bufYAMLFile struct {
 	topLevelLintConfig      LintConfig
 	topLevelBreakingConfig  BreakingConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
+	includeDocsLink         bool
 }
 
 func newBufYAMLFile(
@@ -223,6 +246,7 @@ func newBufYAMLFile(
 	topLevelLintConfig LintConfig,
 	topLevelBreakingConfig BreakingConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
+	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
 		return nil, fmt.Errorf("had %d ModuleConfigs passed to NewBufYAMLFile for FileVersion %v", len(moduleConfigs), fileVersion)
@@ -283,6 +307,7 @@ func newBufYAMLFile(
 		topLevelLintConfig:      topLevelLintConfig,
 		topLevelBreakingConfig:  topLevelBreakingConfig,
 		configuredDepModuleRefs: configuredDepModuleRefs,
+		includeDocsLink:         includeDocsLink,
 	}, nil
 }
 
@@ -314,9 +339,21 @@ func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
 	return slicesext.Copy(c.configuredDepModuleRefs)
 }
 
+func (c *bufYAMLFile) IncludeDocsLink() bool {
+	return c.includeDocsLink
+}
+
 func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
 func (*bufYAMLFile) isFileInfo()    {}
+
+type bufYAMLFileOptions struct {
+	includeDocsLink bool
+}
+
+func newBufYAMLFileOptions() *bufYAMLFileOptions {
+	return &bufYAMLFileOptions{}
+}
 
 func readBufYAMLFile(
 	data []byte,
@@ -389,6 +426,7 @@ func readBufYAMLFile(
 			lintConfig,
 			breakingConfig,
 			configuredDepModuleRefs,
+			false, // TODO(doria): fix round trip
 		)
 	case FileVersionV2:
 		var externalBufYAMLFile externalBufYAMLFileV2
@@ -536,6 +574,7 @@ func readBufYAMLFile(
 			topLevelLintConfig,
 			topLevelBreakingConfig,
 			configuredDepModuleRefs,
+			false, // TODO(doria): fix round trip
 		)
 	default:
 		// This is a system error since we've already parsed.
@@ -615,6 +654,15 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
 			return err
+		}
+		if bufYAMLFile.IncludeDocsLink() {
+			data = bytes.Join(
+				[][]byte{
+					[]byte(fmt.Sprintf(docsLinkComment, fileVersion.String())),
+					data,
+				},
+				[]byte("\n"),
+			)
 		}
 		_, err = writer.Write(data)
 		return err
@@ -708,6 +756,15 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
 			return err
+		}
+		if bufYAMLFile.IncludeDocsLink() {
+			data = bytes.Join(
+				[][]byte{
+					[]byte(fmt.Sprintf(docsLinkComment, fileVersion.String())),
+					data,
+				},
+				[]byte("\n"),
+			)
 		}
 		_, err = writer.Write(data)
 		return err
