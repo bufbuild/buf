@@ -168,7 +168,7 @@ func run(
 			moduleConfig,
 		},
 		nil,
-		bufconfig.BufYAMLFileWithIncludeDocsLink(true),
+		bufconfig.BufYAMLFileWithIncludeDocsLink(),
 	)
 	if err != nil {
 		return err

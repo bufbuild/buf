@@ -131,11 +131,11 @@ func NewBufYAMLFile(
 type BufYAMLFileOption func(*bufYAMLFileOptions)
 
 // BufYAMLFileWithIncludeDocsLink returns a new BufYAMLFileOption that specifies including
-// a comment with a link to the public docs at the top of the buf.yaml file. The comment
-// is included when set to true.
-func BufYAMLFileWithIncludeDocsLink(includeDocsLink bool) BufYAMLFileOption {
+// a comment with a link to the public docs for the appropriate buf.yaml version at the top
+// of the buf.yaml file.
+func BufYAMLFileWithIncludeDocsLink() BufYAMLFileOption {
 	return func(bufYAMLFileOptions *bufYAMLFileOptions) {
-		bufYAMLFileOptions.includeDocsLink = includeDocsLink
+		bufYAMLFileOptions.includeDocsLink = true
 	}
 }
 
