@@ -365,6 +365,9 @@ func readBufYAMLFile(
 	if err != nil {
 		return nil, err
 	}
+	// Check if this file has the docs link comment from "buf config init" as its first line
+	// so we can preserve the comment in our round trip.
+	includeDocsLink := bytes.HasPrefix(data, []byte(fmt.Sprintf(docsLinkComment, fileVersion.String())))
 	switch fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
 		var externalBufYAMLFile externalBufYAMLFileV1Beta1V1
@@ -426,7 +429,7 @@ func readBufYAMLFile(
 			lintConfig,
 			breakingConfig,
 			configuredDepModuleRefs,
-			false, // TODO(doria): fix round trip
+			includeDocsLink,
 		)
 	case FileVersionV2:
 		var externalBufYAMLFile externalBufYAMLFileV2
@@ -574,7 +577,7 @@ func readBufYAMLFile(
 			topLevelLintConfig,
 			topLevelBreakingConfig,
 			configuredDepModuleRefs,
-			false, // TODO(doria): fix round trip
+			includeDocsLink,
 		)
 	default:
 		// This is a system error since we've already parsed.
