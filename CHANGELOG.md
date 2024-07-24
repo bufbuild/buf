@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.35.1] - 2024-07-24
 
 - Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
@@ -1179,6 +1183,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.35.1...HEAD
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
 [v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0
