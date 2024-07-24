@@ -20,7 +20,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/filepathext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -284,12 +283,6 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 		// It's important that we detect these cases so that
 		// multi buckets don't unnecessarily fail when one of
 		// its delegates actually defines the path.
-		elements := strings.Split(normalpath.Normalize(externalPath), "/")
-		if len(elements) == 1 {
-			// The path is a single element, so there aren't
-			// any other files to check.
-			return err
-		}
 		lastParentPath := externalPath
 		parentPath := filepath.Dir(externalPath)
 		for ; parentPath != lastParentPath; lastParentPath, parentPath = parentPath, filepath.Dir(parentPath) {
