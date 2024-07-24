@@ -4,6 +4,8 @@
 
 - Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
   of branch names, tag names, and commit hashes.
+- Fix unexpected `buf build` errors with absolute path directory inputs without workspace and/or
+  module configurations (e.g. `buf.yaml`, `buf.work.yaml`) and proto file paths set to the `--path` flag.
 
 ## [v1.35.0] - 2024-07-22
 
