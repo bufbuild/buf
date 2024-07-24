@@ -4,6 +4,8 @@
 
 - Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
   of branch names, tag names, and commit hashes.
+- Fix bug to check the directory of target proto file paths in fallback logic when scanning
+  for workspace and/or module config files
 
 ## [v1.35.0] - 2024-07-22
 
