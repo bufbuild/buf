@@ -290,8 +290,10 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 			// any other files to check.
 			return err
 		}
-		for i := len(elements) - 1; i >= 0; i-- {
-			parentFileInfo, err := os.Stat(filepath.Join(elements[:i]...))
+		lastParentPath := externalPath
+		parentPath := filepath.Dir(externalPath)
+		for ; parentPath != lastParentPath; lastParentPath, parentPath = parentPath, filepath.Dir(parentPath) {
+			parentFileInfo, err := os.Stat(parentPath)
 			if err != nil {
 				continue
 			}
