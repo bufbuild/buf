@@ -101,7 +101,7 @@ var (
 	// is relative to the files cache directory for module data and is used to store lock files for
 	// synchronizing reading and writing module data from the cache.
 	//
-	// Noramlized.
+	// Normalized.
 	v3CacheModuleLockRelDirPath = "lock"
 )
 
