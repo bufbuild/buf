@@ -280,7 +280,7 @@ func (a *addedModule) ToModule(
 	//         // module-d:c1 digest
 	//         DIGEST(
 	//           README.md,
-	//           x.proto,
+	//           h.proto,
 	//         ),
 	//       ),
 	//     ),
