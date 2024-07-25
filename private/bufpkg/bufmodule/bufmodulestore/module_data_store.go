@@ -118,6 +118,10 @@ func newModuleDataStore(
 	filelocker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
+	// If no filelocker is provided, we set this to a NopLocker.
+	if filelocker == nil {
+		filelocker = filelock.NewNopLocker()
+	}
 	moduleDataStore := &moduleDataStore{
 		logger:     logger,
 		bucket:     bucket,
@@ -195,19 +199,17 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		)
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		// Only attempt to get a file lock when storing individual files
-		if p.filelocker != nil {
-			unlocker, err := p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
-			if err != nil {
-				p.logger.Debug("failed to get rlock for getModuleDataForModuleKey", zap.Error(err))
-				return nil, err
-			}
-			defer func() {
-				if err := unlocker.Unlock(); err != nil {
-					p.logger.Debug("failed to runlock for getModuleDataForModuleKey", zap.Error(err))
-					retErr = multierr.Append(retErr, err)
-				}
-			}()
+		unlocker, err := p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
+		if err != nil {
+			p.logger.Debug("failed to get rlock for getModuleDataForModuleKey", zap.Error(err))
+			return nil, err
 		}
+		defer func() {
+			if err := unlocker.Unlock(); err != nil {
+				p.logger.Debug("failed to runlock for getModuleDataForModuleKey", zap.Error(err))
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
 	}
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
@@ -325,21 +327,19 @@ func (p *moduleDataStore) putModuleData(
 		// Only attempt to get a file locks when storing individual files.
 		// Before writing to the module directory, first get a shared lock and check module.yaml
 		var readUnlocker filelock.Unlocker
-		if p.filelocker != nil {
-			readUnlocker, err = p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
-			if err != nil {
-				p.logger.Debug("failed to get rlock for putModuleData", zap.Error(err))
-				return err
-			}
-			defer func() {
-				if readUnlocker != nil {
-					if err := readUnlocker.Unlock(); err != nil {
-						p.logger.Debug("failed to runlock for putModuleData", zap.Error(err))
-						retErr = multierr.Append(retErr, err)
-					}
-				}
-			}()
+		readUnlocker, err = p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
+		if err != nil {
+			p.logger.Debug("failed to get rlock for putModuleData", zap.Error(err))
+			return err
 		}
+		defer func() {
+			if readUnlocker != nil {
+				if err := readUnlocker.Unlock(); err != nil {
+					p.logger.Debug("failed to runlock for putModuleData", zap.Error(err))
+					retErr = multierr.Append(retErr, err)
+				}
+			}
+		}()
 		data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 		p.logDebugModuleKey(
 			moduleKey,
@@ -368,19 +368,17 @@ func (p *moduleDataStore) putModuleData(
 				return err
 			}
 		}
-		if p.filelocker != nil {
-			unlocker, err := p.filelocker.Lock(ctx, dirPath+externalModuleDataLockFileExt)
-			if err != nil {
-				p.logger.Debug("failed to get lock for putModuleData", zap.Error(err))
-				return err
-			}
-			defer func() {
-				if err := unlocker.Unlock(); err != nil {
-					p.logger.Debug("failed to unlock for putModuleData", zap.Error(err))
-					retErr = multierr.Append(retErr, err)
-				}
-			}()
+		unlocker, err := p.filelocker.Lock(ctx, dirPath+externalModuleDataLockFileExt)
+		if err != nil {
+			p.logger.Debug("failed to get lock for putModuleData", zap.Error(err))
+			return err
 		}
+		defer func() {
+			if err := unlocker.Unlock(); err != nil {
+				p.logger.Debug("failed to unlock for putModuleData", zap.Error(err))
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
 		// Before we write, we check module.yaml with the exclusive lock.
 		data, err = storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 		p.logDebugModuleKey(
