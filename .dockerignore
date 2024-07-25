@@ -8,6 +8,7 @@
 cmd/buf/buf
 cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
 cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
+private/**/testdata/**/*.lock
 private/buf/buftesting/cache/
 private/buf/bufwkt/cmd/wkt-go-data/wkt-go-data
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
