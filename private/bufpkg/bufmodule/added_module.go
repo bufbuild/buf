@@ -192,25 +192,39 @@ func (a *addedModule) ToModule(
 	// module-b:c2 -> module-c:c2
 	// module-c:c1 -> module-d:c1
 	//
-	// Note that module-a depends on an earlier commit of module-b, which in turn depends on an earlier commit of
-	// module-c, but module-a overrides the commit for module-c with the latest commit. Note also that the latest commit
-	// of module-c drops the dependency on module-d.
+	// Note that module-a depends on module-b:c1, which in turn depends on module-c:c1, but module-a also depends on
+	// module-c:c2. When resolving the dependency graph, module-c:c1 is replaced with the newer module-c:c2. The commit
+	// module-c:c2 doesn't depend on module-d, so module-d:c1 is dropped. Graphically, this graph:
 	//
-	// The unreduced graph of dependencies for module-a looks like:
+	//   +-------------+    +-------------+    +-------------+    +-------------+
+	//   |             |    |             |    |             |    |             |
+	//   | module-a:c1 |--->| module-b:c1 |--->| module-c:c1 |--->| module-d:c1 |
+	//   |             |    |             |    |             |    |             |
+	//   +-------------+    +-------------+    +-------------+    +-------------+
+	//         \
+	//          \
+	//           \
+	//            \        +-------------+
+	//             \       |             |
+	//              ------>| module-c:c2 |
+	//                     |             |
+	//                     +-------------+
 	//
-	//      b:c1 - c:c1 - d:c1
-	//     /
-	//    a
-	//     \
-	//      c:c2
+	// is pruned to this graph:
 	//
-	// Due to dependency resolution, module-c:c1 would be overriden by module-c:c2, and this graph would reduce down to:
-	//
-	//      b:c1
-	//     /
-	//    a
-	//     \
-	//      c:c2
+	//   +-------------+    +-------------+
+	//   |             |    |             |
+	//   | module-a:c1 |--->| module-b:c1 |
+	//   |             |    |             |
+	//   +-------------+    +-------------+
+	//          \                  |
+	//           \                 |
+	//            \                v
+	//             \        +-------------+
+	//              \       |             |
+	//               ------>| module-c:c2 |
+	//                      |             |
+	//                      +-------------+
 	//
 	// Calculating the b5 digest for module-a would result in the calculation:
 	//
