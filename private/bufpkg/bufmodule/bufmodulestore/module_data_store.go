@@ -39,7 +39,7 @@ var (
 	externalModuleDataFilesDir     = "files"
 	externalModuleDataV1BufYAMLDir = "v1_buf_yaml"
 	externalModuleDataV1BufLockDir = "v1_buf_lock"
-	externalModuleDataLockFileName = "module.lock"
+	externalModuleDataLockFileExt  = ".lock"
 )
 
 // ModuleDatasResult is a result for a get of ModuleDatas.
@@ -196,7 +196,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		// Only attempt to get a file lock when storing individual files
 		if p.filelocker != nil {
-			unlocker, err := p.filelocker.RLock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
+			unlocker, err := p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
 			if err != nil {
 				p.logger.Debug("failed to get rlock for getModuleDataForModuleKey", zap.Error(err))
 				return nil, err
@@ -326,7 +326,7 @@ func (p *moduleDataStore) putModuleData(
 		// Before writing to the module directory, first get a shared lock and check module.yaml
 		var readUnlocker filelock.Unlocker
 		if p.filelocker != nil {
-			readUnlocker, err = p.filelocker.RLock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
+			readUnlocker, err = p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
 			if err != nil {
 				p.logger.Debug("failed to get rlock for putModuleData", zap.Error(err))
 				return err
@@ -369,7 +369,7 @@ func (p *moduleDataStore) putModuleData(
 			}
 		}
 		if p.filelocker != nil {
-			unlocker, err := p.filelocker.Lock(ctx, normalpath.Join(dirPath, externalModuleDataLockFileName))
+			unlocker, err := p.filelocker.Lock(ctx, dirPath+externalModuleDataLockFileExt)
 			if err != nil {
 				p.logger.Debug("failed to get lock for putModuleData", zap.Error(err))
 				return err
