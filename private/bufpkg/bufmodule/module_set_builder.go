@@ -335,10 +335,10 @@ func (b *moduleSetBuilder) AddLocalModule(
 		true,
 		func() (ObjectData, error) { return localModuleOptions.v1BufYAMLObjectData, nil },
 		func() (ObjectData, error) { return localModuleOptions.v1BufLockObjectData, nil },
-		func() ([]ModuleKey, error) {
+		func() (Digest, error) {
 			// See comment in added_module.go when we construct remote Modules for why
 			// we have this function in the first place.
-			return nil, syserror.Newf("getDeclaredDepModuleKeysB5 should never be called for a local Module")
+			return nil, syserror.Newf("getRemoteB5Digest should never be called for a local Module")
 		},
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,

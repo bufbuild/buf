@@ -241,16 +241,16 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
-	ctx                        context.Context
-	getBucket                  func() (storage.ReadBucket, error)
-	bucketID                   string
-	moduleFullName             ModuleFullName
-	commitID                   uuid.UUID
-	isTarget                   bool
-	isLocal                    bool
-	getV1BufYAMLObjectData     func() (ObjectData, error)
-	getV1BufLockObjectData     func() (ObjectData, error)
-	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error)
+	ctx                    context.Context
+	getBucket              func() (storage.ReadBucket, error)
+	bucketID               string
+	moduleFullName         ModuleFullName
+	commitID               uuid.UUID
+	isTarget               bool
+	isLocal                bool
+	getV1BufYAMLObjectData func() (ObjectData, error)
+	getV1BufLockObjectData func() (ObjectData, error)
+	getRemoteB5Digest      func() (Digest, error)
 
 	moduleSet ModuleSet
 
@@ -270,7 +270,7 @@ func newModule(
 	isLocal bool,
 	getV1BufYAMLObjectData func() (ObjectData, error),
 	getV1BufLockObjectData func() (ObjectData, error),
-	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error),
+	getRemoteB5Digest func() (Digest, error),
 	targetPaths []string,
 	targetExcludePaths []string,
 	protoFileTargetPath string,
@@ -313,16 +313,16 @@ func newModule(
 	}
 
 	module := &module{
-		ctx:                        ctx,
-		getBucket:                  syncOnceValuesGetBucketWithStorageMatcherApplied,
-		bucketID:                   bucketID,
-		moduleFullName:             moduleFullName,
-		commitID:                   commitID,
-		isTarget:                   isTarget,
-		isLocal:                    isLocal,
-		getV1BufYAMLObjectData:     syncext.OnceValues(getV1BufYAMLObjectData),
-		getV1BufLockObjectData:     syncext.OnceValues(getV1BufLockObjectData),
-		getDeclaredDepModuleKeysB5: syncext.OnceValues(getDeclaredDepModuleKeysB5),
+		ctx:                    ctx,
+		getBucket:              syncOnceValuesGetBucketWithStorageMatcherApplied,
+		bucketID:               bucketID,
+		moduleFullName:         moduleFullName,
+		commitID:               commitID,
+		isTarget:               isTarget,
+		isLocal:                isLocal,
+		getV1BufYAMLObjectData: syncext.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData: syncext.OnceValues(getV1BufLockObjectData),
+		getRemoteB5Digest:      syncext.OnceValues(getRemoteB5Digest),
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -399,16 +399,15 @@ func (m *module) ModuleSet() ModuleSet {
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
-		ctx:                        m.ctx,
-		getBucket:                  m.getBucket,
-		bucketID:                   m.bucketID,
-		moduleFullName:             m.moduleFullName,
-		commitID:                   m.commitID,
-		isTarget:                   isTarget,
-		isLocal:                    m.isLocal,
-		getV1BufYAMLObjectData:     m.getV1BufYAMLObjectData,
-		getV1BufLockObjectData:     m.getV1BufLockObjectData,
-		getDeclaredDepModuleKeysB5: m.getDeclaredDepModuleKeysB5,
+		ctx:                    m.ctx,
+		getBucket:              m.getBucket,
+		bucketID:               m.bucketID,
+		moduleFullName:         m.moduleFullName,
+		commitID:               m.commitID,
+		isTarget:               isTarget,
+		isLocal:                m.isLocal,
+		getV1BufYAMLObjectData: m.getV1BufYAMLObjectData,
+		getV1BufLockObjectData: m.getV1BufLockObjectData,
 	}
 	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
 	if !ok {
@@ -452,33 +451,21 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 			}
 			return getB4Digest(module.ctx, bucket, v1BufYAMLObjectData, v1BufLockObjectData)
 		case DigestTypeB5:
+			if !module.isLocal {
+				// For remote modules to have consistent B5 digests, they must not change their
+				// dependencies -- the considered dependencies must be exactly the dependencies the remote module was originally
+				// built with. This means that we cannot consider the modules within the current ModuleSet, as those may not
+				// match. Instead, there are two ways to do this deterministically:
+				//   1. Construct a new ModuleSet with just this module and its declared deps.
+				//   2. Fetch the module's digest remotely from the BSR.
+				//
+				// Given that we are not tamper proofing here (tamper-proofing is done at the ModuleData level), we opt to fetch
+				// the digest remotely from the BSR.
+				return module.getRemoteB5Digest()
+			}
 			moduleDeps, err := module.ModuleDeps()
 			if err != nil {
 				return nil, err
-			}
-			// For remote modules to have consistent B5 digests, they must not change the digests of their
-			// dependencies based on the local workspace. Use the pruned b5 module keys from
-			// ModuleData.DeclaredDepModuleKeys to calculate the digest.
-			if !module.isLocal {
-				declaredDepModuleKeys, err := module.getDeclaredDepModuleKeysB5()
-				if err != nil {
-					return nil, err
-				}
-				moduleDepFullNames := make(map[string]struct{}, len(moduleDeps))
-				for _, dep := range moduleDeps {
-					fullName := dep.ModuleFullName()
-					if fullName == nil {
-						return nil, syserror.Newf("remote module dependencies should have full names")
-					}
-					moduleDepFullNames[fullName.String()] = struct{}{}
-				}
-				prunedDepModuleKeys := make([]ModuleKey, 0, len(declaredDepModuleKeys))
-				for _, dep := range declaredDepModuleKeys {
-					if _, ok := moduleDepFullNames[dep.ModuleFullName().String()]; ok {
-						prunedDepModuleKeys = append(prunedDepModuleKeys, dep)
-					}
-				}
-				return getB5DigestForBucketAndDepModuleKeys(module.ctx, bucket, prunedDepModuleKeys)
 			}
 			return getB5DigestForBucketAndModuleDeps(module.ctx, bucket, moduleDeps)
 		default:

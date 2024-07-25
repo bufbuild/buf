@@ -182,16 +182,37 @@ func (a *addedModule) ToModule(
 	//     e.proto
 	//     f.proto
 	//     g.proto
+	//   module-d:c1
+	//     h.proto
 	//
 	// Then, you have this dependency graph:
 	//
 	// module-a -> module-b:c1, module-c:c2
 	// module-b:c1 -> module-c:c1
+	// module-b:c2 -> module-c:c2
+	// module-c:c1 -> module-d:c1
 	//
-	// Note that module-b depends on an earlier commit of module-c than module-a does.
+	// Note that module-a depends on an earlier commit of module-b, which in turn depends on an earlier commit of
+	// module-c, but module-a overrides the commit for module-c with the latest commit. Note also that the latest commit
+	// of module-c drops the dependency on module-d.
 	//
-	// If we were to just use the dependencies in the ModuleSet to compute the digest, the following
-	// would happen as a calculation:
+	// The unreduced graph of dependencies for module-a looks like:
+	//
+	//      b:c1 - c:c1 - d:c1
+	//     /
+	//    a
+	//     \
+	//      c:c2
+	//
+	// Due to dependency resolution, module-c:c1 would be overriden by module-c:c2, and this graph would reduce down to:
+	//
+	//      b:c1
+	//     /
+	//    a
+	//     \
+	//      c:c2
+	//
+	// Calculating the b5 digest for module-a would result in the calculation:
 	//
 	//   DIGEST(module-a) = digest(
 	//     // module-a contents
@@ -220,11 +241,12 @@ func (a *addedModule) ToModule(
 	//     ),
 	//   )
 	//
-	// Note that to compute the digest of module-b:c1, we would actually use the digest of
-	// module-c:c2, as opposed to module-c:c1, since within the ModuleSet, we would resolve
-	// to use module-c:c2 instead of module-c:c1.
+	// Note that to compute the digest of module-b:c1 within the context of module-a, we would actually
+	//   - use the digest of module-c:c2, as opposed to module-c:c1, since within the ModuleSet, we would resolve
+	//     to use module-c:c2 instead of module-c:c1;
+	//   - not even consider the digest of module-d:c1, since within the ModuleSet, module-d doesn't exist.
 	//
-	// We should be using module-c:c1 to compute the digest of module-b:c1:
+	// We should be using module-c:c1 and module-d:c1 to compute the digest of module-b:c1, always:
 	//
 	//   DIGEST(module-a) = digest(
 	//     // module-a contents
@@ -241,6 +263,11 @@ func (a *addedModule) ToModule(
 	//         README.md,
 	//         e.proto,
 	//         f.proto,
+	//         // module-d:c1 digest
+	//         DIGEST(
+	//           README.md,
+	//           x.proto,
+	//         ),
 	//       ),
 	//     ),
 	//     // module-c:c2 digest
@@ -252,61 +279,44 @@ func (a *addedModule) ToModule(
 	//     ),
 	//   )
 	//
-	// To accomplish this, we need to take the dependencies of the declared ModuleKeys (ie what
-	// the Module actually says is in its buf.lock). This function enables us to do that for
-	// digest calculations. Within the Module, we say that if we get a remote Module, use the
-	// declared ModuleKeys instead of whatever Module we have resolved to for a given ModuleFullName.
-	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
-		moduleData, err := getModuleData()
+	// However, module-d:c1 is not even present in the ModuleSet because it is not a dependency of module-c:c2.
+	// Effectively, when calculating the digest of a remote module, we need to be certain of two things:
+	//    1. That all dependencies of the remote module are in the ModuleSet, at exactly the commit that the remote module
+	//       requires.
+	//    2. That (1) also holds transitively for dependencies of the remote module.
+	//
+	// These properties are impossible to guarantee all the time. For that reason, we cannot predictably calculate the B5
+	// digest of a remote module within a different ModuleSet from the one it was originally calculated. Instead, we must
+	// defer to its pre-calculated digest (i.e., the one in the ModuleKey).
+	//
+	// Note that this _does not_ side-step tamper-proofing. Tamper-proofing occurs at the ModuleData level.
+	getRemoteB5Digest := func() (Digest, error) {
+		remoteDigest, err := a.remoteModuleKey.Digest()
 		if err != nil {
 			return nil, err
 		}
-		declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
-		if err != nil {
-			return nil, err
-		}
-		if len(declaredDepModuleKeys) == 0 {
-			return nil, nil
-		}
-		var digestType DigestType
-		for i, moduleKey := range declaredDepModuleKeys {
-			digest, err := moduleKey.Digest()
-			if err != nil {
-				return nil, err
-			}
-			if i == 0 {
-				digestType = digest.Type()
-			} else if digestType != digest.Type() {
-				return nil, syserror.Newf("multiple digest types found in DeclaredDepModuleKeys: %v, %v", digestType, digest.Type())
-			}
-		}
+		digestType := remoteDigest.Type()
 		switch digestType {
 		case DigestTypeB4:
-			// The declared ModuleKey dependencies for a commit may be stored in v1 buf.lock file,
-			// in which case they will use B4 digests. B4 digests aren't allowed to be used as
-			// input to the B5 digest calculation, so we perform a call to convert all ModuleKeys
-			// from B4 to B5 by using the commit provider.
-			commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
-			for i, declaredDepModuleKey := range declaredDepModuleKeys {
-				commitKey, err := NewCommitKey(declaredDepModuleKey.ModuleFullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
-				if err != nil {
-					return nil, err
-				}
-				commitKeysToFetch[i] = commitKey
-			}
-			commits, err := commitProvider.GetCommitsForCommitKeys(ctx, commitKeysToFetch)
+			commitKey, err := NewCommitKey(
+				a.remoteModuleKey.ModuleFullName().Registry(),
+				a.remoteModuleKey.CommitID(),
+				DigestTypeB5,
+			)
 			if err != nil {
 				return nil, err
 			}
-			if len(commits) != len(commitKeysToFetch) {
-				return nil, syserror.Newf("expected %d commit(s), got %d", commitKeysToFetch, len(commits))
+			commits, err := commitProvider.GetCommitsForCommitKeys(ctx, []CommitKey{commitKey})
+			if err != nil {
+				return nil, err
 			}
-			return slicesext.Map(commits, func(commit Commit) ModuleKey {
-				return commit.ModuleKey()
-			}), nil
+			if len(commits) != 1 {
+				return nil, syserror.Newf("expected %d commit(s), got %d", 1, len(commits))
+			}
+			return commits[0].ModuleKey().Digest()
 		case DigestTypeB5:
-			// No need to fetch b5 digests - we've already got them stored in the module's declared dependencies.
-			return declaredDepModuleKeys, nil
+			// We already have a remote B5 digest, simply return it.
+			return remoteDigest, nil
 		default:
 			return nil, syserror.Newf("unsupported digest type: %v", digestType)
 		}
@@ -321,7 +331,7 @@ func (a *addedModule) ToModule(
 		false,
 		getV1BufYAMLObjectData,
 		getV1BufLockObjectData,
-		getDeclaredDepModuleKeysB5,
+		getRemoteB5Digest,
 		a.remoteTargetPaths,
 		a.remoteTargetExcludePaths,
 		"",
