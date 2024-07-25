@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/spf13/pflag"
 )
@@ -135,6 +136,9 @@ func inner(
 	remote := bufconnect.DefaultRemote
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
+		if _, err := netext.ValidateHostname(remote); err != nil {
+			return err
+		}
 	}
 	// Do not print unless we are prompting
 	if !flags.TokenStdin {
