@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/oauth2"
 	"github.com/bufbuild/buf/private/pkg/open"
@@ -153,6 +154,9 @@ func inner(
 	remote := bufconnect.DefaultRemote
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
+		if _, err := netext.ValidateHostname(remote); err != nil {
+			return err
+		}
 	}
 	if flags.TokenStdin && flags.NoBrowser {
 		return fmt.Errorf("cannot use both --%s and --%s flags", tokenStdinFlagName, noBrowserFlagName)

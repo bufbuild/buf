@@ -91,8 +91,20 @@ var (
 
 // addFunc adds a FileAnnotation.
 //
-// Both the Descriptor and Location can be nil.
-type addFunc func(bufprotosource.Descriptor, []bufprotosource.Descriptor, bufprotosource.Location, string, ...interface{})
+// descriptor is what the FileAnnotation applies to.
+// extraIgnoreDescriptors are extra descriptors to check for ignores. This is used in situations
+// where the file we care about has been deleted, and we want to use the previous file to check
+// for things like config ignores or unstable packages.
+// location is the granular Location of the FileAnnotation.
+//
+// descriptor, extraIgnoreDescriptors, and location can be nil.
+type addFunc func(
+	descriptor bufprotosource.Descriptor,
+	extraIgnoreDescriptors []bufprotosource.Descriptor,
+	location bufprotosource.Location,
+	format string,
+	args ...interface{},
+)
 
 // corpus is a store of the previous files and files given to a check function.
 //

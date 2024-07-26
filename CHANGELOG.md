@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.35.1] - 2024-07-24
+
+- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
+  of branch names, tag names, and commit hashes.
+- Fix unexpected `buf build` errors with absolute path directory inputs without workspace and/or
+  module configurations (e.g. `buf.yaml`, `buf.work.yaml`) and proto file paths set to the `--path` flag.
+
+## [v1.35.0] - 2024-07-22
+
 - Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
   plugins will write to, prior to generation. Allows cleaning of existing assets without having
   to call `rm -rf`.
@@ -1174,7 +1185,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.34.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.35.1...HEAD
+[v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
+[v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
 [v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0
 [v1.33.0]: https://github.com/bufbuild/buf/compare/v1.32.2...v1.33.0
 [v1.32.2]: https://github.com/bufbuild/buf/compare/v1.32.1...v1.32.2
