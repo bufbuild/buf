@@ -191,7 +191,7 @@ func (c *Client) AccessDeviceToken(
 				ticker.Reset(pollingInterval)
 			case ErrorCodeAuthorizationPending:
 				// If the user has not yet authorized the device, continue polling.
-				continue
+				ticker.Reset(pollingInterval)
 			case ErrorCodeAccessDenied, ErrorCodeExpiredToken:
 				// If the user has denied the device or the token has expired, return the error.
 				return nil, &payload.Error
