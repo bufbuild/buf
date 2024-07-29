@@ -101,7 +101,7 @@ func NewServerReflectionResolver(
 	reflectProtocol ReflectProtocol,
 	headers http.Header,
 	printer verbose.Printer,
-) (r protoencoding.Resolver, closeResolver func()) {
+) (r Resolver, closeResolver func()) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
 	var v1Client, v1alphaClient *reflectClient
 	if reflectProtocol != ReflectProtocolGRPCV1 {
@@ -147,6 +147,33 @@ type reflectionResolver struct {
 	downloadedProtos        map[string]*descriptorpb.FileDescriptorProto
 	cachedFiles             protoregistry.Files
 	cachedExts              protoregistry.Types
+}
+
+func (r *reflectionResolver) ListServices() ([]protoreflect.FullName, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.printer.Printf("* Using server reflection to list services\n")
+	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
+		MessageRequest: &reflectionv1.ServerReflectionRequest_ListServices{
+			ListServices: "",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	switch response := resp.MessageResponse.(type) {
+	case *reflectionv1.ServerReflectionResponse_ErrorResponse:
+		return nil, connect.NewWireError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
+	case *reflectionv1.ServerReflectionResponse_ListServicesResponse:
+		serviceNames := make([]protoreflect.FullName, len(response.ListServicesResponse.Service))
+		for i, service := range response.ListServicesResponse.Service {
+			serviceNames[i] = protoreflect.FullName(service.Name)
+		}
+		return serviceNames, nil
+	default:
+		return nil, fmt.Errorf("server replied with unsupported response type: %T", resp.MessageResponse)
+	}
 }
 
 func (r *reflectionResolver) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
