@@ -37,8 +37,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/oauth2"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
-	"github.com/spf13/pflag"
 	"github.com/pkg/browser"
+	"github.com/spf13/pflag"
 )
 
 const (
