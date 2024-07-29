@@ -625,14 +625,6 @@ func checkForControllingWorkspaceOrV1Module(
 	ignoreWorkspaceCheck bool,
 ) (buftarget.ControllingWorkspace, error) {
 	path = normalpath.Normalize(path)
-	// We attempt to check that the provided target path is not a file by checking the extension.
-	// Any valid proto file provided as a target would have the .proto extension, so we treat
-	// any path given without as a directory.
-	// This could be a file without an extension, in which case an error would be returned
-	// to the user when we attempt to check for a controlling workspace.
-	if normalpath.Ext(path) != "" {
-		path = normalpath.Dir(path)
-	}
 	// Keep track of any v1 module found along the way. If we find a v1 or v2 workspace, we
 	// return that over the v1 module, but we return this as the fallback.
 	var fallbackV1Module buftarget.ControllingWorkspace
