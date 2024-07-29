@@ -36,9 +36,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/oauth2"
-	"github.com/bufbuild/buf/private/pkg/open"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/spf13/pflag"
+	"github.com/pkg/browser"
 )
 
 const (
@@ -290,7 +290,7 @@ func doBrowserLogin(
 		return "", err
 	}
 	// Open the browser to the verification URI.
-	if err := open.Open(ctx, container, deviceAuthorization.VerificationURIComplete); err != nil {
+	if err := browser.OpenURL(deviceAuthorization.VerificationURIComplete); err != nil {
 		return "", fmt.Errorf("failed to open browser: %w", err)
 	}
 	if _, err := fmt.Fprintf(
