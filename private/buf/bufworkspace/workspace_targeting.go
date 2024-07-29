@@ -95,7 +95,7 @@ func newWorkspaceTargeting(
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, overrideBufYAMLFile)
+			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, overrideBufYAMLFile, false) // with config override, do not fall back to top level license/doc
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
@@ -107,7 +107,7 @@ func newWorkspaceTargeting(
 				"targeting workspace based on v2 buf.yaml",
 				zap.String("subDirPath", bucketTargeting.SubDirPath()),
 			)
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, controllingWorkspace.BufYAMLFile())
+			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, controllingWorkspace.BufYAMLFile(), true)
 		}
 		// This is a v1 workspace.
 		if bufWorkYAMLFile := controllingWorkspace.BufWorkYAMLFile(); bufWorkYAMLFile != nil {
@@ -165,6 +165,7 @@ func v2WorkspaceTargeting(
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	bufYAMLFile bufconfig.BufYAMLFile,
+	defaultToTopLevelLicenseDoc bool,
 ) (*workspaceTargeting, error) {
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -208,6 +209,7 @@ func v2WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			defaultToTopLevelLicenseDoc,
 		)
 		if err != nil {
 			return nil, err
@@ -311,6 +313,7 @@ func v1WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			false, // v1 workspace modules should not default to top-level license/doc
 		)
 		if err != nil {
 			return nil, err
@@ -434,6 +437,7 @@ func fallbackWorkspaceTargeting(
 				bucket,
 				bucketTargeting,
 				v2BufYAMLFile,
+				true,
 			)
 		}
 		if v1BufWorkYAML != nil {
@@ -517,6 +521,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
+	useTopLevelLicenseDoc bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
 		bucket,
@@ -557,10 +562,28 @@ func getMappedModuleBucketAndModuleTargeting(
 			),
 		)
 	}
+	docBucket := bufmodule.GetDocStorageReadBucket(ctx, moduleBucket)
+	licenseBucket := bufmodule.GetLicenseStorageReadBucket(moduleBucket)
+	if useTopLevelLicenseDoc {
+		docBucketEmpty, err := isBucketEmpty(ctx, docBucket)
+		if err != nil {
+			return nil, nil, err
+		}
+		if docBucketEmpty {
+			docBucket = bufmodule.GetDocStorageReadBucket(ctx, bucket)
+		}
+		licenseBucketEmpty, err := isBucketEmpty(ctx, licenseBucket)
+		if err != nil {
+			return nil, nil, err
+		}
+		if licenseBucketEmpty {
+			licenseBucket = bufmodule.GetLicenseStorageReadBucket(bucket)
+		}
+	}
 	rootBuckets = append(
 		rootBuckets,
-		bufmodule.GetDocStorageReadBucket(ctx, moduleBucket),
-		bufmodule.GetLicenseStorageReadBucket(moduleBucket),
+		docBucket,
+		licenseBucket,
 	)
 	mappedModuleBucket := storage.MultiReadBucket(rootBuckets...)
 	moduleTargeting, err := newModuleTargeting(
@@ -574,6 +597,20 @@ func getMappedModuleBucketAndModuleTargeting(
 		return nil, nil, err
 	}
 	return mappedModuleBucket, moduleTargeting, nil
+}
+
+func isBucketEmpty(ctx context.Context, bucket storage.ReadBucket) (bool, error) {
+	foundError := errors.New("found a file")
+	err := bucket.Walk(ctx, "", func(_ storage.ObjectInfo) error {
+		return foundError
+	})
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, foundError) {
+		return false, nil
+	}
+	return false, err
 }
 
 func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
