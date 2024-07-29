@@ -73,6 +73,7 @@ const (
 	// Action flags
 	listServicesFlagName = "list-services"
 	listMethodsFlagName  = "list-methods"
+	describeFlagName     = "describe"
 
 	// Timeout flags
 	noKeepAliveFlagName    = "no-keepalive"
@@ -215,6 +216,7 @@ type flags struct {
 
 	// Actions
 	ListServices, ListMethods bool
+	Describe                  string
 
 	// Timeouts
 	NoKeepAlive           bool
@@ -400,19 +402,30 @@ one is provided`,
 		&f.ListServices,
 		listServicesFlagName,
 		false,
-		`When set, the command lists supported services and then exits. If server reflection is used
+		fmt.Sprintf(`When set, the command lists supported services and then exits. If server reflection is used
 to provide the RPC schema, then the given URL must be a base URL, not including a service
 or method name. If the schema source is not server reflection, the URL is not used and
-may be omitted.`,
+may be omitted. This flag may not be used with --%s or --%s.`, listMethodsFlagName, describeFlagName),
 	)
 	flagSet.BoolVar(
 		&f.ListMethods,
 		listMethodsFlagName,
 		false,
-		`When set, the command lists supported methods and then exits. If server reflection is used
+		fmt.Sprintf(`When set, the command lists supported methods and then exits. If server reflection is used
 to provide the RPC schema, then the given URL must be a base URL, not including a service
 or method name. If the schema source is not server reflection, the URL is not used and
-may be omitted.`,
+may be omitted. This flag may not be used with --%s or --%s.`, listServicesFlagName, describeFlagName),
+	)
+	flagSet.StringVar(
+		&f.Describe,
+		describeFlagName,
+		"",
+		fmt.Sprintf(`When set, the command describes the given message type by showing an example message
+in JSON-with-comments format, where comments indicate each field's type and also show
+possible values for enum fields. If server reflection is used to provide the RPC schema,
+then the given URL must be a base URL, not including a service or method name. If the
+schema source is not server reflection, the URL is not used and may be omitted. This
+flag may not be used with --%s or --%s.`, listServicesFlagName, listMethodsFlagName),
 	)
 
 	flagSet.StringVarP(
@@ -516,7 +529,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
 	}
 
-	if !hasURL && ((!f.ListServices && !f.ListMethods) || f.Reflect) {
+	if !hasURL && ((!f.ListServices && !f.ListMethods && f.Describe == "") || f.Reflect) {
 		// If we are trying to use reflection for anything or if we are invoking an RPC (which
 		// means we aren't listing services, listing methods, or describing an element), then
 		// a URL is required.
@@ -525,6 +538,12 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 
 	if f.ListServices && f.ListMethods {
 		return fmt.Errorf("flags --%s and --%s are mutually exclusive", listServicesFlagName, listMethodsFlagName)
+	}
+	if f.ListServices && f.Describe != "" {
+		return fmt.Errorf("flags --%s and --%s are mutually exclusive", listServicesFlagName, describeFlagName)
+	}
+	if f.ListMethods && f.Describe != "" {
+		return fmt.Errorf("flags --%s and --%s are mutually exclusive", listMethodsFlagName, describeFlagName)
 	}
 
 	if (f.Key != "" || f.Cert != "" || f.CACert != "" || f.ServerName != "" || f.flagSet.Changed(insecureFlagName)) &&
@@ -825,7 +844,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	var service, method, baseURL string
 	switch {
-	case f.ListServices || f.ListMethods:
+	case f.ListServices || f.ListMethods || f.Describe != "":
 		baseURL = urlArg
 	default:
 		service, method, baseURL, err = parseEndpointURL(urlArg)
@@ -1010,6 +1029,14 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			}
 		}
 		return nil
+
+	case f.Describe != "":
+		messageType, err := res.FindMessageByName(protoreflect.FullName(f.Describe))
+		if err != nil {
+			return err
+		}
+		return bufcurl.DescribeMessage(messageType.Descriptor(), container.Stdout())
+
 	default:
 		// Invoke RPC
 		methodDescriptor, err := bufcurl.ResolveMethodDescriptor(res, service, method)
