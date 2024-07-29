@@ -3,7 +3,7 @@
 set -eo pipefail
 set -x
 
-RELEASE_DOCKER_FILE="make/buf/dockerfiles/Dockerfile.release"
+RELEASE_DOCKER_FILE="make/buf/docker/Dockerfile.release"
 RELEASE_DOCKER_IMAGE="bufrelease-tag"
 DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
