@@ -15,7 +15,6 @@
 package protosourcepath
 
 import (
-	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -24,10 +23,6 @@ import (
 const (
 	fileDescriptorProtoMessageTypeTag = int32(4)
 	descriptorProtoNameTag            = int32(1)
-)
-
-var (
-	errInvalidSourcePath = errors.New("invalid sourcepa")
 )
 
 // GetAssociatedSourcePaths gets the associated source paths.
