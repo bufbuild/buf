@@ -47,6 +47,7 @@ const (
 	createDefaultLabelFlagName = "create-default-label"
 	sourceControlURLFlagName   = "source-control-url"
 	gitMetadataFlagName        = "git-metadata"
+	excludeUnnamedFlagName     = "exclude-unnamed"
 
 	// All deprecated.
 	tagFlagName      = "tag"
@@ -92,6 +93,7 @@ type flags struct {
 	CreateVisibility   string
 	CreateDefaultLabel string
 	SourceControlURL   string
+	ExcludeUnnamed     bool
 	GitMetadata        bool
 	// special
 	InputHashtag string
@@ -154,7 +156,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 The source control URL and default branch is based on the required Git remote %q.
 This flag is only compatible with checkouts of Git source repositories.
-This flag does not allow you to set any of the following flags yourself: --%s, --%s.`,
+If you set the --%s flag and/or --%s flag yourself, then the value(s) will be used instead and the information will not be derived from the Git source control state.`,
 			sourceControlURLFlagName,
 			labelFlagName,
 			labelFlagName,
@@ -164,6 +166,12 @@ This flag does not allow you to set any of the following flags yourself: --%s, -
 			sourceControlURLFlagName,
 			createDefaultLabelFlagName,
 		),
+	)
+	flagSet.BoolVar(
+		&f.ExcludeUnnamed,
+		excludeUnnamedFlagName,
+		false,
+		"Only push named modules to the BSR. Named modules must not have any unnamed dependencies.",
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
@@ -214,26 +222,31 @@ func run(
 		if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
 			uploadOptions = append(uploadOptions, labelUploadOption)
 		}
-		if flags.Create {
-			createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
-			if err != nil {
-				return err
-			}
-			uploadOptions = append(
-				uploadOptions,
-				bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
-			)
+	}
+	if flags.Create {
+		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+		if err != nil {
+			return err
 		}
-		if flags.SourceControlURL != "" {
-			uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
-		}
+		uploadOptions = append(
+			uploadOptions,
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+		)
+	}
+	if flags.SourceControlURL != "" {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
+	}
+	if flags.ExcludeUnnamed {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithExcludeUnnamed())
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
 	if err != nil {
 		return err
 	}
-
+	if len(commits) == 0 {
+		return nil
+	}
 	if workspace.IsV2() {
 		_, err := container.Stdout().Write(
 			[]byte(
@@ -251,15 +264,13 @@ func run(
 		return err
 	}
 	// v1 workspace, fallback to old behavior for backwards compatibility.
-	switch len(commits) {
-	case 0:
-		return nil
-	case 1:
-		_, err := container.Stdout().Write([]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"))
-		return err
-	default:
+	if len(commits) > 1 {
 		return syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
 	}
+	_, err = container.Stdout().Write(
+		[]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"),
+	)
+	return err
 }
 
 func getBuildableWorkspace(
@@ -391,12 +402,6 @@ func validateLabelFlagValues(flags *flags) error {
 func validateGitMetadataFlags(flags *flags) error {
 	if flags.GitMetadata {
 		var usedFlags []string
-		if flags.SourceControlURL != "" {
-			usedFlags = append(usedFlags, sourceControlURLFlagName)
-		}
-		if flags.CreateDefaultLabel != "" {
-			usedFlags = append(usedFlags, createDefaultLabelFlagName)
-		}
 		if len(flags.Tags) > 0 {
 			usedFlags = append(usedFlags, tagFlagName)
 		}
@@ -438,7 +443,7 @@ func getGitMetadataUploadOptions(
 	if err := validateInputIsValidDirAndGitCheckout(ctx, runner, container, input); err != nil {
 		return nil, err
 	}
-	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, input)
+	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, container, input)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +457,7 @@ func getGitMetadataUploadOptions(
 		}
 		return nil, err
 	}
-	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, input)
+	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, container, input)
 	if err != nil {
 		return nil, err
 	}
@@ -464,12 +469,20 @@ func getGitMetadataUploadOptions(
 	if gitLabelsUploadOption != nil {
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
 	}
-	sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
-	if sourceControlURL == "" {
-		return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
+	// We get the source control URL information if the user has not provided a value for
+	// the --source-control-url flag. If they did, then we skip this step and use the user-set
+	// value for source control URL instead.
+	if flags.SourceControlURL == "" {
+		sourceControlURL := originRemote.SourceControlURL(currentGitCommit)
+		if sourceControlURL == "" {
+			return nil, appcmd.NewInvalidArgumentError("unable to determine source control URL for this repository; only GitHub/GitLab/BitBucket are supported")
+		}
+		gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
 	}
-	gitMetadataUploadOptions = append(gitMetadataUploadOptions, bufmodule.UploadWithSourceControlURL(sourceControlURL))
-	if flags.Create {
+	// We get the default label information if the user has not provided a value for the
+	// --create-default-label flag. If they did, then we skip this step and use the user-set
+	// value for --create-default-label instead.
+	if flags.Create && flags.CreateDefaultLabel == "" {
 		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
 			return nil, err

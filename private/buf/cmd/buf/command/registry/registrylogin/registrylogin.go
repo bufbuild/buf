@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/spf13/pflag"
 )
@@ -47,7 +48,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <domain>",
 		Short: `Log in to the Buf Schema Registry`,
-		Long: fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.
+		Long: fmt.Sprintf(`This prompts for your BSR token and updates your %s file with these credentials.
 The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -73,8 +74,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Username,
 		usernameFlagName,
 		"",
-		"The username to use. This command prompts for a username by default",
+		"The username to use.",
 	)
+	_ = flagSet.MarkDeprecated(usernameFlagName, "This flag is no longer needed as the username is automatically derived from the token")
+	_ = flagSet.MarkHidden(usernameFlagName)
 	flagSet.BoolVar(
 		&f.TokenStdin,
 		tokenStdinFlagName,
@@ -133,25 +136,17 @@ func inner(
 	remote := bufconnect.DefaultRemote
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
-	}
-	// Do not print unless we are prompting
-	if flags.Username == "" && !flags.TokenStdin {
-		if _, err := fmt.Fprintf(
-			container.Stdout(),
-			"Log in with your Buf Schema Registry username. If you don't have a username, create one at https://%s.\n\n",
-			remote,
-		); err != nil {
+		if _, err := netext.ValidateHostname(remote); err != nil {
 			return err
 		}
 	}
-	username := flags.Username
-	if username == "" {
-		var err error
-		username, err = bufcli.PromptUser(container, "Username: ")
-		if err != nil {
-			if errors.Is(err, bufcli.ErrNotATTY) {
-				return errors.New("cannot perform an interactive login from a non-TTY device")
-			}
+	// Do not print unless we are prompting
+	if !flags.TokenStdin {
+		if _, err := fmt.Fprintf(
+			container.Stdout(),
+			"Enter the BSR token created at https://%s/settings/user.\n\n",
+			remote,
+		); err != nil {
 			return err
 		}
 	}
@@ -197,14 +192,11 @@ func inner(
 	if user == nil {
 		return errors.New("no user found for provided token")
 	}
-	if user.Username != username {
-		return errors.New("the username associated with the provided token does not match the provided username")
-	}
 	if err := netrc.PutMachines(
 		container,
 		netrc.NewMachine(
 			remote,
-			username,
+			user.Username,
 			token,
 		),
 	); err != nil {
@@ -217,9 +209,9 @@ func inner(
 	if err != nil {
 		return err
 	}
-	loggedInMessage := fmt.Sprintf("Credentials saved to %s.\n", netrcFilePath)
+	loggedInMessage := fmt.Sprintf("Logged in as %s. Credentials saved to %s.\n", user.Username, netrcFilePath)
 	// Unless we did not prompt at all, print a newline first
-	if flags.Username == "" || !flags.TokenStdin {
+	if !flags.TokenStdin {
 		loggedInMessage = "\n" + loggedInMessage
 	}
 	if _, err := container.Stdout().Write([]byte(loggedInMessage)); err != nil {

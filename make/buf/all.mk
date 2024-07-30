@@ -2,7 +2,6 @@ GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 # TODO: Remove go-winio v0.6.1 and otel v1.24.0 when we no longer need to support Golang <1.21
 # TODO: Remove antlr when we no longer need Golang <1.22
 GO_GET_PKGS := $(GO_GET_PKGS) \
-  github.com/bufbuild/protocompile@752249dfc37f06340a14eee3fc14684d3f94ddb6 \
 	github.com/Microsoft/go-winio@v0.6.1 \
 	go.opentelemetry.io/otel@v1.24.0 \
 	go.opentelemetry.io/otel/sdk@v1.24.0 \
@@ -155,7 +154,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.22-bookworm bash make/buf/scripts/release.bash
+	bash make/buf/scripts/release.bash
 
 .PHONY: bufbinarysize
 bufbinarysize:
@@ -185,7 +184,7 @@ endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
 	docker pull golang:$(GOVERSION)-bookworm
-	docker pull golang:$(GOVERSION)-alpine3.19
+	docker pull golang:$(GOVERSION)-alpine3.20
 	$(SED_I) "s/golang:1\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: '1\.[0-9][0-9].x'/go-version: '$(GOVERSION).x'/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)

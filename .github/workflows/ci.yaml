@@ -109,7 +109,7 @@ jobs:
           flavor: |
             latest=auto
       - name: docker-build-push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}

@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protoplugin"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -37,9 +36,6 @@ const (
 	// an unreasonable amount of memory to reserve each time we process an insertion
 	// point and will save a significant number of allocations.
 	averageGeneratedFileSize = 15 * 1024
-	// We don't use insertion points internally, but assume they are smaller than
-	// entire generated files.
-	averageInsertionPointSize = 1024
 )
 
 // Generator executes the Handler using protoc's plugin execution logic.
@@ -146,29 +142,10 @@ func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
 			}
 			seen[fileName] = pluginResponse.PluginName
 		}
-		if pluginResponse.Response.GetSupportedFeatures()&uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS) != 0 {
-			// If plugin says it supports editions, it must set min and max edition.
-			if pluginResponse.Response.MinimumEdition == nil {
-				return fmt.Errorf(
-					"plugin %q advertises that it supports editions but did not indicate a minimum supported edition",
-					pluginResponse.PluginName,
-				)
-			}
-			if pluginResponse.Response.MaximumEdition == nil {
-				return fmt.Errorf(
-					"plugin %q advertises that it supports editions but did not indicate a maximum supported edition",
-					pluginResponse.PluginName,
-				)
-			}
-			if pluginResponse.Response.GetMaximumEdition() < pluginResponse.Response.GetMinimumEdition() {
-				return fmt.Errorf(
-					"plugin %q indicates a maximum supported edition (%d) that is less than its minimum supported edition (%d)",
-					pluginResponse.PluginName,
-					descriptorpb.Edition(pluginResponse.Response.GetMaximumEdition()),
-					descriptorpb.Edition(pluginResponse.Response.GetMinimumEdition()),
-				)
-			}
-		}
+		// Note: we used to verify that the plugin set min/max edition correctly if it set the
+		// SUPPORTS_EDITIONS feature. But some plugins in the protoc codebase, from when editions
+		// were still experimental, advertise SUPPORTS_EDITIONS but did not set those fields. So
+		// we defer the check and only complain if/when the input actually contains Editions files.
 	}
 	return nil
 }

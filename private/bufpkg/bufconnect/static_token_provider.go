@@ -24,7 +24,7 @@ import (
 
 // NewTokenProviderFromContainer creates a singleTokenProvider from the BUF_TOKEN environment variable
 func NewTokenProviderFromContainer(container app.EnvContainer) (TokenProvider, error) {
-	return newTokenProviderFromString(container.Env(tokenEnvKey), true)
+	return newTokenProviderFromString(container.Env(TokenEnvKey), true)
 }
 
 // NewTokenProviderFromString creates a singleTokenProvider by the token provided

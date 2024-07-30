@@ -18,15 +18,16 @@ import (
 	"context"
 	"fmt"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -97,30 +98,38 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(
-		clientConfig,
-		moduleFullName.Registry(),
-		registryv1alpha1connect.NewRepositoryServiceClient,
-	)
-	resp, err := service.CreateRepositoryByFullName(
+	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	resp, err := moduleServiceClient.CreateModules(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.CreateRepositoryByFullNameRequest{
-				FullName:   moduleFullName.Owner() + "/" + moduleFullName.Name(),
-				Visibility: visibility,
+			&modulev1.CreateModulesRequest{
+				Values: []*modulev1.CreateModulesRequest_Value{
+					{
+						OwnerRef: &ownerv1.OwnerRef{
+							Value: &ownerv1.OwnerRef_Name{
+								Name: moduleFullName.Owner(),
+							},
+						},
+						Name:       moduleFullName.Name(),
+						Visibility: visibility,
+					},
+				},
 			},
 		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			return bufcli.NewRepositoryNameAlreadyExistsError(container.Arg(0))
+			return bufcli.NewRepositoryNameAlreadyExistsError(moduleFullName.String())
 		}
 		return err
 	}
-	repository := resp.Msg.Repository
+	repositories := resp.Msg.Modules
+	if len(repositories) != 1 {
+		return syserror.Newf("unexpected nubmer of repositories returned from server: %d", len(repositories))
+	}
 	return bufprint.NewRepositoryPrinter(
 		clientConfig,
 		moduleFullName.Registry(),
 		container.Stdout(),
-	).PrintRepository(ctx, format, repository)
+	).PrintRepository(ctx, format, repositories[0])
 }

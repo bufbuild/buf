@@ -393,20 +393,24 @@ func (c *controller) GetTargetImageWithConfigs(
 			// We did not find a buf.yaml in our current directory, and there was no config override.
 			// Use the defaults.
 		} else {
-			switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-			case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-				moduleConfigs := bufYAMLFile.ModuleConfigs()
-				if len(moduleConfigs) != 1 {
-					return nil, fmt.Errorf("expected 1 ModuleConfig for FileVersion %v, got %d", len(moduleConfigs), fileVersion)
+			if topLevelLintConfig := bufYAMLFile.TopLevelLintConfig(); topLevelLintConfig == nil {
+				// Ensure that this is a v2 config
+				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
+					return nil, syserror.Newf("non-v2 version with no top-level lint config: %s", fileVersion)
 				}
-				lintConfig = moduleConfigs[0].LintConfig()
-				breakingConfig = moduleConfigs[0].BreakingConfig()
-			case bufconfig.FileVersionV2:
-				// Do nothing. Use the default LintConfig and BreakingConfig. With
-				// the new buf.yamls with multiple modules, we don't know what lint or
-				// breaking config to apply.
-			default:
-				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+				// v2 config without a top-level lint config, use v2 default
+				lintConfig = bufconfig.DefaultLintConfigV2
+			} else {
+				lintConfig = topLevelLintConfig
+			}
+			if topLevelBreakingConfig := bufYAMLFile.TopLevelBreakingConfig(); topLevelBreakingConfig == nil {
+				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
+					return nil, syserror.Newf("non-v2 version with no top-level breaking config: %s", fileVersion)
+				}
+				// v2 config without a top-level breaking config, use v2 default
+				breakingConfig = bufconfig.DefaultBreakingConfigV2
+			} else {
+				breakingConfig = topLevelBreakingConfig
 			}
 		}
 		return []ImageWithConfig{

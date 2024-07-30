@@ -1,0 +1,2 @@
+# invalid because this directory is pointed to by a workspace
+version: v2

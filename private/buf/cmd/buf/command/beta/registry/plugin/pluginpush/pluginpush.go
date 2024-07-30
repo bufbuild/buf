@@ -26,9 +26,9 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremoteplugindocker"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -176,22 +176,22 @@ func run(
 			return err
 		}
 	}
-	existingConfigFilePath, err := bufpluginconfig.ExistingConfigFilePath(ctx, sourceBucket)
+	existingConfigFilePath, err := bufremotepluginconfig.ExistingConfigFilePath(ctx, sourceBucket)
 	if err != nil {
 		return syserror.Wrap(err)
 	}
 	if existingConfigFilePath == "" {
-		return fmt.Errorf("please define a %s configuration file in the target directory", bufpluginconfig.ExternalConfigFilePath)
+		return fmt.Errorf("please define a %s configuration file in the target directory", bufremotepluginconfig.ExternalConfigFilePath)
 	}
-	var options []bufpluginconfig.ConfigOption
+	var options []bufremotepluginconfig.ConfigOption
 	if len(flags.OverrideRemote) > 0 {
-		options = append(options, bufpluginconfig.WithOverrideRemote(flags.OverrideRemote))
+		options = append(options, bufremotepluginconfig.WithOverrideRemote(flags.OverrideRemote))
 	}
-	pluginConfig, err := bufpluginconfig.GetConfigForBucket(ctx, sourceBucket, options...)
+	pluginConfig, err := bufremotepluginconfig.GetConfigForBucket(ctx, sourceBucket, options...)
 	if err != nil {
 		return err
 	}
-	client, err := bufplugindocker.NewClient(container.Logger(), bufcli.Version)
+	client, err := bufremoteplugindocker.NewClient(container.Logger(), bufcli.Version)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	authConfig := &bufplugindocker.RegistryAuthConfig{}
+	authConfig := &bufremoteplugindocker.RegistryAuthConfig{}
 	if machine != nil {
 		authConfig.ServerAddress = machine.Name()
 		authConfig.Username = machine.Login()
@@ -280,7 +280,7 @@ func run(
 	} else {
 		container.Logger().Info("image found in registry - skipping push")
 	}
-	plugin, err := bufplugin.NewPlugin(
+	plugin, err := bufremoteplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
 		pluginConfig.Registry,
@@ -315,26 +315,26 @@ func run(
 }
 
 func createCuratedPluginRequest(
-	pluginConfig *bufpluginconfig.Config,
-	plugin bufplugin.Plugin,
+	pluginConfig *bufremotepluginconfig.Config,
+	plugin bufremoteplugin.Plugin,
 	nextRevision uint32,
 	visibility registryv1alpha1.CuratedPluginVisibility,
 ) (*registryv1alpha1.CreateCuratedPluginRequest, error) {
-	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
+	outputLanguages, err := bufremoteplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
 	if err != nil {
 		return nil, err
 	}
-	protoRegistryConfig, err := bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry())
+	protoRegistryConfig, err := bufremoteplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry())
 	if err != nil {
 		return nil, err
 	}
 	return &registryv1alpha1.CreateCuratedPluginRequest{
 		Owner:                pluginConfig.Name.Owner(),
 		Name:                 pluginConfig.Name.Plugin(),
-		RegistryType:         bufplugin.PluginToProtoPluginRegistryType(plugin),
+		RegistryType:         bufremoteplugin.PluginToProtoPluginRegistryType(plugin),
 		Version:              plugin.Version(),
 		ContainerImageDigest: plugin.ContainerImageDigest(),
-		Dependencies:         bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
+		Dependencies:         bufremoteplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		SourceUrl:            plugin.SourceURL(),
 		Description:          plugin.Description(),
 		RegistryConfig:       protoRegistryConfig,
@@ -349,9 +349,9 @@ func createCuratedPluginRequest(
 
 func pushImage(
 	ctx context.Context,
-	client bufplugindocker.Client,
-	authConfig *bufplugindocker.RegistryAuthConfig,
-	plugin *bufpluginconfig.Config,
+	client bufremoteplugindocker.Client,
+	authConfig *bufremoteplugindocker.RegistryAuthConfig,
+	plugin *bufremotepluginconfig.Config,
 	image string,
 ) (_ string, retErr error) {
 	tagResponse, err := client.Tag(ctx, image, plugin)
@@ -384,8 +384,8 @@ func pushImage(
 //   - If image manifest matches imageID, we can use the image digest for the image.
 func findExistingDigestForImageID(
 	ctx context.Context,
-	plugin *bufpluginconfig.Config,
-	authConfig *bufplugindocker.RegistryAuthConfig,
+	plugin *bufremotepluginconfig.Config,
+	authConfig *bufremoteplugindocker.RegistryAuthConfig,
 	imageID string,
 	currentImageDigest string,
 ) (string, error) {
@@ -463,9 +463,9 @@ func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64
 }
 
 func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
-	image, err := bucket.Get(ctx, bufplugindocker.ImagePath)
+	image, err := bucket.Get(ctx, bufremoteplugindocker.ImagePath)
 	if errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("unable to find a %s plugin image: %w", bufplugindocker.ImagePath, err)
+		return nil, fmt.Errorf("unable to find a %s plugin image: %w", bufremoteplugindocker.ImagePath, err)
 	}
 	return image, nil
 }

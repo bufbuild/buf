@@ -33,6 +33,10 @@ type formatter struct {
 	writer   io.Writer
 	fileNode *ast.FileNode
 
+	// Used to adjust comments when we remove superfluous
+	// separators tp canonicalize message literals
+	overrideTrailingComments map[ast.Node]ast.Comments
+
 	// Current level of indentation.
 	indent int
 	// The last character written to writer.
@@ -73,8 +77,9 @@ func newFormatter(
 	fileNode *ast.FileNode,
 ) *formatter {
 	return &formatter{
-		writer:   writer,
-		fileNode: fileNode,
+		writer:                   writer,
+		fileNode:                 fileNode,
+		overrideTrailingComments: map[ast.Node]ast.Comments{},
 	}
 }
 
@@ -200,7 +205,7 @@ func (f *formatter) writeFile() {
 	f.writeFileHeader()
 	f.writeFileTypes()
 	if f.fileNode.EOF != nil {
-		info := f.fileNode.NodeInfo(f.fileNode.EOF)
+		info := f.nodeInfo(f.fileNode.EOF)
 		f.writeMultilineComments(info.LeadingComments())
 	}
 	if f.lastWritten != 0 && f.lastWritten != '\n' {
@@ -329,7 +334,7 @@ func (f *formatter) writeFileTypes() {
 			// These elements have already been written by f.writeFileHeader.
 			continue
 		default:
-			info := f.fileNode.NodeInfo(node)
+			info := f.nodeInfo(node)
 			wantNewline := f.previousNode != nil && (i == 0 || info.LeadingComments().Len() > 0)
 			if wantNewline && !f.leadingCommentsContainBlankLine(node) {
 				f.P("")
@@ -502,13 +507,13 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
 			fieldReferenceNode := optionNameNode.Parts[0]
 			if fieldReferenceNode.Open != nil {
 				f.writeNode(fieldReferenceNode.Open)
-				if info := f.fileNode.NodeInfo(fieldReferenceNode.Open); info.TrailingComments().Len() > 0 {
+				if info := f.nodeInfo(fieldReferenceNode.Open); info.TrailingComments().Len() > 0 {
 					f.writeInlineComments(info.TrailingComments())
 				}
 				f.writeInline(fieldReferenceNode.Name)
 			} else {
 				f.writeNode(fieldReferenceNode.Name)
-				if info := f.fileNode.NodeInfo(fieldReferenceNode.Name); info.TrailingComments().Len() > 0 {
+				if info := f.nodeInfo(fieldReferenceNode.Name); info.TrailingComments().Len() > 0 {
 					f.writeInlineComments(info.TrailingComments())
 				}
 			}
@@ -591,8 +596,8 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 		}
 	}
 	f.writeCompositeValueBody(
-		messageLiteralNode.Open,
-		messageLiteralNode.Close,
+		messageLiteralOpen(messageLiteralNode),
+		messageLiteralClose(messageLiteralNode),
 		elementWriterFunc,
 	)
 }
@@ -617,8 +622,8 @@ func (f *formatter) writeMessageLiteralForArray(
 		closeWriter = f.writeBodyEnd
 	}
 	f.writeBody(
-		messageLiteralNode.Open,
-		messageLiteralNode.Close,
+		messageLiteralOpen(messageLiteralNode),
+		messageLiteralClose(messageLiteralNode),
 		elementWriterFunc,
 		f.writeOpenBracePrefixForArray,
 		closeWriter,
@@ -636,18 +641,32 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	}
 	// messages with a single scalar field and no comments can be
 	// printed all on one line
+	openNode := messageLiteralOpen(messageLiteralNode)
+	closeNode := messageLiteralClose(messageLiteralNode)
 	if inArrayLiteral {
-		f.Indent(messageLiteralNode.Open)
+		f.Indent(openNode)
 	}
-	f.writeInline(messageLiteralNode.Open)
+	f.writeInline(openNode)
 	fieldNode := messageLiteralNode.Elements[0]
 	f.writeInline(fieldNode.Name)
 	if fieldNode.Sep != nil {
 		f.writeInline(fieldNode.Sep)
+	} else {
+		f.WriteString(":")
 	}
 	f.Space()
+	if messageLiteralNode.Seps[0] != nil {
+		// We are dropping the optional trailing separator. If it had
+		// trailing comments and the value does not, move the separator's
+		// trailing comment to the value.
+		sepTrailingComments := f.nodeInfo(messageLiteralNode.Seps[0]).TrailingComments()
+		if sepTrailingComments.Len() > 0 &&
+			f.nodeInfo(fieldNode.Val).TrailingComments().Len() == 0 {
+			f.setTrailingComments(fieldNode.Val, sepTrailingComments)
+		}
+	}
 	f.writeInline(fieldNode.Val)
-	f.writeInline(messageLiteralNode.Close)
+	f.writeInline(closeNode)
 	return true
 }
 
@@ -679,10 +698,18 @@ func arrayLiteralHasNestedMessageOrArray(arrayLiteralNode *ast.ArrayLiteralNode)
 //	foo: 2
 func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageLiteralNode) {
 	for i := 0; i < len(messageLiteralNode.Elements); i++ {
-		if sep := messageLiteralNode.Seps[i]; sep != nil {
-			f.writeMessageFieldWithSeparator(messageLiteralNode.Elements[i])
-			f.writeLineEnd(messageLiteralNode.Seps[i])
-			continue
+		// Separators ("," or ";") are optional. To avoid inconsistent formatted output,
+		// we suppress them, since they aren't needed. So we just write the element and
+		// ignore any optional separator in the AST.
+		if messageLiteralNode.Seps[i] != nil {
+			// Since we are dropping the optional trailing separator, we should
+			// possibly move its trailing comment to the element value so we don't
+			// lose it. Skip this step if the value already has a trailing comment.
+			sepTrailingComments := f.nodeInfo(messageLiteralNode.Seps[i]).TrailingComments()
+			if sepTrailingComments.Len() > 0 &&
+				f.nodeInfo(messageLiteralNode.Elements[i].Val).TrailingComments().Len() == 0 {
+				f.setTrailingComments(messageLiteralNode.Elements[i].Val, sepTrailingComments)
+			}
 		}
 		f.writeNode(messageLiteralNode.Elements[i])
 	}
@@ -698,18 +725,6 @@ func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) {
 		return
 	}
 	f.writeLineEnd(messageFieldNode.Val)
-}
-
-// writeMessageFieldWithSeparator writes the message field node,
-// but leaves room for a trailing separator in the parent message
-// literal.
-func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.MessageFieldNode) {
-	f.writeMessageFieldPrefix(messageFieldNode)
-	if compoundStringLiteral, ok := messageFieldNode.Val.(*ast.CompoundStringLiteralNode); ok {
-		f.writeCompoundStringLiteralIndentEndInline(compoundStringLiteral)
-		return
-	}
-	f.writeInline(messageFieldNode.Val)
 }
 
 // writeMessageFieldPrefix writes the message field node as a single line.
@@ -737,8 +752,13 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	if fieldReferenceNode.Close != nil {
 		f.writeInline(fieldReferenceNode.Close)
 	}
+	// The colon separator is optional sometimes, but we don't have enough
+	// information here to know whether it's necessary. For more consistent
+	// output, just always include it.
 	if messageFieldNode.Sep != nil {
 		f.writeInline(messageFieldNode.Sep)
+	} else {
+		f.WriteString(":")
 	}
 	f.Space()
 }
@@ -1208,7 +1228,7 @@ func (f *formatter) hasInteriorComments(nodes ...ast.Node) bool {
 	for i, n := range nodes {
 		// interior comments mean we ignore leading comments on first
 		// token and trailing comments on the last one
-		info := f.fileNode.NodeInfo(n)
+		info := f.nodeInfo(n)
 		if i > 0 && info.LeadingComments().Len() > 0 {
 			return true
 		}
@@ -1369,7 +1389,7 @@ func (f *formatter) writeBody(
 // in array literals.
 func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) {
 	defer f.SetPreviousNode(openBrace)
-	info := f.fileNode.NodeInfo(openBrace)
+	info := f.nodeInfo(openBrace)
 	if info.LeadingComments().Len() > 0 {
 		f.writeInlineComments(info.LeadingComments())
 		if info.LeadingWhitespace() != "" {
@@ -1388,7 +1408,7 @@ func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) {
 // on multiple lines. This is only used for message literals in arrays.
 func (f *formatter) writeOpenBracePrefixForArray(openBrace ast.Node) {
 	defer f.SetPreviousNode(openBrace)
-	info := f.fileNode.NodeInfo(openBrace)
+	info := f.nodeInfo(openBrace)
 	if info.LeadingComments().Len() > 0 {
 		f.writeMultilineComments(info.LeadingComments())
 	}
@@ -1569,7 +1589,7 @@ func (f *formatter) writeNegativeIntLiteral(negativeIntLiteralNode *ast.Negative
 }
 
 func (f *formatter) writeRaw(n ast.Node) {
-	info := f.fileNode.NodeInfo(n)
+	info := f.nodeInfo(n)
 	f.WriteString(info.RawText())
 }
 
@@ -1735,7 +1755,7 @@ func (f *formatter) writeStart(node ast.Node) {
 
 func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
 	defer f.SetPreviousNode(node)
-	info := f.fileNode.NodeInfo(node)
+	info := f.nodeInfo(node)
 	var (
 		nodeNewlineCount = newlineCount(info.LeadingWhitespace())
 		compact          = forceCompact || isOpenBrace(f.previousNode)
@@ -1805,7 +1825,7 @@ func (f *formatter) writeInline(node ast.Node) {
 		return
 	}
 	defer f.SetPreviousNode(node)
-	info := f.fileNode.NodeInfo(node)
+	info := f.nodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		f.writeInlineComments(info.LeadingComments())
 		if info.LeadingWhitespace() != "" {
@@ -1846,7 +1866,7 @@ func (f *formatter) writeBodyEnd(node ast.Node, leadingEndline bool) {
 		return
 	}
 	defer f.SetPreviousNode(node)
-	info := f.fileNode.NodeInfo(node)
+	info := f.nodeInfo(node)
 	if leadingEndline {
 		if info.LeadingComments().Len() > 0 {
 			f.writeInlineComments(info.LeadingComments())
@@ -1901,7 +1921,7 @@ func (f *formatter) writeBodyEndInline(node ast.Node, leadingInline bool) {
 		return
 	}
 	defer f.SetPreviousNode(node)
-	info := f.fileNode.NodeInfo(node)
+	info := f.nodeInfo(node)
 	if leadingInline {
 		if info.LeadingComments().Len() > 0 {
 			f.writeInlineComments(info.LeadingComments())
@@ -1942,7 +1962,7 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 		return
 	}
 	defer f.SetPreviousNode(node)
-	info := f.fileNode.NodeInfo(node)
+	info := f.nodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		f.writeInlineComments(info.LeadingComments())
 		if info.LeadingWhitespace() != "" {
@@ -2216,7 +2236,7 @@ func computeIndent(s string) (int, bool) {
 }
 
 func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
-	info := f.fileNode.NodeInfo(n)
+	info := f.nodeInfo(n)
 	comments := info.LeadingComments()
 	for i := 0; i < comments.Len(); i++ {
 		if newlineCount(comments.Index(i).LeadingWhitespace()) > 1 {
@@ -2247,9 +2267,39 @@ func (f *formatter) nodeHasComment(node ast.Node) bool {
 		return false
 	}
 
-	nodeinfo := f.fileNode.NodeInfo(node)
+	nodeinfo := f.nodeInfo(node)
 	return nodeinfo.LeadingComments().Len() > 0 ||
 		nodeinfo.TrailingComments().Len() > 0
+}
+
+func (f *formatter) setTrailingComments(node ast.Node, comments ast.Comments) {
+	f.overrideTrailingComments[node] = comments
+}
+
+func (f *formatter) nodeInfo(node ast.Node) nodeInfo {
+	info := f.fileNode.NodeInfo(node)
+	if trailingComments, ok := f.overrideTrailingComments[node]; ok {
+		return infoWithTrailingComments{info, trailingComments}
+	}
+	return info
+}
+
+type nodeInfo interface {
+	Start() ast.SourcePos
+	End() ast.SourcePos
+	LeadingComments() ast.Comments
+	TrailingComments() ast.Comments
+	LeadingWhitespace() string
+	RawText() string
+}
+
+type infoWithTrailingComments struct {
+	ast.NodeInfo
+	trailing ast.Comments
+}
+
+func (n infoWithTrailingComments) TrailingComments() ast.Comments {
+	return n.trailing
 }
 
 // importSortOrder maps import types to a sort order number, so it can be compared and sorted.
@@ -2315,4 +2365,24 @@ func isOpenBrace(node ast.Node) bool {
 // safely ignore them.
 func newlineCount(value string) int {
 	return strings.Count(value, "\n")
+}
+
+func messageLiteralOpen(msg *ast.MessageLiteralNode) *ast.RuneNode {
+	node := msg.Open
+	if node.Rune == '{' {
+		return node
+	}
+	// If it's not "{" then this message literal used "<" and ">" to enclose it.
+	// For consistent formatted output, change it to "{".
+	return ast.NewRuneNode('{', node.Token())
+}
+
+func messageLiteralClose(msg *ast.MessageLiteralNode) *ast.RuneNode {
+	node := msg.Close
+	if node.Rune == '}' {
+		return node
+	}
+	// If it's not "}" then this message literal used "<" and ">" to enclose it.
+	// For consistent formatted output, change it to "}".
+	return ast.NewRuneNode('}', node.Token())
 }

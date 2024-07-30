@@ -48,7 +48,6 @@ linters:
     # - depguard
     - dogsled
     - errcheck
-    - execinquery
     - exhaustruct
     - exportloopref
     - forbidigo
@@ -66,7 +65,7 @@ linters:
     - grouper
     - importas
     - ineffassign
-    - logrlint
+    - loggercheck
     - makezero
     - mirror
     - misspell
@@ -191,7 +190,7 @@ issues:
     - linters:
         - forbidigo
       # we want to use errgroup here
-      path: private/bufpkg/bufplugin/bufplugindocker/docker.go
+      path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/docker.go
       text: "use of `errgroup"
     - linters:
         - forbidigo
@@ -277,3 +276,14 @@ issues:
       # This greatly simplifies creation of descriptors, and it's safe enough since
       # it's just test code.
       path: private/bufpkg/bufimage/source_retention_options_test\.go
+    - linters:
+        - paralleltest
+      path: private/buf/cmd/buf/buf_test.go
+      # The LsModules tests call chdir and cannot be parallelized.
+      text: "LsModules"
+    - linters:
+        - gosec
+      # G101 checks for hardcoded credentials, and the variables named "*Token*
+      # trip this off.
+      path: private/pkg/oauth2/device.go
+      text: "G101:"

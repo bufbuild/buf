@@ -21,7 +21,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -93,7 +93,7 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf(err.Error())
 	}
-	pluginIdentity, pluginVersion, err := bufpluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
+	pluginIdentity, pluginVersion, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf(err.Error())
 	}
@@ -228,6 +228,34 @@ func run(
 			return err
 		}
 		version = cargoVersionResponse.Msg.Version
+	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET:
+		nugetVersionResponse, err := resolveServiceClient.GetNugetVersion(
+			ctx,
+			connect.NewRequest(
+				&registryv1alpha1.GetNugetVersionRequest{
+					ModuleReference: moduleReference,
+					PluginReference: pluginReference,
+				},
+			),
+		)
+		if err != nil {
+			return err
+		}
+		version = nugetVersionResponse.Msg.Version
+	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CMAKE:
+		cmakeVersionResponse, err := resolveServiceClient.GetCmakeVersion(
+			ctx,
+			connect.NewRequest(
+				&registryv1alpha1.GetCmakeVersionRequest{
+					ModuleReference: moduleReference,
+					PluginReference: pluginReference,
+				},
+			),
+		)
+		if err != nil {
+			return err
+		}
+		version = cmakeVersionResponse.Msg.Version
 	default:
 		return syserror.Newf("unknown PluginRegistryType: %v", pluginRegistryType)
 	}

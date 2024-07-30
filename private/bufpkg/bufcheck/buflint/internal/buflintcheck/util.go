@@ -25,8 +25,20 @@ import (
 
 // addFunc adds a FileAnnotation.
 //
-// Both the Descriptor and Locations can be nil.
-type addFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{})
+// descriptor is what the FileAnnotation applies to.
+// location is the granular Location of the FileAnnotation.
+// extraIgnoreLocations are extra Locations to check for comment ignores. Note that if descriptor is a
+// bufprotosource.LocationDescriptor, descriptor.Location() is automatically added to extraIgnoreLocations if
+// location != descriptor.Location().
+//
+// descriptor, location, and extraIgnoreLocations can be nil.
+type addFunc func(
+	descriptior bufprotosource.Descriptor,
+	location bufprotosource.Location,
+	extraIgnoreLocations []bufprotosource.Location,
+	format string,
+	args ...interface{},
+)
 
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch

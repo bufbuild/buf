@@ -4,6 +4,69 @@
 
 - No changes yet.
 
+## [v1.35.1] - 2024-07-24
+
+- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
+  of branch names, tag names, and commit hashes.
+- Fix unexpected `buf build` errors with absolute path directory inputs without workspace and/or
+  module configurations (e.g. `buf.yaml`, `buf.work.yaml`) and proto file paths set to the `--path` flag.
+
+## [v1.35.0] - 2024-07-22
+
+- Add `buf generate --clean` flag that will delete the directories, jar files, or zip files that the
+  plugins will write to, prior to generation. Allows cleaning of existing assets without having
+  to call `rm -rf`.
+- Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
+  required to log in.
+- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
+  known services or methods in the RPC schema, instead of invoking an RPC method.
+
+## [v1.34.0] - 2024-06-21
+
+- Add `buf config ls-modules` command to list configured modules.
+- Fix issue where `buf generate` would succeed on missing insertion points and
+  panic on empty insertion point files.
+- Update `buf generate` to allow the use of Editions syntax when doing local code
+  generation by proxying to a `protoc` binary (for languages where code gen is
+  implemented inside of `protoc` instead of in a plugin: Java, C++, Python, etc).
+- Allow use of an array of strings for the `protoc_path` property of for `buf.gen.yaml`,
+  where the first array element is the actual path and other array elements are extra
+  arguments that are passed to `protoc` each time it is invoked.
+
+## [v1.33.0] - 2024-06-13
+
+- Allow user to override `--source-control-url` and `--create-default-label` when using
+  `--git-metadata` with `buf push`.
+- Fix `buf push --git-metadata` when local tags point to different objects than
+  the remote tags.
+- Fix issue where comment ignores were not respected for `PROTOVALIDATE` lint rule violations.
+- Add `buf beta registry label {create,get,list}` to replace `buf beta registry {draft, tag}`
+  commands.
+- Update `buf beta commit {get,list}` command outputs to display create time and stop
+  displaying associated tags.
+- Change the behavior of `buf beta commit list <buf.build/owner/repository>` when the
+  reference is empty. It now lists commits in the repository instead of listing commits
+  of the default label.
+- Update output of `buf format` to canonicalize the punctuation used in message literals
+  in option values. The output now always uses `{` and `}` instead of `<` and `>`; it
+  adds `:` separators between field names and message values if the source omitted them,
+  and it removes unnecessary separators between fields (`,` and `;` are allowed, but
+  neither is needed).
+- Update `buf format -w` so that it does not touch files whose contents don't actually
+  change. This eliminates noisy notifications to file-system-watcher tools that are
+  watching the directory that contains proto sources.
+- Update `buf generate` to work with plugins provided by protoc for versions v24.0
+  to v25.3. Editions support was experimental in these releases, and the plugins
+  advertise incomplete support for editions, which triggers `buf` to report an error.
+  With this fix, these plugins can be used again as long as none of the input files use
+  editions syntax.
+- Add `buf push --exclude-unnamed` flag to exclude unnamed modules when pushing to the BSR.
+
+## [v1.32.2] - 2024-05-28
+
+- Update `buf generate` to warn instead of error when proto3 optional is required but not
+  supported by a plugin.
+
 ## [v1.32.1] - 2024-05-21
 
 - Fix archive and git inputs so that `--path` and `--exclude-path` paths are relative to
@@ -1122,7 +1185,12 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.32.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.35.1...HEAD
+[v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
+[v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
+[v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0
+[v1.33.0]: https://github.com/bufbuild/buf/compare/v1.32.2...v1.33.0
+[v1.32.2]: https://github.com/bufbuild/buf/compare/v1.32.1...v1.32.2
 [v1.32.1]: https://github.com/bufbuild/buf/compare/v1.32.0...v1.32.1
 [v1.32.0]: https://github.com/bufbuild/buf/compare/v1.32.0-beta.1...v1.32.0
 [v1.32.0-beta.1]: https://github.com/bufbuild/buf/compare/v1.31.0...v1.32.0-beta.1

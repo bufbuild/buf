@@ -609,6 +609,7 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 88, 5, 92, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 106, 5, 110, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 116, 5, 120, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 156, 5, 160, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 22, 3, 26, 5, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 28, 3, 32, 5, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 34, 3, 38, 5, "PROTOVALIDATE"),
@@ -1259,7 +1260,7 @@ func testLintWithOptions(
 		assert.NoError(t, err)
 	} else {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		require.True(t, errors.As(err, &fileAnnotationSet))
+		require.True(t, errors.As(err, &fileAnnotationSet), "error has unexpected type: %T", err)
 		bufanalysistesting.AssertFileAnnotationsEqual(
 			t,
 			expectedFileAnnotations,

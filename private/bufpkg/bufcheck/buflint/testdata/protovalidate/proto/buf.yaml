@@ -3,3 +3,4 @@ name: buf.testing/lint/protovalidate
 lint:
   use:
     - PROTOVALIDATE
+  allow_comment_ignores: true

@@ -26,6 +26,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
@@ -193,14 +194,41 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	})
 
 	t.Run("invalid_upstream", func(t *testing.T) {
-		listener, err := net.Listen("tcp", "127.0.0.1:")
+		tcpAddr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:")
 		require.NoError(t, err)
+		listener, err := net.ListenTCP("tcp", tcpAddr)
+		require.NoError(t, err)
+		done := make(chan struct{})
+		t.Cleanup(func() {
+			done <- struct{}{}
+		})
 		go func() {
-			conn, err := listener.Accept()
-			require.NoError(t, err)
-			require.NoError(t, conn.Close())
+			for {
+				select {
+				case <-done:
+					listener.Close()
+					return
+				default:
+					// Do not call require.NoError to handle errors because it calls t.FailNow,
+					// which is not safe from a goroutine, see https://pkg.go.dev/testing#T.FailNow
+					if err := listener.SetDeadline(time.Now().Add(time.Millisecond * 10)); err != nil {
+						t.Error(err)
+						continue
+					}
+					conn, err := listener.Accept()
+					if err != nil {
+						if err, ok := err.(net.Error); !ok || !err.Timeout() {
+							t.Error(err)
+						}
+						continue
+					}
+					if err := conn.Close(); err != nil {
+						t.Error(err)
+						continue
+					}
+				}
+			}
 		}()
-		defer listener.Close()
 
 		requestProto := &studiov1alpha1.InvokeRequest{
 			Target: "http://" + listener.Addr().String(),
@@ -214,7 +242,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
-		defer response.Body.Close()
+		t.Cleanup(func() {
+			response.Body.Close()
+		})
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
 	})
 }

@@ -21,19 +21,20 @@ import (
 	"path/filepath"
 
 	connect "connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
+	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -46,7 +47,7 @@ type generator struct {
 	logger              *zap.Logger
 	tracer              tracing.Tracer
 	storageosProvider   storageos.Provider
-	pluginexecGenerator bufpluginexec.Generator
+	pluginexecGenerator bufprotopluginexec.Generator
 	clientConfig        *connectclient.Config
 }
 
@@ -61,7 +62,7 @@ func newGenerator(
 		logger:              logger,
 		tracer:              tracer,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufpluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
+		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
 		clientConfig:        clientConfig,
 	}
 }
@@ -103,6 +104,17 @@ func (g *generator) Generate(
 		if err := bufimagemodify.Modify(image, config.GenerateManagedConfig()); err != nil {
 			return err
 		}
+	}
+	if generateOptions.deleteOuts {
+		if err := g.deleteOuts(
+			ctx,
+			generateOptions.baseOutDirPath,
+			config.GeneratePluginConfigs(),
+		); err != nil {
+			return err
+		}
+	}
+	for _, image := range images {
 		if err := g.generateCode(
 			ctx,
 			container,
@@ -116,6 +128,26 @@ func (g *generator) Generate(
 		}
 	}
 	return nil
+}
+
+func (g *generator) deleteOuts(
+	ctx context.Context,
+	baseOutDir string,
+	pluginConfigs []bufconfig.GeneratePluginConfig,
+) error {
+	return bufprotopluginos.NewCleaner(g.storageosProvider).DeleteOuts(
+		ctx,
+		slicesext.Map(
+			pluginConfigs,
+			func(pluginConfig bufconfig.GeneratePluginConfig) string {
+				out := pluginConfig.Out()
+				if baseOutDir != "" && baseOutDir != "." {
+					return filepath.Join(baseOutDir, out)
+				}
+				return out
+			},
+		),
+	)
 }
 
 func (g *generator) generateCode(
@@ -274,7 +306,7 @@ func (g *generator) execPlugins(
 	if err := validateResponses(responses, pluginConfigs); err != nil {
 		return nil, err
 	}
-	if err := checkRequiredFeatures(requiredFeatures, responses, pluginConfigs); err != nil {
+	if err := checkRequiredFeatures(g.logger, requiredFeatures, responses, pluginConfigs); err != nil {
 		return nil, err
 	}
 	return responses, nil
@@ -307,8 +339,8 @@ func (g *generator) execLocalPlugin(
 		container,
 		pluginConfig.Name(),
 		requests,
-		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
-		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()),
+		bufprotopluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
+		bufprotopluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()...),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
@@ -396,15 +428,15 @@ func getPluginGenerationRequest(
 	includeWellKnownTypes bool,
 ) (*registryv1alpha1.PluginGenerationRequest, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
-	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Name(), pluginConfig.Revision()); err == nil {
-		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
+	if reference, err := bufremotepluginref.PluginReferenceForString(pluginConfig.Name(), pluginConfig.Revision()); err == nil {
+		curatedPluginReference = bufremoteplugin.PluginReferenceToProtoCuratedPluginReference(reference)
 	} else {
 		// Try parsing as a plugin identity (no version information)
-		identity, err := bufpluginref.PluginIdentityForString(pluginConfig.Name())
+		identity, err := bufremotepluginref.PluginIdentityForString(pluginConfig.Name())
 		if err != nil {
 			return nil, fmt.Errorf("invalid remote plugin %q", pluginConfig.Name())
 		}
-		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
+		curatedPluginReference = bufremoteplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
 	var options []string
 	if len(pluginConfig.Opt()) > 0 {
@@ -451,8 +483,8 @@ func validateResponses(
 }
 
 type generateOptions struct {
-	// plugin specific options:
 	baseOutDirPath                string
+	deleteOuts                    bool
 	includeImportsOverride        *bool
 	includeWellKnownTypesOverride *bool
 }

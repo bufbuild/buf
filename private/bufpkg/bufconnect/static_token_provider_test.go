@@ -24,7 +24,7 @@ import (
 func TestNewTokenProviderFromContainer(t *testing.T) {
 	t.Parallel()
 	tokenSet, err := NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
-		tokenEnvKey: "default",
+		TokenEnvKey: "default",
 	}))
 	assert.NoError(t, err)
 	token := tokenSet.RemoteToken("fake")
@@ -68,7 +68,7 @@ func TestInvalidTokens(t *testing.T) {
 		_, err := NewTokenProviderFromString(token)
 		assert.Error(t, err, "expected %s to be an invalid token, but it wasn't", token)
 		_, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
-			tokenEnvKey: token,
+			TokenEnvKey: token,
 		}))
 		assert.Error(t, err, "expected %s to be an invalid token, but it wasn't", token)
 	}

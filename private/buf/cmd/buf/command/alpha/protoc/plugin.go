@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
+	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -53,7 +53,7 @@ func executePlugin(
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	generator := bufpluginexec.NewGenerator(
+	generator := bufprotopluginexec.NewGenerator(
 		logger,
 		tracer,
 		storageosProvider,
@@ -62,16 +62,16 @@ func executePlugin(
 	requests, err := bufimage.ImagesToCodeGeneratorRequests(
 		images,
 		strings.Join(pluginInfo.Opt, ","),
-		bufpluginexec.DefaultVersion,
+		bufprotopluginexec.DefaultVersion,
 		false,
 		false,
 	)
 	if err != nil {
 		return nil, err
 	}
-	var options []bufpluginexec.GenerateOption
+	var options []bufprotopluginexec.GenerateOption
 	if pluginInfo.Path != "" {
-		options = append(options, bufpluginexec.GenerateWithPluginPath(pluginInfo.Path))
+		options = append(options, bufprotopluginexec.GenerateWithPluginPath(pluginInfo.Path))
 	}
 	response, err := generator.Generate(
 		ctx,

@@ -36,6 +36,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
@@ -86,6 +87,34 @@ func TestSuccess6(t *testing.T) {
 func TestSuccessProfile1(t *testing.T) {
 	t.Parallel()
 	testRunStdoutProfile(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
+}
+
+func TestSuccessDir(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "successnobufyaml"))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "successnobufyaml"),
+		"--path",
+		filepath.Join("testdata", "successnobufyaml", "buf", "buf.proto"),
+	)
+	wd, err := osext.Getwd()
+	require.NoError(t, err)
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join(wd, "testdata", "successnobufyaml"))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join(wd, "testdata", "successnobufyaml"),
+		"--path",
+		filepath.Join(wd, "testdata", "successnobufyaml", "buf", "buf.proto"),
+	)
 }
 
 func TestFail1(t *testing.T) {
@@ -1027,6 +1056,549 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 	}
 }
 
+func TestLsModulesWorkspaceV1(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		`
+a_v1
+b_no_name_v1
+c_v1beta1
+d_no_file
+e_no_file
+f_no_name_v1beta1
+`,
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as path
+		`
+a_v1
+b_no_name_v1
+c_v1beta1
+d_no_file
+e_no_file
+f_no_name_v1beta1
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as name
+		`
+buf.build/bar/baz
+buf.build/foo/bar
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as json, sort by path
+		`
+{"path":"a_v1","name":"buf.build/foo/bar"}
+{"path":"b_no_name_v1","name":""}
+{"path":"c_v1beta1","name":"buf.build/bar/baz"}
+{"path":"d_no_file","name":""}
+{"path":"e_no_file","name":""}
+{"path":"f_no_name_v1beta1","name":""}
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+}
+
+func TestLsModulesWorkspaceV2(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev2")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		`
+a
+b_no_name
+c
+d_no_name
+`,
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as path
+		`
+a
+b_no_name
+c
+d_no_name
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as name
+		`
+buf.build/bar/baz
+buf.build/foo/bar
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as json, sort by path
+		`
+{"path":"a","name":"buf.build/foo/bar"}
+{"path":"b_no_name","name":""}
+{"path":"c","name":"buf.build/bar/baz"}
+{"path":"d_no_name","name":""}
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+}
+
+func TestLsModulesModuleV1(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	// with name
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1", "a_v1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		".",
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		".",
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+buf.build/foo/bar
+`,
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":"buf.build/foo/bar"}`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+	// without name
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1", "b_no_name_v1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		".",
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		".",
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"", // empty output
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":""}`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+}
+
+func TestLsModulesModuleV1Beta1(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	// with name
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1", "c_v1beta1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		".",
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		".",
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"buf.build/bar/baz",
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":"buf.build/bar/baz"}`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+	// without name
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1", "f_no_name_v1beta1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		".",
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		".",
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"", // empty output
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":""}`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+}
+
+func TestLsModulesNoConfig(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	// with name
+	require.NoError(t, osext.Chdir(t.TempDir()))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		".",
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		".",
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":""}`,
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
+	)
+}
+
+func TestLsModulesBothConfig(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "extraconfigv1")))
+	testRunStderrContainsNoWarn(
+		t,
+		nil,
+		1,
+		[]string{"buf.yaml", "buf.work.yaml"},
+		"config",
+		"ls-modules",
+	)
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "extraconfigv2")))
+	testRunStderrContainsNoWarn(
+		t,
+		nil,
+		1,
+		[]string{"buf.yaml", "buf.work.yaml"},
+		"config",
+		"ls-modules",
+	)
+}
+
+func TestLsModulesInvalidVersion(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspaceinvalid")))
+	testRunStderr(
+		t,
+		nil,
+		1,
+		`Failure: buf.work.yaml pointed to directory "proto" which has a v2 buf.yaml file`,
+		"config",
+		"ls-modules",
+	)
+}
+
+func TestLsModulesConfigFlag(t *testing.T) {
+	t.Parallel()
+
+	// v1beta1
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":"buf.build/bar/baz"}`,
+		"config",
+		"ls-modules",
+		"--config",
+		filepath.Join("testdata", "lsmodules", "workspacev1", "c_v1beta1", "buf.yaml"),
+		"--format",
+		"json",
+	)
+
+	// v1
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`{"path":".","name":"buf.build/foo/bar"}`,
+		"config",
+		"ls-modules",
+		"--config",
+		filepath.Join("testdata", "lsmodules", "workspacev1", "a_v1", "buf.yaml"),
+		"--format",
+		"json",
+	)
+
+	// v2
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+{"path":"a","name":"buf.build/foo/bar"}
+{"path":"b_no_name","name":""}
+{"path":"c","name":"buf.build/bar/baz"}
+{"path":"d_no_name","name":""}
+`,
+		"config",
+		"ls-modules",
+		"--config",
+		filepath.Join("testdata", "lsmodules", "workspacev2", "buf.yaml"),
+		"--format",
+		"json",
+	)
+}
+
+func TestLsModulesConfigPrecedence(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "lsmodules", "workspacev1")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		`
+a
+b_no_name
+c
+d_no_name
+`,
+		"config",
+		"ls-modules",
+		"--config",
+		filepath.Join(pwd, "testdata", "lsmodules", "workspacev2", "buf.yaml"),
+	)
+}
+
 func TestLsBreakingRulesDeprecated(t *testing.T) {
 	t.Parallel()
 
@@ -1505,7 +2077,8 @@ func TestModInitBasic(t *testing.T) {
 	t.Parallel()
 	testModInit(
 		t,
-		`version: v2
+		`# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
 lint:
   use:
     - DEFAULT
@@ -1919,6 +2492,23 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 		filepath.Join("a", "v3"),
 		"--exclude-path",
 		filepath.Join("a", "v3", "foo"),
+	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		`a/v3/a.proto:6:3:Field "1" with name "key" on message "Foo" changed type from "string" to "int32". See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules.`,
+		"",
+		"breaking",
+		filepath.Join(tempDir, "current.binpb"),
+		"--against",
+		filepath.Join(tempDir, "previous.binpb"),
+		"--path",
+		filepath.Join("a", "v3"),
+		"--exclude-path",
+		filepath.Join("a", "v3", "foo"),
+		"--config",
+		`{"version":"v2","breaking":{"use":["WIRE"]}}`,
 	)
 }
 

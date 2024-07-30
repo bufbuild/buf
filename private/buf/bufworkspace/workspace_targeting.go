@@ -224,7 +224,7 @@ func v2WorkspaceTargeting(
 		// Check if the input is overlapping within a module dir path. If so, return a nicer
 		// error. In the future, we want to remove special treatment for input dir, and it
 		// should be treated just like any target path.
-		return nil, checkForOverlap(bucketTargeting.SubDirPath(), moduleDirPaths)
+		return nil, checkForOverlap(ctx, bucket, bucketTargeting.SubDirPath(), moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -327,7 +327,7 @@ func v1WorkspaceTargeting(
 		// Check if the input is overlapping within a module dir path. If so, return a nicer
 		// error. In the future, we want to remove special treatment for input dir, and it
 		// should be treated just like any target path.
-		return nil, checkForOverlap(bucketTargeting.SubDirPath(), moduleDirPaths)
+		return nil, checkForOverlap(ctx, bucket, bucketTargeting.SubDirPath(), moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -625,6 +625,14 @@ func checkForControllingWorkspaceOrV1Module(
 	ignoreWorkspaceCheck bool,
 ) (buftarget.ControllingWorkspace, error) {
 	path = normalpath.Normalize(path)
+	// We attempt to check that the provided target path is not a file by checking the extension.
+	// Any valid proto file provided as a target would have the .proto extension, so we treat
+	// any path given without as a directory.
+	// This could be a file without an extension, in which case an error would be returned
+	// to the user when we attempt to check for a controlling workspace.
+	if normalpath.Ext(path) != "" {
+		path = normalpath.Dir(path)
+	}
 	// Keep track of any v1 module found along the way. If we find a v1 or v2 workspace, we
 	// return that over the v1 module, but we return this as the fallback.
 	var fallbackV1Module buftarget.ControllingWorkspace
@@ -681,9 +689,27 @@ func checkForControllingWorkspaceOrV1Module(
 	return fallbackV1Module, nil
 }
 
-func checkForOverlap(inputPath string, moduleDirPaths []string) error {
+func checkForOverlap(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	inputPath string,
+	moduleDirPaths []string,
+) error {
 	for _, moduleDirPath := range moduleDirPaths {
 		if normalpath.ContainsPath(moduleDirPath, inputPath, normalpath.Relative) {
+			// In the case where the inputPath would appear to be relative to moduleDirPath,
+			// but does not exist, for example, moduleDirPath == "." and inputPath == "fake-path",
+			// or moduleDirPath == "real-path" and inputPath == "real-path/fake-path", the error
+			// returned below is not very clear (in particular the first case, "." and "fake-path").
+			// We do a check here and return ErrNoTargetProtoFiles if the inputPath is empty
+			// and/or it does not exist.
+			empty, err := storage.IsEmpty(ctx, bucket, inputPath)
+			if err != nil {
+				return err
+			}
+			if empty {
+				return bufmodule.ErrNoTargetProtoFiles
+			}
 			return fmt.Errorf("failed to build input %q because it is contained by module at path %q specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path", inputPath, moduleDirPath)
 		}
 	}
