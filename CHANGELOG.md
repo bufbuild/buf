@@ -18,6 +18,8 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
+- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
+  known services or methods in the RPC schema, instead of invoking an RPC method.
 
 ## [v1.34.0] - 2024-06-21
 
