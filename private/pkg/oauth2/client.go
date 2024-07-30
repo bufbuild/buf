@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -26,6 +27,13 @@ import (
 	"time"
 
 	"go.uber.org/multierr"
+)
+
+var (
+	// ErrUnsupported is returned when we receive an unsupported response from the server.
+	//
+	// TODO(go1.23): replace by errors.ErrUnsupported once it is available.
+	ErrUnsupported = errors.New("unsupported operation")
 )
 
 const (
@@ -231,7 +239,7 @@ func parseJSONResponse(response *http.Response, payload any) error {
 		return fmt.Errorf("oauth2: failed to read response body: %w", err)
 	}
 	if contentType, _, _ := mime.ParseMediaType(response.Header.Get("Content-Type")); contentType != "application/json" {
-		return fmt.Errorf("oauth2: invalid response: %d %s", response.StatusCode, body)
+		return fmt.Errorf("oauth2: %w: %d %s", ErrUnsupported, response.StatusCode, body)
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return fmt.Errorf("oauth2: failed to unmarshal response: %w: %s", err, body)

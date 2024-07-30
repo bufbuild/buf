@@ -165,31 +165,26 @@ func inner(
 	if flags.TokenStdin {
 		data, err := io.ReadAll(container.Stdin())
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to read token from stdin: %w", err)
 		}
 		token = string(data)
 	} else if flags.NoBrowser {
-		// Do not print unless we are prompting
-		if _, err := fmt.Fprintf(
-			container.Stdout(),
-			"Enter the BSR token created at https://%s/settings/user.\n\n",
-			remote,
-		); err != nil {
-			return err
-		}
 		var err error
-		token, err = bufcli.PromptUserForPassword(container, "Token: ")
+		token, err = doPromptLogin(ctx, container, remote)
 		if err != nil {
-			if errors.Is(err, bufcli.ErrNotATTY) {
-				return errors.New("cannot perform an interactive login from a non-TTY device")
-			}
 			return err
 		}
 	} else {
 		var err error
 		token, err = doBrowserLogin(ctx, container, remote)
 		if err != nil {
-			return fmt.Errorf("unable to complete authorize device grant: %w", err)
+			if !errors.Is(err, oauth2.ErrUnsupported) {
+				return fmt.Errorf("unable to complete authorize device grant: %w", err)
+			}
+			token, err = doPromptLogin(ctx, container, remote)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	// Remove leading and trailing spaces from user-supplied token to avoid
@@ -243,6 +238,30 @@ func inner(
 		return err
 	}
 	return nil
+}
+
+// doPromptLogin prompts the user for a token.
+func doPromptLogin(
+	_ context.Context,
+	container appext.Container,
+	remote string,
+) (string, error) {
+	if _, err := fmt.Fprintf(
+		container.Stdout(),
+		"Enter the BSR token created at https://%s/settings/user.\n\n",
+		remote,
+	); err != nil {
+		return "", err
+	}
+	var err error
+	token, err := bufcli.PromptUserForPassword(container, "Token: ")
+	if err != nil {
+		if errors.Is(err, bufcli.ErrNotATTY) {
+			return "", errors.New("cannot perform an interactive login from a non-TTY device")
+		}
+		return "", err
+	}
+	return token, nil
 }
 
 // doBrowserLogin performs the device authorization grant flow via the browser.
