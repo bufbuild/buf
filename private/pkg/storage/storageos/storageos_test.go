@@ -17,6 +17,7 @@ package storageos_test
 import (
 	"context"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -56,6 +57,37 @@ func TestOS(t *testing.T) {
 		require.NoError(t, err)
 		require.Zero(t, written)
 		require.NoError(t, writeObjectCloser.Close())
+
+		// Try reading a file as if foo.txt is a directory.
+		_, err = bucket.Get(ctx, "foo.txt/bar.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+		_, err = bucket.Get(ctx, "foo.txt/bar.txt/baz.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+
+		// Read a file that does not exist at all.
+		_, err = bucket.Get(ctx, "baz.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	t.Run("get_non_existent_file_symlink", func(t *testing.T) {
+		ctx := context.Background()
+		// Create a bucket at an absolute path.
+		actualTempDir := t.TempDir()
+		actualTempDir, err := filepath.Abs(actualTempDir)
+		require.NoError(t, err)
+		_, err = os.Create(filepath.Join(actualTempDir, "foo.txt"))
+		require.NoError(t, err)
+		tempDir := t.TempDir()
+		tempDir, err = filepath.Abs(tempDir)
+		require.NoError(t, err)
+		tempDir = filepath.Join(tempDir, "sym")
+		require.NoError(t, os.Symlink(actualTempDir, tempDir))
+		provider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+		bucket, err := provider.NewReadWriteBucket(tempDir, storageos.ReadWriteBucketWithSymlinksIfSupported())
+		require.NoError(t, err)
+
+		_, err = bucket.Get(ctx, "foo.txt")
+		require.NoError(t, err)
 
 		// Try reading a file as if foo.txt is a directory.
 		_, err = bucket.Get(ctx, "foo.txt/bar.txt")
