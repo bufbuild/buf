@@ -42,6 +42,7 @@ func TestOS(t *testing.T) {
 	)
 
 	t.Run("get_non_existent_file", func(t *testing.T) {
+		t.Parallel()
 		ctx := context.Background()
 		// Create a bucket at an absolute path.
 		tempDir := t.TempDir()
@@ -70,6 +71,7 @@ func TestOS(t *testing.T) {
 	})
 
 	t.Run("get_non_existent_file_symlink", func(t *testing.T) {
+		t.Parallel()
 		ctx := context.Background()
 		// Create a bucket at an absolute path.
 		actualTempDir := t.TempDir()
@@ -82,6 +84,11 @@ func TestOS(t *testing.T) {
 		require.NoError(t, err)
 		tempDir = filepath.Join(tempDir, "sym")
 		require.NoError(t, os.Symlink(actualTempDir, tempDir))
+		t.Cleanup(func() {
+			if err := os.Remove(tempDir); err != nil {
+				t.Error(err)
+			}
+		})
 		provider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 		bucket, err := provider.NewReadWriteBucket(tempDir, storageos.ReadWriteBucketWithSymlinksIfSupported())
 		require.NoError(t, err)
