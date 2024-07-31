@@ -56,9 +56,8 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <domain>",
 		Short: `Log in to the Buf Schema Registry`,
-		Long: fmt.Sprintf(`This prompts for your BSR token and updates your %s file with these credentials.
-The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
-		Args: appcmd.MaximumNArgs(1),
+		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. If the browser is not available or the flag %q is specified, this command will prompt for your BSR token. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, noBrowserFlagName, netrc.Filename),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -98,7 +97,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		noBrowserFlagName,
 		false,
 		fmt.Sprintf(
-			"Do not open a browser to complete the login process. This command opens a browser by default. %s must be set to false to use this flag.",
+			"Do not open a browser to complete the login process. This command opens a browser by default. The flag %s must be set to false to use this flag.",
 			tokenStdinFlagName,
 		),
 	)
