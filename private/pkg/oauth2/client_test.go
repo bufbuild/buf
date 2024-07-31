@@ -87,7 +87,7 @@ func TestRegisterDevice(t *testing.T) {
 				Body:       io.NopCloser(strings.NewReader(`server error`)),
 			}, nil
 		},
-		err: fmt.Errorf("oauth2: invalid response: 500 server error"),
+		err: fmt.Errorf("oauth2: %w: 500 server error", ErrUnsupported),
 	}}
 	for _, test := range tests {
 		test := test
