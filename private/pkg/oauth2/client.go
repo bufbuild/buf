@@ -32,7 +32,7 @@ import (
 var (
 	// ErrUnsupported is returned when we receive an unsupported response from the server.
 	//
-	// TODO(go1.23): replace by errors.ErrUnsupported once it is available.
+	// TODO(go1.21): replace by errors.ErrUnsupported once it is available.
 	ErrUnsupported = errors.New("unsupported operation")
 )
 
