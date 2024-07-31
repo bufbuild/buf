@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,12 +49,12 @@ var headerBlockList = map[string]struct{}{
 // servers, but this function will look at only the first.) If there is no
 // such header, the authority is the host portion of the URL (both the domain
 // name/IP address and port).
-func GetAuthority(url *url.URL, headers http.Header) string {
+func GetAuthority(urlHost string, headers http.Header) string {
 	header := headers.Get("host")
 	if header != "" {
 		return header
 	}
-	return url.Host
+	return urlHost
 }
 
 // LoadHeaders computes the set of request headers from the given flag values,

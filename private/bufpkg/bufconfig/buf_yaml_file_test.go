@@ -16,6 +16,7 @@ package bufconfig
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -68,6 +69,34 @@ build:
   excludes:
     - tests
 `,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		//input
+		strings.Join(
+			[]string{
+				fmt.Sprintf(docsLinkComment, "v1"),
+				`version: v1
+build:
+  excludes:
+    - tests
+`,
+			},
+			"\n",
+		),
+		// expected output
+		strings.Join(
+			[]string{
+				fmt.Sprintf(docsLinkComment, "v1"),
+				`version: v1
+build:
+  excludes:
+    - tests
+`,
+			},
+			"\n",
+		),
 	)
 
 	testReadWriteBufYAMLFileRoundTrip(
@@ -290,6 +319,38 @@ modules:
   - path: baz
     name: buf.build/foo/baz
 `,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		strings.Join(
+			[]string{
+				fmt.Sprintf(docsLinkComment, "v2"),
+				`version: v2
+modules:
+  - path: baz
+    name: buf.build/foo/baz
+  - path: bar
+    name: buf.build/foo/bar
+`,
+			},
+			"\n",
+		),
+		// expected output
+		strings.Join(
+			[]string{
+				fmt.Sprintf(docsLinkComment, "v2"),
+				`version: v2
+modules:
+  - path: bar
+    name: buf.build/foo/bar
+  - path: baz
+    name: buf.build/foo/baz
+`,
+			},
+			"\n",
+		),
 	)
 }
 
