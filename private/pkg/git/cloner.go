@@ -350,11 +350,11 @@ func getRefspecsForName(gitName Name) (fetchRef string, fallbackRef string, chec
 		return createFetchRefSpec(cloneBranch), "", checkout
 	} else if cloneBranch != "" {
 		// If a branch is specified, we fetch the branch directly.
-		return createFetchRefSpec(cloneBranch), "", cloneBranch
+		return cloneBranch, "", ""
 	} else if checkout != "" && checkout != "HEAD" {
 		// If a checkout ref is specified, we fetch the ref directly.
 		// We fallback to fetching the HEAD to resolve partial refs.
-		return createFetchRefSpec(checkout), "HEAD", checkout
+		return checkout, "HEAD", ""
 	}
 	return "HEAD", "", ""
 }
