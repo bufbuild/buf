@@ -2,14 +2,21 @@
 
 ## [Unreleased]
 
-- Add `buf registry organization {create, delete, info, update}` commands to manage BSR organizations. Remove `buf beta registry organization` commands.
-- Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to manage BSR modules. Remove `buf beta registry repository` commands.
-- Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels. Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
-- Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove `buf beta registry commit` commands.
+- Add `buf registry organization {create, delete, info, update}` commands to manage BSR
+  organizations. Remove `buf beta registry organization` commands.
+- Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to
+  manage BSR modules. Remove `buf beta registry repository` commands.
+- Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels.
+  Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
+- Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove
+  `buf beta registry commit` commands.
+- Fix git input handling of annotated tags.
+- Update `buf registry login` to complete the login flow in the browser by default. This allows
+  users to login with their browser and have the token automatically provided to the CLI.
 
 ## [v1.35.1] - 2024-07-24
 
-- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
+- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use
   of branch names, tag names, and commit hashes.
 - Fix unexpected `buf build` errors with absolute path directory inputs without workspace and/or
   module configurations (e.g. `buf.yaml`, `buf.work.yaml`) and proto file paths set to the `--path` flag.
