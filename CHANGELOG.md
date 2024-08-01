@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix git input handling of annotated tags.
 
 ## [v1.35.1] - 2024-07-24
 
