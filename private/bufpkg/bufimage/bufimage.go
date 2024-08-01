@@ -222,39 +222,6 @@ func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
 	)
 }
 
-// TODO: this can be just a struct if moved to a different package
-// ImageFileForGeneration is an ImageFile for generation, or a dependency for such a file.
-type ImageFileForGeneration interface {
-	ImageFile
-
-	// ToGenerate returns whether the file may be generated.
-	//
-	// This is not necessarily the same as IsImport(), especially when strategy is set to directory.
-	//
-	// If it returns true, the file
-	//
-	// If it returns false, it will not be generated regardless of --include-imports and --include-wkt.
-	ToGenerate() bool
-}
-
-// NewImageFileForGeneration returns an image file to generate.
-func NewImageFileForGeneration(imageFile ImageFile, toGenerate bool) ImageFileForGeneration {
-	return &imageFileForGeneration{
-		ImageFile:  imageFile,
-		toGenerate: toGenerate,
-	}
-}
-
-// TODO: maybe move to different file
-type imageFileForGeneration struct {
-	ImageFile
-	toGenerate bool
-}
-
-func (f *imageFileForGeneration) ToGenerate() bool {
-	return f.toGenerate
-}
-
 // Image is a buf image.
 type Image interface {
 	// Files are the files that comprise the image.
@@ -284,47 +251,6 @@ type Image interface {
 // If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
 	return newImage(imageFiles, false, nil)
-}
-
-// ImageForGeneration is a buf image to be generated.
-type ImageForGeneration interface {
-	// Files are the files that comprise the image.
-	//
-	// Not all files should be generated.
-	Files() []ImageFileForGeneration
-}
-
-// TODO: rename and add doc
-func NewImageForGenerationFromImageSimple(image Image) ImageForGeneration {
-	return &imageForGeneration{
-		files: slicesext.Map(image.Files(), func(imageFile ImageFile) ImageFileForGeneration {
-			return &imageFileForGeneration{
-				ImageFile:  imageFile,
-				toGenerate: true,
-			}
-		}),
-	}
-}
-
-func newImageForGeneration(image Image, filesToGenerate map[string]struct{}) ImageForGeneration {
-	return &imageForGeneration{
-		files: slicesext.Map(image.Files(), func(imageFile ImageFile) ImageFileForGeneration {
-			_, ok := filesToGenerate[imageFile.Path()]
-			return &imageFileForGeneration{
-				ImageFile:  imageFile,
-				toGenerate: ok,
-			}
-		}),
-	}
-}
-
-// TODO: move to another file
-type imageForGeneration struct {
-	files []ImageFileForGeneration
-}
-
-func (i *imageForGeneration) Files() []ImageFileForGeneration {
-	return i.files
 }
 
 // BuildImage runs compilation.
@@ -588,67 +514,6 @@ func ImageWithOnlyPathsAllowNotExist(
 	return imageWithOnlyPaths(image, paths, excludePaths, true)
 }
 
-// ImageByDirSplitImports returns multiple images split by directory.
-//
-// This function does not treat import files differently from non-import files.
-//
-// TODO: rename this and maybe it should be moved to the bufgen package.
-//
-// If strategy is dir, we want the files in file_to_generate inside each
-// CodeGeneratorRequest to be in the same directory.
-//
-// For example, if we have an image with the following files:
-//
-// - a/a.proto -> b/b.proto
-// - b/b.proto -> c/c.proto
-// - b/b.proto -> d/d.proto
-//
-// where a/a.proto and b/b.proto are the non-imports, and c/c.proto and and d/d.proto are imports.
-//
-// Now, if we have includeImports set to true, we should send 4 CodeGeneratorRequests to each plugin.
-// Each request should have file_to_generate equal to ["x/x.proto"] of length 1, with x being one of a, b, c or d,
-// and its proto_file should include "all files in files_to_generate and everything they import", by contract.
-//
-// If includeImports is set to false, the request with c/c.proto to generate and the one with d/d.proto should not exist,
-// and we should only send 2 requests to the plugin.
-func ImageByDirSplitImports(image Image) ([]ImageForGeneration, error) {
-	dirToImageFilePaths := normalpath.ByDir(
-		slicesext.Map(image.Files(), func(imageFile ImageFile) string {
-			return imageFile.Path()
-		})...,
-	)
-	// we need this to produce a deterministic order of the returned Images
-	dirs := make([]string, 0, len(dirToImageFilePaths))
-	for dir := range dirToImageFilePaths {
-		dirs = append(dirs, dir)
-	}
-	sort.Strings(dirs)
-	newImages := make([]ImageForGeneration, 0, len(dirToImageFilePaths))
-	for _, dir := range dirs {
-		imageFilePaths, ok := dirToImageFilePaths[dir]
-		if !ok {
-			// this should never happen
-			return nil, syserror.Newf("no dir for %q in dirToImageFilePaths", dir)
-		}
-		imageFilesToGenerate, err := slicesext.MapError(imageFilePaths, func(filePath string) (ImageFile, error) {
-			imageFile := image.GetFile(filePath)
-			if imageFile == nil {
-				return nil, syserror.Newf("expected image file to exist at %q", filePath)
-			}
-			return imageFile, nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		newImage, err := getImageForGenerationForFilePaths(image, slicesext.ToStructMap(imageFilePaths), imageFilesToGenerate)
-		if err != nil {
-			return nil, err
-		}
-		newImages = append(newImages, newImage)
-	}
-	return newImages, nil
-}
-
 // ImageByDir returns multiple images that have non-imports split
 // by directory.
 //
@@ -710,98 +575,6 @@ func ImageToFileDescriptorSet(image Image) *descriptorpb.FileDescriptorSet {
 // ImageToFileDescriptorProtos returns the FileDescriptorProtos for the Image.
 func ImageToFileDescriptorProtos(image Image) []*descriptorpb.FileDescriptorProto {
 	return imageFilesToFileDescriptorProtos(image.Files())
-}
-
-// ImageToCodeGeneratorRequest returns a new CodeGeneratorRequest for the Image.
-//
-// All non-imports are added as files to generate.
-// If includeImports is set, all non-well-known-type imports are also added as files to generate.
-// If includeWellKnownTypes is set, well-known-type imports are also added as files to generate.
-// includeWellKnownTypes has no effect if includeImports is not set.
-func ImageToCodeGeneratorRequest(
-	image ImageForGeneration,
-	parameter string,
-	compilerVersion *pluginpb.Version,
-	includeImports bool,
-	includeWellKnownTypes bool,
-) (*pluginpb.CodeGeneratorRequest, error) {
-	return imageToCodeGeneratorRequest(
-		image,
-		parameter,
-		compilerVersion,
-		includeImports,
-		includeWellKnownTypes,
-		nil,
-		nil,
-	)
-}
-
-// ImagesToCodeGeneratorRequests converts the Images to CodeGeneratorRequests.
-//
-// All non-imports are added as files to generate.
-// If includeImports is set, all non-well-known-type imports are also added as files to generate.
-// If includeImports is set, only one CodeGeneratorRequest will contain any given file as a FileToGenerate.
-// If includeWellKnownTypes is set, well-known-type imports are also added as files to generate.
-// includeWellKnownTypes has no effect if includeImports is not set.
-func ImagesToCodeGeneratorRequests(
-	images []ImageForGeneration,
-	parameter string,
-	compilerVersion *pluginpb.Version,
-	includeImports bool,
-	includeWellKnownTypes bool,
-) ([]*pluginpb.CodeGeneratorRequest, error) {
-	requests := make([]*pluginpb.CodeGeneratorRequest, 0, len(images))
-	// alreadyUsedPaths is a map of paths that have already been added to an image.
-	//
-	// We track this if includeImports is set, so that when we find an import, we can
-	// see if the import was already added to a CodeGeneratorRequest via another Image
-	// in the Image slice. If the import was already added, we do not add duplicates
-	// across CodeGeneratorRequests.
-	var alreadyUsedPaths map[string]struct{}
-	// nonImportPaths is a map of non-import paths.
-	//
-	// We track this if includeImports is set. If we find a non-import file in Image A
-	// and this file is an import in Image B, the file will have already been added to
-	// a CodeGeneratorRequest via Image A, so do not add the duplicate to any other
-	// CodeGeneratorRequest.
-	var nonImportPaths map[string]struct{}
-	if includeImports {
-		// We don't need to track these if includeImports is false, so we only populate
-		// the maps if includeImports is true. If includeImports is false, only non-imports
-		// will be added to each CodeGeneratorRequest, so figuring out whether or not
-		// we should add a given import to a given CodeGeneratorRequest is unnecessary.
-		//
-		// imageToCodeGeneratorRequest checks if these maps are nil before every access.
-		alreadyUsedPaths = make(map[string]struct{})
-		nonImportPaths = make(map[string]struct{})
-		for _, image := range images {
-			for _, imageFile := range image.Files() {
-				if !imageFile.IsImport() {
-					nonImportPaths[imageFile.Path()] = struct{}{}
-				}
-			}
-		}
-	}
-	for _, image := range images {
-		var err error
-		request, err := imageToCodeGeneratorRequest(
-			image,
-			parameter,
-			compilerVersion,
-			includeImports,
-			includeWellKnownTypes,
-			alreadyUsedPaths,
-			nonImportPaths,
-		)
-		if err != nil {
-			return nil, err
-		}
-		if len(request.FileToGenerate) == 0 {
-			continue
-		}
-		requests = append(requests, request)
-	}
-	return requests, nil
 }
 
 type newImageForProtoOptions struct {

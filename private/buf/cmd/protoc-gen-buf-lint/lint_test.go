@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagegenerate"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -365,7 +366,7 @@ func testBuildRequest(
 	}
 	image, err := bufimage.NewImage(imageFiles)
 	require.NoError(t, err)
-	codeGenReq, err := bufimage.ImageToCodeGeneratorRequest(bufimage.NewImageForGenerationFromImageSimple(image), parameter, nil, false, false)
+	codeGenReq, err := bufimagegenerate.ImageToCodeGeneratorRequest(bufimagegenerate.NewImageForGenerationFromImage(image), parameter, nil, false, false)
 	require.NoError(t, err)
 	request, err := protoplugin.NewRequest(codeGenReq)
 	require.NoError(t, err)

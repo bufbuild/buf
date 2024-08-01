@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagegenerate"
 )
 
 // imageProvider is used to provide the images used
@@ -29,7 +30,7 @@ import (
 // strategy.
 type imageProvider struct {
 	image       bufimage.Image
-	imagesByDir []bufimage.ImageForGeneration
+	imagesByDir []bufimagegenerate.ImageForGeneration
 	lock        sync.Mutex
 }
 
@@ -39,16 +40,16 @@ func newImageProvider(image bufimage.Image) *imageProvider {
 	}
 }
 
-func (p *imageProvider) GetImages(strategy Strategy) ([]bufimage.ImageForGeneration, error) {
+func (p *imageProvider) GetImages(strategy Strategy) ([]bufimagegenerate.ImageForGeneration, error) {
 	switch strategy {
 	case StrategyAll:
-		return []bufimage.ImageForGeneration{bufimage.NewImageForGenerationFromImageSimple(p.image)}, nil
+		return []bufimagegenerate.ImageForGeneration{bufimagegenerate.NewImageForGenerationFromImage(p.image)}, nil
 	case StrategyDirectory:
 		p.lock.Lock()
 		defer p.lock.Unlock()
 		if p.imagesByDir == nil {
 			var err error
-			p.imagesByDir, err = bufimage.ImageByDirSplitImports(p.image)
+			p.imagesByDir, err = bufimagegenerate.ImageByDirSplitImports(p.image)
 			if err != nil {
 				return nil, err
 			}

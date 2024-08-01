@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagegenerate"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
@@ -331,7 +332,7 @@ func (g *generator) execLocalPlugin(
 	// 	}))
 	// }
 	// fmt.Println("<<<<<<<<")
-	requests, err := bufimage.ImagesToCodeGeneratorRequests(
+	requests, err := bufimagegenerate.ImagesToCodeGeneratorRequests(
 		pluginImages,
 		pluginConfig.Opt(),
 		nil,
