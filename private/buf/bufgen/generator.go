@@ -325,13 +325,6 @@ func (g *generator) execLocalPlugin(
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Println("IMAGES:")
-	// for _, image := range pluginImages {
-	// 	fmt.Println("files:", slicesext.Map(image.Files(), func(file bufimage.ImageFileForGeneration) string {
-	// 		return fmt.Sprintf("%s (%v)", file.Path(), file.ToGenerate())
-	// 	}))
-	// }
-	// fmt.Println("<<<<<<<<")
 	requests, err := bufimagegenerate.ImagesToCodeGeneratorRequests(
 		pluginImages,
 		pluginConfig.Opt(),
@@ -342,13 +335,6 @@ func (g *generator) execLocalPlugin(
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Println("REQUESTS:")
-	// for _, request := range requests {
-	// 	fmt.Println("file_to_generate:", request.FileToGenerate, "proto_file", slicesext.Map(request.ProtoFile, func(file *descriptorpb.FileDescriptorProto) string {
-	// 		return file.GetName()
-	// 	}))
-	// }
-	// fmt.Println("<<<<<<<<")
 	response, err := g.pluginexecGenerator.Generate(
 		ctx,
 		container,
