@@ -89,6 +89,34 @@ func TestSuccessProfile1(t *testing.T) {
 	testRunStdoutProfile(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
+func TestSuccessDir(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "successnobufyaml"))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "successnobufyaml"),
+		"--path",
+		filepath.Join("testdata", "successnobufyaml", "buf", "buf.proto"),
+	)
+	wd, err := osext.Getwd()
+	require.NoError(t, err)
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join(wd, "testdata", "successnobufyaml"))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join(wd, "testdata", "successnobufyaml"),
+		"--path",
+		filepath.Join(wd, "testdata", "successnobufyaml", "buf", "buf.proto"),
+	)
+}
+
 func TestFail1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
@@ -2049,7 +2077,8 @@ func TestModInitBasic(t *testing.T) {
 	t.Parallel()
 	testModInit(
 		t,
-		`version: v2
+		`# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
 lint:
   use:
     - DEFAULT
