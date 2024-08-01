@@ -80,10 +80,10 @@ type ModuleDataStore interface {
 func NewModuleDataStore(
 	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
-	filelocker filelock.Locker,
+	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) ModuleDataStore {
-	return newModuleDataStore(logger, bucket, filelocker, options...)
+	return newModuleDataStore(logger, bucket, locker, options...)
 }
 
 // ModuleDataStoreOption is an option for a new ModuleDataStore.
@@ -91,9 +91,6 @@ type ModuleDataStoreOption func(*moduleDataStore)
 
 // ModuleDataStoreWithTar returns a new ModuleDataStoreOption that reads and stores
 // tar files instead of storing individual files in a directory in the bucket.
-//
-// The filelocker will be ignored when this is set, since we are storing all files associated
-// with the module in a single tar file.
 //
 // The default is to store individual files in a directory.
 func ModuleDataStoreWithTar() ModuleDataStoreOption {
@@ -105,9 +102,9 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
-	logger     *zap.Logger
-	bucket     storage.ReadWriteBucket
-	filelocker filelock.Locker
+	logger *zap.Logger
+	bucket storage.ReadWriteBucket
+	locker filelock.Locker
 
 	tar bool
 }
@@ -115,17 +112,13 @@ type moduleDataStore struct {
 func newModuleDataStore(
 	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
-	filelocker filelock.Locker,
+	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
-	// If no filelocker is provided, we set this to a NopLocker.
-	if filelocker == nil {
-		filelocker = filelock.NewNopLocker()
-	}
 	moduleDataStore := &moduleDataStore{
-		logger:     logger,
-		bucket:     bucket,
-		filelocker: filelocker,
+		logger: logger,
+		bucket: bucket,
+		locker: locker,
 	}
 	for _, option := range options {
 		option(moduleDataStore)
@@ -198,15 +191,17 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			zap.String("dirPath", dirPath),
 		)
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
-		// Only attempt to get a file lock when storing individual files
-		unlocker, err := p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
+		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
 		if err != nil {
-			p.logger.Debug("failed to get rlock for getModuleDataForModuleKey", zap.Error(err))
+			return err
+		}
+		// Only attempt to get a file lock when storing individual files
+		unlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
+		if err != nil {
 			return nil, err
 		}
 		defer func() {
 			if err := unlocker.Unlock(); err != nil {
-				p.logger.Debug("failed to runlock for getModuleDataForModuleKey", zap.Error(err))
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
@@ -323,19 +318,19 @@ func (p *moduleDataStore) putModuleData(
 			zap.String("dirPath", dirPath),
 		)
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
-
+		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
+		if err != nil {
+			return err
+		}
 		// Only attempt to get a file locks when storing individual files.
 		// Before writing to the module directory, first get a shared lock and check module.yaml
-		var readUnlocker filelock.Unlocker
-		readUnlocker, err = p.filelocker.RLock(ctx, dirPath+externalModuleDataLockFileExt)
+		readUnlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
 		if err != nil {
-			p.logger.Debug("failed to get rlock for putModuleData", zap.Error(err))
 			return err
 		}
 		defer func() {
 			if readUnlocker != nil {
 				if err := readUnlocker.Unlock(); err != nil {
-					p.logger.Debug("failed to runlock for putModuleData", zap.Error(err))
 					retErr = multierr.Append(retErr, err)
 				}
 			}
@@ -368,14 +363,12 @@ func (p *moduleDataStore) putModuleData(
 				return err
 			}
 		}
-		unlocker, err := p.filelocker.Lock(ctx, dirPath+externalModuleDataLockFileExt)
+		unlocker, err := p.locker.Lock(ctx, moduleDataStoreDirLockPath)
 		if err != nil {
-			p.logger.Debug("failed to get lock for putModuleData", zap.Error(err))
 			return err
 		}
 		defer func() {
 			if err := unlocker.Unlock(); err != nil {
-				p.logger.Debug("failed to unlock for putModuleData", zap.Error(err))
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
@@ -621,6 +614,14 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 			return digest, nil
 		},
 	)
+}
+
+func getModuleDataStoreDirLockPath(moduleKey bufmodule.ModuleKey) (string, error) {
+	moduleDataStoreDirPath, err := getModuleDataStoreDirPath(moduleKey)
+	if err != nil {
+		return nil, err
+	}
+	return moduleDataStoreDirPath + externalModuleDataLockFileExt
 }
 
 // externalModuleData is the store representation of a ModuleData.

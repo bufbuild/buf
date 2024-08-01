@@ -73,7 +73,7 @@ type LockerOption func(*lockerOptions)
 // LockerWithLockTimeout sets the default lock timeout for the Locker.
 //
 // If Lock/RLock is called with LockWithTimeout, that will override this default timeout.
-// If this is not set, the default lock timeout is 3s.
+// If this is not set, the default lock timeout is set to DefaultLockTimeout.
 func LockerWithLockTimeout(lockTimeout time.Duration) LockerOption {
 	return func(lockerOptions *lockerOptions) {
 		lockerOptions.lockTimeout = lockTimeout
@@ -84,7 +84,7 @@ func LockerWithLockTimeout(lockTimeout time.Duration) LockerOption {
 //
 // If Lock/RLock is called with LockWithRetryDelay, that will override the default lock
 // retry delay.
-// If this is not set, the default lock retry delay is 200ms.
+// If this is not set, the default lock retry delay is set to DefaultLockRetryDelay.
 func LockerWithLockRetryDelay(lockRetryDelay time.Duration) LockerOption {
 	return func(lockerOptions *lockerOptions) {
 		lockerOptions.lockRetryDelay = lockRetryDelay
