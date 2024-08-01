@@ -128,7 +128,7 @@ func newGenerateConfigFromExternalFileV2(
 		return nil, err
 	}
 	return &generateConfig{
-		cleanPluginOuts: externalFile.CleanPluginOuts,
+		cleanPluginOuts: externalFile.Clean,
 		managedConfig:   managedConfig,
 		pluginConfigs:   pluginConfigs,
 	}, nil

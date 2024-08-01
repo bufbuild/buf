@@ -106,7 +106,7 @@ plugins:
 		t,
 		// input
 		`version: v2
-clean_plugin_outs: true
+clean: true
 plugins:
   - local: custom-gen-go
     out: gen/go
@@ -115,7 +115,7 @@ plugins:
 `,
 		// expected output
 		`version: v2
-clean_plugin_outs: true
+clean: true
 plugins:
   - local: custom-gen-go
     out: gen/go
