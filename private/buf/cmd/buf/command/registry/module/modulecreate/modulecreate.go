@@ -143,7 +143,7 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.Print(
+	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
 		bufprint.NewModule(modules[0], moduleFullName),

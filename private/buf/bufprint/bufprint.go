@@ -88,11 +88,11 @@ type OutputEntity interface {
 	fullName() string
 }
 
-// Print prints entities' names.
+// PrintNames prints entities' names.
 //
 // If format is FormatJSON, this also prints information about each entity, the
 // same as calling PrintInfo on each entity.
-func Print(writer io.Writer, format Format, entities ...OutputEntity) error {
+func PrintNames(writer io.Writer, format Format, entities ...OutputEntity) error {
 	switch format {
 	case FormatJSON:
 		for _, entity := range entities {
@@ -126,7 +126,7 @@ func PrintPage(
 	}
 	switch format {
 	case FormatText:
-		if err := Print(writer, format, entities...); err != nil {
+		if err := PrintNames(writer, format, entities...); err != nil {
 			return err
 		}
 		if nextPageToken == "" {

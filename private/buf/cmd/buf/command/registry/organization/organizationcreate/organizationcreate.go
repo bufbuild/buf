@@ -114,7 +114,7 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.Print(
+	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
 		bufprint.NewOrganization(organizations[0], moduleOwner.Registry()),

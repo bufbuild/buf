@@ -142,7 +142,7 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.Print(
+	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
 		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.OutputEntity {
