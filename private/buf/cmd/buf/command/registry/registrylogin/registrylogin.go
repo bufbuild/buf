@@ -68,7 +68,7 @@ func NewCommand(
 type flags struct {
 	Username   string
 	TokenStdin bool
-	NoBrowser  bool
+	Prompt     bool
 }
 
 func newFlags() *flags {
@@ -94,7 +94,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	flagSet.BoolVar(
-		&f.NoBrowser,
+		&f.Prompt,
 		promptFlagName,
 		false,
 		fmt.Sprintf(
@@ -158,7 +158,7 @@ func inner(
 			return err
 		}
 	}
-	if flags.TokenStdin && flags.NoBrowser {
+	if flags.TokenStdin && flags.Prompt {
 		return fmt.Errorf("cannot use both --%s and --%s flags", tokenStdinFlagName, promptFlagName)
 	}
 	var token string
@@ -168,7 +168,7 @@ func inner(
 			return fmt.Errorf("unable to read token from stdin: %w", err)
 		}
 		token = string(data)
-	} else if flags.NoBrowser {
+	} else if flags.Prompt {
 		var err error
 		token, err = doPromptLogin(ctx, container, remote)
 		if err != nil {
@@ -231,7 +231,7 @@ func inner(
 	}
 	loggedInMessage := fmt.Sprintf("Logged in as %s. Credentials saved to %s.\n", user.Username, netrcFilePath)
 	// Unless we did not prompt at all, print a newline first
-	if !flags.TokenStdin || !flags.NoBrowser {
+	if !flags.TokenStdin || !flags.Prompt {
 		loggedInMessage = "\n" + loggedInMessage
 	}
 	if _, err := container.Stdout().Write([]byte(loggedInMessage)); err != nil {
