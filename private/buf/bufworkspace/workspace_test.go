@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -34,15 +35,15 @@ import (
 
 func TestBasicV1(t *testing.T) {
 	t.Parallel()
-	testBasic(t, "workspacev1")
+	testBasic(t, "workspacev1", false)
 }
 
 func TestBasicV2(t *testing.T) {
 	t.Parallel()
-	testBasic(t, "workspacev2")
+	testBasic(t, "workspacev2", true)
 }
 
-func testBasic(t *testing.T, subDirPath string) {
+func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback bool) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -136,10 +137,8 @@ func testBasic(t *testing.T, subDirPath string) {
 	require.NoError(t, err)
 	_, err = module.StatFileInfo(ctx, "acme/bond/excluded/v2/excluded.proto")
 	require.True(t, errors.Is(err, fs.ErrNotExist))
-	_, err = module.StatFileInfo(ctx, "README.md")
-	require.NoError(t, err)
-	_, err = module.StatFileInfo(ctx, "LICENSE")
-	require.NoError(t, err)
+
+	testLicenseAndDoc(t, ctx, workspace, expectTopLevelLicenseDocFallback)
 
 	bucketTargeting, err = buftarget.NewBucketTargeting(
 		ctx,
@@ -175,6 +174,8 @@ func testBasic(t *testing.T, subDirPath string) {
 	fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
 	require.NoError(t, err)
 	require.False(t, fileInfo.IsTargetFile())
+
+	testLicenseAndDoc(t, ctx, workspace, expectTopLevelLicenseDocFallback)
 }
 
 func TestUnusedDep(t *testing.T) {
@@ -237,4 +238,68 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 		bsrProvider,
 		bsrProvider,
 	)
+}
+
+func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, expectTopLevelLicenseDocFallback bool) {
+	// bond has its own license and doc
+	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
+	require.NotNil(t, module)
+	requireModuleFileContent(t, ctx, module, "README.md", "bond doc\n")
+	requireModuleFileContent(t, ctx, module, "LICENSE", "bond license\n")
+
+	module = workspace.GetModuleForOpaqueID("buf.testing/acme/geo")
+	require.NotNil(t, module)
+	// geo has its own license
+	requireModuleFileContent(t, ctx, module, "LICENSE", "geo license\n")
+	// geo falls back to top-level doc if it's a v2 workspace
+	if expectTopLevelLicenseDocFallback {
+		requireModuleFileContent(t, ctx, module, "README.md", "workspace doc\n")
+	} else {
+		_, err := module.StatFileInfo(ctx, "README.md")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	}
+	_, err := module.StatFileInfo(ctx, "buf.md")
+	require.ErrorIs(t, err, fs.ErrNotExist)
+
+	module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
+	require.NotNil(t, module)
+	// moeny has its own doc
+	requireModuleFileContent(t, ctx, module, "buf.md", "money doc\n")
+	// money does not have README.md
+	_, err = module.StatFileInfo(ctx, "README.md")
+	require.ErrorIs(t, err, fs.ErrNotExist)
+	// money falls back to top-level license if it's a v2 workspace
+	if expectTopLevelLicenseDocFallback {
+		requireModuleFileContent(t, ctx, module, "LICENSE", "workspace license\n")
+	} else {
+		_, err = module.StatFileInfo(ctx, "LICENSE")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	}
+
+	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	require.NotNil(t, module)
+	// portfolio does not have its own license or doc
+	if expectTopLevelLicenseDocFallback {
+		requireModuleFileContent(t, ctx, module, "LICENSE", "workspace license\n")
+		requireModuleFileContent(t, ctx, module, "README.md", "workspace doc\n")
+	} else {
+		_, err = module.StatFileInfo(ctx, "LICENSE")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+		_, err = module.StatFileInfo(ctx, "README.md")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	}
+}
+
+func requireModuleFileContent(
+	t *testing.T,
+	ctx context.Context,
+	module bufmodule.Module,
+	path string,
+	expectedContent string,
+) {
+	file, err := module.GetFile(ctx, path)
+	require.NoError(t, err)
+	content, err := ioext.ReadAllAndClose(file)
+	require.NoError(t, err)
+	require.Equal(t, expectedContent, string(content))
 }
