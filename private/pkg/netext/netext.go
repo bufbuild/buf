@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 )
 
 const (
@@ -37,8 +38,12 @@ func ValidateHostname(hostname string) (string, error) {
 	}
 
 	parsedHost := hostname
-	if host, _, err := net.SplitHostPort(hostname); err == nil {
-		parsedHost = host
+	if host, port, err := net.SplitHostPort(hostname); err == nil {
+		// net.SplitHostPort performs very lax validation of ports (allowing to be resolved from /etc/services).
+		// Only accept numeric ports here.
+		if portNum, err := strconv.ParseUint(port, 10, 32); err == nil && portNum <= 65535 {
+			parsedHost = host
+		}
 	}
 	if net.ParseIP(parsedHost) != nil {
 		// hostname is a valid IP address

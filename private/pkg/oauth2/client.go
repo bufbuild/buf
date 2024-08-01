@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -26,6 +27,13 @@ import (
 	"time"
 
 	"go.uber.org/multierr"
+)
+
+var (
+	// ErrUnsupported is returned when we receive an unsupported response from the server.
+	//
+	// TODO(go1.21): replace by errors.ErrUnsupported once it is available.
+	ErrUnsupported = errors.New("unsupported operation")
 )
 
 const (
@@ -149,13 +157,13 @@ func (c *Client) AccessDeviceToken(
 		return nil, fmt.Errorf("oauth2: polling interval must be less than or equal to %v", maxPollingInterval)
 	}
 	encodedValues := deviceAccessTokenRequest.ToValues().Encode()
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
+	timer := time.NewTimer(pollingInterval)
+	defer timer.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-ticker.C:
+		case <-timer.C:
 			body := strings.NewReader(encodedValues)
 			request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+DeviceTokenPath, body)
 			if err != nil {
@@ -188,16 +196,15 @@ func (c *Client) AccessDeviceToken(
 			case ErrorCodeSlowDown:
 				// If the server is rate limiting the client, increase the polling interval.
 				pollingInterval += incrementPollingInterval
-				ticker.Reset(pollingInterval)
 			case ErrorCodeAuthorizationPending:
 				// If the user has not yet authorized the device, continue polling.
-				continue
 			case ErrorCodeAccessDenied, ErrorCodeExpiredToken:
 				// If the user has denied the device or the token has expired, return the error.
 				return nil, &payload.Error
 			default:
 				return nil, &payload.Error
 			}
+			timer.Reset(pollingInterval)
 		}
 	}
 }
@@ -232,7 +239,7 @@ func parseJSONResponse(response *http.Response, payload any) error {
 		return fmt.Errorf("oauth2: failed to read response body: %w", err)
 	}
 	if contentType, _, _ := mime.ParseMediaType(response.Header.Get("Content-Type")); contentType != "application/json" {
-		return fmt.Errorf("oauth2: invalid response: %d %s", response.StatusCode, body)
+		return fmt.Errorf("oauth2: %w: %d %s", ErrUnsupported, response.StatusCode, body)
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return fmt.Errorf("oauth2: failed to unmarshal response: %w: %s", err, body)
