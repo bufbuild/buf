@@ -100,6 +100,6 @@ func run(
 		}
 		return err
 	}
-	fmt.Fprintf(container.Stdout(), "Unarchived %s.\n", moduleRef)
-	return nil
+	_, err = fmt.Fprintf(container.Stdout(), "Unarchived %s.\n", moduleRef)
+	return err
 }
