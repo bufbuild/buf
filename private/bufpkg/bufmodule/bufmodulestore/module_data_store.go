@@ -193,7 +193,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		// Only attempt to get a file lock when storing individual files
 		unlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
@@ -619,9 +619,9 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 func getModuleDataStoreDirLockPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	moduleDataStoreDirPath, err := getModuleDataStoreDirPath(moduleKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return moduleDataStoreDirPath + externalModuleDataLockFileExt
+	return moduleDataStoreDirPath + externalModuleDataLockFileExt, nil
 }
 
 // externalModuleData is the store representation of a ModuleData.
