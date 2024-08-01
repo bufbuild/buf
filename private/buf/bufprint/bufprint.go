@@ -229,6 +229,7 @@ func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName)
 		Name:       moduleFullName.Name(),
 		FullName:   moduleFullName.String(),
 		CreateTime: module.CreateTime.AsTime(),
+		State:      module.State.String(),
 	}
 }
 
@@ -432,6 +433,7 @@ type outputModule struct {
 	Name       string    `json:"name,omitempty"`
 	FullName   string    `json:"-" bufprint:"Full Name"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	State      string    `json:"state,omitempty"`
 }
 
 func (m outputModule) fullName() string {
