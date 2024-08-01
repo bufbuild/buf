@@ -97,6 +97,11 @@ func TestValidateHostname(t *testing.T) {
 			hostname:    "",
 			isValid:     false,
 		},
+		{
+			description: "urls are invalid",
+			hostname:    "https://buf.build",
+			isValid:     false,
+		},
 	}
 
 	for _, test := range tests {

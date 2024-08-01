@@ -12,7 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
+//go:build darwin
+// +build darwin
 
-// Version is the CLI version of buf.
-const Version = "1.35.2-dev"
+package registrylogin
+
+import (
+	"os"
+	"strings"
+)
+
+func getClientName() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "", err
+	}
+	// macOS uses .local for the hostname.
+	hostname = strings.TrimSuffix(hostname, ".local")
+	return hostname, nil
+}

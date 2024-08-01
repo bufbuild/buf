@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
+//go:build !darwin
+// +build !darwin
 
-// Version is the CLI version of buf.
-const Version = "1.35.2-dev"
+package registrylogin
+
+import "os"
+
+func getClientName() (string, error) {
+	return os.Hostname()
+}
