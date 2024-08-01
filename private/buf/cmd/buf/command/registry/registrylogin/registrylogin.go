@@ -54,7 +54,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <domain>",
 		Short: `Log in to the Buf Schema Registry`,
-		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags %q or %q to complete an alternative login flow. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename),
+		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags --%s or --%s to complete an alternative login flow. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename),
 		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -89,7 +89,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		tokenStdinFlagName,
 		false,
 		fmt.Sprintf(
-			"Read the token from stdin. This command prompts for a token by default. Exclusive with the flag %q.",
+			"Read the token from stdin. This command prompts for a token by default. Exclusive with the flag --%s.",
 			promptFlagName,
 		),
 	)
@@ -98,7 +98,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		promptFlagName,
 		false,
 		fmt.Sprintf(
-			"Prompt for the token. The device must be a TTY. Exclusive with the flag %q.",
+			"Prompt for the token. The device must be a TTY. Exclusive with the flag --%s.",
 			tokenStdinFlagName,
 		),
 	)
@@ -159,7 +159,7 @@ func inner(
 		}
 	}
 	if flags.TokenStdin && flags.Prompt {
-		return fmt.Errorf("cannot use both --%s and --%s flags", tokenStdinFlagName, promptFlagName)
+		return appcmd.NewInvalidArgumentErrorf("cannot use both --%s and --%s flags", tokenStdinFlagName, promptFlagName)
 	}
 	var token string
 	if flags.TokenStdin {
