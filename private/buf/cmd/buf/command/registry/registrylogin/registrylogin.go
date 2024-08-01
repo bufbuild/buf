@@ -231,7 +231,7 @@ func inner(
 	}
 	loggedInMessage := fmt.Sprintf("Logged in as %s. Credentials saved to %s.\n", user.Username, netrcFilePath)
 	// Unless we did not prompt at all, print a newline first
-	if !flags.TokenStdin || !flags.Prompt {
+	if !flags.TokenStdin {
 		loggedInMessage = "\n" + loggedInMessage
 	}
 	if _, err := container.Stdout().Write([]byte(loggedInMessage)); err != nil {
