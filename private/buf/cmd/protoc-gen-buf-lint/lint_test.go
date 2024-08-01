@@ -365,7 +365,7 @@ func testBuildRequest(
 	}
 	image, err := bufimage.NewImage(imageFiles)
 	require.NoError(t, err)
-	codeGenReq, err := bufimage.ImageToCodeGeneratorRequest(image, parameter, nil, false, false)
+	codeGenReq, err := bufimage.ImageToCodeGeneratorRequest(bufimage.NewImageForGenerationFromImageSimple(image), parameter, nil, false, false)
 	require.NoError(t, err)
 	request, err := protoplugin.NewRequest(codeGenReq)
 	require.NoError(t, err)

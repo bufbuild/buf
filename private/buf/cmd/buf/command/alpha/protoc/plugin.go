@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
@@ -60,7 +61,7 @@ func executePlugin(
 		runner,
 	)
 	requests, err := bufimage.ImagesToCodeGeneratorRequests(
-		images,
+		slicesext.Map(images, bufimage.NewImageForGenerationFromImageSimple),
 		strings.Join(pluginInfo.Opt, ","),
 		bufprotopluginexec.DefaultVersion,
 		false,

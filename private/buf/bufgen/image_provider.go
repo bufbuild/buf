@@ -29,7 +29,7 @@ import (
 // strategy.
 type imageProvider struct {
 	image       bufimage.Image
-	imagesByDir []bufimage.Image
+	imagesByDir []bufimage.ImageForGeneration
 	lock        sync.Mutex
 }
 
@@ -39,16 +39,16 @@ func newImageProvider(image bufimage.Image) *imageProvider {
 	}
 }
 
-func (p *imageProvider) GetImages(strategy Strategy) ([]bufimage.Image, error) {
+func (p *imageProvider) GetImages(strategy Strategy) ([]bufimage.ImageForGeneration, error) {
 	switch strategy {
 	case StrategyAll:
-		return []bufimage.Image{p.image}, nil
+		return []bufimage.ImageForGeneration{bufimage.NewImageForGenerationFromImageSimple(p.image)}, nil
 	case StrategyDirectory:
 		p.lock.Lock()
 		defer p.lock.Unlock()
 		if p.imagesByDir == nil {
 			var err error
-			p.imagesByDir, err = bufimage.ImageByDir(p.image)
+			p.imagesByDir, err = bufimage.ImageByDirSplitImports(p.image)
 			if err != nil {
 				return nil, err
 			}

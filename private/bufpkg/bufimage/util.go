@@ -275,6 +275,66 @@ func addFileWithImports(
 	return accumulator
 }
 
+func getImageForGenerationForFilePaths(
+	image Image,
+	generationPaths map[string]struct{},
+	generationImageFiles []ImageFile,
+) (ImageForGeneration, error) {
+	var imageFiles []ImageFile
+	seenPaths := make(map[string]struct{})
+	for _, nonImportImageFile := range generationImageFiles {
+		imageFiles = addFileForGenerationWithImports(
+			imageFiles,
+			image,
+			generationPaths,
+			seenPaths,
+			nonImportImageFile,
+		)
+	}
+	imageWithPaths, err := NewImage(imageFiles)
+	if err != nil {
+		return nil, err
+	}
+	return newImageForGeneration(imageWithPaths, generationPaths), nil
+}
+
+// largely copied from addFileWithImports
+//
+// returns accumulated files in correct order
+func addFileForGenerationWithImports(
+	accumulator []ImageFile,
+	image Image,
+	nonImportPaths map[string]struct{},
+	seenPaths map[string]struct{},
+	imageFile ImageFile,
+) []ImageFile {
+	path := imageFile.Path()
+	// if seen already, skip
+	if _, ok := seenPaths[path]; ok {
+		return accumulator
+	}
+	seenPaths[path] = struct{}{}
+
+	// then, add imports first, for proper ordering
+	for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
+		if importFile := image.GetFile(importPath); importFile != nil {
+			accumulator = addFileForGenerationWithImports(
+				accumulator,
+				image,
+				nonImportPaths,
+				seenPaths,
+				importFile,
+			)
+		}
+	}
+
+	accumulator = append(
+		accumulator,
+		imageFile,
+	)
+	return accumulator
+}
+
 func checkExcludePathsExistInImage(image Image, excludeFileOrDirPaths []string) error {
 	for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
 		var foundPath bool
@@ -413,7 +473,7 @@ func stripBufExtensionField(unknownFields protoreflect.RawFields) protoreflect.R
 }
 
 func imageToCodeGeneratorRequest(
-	image Image,
+	image ImageForGeneration,
 	parameter string,
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
@@ -455,12 +515,15 @@ func imageToCodeGeneratorRequest(
 }
 
 func isFileToGenerate(
-	imageFile ImageFile,
+	imageFile ImageFileForGeneration,
 	alreadyUsedPaths map[string]struct{},
 	nonImportPaths map[string]struct{},
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) bool {
+	if !imageFile.ToGenerate() {
+		return false
+	}
 	path := imageFile.Path()
 	if !imageFile.IsImport() {
 		if alreadyUsedPaths != nil {

@@ -510,7 +510,7 @@ func TestBasic(t *testing.T) {
 			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
 	}
-	actualRequest, err := bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, false)
+	actualRequest, err := bufimage.ImageToCodeGeneratorRequest(bufimage.NewImageForGenerationFromImageSimple(image), "foo", nil, false, false)
 	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequest,
@@ -520,7 +520,7 @@ func TestBasic(t *testing.T) {
 	require.Empty(t, diff)
 
 	// verify that includeWellKnownTypes is a no-op if includeImports is false
-	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, true)
+	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(bufimage.NewImageForGenerationFromImageSimple(image), "foo", nil, false, true)
 	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequest,
@@ -558,7 +558,7 @@ func TestBasic(t *testing.T) {
 			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
 	}
-	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, false)
+	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(bufimage.NewImageForGenerationFromImageSimple(image), "foo", nil, true, false)
 	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequestIncludeImports,
@@ -611,7 +611,7 @@ func TestBasic(t *testing.T) {
 			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
 	}
-	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, true)
+	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(bufimage.NewImageForGenerationFromImageSimple(image), "foo", nil, true, true)
 	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequestIncludeImportsAndWellKnownTypes,
@@ -704,7 +704,7 @@ func TestBasic(t *testing.T) {
 			},
 		},
 	}
-	requestsFromImages, err := bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, false)
+	requestsFromImages, err := bufimage.ImagesToCodeGeneratorRequests(slicesext.Map(imagesByDir, bufimage.NewImageForGenerationFromImageSimple), "foo", nil, false, false)
 	require.NoError(t, err)
 	require.Equal(t, len(codeGeneratorRequests), len(requestsFromImages))
 	for i := range codeGeneratorRequests {
@@ -764,7 +764,7 @@ func TestBasic(t *testing.T) {
 			},
 		},
 	}
-	requestsFromImages, err = bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, false)
+	requestsFromImages, err = bufimage.ImagesToCodeGeneratorRequests(slicesext.Map(imagesByDir, bufimage.NewImageForGenerationFromImageSimple), "foo", nil, true, false)
 	require.NoError(t, err)
 	require.Equal(t, len(codeGeneratorRequestsIncludeImports), len(requestsFromImages))
 	for i := range codeGeneratorRequestsIncludeImports {
