@@ -120,9 +120,9 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 
 // GenerateWithDeleteOuts returns a new GenerateOption that results in the
 // output directories, zip files, or jar files being deleted before generation is run.
-func GenerateWithDeleteOuts() GenerateOption {
+func GenerateWithDeleteOuts(deleteOuts bool) GenerateOption {
 	return func(generateOptions *generateOptions) {
-		generateOptions.deleteOuts = true
+		generateOptions.deleteOuts = &deleteOuts
 	}
 }
 

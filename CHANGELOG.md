@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add `clean` as a top-level option in `buf.gen.yaml`, matching the `buf generate --clean` flag. If
+  set to true, this will delete the directories, jar files, or zip files set to `out` for each
+  plugin.
 - Fix git input handling of annotated tags.
 - Update `buf registry login` to complete the login flow in the browser by default. This allows
   users to login with their browser and have the token automatically provided to the CLI.

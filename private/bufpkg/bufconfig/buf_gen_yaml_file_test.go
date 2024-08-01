@@ -106,6 +106,27 @@ plugins:
 		t,
 		// input
 		`version: v2
+clean: true
+plugins:
+  - local: custom-gen-go
+    out: gen/go
+    opt: paths=source_relative
+    strategy: directory
+`,
+		// expected output
+		`version: v2
+clean: true
+plugins:
+  - local: custom-gen-go
+    out: gen/go
+    opt: paths=source_relative
+    strategy: directory
+`,
+	)
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
 managed:
   disable:
     - module: buf.build/googleapis/googleapis
