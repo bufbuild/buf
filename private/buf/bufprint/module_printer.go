@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	moduleFullNameHeader   = "Full Name"
+	moduleFullNameHeader   = "Name"
 	moduleCreateTimeHeader = "Create Time"
 )
 

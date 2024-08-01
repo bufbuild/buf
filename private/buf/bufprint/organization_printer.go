@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	organizationFullNameHeader   = "Full Name"
+	organizationFullNameHeader   = "Name"
 	organizationCreateTimeHeader = "Create Time"
 )
 
