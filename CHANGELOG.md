@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fix git input handling of annotated tags.
 - Update `buf registry login` to complete the login flow in the browser. This allows users to log in
   with their browser and have the token automatically provided to the CLI.
 
