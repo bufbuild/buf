@@ -124,6 +124,26 @@ func PrintPage(
 	if len(entities) == 0 {
 		return nil
 	}
+	var entitiesName string
+	for _, entity := range entities {
+		var currentEntitiesName string
+		switch entity.(type) {
+		case outputLabel:
+			currentEntitiesName = "labels"
+		case outputCommit:
+			currentEntitiesName = "commits"
+		case outputModule:
+			currentEntitiesName = "modules"
+		case outputOrganization:
+			currentEntitiesName = "organizations"
+		default:
+			return syserror.Newf("unknown implementation of OutputEntity: %T", entity)
+		}
+		if currentEntitiesName != entitiesName && entitiesName != "" {
+			return syserror.Newf("the page has both %s and %s", currentEntitiesName, entitiesName)
+		}
+		entitiesName = currentEntitiesName
+	}
 	switch format {
 	case FormatText:
 		if err := PrintNames(writer, format, entities...); err != nil {
@@ -134,32 +154,13 @@ func PrintPage(
 		}
 		_, err := fmt.Fprintf(
 			writer,
-			"\nMore than %d commits found, run %q to list more\n",
+			"\nMore than %d %s found, run %q to list more\n",
 			len(entities),
+			entitiesName,
 			nextPageCommand,
 		)
 		return err
 	case FormatJSON:
-		var entitiesName string
-		for _, entity := range entities {
-			var currentEntitiesName string
-			switch entity.(type) {
-			case outputLabel:
-				currentEntitiesName = "labels"
-			case outputCommit:
-				currentEntitiesName = "commits"
-			case outputModule:
-				currentEntitiesName = "modules"
-			case outputOrganization:
-				currentEntitiesName = "organizations"
-			default:
-				return syserror.Newf("unknown implementation of OutputEntity: %T", entity)
-			}
-			if currentEntitiesName != entitiesName && entitiesName != "" {
-				return syserror.Newf("the page has both %s and %s", currentEntitiesName, entitiesName)
-			}
-			entitiesName = currentEntitiesName
-		}
 		return json.NewEncoder(writer).Encode(&entityPage{
 			NextPage:         nextPageToken,
 			Entities:         entities,
