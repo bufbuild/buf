@@ -432,7 +432,7 @@ type outputModule struct {
 	Remote     string    `json:"remote,omitempty"`
 	Owner      string    `json:"owner,omitempty"`
 	Name       string    `json:"name,omitempty"`
-	FullName   string    `json:"-" bufprint:"Full Name"`
+	FullName   string    `json:"-" bufprint:"Name"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
 	State      string    `json:"state,omitempty"`
 }
@@ -445,7 +445,7 @@ type outputOrganization struct {
 	ID         string    `json:"id,omitempty"`
 	Remote     string    `json:"remote,omitempty"`
 	Name       string    `json:"name,omitempty"`
-	FullName   string    `json:"-" bufprint:"Full Name"`
+	FullName   string    `json:"-" bufprint:"Name"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
 }
 
