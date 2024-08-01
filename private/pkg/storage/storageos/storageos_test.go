@@ -15,6 +15,9 @@
 package storageos_test
 
 import (
+	"context"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -37,6 +40,72 @@ func TestOS(t *testing.T) {
 		testWriteBucketToReadBucket,
 		true,
 	)
+
+	t.Run("get_non_existent_file", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		// Create a bucket at an absolute path.
+		tempDir := t.TempDir()
+		tempDir, err := filepath.Abs(tempDir)
+		require.NoError(t, err)
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+		require.NoError(t, err)
+
+		// Write a file to it.
+		writeObjectCloser, err := bucket.Put(ctx, "foo.txt")
+		require.NoError(t, err)
+		written, err := writeObjectCloser.Write([]byte(nil))
+		require.NoError(t, err)
+		require.Zero(t, written)
+		require.NoError(t, writeObjectCloser.Close())
+
+		// Try reading a file as if foo.txt is a directory.
+		_, err = bucket.Get(ctx, "foo.txt/bar.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+		_, err = bucket.Get(ctx, "foo.txt/bar.txt/baz.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+
+		// Read a file that does not exist at all.
+		_, err = bucket.Get(ctx, "baz.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	t.Run("get_non_existent_file_symlink", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		// Create a bucket at an absolute path.
+		actualTempDir := t.TempDir()
+		actualTempDir, err := filepath.Abs(actualTempDir)
+		require.NoError(t, err)
+		_, err = os.Create(filepath.Join(actualTempDir, "foo.txt"))
+		require.NoError(t, err)
+		tempDir := t.TempDir()
+		tempDir, err = filepath.Abs(tempDir)
+		require.NoError(t, err)
+		tempDir = filepath.Join(tempDir, "sym")
+		require.NoError(t, os.Symlink(actualTempDir, tempDir))
+		t.Cleanup(func() {
+			if err := os.Remove(tempDir); err != nil {
+				t.Error(err)
+			}
+		})
+		provider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+		bucket, err := provider.NewReadWriteBucket(tempDir, storageos.ReadWriteBucketWithSymlinksIfSupported())
+		require.NoError(t, err)
+
+		_, err = bucket.Get(ctx, "foo.txt")
+		require.NoError(t, err)
+
+		// Try reading a file as if foo.txt is a directory.
+		_, err = bucket.Get(ctx, "foo.txt/bar.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+		_, err = bucket.Get(ctx, "foo.txt/bar.txt/baz.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+
+		// Read a file that does not exist at all.
+		_, err = bucket.Get(ctx, "baz.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	})
 }
 
 func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos.Provider) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
