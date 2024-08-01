@@ -32,7 +32,13 @@ import (
 // location != descriptor.Location().
 //
 // descriptor, location, and extraIgnoreLocations can be nil.
-type addFunc func(descriptior bufprotosource.Descriptor, location bufprotosource.Location, extraIgnoreLocations []bufprotosource.Location, message string, args ...interface{})
+type addFunc func(
+	descriptior bufprotosource.Descriptor,
+	location bufprotosource.Location,
+	extraIgnoreLocations []bufprotosource.Location,
+	format string,
+	args ...interface{},
+)
 
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch

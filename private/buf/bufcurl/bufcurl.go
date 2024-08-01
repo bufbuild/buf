@@ -16,6 +16,7 @@ package bufcurl
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,8 +37,22 @@ type Invoker interface {
 // ResolveMethodDescriptor uses the given resolver to find a descriptor for
 // the requested service and method. The service name must be fully-qualified.
 func ResolveMethodDescriptor(res protoencoding.Resolver, service, method string) (protoreflect.MethodDescriptor, error) {
+	serviceDescriptor, err := ResolveServiceDescriptor(res, service)
+	if err != nil {
+		return nil, err
+	}
+	methodDescriptor := serviceDescriptor.Methods().ByName(protoreflect.Name(method))
+	if methodDescriptor == nil {
+		return nil, fmt.Errorf("URL indicates method name %q, but service %q contains no such method", method, service)
+	}
+	return methodDescriptor, nil
+}
+
+// ResolveServiceDescriptor uses the given resolver to find a descriptor for
+// the requested service. The service name must be fully-qualified.
+func ResolveServiceDescriptor(res protoencoding.Resolver, service string) (protoreflect.ServiceDescriptor, error) {
 	descriptor, err := res.FindDescriptorByName(protoreflect.FullName(service))
-	if err == protoregistry.NotFound {
+	if errors.Is(err, protoregistry.NotFound) {
 		return nil, fmt.Errorf("failed to find service named %q in schema", service)
 	} else if err != nil {
 		return nil, err
@@ -46,9 +61,5 @@ func ResolveMethodDescriptor(res protoencoding.Resolver, service, method string)
 	if !ok {
 		return nil, fmt.Errorf("URL indicates service name %q, but that name is a %s", service, descriptorKind(descriptor))
 	}
-	methodDescriptor := serviceDescriptor.Methods().ByName(protoreflect.Name(method))
-	if methodDescriptor == nil {
-		return nil, fmt.Errorf("URL indicates method name %q, but service %q contains no such method", method, service)
-	}
-	return methodDescriptor, nil
+	return serviceDescriptor, nil
 }
