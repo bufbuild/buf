@@ -316,9 +316,9 @@ func doBrowserLogin(
 		container.Stdout(),
 		`Opening your browser to complete authorization process.
 
-If your browser doesn't open automatically,
-please open this URL in a browser to complete the process:
-	%s
+If your browser doesn't open automatically, please open this URL in a browser to complete the process:
+
+%s
 `,
 		deviceAuthorization.VerificationURIComplete,
 	); err != nil {
