@@ -131,6 +131,7 @@ func (p *modulePrinter) modulesToOutputModules(ctx context.Context, modules ...*
 			Owner:      ownerName,
 			Name:       module.GetName(),
 			CreateTime: module.GetCreateTime().AsTime(),
+			State:      module.State.String(),
 		}
 	}
 	return outputModules, nil
@@ -142,4 +143,5 @@ type outputModule struct {
 	Owner      string    `json:"owner,omitempty"`
 	Name       string    `json:"name,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty"`
+	State      string    `json:"state,omitempty"`
 }
