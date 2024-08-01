@@ -814,7 +814,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	// Verify that all excludes are within a root.
-	rootMap := slicesext.ToStructMap(roots)
+	rootMap := slicesext.ToSet(roots)
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:

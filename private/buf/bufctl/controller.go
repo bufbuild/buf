@@ -1107,10 +1107,10 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	if err != nil {
 		return err
 	}
-	configuredModuleFullNameStringMap := slicesext.ToStructMap(configuredModuleFullNameStrings)
+	configuredModuleFullNameStringSet := slicesext.ToSet(configuredModuleFullNameStrings)
 	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
 		if moduleFullName := localModule.ModuleFullName(); moduleFullName != nil {
-			configuredModuleFullNameStringMap[moduleFullName.String()] = struct{}{}
+			configuredModuleFullNameStringSet.Add(moduleFullName.String())
 		}
 	}
 
@@ -1138,7 +1138,7 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 				// The import was from a local unnamed Module in the Workspace.
 				continue
 			}
-			if _, ok := configuredModuleFullNameStringMap[moduleFullNameString]; !ok {
+			if !configuredModuleFullNameStringSet.Contains(moduleFullNameString) {
 				c.logger.Sugar().Warnf(
 					`File %q imports %q, which is not in your workspace or in the dependencies declared in your buf.yaml, but is found in transitive dependency %q.
 Declare %q in the deps key in your buf.yaml.`,

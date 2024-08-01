@@ -45,18 +45,18 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	if err := normalpath.ValidatePathsNormalizedValidatedUnique(excludeFileOrDirPaths); err != nil {
 		return nil, err
 	}
-	excludeFileOrDirPathMap := slicesext.ToStructMap(excludeFileOrDirPaths)
+	excludeFileOrDirPathSet := slicesext.ToSet(excludeFileOrDirPaths)
 	// These are the files that fileOrDirPaths actually reference and will
 	// result in the non-imports in our resulting Image. The Image will also include
 	// the ImageFiles that the nonImportImageFiles import
-	nonImportPaths := make(map[string]struct{})
+	nonImportPathsSet := make(slicesext.Set[string])
 	var nonImportImageFiles []ImageFile
 	// We have only exclude paths, and therefore all other paths are target paths.
 	if len(fileOrDirPaths) == 0 && len(excludeFileOrDirPaths) > 0 {
 		for _, imageFile := range image.Files() {
 			if !imageFile.IsImport() {
-				if !normalpath.MapHasEqualOrContainingPath(excludeFileOrDirPathMap, imageFile.Path(), normalpath.Relative) {
-					nonImportPaths[imageFile.Path()] = struct{}{}
+				if !normalpath.MapHasEqualOrContainingPath(excludeFileOrDirPathSet, imageFile.Path(), normalpath.Relative) {
+					nonImportPathsSet.Add(imageFile.Path())
 					nonImportImageFiles = append(nonImportImageFiles, imageFile)
 				}
 			}
@@ -68,11 +68,11 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				return nil, err
 			}
 		}
-		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+		return getImageWithImports(image, nonImportPathsSet, nonImportImageFiles)
 	}
 	// We do a check here to ensure that no paths are duplicated as a target and an exclude.
 	for _, fileOrDirPath := range fileOrDirPaths {
-		if _, ok := excludeFileOrDirPathMap[fileOrDirPath]; ok {
+		if _, ok := excludeFileOrDirPathSet[fileOrDirPath]; ok {
 			return nil, fmt.Errorf(
 				"cannot set the same path for both --path and --exclude-path flags: %s",
 				normalpath.Unnormalize(fileOrDirPath),
@@ -100,8 +100,8 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				// thus, we would always include it if it's specified.
 				// We have an ImageFile, therefore the fileOrDirPath was a file path
 				// add to the nonImportImageFiles if does not already exist
-				if _, ok := nonImportPaths[fileOrDirPath]; !ok {
-					nonImportPaths[fileOrDirPath] = struct{}{}
+				if _, ok := nonImportPathsSet[fileOrDirPath]; !ok {
+					nonImportPathsSet.Add(fileOrDirPath)
 					nonImportImageFiles = append(nonImportImageFiles, imageFile)
 				}
 			} else {
@@ -127,104 +127,104 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				return nil, err
 			}
 		}
-		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+		return getImageWithImports(image, nonImportPathsSet, nonImportImageFiles)
 	}
 	// we have potential directory paths, do the expensive operation
 	// make a map of the directory paths
 	// note that we do not make this a map to begin with as maps are unordered,
 	// and we want to make sure we iterate over the paths in a deterministic order
-	potentialDirPathMap := slicesext.ToStructMap(potentialDirPaths)
+	potentialDirPathSet := slicesext.ToSet(potentialDirPaths)
 
 	// map of all paths based on the imageFiles
 	// the map of paths within potentialDirPath that matches a file in image.Files()
 	// this needs to contain all paths in potentialDirPathMap at the end for us to
 	// have had matches for every inputted fileOrDirPath
-	matchingPotentialDirPathMap := make(map[string]struct{})
+	matchingPotentialDirPathSet := make(slicesext.Set[string])
 	// the same thing is done for exclude paths
-	matchingPotentialExcludePathMap := make(map[string]struct{})
+	matchingPotentialExcludePathSet := make(slicesext.Set[string])
 	for _, imageFile := range image.Files() {
 		imageFilePath := imageFile.Path()
 		fileMatchingExcludePathMap := normalpath.MapAllEqualOrContainingPathMap(
-			excludeFileOrDirPathMap,
+			excludeFileOrDirPathSet,
 			imageFilePath,
 			normalpath.Relative,
 		)
 		if len(fileMatchingExcludePathMap) > 0 {
 			for key := range fileMatchingExcludePathMap {
-				matchingPotentialExcludePathMap[key] = struct{}{}
+				matchingPotentialExcludePathSet.Add(key)
 			}
 		}
-		// get the paths in potentialDirPathMap that match this imageFilePath
-		fileMatchingPathMap := normalpath.MapAllEqualOrContainingPathMap(
-			potentialDirPathMap,
+		// get the paths in potentialDirPathSet that match this imageFilePath
+		fileMatchingPathSet := normalpath.MapAllEqualOrContainingPathMap(
+			potentialDirPathSet,
 			imageFilePath,
 			normalpath.Relative,
 		)
-		if shouldExcludeFile(fileMatchingPathMap, fileMatchingExcludePathMap) {
+		if shouldExcludeFile(fileMatchingPathSet, fileMatchingExcludePathMap) {
 			continue
 		}
-		if len(fileMatchingPathMap) > 0 {
+		if len(fileMatchingPathSet) > 0 {
 			// we had a match, this means that some path in potentialDirPaths matched
-			// the imageFilePath, add all the paths in potentialDirPathMap that
-			// matched to matchingPotentialDirPathMap
-			for key := range fileMatchingPathMap {
-				matchingPotentialDirPathMap[key] = struct{}{}
+			// the imageFilePath, add all the paths in potentialDirPathSet that
+			// matched to matchingPotentialDirPathSet
+			for key := range fileMatchingPathSet {
+				matchingPotentialDirPathSet.Add(key)
 			}
 			// then, add the file to non-imports if it is not added
-			if _, ok := nonImportPaths[imageFilePath]; !ok {
-				nonImportPaths[imageFilePath] = struct{}{}
+			if _, ok := nonImportPathsSet[imageFilePath]; !ok {
+				nonImportPathsSet.Add(imageFilePath)
 				nonImportImageFiles = append(nonImportImageFiles, imageFile)
 			}
 		}
 	}
 	// if !allowNotExist, i.e. if all fileOrDirPaths must have a matching ImageFile,
-	// we check the matchingPotentialDirPathMap against the potentialDirPathMap
-	// to make sure that potentialDirPathMap is covered
+	// we check the matchingPotentialDirPathSet against the potentialDirPathSet
+	// to make sure that potentialDirPathSet is covered
 	if !allowNotExist {
-		for potentialDirPath := range potentialDirPathMap {
-			if _, ok := matchingPotentialDirPathMap[potentialDirPath]; !ok {
+		for potentialDirPath := range potentialDirPathSet {
+			if !matchingPotentialDirPathSet.Contains(potentialDirPath) {
 				// no match, this is an error given that allowNotExist is false
 				return nil, fmt.Errorf("path %q has no matching file in the image", potentialDirPath)
 			}
 		}
-		for excludeFileOrDirPath := range excludeFileOrDirPathMap {
-			if _, ok := matchingPotentialExcludePathMap[excludeFileOrDirPath]; !ok {
+		for excludeFileOrDirPath := range excludeFileOrDirPathSet {
+			if !matchingPotentialExcludePathSet.Contains(excludeFileOrDirPath) {
 				// no match, this is an error given that allowNotExist is false
 				return nil, fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
 			}
 		}
 	}
 	// we finally have all files that match fileOrDirPath that we can find, make the image
-	return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+	return getImageWithImports(image, nonImportPathsSet, nonImportImageFiles)
 }
 
 // shouldExcludeFile takes the map of all the matching target paths and the map of all the matching
 // exclude paths for an image file and takes the union of the two sets of matches to return
 // a bool on whether or not we should exclude the file from the image.
 func shouldExcludeFile(
-	fileMatchingPathMap map[string]struct{},
-	fileMatchingExcludePathMap map[string]struct{},
+	fileMatchingPathSet slicesext.Set[string],
+	fileMatchingExcludePathSet slicesext.Set[string],
 ) bool {
-	for fileMatchingPath := range fileMatchingPathMap {
-		for fileMatchingExcludePath := range fileMatchingExcludePathMap {
+	for fileMatchingPath := range fileMatchingPathSet {
+		for fileMatchingExcludePath := range fileMatchingExcludePathSet {
 			if normalpath.EqualsOrContainsPath(fileMatchingPath, fileMatchingExcludePath, normalpath.Relative) {
-				delete(fileMatchingPathMap, fileMatchingPath)
+				delete(fileMatchingPathSet, fileMatchingPath)
 				continue
 			}
 		}
 	}
 	// If there are no potential paths remaining,
 	// then the file should be excluded.
-	return len(fileMatchingPathMap) == 0
+	return len(fileMatchingPathSet) == 0
 }
 
 func getImageWithImports(
 	image Image,
-	nonImportPaths map[string]struct{},
+	nonImportPaths slicesext.Set[string],
 	nonImportImageFiles []ImageFile,
 ) (Image, error) {
 	var imageFiles []ImageFile
-	seenPaths := make(map[string]struct{})
+	seenPaths := make(slicesext.Set[string], len(nonImportImageFiles))
 	for _, nonImportImageFile := range nonImportImageFiles {
 		imageFiles = addFileWithImports(
 			imageFiles,
@@ -241,16 +241,16 @@ func getImageWithImports(
 func addFileWithImports(
 	accumulator []ImageFile,
 	image Image,
-	nonImportPaths map[string]struct{},
-	seenPaths map[string]struct{},
+	nonImportPaths slicesext.Set[string],
+	seenPaths slicesext.Set[string],
 	imageFile ImageFile,
 ) []ImageFile {
 	path := imageFile.Path()
 	// if seen already, skip
-	if _, ok := seenPaths[path]; ok {
+	if seenPaths.Contains(path) {
 		return accumulator
 	}
-	seenPaths[path] = struct{}{}
+	seenPaths.Add(path)
 
 	// then, add imports first, for proper ordering
 	for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
@@ -267,10 +267,10 @@ func addFileWithImports(
 
 	// finally, add this file
 	// check if this is an import or not
-	_, isNotImport := nonImportPaths[path]
+	isImport := !nonImportPaths.Contains(path)
 	accumulator = append(
 		accumulator,
-		ImageFileWithIsImport(imageFile, !isNotImport),
+		ImageFileWithIsImport(imageFile, isImport),
 	)
 	return accumulator
 }
@@ -418,8 +418,8 @@ func imageToCodeGeneratorRequest(
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
 	includeWellKnownTypes bool,
-	alreadyUsedPaths map[string]struct{},
-	nonImportPaths map[string]struct{},
+	alreadyUsedPaths slicesext.Set[string],
+	nonImportPaths slicesext.Set[string],
 ) (*pluginpb.CodeGeneratorRequest, error) {
 	imageFiles := image.Files()
 	request := &pluginpb.CodeGeneratorRequest{
@@ -456,8 +456,8 @@ func imageToCodeGeneratorRequest(
 
 func isFileToGenerate(
 	imageFile ImageFile,
-	alreadyUsedPaths map[string]struct{},
-	nonImportPaths map[string]struct{},
+	alreadyUsedPaths slicesext.Set[string],
+	nonImportPaths slicesext.Set[string],
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) bool {
@@ -465,7 +465,7 @@ func isFileToGenerate(
 	if !imageFile.IsImport() {
 		if alreadyUsedPaths != nil {
 			// set as already used
-			alreadyUsedPaths[path] = struct{}{}
+			alreadyUsedPaths.Add(path)
 		}
 		// this is a non-import in this image, we always want to generate
 		return true
@@ -479,23 +479,19 @@ func isFileToGenerate(
 		// includeWellKnownTypes is set
 		return false
 	}
-	if alreadyUsedPaths != nil {
-		if _, ok := alreadyUsedPaths[path]; ok {
-			// this was already added for generate to another image
-			return false
-		}
+	if alreadyUsedPaths.Contains(path) {
+		// this was already added for generate to another image
+		return false
 	}
-	if nonImportPaths != nil {
-		if _, ok := nonImportPaths[path]; ok {
-			// this is a non-import in another image so it will be generated
-			// from another image
-			return false
-		}
+	if nonImportPaths.Contains(path) {
+		// this is a non-import in another image so it will be generated
+		// from another image
+		return false
 	}
 	// includeImports is set, this isn't a wkt, and it won't be generated in another image
 	if alreadyUsedPaths != nil {
 		// set as already used
-		alreadyUsedPaths[path] = struct{}{}
+		alreadyUsedPaths.Add(path)
 	}
 	return true
 }

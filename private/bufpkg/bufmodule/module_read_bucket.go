@@ -268,7 +268,7 @@ type moduleReadBucket struct {
 // module cannot be assumed to be functional yet.
 // Do not call any functions on module.
 func newModuleReadBucketForModule(
-	ctx context.Context,
+	_ context.Context,
 	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	module Module,
@@ -288,8 +288,8 @@ func newModuleReadBucketForModule(
 		getBucket:            syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module:               module,
 		targetPaths:          targetPaths,
-		targetPathMap:        slicesext.ToStructMap(targetPaths),
-		targetExcludePathMap: slicesext.ToStructMap(targetExcludePaths),
+		targetPathMap:        slicesext.ToSet(targetPaths),
+		targetExcludePathMap: slicesext.ToSet(targetExcludePaths),
 		protoFileTargetPath:  protoFileTargetPath,
 		includePackageFiles:  includePackageFiles,
 	}, nil
@@ -690,7 +690,7 @@ func newFilteredModuleReadBucket(
 	delegate ModuleReadBucket,
 	fileTypes []FileType,
 ) *filteredModuleReadBucket {
-	fileTypeMap := slicesext.ToStructMap(fileTypes)
+	fileTypeMap := slicesext.ToSet(fileTypes)
 	_, containsFileTypeProto := fileTypeMap[FileTypeProto]
 	return &filteredModuleReadBucket{
 		delegate:              delegate,

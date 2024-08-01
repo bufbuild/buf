@@ -60,7 +60,7 @@ func SplitTrimLinesNoEmpty(output string) []string {
 //
 // Strings with only spaces are considered empty.
 func SliceToUniqueSortedSliceFilterEmptyStrings(s []string) []string {
-	m := slicesext.ToStructMap(s)
+	m := slicesext.ToSet(s)
 	for key := range m {
 		if strings.TrimSpace(key) == "" {
 			delete(m, key)

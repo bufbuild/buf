@@ -44,7 +44,7 @@ var (
 )
 
 func init() {
-	docFilePathMap = slicesext.ToStructMap(orderedDocFilePaths)
+	docFilePathMap = slicesext.ToSet(orderedDocFilePaths)
 }
 
 func getDocFilePathForStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) string {

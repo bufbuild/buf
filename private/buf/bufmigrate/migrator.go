@@ -746,21 +746,13 @@ func equivalentCheckConfigInV2(
 		return simplyTranslatedCheckConfig, nil
 	}
 	// Otherwise, find what's missing and what's extra.
-	expectedIDsMap := slicesext.ToStructMap(expectedIDs)
-	simplyTranslatedIDsMap := slicesext.ToStructMap(simplyTranslatedIDs)
 	missingIDs := slicesext.Filter(
 		expectedIDs,
-		func(expectedID string) bool {
-			_, ok := simplyTranslatedIDsMap[expectedID]
-			return !ok
-		},
+		slicesext.ToSet(simplyTranslatedIDs).Contains,
 	)
 	extraIDs := slicesext.Filter(
 		simplyTranslatedIDs,
-		func(simplyTranslatedID string) bool {
-			_, ok := expectedIDsMap[simplyTranslatedID]
-			return !ok
-		},
+		slicesext.ToSet(expectedIDs).Contains,
 	)
 	return bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,

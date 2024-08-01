@@ -325,7 +325,7 @@ func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) 
 	if len(opaqueIDs) == 0 {
 		return nil, errors.New("at least one Module must be targeted")
 	}
-	opaqueIDMap := slicesext.ToStructMap(opaqueIDs)
+	opaqueIDMap := slicesext.ToSet(opaqueIDs)
 	modules := make([]Module, len(m.modules))
 	for i, module := range m.modules {
 		_, isTarget := opaqueIDMap[module.OpaqueID()]

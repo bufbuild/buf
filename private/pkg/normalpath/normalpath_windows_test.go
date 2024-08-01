@@ -362,8 +362,8 @@ func TestMapHasEqualOrContainingPath(t *testing.T) {
 }
 
 func testMapHasEqualOrContainingPath(t *testing.T, expected bool, path string, keys ...string) {
-	keyMap := slicesext.ToStructMap(keys)
-	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
+	keySet := slicesext.ToSet(keys)
+	assert.Equal(t, expected, MapHasEqualOrContainingPath(keySet, path, Relative), fmt.Sprintf("%s %v", path, keys))
 }
 
 func TestMapAllEqualOrContainingPaths(t *testing.T) {
@@ -386,8 +386,8 @@ func testMapAllEqualOrContainingPaths(t *testing.T, expected []string, path stri
 		expected = make([]string, 0)
 	}
 	sort.Strings(expected)
-	keyMap := slicesext.ToStructMap(keys)
-	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
+	keySet := slicesext.ToSet(keys)
+	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keySet, path, Relative), fmt.Sprintf("%s %v", path, keys))
 }
 
 func TestContainsPathAbs(t *testing.T) {
@@ -497,8 +497,8 @@ func TestMapHasEqualOrContainingPathAbs(t *testing.T) {
 }
 
 func testMapHasEqualOrContainingPathAbs(t *testing.T, expected bool, path string, keys ...string) {
-	keyMap := slicesext.ToStructMap(keys)
-	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
+	keySet := slicesext.ToSet(keys)
+	assert.Equal(t, expected, MapHasEqualOrContainingPath(keySet, path, Absolute), fmt.Sprintf("%s %v", path, keys))
 }
 
 func TestMapAllEqualOrContainingPathsAbs(t *testing.T) {
@@ -527,6 +527,6 @@ func testMapAllEqualOrContainingPathsAbs(t *testing.T, expected []string, path s
 		expected = make([]string, 0)
 	}
 	sort.Strings(expected)
-	keyMap := slicesext.ToStructMap(keys)
-	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
+	keySet := slicesext.ToSet(keys)
+	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keySet, path, Absolute), fmt.Sprintf("%s %v", path, keys))
 }

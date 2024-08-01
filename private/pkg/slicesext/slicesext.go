@@ -233,29 +233,21 @@ func Equal[S ~[]E, E comparable](s1, s2 S) bool {
 	return true
 }
 
-// ToStructMap converts the slice to a map with struct{} values.
-func ToStructMap[T comparable](s []T) map[T]struct{} {
-	m := make(map[T]struct{}, len(s))
-	for _, e := range s {
-		m[e] = struct{}{}
-	}
-	return m
+// ToSet converts the slice to a Set.
+func ToSet[T comparable](s []T) Set[T] {
+	return SetOf(s...)
 }
 
-// ToStructMapOmitEmpty converts the slice to a map with struct{} values.
+// ToSetOmitEmpty converts the slice to a Set.
 //
-// Zero values of T are not added to the map.
+// Zero values of T are not added to the Set.
 //
-// TODO FUTURE: Make ToStructMap use this logic, remove ToStructMapOmitEmpty, to match other functions.
-func ToStructMapOmitEmpty[T comparable](s []T) map[T]struct{} {
+// TODO FUTURE: Make ToSet use this logic, remove ToSetOmitEmpty, to match other functions.
+func ToSetOmitEmpty[T comparable](s []T) Set[T] {
+	set := SetOf(s...)
 	var zero T
-	m := make(map[T]struct{}, len(s))
-	for _, e := range s {
-		if e != zero {
-			m[e] = struct{}{}
-		}
-	}
-	return m
+	delete(set, zero)
+	return set
 }
 
 // ToValuesMap transforms the input slice into a map from f(V) -> V.
@@ -419,7 +411,7 @@ func MapValuesToSlice[K comparable, V any](m map[K]V) []V {
 
 // ToUniqueSorted returns a sorted copy of s with no duplicates.
 func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
-	return MapKeysToSortedSlice(ToStructMap(s))
+	return MapKeysToSortedSlice(ToSet(s))
 }
 
 // ToString prints the slice as [e1,e2,...].
@@ -437,16 +429,17 @@ func ToString[S ~[]T, T fmt.Stringer](s S) string {
 // If an element is the zero value, it is not added to duplicates.
 func Duplicates[T comparable](s []T) []T {
 	var zero T
-	count := make(map[T]int, len(s))
+	seen := make(map[T]bool, len(s))
 	// Needed instead of var declaration to make tests pass.
 	duplicates := make([]T, 0)
 	for _, e := range s {
 		if e == zero {
 			continue
 		}
-		count[e] = count[e] + 1
-		if count[e] == 2 {
-			// Only insert the first time this is found.
+		if added, hasSeen := seen[e]; !hasSeen {
+			seen[e] = false
+		} else if !added {
+			seen[e] = true
 			duplicates = append(duplicates, e)
 		}
 	}
@@ -455,12 +448,12 @@ func Duplicates[T comparable](s []T) []T {
 
 // Deduplicate returns the unique values of s.
 func Deduplicate[V comparable](s []V) []V {
-	seen := make(map[V]struct{})
+	seen := make(Set[V], len(s))
 	result := make([]V, 0)
 	for _, e := range s {
-		if _, ok := seen[e]; !ok {
+		if !seen.Contains(e) {
 			result = append(result, e)
-			seen[e] = struct{}{}
+			seen.Add(e)
 		}
 	}
 	return result
@@ -470,13 +463,13 @@ func Deduplicate[V comparable](s []V) []V {
 //
 // Earlier occurrences of a value are returned and later occurrences are dropped.
 func DeduplicateAny[K comparable, V any](s []V, f func(V) K) []V {
-	seen := make(map[K]struct{})
+	seen := make(Set[K], len(s))
 	result := make([]V, 0)
 	for _, e := range s {
 		k := f(e)
-		if _, ok := seen[k]; !ok {
+		if !seen.Contains(k) {
 			result = append(result, e)
-			seen[k] = struct{}{}
+			seen.Add(k)
 		}
 	}
 	return result
@@ -522,9 +515,64 @@ func ElementsEqual[T comparable](one []T, two []T) bool {
 //
 // Nil and empty slices are treated as equals.
 func ElementsContained[T comparable](superset []T, subset []T) bool {
-	m := ToStructMap(superset)
+	m := ToSet(superset)
 	for _, elem := range subset {
 		if _, ok := m[elem]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// Set is a set of T.
+type Set[T comparable] map[T]struct{}
+
+// SetOf returns a new set constructed from the elements in slice.
+func SetOf[T comparable](slice ...T) Set[T] {
+	set := make(Set[T], len(slice))
+	for _, value := range slice {
+		set.Add(value)
+	}
+	return set
+}
+
+// Add adds e to s.
+func (s Set[T]) Add(e T) { s[e] = struct{}{} }
+
+// Append appends all elements in slice to s.
+func (s Set[T]) Append(slice ...T) {
+	for _, value := range slice {
+		s.Add(value)
+	}
+}
+
+// Delete removes e from the set.
+func (s Set[T]) Delete(e T) { delete(s, e) }
+
+// Contains returns true if e is in the set.
+func (s Set[T]) Contains(e T) bool { _, ok := s[e]; return ok }
+
+// Len returns the number of elements in the set.
+func (s Set[T]) Len() int { return len(s) }
+
+// Slice returns the elements in the set as a slice.
+func (s Set[T]) Slice() []T {
+	slice := make([]T, 0, len(s))
+	for value := range s {
+		slice = append(slice, value)
+	}
+	return slice
+}
+
+// Equal returns true if s and other are equal.
+//
+// TODO FUTURE: remove and replace with maps.Equal when we only support Go versions >= 1.21.
+func (s Set[T]) Equal(other Set[T]) bool {
+	if len(s) != len(other) {
+		return false
+	}
+	for k := range s {
+		if _, ok := other[k]; !ok {
 			return false
 		}
 	}

@@ -354,13 +354,13 @@ func run(
 		}
 	}
 	if flags.Write {
-		changedPathSet := slicesext.ToStructMap(changedPaths)
+		changedPathSet := slicesext.ToSet(changedPaths)
 		return storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
 			"",
 			func(readObject storage.ReadObject) error {
-				if _, ok := changedPathSet[readObject.Path()]; !ok {
+				if changedPathSet.Contains(readObject.Path()) {
 					// no change, nothing to re-write
 					return nil
 				}

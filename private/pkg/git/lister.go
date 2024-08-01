@@ -82,10 +82,10 @@ func (l *lister) ListFilesAndUnstagedFiles(
 
 // stringSliceExcept returns all elements in source that are not in except.
 func stringSliceExcept(source []string, except []string) []string {
-	exceptMap := slicesext.ToStructMap(except)
+	exceptSet := slicesext.ToSet(except)
 	result := make([]string, 0, len(source))
 	for _, s := range source {
-		if _, ok := exceptMap[s]; !ok {
+		if !exceptSet.Contains(s) {
 			result = append(result, s)
 		}
 	}

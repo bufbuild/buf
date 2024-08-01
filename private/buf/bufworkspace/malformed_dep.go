@@ -54,7 +54,7 @@ type MalformedDep interface {
 
 // MalformedDepsForWorkspace gets the MalformedDeps for the workspace.
 func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
-	localModuleFullNameStringMap := slicesext.ToStructMapOmitEmpty(
+	localModuleFullNameStringSet := slicesext.ToSetOmitEmpty(
 		slicesext.Map(
 			bufmodule.ModuleSetLocalModules(workspace),
 			func(module bufmodule.Module) string {
@@ -97,7 +97,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	}
 	var malformedDeps []MalformedDep
 	for moduleFullNameString, configuredDepModuleRef := range moduleFullNameStringToConfiguredDepModuleRef {
-		_, isLocalModule := localModuleFullNameStringMap[moduleFullNameString]
+		isLocalModule := localModuleFullNameStringSet.Contains(moduleFullNameString)
 		_, isRemoteDep := moduleFullNameStringToRemoteDep[moduleFullNameString]
 		if !isRemoteDep && !isLocalModule {
 			// The module was in buf.yaml deps, but was not in the remote dep list after

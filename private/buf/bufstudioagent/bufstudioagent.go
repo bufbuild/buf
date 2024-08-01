@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
 )
@@ -28,7 +29,7 @@ func NewHandler(
 	logger *zap.Logger,
 	origin string,
 	tlsClientConfig *tls.Config,
-	disallowedHeaders map[string]struct{},
+	disallowedHeaders slicesext.Set[string],
 	forwardHeaders map[string]string,
 	privateNetwork bool,
 ) http.Handler {

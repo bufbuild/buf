@@ -159,7 +159,7 @@ func (s *state) packagesForPackageExpressionUncached(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+	return slicesext.ToSet(getNonEmptyLines(string(data))), nil
 }
 
 func (s *state) depsForPackage(
@@ -214,7 +214,7 @@ func (s *state) depsForPackageUncached(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+	return slicesext.ToSet(getNonEmptyLines(string(data))), nil
 }
 
 type packagesResult struct {

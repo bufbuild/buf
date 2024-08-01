@@ -183,7 +183,7 @@ func run(
 		container.Logger(),
 		flags.Origin,
 		clientTLSConfig,
-		slicesext.ToStructMap(flags.DisallowedHeaders),
+		slicesext.ToSet(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
 		flags.PrivateNetwork,
 	)
