@@ -2077,7 +2077,8 @@ func TestModInitBasic(t *testing.T) {
 	t.Parallel()
 	testModInit(
 		t,
-		`version: v2
+		`# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
 lint:
   use:
     - DEFAULT

@@ -3,6 +3,8 @@
 set -eo pipefail
 set -x
 
+RELEASE_DOCKER_FILE="make/buf/docker/Dockerfile.release"
+RELEASE_DOCKER_IMAGE="bufrelease-tag"
 DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
 
@@ -48,15 +50,13 @@ if [ -z "${INSIDE_DOCKER}" ]; then
       fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
     fi
   fi
-  if [ -z "${DOCKER_IMAGE}" ]; then
-    fail "DOCKER_IMAGE must be set"
-  fi
+  docker build -f "${RELEASE_DOCKER_FILE}" -t "${RELEASE_DOCKER_IMAGE}" .
   docker run --volume \
     "${DIR}:/app" \
     --workdir "/app" \
     --rm \
     -e INSIDE_DOCKER=1 \
-    "${DOCKER_IMAGE}" \
+    "${RELEASE_DOCKER_IMAGE}" \
     bash -x make/buf/scripts/release.bash
   if [ "$(uname -s)" == "Linux" ]; then
     sudo chown -R "$(id -u):$(id -g)" .build
@@ -107,21 +107,23 @@ for os in Darwin Linux Windows; do
   done
 done
 
-for os in Darwin Linux; do
+for os in Darwin Linux Windows; do
   for arch in x86_64 arm64; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
     fi
     dir="${os}/${arch}/${BASE_NAME}"
-    mkdir -p "${dir}/etc/bash_completion.d"
-    mkdir -p "${dir}/share/fish/vendor_completions.d"
-    mkdir -p "${dir}/share/zsh/site-functions"
-    mkdir -p "${dir}/share/man/man1"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion bash > "${dir}/etc/bash_completion.d/buf"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion fish > "${dir}/share/fish/vendor_completions.d/buf.fish"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion zsh > "${dir}/share/zsh/site-functions/_buf"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" manpages "${dir}/share/man/man1"
     cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
+    if [ "${os}" == "Darwin" ] || [ "${os}" == "Linux" ]; then
+      mkdir -p "${dir}/etc/bash_completion.d"
+      mkdir -p "${dir}/share/fish/vendor_completions.d"
+      mkdir -p "${dir}/share/zsh/site-functions"
+      mkdir -p "${dir}/share/man/man1"
+      "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion bash > "${dir}/etc/bash_completion.d/buf"
+      "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion fish > "${dir}/share/fish/vendor_completions.d/buf.fish"
+      "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion zsh > "${dir}/share/zsh/site-functions/_buf"
+      "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" manpages "${dir}/share/man/man1"
+    fi
   done
 done
 
@@ -135,6 +137,20 @@ for os in Darwin Linux; do
     tar_dir="${BASE_NAME}"
     tarball="${BASE_NAME}-${os}-${arch}.tar.gz"
     tar -C "${tar_context_dir}" -cvzf "${tarball}" "${tar_dir}"
+  done
+done
+
+for os in Windows; do
+  for arch in x86_64 arm64; do
+    dir="${os}/${arch}/${BASE_NAME}"
+    # "${os}/${arch}"
+    zip_context_dir="$(dirname "${dir}")"
+    zip_dir="${BASE_NAME}"
+    zipfile="${BASE_NAME}-${os}-${arch}.zip"
+    pushd "${zip_context_dir}" >/dev/null
+    zip -r "${zipfile}" "${zip_dir}"
+    popd >/dev/null
+    mv "${zip_context_dir}/${zipfile}" "${zipfile}"
   done
 done
 

@@ -138,7 +138,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
-	_ = flagSet.MarkDeprecated(errorFormatFlagName, "This flag no longer has any effect")
+	_ = flagSet.MarkDeprecated(errorFormatFlagName, "this flag no longer has any effect")
 	_ = flagSet.MarkHidden(errorFormatFlagName)
 	flagSet.BoolVar(
 		&f.AsImportPaths,
@@ -146,7 +146,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		"Strip local directory paths and print filepaths as they are imported",
 	)
-	_ = flagSet.MarkDeprecated(asImportPathsFlagName, fmt.Sprintf("Use --%s=import instead", formatFlagName))
+	_ = flagSet.MarkDeprecated(asImportPathsFlagName, fmt.Sprintf("use --%s=import instead", formatFlagName))
 	_ = flagSet.MarkHidden(asImportPathsFlagName)
 }
 
