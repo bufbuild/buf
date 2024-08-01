@@ -2,11 +2,13 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix git input handling of annotated tags.
+- Update `buf registry login` to complete the login flow in the browser by default. This allows
+  users to login with their browser and have the token automatically provided to the CLI.
 
 ## [v1.35.1] - 2024-07-24
 
-- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use 
+- Fix the git input parameter `ref` to align with the `git` notion of a ref. This allows for the use
   of branch names, tag names, and commit hashes.
 - Fix unexpected `buf build` errors with absolute path directory inputs without workspace and/or
   module configurations (e.g. `buf.yaml`, `buf.work.yaml`) and proto file paths set to the `--path` flag.
@@ -18,6 +20,8 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
+- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
+  known services or methods in the RPC schema, instead of invoking an RPC method.
 
 ## [v1.34.0] - 2024-06-21
 

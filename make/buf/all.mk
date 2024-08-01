@@ -148,7 +148,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.22-bookworm bash make/buf/scripts/release.bash
+	bash make/buf/scripts/release.bash
 
 .PHONY: bufbinarysize
 bufbinarysize:

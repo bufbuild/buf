@@ -59,7 +59,7 @@ const (
 )
 
 var (
-	useLabelInstead = fmt.Sprintf("Use --%s instead.", labelFlagName)
+	useLabelInstead = fmt.Sprintf("use --%s instead.", labelFlagName)
 )
 
 // NewCommand returns a new Command.
