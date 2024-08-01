@@ -445,7 +445,10 @@ func TestFail14(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/lint_stable_package_import/api/v1alpha/bar.proto:5:1:This file is in stable package "api.v1", so it should not depend on "api/v1alpha/bar.proto" from unstable package "api.v1alpha".`),
+		fmt.Sprintf(
+			`%s:5:1:This file is in stable package "api.v1", so it should not depend on "api/v1alpha/bar.proto" from unstable package "api.v1alpha".`,
+			filepath.FromSlash(`testdata/lint_stable_package_import/api/v1/foo.proto`),
+		),
 		"lint",
 		filepath.Join("testdata", "lint_stable_package_import"),
 	)

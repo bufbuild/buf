@@ -1055,7 +1055,7 @@ func checkStablePackageNoImportUnstable(add addFunc, files []bufprotosource.File
 					continue
 				}
 				if importedFilePackageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
-					add(importedFile, fileImport.Location(), nil, `This file is in stable package %q, so it should not depend on %q from unstable package %q.`, file.Package(), fileImport.Import(), importedFile.Package())
+					add(file, fileImport.Location(), nil, `This file is in stable package %q, so it should not depend on %q from unstable package %q.`, file.Package(), fileImport.Import(), importedFile.Package())
 				}
 			}
 		}
