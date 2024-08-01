@@ -19,8 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -44,7 +42,7 @@ import (
 const (
 	usernameFlagName   = "username"
 	tokenStdinFlagName = "token-stdin"
-	noBrowserFlagName  = "no-browser"
+	promptFlagName     = "prompt"
 )
 
 // NewCommand returns a new Command.
@@ -56,7 +54,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <domain>",
 		Short: `Log in to the Buf Schema Registry`,
-		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. If the browser is not available or the flag %q is specified, this command will prompt for your BSR token. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, noBrowserFlagName, netrc.Filename),
+		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags %q or %q to complete an alternative login flow. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename),
 		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -90,14 +88,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.TokenStdin,
 		tokenStdinFlagName,
 		false,
-		"Read the token from stdin. This command prompts for a token by default",
+		fmt.Sprintf(
+			"Read the token from stdin. This command prompts for a token by default. Exclusive with the flag %q.",
+			promptFlagName,
+		),
 	)
 	flagSet.BoolVar(
 		&f.NoBrowser,
-		noBrowserFlagName,
+		promptFlagName,
 		false,
 		fmt.Sprintf(
-			"Do not open a browser to complete the login process. This command opens a browser by default. The flag %s must be set to false to use this flag.",
+			"Prompt for the token. The device must be a TTY. Exclusive with the flag %q.",
 			tokenStdinFlagName,
 		),
 	)
@@ -158,7 +159,7 @@ func inner(
 		}
 	}
 	if flags.TokenStdin && flags.NoBrowser {
-		return fmt.Errorf("cannot use both --%s and --%s flags", tokenStdinFlagName, noBrowserFlagName)
+		return fmt.Errorf("cannot use both --%s and --%s flags", tokenStdinFlagName, promptFlagName)
 	}
 	var token string
 	if flags.TokenStdin {
@@ -338,18 +339,4 @@ please open this URL in a browser to complete the process:
 		return "", err
 	}
 	return deviceToken.AccessToken, nil
-}
-
-// getClientName returns the client name for the device registration.
-func getClientName() (string, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return "", err
-	}
-	switch runtime.GOOS {
-	case "darwin":
-		// macOS uses .local for the hostname.
-		hostname = strings.TrimSuffix(hostname, ".local")
-	}
-	return hostname, nil
 }
