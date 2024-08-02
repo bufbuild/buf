@@ -1,0 +1,5 @@
+FROM golang:1.22-bookworm
+RUN  apt-get -y update \
+     && apt-get -y autoremove \
+     && apt-get clean \
+     && apt-get install -y zip
