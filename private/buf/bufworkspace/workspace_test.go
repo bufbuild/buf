@@ -263,7 +263,7 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 
 	module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
 	require.NotNil(t, module)
-	// moeny has its own doc
+	// money has its own doc
 	requireModuleFileContent(t, ctx, module, "buf.md", "money doc\n")
 	// money does not have README.md
 	_, err = module.StatFileInfo(ctx, "README.md")
