@@ -8,6 +8,8 @@
 - Fix git input handling of annotated tags.
 - Update `buf registry login` to complete the login flow in the browser by default. This allows
   users to login with their browser and have the token automatically provided to the CLI.
+- Update `buf push` to push the license file and doc file (e.g. `README.md`) next to the `buf.yaml`
+  if a module does not have a license file or doc file.
 
 ## [v1.35.1] - 2024-07-24
 
