@@ -18,9 +18,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
@@ -141,7 +141,7 @@ func newModuleKeyNoValidate(
 	return &moduleKey{
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
-		getDigest:      syncext.OnceValues(getDigest),
+		getDigest:      sync.OnceValues(getDigest),
 	}
 }
 

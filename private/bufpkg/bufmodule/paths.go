@@ -16,10 +16,10 @@ package bufmodule
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
 const (
@@ -75,7 +75,7 @@ func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.M
 	)
 }
 
-// getSyncOnceValuesGetBucketWithStorageMatcherApplied wraps the getBucket function with syncext.OnceValues
+// getSyncOnceValuesGetBucketWithStorageMatcherApplied wraps the getBucket function with sync.OnceValues
 // and getStorageMatcher applied.
 //
 // This is used when constructing moduleReadBuckets in moduleSetBuilder, and when getting a bucket for
@@ -84,7 +84,7 @@ func getSyncOnceValuesGetBucketWithStorageMatcherApplied(
 	ctx context.Context,
 	getBucket func() (storage.ReadBucket, error),
 ) func() (storage.ReadBucket, error) {
-	return syncext.OnceValues(
+	return sync.OnceValues(
 		func() (storage.ReadBucket, error) {
 			bucket, err := getBucket()
 			if err != nil {

@@ -46,20 +46,12 @@
 package slicesext
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 )
-
-// Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
-//
-// TODO FUTURE: remove and replace with cmp.Ordered when we only support Go versions >= 1.21.
-type Ordered interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64 |
-		~string
-}
 
 // Indexed is a value that had an index within a slice.
 type Indexed[T any] struct {
@@ -214,25 +206,6 @@ func Concat[S ~[]E, E any](slices ...S) S {
 	return newslice
 }
 
-// Equal reports whether two slices are equal: the same length and all
-// elements equal. If the lengths are different, Equal returns false.
-// Otherwise, the elements are compared in increasing index order, and the
-// comparison stops at the first unequal pair.
-// Floating point NaNs are not considered equal.
-//
-// TODO FUTURE: Delete this in favor of slices.Equal when we are >1.21.
-func Equal[S ~[]E, E comparable](s1, s2 S) bool {
-	if len(s1) != len(s2) {
-		return false
-	}
-	for i := range s1 {
-		if s1[i] != s2[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // ToStructMap converts the slice to a map with struct{} values.
 func ToStructMap[T comparable](s []T) map[T]struct{} {
 	m := make(map[T]struct{}, len(s))
@@ -368,15 +341,9 @@ func IndexedToSortedValues[T any](s []Indexed[T]) []T {
 }
 
 // MapKeysToSortedSlice converts the map's keys to a sorted slice.
-func MapKeysToSortedSlice[M ~map[K]V, K Ordered, V any](m M) []K {
+func MapKeysToSortedSlice[M ~map[K]V, K cmp.Ordered, V any](m M) []K {
 	s := MapKeysToSlice(m)
-	// TODO FUTURE: Replace with slices.Sort when we only support Go versions >= 1.21.
-	sort.Slice(
-		s,
-		func(i int, j int) bool {
-			return s[i] < s[j]
-		},
-	)
+	slices.Sort(s)
 	return s
 }
 
@@ -393,15 +360,9 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 //
 // Duplicate values will be added. This should generally be used
 // in cases where you know there is a 1-1 mapping from K to V.
-func MapValuesToSortedSlice[K comparable, V Ordered](m map[K]V) []V {
+func MapValuesToSortedSlice[K comparable, V cmp.Ordered](m map[K]V) []V {
 	s := MapValuesToSlice(m)
-	// TODO FUTURE: Replace with slices.Sort when we only support Go versions >= 1.21.
-	sort.Slice(
-		s,
-		func(i int, j int) bool {
-			return s[i] < s[j]
-		},
-	)
+	slices.Sort(s)
 	return s
 }
 
@@ -418,7 +379,7 @@ func MapValuesToSlice[K comparable, V any](m map[K]V) []V {
 }
 
 // ToUniqueSorted returns a sorted copy of s with no duplicates.
-func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
+func ToUniqueSorted[S ~[]T, T cmp.Ordered](s S) S {
 	return MapKeysToSortedSlice(ToStructMap(s))
 }
 

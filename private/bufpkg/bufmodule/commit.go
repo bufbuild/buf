@@ -15,9 +15,8 @@
 package bufmodule
 
 import (
+	"sync"
 	"time"
-
-	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
 // Commit represents a Commit on the BSR.
@@ -102,7 +101,7 @@ func newCommit(
 	}
 	return &commit{
 		moduleKey:     moduleKey,
-		getCreateTime: syncext.OnceValues(getCreateTime),
+		getCreateTime: sync.OnceValues(getCreateTime),
 	}
 }
 

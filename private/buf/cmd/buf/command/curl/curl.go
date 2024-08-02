@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -39,7 +40,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -906,7 +906,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}()
 
-	makeTransportOnce := syncext.OnceValues(func() (connect.HTTPClient, error) {
+	makeTransportOnce := sync.OnceValues(func() (connect.HTTPClient, error) {
 		// We do this lazily since some commands don't need a transport, like listing
 		// services and methods and describing elements when the schema source is
 		// something other than server reflection. We memoize the result to use the

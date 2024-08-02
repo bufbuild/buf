@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"slices"
 	"sort"
 	"strings"
 
@@ -725,7 +726,7 @@ func appendWellKnownTypeImageFileInfos(
 		return nil, err
 	}
 	wktPaths := slicesext.Map(wktObjectInfos, storage.ObjectInfo.Path)
-	if !slicesext.Equal(datawkt.AllFilePaths, wktPaths) {
+	if !slices.Equal(datawkt.AllFilePaths, wktPaths) {
 		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
 	}
 	resultImageFileInfos := slicesext.Copy(imageFileInfos)
