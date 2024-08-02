@@ -282,7 +282,7 @@ func (a *uploader) Upload(
 			),
 		)
 		if err != nil {
-			return nil, err
+			return nil, asDependencyNotFoundError(err, remoteDeps)
 		}
 		universalProtoCommits, err = slicesext.MapError(response.Msg.Commits, newUniversalProtoCommitForV1Beta1)
 		if err != nil {
@@ -313,7 +313,7 @@ func (a *uploader) Upload(
 			),
 		)
 		if err != nil {
-			return nil, err
+			return nil, asDependencyNotFoundError(err, remoteDeps)
 		}
 		universalProtoCommits, err = slicesext.MapError(response.Msg.Commits, newUniversalProtoCommitForV1)
 		if err != nil {
@@ -493,4 +493,39 @@ func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 		CommitId: uuidutil.ToDashless(depCommitID),
 		Registry: remoteDep.ModuleFullName().Registry(),
 	}, nil
+}
+
+// In UploadRequest, only dependency commit IDs are included (as opposed to module + commit ID), this means
+// when the BSR fails to resolve the commit ID, it can only return an error reporting this ID is not found,
+// without saying which module the commit ID belongs to.
+//
+// asDependencyNotFoundError returns an error reporting moduleFullName:CommitID not found if err
+// is an error reporting the commitID was not found. Otherwise, it returns the err as is.
+func asDependencyNotFoundError(err error, remoteDeps []bufmodule.RemoteDep) error {
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		return err
+	}
+	for _, remoteDep := range remoteDeps {
+		commitID := remoteDep.CommitID()
+		if commitID.IsNil() {
+			continue
+		}
+		moduleFullName := remoteDep.ModuleFullName()
+		if moduleFullName == nil {
+			continue
+		}
+		dashlessCommitID := uuidutil.ToDashless(commitID)
+		if !strings.Contains(err.Error(), dashlessCommitID) {
+			continue
+		}
+		if !strings.Contains(err.Error(), moduleFullName.Registry()) {
+			continue
+		}
+		return fmt.Errorf(
+			"dependency %s:%s does not exist",
+			remoteDep.ModuleFullName().String(),
+			dashlessCommitID,
+		)
+	}
+	return err
 }
