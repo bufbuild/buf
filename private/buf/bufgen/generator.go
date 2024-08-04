@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
@@ -34,10 +35,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/watcher"
+	"github.com/fsnotify/fsnotify"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -84,6 +88,9 @@ func newGenerator(
 //
 // This behavior is equivalent to protoc, which only writes out the content
 // for each of the plugins if all of the plugins are successful.
+//
+// If watch option is true, the function will block and regenerate code on
+// filesystem changes. It will return when ctx is done or a signal (SIGNIT or SIGTERM) is received.
 func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
@@ -105,6 +112,36 @@ func (g *generator) Generate(
 			return err
 		}
 	}
+
+	if generateOptions.watch {
+		return g.watch(ctx, func() error {
+			return g.generate(
+				ctx,
+				container,
+				config,
+				images,
+				generateOptions,
+			)
+		})
+	}
+
+	return g.generate(
+		ctx,
+		container,
+		config,
+		images,
+		generateOptions,
+	)
+}
+
+func (g *generator) generate(
+	ctx context.Context,
+	container app.EnvStdioContainer,
+	config bufconfig.GenerateConfig,
+	images []bufimage.Image,
+	generateOptions *generateOptions,
+) error {
+	// Clean the output directories if necessary.
 	shouldDeleteOuts := config.CleanPluginOuts()
 	if generateOptions.deleteOuts != nil {
 		shouldDeleteOuts = *generateOptions.deleteOuts
@@ -118,6 +155,8 @@ func (g *generator) Generate(
 			return err
 		}
 	}
+
+	// Generate the code for each image.
 	for _, image := range images {
 		if err := g.generateCode(
 			ctx,
@@ -131,7 +170,46 @@ func (g *generator) Generate(
 			return err
 		}
 	}
+
 	return nil
+}
+
+// watch is a blocking function that watches the filesystem for changes and
+// regenerates code when a change is detected.
+//
+// This function will block until ctx is done, a signal is received or an error occurs.
+func (g *generator) watch(ctx context.Context, callback func() error) error {
+	cwd, err := osext.Getwd()
+	if err != nil {
+		return fmt.Errorf("getting current directory: %w", err)
+	}
+
+	watch, err := watcher.New(g.logger.Named("watcher"))
+	if err != nil {
+		return fmt.Errorf("initializing filewatcher: %w", err)
+	}
+
+	err = watch.AddRecursive(cwd)
+	if err != nil {
+		return fmt.Errorf("adding watch path: %w", err)
+	}
+
+	g.logger.Sugar().Infof("Watching filesystem changes at %s...", cwd)
+
+	return watch.Watch(ctx, func(ctx context.Context, name string, _ fsnotify.Op) error {
+		// ignore all except for .proto files.
+		if !strings.HasSuffix(name, ".proto") {
+			return nil
+		}
+
+		g.logger.Sugar().Infof("Change detected at %s", strings.TrimPrefix(name, cwd))
+
+		if err := callback(); err != nil {
+			return fmt.Errorf("generating code: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (g *generator) deleteOuts(
@@ -491,6 +569,7 @@ type generateOptions struct {
 	deleteOuts                    *bool
 	includeImportsOverride        *bool
 	includeWellKnownTypesOverride *bool
+	watch                         bool
 }
 
 func newGenerateOptions() *generateOptions {

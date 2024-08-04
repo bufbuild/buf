@@ -153,3 +153,10 @@ func GenerateWithIncludeWellKnownTypesOverride(includeWellKnownTypes bool) Gener
 		generateOptions.includeWellKnownTypesOverride = &includeWellKnownTypes
 	}
 }
+
+// GenerateWithWatch results in the option for regenerating code on changes.
+func GenerateWithWatch(watch bool) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.watch = watch
+	}
+}
