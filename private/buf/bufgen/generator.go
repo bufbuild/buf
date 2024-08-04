@@ -202,7 +202,8 @@ func (g *generator) watch(ctx context.Context, callback func() error) error {
 			return nil
 		}
 
-		g.logger.Sugar().Infof("Change detected at %s", strings.TrimPrefix(name, cwd))
+		changedFile := strings.TrimPrefix(name, cwd)
+		g.logger.Sugar().Infof("Change detected at %s. Regenerating...", changedFile)
 
 		if err := callback(); err != nil {
 			return fmt.Errorf("generating code: %w", err)

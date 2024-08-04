@@ -8,11 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
@@ -32,6 +34,10 @@ type Watcher struct {
 	watcher      *fsnotify.Watcher
 	checksum     map[string][]byte
 	checksumLock *sync.Mutex
+
+	// Deduplication fields
+	timers     map[string]*time.Timer
+	timersLock *sync.Mutex
 }
 
 // New initializes a new Watcher with a given logger.
@@ -47,6 +53,8 @@ func New(logger *zap.Logger) (*Watcher, error) {
 		watcher:      watcher,
 		checksum:     make(map[string][]byte),
 		checksumLock: new(sync.Mutex),
+		timers:       make(map[string]*time.Timer),
+		timersLock:   new(sync.Mutex),
 	}, nil
 }
 
@@ -97,6 +105,10 @@ func (w *Watcher) Close() error {
 }
 
 // Watch listens for file system events and triggers the ChangeFunc callback on changes.
+//
+// Watch will only run the callback function on file changes, not any fs events.
+// It also has built-in deduplication logic.
+//
 // The function will return when the context is canceled, an error occurs, or the user sends a SIGTERM or SIGINT signal.
 // The callback function should be fast and non-blocking.
 // If the callback returns an error, the watcher will stop and return the error.
@@ -131,12 +143,15 @@ func (w *Watcher) Watch(ctx context.Context, change ChangeFunc) error {
 				continue
 			}
 
-			// Run the callback every time a file is changed.
-			// The callback should be fast and non-blocking.
-			// If the callback returns an error, the watcher will stop and return the error.
-			if err := change(ctx, event.Name, event.Op); err != nil {
-				return err
-			}
+			// Run the deduplication middleware before calling the change callback.
+			w.dedup(event, func() {
+				// Run the callback every time a file is changed.
+				// The callback should be fast and non-blocking.
+				// If the callback returns an error, the watcher will stop and return the error.
+				if err := change(ctx, event.Name, event.Op); err != nil {
+					w.logger.Sugar().Errorf("Error in change callback: %v", err)
+				}
+			})
 
 		case err, ok := <-w.watcher.Errors:
 			if !ok {
@@ -149,6 +164,36 @@ func (w *Watcher) Watch(ctx context.Context, change ChangeFunc) error {
 			return nil
 		}
 	}
+}
+
+// dedup handles the deduplication of file system events by using a timer to wait for a short period before triggering the callback.
+func (w *Watcher) dedup(event fsnotify.Event, callback func()) {
+	const waitFor = 100 * time.Millisecond
+
+	// Callback function to run when the timer expires.
+	runCallback := func() {
+		callback()
+		w.timersLock.Lock()
+		delete(w.timers, event.Name)
+		w.timersLock.Unlock()
+	}
+
+	w.timersLock.Lock()
+	t, ok := w.timers[event.Name]
+	w.timersLock.Unlock()
+
+	// No timer yet, so create one.
+	if !ok {
+		t = time.AfterFunc(math.MaxInt64, runCallback)
+		t.Stop()
+
+		w.timersLock.Lock()
+		w.timers[event.Name] = t
+		w.timersLock.Unlock()
+	}
+
+	// Reset the timer for this path, so it will start from waitFor again.
+	t.Reset(waitFor)
 }
 
 // updateChecksum computes the checksum for a file and updates the stored checksum if it has changed.
