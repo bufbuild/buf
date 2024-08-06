@@ -19,14 +19,14 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/bufplugin-go/bufplugincheck"
+	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/pluginrpc-go"
 	"go.uber.org/zap"
 )
 
 type checkClient struct {
 	logger *zap.Logger
-	client bufplugincheck.CheckClient
+	client check.Client
 }
 
 func newCheckClient(
@@ -35,7 +35,7 @@ func newCheckClient(
 ) *checkClient {
 	return &checkClient{
 		logger: logger,
-		client: bufplugincheck.NewCheckClient(pluginrpcClient),
+		client: check.NewClient(pluginrpcClient),
 	}
 }
 
@@ -44,18 +44,18 @@ func (c *checkClient) Check(
 	image bufimage.Image,
 	againstImage bufimage.Image,
 ) error {
-	files, err := bufplugincheck.FilesForProtoFiles(imageToProtoFiles(image))
+	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		return err
 	}
-	var againstFiles []bufplugincheck.File
+	var againstFiles []check.File
 	if againstImage != nil {
-		againstFiles, err = bufplugincheck.FilesForProtoFiles(imageToProtoFiles(againstImage))
+		againstFiles, err = check.FilesForProtoFiles(imageToProtoFiles(againstImage))
 		if err != nil {
 			return err
 		}
 	}
-	request, err := bufplugincheck.NewRequest(files, bufplugincheck.WithAgainstFiles(againstFiles))
+	request, err := check.NewRequest(files, check.WithAgainstFiles(againstFiles))
 	if err != nil {
 		return err
 	}

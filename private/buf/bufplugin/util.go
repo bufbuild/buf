@@ -19,7 +19,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/bufplugin-go/bufplugincheck"
+	"github.com/bufbuild/bufplugin-go/check"
 )
 
 func imageToProtoFiles(image bufimage.Image) []*checkv1beta1.File {
@@ -33,11 +33,11 @@ func imageFileToProtoFile(imageFile bufimage.ImageFile) *checkv1beta1.File {
 	}
 }
 
-func annotationsToFileAnnotations(annotations []bufplugincheck.Annotation) []bufanalysis.FileAnnotation {
+func annotationsToFileAnnotations(annotations []check.Annotation) []bufanalysis.FileAnnotation {
 	return slicesext.Map(annotations, annotationToFileAnnotation)
 }
 
-func annotationToFileAnnotation(annotation bufplugincheck.Annotation) bufanalysis.FileAnnotation {
+func annotationToFileAnnotation(annotation check.Annotation) bufanalysis.FileAnnotation {
 	if annotation == nil {
 		return nil
 	}
