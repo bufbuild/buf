@@ -909,6 +909,24 @@ func testGenerateDeleteOuts(
 	baseOutDirPath string,
 	outputPaths ...string,
 ) {
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, nil, true, true, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, nil, false, false, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, []string{"--clean"}, false, true, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, []string{"--clean"}, true, true, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, []string{"--clean=true"}, true, true, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, []string{"--clean=true"}, false, true, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, []string{"--clean=false"}, true, false, outputPaths)
+	testGenerateDeleteOutsWithArgAndConfig(t, baseOutDirPath, []string{"--clean=false"}, false, false, outputPaths)
+}
+
+func testGenerateDeleteOutsWithArgAndConfig(
+	t *testing.T,
+	baseOutDirPath string,
+	cleanArgs []string,
+	cleanOptionInConfig bool,
+	expectedClean bool,
+	outputPaths []string,
+) {
 	// Just add more builtins to the plugins slice below if this goes off
 	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
@@ -964,18 +982,25 @@ plugins:
 		_, _ = templateBuilder.WriteString(outputPath)
 		_, _ = templateBuilder.WriteString("\n")
 	}
+	if cleanOptionInConfig {
+		templateBuilder.WriteString("clean: true\n")
+	}
 	testRunStdoutStderr(
 		t,
 		nil,
 		0,
 		``,
 		``,
-		filepath.Join("testdata", "simple"),
-		"--template",
-		templateBuilder.String(),
-		"-o",
-		filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
-		"--clean",
+		append(
+			[]string{
+				filepath.Join("testdata", "simple"),
+				"--template",
+				templateBuilder.String(),
+				"-o",
+				filepath.Join(tmpDirPath, normalpath.Unnormalize(baseOutDirPath)),
+			},
+			cleanArgs...,
+		)...,
 	)
 	for _, fullOutputPath := range fullOutputPaths {
 		switch normalpath.Ext(fullOutputPath) {
@@ -986,14 +1011,22 @@ plugins:
 				fullOutputPath,
 			)
 			require.NoError(t, err)
+			// Always expect non-fake data, because the existing ".jar" or ".zip"
+			// file is always replaced by the output. This is the existing and correct
+			// behavior.
 			require.True(t, len(data) > 1, "expected non-fake data at %q", fullOutputPath)
 		default:
-			_, err := storage.ReadPath(
+			data, err := storage.ReadPath(
 				ctx,
 				storageBucket,
 				normalpath.Join(fullOutputPath, "foo.txt"),
 			)
-			require.ErrorIs(t, err, fs.ErrNotExist)
+			if expectedClean {
+				require.ErrorIs(t, err, fs.ErrNotExist)
+			} else {
+				require.NoError(t, err, "expected foo.txt at %q", fullOutputPath)
+				require.NotNil(t, data, "expected foo.txt at %q", fullOutputPath)
+			}
 		}
 	}
 }

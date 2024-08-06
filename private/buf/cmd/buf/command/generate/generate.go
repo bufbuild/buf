@@ -373,7 +373,7 @@ Insertion points are processed in the order the plugins are specified in the tem
 type flags struct {
 	Template               string
 	BaseOutDirPath         string
-	DeleteOuts             bool
+	DeleteOuts             *bool
 	ErrorFormat            string
 	Files                  []string
 	Config                 string
@@ -427,10 +427,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		".",
 		`The base directory to generate to. This is prepended to the out directories in the generation template`,
 	)
-	flagSet.BoolVar(
-		&f.DeleteOuts,
+	bindBoolPointer(
+		flagSet,
 		deleteOutsFlagName,
-		false,
+		&f.DeleteOuts,
 		`Prior to generation, delete the directories, jar files, or zip files that the plugins will write to. Allows cleaning of existing assets without having to call rm -rf`,
 	)
 	flagSet.StringVar(
@@ -522,10 +522,10 @@ func run(
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	}
-	if flags.DeleteOuts {
+	if flags.DeleteOuts != nil {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithDeleteOuts(),
+			bufgen.GenerateWithDeleteOuts(*flags.DeleteOuts),
 		)
 	}
 	if flags.IncludeImportsOverride != nil {
