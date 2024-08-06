@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -43,6 +44,7 @@ func buildImage(
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
+	compiledDeps map[string]*descriptorpb.FileDescriptorProto,
 ) (_ Image, retErr error) {
 	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
@@ -51,7 +53,7 @@ func buildImage(
 		return nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")
 	}
 	moduleReadBucket = bufmodule.ModuleReadBucketWithOnlyProtoFiles(moduleReadBucket)
-	parserAccessorHandler := newParserAccessorHandler(ctx, moduleReadBucket)
+	fileResolver := newFileResolver(ctx, moduleReadBucket, compiledDeps)
 	targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 	if err != nil {
 		return nil, err
@@ -65,7 +67,7 @@ func buildImage(
 
 	buildResult := getBuildResult(
 		ctx,
-		parserAccessorHandler,
+		fileResolver,
 		paths,
 		excludeSourceCodeInfo,
 		noParallelism,
@@ -82,7 +84,7 @@ func buildImage(
 		excludeSourceCodeInfo,
 		sortedFiles,
 		buildResult.Symbols,
-		parserAccessorHandler,
+		fileResolver,
 		buildResult.SyntaxUnspecifiedFilenames,
 		buildResult.FilenameToUnusedDependencyFilenames,
 	)
@@ -94,7 +96,7 @@ func buildImage(
 
 func getBuildResult(
 	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
+	fileResolver *fileResolver,
 	paths []string,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
@@ -116,7 +118,7 @@ func getBuildResult(
 	compiler := protocompile.Compiler{
 		MaxParallelism: parallelism,
 		SourceInfoMode: sourceInfoMode,
-		Resolver:       &protocompile.SourceResolver{Accessor: parserAccessorHandler.Open},
+		Resolver:       fileResolver,
 		Symbols:        symbols,
 		Reporter: reporter.NewReporter(
 			func(errorWithPos reporter.ErrorWithPos) error {
@@ -139,7 +141,7 @@ func getBuildResult(
 			}
 			fileAnnotationSet, err := bufprotocompile.FileAnnotationSetForErrorsWithPos(
 				errorsWithPos,
-				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
+				bufprotocompile.WithExternalPathResolver(fileResolver.ExternalPath),
 			)
 			if err != nil {
 				return newFailedBuildResult(err)
@@ -149,7 +151,7 @@ func getBuildResult(
 		if errorWithPos, ok := err.(reporter.ErrorWithPos); ok {
 			fileAnnotation, err := bufprotocompile.FileAnnotationForErrorWithPos(
 				errorWithPos,
-				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
+				bufprotocompile.WithExternalPathResolver(fileResolver.ExternalPath),
 			)
 			if err != nil {
 				return newFailedBuildResult(err)
@@ -237,7 +239,7 @@ func getImage(
 	excludeSourceCodeInfo bool,
 	sortedFiles linker.Files,
 	symbols *linker.Symbols,
-	parserAccessorHandler *parserAccessorHandler,
+	fileResolver *fileResolver,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 ) (Image, error) {
@@ -262,7 +264,7 @@ func getImage(
 			ctx,
 			excludeSourceCodeInfo,
 			fileDescriptor,
-			parserAccessorHandler,
+			fileResolver,
 			syntaxUnspecifiedFilenames,
 			filenameToUnusedDependencyFilenames,
 			alreadySeen,
@@ -280,7 +282,7 @@ func getImageFilesRec(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	fileDescriptor protoreflect.FileDescriptor,
-	parserAccessorHandler *parserAccessorHandler,
+	fileResolver *fileResolver,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	alreadySeen map[string]struct{},
@@ -316,7 +318,7 @@ func getImageFilesRec(
 			ctx,
 			excludeSourceCodeInfo,
 			dependency,
-			parserAccessorHandler,
+			fileResolver,
 			syntaxUnspecifiedFilenames,
 			filenameToUnusedDependencyFilenames,
 			alreadySeen,
@@ -340,11 +342,11 @@ func getImageFilesRec(
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
 	imageFile, err := NewImageFile(
 		fileDescriptorProto,
-		parserAccessorHandler.ModuleFullName(path),
-		parserAccessorHandler.CommitID(path),
+		fileResolver.ModuleFullName(path),
+		fileResolver.CommitID(path),
 		// if empty, defaults to path
-		parserAccessorHandler.ExternalPath(path),
-		parserAccessorHandler.LocalPath(path),
+		fileResolver.ExternalPath(path),
+		fileResolver.LocalPath(path),
 		!isNotImport,
 		syntaxUnspecified,
 		unusedDependencyIndexes,
@@ -411,6 +413,7 @@ func newFailedBuildResult(err error) *buildResult {
 type buildImageOptions struct {
 	excludeSourceCodeInfo bool
 	noParallelism         bool
+	compiledDeps          map[string]*descriptorpb.FileDescriptorProto
 }
 
 func newBuildImageOptions() *buildImageOptions {

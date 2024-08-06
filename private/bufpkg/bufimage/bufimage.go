@@ -280,6 +280,7 @@ func BuildImage(
 		moduleReadBucket,
 		buildImageOptions.excludeSourceCodeInfo,
 		buildImageOptions.noParallelism,
+		buildImageOptions.compiledDeps,
 	)
 }
 
@@ -301,6 +302,18 @@ func WithExcludeSourceCodeInfo() BuildImageOption {
 func WithNoParallelism() BuildImageOption {
 	return func(buildImageOptions *buildImageOptions) {
 		buildImageOptions.noParallelism = true
+	}
+}
+
+// WithCompiledDependency allows the caller to supply already-compiled
+// descriptors that can be used, in lieu of source, to resolve imports
+// in the image that is being built.
+func WithCompiledDependency(dep *descriptorpb.FileDescriptorProto) BuildImageOption {
+	return func(buildImageOptions *buildImageOptions) {
+		if buildImageOptions.compiledDeps == nil {
+			buildImageOptions.compiledDeps = map[string]*descriptorpb.FileDescriptorProto{}
+		}
+		buildImageOptions.compiledDeps[dep.GetName()] = dep
 	}
 }
 
