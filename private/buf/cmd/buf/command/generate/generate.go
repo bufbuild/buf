@@ -52,6 +52,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	watchFlagName               = "watch"
 )
 
 // NewCommand returns a new Command.
@@ -382,6 +383,7 @@ type flags struct {
 	IncludeWKTOverride     *bool
 	ExcludePaths           []string
 	DisableSymlinks        bool
+	Watch                  bool
 	// We may be able to bind two flags to one string slice but I don't
 	// want to find out what will break if we do.
 	Types           []string
@@ -460,6 +462,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
+	flagSet.BoolVar(
+		&f.Watch,
+		watchFlagName,
+		false,
+		`Watch changes and regenrate code.`,
+	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
@@ -521,6 +529,7 @@ func run(
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+		bufgen.GenerateWithWatch(flags.Watch),
 	}
 	if flags.DeleteOuts != nil {
 		generateOptions = append(
