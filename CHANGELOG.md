@@ -1,7 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [v1.36.0] - 2024-08-06
 
+- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
+  known services or methods in the RPC schema, instead of invoking an RPC method.
 - Add `clean` as a top-level option in `buf.gen.yaml`, matching the `buf generate --clean` flag. If
   set to true, this will delete the directories, jar files, or zip files set to `out` for each
   plugin.
@@ -31,8 +33,6 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
-- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
-  known services or methods in the RPC schema, instead of invoking an RPC method.
 
 ## [v1.34.0] - 2024-06-21
 
@@ -1198,7 +1198,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.35.1...HEAD
+[v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
 [v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0
