@@ -21,6 +21,7 @@ import (
 const (
 	enumNameTypeTag   = int32(1)
 	enumValuesTypeTag = int32(2)
+	enumOptionTypeTag = int32(3)
 )
 
 func enums(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
@@ -45,6 +46,11 @@ func enum(token int32, sourcePath protoreflect.SourcePath, i int) (state, []prot
 		return nil, nil, nil
 	case enumValuesTypeTag:
 		return enumValues, nil, nil
+	case enumOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum option declaration without index")
+		}
+		return options, nil, nil
 	}
 	// TODO(doria): continue implementing source paths.
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")

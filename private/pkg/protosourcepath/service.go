@@ -21,6 +21,7 @@ import (
 const (
 	serviceNameTypeTag    = int32(1)
 	serviceMethodsTypeTag = int32(2)
+	serviceOptionTypeTag  = int32(3)
 )
 
 func services(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
@@ -45,9 +46,14 @@ func service(token int32, sourcePath protoreflect.SourcePath, i int) (state, []p
 		return nil, nil, nil
 	case serviceMethodsTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method declaraction without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method declaration without index")
 		}
 		return methods, nil, nil
+	case serviceOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have service option declaration without index")
+		}
+		return options, nil, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
 }
