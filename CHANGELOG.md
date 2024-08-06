@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.36.0] - 2024-08-06
 
 - Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
@@ -15,7 +19,7 @@
 - Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to
   manage BSR modules. Remove `buf beta registry repository` commands.
 - Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels.
-  Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
+  Remove `buf beta registry label` commands and `buf beta registry {archive, unarchive}`.
 - Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove
   `buf beta registry commit` commands.
 
@@ -1198,6 +1202,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.36.0...HEAD
 [v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
