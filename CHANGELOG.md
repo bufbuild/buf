@@ -8,6 +8,14 @@
 - Fix git input handling of annotated tags.
 - Update `buf registry login` to complete the login flow in the browser by default. This allows
   users to login with their browser and have the token automatically provided to the CLI.
+- Add `buf registry organization {create, delete, info, update}` commands to manage BSR
+  organizations. Remove `buf beta registry organization` commands.
+- Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to
+  manage BSR modules. Remove `buf beta registry repository` commands.
+- Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels.
+  Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
+- Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove
+  `buf beta registry commit` commands.
 
 ## [v1.35.1] - 2024-07-24
 

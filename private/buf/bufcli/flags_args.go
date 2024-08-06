@@ -28,6 +28,8 @@ import (
 )
 
 const (
+	DefaultArchiveStatus = unarchivedArchiveStatus
+
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
 
@@ -142,12 +144,16 @@ By default, symlinks are followed in this CLI, but never followed on the Buf Sch
 }
 
 // BindVisibility binds the visibility flag.
-func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
+func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, emptyDefault bool) {
+	defaultVisibility := privateVisibility
+	if emptyDefault {
+		defaultVisibility = ""
+	}
 	flagSet.StringVar(
 		addr,
 		flagName,
-		"",
-		fmt.Sprintf(`The repository's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+		defaultVisibility,
+		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -158,7 +164,7 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 		addr,
 		flagName,
 		privateVisibility,
-		fmt.Sprintf(`The repository's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -168,9 +174,46 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	flagSet.StringVar(
 		addr,
 		flagName,
-		unarchivedArchiveStatus,
+		DefaultArchiveStatus,
 		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, stringutil.SliceToString(allArchiveStatusStrings)),
 	)
+}
+
+// Binds a string pointer flag, which indicates flag presence, i.e. `--flag ""` is not the same as not passing the flag.
+//
+// This is useful for buf registry organization/module update, where we only modify the fields specified.
+//
+// Value must not be nil.
+func BindStringPointer(flagSet *pflag.FlagSet, name string, value **string, usage string) {
+	flagSet.Var(
+		&stringPointerValue{
+			valuePointer: value,
+		},
+		name,
+		usage,
+	)
+}
+
+// Implements pflag.Value.
+type stringPointerValue struct {
+	// This must not be nil at construction time.
+	valuePointer **string
+}
+
+func (b *stringPointerValue) Type() string {
+	return "string"
+}
+
+func (b *stringPointerValue) String() string {
+	if *b.valuePointer == nil {
+		return ""
+	}
+	return **b.valuePointer
+}
+
+func (b *stringPointerValue) Set(value string) error {
+	*b.valuePointer = &value
+	return nil
 }
 
 // GetInputLong gets the long command description for an input-based command.
@@ -243,18 +286,6 @@ func GetInputValue(
 		return arg, nil
 	}
 	return defaultValue, nil
-}
-
-// VisibilityFlagToVisibility parses the given string as a modulev1.ModuleVisibility
-func VisibilityFlagToVisibility(visibility string) (modulev1.ModuleVisibility, error) {
-	switch visibility {
-	case publicVisibility:
-		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
-	case privateVisibility:
-		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
-	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
-	}
 }
 
 // VisibilityFlagToVisibilityAllowUnspecified parses the given string as a modulev1.ModuleVisibility

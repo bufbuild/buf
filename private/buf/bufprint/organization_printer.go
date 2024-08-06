@@ -24,6 +24,11 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 )
 
+const (
+	organizationFullNameHeader   = "Name"
+	organizationCreateTimeHeader = "Create Time"
+)
+
 type organizationPrinter struct {
 	address string
 	writer  io.Writer
@@ -39,7 +44,7 @@ func newOrganizationPrinter(
 	}
 }
 
-func (p *organizationPrinter) PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error {
+func (p *organizationPrinter) PrintOrganizationInfo(ctx context.Context, format Format, organization *ownerv1.Organization) error {
 	outOrganization := registryOrganizationToOutputOrganization(p.address, organization)
 	switch format {
 	case FormatText:
@@ -77,8 +82,8 @@ func (p *organizationPrinter) printOrganizationsText(outputOrganizations []outpu
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"Full Name",
-			"Create Time",
+			organizationFullNameHeader,
+			organizationCreateTimeHeader,
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputOrganization := range outputOrganizations {
