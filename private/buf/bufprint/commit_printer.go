@@ -107,9 +107,9 @@ func (p *commitPrinter) PrintCommitPage(ctx context.Context, format Format, next
 		)
 		return err
 	case FormatJSON:
-		return json.NewEncoder(p.writer).Encode(paginationWrapper{
+		return json.NewEncoder(p.writer).Encode(commitPage{
 			NextPage: nextPageToken,
-			Results:  outputCommits,
+			Commits:  outputCommits,
 		})
 	default:
 		return fmt.Errorf("unknown format: %v", format)
@@ -147,4 +147,9 @@ func commitToOutputCommit(commit *modulev1.Commit) outputCommit {
 		Commit:     commit.Id,
 		CreateTime: commit.CreateTime.AsTime(),
 	}
+}
+
+type commitPage struct {
+	NextPage string         `json:"next_page,omitempty"`
+	Commits  []outputCommit `json:"commits"`
 }
