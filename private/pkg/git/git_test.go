@@ -83,10 +83,30 @@ func TestGitCloner(t *testing.T) {
 		_, err = readBucket.Stat(ctx, "nonexistent")
 		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
+	t.Run("ref=main", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewRefName("main"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 1", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
 
 	t.Run("origin/main", func(t *testing.T) {
 		t.Parallel()
 		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewBranchName("origin/main"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 3", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
+	t.Run("ref=origin/main", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewRefName("origin/main"), false)
 
 		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
 		require.NoError(t, err)
@@ -109,6 +129,36 @@ func TestGitCloner(t *testing.T) {
 	t.Run("remote-tag", func(t *testing.T) {
 		t.Parallel()
 		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewTagName("remote-tag"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 4", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
+	t.Run("ref=remote-tag", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewRefName("remote-tag"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 4", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
+	t.Run("tag=remote-annotated-tag", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewTagName("remote-annotated-tag"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 4", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
+	t.Run("ref=remote-annotated-tag", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 1, NewRefName("remote-annotated-tag"), false)
 
 		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
 		require.NoError(t, err)
@@ -278,6 +328,7 @@ func createGitDirs(
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 4")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "tag", "remote-tag")
+	runCommand(ctx, t, container, runner, "git", "-C", originPath, "tag", "-a", "remote-annotated-tag", "-m", "annotated tag")
 
 	runCommand(ctx, t, container, runner, "git", "-C", workPath, "fetch", "origin")
 	return originPath, workPath
