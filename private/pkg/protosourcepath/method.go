@@ -26,6 +26,7 @@ const (
 	methodOutputTypeTypeTag      = int32(3)
 	methodClientStreamingTypeTag = int32(5)
 	methodServerStreamingTypeTag = int32(6)
+	methodOptionTypeTag          = int32(4)
 )
 
 var (
@@ -61,8 +62,18 @@ func methods(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []proto
 
 func method(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalMethodTokens, token) {
-		// Encountered a terminal method token, terminate here.
+		// Encountered a terminal method token, validate and terminate here.
+		if len(sourcePath) != i+1 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid method path")
+		}
 		return nil, nil, nil
+	}
+	switch token {
+	case methodOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method option declaration without index")
+		}
+		return options, nil, nil
 	}
 	// TODO(doria): implement non-terminal method tokens
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")

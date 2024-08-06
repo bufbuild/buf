@@ -101,7 +101,7 @@ func run(
 			fmt.Printf("len trailing comments: %v\n", len(sourceLocation.TrailingComments))
 			associatedSourcePaths, err := protosourcepath.GetAssociatedSourcePaths(sourceLocation.Path)
 			if err != nil {
-				return err
+				fmt.Println(err)
 			}
 			fmt.Printf("Associated source paths: %v\n", associatedSourcePaths)
 			fmt.Printf("Associated source paths: %v\n\n", rawAssociatedSourcePaths(associatedSourcePaths))

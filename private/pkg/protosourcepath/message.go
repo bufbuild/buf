@@ -21,12 +21,14 @@ import (
 )
 
 const (
-	messageNameTypeTag      = int32(1)
-	mesasgeFieldsTypeTag    = int32(2)
-	nestedMessagesTypeTag   = int32(3)
-	nestedEnumsTypeTag      = int32(4)
-	messageOneOfsTypeTag    = int32(8)
-	messageOneOfNameTypeTag = int32(1)
+	messageNameTypeTag        = int32(1)
+	mesasgeFieldsTypeTag      = int32(2)
+	nestedMessagesTypeTag     = int32(3)
+	nestedEnumsTypeTag        = int32(4)
+	messageOneOfsTypeTag      = int32(8)
+	messageOneOfNameTypeTag   = int32(1)
+	messageOneOfOptionTypeTag = int32(2)
+	messageOptionTypeTag      = int32(7)
 )
 
 var (
@@ -75,6 +77,11 @@ func message(token int32, sourcePath protoreflect.SourcePath, i int) (state, []p
 			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have a nested enum declaration without index")
 		}
 		return enums, nil, nil
+	case messageOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have message option declaration without index")
+		}
+		return options, nil, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
 }
@@ -90,7 +97,18 @@ func oneOfs(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protor
 
 func oneOf(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalOneOfTokens, token) {
+		// Encountered a terminal one of token validate the path and return here.
+		if len(sourcePath) != i+1 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid one of path")
+		}
 		return nil, nil, nil
+	}
+	switch token {
+	case messageOneOfOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have one of option declaration without index")
+		}
+		return options, nil, nil
 	}
 	// TODO(doria): implement non-terminal one-of tokens
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")

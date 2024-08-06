@@ -26,6 +26,7 @@ const (
 	fieldLabelTypeTag    = int32(4)
 	fieldTypeTypeTag     = int32(5)
 	fieldTypeNameTypeTag = int32(6)
+	fieldOptionTypeTag   = int32(8)
 )
 
 var (
@@ -60,8 +61,18 @@ func fields(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protor
 
 func field(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalFieldTokens, token) {
-		// Encountered a terminal field token, terminate here.
+		// Encountered a terminal field token, validate the path and return here.
+		if len(sourcePath) != i+1 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid field path")
+		}
 		return nil, nil, nil
+	}
+	switch token {
+	case fieldOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field option declaration without index")
+		}
+		return options, nil, nil
 	}
 	// TODO(doria): implement non-terminal field tokens
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")

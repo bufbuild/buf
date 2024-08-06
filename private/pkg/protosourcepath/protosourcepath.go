@@ -24,13 +24,13 @@ import (
 const (
 	packageTypeTag      = int32(2)
 	dependenciesTypeTag = int32(3)
+	syntaxTypeTag       = int32(12)
+	editionTypeTag      = int32(14)
 	messagesTypeTag     = int32(4)
 	enumsTypeTag        = int32(5)
 	servicesTypeTag     = int32(6)
-	extensionsTypeTag   = int32(7)
 	fileOptionsTypeTag  = int32(8)
-	syntaxTypeTag       = int32(12)
-	editionTypeTag      = int32(14)
+	extensionsTypeTag   = int32(7)
 )
 
 type AssociatedSourcePaths struct {
@@ -92,6 +92,11 @@ func start(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have service declaration without index")
 		}
 		return services, nil, nil
+	case fileOptionsTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have file options declaration without option path")
+		}
+		return options, nil, nil
 	}
 	// TODO(doria): continuing implementing source paths
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")

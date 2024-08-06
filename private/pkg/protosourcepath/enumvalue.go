@@ -23,6 +23,7 @@ import (
 const (
 	enumValueNameTypeTag   = int32(1)
 	enumValueNumberTypeTag = int32(2)
+	enumValueOptionTypeTag = int32(3)
 )
 
 var (
@@ -50,8 +51,18 @@ func enumValues(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []pr
 
 func enumValue(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalEnumValueTokens, token) {
-		// Encountered a terminal enum value token, terminate here
+		// Encountered a terminal enum value token, validate and terminate here
+		if len(sourcePath) != i+1 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")
+		}
 		return nil, nil, nil
+	}
+	switch token {
+	case enumValueOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum value option declaration without index")
+		}
+		return options, nil, nil
 	}
 	// TODO(doria): implement non-terminal enum value tokens
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
