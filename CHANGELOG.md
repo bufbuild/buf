@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.36.0] - 2024-08-06
 
 - Add `clean` as a top-level option in `buf.gen.yaml`, matching the `buf generate --clean` flag. If
   set to true, this will delete the directories, jar files, or zip files set to `out` for each
@@ -1198,7 +1198,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.35.1...HEAD
+[v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
 [v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0
