@@ -19,7 +19,7 @@
 - Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to
   manage BSR modules. Remove `buf beta registry repository` commands.
 - Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels.
-  Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
+  Remove `buf beta registry label` commands and `buf beta registry {archive, unarchive}`.
 - Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove
   `buf beta registry commit` commands.
 
