@@ -106,9 +106,7 @@ var (
 	// EnumZeroValueSuffixRuleBuilder is a rule builder.
 	EnumZeroValueSuffixRuleBuilder = internal.NewRuleBuilder(
 		"ENUM_ZERO_VALUE_SUFFIX",
-		func(configBuilder internal.ConfigBuilder) (string, error) {
-			return `enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED")`, nil
-		},
+		`enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED")`,
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			if configBuilder.EnumZeroValueSuffix == "" {
 				return nil, errors.New("enum_zero_value_suffix is empty")
@@ -277,9 +275,7 @@ var (
 	// RPCRequestResponseUniqueRuleBuilder is a rule builder.
 	RPCRequestResponseUniqueRuleBuilder = internal.NewRuleBuilder(
 		"RPC_REQUEST_RESPONSE_UNIQUE",
-		func(configBuilder internal.ConfigBuilder) (string, error) {
-			return "RPC request and response types are only used in one RPC (configurable)", nil
-		},
+		"RPC request and response types are only used in one RPC (configurable)",
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckRPCRequestResponseUnique(
@@ -296,9 +292,7 @@ var (
 	// RPCRequestStandardNameRuleBuilder is a rule builder.
 	RPCRequestStandardNameRuleBuilder = internal.NewRuleBuilder(
 		"RPC_REQUEST_STANDARD_NAME",
-		func(configBuilder internal.ConfigBuilder) (string, error) {
-			return "RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)", nil
-		},
+		"RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)",
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckRPCRequestStandardName(
@@ -313,9 +307,7 @@ var (
 	// RPCResponseStandardNameRuleBuilder is a rule builder.
 	RPCResponseStandardNameRuleBuilder = internal.NewRuleBuilder(
 		"RPC_RESPONSE_STANDARD_NAME",
-		func(configBuilder internal.ConfigBuilder) (string, error) {
-			return "RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)", nil
-		},
+		"RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)",
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckRPCResponseStandardName(
@@ -336,9 +328,7 @@ var (
 	// ServiceSuffixRuleBuilder is a rule builder.
 	ServiceSuffixRuleBuilder = internal.NewRuleBuilder(
 		"SERVICE_SUFFIX",
-		func(configBuilder internal.ConfigBuilder) (string, error) {
-			return `services have a consistent suffix (configurable, default suffix is "Service")`, nil
-		},
+		`services have a consistent suffix (configurable, default suffix is "Service")`,
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			if configBuilder.ServiceSuffix == "" {
 				return nil, errors.New("service_suffix is empty")
