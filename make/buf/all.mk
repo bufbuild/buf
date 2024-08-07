@@ -7,7 +7,8 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 	go.opentelemetry.io/otel/sdk@v1.24.0 \
 	go.opentelemetry.io/otel/trace@v1.24.0 \
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.24.0 \
-	github.com/antlr4-go/antlr/v4@v4.13.0
+	github.com/antlr4-go/antlr/v4@v4.13.1 \
+	github.com/bufbuild/bufplugin-go@latest
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -27,7 +28,7 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
 	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
-GO_MOD_VERSION := 1.20
+GO_MOD_VERSION := 1.22
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
