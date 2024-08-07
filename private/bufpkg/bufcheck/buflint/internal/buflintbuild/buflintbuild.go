@@ -107,10 +107,7 @@ var (
 	EnumZeroValueSuffixRuleBuilder = internal.NewRuleBuilder(
 		"ENUM_ZERO_VALUE_SUFFIX",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
-			if configBuilder.EnumZeroValueSuffix == "" {
-				return "", errors.New("enum_zero_value_suffix is empty")
-			}
-			return "enum zero values are suffixed with " + configBuilder.EnumZeroValueSuffix + " (suffix is configurable)", nil
+			return `enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED")`, nil
 		},
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			if configBuilder.EnumZeroValueSuffix == "" {
@@ -340,10 +337,7 @@ var (
 	ServiceSuffixRuleBuilder = internal.NewRuleBuilder(
 		"SERVICE_SUFFIX",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
-			if configBuilder.ServiceSuffix == "" {
-				return "", errors.New("service_suffix is empty")
-			}
-			return "services are suffixed with " + configBuilder.ServiceSuffix + " (suffix is configurable)", nil
+			return `services have a consistent suffix (configurable, default suffix is "Service")`, nil
 		},
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
 			if configBuilder.ServiceSuffix == "" {
