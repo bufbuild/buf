@@ -22,6 +22,7 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -85,7 +86,7 @@ func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
 
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
-	PrintOrganization(ctx context.Context, format Format, organization *ownerv1.Organization) error
+	PrintOrganizationInfo(ctx context.Context, format Format, organization *ownerv1.Organization) error
 }
 
 // NewOrganizationPrinter returns a new OrganizationPrinter.
@@ -93,42 +94,45 @@ func NewOrganizationPrinter(address string, writer io.Writer) OrganizationPrinte
 	return newOrganizationPrinter(address, writer)
 }
 
-// RepositoryPrinter is a repository printer.
-type RepositoryPrinter interface {
-	PrintRepository(ctx context.Context, format Format, repository *modulev1.Module) error
-	PrintRepositories(ctx context.Context, format Format, nextPageToken string, repositories ...*modulev1.Module) error
+// ModulePrinter is a module printer.
+type ModulePrinter interface {
+	PrintModuleInfo(ctx context.Context, format Format, repository *modulev1.Module) error
 }
 
-// NewRepositoryPrinter returns a new RepositoryPrinter.
-func NewRepositoryPrinter(
+// NewModulePrinter returns a new ModulePrinter.
+func NewModulePrinter(
 	clientConfig *connectclient.Config,
 	address string,
 	writer io.Writer,
-) RepositoryPrinter {
-	return newRepositoryPrinter(clientConfig, address, writer)
+) ModulePrinter {
+	return newModulePrinter(clientConfig, address, writer)
 }
 
-// RepositoryLabelPrinter is a repository label printer.
-// TODO: perhaps rename this to LabelPrinter along with other printers
-type RepositoryLabelPrinter interface {
-	PrintRepositoryLabel(ctx context.Context, format Format, label *modulev1.Label) error
-	PrintRepositoryLabels(ctx context.Context, format Format, nextPageToken string, labels ...*modulev1.Label) error
+// LabelPrinter is a repository label printer.
+type LabelPrinter interface {
+	// PrintLabels prints each label on a new line.
+	PrintLabels(ctx context.Context, format Format, label ...*modulev1.Label) error
+	// PrintLabels prints information about a label.
+	PrintLabelInfo(ctx context.Context, format Format, label *modulev1.Label) error
+	// PrintLabelPage prints a page of labels.
+	PrintLabelPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, labels []*modulev1.Label) error
 }
 
-// NewRepositoryLabelPrinter returns a new RepositoryLabelPrinter.
-func NewRepositoryLabelPrinter(writer io.Writer) RepositoryLabelPrinter {
-	return newRepositoryLabelPrinter(writer)
+// NewLabelPrinter returns a new RepositoryLabelPrinter.
+func NewLabelPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) LabelPrinter {
+	return newLabelPrinter(writer, moduleFullName)
 }
 
-// RepositoryCommitPrinter is a repository commit printer.
-type RepositoryCommitPrinter interface {
-	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *modulev1.Commit) error
-	PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*modulev1.Commit) error
+// CommitPrinter is a commit printer.
+type CommitPrinter interface {
+	PrintCommitInfo(ctx context.Context, format Format, commit *modulev1.Commit) error
+	PrintCommits(ctx context.Context, format Format, commits ...*modulev1.Commit) error
+	PrintCommitPage(ctx context.Context, format Format, nextPageCommand, nextPageToken string, commits []*modulev1.Commit) error
 }
 
-// NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
-func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
-	return newRepositoryCommitPrinter(writer)
+// NewCommitPrinter returns a new RepositoryCommitPrinter.
+func NewCommitPrinter(writer io.Writer, moduleFullName bufmodule.ModuleFullName) CommitPrinter {
+	return newCommitPrinter(writer, moduleFullName)
 }
 
 // TokenPrinter is a token printer.
