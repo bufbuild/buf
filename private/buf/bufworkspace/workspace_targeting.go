@@ -176,12 +176,16 @@ func v2WorkspaceTargeting(
 	// directories, and this is a system error - this should be verified before we reach this function.
 	var hadIsTentativelyTargetModule bool
 	var hadIsTargetModule bool
-	moduleDirPaths := make([]string, 0, len(bufYAMLFile.ModuleConfigs()))
+	moduleDirPaths := slicesext.Map(
+		bufYAMLFile.ModuleConfigs(),
+		func(moduleConfig bufconfig.ModuleConfig) string {
+			return moduleConfig.DirPath()
+		},
+	)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
-		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
@@ -200,6 +204,20 @@ func v2WorkspaceTargeting(
 		if isTentativelyTargetModule {
 			hadIsTentativelyTargetModule = true
 		}
+		var otherModulePathsContained []string
+		for _, siblingModulePath := range moduleDirPaths {
+			if moduleDirPath == siblingModulePath {
+				continue
+			}
+			if !normalpath.EqualsOrContainsPath(moduleDirPath, siblingModulePath, normalpath.Relative) {
+				continue
+			}
+			otherModulePathContained, err := normalpath.Rel(moduleDirPath, siblingModulePath)
+			if err != nil {
+				return nil, syserror.Newf("failed to compute relative path from %q to %q: %w", moduleDirPath, siblingModulePath, err)
+			}
+			otherModulePathsContained = append(otherModulePathsContained, otherModulePathContained)
+		}
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			config,
@@ -208,6 +226,7 @@ func v2WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			otherModulePathsContained,
 		)
 		if err != nil {
 			return nil, err
@@ -311,6 +330,7 @@ func v1WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			nil,
 		)
 		if err != nil {
 			return nil, err
@@ -517,6 +537,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
+	extraExcludePaths []string,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
 		bucket,
@@ -532,12 +553,14 @@ func getMappedModuleBucketAndModuleTargeting(
 			storage.MatchPathExt(".proto"),
 			storage.MapOnPrefix(root),
 		}
-		if len(excludes) != 0 {
+		pathsToExclude := slicesext.Copy(excludes)
+		pathsToExclude = append(pathsToExclude, extraExcludePaths...)
+		if len(pathsToExclude) != 0 {
 			var notOrMatchers []storage.Matcher
-			for _, exclude := range excludes {
+			for _, pathToExclude := range pathsToExclude {
 				notOrMatchers = append(
 					notOrMatchers,
-					storage.MatchPathContained(exclude),
+					storage.MatchPathContained(pathToExclude),
 				)
 			}
 			mappers = append(
