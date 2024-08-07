@@ -14,7 +14,10 @@
 
 package bufprotosource
 
-import "google.golang.org/protobuf/types/descriptorpb"
+import (
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+)
 
 type location struct {
 	sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location
@@ -90,4 +93,8 @@ func (l *location) TrailingComments() string {
 
 func (l *location) LeadingDetachedComments() []string {
 	return l.sourceCodeInfoLocation.LeadingDetachedComments
+}
+
+func (l *location) Path() protoreflect.SourcePath {
+	return protoreflect.SourcePath(l.sourceCodeInfoLocation.Path)
 }
