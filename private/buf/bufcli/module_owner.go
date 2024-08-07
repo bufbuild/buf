@@ -25,7 +25,7 @@ import (
 // ModuleOwner represents a module owner, consisting of a registry and owner.
 //
 // This concept used to live in bufmodule but it doesn't really make sense there, as it isn't
-// use anywhere else. We only use this in buf beta registry organization commands at the moment.
+// use anywhere else. We only use this in buf registry organization commands at the moment.
 type ModuleOwner interface {
 	// String returns "registry/owner".
 	fmt.Stringer

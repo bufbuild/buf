@@ -22,7 +22,7 @@ import (
 // RuleBuilder is a rule builder.
 type RuleBuilder struct {
 	id             string
-	newPurpose     func(ConfigBuilder) (string, error)
+	purpose        string
 	deprecated     bool
 	replacementIDs []string
 	newCheck       func(ConfigBuilder) (CheckFunc, error)
@@ -31,12 +31,12 @@ type RuleBuilder struct {
 // NewRuleBuilder returns a new undeprecated RuleBuilder.
 func NewRuleBuilder(
 	id string,
-	newPurpose func(ConfigBuilder) (string, error),
+	purpose string,
 	newCheck func(ConfigBuilder) (CheckFunc, error),
 ) *RuleBuilder {
 	return &RuleBuilder{
 		id:             id,
-		newPurpose:     newPurpose,
+		purpose:        purpose,
 		deprecated:     false,
 		replacementIDs: nil,
 		newCheck:       newCheck,
@@ -52,7 +52,7 @@ func NewNopRuleBuilder(
 ) *RuleBuilder {
 	return NewRuleBuilder(
 		id,
-		newNopPurpose(purpose),
+		purpose,
 		newNopCheckFunc(checkFunc),
 	)
 }
@@ -67,7 +67,7 @@ func NewDeprecatedRuleBuilder(
 ) *RuleBuilder {
 	return &RuleBuilder{
 		id:             id,
-		newPurpose:     newNopPurpose(purpose),
+		purpose:        purpose,
 		deprecated:     true,
 		replacementIDs: replacementIDs,
 		newCheck:       newNopCheckFunc(newNopCheck),
@@ -81,10 +81,6 @@ func NewDeprecatedRuleBuilder(
 //
 // Categories is an actual copy from the ruleBuilder.
 func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) (*Rule, error) {
-	purpose, err := c.newPurpose(configBuilder)
-	if err != nil {
-		return nil, err
-	}
 	check, err := c.newCheck(configBuilder)
 	if err != nil {
 		return nil, err
@@ -92,7 +88,7 @@ func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) 
 	return newRule(
 		c.id,
 		categories,
-		purpose,
+		c.purpose,
 		c.deprecated,
 		c.replacementIDs,
 		check,
@@ -112,12 +108,6 @@ func (c *RuleBuilder) Deprecated() bool {
 // ReplacementIDs returns the replacement IDs.
 func (c *RuleBuilder) ReplacementIDs() []string {
 	return c.replacementIDs
-}
-
-func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
-	return func(ConfigBuilder) (string, error) {
-		return purpose, nil
-	}
 }
 
 func newNopCheckFunc(

@@ -258,6 +258,7 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 	}
 	externalBufGenYAMLFileV2 := externalBufGenYAMLFileV2{
 		Version: FileVersionV2.String(),
+		Clean:   bufGenYAMLFile.GenerateConfig().CleanPluginOuts(),
 		Plugins: externalPluginConfigsV2,
 		Managed: externalManagedConfigV2,
 		Inputs:  externalInputConfigsV2,
@@ -481,8 +482,11 @@ type externalTypesConfigV1 struct {
 
 // externalBufGenYAMLFileV2 represents the v2 buf.gen.yaml file.
 type externalBufGenYAMLFileV2 struct {
-	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
-	Managed externalGenerateManagedConfigV2  `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Version string                          `json:"version,omitempty" yaml:"version,omitempty"`
+	Managed externalGenerateManagedConfigV2 `json:"managed,omitempty" yaml:"managed,omitempty"`
+	// Clean, if set to true, will delete the output directories, zip files, or jar files
+	// before generation is run.
+	Clean   bool                             `json:"clean,omitempty" yaml:"clean,omitempty"`
 	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Inputs  []externalInputConfigV2          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }

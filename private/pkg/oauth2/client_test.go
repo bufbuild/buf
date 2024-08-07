@@ -82,12 +82,12 @@ func TestRegisterDevice(t *testing.T) {
 		input: &DeviceRegistrationRequest{ClientName: "nameOfClient"},
 		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
 			return &http.Response{
-				Status:     "500 Internal Server Error",
-				StatusCode: http.StatusInternalServerError,
-				Body:       io.NopCloser(strings.NewReader(`server error`)),
+				Status:     "501 Not Implemented",
+				StatusCode: http.StatusNotImplemented,
+				Body:       io.NopCloser(strings.NewReader(`not implemented`)),
 			}, nil
 		},
-		err: fmt.Errorf("oauth2: invalid response: 500 server error"),
+		err: fmt.Errorf("oauth2: %w: 501 not implemented", ErrUnsupported),
 	}}
 	for _, test := range tests {
 		test := test

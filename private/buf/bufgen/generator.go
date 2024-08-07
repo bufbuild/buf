@@ -105,7 +105,11 @@ func (g *generator) Generate(
 			return err
 		}
 	}
-	if generateOptions.deleteOuts {
+	shouldDeleteOuts := config.CleanPluginOuts()
+	if generateOptions.deleteOuts != nil {
+		shouldDeleteOuts = *generateOptions.deleteOuts
+	}
+	if shouldDeleteOuts {
 		if err := g.deleteOuts(
 			ctx,
 			generateOptions.baseOutDirPath,
@@ -484,7 +488,7 @@ func validateResponses(
 
 type generateOptions struct {
 	baseOutDirPath                string
-	deleteOuts                    bool
+	deleteOuts                    *bool
 	includeImportsOverride        *bool
 	includeWellKnownTypesOverride *bool
 }
