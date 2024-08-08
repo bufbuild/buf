@@ -28,9 +28,16 @@ var (
 			"BASIC",
 			"DEFAULT",
 		},
-		Purpose: check.NopPurpose("Checks that services are PascalCase."),
+		Purpose: "Checks that services are PascalCase.",
 		Type:    check.RuleTypeLint,
-		Handler: check.NopRuleHandler(check.RuleHandlerFunc(handleV2ServicePascalCase)),
+		Handler: check.RuleHandlerFunc(handleV2ServicePascalCase),
+	}
+
+	v2Spec = &check.Spec{
+		Rules: []*check.RuleSpec{
+			v2ServicePascalCaseRuleSpec,
+		},
+		Before: before,
 	}
 )
 
@@ -43,15 +50,26 @@ func handleV2ServicePascalCase(
 }
 
 func newFilesRuleHandler(
-	f func(check.ResponseWriter, []bufprotosource.File, check.Options) error,
+	f func(
+		responseWriter check.ResponseWriter,
+		files []bufprotosource.File,
+		options check.Options,
+	) error,
 ) check.RuleHandler {
 	return check.RuleHandlerFunc(
 		func(
-			_ context.Context,
+			ctx context.Context,
 			responseWriter check.ResponseWriter,
 			request check.Request,
 		) error {
 			return nil
 		},
 	)
+}
+
+func before(
+	ctx context.Context,
+	request check.Request,
+) (context.Context, check.Request, error) {
+	return ctx, request, nil
 }
