@@ -214,7 +214,7 @@ func getProtosourceFiles(
 		}
 		return nil, err
 	}
-	return bufprotosource.NewFiles(ctx, image)
+	return bufprotosource.NewFiles(ctx, image.Files(), image.Resolver())
 }
 
 func getGolangFileData(
