@@ -31,6 +31,7 @@ type moduleTargeting struct {
 	// Also false if there were bucketTargeting.TargetPaths() or bucketTargeting.protoFileTargetPath, but
 	// these paths did not match anything in the module.
 	isTargetModule bool
+	bucketID       string
 	// moduleDirPath is the directory path of the module
 	moduleDirPath string
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
@@ -44,6 +45,7 @@ type moduleTargeting struct {
 
 func newModuleTargeting(
 	moduleDirPath string,
+	bucketID string,
 	roots []string,
 	bucketTargeting buftarget.BucketTargeting,
 	config *workspaceBucketConfig,
@@ -52,7 +54,7 @@ func newModuleTargeting(
 	if !isTentativelyTargetModule {
 		// If this is not a target Module, we do not want to target anything, as targeting
 		// paths for non-target Modules is an error.
-		return &moduleTargeting{moduleDirPath: moduleDirPath}, nil
+		return &moduleTargeting{moduleDirPath: moduleDirPath, bucketID: bucketID}, nil // TODO: should bucket ID be passed at all?
 	}
 	// If we have no target paths, then we always match the value of isTargetModule.
 	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
@@ -154,6 +156,7 @@ func newModuleTargeting(
 	}
 	return &moduleTargeting{
 		moduleDirPath:             moduleDirPath,
+		bucketID:                  bucketID,
 		isTargetModule:            isTargetModule,
 		moduleTargetPaths:         moduleTargetPaths,
 		moduleTargetExcludePaths:  moduleTargetExcludePaths,

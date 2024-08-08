@@ -74,6 +74,7 @@ type BufYAMLFile interface {
 	// This will always be non-empty.
 	// All ModuleConfigs will have unique ModuleFullNames.
 	// Sorted by DirPath.
+	// TODO: tie breaker for sorting
 	ModuleConfigs() []ModuleConfig
 	// TopLevelLintConfig returns the top-level LintConfig for the File.
 	//
@@ -255,8 +256,9 @@ func newBufYAMLFile(
 		return nil, errors.New("had 0 ModuleConfigs passed to NewBufYAMLFile")
 	}
 	for _, moduleConfig := range moduleConfigs {
-		if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && moduleConfig.DirPath() != "." {
-			return nil, fmt.Errorf("invalid DirPath %q in NewBufYAMLFile for %v ModuleConfig", moduleConfig.DirPath(), fileVersion)
+		moduleDirPath, _ := moduleConfig.DirPath()
+		if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && moduleDirPath != "." {
+			return nil, fmt.Errorf("invalid DirPath %q in NewBufYAMLFile for %v ModuleConfig", moduleDirPath, fileVersion)
 		}
 		if moduleConfig == nil {
 			return nil, errors.New("ModuleConfig was nil in NewBufYAMLFile")
@@ -268,17 +270,20 @@ func newBufYAMLFile(
 			return nil, fmt.Errorf("FileVersion %v was passed to NewBufYAMLFile but had BreakingConfig FileVersion %v", fileVersion, moduleConfig.BreakingConfig().FileVersion())
 		}
 	}
-	// Zero values are not added to duplicates.
-	duplicateModuleConfigDirPaths := slicesext.Duplicates(
-		slicesext.Map(
-			moduleConfigs,
-			func(moduleConfig ModuleConfig) string {
-				return moduleConfig.DirPath()
-			},
-		),
-	)
-	if len(duplicateModuleConfigDirPaths) > 0 {
-		return nil, fmt.Errorf("module directory %q seen more than once", strings.Join(duplicateModuleConfigDirPaths, ", "))
+	if !bufYAMLVersionAllowsDuplicateModuleDirPaths(fileVersion) {
+		// Zero values are not added to duplicates.
+		duplicateModuleConfigDirPaths := slicesext.Duplicates(
+			slicesext.Map(
+				moduleConfigs,
+				func(moduleConfig ModuleConfig) string {
+					dirPath, _ := moduleConfig.DirPath()
+					return dirPath
+				},
+			),
+		)
+		if len(duplicateModuleConfigDirPaths) > 0 {
+			return nil, fmt.Errorf("module directory %q seen more than once", strings.Join(duplicateModuleConfigDirPaths, ", "))
+		}
 	}
 	// Zero values are not added to duplicates.
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleConfigs); err != nil {
@@ -290,7 +295,16 @@ func newBufYAMLFile(
 	sort.Slice(
 		moduleConfigs,
 		func(i int, j int) bool {
-			return moduleConfigs[i].DirPath() < moduleConfigs[j].DirPath()
+			// TODO: figure it out
+			iDirPath, iIndex := moduleConfigs[i].DirPath()
+			jDirPath, jIndex := moduleConfigs[j].DirPath()
+			if iDirPath < jDirPath {
+				return true
+			}
+			if iDirPath > jDirPath {
+				return false
+			}
+			return iIndex < jIndex
 		},
 	)
 	sort.Slice(
@@ -412,6 +426,7 @@ func readBufYAMLFile(
 		}
 		moduleConfig, err := newModuleConfig(
 			"",
+			0,
 			moduleFullName,
 			rootToExcludes,
 			lintConfig,
@@ -451,6 +466,7 @@ func readBufYAMLFile(
 		defaultExternalLintConfig := externalBufYAMLFile.Lint
 		defaultExternalBreakingConfig := externalBufYAMLFile.Breaking
 		var moduleConfigs []ModuleConfig
+		dirPathToCount := make(map[string]int)
 		for _, externalModule := range externalModules {
 			dirPath := externalModule.Path
 			if dirPath == "" {
@@ -532,6 +548,7 @@ func readBufYAMLFile(
 			}
 			moduleConfig, err := newModuleConfig(
 				dirPath,
+				dirPathToCount[dirPath],
 				moduleFullName,
 				rootToExcludes,
 				lintConfig,
@@ -540,6 +557,7 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, err
 			}
+			dirPathToCount[dirPath]++
 			moduleConfigs = append(moduleConfigs, moduleConfig)
 		}
 		var topLevelLintConfig LintConfig
@@ -595,8 +613,9 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		}
 		moduleConfig := moduleConfigs[0]
 		// Just some extra sanity checking that we've properly validated.
-		if moduleConfig.DirPath() != "." {
-			return syserror.Newf("expected ModuleConfig DirPath to be . but was %q", moduleConfig.DirPath())
+		moduleDirPath, _ := moduleConfig.DirPath()
+		if moduleDirPath != "." {
+			return syserror.Newf("expected ModuleConfig DirPath to be . but was %q", moduleDirPath)
 		}
 		externalBufYAMLFile := externalBufYAMLFileV1Beta1V1{
 			Version: fileVersion.String(),
@@ -695,7 +714,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		stringToExternalBreaking := make(map[string]externalBufYAMLFileBreakingV1Beta1V1V2)
 
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
-			moduleDirPath := moduleConfig.DirPath()
+			moduleDirPath, _ := moduleConfig.DirPath()
 			joinDirPath := func(importPath string) string {
 				return filepath.Join(moduleDirPath, importPath)
 			}
@@ -1275,4 +1294,8 @@ func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {
 	}
 	// len(m) == 0
 	return zero, nil
+}
+
+func bufYAMLVersionAllowsDuplicateModuleDirPaths(version FileVersion) bool {
+	return version == FileVersionV2
 }

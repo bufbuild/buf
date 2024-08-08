@@ -216,6 +216,7 @@ func lsRun(
 				if flags.ModulePath == "" {
 					return appcmd.NewInvalidArgumentErrorf("--%s must be specified if the the buf.yaml has more than one module", modulePathFlagName)
 				}
+				// TODO: this can have multiple matching module configs
 				moduleConfig, err := getModuleConfigForModulePath(moduleConfigs, flags.ModulePath)
 				if err != nil {
 					return err
@@ -260,7 +261,7 @@ func lsRun(
 func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, modulePath string) (bufconfig.ModuleConfig, error) {
 	modulePath = normalpath.Normalize(modulePath)
 	for _, moduleConfig := range moduleConfigs {
-		if moduleConfig.DirPath() == modulePath {
+		if moduleDirPath, _ := moduleConfig.DirPath(); moduleDirPath == modulePath {
 			return moduleConfig, nil
 		}
 	}

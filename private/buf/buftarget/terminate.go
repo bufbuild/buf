@@ -86,7 +86,7 @@ func terminateAtControllingWorkspace(
 			return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 		}
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
-			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relDirPath, normalpath.Relative) {
+			if moduleDirPath, _ := moduleConfig.DirPath(); normalpath.EqualsOrContainsPath(moduleDirPath, relDirPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
 		}

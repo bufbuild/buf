@@ -35,6 +35,7 @@ func init() {
 	var err error
 	DefaultModuleConfigV1, err = newModuleConfig(
 		".",
+		0,
 		nil,
 		map[string][]string{
 			".": {},
@@ -47,6 +48,7 @@ func init() {
 	}
 	DefaultModuleConfigV2, err = newModuleConfig(
 		".",
+		0,
 		nil,
 		map[string][]string{
 			".": {},
@@ -66,14 +68,17 @@ func init() {
 // the user of this package to decide what to do with these fields, we do not name DirPath as
 // BucketID, and we do not expose OpaqueID.
 type ModuleConfig interface {
-	// DirPath returns the path of the Module within the Workspace, if specified.
+	// DirPath returns the path of the Module within the Workspace, if specified,
+	// and an index among other modules in the same workspace with the same path.
+	// For v1 and v1beta1, this index is always 0, because duplicated module dir
+	// paths in the same workspace were not allowed.
 	//
-	// This is always present. For v1beta1 and v1 buf.yamls, this is always ".".
+	// This is always present. For v1beta1 and v1 buf.yamls, the path is always ".".
 	//
 	// In v2, this will be used as the BucketID within Workspaces. For v1, it is up
 	// to the Workspace constructor to come up with a BucketID (likely the directory name
 	// within buf.work.yaml).
-	DirPath() string
+	DirPath() (string, int)
 	// ModuleFullName returns the ModuleFullName for the Module, if available.
 	//
 	// This may be nil.
@@ -126,6 +131,7 @@ func NewModuleConfig(
 ) (ModuleConfig, error) {
 	return newModuleConfig(
 		dirPath,
+		0,
 		moduleFullName,
 		rootToExcludes,
 		lintConfig,
@@ -137,6 +143,7 @@ func NewModuleConfig(
 
 type moduleConfig struct {
 	dirPath        string
+	dirPathIndex   int
 	moduleFullName bufmodule.ModuleFullName
 	rootToExcludes map[string][]string
 	lintConfig     LintConfig
@@ -146,6 +153,7 @@ type moduleConfig struct {
 // All validations are syserrors as we only ever read ModuleConfigs.
 func newModuleConfig(
 	dirPath string,
+	dirPathIndex int,
 	moduleFullName bufmodule.ModuleFullName,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
@@ -195,6 +203,7 @@ func newModuleConfig(
 	}
 	return &moduleConfig{
 		dirPath:        dirPath,
+		dirPathIndex:   dirPathIndex,
 		moduleFullName: moduleFullName,
 		rootToExcludes: newRootToExcludes,
 		lintConfig:     lintConfig,
@@ -202,8 +211,8 @@ func newModuleConfig(
 	}, nil
 }
 
-func (m *moduleConfig) DirPath() string {
-	return m.dirPath
+func (m *moduleConfig) DirPath() (string, int) {
+	return m.dirPath, m.dirPathIndex
 }
 
 func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
