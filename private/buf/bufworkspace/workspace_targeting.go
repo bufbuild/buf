@@ -182,7 +182,7 @@ func v2WorkspaceTargeting(
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath, _ := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		bucketID := bucketIDForModuleConfig(moduleConfig, true)
+		bucketID := bucketIDForModuleConfigV2(moduleConfig)
 		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
@@ -287,7 +287,7 @@ func v1WorkspaceTargeting(
 				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
 			}
 		}
-		bucketID := bucketIDForModuleConfig(moduleConfig, false)
+		bucketID := moduleDirPath
 		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// We only want to target modules that are inside the bucketTargeting.SubDirPath().
 		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.SubDirPath() is "foo/bar",
@@ -714,11 +714,8 @@ func checkForOverlap(
 	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
 }
 
-func bucketIDForModuleConfig(moduleConfig bufconfig.ModuleConfig, allowDuplicateDirPaths bool) string {
+func bucketIDForModuleConfigV2(moduleConfig bufconfig.ModuleConfig) string {
 	dirPath, dirPathIndex := moduleConfig.DirPath()
-	if !allowDuplicateDirPaths {
-		return dirPath
-	}
 	if dirPathIndex == 0 {
 		return dirPath
 	}
