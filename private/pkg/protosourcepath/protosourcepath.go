@@ -23,17 +23,18 @@ import (
 )
 
 const (
-	packageTypeTag            = int32(2)
-	dependenciesTypeTag       = int32(3)
-	syntaxTypeTag             = int32(12)
-	editionTypeTag            = int32(14)
-	messagesTypeTag           = int32(4)
-	enumsTypeTag              = int32(5)
-	servicesTypeTag           = int32(6)
-	fileOptionsTypeTag        = int32(8)
-	extensionsTypeTag         = int32(7)
-	reservedRangeStartTypeTag = int32(1)
-	reservedRangeEndTypeTag   = int32(2)
+	packageTypeTag             = int32(2)
+	dependenciesTypeTag        = int32(3)
+	syntaxTypeTag              = int32(12)
+	editionTypeTag             = int32(14)
+	messagesTypeTag            = int32(4)
+	enumsTypeTag               = int32(5)
+	servicesTypeTag            = int32(6)
+	fileOptionsTypeTag         = int32(8)
+	extensionsTypeTag          = int32(7)
+	reservedRangeStartTypeTag  = int32(1)
+	reservedRangeEndTypeTag    = int32(2)
+	uninterpretedOptionTypeTag = int32(999)
 )
 
 var (
@@ -116,6 +117,14 @@ func start(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 func dependencies(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
 	// dependencies are a terminal path
 	return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+}
+
+func options(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	// All option paths are considered terminal, validate and terminate
+	if token == uninterpretedOptionTypeTag {
+		return nil, nil, newInvalidSourcePathError(sourcePath, "uninterpreted option path provided")
+	}
+	return nil, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 }
 
 func reservedRanges(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
