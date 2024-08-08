@@ -71,7 +71,7 @@ func method(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pr
 	switch token {
 	case methodOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method option declaration without option number")
 		}
 		return options, nil, nil
 	}

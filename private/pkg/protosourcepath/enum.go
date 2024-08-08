@@ -19,9 +19,11 @@ import (
 )
 
 const (
-	enumNameTypeTag   = int32(1)
-	enumValuesTypeTag = int32(2)
-	enumOptionTypeTag = int32(3)
+	enumNameTypeTag          = int32(1)
+	enumValuesTypeTag        = int32(2)
+	enumOptionTypeTag        = int32(3)
+	enumReservedRangeTypeTag = int32(4)
+	enumReservedNameTypeTag  = int32(5)
 )
 
 func enums(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
@@ -48,10 +50,13 @@ func enum(token int32, sourcePath protoreflect.SourcePath, i int) (state, []prot
 		return enumValues, nil, nil
 	case enumOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum option declaration without option number")
 		}
 		return options, nil, nil
+	case enumReservedRangeTypeTag:
+		return reservedRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+	case enumReservedNameTypeTag:
+		return reservedNames, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
-	// TODO(doria): continue implementing source paths.
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
 }

@@ -60,7 +60,7 @@ func enumValue(token int32, sourcePath protoreflect.SourcePath, i int) (state, [
 	switch token {
 	case enumValueOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum value option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum value option declaration without option number")
 		}
 		return options, nil, nil
 	}

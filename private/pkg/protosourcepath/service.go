@@ -51,7 +51,7 @@ func service(token int32, sourcePath protoreflect.SourcePath, i int) (state, []p
 		return methods, nil, nil
 	case serviceOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have service option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have service option declaration without option number")
 		}
 		return options, nil, nil
 	}
