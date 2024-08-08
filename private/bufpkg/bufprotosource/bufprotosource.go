@@ -525,6 +525,7 @@ type Method interface {
 	IdempotencyLevelLocation() Location
 }
 
+// InputFile is a file used as input when building Files.
 type InputFile interface {
 	FileInfo
 
