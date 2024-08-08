@@ -64,6 +64,7 @@ type v2Targeting struct {
 
 type moduleBucketAndModuleTargeting struct {
 	bucket          storage.ReadBucket
+	bucketID        string
 	moduleTargeting *moduleTargeting
 }
 
@@ -179,10 +180,14 @@ func v2WorkspaceTargeting(
 	moduleDirPaths := make([]string, 0, len(bufYAMLFile.ModuleConfigs()))
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
+	dirPathToCount := make(map[string]int)
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		dirPathIndexForCurrentPath := dirPathToCount[moduleDirPath]
+		dirPathToCount[moduleDirPath]++
+		bucketID := bucketIDForLocalV2Module(moduleDirPath, dirPathIndexForCurrentPath)
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -217,6 +222,7 @@ func v2WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -285,7 +291,8 @@ func v1WorkspaceTargeting(
 				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
 			}
 		}
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		bucketID := moduleDirPath
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// We only want to target modules that are inside the bucketTargeting.SubDirPath().
 		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.SubDirPath() is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -320,6 +327,7 @@ func v1WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -706,4 +714,11 @@ func checkForOverlap(
 		}
 	}
 	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
+}
+
+func bucketIDForLocalV2Module(moduleDirPath string, pathIndex int) string {
+	if pathIndex == 0 {
+		return moduleDirPath
+	}
+	return fmt.Sprintf("%s[%d]", moduleDirPath, pathIndex)
 }

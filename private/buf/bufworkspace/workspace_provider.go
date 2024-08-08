@@ -313,7 +313,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				return nil, err
 			}
 		}
-		moduleConfig, ok := v1WorkspaceTargeting.bucketIDToModuleConfig[moduleTargeting.moduleDirPath]
+		moduleConfig, ok := v1WorkspaceTargeting.bucketIDToModuleConfig[moduleBucketAndTargeting.bucketID]
 		if !ok {
 			// This should not happen since moduleBucketAndTargeting is derived from the module
 			// configs, however, we return this error as a safety check
@@ -321,7 +321,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
-			moduleTargeting.moduleDirPath, // bucket ID
+			moduleBucketAndTargeting.bucketID,
 			moduleTargeting.isTargetModule,
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
 			bufmodule.LocalModuleWithTargetPaths(
@@ -386,7 +386,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	for _, moduleBucketAndTargeting := range v2Targeting.moduleBucketsAndTargeting {
 		mappedModuleBucket := moduleBucketAndTargeting.bucket
 		moduleTargeting := moduleBucketAndTargeting.moduleTargeting
-		moduleConfig, ok := v2Targeting.bucketIDToModuleConfig[moduleTargeting.moduleDirPath]
+		moduleConfig, ok := v2Targeting.bucketIDToModuleConfig[moduleBucketAndTargeting.bucketID]
 		if !ok {
 			// This should not happen since moduleBucketAndTargeting is derived from the module
 			// configs, however, we return this error as a safety check
@@ -394,7 +394,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
-			moduleTargeting.moduleDirPath,
+			moduleBucketAndTargeting.bucketID,
 			moduleTargeting.isTargetModule,
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
 			bufmodule.LocalModuleWithTargetPaths(
