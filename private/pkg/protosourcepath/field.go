@@ -28,6 +28,7 @@ const (
 	fieldTypeNameTypeTag     = int32(6)
 	fieldOptionTypeTag       = int32(8)
 	extensionExtendeeTypeTag = int32(2)
+	fieldDefaultValueTypeTag = int32(7)
 )
 
 var (
@@ -75,6 +76,8 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field option declaration without option number")
 		}
 		return options, nil, nil
+	case fieldDefaultValueTypeTag:
+		return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
 }
