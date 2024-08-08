@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -45,19 +46,28 @@ func GetModuleConfigForProtocPlugin(
 	if module == "" {
 		module = "."
 	}
+	moduleConfigsMatchingDirPath := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		// If we have a v1beta1 or v1 buf.yaml, dirPath will be ".". Using the ModuleConfig from
 		// a v1beta1 or v1 buf.yaml file matches the pre-refactor behavior.
 		//
 		// If we have a v2 buf.yaml, users have to provide a module path or full name, otherwise
 		// we can't deduce what ModuleConfig to use.
-		if dirPath := moduleConfig.DirPath(); dirPath == module {
-			return moduleConfig, nil
-		}
 		if fullName := moduleConfig.ModuleFullName(); fullName != nil && fullName.String() == module {
 			return moduleConfig, nil
 		}
+		if dirPath := moduleConfig.DirPath(); dirPath == module {
+			moduleConfigsMatchingDirPath = append(moduleConfigsMatchingDirPath, moduleConfig)
+		}
 	}
-	// TODO: point to a webpage that explains this.
-	return nil, errors.New(`could not determine which module to pull configuration from. See the docs for more details.`)
+	switch len(moduleConfigsMatchingDirPath) {
+	case 0:
+		// TODO: this error messsage seems easy to update.
+		// TODO: point to a webpage that explains this.
+		return nil, errors.New(`could not determine which module to pull configuration from. See the docs for more details`)
+	case 1:
+		return moduleConfigsMatchingDirPath[0], nil
+	default:
+		return nil, fmt.Errorf("multiple modules found at %q, specify its full name as <remote/owner/module> instead", module)
+	}
 }

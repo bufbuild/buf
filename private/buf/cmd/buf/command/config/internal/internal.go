@@ -259,10 +259,19 @@ func lsRun(
 
 func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, modulePath string) (bufconfig.ModuleConfig, error) {
 	modulePath = normalpath.Normalize(modulePath)
+	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range moduleConfigs {
 		if moduleConfig.DirPath() == modulePath {
-			return moduleConfig, nil
+			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
 		}
 	}
-	return nil, fmt.Errorf("no module found for path %q", modulePath)
+	switch len(moduleConfigsFound) {
+	case 0:
+		return nil, fmt.Errorf("no module found for path %q", modulePath)
+	case 1:
+		return moduleConfigsFound[0], nil
+	default:
+		// TODO: deprecate --module-path and add a --module flag that accepts either a module dir path or a module full name.
+		return nil, fmt.Errorf("multiple modules found for %q", modulePath)
+	}
 }
