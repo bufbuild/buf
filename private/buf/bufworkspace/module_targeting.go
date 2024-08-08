@@ -54,7 +54,7 @@ func newModuleTargeting(
 	if !isTentativelyTargetModule {
 		// If this is not a target Module, we do not want to target anything, as targeting
 		// paths for non-target Modules is an error.
-		return &moduleTargeting{moduleDirPath: moduleDirPath, bucketID: bucketID}, nil // TODO: should bucket ID be passed at all?
+		return &moduleTargeting{moduleDirPath: moduleDirPath, bucketID: bucketID}, nil
 	}
 	// If we have no target paths, then we always match the value of isTargetModule.
 	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
