@@ -16,21 +16,31 @@ package protosourcepath
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
-	packageTypeTag      = int32(2)
-	dependenciesTypeTag = int32(3)
-	syntaxTypeTag       = int32(12)
-	editionTypeTag      = int32(14)
-	messagesTypeTag     = int32(4)
-	enumsTypeTag        = int32(5)
-	servicesTypeTag     = int32(6)
-	fileOptionsTypeTag  = int32(8)
-	extensionsTypeTag   = int32(7)
+	packageTypeTag            = int32(2)
+	dependenciesTypeTag       = int32(3)
+	syntaxTypeTag             = int32(12)
+	editionTypeTag            = int32(14)
+	messagesTypeTag           = int32(4)
+	enumsTypeTag              = int32(5)
+	servicesTypeTag           = int32(6)
+	fileOptionsTypeTag        = int32(8)
+	extensionsTypeTag         = int32(7)
+	reservedRangeStartTypeTag = int32(1)
+	reservedRangeEndTypeTag   = int32(2)
+)
+
+var (
+	terminalReservedRangeTokens = []int32{
+		reservedRangeStartTypeTag,
+		reservedRangeEndTypeTag,
+	}
 )
 
 type AssociatedSourcePaths struct {
@@ -94,17 +104,46 @@ func start(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 		return services, nil, nil
 	case fileOptionsTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have file options declaration without option path")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have file options declaration without option number")
 		}
 		return options, nil, nil
+	case extensionsTypeTag:
+		return extensions, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
-	// TODO(doria): continuing implementing source paths
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
 }
 
 func dependencies(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
 	// dependencies are a terminal path
 	return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+}
+
+func reservedRanges(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	associatedPaths := []protoreflect.SourcePath{
+		currentPath(sourcePath, i),
+		childAssociatedPath(sourcePath, i, reservedRangeStartTypeTag),
+		childAssociatedPath(sourcePath, i, reservedRangeEndTypeTag),
+	}
+	return reservedRange, associatedPaths, nil
+}
+
+func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	// We always expect a terminal path for reserved range, so validate the token and return here
+	if !slices.Contains(terminalReservedRangeTokens, token) || len(sourcePath) != i+1 {
+		return nil, nil, newInvalidSourcePathError(sourcePath, "invalid reserved range path")
+	}
+	return nil, nil, nil
+}
+
+func reservedNames(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	associatedPaths := []protoreflect.SourcePath{
+		currentPath(sourcePath, i),
+	}
+	// We always expect a reserve name to end with its index, so validate and terminate here
+	if len(sourcePath) != i+1 {
+		return nil, nil, newInvalidSourcePathError(sourcePath, "invalid reserved name path")
+	}
+	return nil, associatedPaths, nil
 }
 
 // TODO(doria): make the error better

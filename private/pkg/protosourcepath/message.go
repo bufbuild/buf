@@ -21,19 +21,30 @@ import (
 )
 
 const (
-	messageNameTypeTag        = int32(1)
-	mesasgeFieldsTypeTag      = int32(2)
-	nestedMessagesTypeTag     = int32(3)
-	nestedEnumsTypeTag        = int32(4)
-	messageOneOfsTypeTag      = int32(8)
-	messageOneOfNameTypeTag   = int32(1)
-	messageOneOfOptionTypeTag = int32(2)
-	messageOptionTypeTag      = int32(7)
+	messageNameTypeTag                 = int32(1)
+	mesasgeFieldsTypeTag               = int32(2)
+	nestedMessagesTypeTag              = int32(3)
+	nestedEnumsTypeTag                 = int32(4)
+	messageOneOfsTypeTag               = int32(8)
+	messageOneOfNameTypeTag            = int32(1)
+	messageOneOfOptionTypeTag          = int32(2)
+	messageOptionTypeTag               = int32(7)
+	messageExtensionsTypeTag           = int32(6)
+	messageExtensionRangeTypeTag       = int32(5)
+	messageExtensionRangeStartTypeTag  = int32(1)
+	messageExtensionRangeEndTypeTag    = int32(2)
+	messageExtensionRangeOptionTypeTag = int32(3)
+	messageReservedRangeTypeTag        = int32(9)
+	messageReservedNameTypeTag         = int32(10)
 )
 
 var (
 	terminalOneOfTokens = []int32{
 		messageOneOfNameTypeTag,
+	}
+	terminalExtensionRangeTokens = []int32{
+		messageExtensionRangeStartTypeTag,
+		messageExtensionRangeEndTypeTag,
 	}
 )
 
@@ -79,11 +90,19 @@ func message(token int32, sourcePath protoreflect.SourcePath, i int) (state, []p
 		return enums, nil, nil
 	case messageOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have message option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have message option declaration without option number")
 		}
 		return options, nil, nil
+	case messageExtensionRangeTypeTag:
+		return extensionRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+	case messageExtensionsTypeTag:
+		return extensions, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+	case messageReservedRangeTypeTag:
+		return reservedRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+	case messageReservedNameTypeTag:
+		return reservedNames, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
 }
 
 func oneOfs(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
@@ -106,10 +125,40 @@ func oneOf(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 	switch token {
 	case messageOneOfOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have one of option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have one of option declaration without option number")
 		}
 		return options, nil, nil
 	}
-	// TODO(doria): implement non-terminal one-of tokens
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
+}
+
+func extensionRanges(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	associatedPaths := []protoreflect.SourcePath{
+		currentPath(sourcePath, i),
+		childAssociatedPath(sourcePath, i, messageExtensionRangeStartTypeTag),
+		childAssociatedPath(sourcePath, i, messageExtensionRangeEndTypeTag),
+	}
+	if len(sourcePath) == i+1 {
+		// This does not extend beyond the declaration, return associated paths and terminate here.
+		return nil, associatedPaths, nil
+	}
+	return extensionRange, associatedPaths, nil
+}
+
+func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	if slices.Contains(terminalExtensionRangeTokens, token) {
+		// Encountered a terminal extension range token validate the path and return here
+		if len(sourcePath) != i+1 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid extension range path")
+		}
+		return nil, nil, nil
+	}
+	switch token {
+	case messageExtensionRangeOptionTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have extension range option declaration without option number")
+		}
+		return options, nil, nil
+	}
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
 }

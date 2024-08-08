@@ -21,12 +21,13 @@ import (
 )
 
 const (
-	fieldNameTypeTag     = int32(1)
-	fieldNumberTypeTag   = int32(3)
-	fieldLabelTypeTag    = int32(4)
-	fieldTypeTypeTag     = int32(5)
-	fieldTypeNameTypeTag = int32(6)
-	fieldOptionTypeTag   = int32(8)
+	fieldNameTypeTag         = int32(1)
+	fieldNumberTypeTag       = int32(3)
+	fieldLabelTypeTag        = int32(4)
+	fieldTypeTypeTag         = int32(5)
+	fieldTypeNameTypeTag     = int32(6)
+	fieldOptionTypeTag       = int32(8)
+	extensionExtendeeTypeTag = int32(2)
 )
 
 var (
@@ -36,6 +37,7 @@ var (
 		fieldLabelTypeTag,
 		fieldTypeTypeTag,
 		fieldTypeNameTypeTag,
+		extensionExtendeeTypeTag,
 	}
 )
 
@@ -70,10 +72,25 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 	switch token {
 	case fieldOptionTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field option declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field option declaration without option number")
 		}
 		return options, nil, nil
 	}
-	// TODO(doria): implement non-terminal field tokens
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+}
+
+func extensions(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+	// Add current path and extendee
+	associatedPaths := []protoreflect.SourcePath{
+		currentPath(sourcePath, i),
+		childAssociatedPath(sourcePath, i, extensionExtendeeTypeTag),
+	}
+	// An extension is effectively a field descriptor, so we want to add all the associated
+	// paths with fields.
+	field, fieldsAssociatedPaths, err := fields(token, sourcePath, i)
+	if err != nil {
+		return nil, nil, err
+	}
+	associatedPaths = append(associatedPaths, fieldsAssociatedPaths...)
+	return field, associatedPaths, nil
 }
