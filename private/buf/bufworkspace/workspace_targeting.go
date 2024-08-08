@@ -719,5 +719,8 @@ func bucketIDForModuleConfig(moduleConfig bufconfig.ModuleConfig, allowDuplicate
 	if !allowDuplicateDirPaths {
 		return dirPath
 	}
+	if dirPathIndex == 0 {
+		return dirPath
+	}
 	return fmt.Sprintf("%s[%d]", dirPath, dirPathIndex)
 }
