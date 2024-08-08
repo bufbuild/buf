@@ -29,8 +29,10 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -240,6 +242,18 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
+	// ModuleFullName is the module that this file came from.
+	//
+	// Note this *can* be nil if we did not build from a named module.
+	// All code must assume this can be nil.
+	// Note that nil checking should work since the backing type is always a pointer.
+	ModuleFullName() bufmodule.ModuleFullName
+	// CommitID is the commit for the module that this file came from.
+	//
+	// This will only be set if ModuleFullName is set, but may not be set
+	// even if ModuleFullName is set, that is commit is optional information
+	// even if we know what module this file came from.
+	CommitID() uuid.UUID
 	// IsImport returns true if this file is an import.
 	IsImport() bool
 }
