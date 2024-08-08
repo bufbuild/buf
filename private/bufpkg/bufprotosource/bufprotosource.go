@@ -29,11 +29,9 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/gofrs/uuid/v5"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -242,18 +240,6 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
-	// ModuleFullName is the module that this file came from.
-	//
-	// Note this *can* be nil if we did not build from a named module.
-	// All code must assume this can be nil.
-	// Note that nil checking should work since the backing type is always a pointer.
-	ModuleFullName() bufmodule.ModuleFullName
-	// CommitID is the commit for the module that this file came from.
-	//
-	// This will only be set if ModuleFullName is set, but may not be set
-	// even if ModuleFullName is set, that is commit is optional information
-	// even if we know what module this file came from.
-	CommitID() uuid.UUID
 	// IsImport returns true if this file is an import.
 	IsImport() bool
 }
@@ -539,9 +525,31 @@ type Method interface {
 	IdempotencyLevelLocation() Location
 }
 
+type InputFile interface {
+	FileInfo
+
+	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto.
+	//
+	// This will never be nil.
+	// The value Path() is equal to FileDescriptorProto().GetName() .
+	FileDescriptorProto() *descriptorpb.FileDescriptorProto
+	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
+	IsSyntaxUnspecified() bool
+	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
+	// FileDescriptorProto().GetDependency().
+	//
+	// All indexes will be valid.
+	// Will return nil if empty.
+	UnusedDependencyIndexes() []int32
+}
+
 // NewFiles converts the input Image into Files.
-func NewFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
-	return newFiles(ctx, image)
+func NewFiles[F InputFile](
+	ctx context.Context,
+	inputFiles []F,
+	resolver protodesc.Resolver,
+) ([]File, error) {
+	return newFiles(ctx, inputFiles, resolver)
 }
 
 // SortFiles sorts the Files by FilePath.
