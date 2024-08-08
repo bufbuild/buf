@@ -20,8 +20,8 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -30,7 +30,7 @@ type file struct {
 	descriptor
 	optionExtensionDescriptor
 
-	resolver       protoencoding.Resolver
+	resolver       protodesc.Resolver
 	fileDescriptor protodescriptor.FileDescriptor
 	syntax         Syntax
 	fileImports    []FileImport
@@ -228,7 +228,7 @@ func (f *file) SyntaxLocation() Location {
 
 // does not validation of the fileDescriptorProto - this is assumed to be done elsewhere
 // does no duplicate checking by name - could just have maps ie importToFileImport, enumNameToEnum, etc
-func newFile(imageFile bufimage.ImageFile, resolver protoencoding.Resolver) (*file, error) {
+func newFile(imageFile bufimage.ImageFile, resolver protodesc.Resolver) (*file, error) {
 	locationStore := newLocationStore(imageFile.FileDescriptorProto().GetSourceCodeInfo().GetLocation())
 	f := &file{
 		FileInfo:       imageFile,
