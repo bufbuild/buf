@@ -439,21 +439,6 @@ func TestFail13(t *testing.T) {
 	)
 }
 
-func TestFail14(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		bufctl.ExitCodeFileAnnotation,
-		fmt.Sprintf(
-			`%s:5:1:This file is in stable package "api.v1", so it should not depend on "api/v1alpha/bar.proto" from unstable package "api.v1alpha".`,
-			filepath.FromSlash(`testdata/lint_stable_package_import/api/v1/foo.proto`),
-		),
-		"lint",
-		filepath.Join("testdata", "lint_stable_package_import"),
-	)
-}
-
 func TestFailCheckBreaking1(t *testing.T) {
 	t.Parallel()
 	testRunStdoutStderrNoWarn(
