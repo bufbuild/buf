@@ -1015,6 +1015,11 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 	)
 }
 
+func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "workspace", "success", "duplicate_dir_path"))
+}
+
 func TestWorkspaceDuplicateFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes multiple images that define the same file.

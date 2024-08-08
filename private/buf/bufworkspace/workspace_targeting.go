@@ -64,6 +64,7 @@ type v2Targeting struct {
 
 type moduleBucketAndModuleTargeting struct {
 	bucket          storage.ReadBucket
+	bucketID        string
 	moduleTargeting *moduleTargeting
 }
 
@@ -201,10 +202,47 @@ func v2WorkspaceTargeting(
 	moduleDirPaths := make([]string, 0, len(bufYAMLFile.ModuleConfigs()))
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
+	// With in a v2 bufYAMLFile, multiple module configs may have the same DirPath. To make sure each module
+	// has a unique BucketID, we cannot use their DirPaths as BucketIDs directly, but instead we append an
+	// index to the path to differentiate different modules sharing the same DirPath. More specifically,
+	// if a path has multiple occurrences, the first module's bucketID is just the path, but the second module
+	// with this path has a bucketID of <path>//1, and the nth module with this path has a bucketID of <path>//n-1.
+	// To illustrate, bucketID is shown for each module in the buf.yaml below:
+	// ...
+	// modules:
+	//   - path: foo # bucketID foo
+	//   - path: bar # bucketID bar
+	//   - path: foo # bucketID foo//1
+	//   - path: bar # bucketID bar//1
+	//   - path: bar # bucketID bar//2
+	//   - path: new # bucketID new
+	//   - path: foo # bucketID foo//2
+	// ...
+	// The BufYAMLFile interface guarantees that the relative order among modules configs with the same path
+	// is the same order among these modules in the external buf.yaml v2, i.e. the nth "foo" in the external
+	// buf.yaml above is also the nth "foo" in module configs, even though the module configs goes as:
+	// [bar, bar, bar, foo, foo, foo, new], which is why the following produces bucketIDs as shown in the example above:
+	//
+	// Use dirPathToCount to keep track of how many modules of this path has been seen (before the current module) in this BufYAMLFile,
+	// and this number is exactly the index we want to append to the DirPath for the bucketID.
+	dirPathToCount := make(map[string]int)
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		// If this is the first module with this DirPath, it should have index 0.
+		bucketID := moduleDirPath
+		if numOfPrecedentModulesWithSameDirPath := dirPathToCount[moduleDirPath]; numOfPrecedentModulesWithSameDirPath != 0 {
+			// If n modules before this one have this DirPath, they have indices [0, ..., n-1] and this one has index n.
+			//
+			// We are appending the index to the moduleDirPath, so the bucketID becomes DirPath<some form of index>,
+			// but we also want to avoid the case where another module's DirPath is <this DirPath><some form of index>.
+			// We use "//" to connect the DirPath and index to make collision impossible: No module's DirPath contains "//"
+			// because it must already have been normalized, i.e. "foo//bar//" is normalized to "foo/bar" before being stored
+			// as a ModuleConfig's DirPath.
+			bucketID = fmt.Sprintf("%s//%d", moduleDirPath, numOfPrecedentModulesWithSameDirPath)
+		}
+		dirPathToCount[moduleDirPath]++
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -240,6 +278,7 @@ func v2WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -308,7 +347,9 @@ func v1WorkspaceTargeting(
 				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
 			}
 		}
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		// DirPaths are unique within a v1 workspace, and so it's safe to use them as bucketIDs.
+		bucketID := moduleDirPath
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// We only want to target modules that are inside the bucketTargeting.SubDirPath().
 		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.SubDirPath() is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -346,6 +387,7 @@ func v1WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}

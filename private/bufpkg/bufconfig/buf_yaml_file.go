@@ -24,7 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -72,8 +71,20 @@ type BufYAMLFile interface {
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
 	//
 	// This will always be non-empty.
-	// All ModuleConfigs will have unique ModuleFullNames.
-	// Sorted by DirPath.
+	// All ModuleConfigs will have unique ModuleFullNames, but not necessarily
+	// unique DirPaths.
+	//
+	// The module configs are sorted by DirPath. If two module configs have the
+	// same DirPath, the order defined in the external file is used to break the tie.
+	// For example, if in the buf.yaml there are:
+	// - path: foo
+	//   module: buf.build/acme/foobaz
+	//   ...
+	// - path: foo
+	//   module: buf.build/acme/foobar
+	//   ...
+	// Then in ModuleConfigs, the config with buf.build/acme/foobaz still comes before buf.build/acme/foobar,
+	// because it comes earlier in the buf.yaml. This also guarantees the deterministic order of ModuleConfigs.
 	ModuleConfigs() []ModuleConfig
 	// TopLevelLintConfig returns the top-level LintConfig for the File.
 	//
@@ -251,6 +262,8 @@ func newBufYAMLFile(
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
 		return nil, fmt.Errorf("had %d ModuleConfigs passed to NewBufYAMLFile for FileVersion %v", len(moduleConfigs), fileVersion)
 	}
+	// At this point, if there are multiple moduleConfigs, we know the version must be v2 and we do not
+	// need to check for duplicate DirPaths because they are allowed in v2.
 	if len(moduleConfigs) == 0 {
 		return nil, errors.New("had 0 ModuleConfigs passed to NewBufYAMLFile")
 	}
@@ -269,25 +282,16 @@ func newBufYAMLFile(
 		}
 	}
 	// Zero values are not added to duplicates.
-	duplicateModuleConfigDirPaths := slicesext.Duplicates(
-		slicesext.Map(
-			moduleConfigs,
-			func(moduleConfig ModuleConfig) string {
-				return moduleConfig.DirPath()
-			},
-		),
-	)
-	if len(duplicateModuleConfigDirPaths) > 0 {
-		return nil, fmt.Errorf("module directory %q seen more than once", strings.Join(duplicateModuleConfigDirPaths, ", "))
-	}
-	// Zero values are not added to duplicates.
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleConfigs); err != nil {
 		return nil, err
 	}
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(configuredDepModuleRefs); err != nil {
 		return nil, err
 	}
-	sort.Slice(
+	// Since multiple module configs with the same DirPath are allowed in v2, we need a stable sort
+	// so that the relative order among module configs with the same DirPath is preserved from the
+	// external buf.yaml, as specified in BufYAMLFile.ModuleConfigs' doc.
+	sort.SliceStable(
 		moduleConfigs,
 		func(i int, j int) bool {
 			return moduleConfigs[i].DirPath() < moduleConfigs[j].DirPath()
