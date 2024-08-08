@@ -95,6 +95,6 @@ func (l *location) LeadingDetachedComments() []string {
 	return l.sourceCodeInfoLocation.LeadingDetachedComments
 }
 
-func (l *location) Path() protoreflect.SourcePath {
+func (l *location) SourcePath() protoreflect.SourcePath {
 	return protoreflect.SourcePath(l.sourceCodeInfoLocation.Path)
 }

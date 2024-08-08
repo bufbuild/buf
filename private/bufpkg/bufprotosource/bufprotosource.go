@@ -214,7 +214,7 @@ type Location interface {
 	// NOT a copy. Do not modify.
 	LeadingDetachedComments() []string
 	// NOT a copy. Do not modify.
-	Path() protoreflect.SourcePath
+	SourcePath() protoreflect.SourcePath
 }
 
 // ModuleFullName is a module full name.
