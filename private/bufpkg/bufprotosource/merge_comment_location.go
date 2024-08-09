@@ -30,6 +30,10 @@ func newMergeCommentLocation(base Location, delegate Location) *mergeCommentLoca
 	}
 }
 
+func (l *mergeCommentLocation) FilePath() string {
+	return l.base.FilePath()
+}
+
 func (l *mergeCommentLocation) StartLine() int {
 	return l.base.StartLine()
 }

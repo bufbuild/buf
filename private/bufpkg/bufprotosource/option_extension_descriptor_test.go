@@ -66,7 +66,14 @@ func TestOptionExtensionLocation(t *testing.T) {
 			LeadingComments: proto.String("options"),
 		},
 	}
-	locationStore := newLocationStore(locations)
+	locationStore := newLocationStore(
+		&descriptorpb.FileDescriptorProto{
+			Name: proto.String("foo.proto"),
+			SourceCodeInfo: &descriptorpb.SourceCodeInfo{
+				Location: locations,
+			},
+		},
+	)
 	descriptor := newOptionExtensionDescriptor(&descriptorpb.MessageOptions{}, []int32{1, 2, 3, 4, 5}, locationStore, 12)
 	customOption1079 := makeCustomOption(t, 1079)
 	customOption1089 := makeCustomOption(t, 1089)
