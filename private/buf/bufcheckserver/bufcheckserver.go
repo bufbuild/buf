@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufwkp is buf "well-known plugin", i.e. the prototype to replace
-// our lint and breaking change packages with a well-known built-in plugin.
-package bufwkp
+package bufcheckserver
 
 import (
 	"context"

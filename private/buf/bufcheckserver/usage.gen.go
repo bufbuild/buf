@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufwkp
+package bufcheckserver
 
 import _ "github.com/bufbuild/buf/private/usage"
