@@ -27,38 +27,6 @@ import (
 type protosourceFilesContextKey struct{}
 type againstProtosourceFilesContextKey struct{}
 
-// RuleSpecBuilder matches check.RuleSpec but without categories.
-//
-// We have very similar RuleSpecs across our versions of our lint rules, however their categories do change
-// across versions. This allows us to share the basic RuleSpec shape across versions.
-type RuleSpecBuilder struct {
-	// Required.
-	ID string
-	// Required.
-	Purpose string
-	// Required.
-	Type           check.RuleType
-	Deprecated     bool
-	ReplacementIDs []string
-	// Required.
-	Handler check.RuleHandler
-}
-
-// Build builds the RuleSpec for the categories.
-//
-// Not making categories variadic in case we want to add extra parameters later easily.
-func (b *RuleSpecBuilder) Build(categories []string) *check.RuleSpec {
-	return &check.RuleSpec{
-		ID:             b.ID,
-		Categories:     categories,
-		Purpose:        b.Purpose,
-		Type:           b.Type,
-		Deprecated:     b.Deprecated,
-		ReplacementIDs: b.ReplacementIDs,
-		Handler:        b.Handler,
-	}
-}
-
 // Before should be attached to each check.Spec that uses the functionality in this package.
 func Before(
 	ctx context.Context,
@@ -79,29 +47,6 @@ func Before(
 		ctx = context.WithValue(ctx, againstProtosourceFilesContextKey{}, againstProtosourceFiles)
 	}
 	return ctx, request, nil
-}
-
-// ResponseWriter is a check.ResponseWriter that also includes bufprotosource functionality.
-type ResponseWriter interface {
-	check.ResponseWriter
-
-	// AddProtosourceAnnotation adds a check.Annotation for bufprotosource.Locations.
-	AddProtosourceAnnotation(
-		location bufprotosource.Location,
-		againstLocation bufprotosource.Location,
-		format string,
-		args ...any,
-	)
-}
-
-// Request is a check.Request that also includes bufprotosource functionality.
-type Request interface {
-	check.Request
-
-	// ProtosourceFiles returns the check.Files as bufprotosource.Files.
-	ProtosourceFiles() []bufprotosource.File
-	// AgainstProtosourceFiles returns the check.AgainstFiles as bufprotosource.Files.
-	AgainstProtosourceFiles() []bufprotosource.File
 }
 
 // NewRuleHandler returns a new check.RuleHandler for the given function.
@@ -133,133 +78,17 @@ func NewRuleHandler(
 	)
 }
 
-// NewLintFilesRuleHandler returns a new check.RuleHandler for the given function.
-//
-// The files slice does not include imports.
-func NewLintFilesRuleHandler(
-	f func(
-		responseWriter ResponseWriter,
-		request Request,
-		files []bufprotosource.File,
-	) error,
-) check.RuleHandler {
-	return NewRuleHandler(
-		func(
-			_ context.Context,
-			responseWriter ResponseWriter,
-			request Request,
-		) error {
-			files := request.ProtosourceFiles()
-			filesWithoutImports := make([]bufprotosource.File, 0, len(files))
-			for _, file := range files {
-				if !file.IsImport() {
-					filesWithoutImports = append(filesWithoutImports, file)
-				}
-			}
-			return f(responseWriter, request, filesWithoutImports)
-		},
-	)
-}
-
-// NewLintFilesRuleHandler returns a new check.RuleHandler for the given function.
-//
-// The function will be called for each File in the request.
-//
-// Files that are imports are skipped.
-func NewLintFileRuleHandler(
-	f func(
-		responseWriter ResponseWriter,
-		request Request,
-		file bufprotosource.File,
-	) error,
-) check.RuleHandler {
-	return NewLintFilesRuleHandler(
-		func(
-			responseWriter ResponseWriter,
-			request Request,
-			files []bufprotosource.File,
-		) error {
-			for _, file := range files {
-				if err := f(responseWriter, request, file); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	)
-}
-
-// NewLintServiceRuleHandler returns a new check.RuleHandler for the given function.
-//
-// The function will be called for each service within each File in the request.
-//
-// Files that are imports are skipped.
-func NewLintServiceRuleHandler(
-	f func(
-		responseWriter ResponseWriter,
-		request Request,
-		service bufprotosource.Service,
-	) error,
-) check.RuleHandler {
-	return NewLintFileRuleHandler(
-		func(
-			responseWriter ResponseWriter,
-			request Request,
-			file bufprotosource.File,
-		) error {
-			for _, service := range file.Services() {
-				if err := f(responseWriter, request, service); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	)
-}
-
-// NewLintMethodRuleHandler returns a new check.RuleHandler for the given function.
-//
-// The function will be called for each method within each File in the request.
-//
-// Files that are imports are skipped.
-func NewLintMethodRuleHandler(
-	f func(
-		responseWriter ResponseWriter,
-		request Request,
-		method bufprotosource.Method,
-	) error,
-) check.RuleHandler {
-	return NewLintServiceRuleHandler(
-		func(
-			responseWriter ResponseWriter,
-			request Request,
-			service bufprotosource.Service,
-		) error {
-			for _, method := range service.Methods() {
-				if err := f(responseWriter, request, method); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	)
-}
-
 func protosourceFilesForFiles(ctx context.Context, files []check.File) ([]bufprotosource.File, error) {
 	if len(files) == 0 {
 		return nil, nil
 	}
-	resolver, err := newResolver(files)
-	if err != nil {
-		return nil, err
-	}
-	return bufprotosource.NewFiles(ctx, slicesext.Map(files, newInputFile), resolver)
-}
-
-func newResolver(files []check.File) (protodesc.Resolver, error) {
-	return protodesc.NewFiles(
+	resolver, err := protodesc.NewFiles(
 		&descriptorpb.FileDescriptorSet{
 			File: slicesext.Map(files, check.File.FileDescriptorProto),
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+	return bufprotosource.NewFiles(ctx, slicesext.Map(files, newInputFile), resolver)
 }

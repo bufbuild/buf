@@ -19,6 +19,16 @@ import (
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
+// Request is a check.Request that also includes bufprotosource functionality.
+type Request interface {
+	check.Request
+
+	// ProtosourceFiles returns the check.Files as bufprotosource.Files.
+	ProtosourceFiles() []bufprotosource.File
+	// AgainstProtosourceFiles returns the check.AgainstFiles as bufprotosource.Files.
+	AgainstProtosourceFiles() []bufprotosource.File
+}
+
 type request struct {
 	check.Request
 

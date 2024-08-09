@@ -19,6 +19,19 @@ import (
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
+// ResponseWriter is a check.ResponseWriter that also includes bufprotosource functionality.
+type ResponseWriter interface {
+	check.ResponseWriter
+
+	// AddProtosourceAnnotation adds a check.Annotation for bufprotosource.Locations.
+	AddProtosourceAnnotation(
+		location bufprotosource.Location,
+		againstLocation bufprotosource.Location,
+		format string,
+		args ...any,
+	)
+}
+
 type responseWriter struct {
 	check.ResponseWriter
 }
