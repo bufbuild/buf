@@ -60,23 +60,35 @@ var (
 type protosourceFilesContextKey struct{}
 type againstProtosourceFilesContextKey struct{}
 
-type LintResponseWriter interface {
-	AddAnnotation(
+type ResponseWriter interface {
+	check.ResponseWriter
+
+	AddProtosourceAnnotation(
 		location bufprotosource.Location,
+		againstLocation bufprotosource.Location,
 		format string,
 		args ...any,
 	)
 }
 
+type Request interface {
+	check.Request
+
+	ProtosourceFiles() []bufprotosource.File
+	AgainstProtosourceFiles() []bufprotosource.File
+}
+
 func checkServicePascalCase(
-	lintResponseWriter LintResponseWriter,
+	responseWriter ResponseWriter,
+	request Request,
 	service bufprotosource.Service,
 ) error {
 	name := service.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
-		lintResponseWriter.AddAnnotation(
+		responseWriter.AddProtosourceAnnotation(
 			service.NameLocation(),
+			nil,
 			"Service name %q should be PascalCase, such as %q.",
 			name,
 			expectedName,
@@ -88,10 +100,8 @@ func checkServicePascalCase(
 func newRuleHandler(
 	f func(
 		ctx context.Context,
-		responseWriter check.ResponseWriter,
-		request check.Request,
-		files []bufprotosource.File,
-		againstFiles []bufprotosource.File,
+		responseWriter ResponseWriter,
+		request Request,
 	) error,
 ) check.RuleHandler {
 	return check.RuleHandlerFunc(
@@ -102,12 +112,14 @@ func newRuleHandler(
 		) error {
 			return f(
 				ctx,
-				responseWriter,
-				request,
-				// Is this OK with nil?
-				ctx.Value(protosourceFilesContextKey{}).([]bufprotosource.File),
-				// Is this OK with nil?
-				ctx.Value(againstProtosourceFilesContextKey{}).([]bufprotosource.File),
+				newResponseWriter(responseWriter),
+				newRequest(
+					request,
+					// Is this OK with nil?
+					ctx.Value(protosourceFilesContextKey{}).([]bufprotosource.File),
+					// Is this OK with nil?
+					ctx.Value(againstProtosourceFilesContextKey{}).([]bufprotosource.File),
+				),
 			)
 		},
 	)
@@ -116,25 +128,25 @@ func newRuleHandler(
 // Skips imports.
 func newLintFilesRuleHandler(
 	f func(
-		lintResponseWriter LintResponseWriter,
+		responseWriter ResponseWriter,
+		request Request,
 		files []bufprotosource.File,
 	) error,
 ) check.RuleHandler {
 	return newRuleHandler(
 		func(
 			_ context.Context,
-			responseWriter check.ResponseWriter,
-			_ check.Request,
-			files []bufprotosource.File,
-			_ []bufprotosource.File,
+			responseWriter ResponseWriter,
+			request Request,
 		) error {
+			files := request.ProtosourceFiles()
 			filesWithoutImports := make([]bufprotosource.File, 0, len(files))
 			for _, file := range files {
 				if !file.IsImport() {
 					filesWithoutImports = append(filesWithoutImports, file)
 				}
 			}
-			return f(newLintResponseWriter(responseWriter), filesWithoutImports)
+			return f(responseWriter, request, filesWithoutImports)
 		},
 	)
 }
@@ -142,17 +154,19 @@ func newLintFilesRuleHandler(
 // Skips imports.
 func newLintFileRuleHandler(
 	f func(
-		lintResponseWriter LintResponseWriter,
+		responseWriter ResponseWriter,
+		request Request,
 		file bufprotosource.File,
 	) error,
 ) check.RuleHandler {
 	return newLintFilesRuleHandler(
 		func(
-			lintResponseWriter LintResponseWriter,
+			responseWriter ResponseWriter,
+			request Request,
 			files []bufprotosource.File,
 		) error {
 			for _, file := range files {
-				if err := f(lintResponseWriter, file); err != nil {
+				if err := f(responseWriter, request, file); err != nil {
 					return err
 				}
 			}
@@ -161,19 +175,22 @@ func newLintFileRuleHandler(
 	)
 }
 
+// Skips imports.
 func newLintServiceRuleHandler(
 	f func(
-		lintResponseWriter LintResponseWriter,
+		responseWriter ResponseWriter,
+		request Request,
 		service bufprotosource.Service,
 	) error,
 ) check.RuleHandler {
 	return newLintFileRuleHandler(
 		func(
-			lintResponseWriter LintResponseWriter,
+			responseWriter ResponseWriter,
+			request Request,
 			file bufprotosource.File,
 		) error {
 			for _, service := range file.Services() {
-				if err := f(lintResponseWriter, service); err != nil {
+				if err := f(responseWriter, request, service); err != nil {
 					return err
 				}
 			}
@@ -182,19 +199,22 @@ func newLintServiceRuleHandler(
 	)
 }
 
+// Skips imports.
 func newLintMethodRuleHandler(
 	f func(
-		lintResponseWriter LintResponseWriter,
+		responseWriter ResponseWriter,
+		request Request,
 		method bufprotosource.Method,
 	) error,
 ) check.RuleHandler {
 	return newLintServiceRuleHandler(
 		func(
-			lintResponseWriter LintResponseWriter,
+			responseWriter ResponseWriter,
+			request Request,
 			service bufprotosource.Service,
 		) error {
 			for _, method := range service.Methods() {
-				if err := f(lintResponseWriter, method); err != nil {
+				if err := f(responseWriter, request, method); err != nil {
 					return err
 				}
 			}
@@ -271,24 +291,52 @@ func (i *inputFile) CommitID() uuid.UUID {
 	return uuid.Nil
 }
 
-type lintResponseWriter struct {
-	responseWriter check.ResponseWriter
+type responseWriter struct {
+	check.ResponseWriter
 }
 
-func newLintResponseWriter(responseWriter check.ResponseWriter) *lintResponseWriter {
-	return &lintResponseWriter{
-		responseWriter: responseWriter,
+func newResponseWriter(checkResponseWriter check.ResponseWriter) *responseWriter {
+	return &responseWriter{
+		ResponseWriter: checkResponseWriter,
 	}
 }
 
-func (l *lintResponseWriter) AddAnnotation(
+func (w *responseWriter) AddProtosourceAnnotation(
 	location bufprotosource.Location,
+	againstLocation bufprotosource.Location,
 	format string,
 	args ...any,
 ) {
-	l.responseWriter.AddAnnotation(
+	w.ResponseWriter.AddAnnotation(
 		check.WithMessagef(format, args...),
 		check.WithFileName(location.FilePath()),
 		check.WithSourcePath(location.SourcePath()),
 	)
+}
+
+type request struct {
+	check.Request
+
+	protosourceFiles        []bufprotosource.File
+	againstProtosourceFiles []bufprotosource.File
+}
+
+func newRequest(
+	checkRequest check.Request,
+	protosourceFiles []bufprotosource.File,
+	againstProtosourceFiles []bufprotosource.File,
+) *request {
+	return &request{
+		Request:                 checkRequest,
+		protosourceFiles:        protosourceFiles,
+		againstProtosourceFiles: againstProtosourceFiles,
+	}
+}
+
+func (r *request) ProtosourceFiles() []bufprotosource.File {
+	return r.protosourceFiles
+}
+
+func (r *request) AgainstProtosourceFiles() []bufprotosource.File {
+	return r.againstProtosourceFiles
 }
