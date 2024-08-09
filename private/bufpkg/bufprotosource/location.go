@@ -20,13 +20,22 @@ import (
 )
 
 type location struct {
+	filePath               string
 	sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location
 }
 
-func newLocation(sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location) *location {
+func newLocation(
+	filePath string,
+	sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location,
+) *location {
 	return &location{
+		filePath:               filePath,
 		sourceCodeInfoLocation: sourceCodeInfoLocation,
 	}
+}
+
+func (l *location) FilePath() string {
+	return l.filePath
 }
 
 func (l *location) StartLine() int {

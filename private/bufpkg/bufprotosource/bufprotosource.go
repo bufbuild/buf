@@ -205,6 +205,11 @@ type FeaturesDescriptor interface {
 //
 // Note that unlike SourceCodeInfo_Location, these are not zero-indexed.
 type Location interface {
+	// FilePath returns the path of the File associated with this Location.
+	//
+	// This is the same as doing File().Path() on the Descriptor that this Location came from.
+	// We additionally store this information on the Location for convenience.
+	FilePath() string
 	StartLine() int
 	StartColumn() int
 	EndLine() int
