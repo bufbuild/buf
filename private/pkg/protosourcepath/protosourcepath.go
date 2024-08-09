@@ -62,7 +62,8 @@ func GetAssociatedSourcePaths(
 	var err error
 	for i, token := range sourcePath {
 		if currentState == nil {
-			return nil, fmt.Errorf("state has already been terminated before index %v for path %v", i, sourcePath)
+			// We returned an unexpected terminal state, this is considered an invalid source path.
+			return nil, newInvalidSourcePathError(sourcePath, "unexpected termination, invalid source path")
 		}
 		currentState, associatedSourcePaths, err = currentState(token, sourcePath, i, excludeChildAssociatedPaths)
 		if err != nil {
@@ -88,7 +89,7 @@ type state func(
 func start(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case packageTypeTag, syntaxTypeTag, editionTypeTag:
-		// package, syntax, and edition are terminal paths
+		// package, syntax, and edition are terminal paths, return the path and terminate here.
 		return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	case dependenciesTypeTag:
 		if len(sourcePath) < i+2 {
@@ -122,12 +123,13 @@ func start(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 }
 
 func dependencies(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// dependencies are a terminal path
+	// dependencies are a terminal path, retrun the path and terminate here.
 	return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 }
 
 func options(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// All option paths are considered terminal, validate and terminate
+	// All option paths are considered terminal, validate the token is not for an uninterpreted
+	// option and return the whole path.
 	if token == uninterpretedOptionTypeTag {
 		return nil, nil, newInvalidSourcePathError(sourcePath, "uninterpreted option path provided")
 	}
@@ -154,12 +156,12 @@ func reservedRanges(
 }
 
 func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// We always expect a terminal path for reserved range, so validate the token and return here
 	// TODO: use slices.Contains in the future
+	// All reserved range paths are considered a terminal, so validate the path and terminate here.
 	if !slicesext.ElementsContained(
 		terminalReservedRangeTokens,
 		[]int32{token},
-	) || len(sourcePath) != i+1 {
+	) {
 		return nil, nil, newInvalidSourcePathError(sourcePath, "invalid reserved range path")
 	}
 	return nil, nil, nil
@@ -169,10 +171,7 @@ func reservedNames(_ int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
-	// We always expect a reserve name to end with its index, so validate and terminate here
-	if len(sourcePath) != i+1 {
-		return nil, nil, newInvalidSourcePathError(sourcePath, "invalid reserved name path")
-	}
+	// All reserved name paths are considered terminal, can terminate here immeidately.
 	return nil, associatedPaths, nil
 }
 
@@ -183,15 +182,13 @@ func newInvalidSourcePathError(sourcePath protoreflect.SourcePath, s string) err
 
 // childAssociatedPath makes a copy of the source path at the given index (inclusive)
 // and appends a child path tag.
-// This is a helper function, the caller is expected to manage providing an index within
-// range.
+// This is a helper function, the caller is expected to manage providing an index within range.
 func childAssociatedPath(sourcePath protoreflect.SourcePath, i int, tag int32) protoreflect.SourcePath {
 	return append(slicesext.Copy(sourcePath)[:i+1], tag)
 }
 
 // currentPath makes a copy of the source path at the given index (inclusive).
-// This is a helper function, the caller is expected to manage providing an index within
-// range.
+// This is a helper function, the caller is expected to manage providing an index within range.
 func currentPath(sourcePath protoreflect.SourcePath, i int) protoreflect.SourcePath {
 	return slicesext.Copy(sourcePath)[:i+1]
 }

@@ -53,8 +53,6 @@ func messages(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
-	// Add message declaration and message name to aassociated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -65,17 +63,17 @@ func messages(
 		)
 	}
 	if len(sourcePath) == i+1 {
-		// This does not extend beyond the declaration, return associated paths and terminate here.
+		// This does not extend beyond the message declaration, return associated paths and
+		// terminate here.
 		return nil, associatedPaths, nil
 	}
-	// Otherwise, move on to the message structure
 	return message, associatedPaths, nil
 }
 
 func message(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case messageNameTypeTag:
-		// This is the mesasge name, which is already added, can terminate here immediately.
+		// The path for message name has already been added, can terminate here immediately.
 		return nil, nil, nil
 	case mesasgeFieldsTypeTag:
 		if len(sourcePath) < i+2 {
@@ -111,7 +109,7 @@ func message(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (st
 	case messageReservedNameTypeTag:
 		return reservedNames, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid message path")
 }
 
 func oneOfs(
@@ -120,7 +118,6 @@ func oneOfs(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -139,10 +136,7 @@ func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 		terminalOneOfTokens,
 		[]int32{token},
 	) {
-		// Encountered a terminal one of token validate the path and return here.
-		if len(sourcePath) != i+1 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid one of path")
-		}
+		// Encountered a terminal one of token, can terminate here immediately.
 		return nil, nil, nil
 	}
 	switch token {
@@ -152,7 +146,7 @@ func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 		}
 		return options, nil, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid one of path")
 }
 
 func extensionRanges(
@@ -184,10 +178,7 @@ func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bo
 		terminalExtensionRangeTokens,
 		[]int32{token},
 	) {
-		// Encountered a terminal extension range token validate the path and return here
-		if len(sourcePath) != i+1 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid extension range path")
-		}
+		// Encountered a terminal extension range token, can terminate here immediately.
 		return nil, nil, nil
 	}
 	switch token {
@@ -197,5 +188,5 @@ func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bo
 		}
 		return options, nil, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid extension range path")
 }

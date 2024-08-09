@@ -30,8 +30,6 @@ func services(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
-	// Add service declaration and name to associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -42,17 +40,17 @@ func services(
 		)
 	}
 	if len(sourcePath) == +1 {
-		// This does not extend beyond the declaration, return associated paths and terminate here
+		// This does not extend beyond the declaration, return associated paths and
+		// terminate here.
 		return nil, associatedPaths, nil
 	}
-	// Otherwsise, move on to the service structure
 	return service, associatedPaths, nil
 }
 
 func service(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case serviceNameTypeTag:
-		// This is the service name, which is already added, can terminate here immediately.
+		// The path for service name has already been added, can termiante here immediately.
 		return nil, nil, nil
 	case serviceMethodsTypeTag:
 		if len(sourcePath) < i+2 {
@@ -65,5 +63,5 @@ func service(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (st
 		}
 		return options, nil, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid service path")
 }

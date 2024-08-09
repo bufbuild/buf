@@ -32,8 +32,6 @@ func enums(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
-	// Add enum declaration and enum name to associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -44,17 +42,17 @@ func enums(
 		)
 	}
 	if len(sourcePath) == i+1 {
-		// This does not extend beyond the declaration, return associated paths and terminate here.
+		// This path does not extend beyond the enum declaration, return associated paths and
+		// terminate here.
 		return nil, associatedPaths, nil
 	}
-	// Otherwise, move on to enum structure
 	return enum, associatedPaths, nil
 }
 
 func enum(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case enumNameTypeTag:
-		// This is the enum name, which is already added, can termiante here immediately.
+		// The enum name has already been added, can terminate here immediately.
 		return nil, nil, nil
 	case enumValuesTypeTag:
 		return enumValues, nil, nil
@@ -68,5 +66,5 @@ func enum(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state
 	case enumReservedNameTypeTag:
 		return reservedNames, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum path")
 }

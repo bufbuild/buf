@@ -38,7 +38,6 @@ func enumValues(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -50,11 +49,10 @@ func enumValues(
 		)
 	}
 	if len(sourcePath) == i+1 {
-		// This does not extend beyond the enum value declaration, return the name and number
-		// as associated paths and terminate here:
+		// This does not extend beyond the enum value declaration, return associated paths and
+		// terminate here.
 		return nil, associatedPaths, nil
 	}
-	// Otherwise, continue to the enum value structure
 	return enumValue, associatedPaths, nil
 }
 
@@ -64,10 +62,7 @@ func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 		terminalEnumValueTokens,
 		[]int32{token},
 	) {
-		// Encountered a terminal enum value token, validate and terminate here
-		if len(sourcePath) != i+1 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")
-		}
+		// Encountered a terminal enum value path, terminate here.
 		return nil, nil, nil
 	}
 	switch token {
@@ -77,6 +72,5 @@ func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 		}
 		return options, nil, nil
 	}
-	// TODO(doria): implement non-terminal enum value tokens
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")
 }

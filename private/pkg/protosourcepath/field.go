@@ -47,8 +47,6 @@ func fields(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
-	// Add current path, field name, number, label, type, type name to associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -63,11 +61,10 @@ func fields(
 		)
 	}
 	if len(sourcePath) == i+1 {
-		// If this does not extend beyond the declaration, return the name, number, label, type, type_name
-		// as associated paths and terminate here:
+		// This does not extend beyond the field declaration, return the assocaited paths and
+		// terminate here.
 		return nil, associatedPaths, nil
 	}
-	// Otherwise, continue to the field structure
 	return field, associatedPaths, nil
 }
 
@@ -77,10 +74,7 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 		terminalFieldTokens,
 		[]int32{token},
 	) {
-		// Encountered a terminal field token, validate the path and return here.
-		if len(sourcePath) != i+1 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid field path")
-		}
+		// Encountered a terminal field token, can terminate here immediately.
 		return nil, nil, nil
 	}
 	switch token {
@@ -92,7 +86,7 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 	case fieldDefaultValueTypeTag:
 		return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid field path")
 }
 
 func extensions(

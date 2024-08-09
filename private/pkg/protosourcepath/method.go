@@ -44,9 +44,6 @@ func methods(
 	i int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// TODO(doria): should we handle the index?
-	// Add current path, method name, method input type, method output type, client streaming, and server
-	// streaming as associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
@@ -61,11 +58,10 @@ func methods(
 		)
 	}
 	if len(sourcePath) == i+1 {
-		// If this does not extend beyond the method declaration, return associated paths and
-		// terminate.
+		// This does not extend beyond the method declaration, return associated paths and
+		// terminate here.
 		return nil, associatedPaths, nil
 	}
-	// Otherwise, continue to method structure
 	return method, associatedPaths, nil
 }
 
@@ -75,10 +71,7 @@ func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (sta
 		terminalMethodTokens,
 		[]int32{token},
 	) {
-		// Encountered a terminal method token, validate and terminate here.
-		if len(sourcePath) != i+1 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid method path")
-		}
+		// Encountered a terminal method token, can terminate here immediately.
 		return nil, nil, nil
 	}
 	switch token {
@@ -88,6 +81,5 @@ func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (sta
 		}
 		return options, nil, nil
 	}
-	// TODO(doria): implement non-terminal method tokens
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid method path")
 }
