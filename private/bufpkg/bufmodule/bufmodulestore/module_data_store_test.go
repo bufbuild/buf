@@ -21,10 +21,12 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -40,17 +42,41 @@ func TestModuleDataStoreBasicTar(t *testing.T) {
 	testModuleDataStoreBasic(t, true)
 }
 
+func TestModuleDataStoreOS(t *testing.T) {
+	t.Parallel()
+	testModuleDataStoreOS(t)
+}
+
 func testModuleDataStoreBasic(t *testing.T, tar bool) {
-	ctx := context.Background()
 	bucket := storagemem.NewReadWriteBucket()
+	filelocker := filelock.NewNopLocker()
 	var moduleDataStoreOptions []ModuleDataStoreOption
 	if tar {
 		moduleDataStoreOptions = append(moduleDataStoreOptions, ModuleDataStoreWithTar())
 	}
-	logger := zaputil.NewLogger(os.Stderr, zapcore.DebugLevel, zaputil.NewTextEncoder())
-	moduleDataStore := NewModuleDataStore(logger, bucket, moduleDataStoreOptions...)
-	moduleKeys, moduleDatas := testGetModuleKeysAndModuleDatas(t, ctx)
+	testModuleDataStore(t, bucket, filelocker, moduleDataStoreOptions, tar)
+}
 
+func testModuleDataStoreOS(t *testing.T) {
+	tempDir := t.TempDir()
+	bucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	filelocker, err := filelock.NewLocker(tempDir)
+	require.NoError(t, err)
+	testModuleDataStore(t, bucket, filelocker, nil, false)
+}
+
+func testModuleDataStore(
+	t *testing.T,
+	bucket storage.ReadWriteBucket,
+	filelocker filelock.Locker,
+	moduleDataStoreOptions []ModuleDataStoreOption,
+	tar bool,
+) {
+	ctx := context.Background()
+	logger := zaputil.NewLogger(os.Stderr, zapcore.DebugLevel, zaputil.NewTextEncoder())
+	moduleDataStore := NewModuleDataStore(logger, bucket, filelocker, moduleDataStoreOptions...)
+	moduleKeys, moduleDatas := testGetModuleKeysAndModuleDatas(t, ctx)
 	foundModuleDatas, notFoundModuleKeys, err := moduleDataStore.GetModuleDatasForModuleKeys(
 		ctx,
 		moduleKeys,
