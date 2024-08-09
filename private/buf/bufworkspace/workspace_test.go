@@ -281,7 +281,7 @@ func TestDuplicatePath(t *testing.T) {
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/bar/v1/bar.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared//1")
+	module = workspace.GetModuleForOpaqueID("proto/shared//(the 2nd duplicate)")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/foo/v1/foo.proto")
 
@@ -289,7 +289,7 @@ func TestDuplicatePath(t *testing.T) {
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/x/x.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared1//1")
+	module = workspace.GetModuleForOpaqueID("proto/shared1//(the 2nd duplicate)")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/y/y.proto")
 

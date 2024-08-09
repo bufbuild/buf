@@ -4,8 +4,8 @@ modules:
     excludes:
       - proto/shared/prefix/foo
   - path: proto//shared1
-    excludes:
-      - proto/shared1/prefix/y
+    includes:
+      - ./proto//shared1/prefix/x/
   - path: separate  
   - path: proto/shared/
     excludes:

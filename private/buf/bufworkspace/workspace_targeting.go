@@ -203,43 +203,36 @@ func v2WorkspaceTargeting(
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
 	// With in a v2 bufYAMLFile, multiple module configs may have the same DirPath. To make sure each module
-	// has a unique BucketID, we cannot use their DirPaths as BucketIDs directly, but instead we append an
-	// index to the path to differentiate different modules sharing the same DirPath. More specifically,
-	// if a path has multiple occurrences, the first module's bucketID is just the path, but the second module
-	// with this path has a bucketID of <path>//1, and the nth module with this path has a bucketID of <path>//n-1.
-	// To illustrate, bucketID is shown for each module in the buf.yaml below:
+	// has a unique BucketID, we cannot use their DirPaths as BucketIDs directly, but instead we append
+	// an index (1-indexed) to the path as the bucketID to distinguish modules at the same DirPath. More
+	// specifically, if multiple modules share the same path, the first one's bucketID is just the path,
+	// but starting at the second module, bucketID is "<path>//(the nth duplicate)".
+	// As an example, bucketIDs are shown for modules in the buf.yaml below:
 	// ...
 	// modules:
-	//   - path: foo # bucketID foo
-	//   - path: bar # bucketID bar
-	//   - path: foo # bucketID foo//1
-	//   - path: bar # bucketID bar//1
-	//   - path: bar # bucketID bar//2
-	//   - path: new # bucketID new
-	//   - path: foo # bucketID foo//2
+	//   - path: foo # bucketID: foo
+	//   - path: bar # bucketID: bar
+	//   - path: foo # bucketID: foo//(the 2nd duplicate)
+	//   - path: bar # bucketID: bar//(the 2nd duplicate)
+	//   - path: bar # bucketID: bar//(the 3rd duplicate)
+	//   - path: new # bucketID: new
+	//   - path: foo # bucketID: foo//(the 3rd duplicate)
 	// ...
-	// The BufYAMLFile interface guarantees that the relative order among modules configs with the same path
-	// is the same order among these modules in the external buf.yaml v2, i.e. the nth "foo" in the external
-	// buf.yaml above is also the nth "foo" in module configs, even though the module configs goes as:
-	// [bar, bar, bar, foo, foo, foo, new], which is why the following produces bucketIDs as shown in the example above:
-	//
-	// Use dirPathToCount to keep track of how many modules of this path has been seen (before the current module) in this BufYAMLFile,
-	// and this number is exactly the index we want to append to the DirPath for the bucketID.
+	// Note: The BufYAMLFile interface guarantees that the relative order among module configs with
+	// the same path is the same order among these modules in the external buf.yaml v2, e.g. the 2nd
+	// "foo" in the external buf.yaml above is also the 2nd "foo" in module configs, even though sorted:
+	// [bar, bar, bar, foo, foo, foo, new].
+	//                       ^
+	// Use dirPathToCount to keep track of how many modules of this path has been seen (before the
+	// current module) in this BufYAMLFile.
 	dirPathToCount := make(map[string]int)
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		// If this is the first module with this DirPath, it should have index 0.
 		bucketID := moduleDirPath
-		if numOfPrecedentModulesWithSameDirPath := dirPathToCount[moduleDirPath]; numOfPrecedentModulesWithSameDirPath != 0 {
-			// If n modules before this one have this DirPath, they have indices [0, ..., n-1] and this one has index n.
-			//
-			// We are appending the index to the moduleDirPath, so the bucketID becomes DirPath<some form of index>,
-			// but we also want to avoid the case where another module's DirPath is <this DirPath><some form of index>.
-			// We use "//" to connect the DirPath and index to make collision impossible: No module's DirPath contains "//"
-			// because it must already have been normalized, i.e. "foo//bar//" is normalized to "foo/bar" before being stored
-			// as a ModuleConfig's DirPath.
-			bucketID = fmt.Sprintf("%s//%d", moduleDirPath, numOfPrecedentModulesWithSameDirPath)
+		if numOfModulesBeforeWithSamePath := dirPathToCount[moduleDirPath]; numOfModulesBeforeWithSamePath != 0 {
+			// If n modules before this have DirPath, this is the (n+1)th duplicate at DirPath.
+			bucketID = formatBucketIDForDuplicateModulePath(moduleDirPath, numOfModulesBeforeWithSamePath+1)
 		}
 		dirPathToCount[moduleDirPath]++
 		bucketIDToModuleConfig[bucketID] = moduleConfig
@@ -626,6 +619,26 @@ func getMappedModuleBucketAndModuleTargeting(
 				),
 			)
 		}
+		// Filter the proto files based on includes only when it's specified.
+		if includes := moduleConfig.Includes(); len(includes) > 0 {
+			if root != "." {
+				// This is impossible. Having non-empty Includes means it's v2, which means root must be ".".
+				return nil, nil, syserror.Newf(`module config has includes but also a root that is not ".": %q`, root)
+			}
+			var orMatchers []storage.Matcher
+			for _, include := range includes {
+				orMatchers = append(
+					orMatchers,
+					storage.MatchPathContained(include),
+				)
+			}
+			matchers = append(
+				matchers,
+				storage.MatchOr(
+					orMatchers...,
+				),
+			)
+		}
 		rootBuckets = append(
 			rootBuckets,
 			storage.FilterReadBucket(
@@ -824,4 +837,32 @@ func checkForOverlap(
 		}
 	}
 	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
+}
+
+func formatBucketIDForDuplicateModulePath(moduleDirPath string, nthDuplicate int) string {
+	ordinalSuffix := "th"
+	switch nthDuplicate % 100 {
+	case 11, 12, 13:
+		// the 11th, 12th, 13th duplicate
+	default:
+		switch nthDuplicate % 10 {
+		case 1:
+			// the 1st, 21st, ... duplicate
+			ordinalSuffix = "st"
+		case 2:
+			// the 2nd, 22nd, ... duplicate
+			ordinalSuffix = "nd"
+		case 3:
+			// the 3rd, 23rd, ... duplicate
+			ordinalSuffix = "rd"
+		}
+	}
+	// We are appending the 1-based index (i.e. nth) to the moduleDirPath, but we also want to avoid
+	// the case where another module's DirPath is equal to formatBucketIDForDuplicateModulePath(modulePath, n).
+	// In other words, to avoid collision, the return of this function should not be a valid module DirPath.
+	// We use "//" as a separator to make collision impossible: No module's DirPath contains "//"
+	// because it must already have been normalized and must be a relative path, i.e. "foo//bar//" is
+	// normalized to "foo/bar" before being stored as a ModuleConfig's DirPath. For this reason we
+	// choose it over "foo/bar(the 2nd duplicate)", even though it does not look as nice.
+	return fmt.Sprintf("%s//(the %d%s duplicate)", moduleDirPath, nthDuplicate, ordinalSuffix)
 }

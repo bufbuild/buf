@@ -271,7 +271,7 @@ func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, module
 	case 1:
 		return moduleConfigsFound[0], nil
 	default:
-		// TODO: deprecate --module-path and add a --module flag that accepts either a module dir path or a module full name.
+		// TODO: add --module-name flag to allow differentiation
 		return nil, fmt.Errorf("multiple modules found for %q", modulePath)
 	}
 }

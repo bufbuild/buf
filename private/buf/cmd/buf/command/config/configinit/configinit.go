@@ -135,6 +135,7 @@ func run(
 	moduleConfig, err := bufconfig.NewModuleConfig(
 		".",
 		moduleFullName,
+		nil,
 		map[string][]string{
 			".": {},
 		},
