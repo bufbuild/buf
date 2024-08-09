@@ -29,11 +29,11 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/gofrs/uuid/v5"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -214,7 +214,7 @@ type Location interface {
 	// NOT a copy. Do not modify.
 	LeadingDetachedComments() []string
 	// NOT a copy. Do not modify.
-	Path() protoreflect.SourcePath
+	SourcePath() protoreflect.SourcePath
 }
 
 // ModuleFullName is a module full name.
@@ -539,9 +539,32 @@ type Method interface {
 	IdempotencyLevelLocation() Location
 }
 
+// InputFile is a file used as input when building Files.
+type InputFile interface {
+	FileInfo
+
+	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto.
+	//
+	// This will never be nil.
+	// The value Path() is equal to FileDescriptorProto().GetName() .
+	FileDescriptorProto() *descriptorpb.FileDescriptorProto
+	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
+	IsSyntaxUnspecified() bool
+	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
+	// FileDescriptorProto().GetDependency().
+	//
+	// All indexes will be valid.
+	// Will return nil if empty.
+	UnusedDependencyIndexes() []int32
+}
+
 // NewFiles converts the input Image into Files.
-func NewFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
-	return newFiles(ctx, image)
+func NewFiles[F InputFile](
+	ctx context.Context,
+	inputFiles []F,
+	resolver protodesc.Resolver,
+) ([]File, error) {
+	return newFiles(ctx, inputFiles, resolver)
 }
 
 // SortFiles sorts the Files by FilePath.

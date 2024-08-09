@@ -67,6 +67,6 @@ func (l *mergeCommentLocation) LeadingDetachedComments() []string {
 	return l.delegate.LeadingDetachedComments()
 }
 
-func (l *mergeCommentLocation) Path() protoreflect.SourcePath {
-	return l.base.Path()
+func (l *mergeCommentLocation) SourcePath() protoreflect.SourcePath {
+	return l.base.SourcePath()
 }

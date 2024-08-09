@@ -213,7 +213,7 @@ func TestGoogleapis(t *testing.T) {
 
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	// basic check to make sure there is no error at this scale
-	_, err = bufprotosource.NewFiles(context.Background(), image)
+	_, err = bufprotosource.NewFiles(context.Background(), image.Files(), image.Resolver())
 	assert.NoError(t, err)
 }
 

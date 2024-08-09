@@ -35,7 +35,7 @@ func TestNewFiles(t *testing.T) {
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
 	require.NoError(t, err)
-	files, err := NewFiles(context.Background(), image)
+	files, err := NewFiles(context.Background(), image.Files(), image.Resolver())
 	require.NoError(t, err)
 	require.Len(t, files, 1)
 	file := files[0]
