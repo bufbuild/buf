@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckserver
+// Generated. DO NOT EDIT.
+
+package bufcheckserverv2
+
+import _ "github.com/bufbuild/buf/private/usage"
