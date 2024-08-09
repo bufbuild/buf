@@ -16,7 +16,6 @@ package protosourcepath
 
 import (
 	"fmt"
-	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -156,7 +155,11 @@ func reservedRanges(
 
 func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// We always expect a terminal path for reserved range, so validate the token and return here
-	if !slices.Contains(terminalReservedRangeTokens, token) || len(sourcePath) != i+1 {
+	// TODO: use slices.Contains in the future
+	if !slicesext.ElementsContained(
+		terminalReservedRangeTokens,
+		[]int32{token},
+	) || len(sourcePath) != i+1 {
 		return nil, nil, newInvalidSourcePathError(sourcePath, "invalid reserved range path")
 	}
 	return nil, nil, nil

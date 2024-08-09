@@ -15,8 +15,7 @@
 package protosourcepath
 
 import (
-	"slices"
-
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -71,7 +70,11 @@ func methods(
 }
 
 func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	if slices.Contains(terminalMethodTokens, token) {
+	// TODO: use slices.Contains in the future
+	if slicesext.ElementsContained(
+		terminalMethodTokens,
+		[]int32{token},
+	) {
 		// Encountered a terminal method token, validate and terminate here.
 		if len(sourcePath) != i+1 {
 			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid method path")

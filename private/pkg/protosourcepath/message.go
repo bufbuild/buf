@@ -15,8 +15,7 @@
 package protosourcepath
 
 import (
-	"slices"
-
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -135,7 +134,11 @@ func oneOfs(
 }
 
 func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	if slices.Contains(terminalOneOfTokens, token) {
+	// TODO: use slices.Contains in the future
+	if slicesext.ElementsContained(
+		terminalOneOfTokens,
+		[]int32{token},
+	) {
 		// Encountered a terminal one of token validate the path and return here.
 		if len(sourcePath) != i+1 {
 			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid one of path")
@@ -176,7 +179,11 @@ func extensionRanges(
 }
 
 func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	if slices.Contains(terminalExtensionRangeTokens, token) {
+	// TODO: use slices.Contains in the future
+	if slicesext.ElementsContained(
+		terminalExtensionRangeTokens,
+		[]int32{token},
+	) {
 		// Encountered a terminal extension range token validate the path and return here
 		if len(sourcePath) != i+1 {
 			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid extension range path")

@@ -15,8 +15,7 @@
 package protosourcepath
 
 import (
-	"slices"
-
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -73,7 +72,11 @@ func fields(
 }
 
 func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	if slices.Contains(terminalFieldTokens, token) {
+	// TODO: use slices.Contains in the future
+	if slicesext.ElementsContained(
+		terminalFieldTokens,
+		[]int32{token},
+	) {
 		// Encountered a terminal field token, validate the path and return here.
 		if len(sourcePath) != i+1 {
 			return nil, nil, newInvalidSourcePathError(sourcePath, "invalid field path")
