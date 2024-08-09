@@ -3,13 +3,13 @@ module github.com/bufbuild/buf
 go 1.22
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240807162203-18906b410a6f.2
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240808202119-fdc570d02b19.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240801134127-09fbc17f7c9e.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240801134127-09fbc17f7c9e.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1
-	github.com/bufbuild/bufplugin-go v0.0.0-20240808183136-21757f2aadf5
+	github.com/bufbuild/bufplugin-go v0.0.0-20240809185306-2e8861b38814
 	github.com/bufbuild/pluginrpc-go v0.0.0-20240806221947-0f4109e5de7f
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
@@ -51,6 +51,7 @@ require (
 
 require (
 	buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240806221033-67986767b04f.2 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/connectrpc/go v1.16.2-20240717164558-a6c49f84cc0f.1 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
