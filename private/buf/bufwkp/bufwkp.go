@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package bufwkp is buf "well-known plugin", i.e. the prototype to replace
+// our lint and breaking change packages with a well-known built-in plugin.
 package bufwkp
 
 import (
@@ -20,22 +22,31 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const (
+	servicePascalCaseRuleID  = "SERVICE_PASCAL_CASE"
+	servicePascalCasePurpose = "Checks that services are PascalCase."
+
+	basicCategory   = "BASIC"
+	defaultCategory = "DEFAULT"
+)
+
 var (
 	v2ServicePascalCaseRuleSpec = &check.RuleSpec{
-		ID: "SERVICE_PASCAL_CASE",
+		ID: servicePascalCaseRuleID,
 		Categories: []string{
-			"BASIC",
-			"DEFAULT",
+			basicCategory,
+			defaultCategory,
 		},
-		Purpose: "Checks that services are PascalCase.",
+		Purpose: servicePascalCasePurpose,
 		Type:    check.RuleTypeLint,
-		Handler: check.RuleHandlerFunc(handleV2ServicePascalCase),
+		Handler: newLintServiceRuleHandler(checkServicePascalCase),
 	}
 
 	v2Spec = &check.Spec{
@@ -49,11 +60,28 @@ var (
 type protosourceFilesContextKey struct{}
 type againstProtosourceFilesContextKey struct{}
 
-func handleV2ServicePascalCase(
-	_ context.Context,
-	responseWriter check.ResponseWriter,
-	request check.Request,
+type LintResponseWriter interface {
+	AddAnnotation(
+		location bufprotosource.Location,
+		format string,
+		args ...any,
+	)
+}
+
+func checkServicePascalCase(
+	lintResponseWriter LintResponseWriter,
+	service bufprotosource.Service,
 ) error {
+	name := service.Name()
+	expectedName := stringutil.ToPascalCase(name)
+	if name != expectedName {
+		lintResponseWriter.AddAnnotation(
+			service.NameLocation(),
+			"Service name %q should be PascalCase, such as %q.",
+			name,
+			expectedName,
+		)
+	}
 	return nil
 }
 
@@ -81,6 +109,96 @@ func newRuleHandler(
 				// Is this OK with nil?
 				ctx.Value(againstProtosourceFilesContextKey{}).([]bufprotosource.File),
 			)
+		},
+	)
+}
+
+// Skips imports.
+func newLintFilesRuleHandler(
+	f func(
+		lintResponseWriter LintResponseWriter,
+		files []bufprotosource.File,
+	) error,
+) check.RuleHandler {
+	return newRuleHandler(
+		func(
+			_ context.Context,
+			responseWriter check.ResponseWriter,
+			_ check.Request,
+			files []bufprotosource.File,
+			_ []bufprotosource.File,
+		) error {
+			filesWithoutImports := make([]bufprotosource.File, 0, len(files))
+			for _, file := range files {
+				if !file.IsImport() {
+					filesWithoutImports = append(filesWithoutImports, file)
+				}
+			}
+			return f(newLintResponseWriter(responseWriter), filesWithoutImports)
+		},
+	)
+}
+
+// Skips imports.
+func newLintFileRuleHandler(
+	f func(
+		lintResponseWriter LintResponseWriter,
+		file bufprotosource.File,
+	) error,
+) check.RuleHandler {
+	return newLintFilesRuleHandler(
+		func(
+			lintResponseWriter LintResponseWriter,
+			files []bufprotosource.File,
+		) error {
+			for _, file := range files {
+				if err := f(lintResponseWriter, file); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
+func newLintServiceRuleHandler(
+	f func(
+		lintResponseWriter LintResponseWriter,
+		service bufprotosource.Service,
+	) error,
+) check.RuleHandler {
+	return newLintFileRuleHandler(
+		func(
+			lintResponseWriter LintResponseWriter,
+			file bufprotosource.File,
+		) error {
+			for _, service := range file.Services() {
+				if err := f(lintResponseWriter, service); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
+func newLintMethodRuleHandler(
+	f func(
+		lintResponseWriter LintResponseWriter,
+		method bufprotosource.Method,
+	) error,
+) check.RuleHandler {
+	return newLintServiceRuleHandler(
+		func(
+			lintResponseWriter LintResponseWriter,
+			service bufprotosource.Service,
+		) error {
+			for _, method := range service.Methods() {
+				if err := f(lintResponseWriter, method); err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 	)
 }
@@ -151,4 +269,26 @@ func (i *inputFile) ModuleFullName() bufmodule.ModuleFullName {
 
 func (i *inputFile) CommitID() uuid.UUID {
 	return uuid.Nil
+}
+
+type lintResponseWriter struct {
+	responseWriter check.ResponseWriter
+}
+
+func newLintResponseWriter(responseWriter check.ResponseWriter) *lintResponseWriter {
+	return &lintResponseWriter{
+		responseWriter: responseWriter,
+	}
+}
+
+func (l *lintResponseWriter) AddAnnotation(
+	location bufprotosource.Location,
+	format string,
+	args ...any,
+) {
+	l.responseWriter.AddAnnotation(
+		check.WithMessagef(format, args...),
+		check.WithFileName(location.FilePath()),
+		check.WithSourcePath(location.SourcePath()),
+	)
 }

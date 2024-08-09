@@ -124,6 +124,7 @@ func newFilesWithImportsCheckFunc(
 	}
 }
 
+// Does not include imports.
 func newFilesCheckFunc(
 	f func(addFunc, []bufprotosource.File) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
@@ -142,6 +143,7 @@ func newFilesCheckFunc(
 	}
 }
 
+// Includes imports. TODO Was this intended?
 func newPackageToFilesCheckFunc(
 	f func(add addFunc, pkg string, files []bufprotosource.File) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
@@ -161,6 +163,7 @@ func newPackageToFilesCheckFunc(
 	)
 }
 
+// Includes imports. TODO Was this intended?
 func newDirToFilesCheckFunc(
 	f func(add addFunc, dirPath string, files []bufprotosource.File) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
