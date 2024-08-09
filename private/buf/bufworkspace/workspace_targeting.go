@@ -720,5 +720,6 @@ func bucketIDForLocalV2Module(moduleDirPath string, pathIndex int) string {
 	if pathIndex == 0 {
 		return moduleDirPath
 	}
-	return fmt.Sprintf("%s[%d]", moduleDirPath, pathIndex)
+	// It's impossible for a moduleDirPath to contain "//" because we normalize the paths first.
+	return fmt.Sprintf("%s//%d", moduleDirPath, pathIndex)
 }

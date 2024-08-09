@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package prefix.bar.v1;
+
+import "acme/extension/v1/extension.proto";
+
+message Bar {
+  option (acme.extension.v1.experimental) = true;
+  string name = 1;
+}
