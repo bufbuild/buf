@@ -24,12 +24,22 @@ const (
 	serviceOptionTypeTag  = int32(3)
 )
 
-func services(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func services(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	// Add service declaration and name to associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, serviceNameTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, serviceNameTypeTag),
+		)
 	}
 	if len(sourcePath) == +1 {
 		// This does not extend beyond the declaration, return associated paths and terminate here
@@ -39,7 +49,7 @@ func services(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []prot
 	return service, associatedPaths, nil
 }
 
-func service(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func service(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case serviceNameTypeTag:
 		// This is the service name, which is already added, can terminate here immediately.

@@ -26,12 +26,22 @@ const (
 	enumReservedNameTypeTag  = int32(5)
 )
 
-func enums(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func enums(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	// Add enum declaration and enum name to associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, enumNameTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, enumNameTypeTag),
+		)
 	}
 	if len(sourcePath) == i+1 {
 		// This does not extend beyond the declaration, return associated paths and terminate here.
@@ -41,7 +51,7 @@ func enums(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protore
 	return enum, associatedPaths, nil
 }
 
-func enum(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func enum(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case enumNameTypeTag:
 		// This is the enum name, which is already added, can termiante here immediately.

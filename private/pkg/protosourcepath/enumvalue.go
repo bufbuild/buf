@@ -33,12 +33,22 @@ var (
 	}
 )
 
-func enumValues(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func enumValues(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, enumValueNameTypeTag),
-		childAssociatedPath(sourcePath, i, enumValueNumberTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, enumValueNameTypeTag),
+			childAssociatedPath(sourcePath, i, enumValueNumberTypeTag),
+		)
 	}
 	if len(sourcePath) == i+1 {
 		// This does not extend beyond the enum value declaration, return the name and number
@@ -49,7 +59,7 @@ func enumValues(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []pr
 	return enumValue, associatedPaths, nil
 }
 
-func enumValue(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalEnumValueTokens, token) {
 		// Encountered a terminal enum value token, validate and terminate here
 		if len(sourcePath) != i+1 {

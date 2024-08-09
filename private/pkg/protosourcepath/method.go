@@ -39,17 +39,27 @@ var (
 	}
 )
 
-func methods(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func methods(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	// Add current path, method name, method input type, method output type, client streaming, and server
 	// streaming as associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, methodNameTypeTag),
-		childAssociatedPath(sourcePath, i, methodInputTypeTypeTag),
-		childAssociatedPath(sourcePath, i, methodOutputTypeTypeTag),
-		childAssociatedPath(sourcePath, i, methodClientStreamingTypeTag),
-		childAssociatedPath(sourcePath, i, methodServerStreamingTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, methodNameTypeTag),
+			childAssociatedPath(sourcePath, i, methodInputTypeTypeTag),
+			childAssociatedPath(sourcePath, i, methodOutputTypeTypeTag),
+			childAssociatedPath(sourcePath, i, methodClientStreamingTypeTag),
+			childAssociatedPath(sourcePath, i, methodServerStreamingTypeTag),
+		)
 	}
 	if len(sourcePath) == i+1 {
 		// If this does not extend beyond the method declaration, return associated paths and
@@ -60,7 +70,7 @@ func methods(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []proto
 	return method, associatedPaths, nil
 }
 
-func method(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalMethodTokens, token) {
 		// Encountered a terminal method token, validate and terminate here.
 		if len(sourcePath) != i+1 {

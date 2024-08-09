@@ -53,7 +53,10 @@ type AssociatedSourcePaths struct {
 // GetAssociatedSourcePaths...
 //
 // TODO(doria): write docs
-func GetAssociatedSourcePaths(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
+func GetAssociatedSourcePaths(
+	sourcePath protoreflect.SourcePath,
+	excludeChildAssociatedPaths bool,
+) ([]protoreflect.SourcePath, error) {
 	var result []protoreflect.SourcePath
 	currentState := start
 	var associatedSourcePaths []protoreflect.SourcePath
@@ -62,7 +65,7 @@ func GetAssociatedSourcePaths(sourcePath protoreflect.SourcePath) ([]protoreflec
 		if currentState == nil {
 			return nil, fmt.Errorf("state has already been terminated before index %v for path %v", i, sourcePath)
 		}
-		currentState, associatedSourcePaths, err = currentState(token, sourcePath, i)
+		currentState, associatedSourcePaths, err = currentState(token, sourcePath, i, excludeChildAssociatedPaths)
 		if err != nil {
 			return nil, err
 		}
@@ -76,9 +79,14 @@ func GetAssociatedSourcePaths(sourcePath protoreflect.SourcePath) ([]protoreflec
 
 // *** PRIVATE ***
 
-type state func(int32, protoreflect.SourcePath, int) (state, []protoreflect.SourcePath, error)
+type state func(
+	token int32,
+	sourcePath protoreflect.SourcePath,
+	index int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error)
 
-func start(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func start(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case packageTypeTag, syntaxTypeTag, editionTypeTag:
 		// package, syntax, and edition are terminal paths
@@ -114,12 +122,12 @@ func start(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
 }
 
-func dependencies(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func dependencies(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// dependencies are a terminal path
 	return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 }
 
-func options(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func options(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// All option paths are considered terminal, validate and terminate
 	if token == uninterpretedOptionTypeTag {
 		return nil, nil, newInvalidSourcePathError(sourcePath, "uninterpreted option path provided")
@@ -127,16 +135,26 @@ func options(token int32, sourcePath protoreflect.SourcePath, i int) (state, []p
 	return nil, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 }
 
-func reservedRanges(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func reservedRanges(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, reservedRangeStartTypeTag),
-		childAssociatedPath(sourcePath, i, reservedRangeEndTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, reservedRangeStartTypeTag),
+			childAssociatedPath(sourcePath, i, reservedRangeEndTypeTag),
+		)
 	}
 	return reservedRange, associatedPaths, nil
 }
 
-func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// We always expect a terminal path for reserved range, so validate the token and return here
 	if !slices.Contains(terminalReservedRangeTokens, token) || len(sourcePath) != i+1 {
 		return nil, nil, newInvalidSourcePathError(sourcePath, "invalid reserved range path")
@@ -144,7 +162,7 @@ func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int) (stat
 	return nil, nil, nil
 }
 
-func reservedNames(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func reservedNames(_ int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}

@@ -48,12 +48,22 @@ var (
 	}
 )
 
-func messages(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func messages(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	// Add message declaration and message name to aassociated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, messageNameTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, messageNameTypeTag),
+		)
 	}
 	if len(sourcePath) == i+1 {
 		// This does not extend beyond the declaration, return associated paths and terminate here.
@@ -63,7 +73,7 @@ func messages(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []prot
 	return message, associatedPaths, nil
 }
 
-func message(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func message(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case messageNameTypeTag:
 		// This is the mesasge name, which is already added, can terminate here immediately.
@@ -105,16 +115,26 @@ func message(token int32, sourcePath protoreflect.SourcePath, i int) (state, []p
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
 }
 
-func oneOfs(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func oneOfs(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, messageOneOfNameTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, messageOneOfNameTypeTag),
+		)
 	}
 	return oneOf, associatedPaths, nil
 }
 
-func oneOf(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalOneOfTokens, token) {
 		// Encountered a terminal one of token validate the path and return here.
 		if len(sourcePath) != i+1 {
@@ -132,11 +152,21 @@ func oneOf(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid source path")
 }
 
-func extensionRanges(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func extensionRanges(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, messageExtensionRangeStartTypeTag),
-		childAssociatedPath(sourcePath, i, messageExtensionRangeEndTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, messageExtensionRangeStartTypeTag),
+			childAssociatedPath(sourcePath, i, messageExtensionRangeEndTypeTag),
+		)
 	}
 	if len(sourcePath) == i+1 {
 		// This does not extend beyond the declaration, return associated paths and terminate here.
@@ -145,7 +175,7 @@ func extensionRanges(_ int32, sourcePath protoreflect.SourcePath, i int) (state,
 	return extensionRange, associatedPaths, nil
 }
 
-func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalExtensionRangeTokens, token) {
 		// Encountered a terminal extension range token validate the path and return here
 		if len(sourcePath) != i+1 {

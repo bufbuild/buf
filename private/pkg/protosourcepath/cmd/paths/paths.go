@@ -99,12 +99,18 @@ func run(
 			fmt.Println([]int32(sourceLocation.Path))
 			fmt.Printf("len leading comments: %v\n", len(sourceLocation.LeadingComments))
 			fmt.Printf("len trailing comments: %v\n", len(sourceLocation.TrailingComments))
-			associatedSourcePaths, err := protosourcepath.GetAssociatedSourcePaths(sourceLocation.Path)
+			allAssociatedSourcePaths, err := protosourcepath.GetAssociatedSourcePaths(sourceLocation.Path, false)
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Printf("Associated source paths: %v\n", associatedSourcePaths)
-			fmt.Printf("Associated source paths: %v\n\n", rawAssociatedSourcePaths(associatedSourcePaths))
+			fmt.Printf("All associated source paths: %v\n", allAssociatedSourcePaths)
+			fmt.Printf("All associated source paths: %v\n", rawAssociatedSourcePaths(allAssociatedSourcePaths))
+			fullAssociatedSourcePaths, err := protosourcepath.GetAssociatedSourcePaths(sourceLocation.Path, true)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Printf("Full associated source paths only: %v\n", fullAssociatedSourcePaths)
+			fmt.Printf("Full associated source paths only: %v\n\n", rawAssociatedSourcePaths(fullAssociatedSourcePaths))
 		}
 	}
 	fmt.Println("---")

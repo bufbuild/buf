@@ -42,16 +42,26 @@ var (
 	}
 )
 
-func fields(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func fields(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
 	// TODO(doria): should we handle the index?
 	// Add current path, field name, number, label, type, type name to associated paths
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, fieldNameTypeTag),
-		childAssociatedPath(sourcePath, i, fieldNumberTypeTag),
-		childAssociatedPath(sourcePath, i, fieldLabelTypeTag),
-		childAssociatedPath(sourcePath, i, fieldTypeTypeTag),
-		childAssociatedPath(sourcePath, i, fieldTypeNameTypeTag),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, fieldNameTypeTag),
+			childAssociatedPath(sourcePath, i, fieldNumberTypeTag),
+			childAssociatedPath(sourcePath, i, fieldLabelTypeTag),
+			childAssociatedPath(sourcePath, i, fieldTypeTypeTag),
+			childAssociatedPath(sourcePath, i, fieldTypeNameTypeTag),
+		)
 	}
 	if len(sourcePath) == i+1 {
 		// If this does not extend beyond the declaration, return the name, number, label, type, type_name
@@ -62,7 +72,7 @@ func fields(_ int32, sourcePath protoreflect.SourcePath, i int) (state, []protor
 	return field, associatedPaths, nil
 }
 
-func field(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
+func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	if slices.Contains(terminalFieldTokens, token) {
 		// Encountered a terminal field token, validate the path and return here.
 		if len(sourcePath) != i+1 {
@@ -82,18 +92,22 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int) (state, []pro
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid or unimplemented source path")
 }
 
-func extensions(token int32, sourcePath protoreflect.SourcePath, i int) (state, []protoreflect.SourcePath, error) {
-	// Add current path and extendee
-	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
-		childAssociatedPath(sourcePath, i, extensionExtendeeTypeTag),
-	}
-	// An extension is effectively a field descriptor, so we want to add all the associated
-	// paths with fields.
-	field, fieldsAssociatedPaths, err := fields(token, sourcePath, i)
+func extensions(
+	token int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
+	// An extension is effectively a field descriptor, so we start by getting all paths for fields.
+	field, associatedPaths, err := fields(token, sourcePath, i, excludeChildAssociatedPaths)
 	if err != nil {
 		return nil, nil, err
 	}
-	associatedPaths = append(associatedPaths, fieldsAssociatedPaths...)
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, extensionExtendeeTypeTag),
+		)
+	}
 	return field, associatedPaths, nil
 }
