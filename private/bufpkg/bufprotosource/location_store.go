@@ -15,8 +15,7 @@
 package bufprotosource
 
 import (
-	"sync"
-
+	"github.com/bufbuild/buf/private/pkg/syncext"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -31,7 +30,7 @@ func newLocationStore(fileDescriptorProto *descriptorpb.FileDescriptorProto) *lo
 		filePath:                fileDescriptorProto.GetName(),
 		sourceCodeInfoLocations: fileDescriptorProto.GetSourceCodeInfo().GetLocation(),
 	}
-	locationStore.getPathToLocation = sync.OnceValue(locationStore.getPathToLocationUncached)
+	locationStore.getPathToLocation = syncext.OnceValue(locationStore.getPathToLocationUncached)
 	return locationStore
 }
 
