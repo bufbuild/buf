@@ -28,4 +28,11 @@ var (
 		Type:    check.RuleTypeLint,
 		Handler: bufcheckserverhandle.HandleLintServicePascalCase,
 	}
+	// LintServiceSuffixRuleSpecBuilder is a rule builder.
+	LintServiceSuffixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "SERVICE_SUFFIX",
+		Purpose: `Checks that services have a consistent suffix (configurable, default suffix is "Service").`,
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintServiceSuffix,
+	}
 )

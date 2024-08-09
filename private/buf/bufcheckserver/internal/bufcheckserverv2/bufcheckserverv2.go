@@ -25,6 +25,7 @@ var (
 	Spec = &check.Spec{
 		Rules: []*check.RuleSpec{
 			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
+			bufcheckserverbuild.LintServiceSuffixRuleSpecBuilder.Build([]string{"DEFAULT"}),
 		},
 		Before: bufcheckserverutil.Before,
 	}
