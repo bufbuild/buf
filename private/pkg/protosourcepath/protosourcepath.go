@@ -43,15 +43,37 @@ var (
 	}
 )
 
-type AssociatedSourcePaths struct {
-	ParentPaths  []protoreflect.SourcePath
-	SiblingPaths []protoreflect.SourcePath
-	ChildPaths   []protoreflect.SourcePath
-}
-
-// GetAssociatedSourcePaths...
+// GetAssociatedSourcePaths takes a protoreflect.SourcePath and the option to exclude child
+// associated paths, and returns a list of associated paths, []protoreflect.SourcePath.
 //
-// TODO(doria): write docs
+// We should expect at least one associated path for a valid path input.
+//
+// Excluding child associated paths will only return associated paths for complete/top-level
+// declarations. For example,
+//
+// Input: [4, 0, 2, 0] (.message[0].field[0])
+//
+// excludeChildAssociatedPaths == false:
+// Associated paths: [
+//
+//	[4, 0] (.message[0])
+//	[4, 0, 1] (.message[0].name)
+//	[4, 0, 2, 0] (.message[0].field[0])
+//	[4, 0, 2, 0, 1] (.message[0].field[0].name)
+//	[4, 0, 2, 0, 3] (.message[0].field[0].number)
+//	[4, 0, 2, 0, 4] (.message[0].field[0].label)
+//	[4, 0, 2, 0, 5] (.message[0].field[0].type)
+//	[4, 0, 2, 0, 6] (.message[0].field[0].type_name)
+//
+// ]
+//
+// excludeChildAssociatedPaths == true:
+// Associated paths: [
+//
+//	[4, 0] (.message[0])
+//	[4, 0, 2, 0] (.message[0].field[0])
+//
+// ]
 func GetAssociatedSourcePaths(
 	sourcePath protoreflect.SourcePath,
 	excludeChildAssociatedPaths bool,
@@ -156,8 +178,8 @@ func reservedRanges(
 }
 
 func reservedRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// TODO: use slices.Contains in the future
 	// All reserved range paths are considered a terminal, so validate the path and terminate here.
+	// TODO: use slices.Contains in the future
 	if !slicesext.ElementsContained(
 		terminalReservedRangeTokens,
 		[]int32{token},
@@ -175,7 +197,6 @@ func reservedNames(_ int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 	return nil, associatedPaths, nil
 }
 
-// TODO(doria): make the error better
 func newInvalidSourcePathError(sourcePath protoreflect.SourcePath, s string) error {
 	return fmt.Errorf("%s: %v", s, sourcePath)
 }
