@@ -12,20 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckserver
+// Generated. DO NOT EDIT.
 
-import (
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverbuild"
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
-	"github.com/bufbuild/bufplugin-go/check"
-)
+package bufcheckserverbuild
 
-var (
-	// V2Spec is the v2 check.Spec.
-	V2Spec = &check.Spec{
-		Rules: []*check.RuleSpec{
-			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
-		},
-		Before: bufcheckserverutil.Before,
-	}
-)
+import _ "github.com/bufbuild/buf/private/usage"

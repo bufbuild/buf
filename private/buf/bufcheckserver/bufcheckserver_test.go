@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckserver
+package bufcheckserver_test
 
 import (
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufcheckserver"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 )
@@ -25,7 +26,7 @@ func TestServicePascalCase(t *testing.T) {
 	t.Parallel()
 
 	for _, spec := range []*check.Spec{
-		v2Spec,
+		bufcheckserver.V2Spec,
 	} {
 		checktest.TestCase{
 			Spec: spec,
@@ -34,11 +35,11 @@ func TestServicePascalCase(t *testing.T) {
 				FilePaths: []string{"a.proto"},
 			},
 			RuleIDs: []string{
-				servicePascalCaseRuleID,
+				"SERVICE_PASCAL_CASE",
 			},
 			ExpectedAnnotations: []checktest.ExpectedAnnotation{
 				{
-					ID: servicePascalCaseRuleID,
+					ID: "SERVICE_PASCAL_CASE",
 					Location: &checktest.ExpectedLocation{
 						FileName:    "a.proto",
 						StartLine:   7,
@@ -48,7 +49,7 @@ func TestServicePascalCase(t *testing.T) {
 					},
 				},
 				{
-					ID: servicePascalCaseRuleID,
+					ID: "SERVICE_PASCAL_CASE",
 					Location: &checktest.ExpectedLocation{
 						FileName:    "a.proto",
 						StartLine:   8,
@@ -58,7 +59,7 @@ func TestServicePascalCase(t *testing.T) {
 					},
 				},
 				{
-					ID: servicePascalCaseRuleID,
+					ID: "SERVICE_PASCAL_CASE",
 					Location: &checktest.ExpectedLocation{
 						FileName:    "a.proto",
 						StartLine:   9,
@@ -68,7 +69,7 @@ func TestServicePascalCase(t *testing.T) {
 					},
 				},
 				{
-					ID: servicePascalCaseRuleID,
+					ID: "SERVICE_PASCAL_CASE",
 					Location: &checktest.ExpectedLocation{
 						FileName:    "a.proto",
 						StartLine:   10,

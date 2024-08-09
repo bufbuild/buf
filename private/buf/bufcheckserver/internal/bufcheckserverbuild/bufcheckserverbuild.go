@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckserver
+package bufcheckserverbuild
 
 import (
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverbuild"
+	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverhandle"
 	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
 var (
-	// V2Spec is the v2 check.Spec.
-	V2Spec = &check.Spec{
-		Rules: []*check.RuleSpec{
-			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
-		},
-		Before: bufcheckserverutil.Before,
+	// LintServicePascalCaseRuleSpecBuilder is a rule builder.
+	LintServicePascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "SERVICE_PASCAL_CASE",
+		Purpose: "Checks that services are PascalCase",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintServicePascalCase,
 	}
 )

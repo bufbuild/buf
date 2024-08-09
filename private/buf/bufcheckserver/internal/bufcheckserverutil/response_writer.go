@@ -12,20 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckserver
+package bufcheckserverutil
 
 import (
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverbuild"
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
-var (
-	// V2Spec is the v2 check.Spec.
-	V2Spec = &check.Spec{
-		Rules: []*check.RuleSpec{
-			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
-		},
-		Before: bufcheckserverutil.Before,
+type responseWriter struct {
+	check.ResponseWriter
+}
+
+func newResponseWriter(checkResponseWriter check.ResponseWriter) *responseWriter {
+	return &responseWriter{
+		ResponseWriter: checkResponseWriter,
 	}
-)
+}
+
+func (w *responseWriter) AddProtosourceAnnotation(
+	location bufprotosource.Location,
+	againstLocation bufprotosource.Location,
+	format string,
+	args ...any,
+) {
+	w.ResponseWriter.AddAnnotation(
+		check.WithMessagef(format, args...),
+		check.WithFileName(location.FilePath()),
+		check.WithSourcePath(location.SourcePath()),
+	)
+}

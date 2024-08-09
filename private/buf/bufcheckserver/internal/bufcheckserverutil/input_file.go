@@ -12,20 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckserver
+package bufcheckserverutil
 
 import (
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverbuild"
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/bufplugin-go/check"
+	"github.com/gofrs/uuid/v5"
 )
 
-var (
-	// V2Spec is the v2 check.Spec.
-	V2Spec = &check.Spec{
-		Rules: []*check.RuleSpec{
-			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
-		},
-		Before: bufcheckserverutil.Before,
+type inputFile struct {
+	check.File
+}
+
+func newInputFile(file check.File) *inputFile {
+	return &inputFile{
+		File: file,
 	}
-)
+}
+
+func (i *inputFile) Path() string {
+	return i.File.FileDescriptorProto().GetName()
+}
+
+// TODO: We will need to reconcile this on the client-side as right now we rely on ExternalPath
+// being passed end-to-end.
+func (i *inputFile) ExternalPath() string {
+	return i.Path()
+}
+
+func (i *inputFile) ModuleFullName() bufmodule.ModuleFullName {
+	return nil
+}
+
+func (i *inputFile) CommitID() uuid.UUID {
+	return uuid.Nil
+}
