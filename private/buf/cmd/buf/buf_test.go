@@ -665,52 +665,53 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 func TestCheckLsLintRulesV2(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                CATEGORIES               PURPOSE
-DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT  Checks that all files in a given directory are in the same package.
-PACKAGE_DEFINED                   MINIMAL, BASIC, DEFAULT  Checks that all files have a package defined.
-PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT  Checks that all files are in a directory that matches their package name.
-PACKAGE_NO_IMPORT_CYCLE           MINIMAL, BASIC, DEFAULT  Checks that packages do not have import cycles.
-PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, DEFAULT  Checks that all files with a given package are in the same directory.
-ENUM_FIRST_VALUE_ZERO             BASIC, DEFAULT           Checks that all first values of enums have a numeric value of 0.
-ENUM_NO_ALLOW_ALIAS               BASIC, DEFAULT           Checks that enums do not have the allow_alias option set.
-ENUM_PASCAL_CASE                  BASIC, DEFAULT           Checks that enums are PascalCase.
-ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT           Checks that enum values are UPPER_SNAKE_CASE.
-FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that field names are lower_snake_case.
-FIELD_NOT_REQUIRED                BASIC, DEFAULT           Checks that fields are not configured to be required.
-IMPORT_NO_PUBLIC                  BASIC, DEFAULT           Checks that imports are not public.
-IMPORT_NO_WEAK                    BASIC, DEFAULT           Checks that imports are not weak.
-IMPORT_USED                       BASIC, DEFAULT           Checks that imports are used.
-MESSAGE_PASCAL_CASE               BASIC, DEFAULT           Checks that messages are PascalCase.
-ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that oneof names are lower_snake_case.
-PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT           Checks that packages are lower_snake.case.
-PACKAGE_SAME_CSHARP_NAMESPACE     BASIC, DEFAULT           Checks that all files with a given package have the same value for the csharp_namespace option.
-PACKAGE_SAME_GO_PACKAGE           BASIC, DEFAULT           Checks that all files with a given package have the same value for the go_package option.
-PACKAGE_SAME_JAVA_MULTIPLE_FILES  BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_multiple_files option.
-PACKAGE_SAME_JAVA_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_package option.
-PACKAGE_SAME_PHP_NAMESPACE        BASIC, DEFAULT           Checks that all files with a given package have the same value for the php_namespace option.
-PACKAGE_SAME_RUBY_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the ruby_package option.
-PACKAGE_SAME_SWIFT_PREFIX         BASIC, DEFAULT           Checks that all files with a given package have the same value for the swift_prefix option.
-RPC_PASCAL_CASE                   BASIC, DEFAULT           Checks that RPCs are PascalCase.
-SERVICE_PASCAL_CASE               BASIC, DEFAULT           Checks that services are PascalCase.
-SYNTAX_SPECIFIED                  BASIC, DEFAULT           Checks that all files have a syntax specified.
-ENUM_VALUE_PREFIX                 DEFAULT                  Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
-ENUM_ZERO_VALUE_SUFFIX            DEFAULT                  Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
-FILE_LOWER_SNAKE_CASE             DEFAULT                  Checks that filenames are lower_snake_case.
-PACKAGE_VERSION_SUFFIX            DEFAULT                  Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
-PROTOVALIDATE                     DEFAULT                  Checks that protovalidate rules are valid and all CEL expressions compile.
-RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT                  Checks that RPC request and response types are only used in one RPC (configurable).
-RPC_REQUEST_STANDARD_NAME         DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
-RPC_RESPONSE_STANDARD_NAME        DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
-SERVICE_SUFFIX                    DEFAULT                  Checks that services have a consistent suffix (configurable, default suffix is "Service").
-COMMENT_ENUM                      COMMENTS                 Checks that enums have non-empty comments.
-COMMENT_ENUM_VALUE                COMMENTS                 Checks that enum values have non-empty comments.
-COMMENT_FIELD                     COMMENTS                 Checks that fields have non-empty comments.
-COMMENT_MESSAGE                   COMMENTS                 Checks that messages have non-empty comments.
-COMMENT_ONEOF                     COMMENTS                 Checks that oneof have non-empty comments.
-COMMENT_RPC                       COMMENTS                 Checks that RPCs have non-empty comments.
-COMMENT_SERVICE                   COMMENTS                 Checks that services have non-empty comments.
-RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
-RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
+ID                                 CATEGORIES               PURPOSE
+DIRECTORY_SAME_PACKAGE             MINIMAL, BASIC, DEFAULT  Checks that all files in a given directory are in the same package.
+PACKAGE_DEFINED                    MINIMAL, BASIC, DEFAULT  Checks that all files have a package defined.
+PACKAGE_DIRECTORY_MATCH            MINIMAL, BASIC, DEFAULT  Checks that all files are in a directory that matches their package name.
+PACKAGE_NO_IMPORT_CYCLE            MINIMAL, BASIC, DEFAULT  Checks that packages do not have import cycles.
+PACKAGE_SAME_DIRECTORY             MINIMAL, BASIC, DEFAULT  Checks that all files with a given package are in the same directory.
+ENUM_FIRST_VALUE_ZERO              BASIC, DEFAULT           Checks that all first values of enums have a numeric value of 0.
+ENUM_NO_ALLOW_ALIAS                BASIC, DEFAULT           Checks that enums do not have the allow_alias option set.
+ENUM_PASCAL_CASE                   BASIC, DEFAULT           Checks that enums are PascalCase.
+ENUM_VALUE_UPPER_SNAKE_CASE        BASIC, DEFAULT           Checks that enum values are UPPER_SNAKE_CASE.
+FIELD_LOWER_SNAKE_CASE             BASIC, DEFAULT           Checks that field names are lower_snake_case.
+FIELD_NOT_REQUIRED                 BASIC, DEFAULT           Checks that fields are not configured to be required.
+IMPORT_NO_PUBLIC                   BASIC, DEFAULT           Checks that imports are not public.
+IMPORT_NO_WEAK                     BASIC, DEFAULT           Checks that imports are not weak.
+IMPORT_USED                        BASIC, DEFAULT           Checks that imports are used.
+MESSAGE_PASCAL_CASE                BASIC, DEFAULT           Checks that messages are PascalCase.
+ONEOF_LOWER_SNAKE_CASE             BASIC, DEFAULT           Checks that oneof names are lower_snake_case.
+PACKAGE_LOWER_SNAKE_CASE           BASIC, DEFAULT           Checks that packages are lower_snake.case.
+PACKAGE_SAME_CSHARP_NAMESPACE      BASIC, DEFAULT           Checks that all files with a given package have the same value for the csharp_namespace option.
+PACKAGE_SAME_GO_PACKAGE            BASIC, DEFAULT           Checks that all files with a given package have the same value for the go_package option.
+PACKAGE_SAME_JAVA_MULTIPLE_FILES   BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_multiple_files option.
+PACKAGE_SAME_JAVA_PACKAGE          BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_package option.
+PACKAGE_SAME_PHP_NAMESPACE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the php_namespace option.
+PACKAGE_SAME_RUBY_PACKAGE          BASIC, DEFAULT           Checks that all files with a given package have the same value for the ruby_package option.
+PACKAGE_SAME_SWIFT_PREFIX          BASIC, DEFAULT           Checks that all files with a given package have the same value for the swift_prefix option.
+RPC_PASCAL_CASE                    BASIC, DEFAULT           Checks that RPCs are PascalCase.
+SERVICE_PASCAL_CASE                BASIC, DEFAULT           Checks that services are PascalCase.
+SYNTAX_SPECIFIED                   BASIC, DEFAULT           Checks that all files have a syntax specified.
+ENUM_VALUE_PREFIX                  DEFAULT                  Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
+ENUM_ZERO_VALUE_SUFFIX             DEFAULT                  Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
+FILE_LOWER_SNAKE_CASE              DEFAULT                  Checks that filenames are lower_snake_case.
+PACKAGE_VERSION_SUFFIX             DEFAULT                  Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
+PROTOVALIDATE                      DEFAULT                  Checks that protovalidate rules are valid and all CEL expressions compile.
+RPC_REQUEST_RESPONSE_UNIQUE        DEFAULT                  Checks that RPC request and response types are only used in one RPC (configurable).
+RPC_REQUEST_STANDARD_NAME          DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
+RPC_RESPONSE_STANDARD_NAME         DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
+SERVICE_SUFFIX                     DEFAULT                  Checks that services have a consistent suffix (configurable, default suffix is "Service").
+COMMENT_ENUM                       COMMENTS                 Checks that enums have non-empty comments.
+COMMENT_ENUM_VALUE                 COMMENTS                 Checks that enum values have non-empty comments.
+COMMENT_FIELD                      COMMENTS                 Checks that fields have non-empty comments.
+COMMENT_MESSAGE                    COMMENTS                 Checks that messages have non-empty comments.
+COMMENT_ONEOF                      COMMENTS                 Checks that oneof have non-empty comments.
+COMMENT_RPC                        COMMENTS                 Checks that RPCs have non-empty comments.
+COMMENT_SERVICE                    COMMENTS                 Checks that services have non-empty comments.
+RPC_NO_CLIENT_STREAMING            UNARY_RPC                Checks that RPCs are not client streaming.
+RPC_NO_SERVER_STREAMING            UNARY_RPC                Checks that RPCs are not server streaming.
+STABLE_PACKAGE_NO_IMPORT_UNSTABLE                           Checks that all files that have stable versioned packages do not import packages with unstable version packages.
 		`
 	testRunStdout(
 		t,

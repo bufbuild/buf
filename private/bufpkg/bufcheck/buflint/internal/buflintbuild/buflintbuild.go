@@ -338,6 +338,12 @@ var (
 			}), nil
 		},
 	)
+	// StablePackageNoImportUnstableRuleBuilder is a rule builder.
+	StablePackageNoImportUnstableRuleBuilder = internal.NewNopRuleBuilder(
+		"STABLE_PACKAGE_NO_IMPORT_UNSTABLE",
+		"all files that have stable versioned packages do not import packages with unstable version packages",
+		newAdapter(buflintcheck.CheckStablePackageNoImportUnstable),
+	)
 	// SyntaxSpecifiedRuleBuilder is a rule builder.
 	SyntaxSpecifiedRuleBuilder = internal.NewNopRuleBuilder(
 		"SYNTAX_SPECIFIED",

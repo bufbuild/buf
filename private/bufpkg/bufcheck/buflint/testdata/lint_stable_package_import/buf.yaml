@@ -1,0 +1,4 @@
+version: v2
+lint:
+  use:
+    - STABLE_PACKAGE_NO_IMPORT_UNSTABLE

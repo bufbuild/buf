@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "api/v1alpha/bar.proto";
+
+message Foo {
+  api.v1alpha.Bar bar = 1;
+}
