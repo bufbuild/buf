@@ -96,10 +96,8 @@ func message(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (st
 		}
 		return enums, nil, nil
 	case messageOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have message option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	case messageExtensionRangeTypeTag:
 		return extensionRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	case messageExtensionsTypeTag:
@@ -141,10 +139,8 @@ func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 	}
 	switch token {
 	case messageOneOfOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have one of option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid one of path")
 }
@@ -183,10 +179,8 @@ func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bo
 	}
 	switch token {
 	case messageExtensionRangeOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have extension range option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid extension range path")
 }

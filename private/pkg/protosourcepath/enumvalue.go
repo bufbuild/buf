@@ -67,10 +67,8 @@ func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 	}
 	switch token {
 	case enumValueOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum value option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")
 }

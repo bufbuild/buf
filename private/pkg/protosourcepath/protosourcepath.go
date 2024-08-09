@@ -134,10 +134,8 @@ func start(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 		}
 		return services, nil, nil
 	case fileOptionsTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have file options declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	case extensionsTypeTag:
 		return extensions, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
@@ -150,12 +148,11 @@ func dependencies(token int32, sourcePath protoreflect.SourcePath, i int, _ bool
 }
 
 func options(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// All option paths are considered terminal, validate the token is not for an uninterpreted
-	// option and return the whole path.
-	if token == uninterpretedOptionTypeTag {
-		return nil, nil, newInvalidSourcePathError(sourcePath, "uninterpreted option path provided")
+	// The entire path has alreaduy been returned, we just need to handle the terminal state here
+	if len(sourcePath) == i+1 {
+		return nil, nil, nil
 	}
-	return nil, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+	return options, nil, nil
 }
 
 func reservedRanges(

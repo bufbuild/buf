@@ -76,10 +76,8 @@ func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (sta
 	}
 	switch token {
 	case methodOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid method path")
 }

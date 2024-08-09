@@ -15,6 +15,7 @@
 package protosourcepath
 
 import (
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -58,10 +59,8 @@ func service(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (st
 		}
 		return methods, nil, nil
 	case serviceOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have service option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid service path")
 }

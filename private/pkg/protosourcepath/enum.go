@@ -15,6 +15,7 @@
 package protosourcepath
 
 import (
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -57,10 +58,8 @@ func enum(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state
 	case enumValuesTypeTag:
 		return enumValues, nil, nil
 	case enumOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	case enumReservedRangeTypeTag:
 		return reservedRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	case enumReservedNameTypeTag:

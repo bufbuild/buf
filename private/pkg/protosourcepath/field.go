@@ -61,7 +61,7 @@ func fields(
 		)
 	}
 	if len(sourcePath) == i+1 {
-		// This does not extend beyond the field declaration, return the assocaited paths and
+		// This does not extend beyond the field declaration, return the associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
 	}
@@ -79,10 +79,8 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 	}
 	switch token {
 	case fieldOptionTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field option declaration without option number")
-		}
-		return options, nil, nil
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	case fieldDefaultValueTypeTag:
 		return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
 	}
