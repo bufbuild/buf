@@ -7,5 +7,5 @@ import "prefix/bar/v1/bar.proto";
 
 message Foo {
   acme.date.v1.Date date = 1;
-  shared.prefix.bar.v1.Bar = 2;
+  prefix.bar.v1.Bar bar = 2;
 }
