@@ -413,6 +413,7 @@ func readBufYAMLFile(
 		moduleConfig, err := newModuleConfig(
 			"",
 			moduleFullName,
+			nil,
 			rootToExcludes,
 			lintConfig,
 			breakingConfig,
@@ -469,11 +470,34 @@ func readBufYAMLFile(
 			}
 			// Makes sure that the given path is normalized, validated, and contained within dirPath.
 			//
-			// Used on excludes, and lint and breaking change paths.
+			// Used on includes, excludes, and lint and breaking change paths.
 			//
 			// We first check that a given path is within a module before passing it to this function
 			// if the path came from defaultExternalLintConfig or defaultExternalBreakingConfig.
 			// The only root for v2 buf.yamls must be ".", so we have to make the excludes relative first.
+			relIncludes, err := normalizeAndCheckPaths(externalModule.Includes, "include")
+			if err != nil {
+				return nil, err
+			}
+			relIncludes, err = slicesext.MapError(
+				relIncludes,
+				func(path string) (string, error) {
+					if path == dirPath {
+						return "", fmt.Errorf("include path %q is equal to module directory %q", path, dirPath)
+					}
+					if !normalpath.EqualsOrContainsPath(dirPath, path, normalpath.Relative) {
+						return "", fmt.Errorf("include path %q does not reside within module directory %q", path, dirPath)
+					}
+					// TODO: do we care whether it's a file or directory?
+					if normalpath.Ext(path) == ".proto" {
+						return "", fmt.Errorf("includes can only be directories but file %s discovered", path)
+					}
+					return normalpath.Rel(dirPath, path)
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
 			relExcludes, err := slicesext.MapError(
 				externalModule.Excludes,
 				func(path string) (string, error) {
@@ -533,6 +557,7 @@ func readBufYAMLFile(
 			moduleConfig, err := newModuleConfig(
 				dirPath,
 				moduleFullName,
+				relIncludes,
 				rootToExcludes,
 				lintConfig,
 				breakingConfig,
@@ -1161,6 +1186,7 @@ type externalBufYAMLFileV2 struct {
 type externalBufYAMLFileModuleV2 struct {
 	Path     string                                 `json:"path,omitempty" yaml:"path,omitempty"`
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Includes []string                               `json:"includes,omitempty" yaml:"includes,omitempty"`
 	Excludes []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`

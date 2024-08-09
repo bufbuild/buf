@@ -549,6 +549,25 @@ func getMappedModuleBucketAndModuleTargeting(
 				),
 			)
 		}
+		if includes := moduleConfig.Includes(); len(includes) > 0 {
+			if root != "." {
+				// TODO: also add this check in bufconfig package
+				return nil, nil, syserror.Newf(`module config has includes but also a root that is not ".": %q`, root)
+			}
+			var orMatchers []storage.Matcher
+			for _, include := range includes {
+				orMatchers = append(
+					orMatchers,
+					storage.MatchPathContained(include),
+				)
+			}
+			mappers = append(
+				mappers,
+				storage.MatchOr(
+					orMatchers...,
+				),
+			)
+		}
 		rootBuckets = append(
 			rootBuckets,
 			storage.MapReadBucket(

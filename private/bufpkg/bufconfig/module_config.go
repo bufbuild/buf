@@ -36,6 +36,7 @@ func init() {
 	DefaultModuleConfigV1, err = newModuleConfig(
 		".",
 		nil,
+		nil,
 		map[string][]string{
 			".": {},
 		},
@@ -47,6 +48,7 @@ func init() {
 	}
 	DefaultModuleConfigV2, err = newModuleConfig(
 		".",
+		nil,
 		nil,
 		map[string][]string{
 			".": {},
@@ -78,6 +80,11 @@ type ModuleConfig interface {
 	//
 	// This may be nil.
 	ModuleFullName() bufmodule.ModuleFullName
+	// Includes says the module only includes these paths. The paths are relative to DirPath.
+	// An empty Includes means including everything.
+	//
+	// Not a copy, do not modify.
+	Includes() []string
 	// RootToExcludes contains a map from root to the excludes for that root.
 	//
 	// Roots are the root directories within a bucket to search for Protobuf files.
@@ -120,6 +127,7 @@ type ModuleConfig interface {
 func NewModuleConfig(
 	dirPath string,
 	moduleFullName bufmodule.ModuleFullName,
+	includes []string,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
@@ -127,6 +135,7 @@ func NewModuleConfig(
 	return newModuleConfig(
 		dirPath,
 		moduleFullName,
+		includes,
 		rootToExcludes,
 		lintConfig,
 		breakingConfig,
@@ -138,6 +147,7 @@ func NewModuleConfig(
 type moduleConfig struct {
 	dirPath        string
 	moduleFullName bufmodule.ModuleFullName
+	includes       []string
 	rootToExcludes map[string][]string
 	lintConfig     LintConfig
 	breakingConfig BreakingConfig
@@ -147,6 +157,7 @@ type moduleConfig struct {
 func newModuleConfig(
 	dirPath string,
 	moduleFullName bufmodule.ModuleFullName,
+	includes []string,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
@@ -196,6 +207,7 @@ func newModuleConfig(
 	return &moduleConfig{
 		dirPath:        dirPath,
 		moduleFullName: moduleFullName,
+		includes:       includes,
 		rootToExcludes: newRootToExcludes,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
@@ -208,6 +220,10 @@ func (m *moduleConfig) DirPath() string {
 
 func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
 	return m.moduleFullName
+}
+
+func (m *moduleConfig) Includes() []string {
+	return m.includes
 }
 
 func (m *moduleConfig) RootToExcludes() map[string][]string {

@@ -179,6 +179,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		emptyModuleConfig, err := bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			nil,
+			nil,
 			map[string][]string{
 				".": {},
 			},
@@ -271,6 +272,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			moduleConfigForRoot, err := bufconfig.NewModuleConfig(
 				moduleRootRelativeToDestination,
 				moduleFullName,
+				nil,
 				// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
 				// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
 				map[string][]string{".": moduleConfig.RootToExcludes()[root]},
@@ -306,6 +308,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		moduleConfig, err = bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			moduleConfig.ModuleFullName(),
+			nil,
 			// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
 			// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
 			moduleConfig.RootToExcludes(),
