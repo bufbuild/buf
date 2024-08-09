@@ -13,31 +13,3 @@
 // limitations under the License.
 
 package bufcheckserverhandle
-
-import (
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
-)
-
-// HandleLintServicePascalCase is a handle function.
-var HandleLintServicePascalCase = bufcheckserverutil.NewLintServiceRuleHandler(handleLintServicePascalCase)
-
-func handleLintServicePascalCase(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	request bufcheckserverutil.Request,
-	service bufprotosource.Service,
-) error {
-	name := service.Name()
-	expectedName := stringutil.ToPascalCase(name)
-	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
-			service.NameLocation(),
-			nil,
-			"Service name %q should be PascalCase, such as %q.",
-			name,
-			expectedName,
-		)
-	}
-	return nil
-}
