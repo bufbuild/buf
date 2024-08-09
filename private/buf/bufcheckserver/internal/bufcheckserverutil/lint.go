@@ -49,6 +49,70 @@ func NewLintFilesRuleHandler(
 	)
 }
 
+// NewLintPackageToFilesRuleHandler returns a new check.RuleHandler for the given function.
+//
+// The pkgFiles slice will only have files for the given package.
+// The pkgFiles slice does not include imports.
+func NewLintPackageToFilesRuleHandler(
+	f func(
+		responseWriter ResponseWriter,
+		request Request,
+		pkg string,
+		pkgFiles []bufprotosource.File,
+	) error,
+) check.RuleHandler {
+	return NewLintFilesRuleHandler(
+		func(
+			responseWriter ResponseWriter,
+			request Request,
+			files []bufprotosource.File,
+		) error {
+			pkgToFiles, err := bufprotosource.PackageToFiles(files...)
+			if err != nil {
+				return err
+			}
+			for pkg, pkgFiles := range pkgToFiles {
+				if err := f(responseWriter, request, pkg, pkgFiles); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
+// NewLintDirPathToFilesRuleHandler returns a new check.RuleHandler for the given function.
+//
+// The dirFiles slice will only have files for the given directory.
+// The dirFiles slice does not include imports.
+func NewLintDirPathToFilesRuleHandler(
+	f func(
+		responseWriter ResponseWriter,
+		request Request,
+		dirPath string,
+		dirFiles []bufprotosource.File,
+	) error,
+) check.RuleHandler {
+	return NewLintFilesRuleHandler(
+		func(
+			responseWriter ResponseWriter,
+			request Request,
+			files []bufprotosource.File,
+		) error {
+			dirPathToFiles, err := bufprotosource.DirPathToFiles(files...)
+			if err != nil {
+				return err
+			}
+			for dirPath, dirFiles := range dirPathToFiles {
+				if err := f(responseWriter, request, dirPath, dirFiles); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
 // NewLintFilesRuleHandler returns a new check.RuleHandler for the given function.
 //
 // The function will be called for each File in the request.
