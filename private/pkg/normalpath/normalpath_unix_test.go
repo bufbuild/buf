@@ -319,6 +319,23 @@ func TestEqualsOrContainsPath(t *testing.T) {
 	testEqualsOrContainsPath(t, true, "b", "b/a/c")
 }
 
+func BenchmarkEqualsOrContainsPath(b *testing.B) {
+	b.Run("Short", func(b *testing.B) {
+		var ok bool
+		for i := 0; i < b.N; i++ {
+			ok = EqualsOrContainsPath("a/b/c", "a/b/c/d", Relative)
+		}
+		assert.True(b, ok)
+	})
+	b.Run("Long", func(b *testing.B) {
+		var ok bool
+		for i := 0; i < b.N; i++ {
+			ok = EqualsOrContainsPath("a/b/c", "a/b/c/d/e/f/g/h/i/j", Relative)
+		}
+		assert.True(b, ok)
+	})
+}
+
 func testEqualsOrContainsPath(t *testing.T, expected bool, value string, path string) {
 	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Relative), fmt.Sprintf("%s %s", value, path))
 }
