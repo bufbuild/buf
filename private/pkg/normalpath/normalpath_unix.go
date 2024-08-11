@@ -53,18 +53,12 @@ func EqualsOrContainsPath(value string, path string, pathType PathType) bool {
 		pathRoot = "."
 	}
 
-	if value == pathRoot {
-		return true
-	}
-
-	// Walk up the path and compare at each directory level until there is a
-	// match or the path reaches its root (either `/` or `.`).
-	for curPath := path; curPath != pathRoot; curPath = Dir(curPath) {
-		if value == curPath {
-			return true
-		}
-	}
-	return false
+	// If the value is the root, it contains everything.
+	return value == pathRoot ||
+		// If the value is the path, it contains itself.
+		value == path ||
+		// If the value is a directory and the path is in the directory.
+		strings.HasPrefix(path, value+stringOSPathSeparator)
 }
 
 // MapHasEqualOrContainingPath returns true if the path matches any file or directory in the map.
