@@ -100,22 +100,10 @@ func MapAllEqualOrContainingPathMap(m map[string]struct{}, path string, pathType
 		return nil
 	}
 
-	pathRoot := stringOSPathSeparator
-	if pathType == Relative {
-		pathRoot = "."
-	}
-
 	n := make(map[string]struct{})
-	if _, ok := m[pathRoot]; ok {
-		// also covers if path == separator.
-		n[pathRoot] = struct{}{}
-	}
 	for potentialMatch := range m {
-		for curPath := path; curPath != pathRoot; curPath = Dir(curPath) {
-			if potentialMatch == curPath {
-				n[potentialMatch] = struct{}{}
-				break
-			}
+		if EqualsOrContainsPath(potentialMatch, path, pathType) {
+			n[potentialMatch] = struct{}{}
 		}
 	}
 	return n
