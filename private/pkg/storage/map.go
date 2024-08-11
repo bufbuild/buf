@@ -29,7 +29,7 @@ import (
 //
 // If the Mappers are empty, the original ReadBucket is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -44,7 +44,7 @@ func MapReadBucket(readBucket ReadBucket, mappers ...Mapper) ReadBucket {
 //
 // If the Mappers are empty, the original ReadBucketCloser is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -59,7 +59,7 @@ func MapReadBucketCloser(readBucketCloser ReadBucketCloser, mappers ...Mapper) R
 //
 // If the Mappers are empty, the original WriteBucket is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -76,7 +76,7 @@ func MapWriteBucket(writeBucket WriteBucket, mappers ...Mapper) WriteBucket {
 //
 // If the Mappers are empty, the original WriteBucketCloser is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -93,7 +93,7 @@ func MapWriteBucketCloser(writeBucketCloser WriteBucketCloser, mappers ...Mapper
 //
 // If the Mappers are empty, the original ReadWriteBucket is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -113,7 +113,7 @@ func MapReadWriteBucket(readWriteBucket ReadWriteBucket, mappers ...Mapper) Read
 //
 // If the Mappers are empty, the original ReadWriteBucketCloser is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -178,7 +178,7 @@ func (r *mapReadBucketCloser) Walk(ctx context.Context, prefix string, f func(Ob
 	if err != nil {
 		return err
 	}
-	fullPrefix, matches := r.mapper.MapPrefix(prefix)
+	fullPrefix, matches := r.mapper.MapPath(prefix)
 	if !matches {
 		return nil
 	}
@@ -263,7 +263,7 @@ func (w *mapWriteBucketCloser) DeleteAll(ctx context.Context, prefix string) err
 	if err != nil {
 		return err
 	}
-	fullPrefix, matches := w.mapper.MapPrefix(prefix)
+	fullPrefix, matches := w.mapper.MapPath(prefix)
 	if !matches {
 		return nil
 	}

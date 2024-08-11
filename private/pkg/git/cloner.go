@@ -240,8 +240,8 @@ func (c *cloner) CloneToBucket(
 		return err
 	}
 	var readBucket storage.ReadBucket = tmpReadWriteBucket
-	if options.Mapper != nil {
-		readBucket = storage.MapReadBucket(readBucket, options.Mapper)
+	if options.Matcher != nil {
+		readBucket = storage.FilterReadBucket(readBucket, options.Matcher)
 	}
 	_, err = storage.Copy(ctx, readBucket, writeBucket)
 	return err

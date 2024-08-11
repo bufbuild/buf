@@ -527,10 +527,12 @@ func getMappedModuleBucketAndModuleTargeting(
 	for root, excludes := range rootToExcludes {
 		// Roots only applies to .proto files.
 		mappers := []storage.Mapper{
+			storage.MapOnPrefix(root),
+		}
+		matchers := []storage.Matcher{
 			// need to do match extension here
 			// https://github.com/bufbuild/buf/issues/113
 			storage.MatchPathExt(".proto"),
-			storage.MapOnPrefix(root),
 		}
 		if len(excludes) != 0 {
 			var notOrMatchers []storage.Matcher
@@ -540,8 +542,8 @@ func getMappedModuleBucketAndModuleTargeting(
 					storage.MatchPathContained(exclude),
 				)
 			}
-			mappers = append(
-				mappers,
+			matchers = append(
+				matchers,
 				storage.MatchNot(
 					storage.MatchOr(
 						notOrMatchers...,
@@ -551,9 +553,12 @@ func getMappedModuleBucketAndModuleTargeting(
 		}
 		rootBuckets = append(
 			rootBuckets,
-			storage.MapReadBucket(
-				moduleBucket,
-				mappers...,
+			storage.FilterReadBucket(
+				storage.MapReadBucket(
+					moduleBucket,
+					mappers...,
+				),
+				matchers...,
 			),
 		)
 	}

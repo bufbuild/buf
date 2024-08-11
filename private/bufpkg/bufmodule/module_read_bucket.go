@@ -229,7 +229,7 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 //
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
 func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) storage.ReadBucket {
-	return storage.MapReadBucket(
+	return storage.FilterReadBucket(
 		bucket,
 		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
 	)
@@ -239,7 +239,7 @@ func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) sto
 //
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
 func GetLicenseStorageReadBucket(bucket storage.ReadBucket) storage.ReadBucket {
-	return storage.MapReadBucket(
+	return storage.FilterReadBucket(
 		bucket,
 		storage.MatchPathEqual(licenseFilePath),
 	)

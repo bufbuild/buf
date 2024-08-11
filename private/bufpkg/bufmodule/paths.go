@@ -90,7 +90,7 @@ func getSyncOnceValuesGetBucketWithStorageMatcherApplied(
 			if err != nil {
 				return nil, err
 			}
-			return storage.MapReadBucket(bucket, getStorageMatcher(ctx, bucket)), nil
+			return storage.FilterReadBucket(bucket, getStorageMatcher(ctx, bucket)), nil
 		},
 	)
 }

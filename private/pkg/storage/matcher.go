@@ -22,7 +22,10 @@ import (
 //
 // This will cause a Bucket to operate as if it only contains matching paths.
 type Matcher interface {
-	Mapper
+	// MatchPath returns true if the path matches.
+	//
+	// The path is expected to be normalized and validated.
+	MatchPath(string) bool
 	isMatcher()
 }
 
@@ -88,117 +91,44 @@ func MatchNot(matcher Matcher) Matcher {
 
 type pathMatcherFunc func(string) bool
 
-func (f pathMatcherFunc) MapPath(path string) (string, bool) {
-	matches := f(path)
-	return path, matches
-}
-
-func (f pathMatcherFunc) MapPrefix(prefix string) (string, bool) {
-	// always returns true, path matchers do not check prefixes
-	return prefix, true
-}
-
-func (f pathMatcherFunc) UnmapFullPath(fullPath string) (string, bool, error) {
-	matches := f(fullPath)
-	return fullPath, matches, nil
+func (f pathMatcherFunc) MatchPath(path string) bool {
+	return f(path)
 }
 
 func (pathMatcherFunc) isMatcher() {}
-func (pathMatcherFunc) isMapper()  {}
 
 type orMatcher []Matcher
 
-func (o orMatcher) MapPath(path string) (string, bool) {
+func (o orMatcher) MatchPath(path string) bool {
 	for _, matcher := range o {
-		if _, matches := matcher.MapPath(path); matches {
-			return path, true
+		if matches := matcher.MatchPath(path); matches {
+			return true
 		}
 	}
-	return "", false
-}
-
-func (o orMatcher) MapPrefix(prefix string) (string, bool) {
-	for _, matcher := range o {
-		if _, matches := matcher.MapPrefix(prefix); matches {
-			return prefix, true
-		}
-	}
-	return "", false
-}
-
-func (o orMatcher) UnmapFullPath(fullPath string) (string, bool, error) {
-	for _, matcher := range o {
-		_, matches, err := matcher.UnmapFullPath(fullPath)
-		if err != nil {
-			return "", false, err
-		}
-		if matches {
-			return fullPath, true, nil
-		}
-	}
-	return fullPath, false, nil
+	return false
 }
 
 func (orMatcher) isMatcher() {}
-func (orMatcher) isMapper()  {}
 
 type andMatcher []Matcher
 
-func (a andMatcher) MapPath(path string) (string, bool) {
+func (a andMatcher) MatchPath(path string) bool {
 	for _, matcher := range a {
-		if _, matches := matcher.MapPath(path); !matches {
-			return path, false
+		if matches := matcher.MatchPath(path); !matches {
+			return false
 		}
 	}
-	return path, true
-}
-
-func (a andMatcher) MapPrefix(prefix string) (string, bool) {
-	for _, matcher := range a {
-		if _, matches := matcher.MapPrefix(prefix); !matches {
-			return prefix, false
-		}
-	}
-	return prefix, true
-}
-
-func (a andMatcher) UnmapFullPath(fullPath string) (string, bool, error) {
-	for _, matcher := range a {
-		_, matches, err := matcher.UnmapFullPath(fullPath)
-		if err != nil {
-			return "", false, err
-		}
-		if !matches {
-			return fullPath, false, nil
-		}
-	}
-	return fullPath, true, nil
+	return true
 }
 
 func (andMatcher) isMatcher() {}
-func (andMatcher) isMapper()  {}
 
 type notMatcher struct {
 	delegate Matcher
 }
 
-func (n notMatcher) MapPath(path string) (string, bool) {
-	_, matches := n.delegate.MapPath(path)
-	return path, !matches
-}
-
-func (n notMatcher) MapPrefix(prefix string) (string, bool) {
-	_, matches := n.delegate.MapPath(prefix)
-	return prefix, !matches
-}
-
-func (n notMatcher) UnmapFullPath(fullPath string) (string, bool, error) {
-	_, matches, err := n.delegate.UnmapFullPath(fullPath)
-	if err != nil {
-		return "", false, err
-	}
-	return fullPath, !matches, nil
+func (n notMatcher) MatchPath(path string) bool {
+	return !n.delegate.MatchPath(path)
 }
 
 func (notMatcher) isMatcher() {}
-func (notMatcher) isMapper()  {}
