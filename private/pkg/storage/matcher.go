@@ -85,9 +85,6 @@ func MatchNot(matcher Matcher) Matcher {
 
 // We limit or/and/not to Matchers as composite logic must assume
 // the input path is not modified, so that we can always return it
-//
-// We might want to just remove Matcher implementing Mapper for simplification,
-// and just have a Matches function, then handle chaining them separately.
 
 type pathMatcherFunc func(string) bool
 
