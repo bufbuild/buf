@@ -231,17 +231,17 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
 func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) (storage.ReadBucket, error) {
 	// Store the documentation file in a new memory bucket for performance reasons.
-	path := getDocFilePathForStorageReadBucket(ctx, bucket)
-	if path == "" {
+	docFilePath := getDocFilePathForStorageReadBucket(ctx, bucket)
+	if docFilePath == "" {
 		return storage.MultiReadBucket(), nil // nop bucket
 	}
-	content, err := storage.ReadPath(ctx, bucket, path)
+	content, err := storage.ReadPath(ctx, bucket, docFilePath)
 	if err != nil {
 		return nil, err
 	}
 	return storagemem.NewReadBucket(
 		map[string][]byte{
-			path: content,
+			docFilePath: content,
 		},
 	)
 }
