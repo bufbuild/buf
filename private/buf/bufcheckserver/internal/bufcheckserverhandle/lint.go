@@ -21,7 +21,132 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
+
+var (
+	// HandleLintCommentEnum is a handle function.
+	HandleLintCommentEnum = bufcheckserverutil.NewLintEnumRuleHandler(handleLintCommentEnum)
+	// HandleLintCommentEnumValue is a handle function.
+	HandleLintCommentEnumValue = bufcheckserverutil.NewLintEnumValueRuleHandler(handleLintCommentEnumValue)
+	// HandleLintCommentField is a handle function.
+	HandleLintCommentField = bufcheckserverutil.NewLintFieldRuleHandler(handleLintCommentField)
+	// HandleLintCommentMessage is a handle function.
+	HandleLintCommentMessage = bufcheckserverutil.NewLintMessageRuleHandler(handleLintCommentMessage)
+	// HandleLintCommentOneof is a handle function.
+	HandleLintCommentOneof = bufcheckserverutil.NewLintOneofRuleHandler(handleLintCommentOneof)
+	// HandleLintCommentService is a handle function.
+	HandleLintCommentService = bufcheckserverutil.NewLintServiceRuleHandler(handleLintCommentService)
+	// HandleLintCommentRPC is a handle function.
+	HandleLintCommentRPC = bufcheckserverutil.NewLintMethodRuleHandler(handleLintCommentRPC)
+)
+
+func handleLintCommentEnum(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.Enum,
+) error {
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "Enum")
+}
+
+func handleLintCommentEnumValue(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.EnumValue,
+) error {
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "Enum value")
+}
+
+func handleLintCommentField(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.Field,
+) error {
+	if value.ParentMessage() != nil && value.ParentMessage().IsMapEntry() {
+		// Don't handle synthetic fields for map entries. They have no comments.
+		return nil
+	}
+	if value.Type() == descriptorpb.FieldDescriptorProto_TYPE_GROUP {
+		// Group fields also have no comments: comments in source get
+		// attributed to the nested message, not the field.
+		return nil
+	}
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "Field")
+}
+
+func handleLintCommentMessage(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.Message,
+) error {
+	if value.IsMapEntry() {
+		// Don't handle synthetic map entries. They have no comments.
+		return nil
+	}
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "Message")
+}
+
+func handleLintCommentOneof(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.Oneof,
+) error {
+	oneofDescriptor, err := value.AsDescriptor()
+	if err == nil && oneofDescriptor.IsSynthetic() {
+		// Don't handle synthetic oneofs (for proto3-optional fields). They have no comments.
+		return nil
+	}
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "Oneof")
+}
+
+func handleLintCommentRPC(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.Method,
+) error {
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "RPC")
+}
+
+func handleLintCommentService(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	value bufprotosource.Service,
+) error {
+	return handleLintCommentNamedDescriptor(responseWriter, request, value, "Service")
+}
+
+func handleLintCommentNamedDescriptor(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	namedDescriptor bufprotosource.NamedDescriptor,
+	typeName string,
+) error {
+	location := namedDescriptor.Location()
+	if location == nil {
+		// this will magically skip map entry fields as well as a side-effect, although originally unintended
+		return nil
+	}
+	// Note that this does result in us parsing the comment excludes on every call to the rule.
+	// This is theoretically inefficient, but shouldn't have any real world impact. The alternative
+	// is doing a custom parse of all the options we expect within bufcheckserveropt, and attaching
+	// this result to the bufcheckserverutil.Request, which gets us even further from the bufplugin-go
+	// SDK. We want to do what is native as much as possible. If this is a real performance problem,
+	// we can update in the future.
+	commentExcludes, err := bufcheckserveropt.GetCommentExcludes(request.Options())
+	if err != nil {
+		return err
+	}
+	if !validLeadingComment(commentExcludes, location.LeadingComments()) {
+		responseWriter.AddProtosourceAnnotation(
+			location,
+			nil,
+			"%s %q should have a non-empty comment for documentation.",
+			typeName,
+			namedDescriptor.Name(),
+		)
+	}
+	return nil
+}
 
 // HandleLintServicePascalCase is a handle function.
 var HandleLintServicePascalCase = bufcheckserverutil.NewLintServiceRuleHandler(handleLintServicePascalCase)
@@ -65,4 +190,20 @@ func handleLintServiceSuffix(
 		)
 	}
 	return nil
+}
+
+// UTILS
+
+// validLeadingComment returns true if comment has at least one line that isn't empty
+// and doesn't start with one of the comment excludes.
+func validLeadingComment(commentExcludes []string, comment string) bool {
+	for _, line := range strings.Split(comment, "\n") {
+		line = strings.TrimSpace(line)
+		for _, commentExclude := range commentExcludes {
+			if line != "" && !strings.HasPrefix(line, commentExclude) {
+				return true
+			}
+		}
+	}
+	return false
 }
