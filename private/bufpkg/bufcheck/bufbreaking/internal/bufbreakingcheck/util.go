@@ -302,24 +302,6 @@ func newFieldPairCheckFunc(
 	)
 }
 
-func newFieldDescriptorPairCheckFunc(
-	f func(addFunc, *corpus, bufprotosource.Field, protoreflect.FieldDescriptor, bufprotosource.Field, protoreflect.FieldDescriptor) error,
-) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return newFieldPairCheckFunc(
-		func(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-			previousDescriptor, err := previousField.AsDescriptor()
-			if err != nil {
-				return err
-			}
-			descriptor, err := field.AsDescriptor()
-			if err != nil {
-				return err
-			}
-			return f(add, corpus, previousField, previousDescriptor, field, descriptor)
-		},
-	)
-}
-
 func newServicePairCheckFunc(
 	f func(addFunc, *corpus, bufprotosource.Service, bufprotosource.Service) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
