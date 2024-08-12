@@ -13,3 +13,53 @@
 // limitations under the License.
 
 package bufcheckserverhandle
+
+import (
+	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+)
+
+// HandleBreakingEnumSameType is a check function.
+var HandleBreakingEnumSameType = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumSameType)
+
+func handleBreakingEnumSameType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if previousDescriptor.IsClosed() != descriptor.IsClosed() {
+		previousState, currentState := "closed", "open"
+		if descriptor.IsClosed() {
+			previousState, currentState = currentState, previousState
+		}
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(enum.Features().EnumTypeLocation(), enum.Location()),
+			withBackupLocation(previousEnum.Features().EnumTypeLocation(), previousEnum.Location()),
+			`Enum %q changed from %s to %s.`,
+			enum.Name(),
+			previousState,
+			currentState,
+		)
+	}
+	return nil
+}
+
+// UTILS
+
+func withBackupLocation(locs ...bufprotosource.Location) bufprotosource.Location {
+	for _, loc := range locs {
+		if loc != nil {
+			return loc
+		}
+	}
+	return nil
+}

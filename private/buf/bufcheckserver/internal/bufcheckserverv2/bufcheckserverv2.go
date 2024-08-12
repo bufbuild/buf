@@ -24,6 +24,7 @@ var (
 	// Spec is the v2 check.Spec.
 	Spec = &check.Spec{
 		Rules: []*check.RuleSpec{
+			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build([]string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build([]string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build([]string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentFieldRuleSpecBuilder.Build([]string{"COMMENTS"}),

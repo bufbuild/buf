@@ -21,6 +21,13 @@ import (
 )
 
 var (
+	// BreakingEnumSameTypeRuleSpecBuilder is a rule builder.
+	BreakingEnumSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_SAME_TYPE",
+		Purpose: "Checks that enums have the same type (open vs closed)",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumSameType,
+	}
 	// LintCommentEnumRuleSpecBuilder is a rule builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "COMMENT_ENUM",
