@@ -14,6 +14,8 @@
 
 package bufprotosource
 
+import "google.golang.org/protobuf/reflect/protoreflect"
+
 type mergeCommentLocation struct {
 	base            Location
 	delegate        Location
@@ -26,6 +28,10 @@ func newMergeCommentLocation(base Location, delegate Location) *mergeCommentLoca
 		delegate:        delegate,
 		baseHasComments: base.LeadingComments() != "" || base.TrailingComments() != "" || len(base.LeadingDetachedComments()) > 0,
 	}
+}
+
+func (l *mergeCommentLocation) FilePath() string {
+	return l.base.FilePath()
 }
 
 func (l *mergeCommentLocation) StartLine() int {
@@ -63,4 +69,8 @@ func (l *mergeCommentLocation) LeadingDetachedComments() []string {
 		return l.base.LeadingDetachedComments()
 	}
 	return l.delegate.LeadingDetachedComments()
+}
+
+func (l *mergeCommentLocation) SourcePath() protoreflect.SourcePath {
+	return l.base.SourcePath()
 }
