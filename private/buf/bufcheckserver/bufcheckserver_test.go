@@ -22,6 +22,12 @@ import (
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 )
 
+// *** DO NOT ADD MORE TESTS ***
+//
+// We're going to rely on the existing integration tests bufbreaking_test.go and
+// buflint_test.go, and adapt everything to those tests, once we complete the client-side
+// work. This test was just to make sure everything was working end-to-end.
+
 func TestServicePascalCase(t *testing.T) {
 	t.Parallel()
 
