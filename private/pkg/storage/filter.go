@@ -88,16 +88,22 @@ func (r *filterReadBucketCloser) Walk(ctx context.Context, prefix string, f func
 	if err != nil {
 		return err
 	}
-	return r.delegate.Walk(
-		ctx,
-		prefix,
-		func(objectInfo ObjectInfo) error {
-			if !r.matcher.MatchPath(objectInfo.Path()) {
-				return nil
-			}
-			return f(objectInfo)
-		},
-	)
+	prefixRoots := r.matcher.MatchPrefix(prefix)
+	for _, prefixRoot := range prefixRoots {
+		if err := r.delegate.Walk(
+			ctx,
+			prefixRoot,
+			func(objectInfo ObjectInfo) error {
+				if !r.matcher.MatchPath(objectInfo.Path()) {
+					return nil
+				}
+				return f(objectInfo)
+			},
+		); err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 func (r *filterReadBucketCloser) Close() error {
