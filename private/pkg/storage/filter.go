@@ -36,7 +36,7 @@ func FilterReadBucket(readBucket ReadBucket, matchers ...Matcher) ReadBucket {
 //
 // If the Matchers are empty, the original ReadBucketCloser is returned.
 // If there is more than one Matcher, the Matchers are anded together.
-func FilterReadBucketCloser(readBucketCloser ReadBucketCloser, matchers ...Matcher) ReadBucket {
+func FilterReadBucketCloser(readBucketCloser ReadBucketCloser, matchers ...Matcher) ReadBucketCloser {
 	if len(matchers) == 0 {
 		return readBucketCloser
 	}
