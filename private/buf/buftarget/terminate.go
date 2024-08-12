@@ -89,6 +89,9 @@ func terminateAtControllingWorkspace(
 			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relDirPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
+			if normalpath.EqualsOrContainsPath(relDirPath, moduleConfig.DirPath(), normalpath.Relative) {
+				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
+			}
 		}
 	}
 	if bufWorkYAMLExists {

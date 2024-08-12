@@ -1,0 +1,7 @@
+package bar;
+
+import "foo.proto";
+
+message Bar {
+  optional foo.Foo foo = 1;
+}

@@ -24,8 +24,15 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
@@ -1427,6 +1434,58 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 	)
 }
 
+func TestWorkspaceWithTargettingModuleCommonParentDir(t *testing.T) {
+	workspaceDir := filepath.Join("testdata", "workspace", "success", "shared_parent_dir")
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo.proto":        {},
+			"bar.proto":        {},
+			"baz.proto":        {},
+			"imported.proto":   {},
+			"standalone.proto": {},
+		},
+		workspaceDir,
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"imported.proto":   {},
+			"standalone.proto": {},
+		},
+		filepath.Join(workspaceDir, "standalone"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo.proto":      {},
+			"bar.proto":      {},
+			"baz.proto":      {},
+			"imported.proto": {isImport: true},
+		},
+		filepath.Join(workspaceDir, "parent"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo.proto":      {isImport: true},
+			"bar.proto":      {},
+			"baz.proto":      {},
+			"imported.proto": {isImport: true},
+		},
+		filepath.Join(workspaceDir, "parent/nextlayer"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo.proto":      {isImport: true},
+			"bar.proto":      {},
+			"imported.proto": {isImport: true},
+		},
+		filepath.Join(workspaceDir, "parent/nextlayer/bar"),
+	)
+}
+
 func createZipFromDir(t *testing.T, rootPath string, archiveName string) string {
 	zipDir := filepath.Join(t.TempDir(), rootPath)
 	require.NoError(t, os.MkdirAll(zipDir, 0755))
@@ -1465,4 +1524,42 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 	_, err = zipCloser.Write(buffer.Bytes())
 	require.NoError(t, err)
 	return zipDir
+}
+
+type expectedFileInfo struct {
+	isImport bool
+}
+
+func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string]expectedFileInfo, buildArgs ...string) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		0,
+		internaltesting.NewEnvFunc(t),
+		nil,
+		stdout,
+		stderr,
+		append(
+			[]string{
+				"build",
+				"-o=-#format=binpb",
+			},
+			buildArgs...,
+		)...,
+	)
+	outputImage := &imagev1.Image{}
+	require.NoError(t, proto.Unmarshal(stdout.Bytes(), outputImage))
+
+	filesToCheck := slicesext.ToStructMap(slicesext.MapKeysToSlice(expectedFilePathToInfo))
+
+	for _, imageFile := range outputImage.File {
+		filePath := imageFile.GetName()
+		expectedFileInfo, ok := expectedFilePathToInfo[filePath]
+		require.Truef(t, ok, "unexpected file in the image built: %s", filePath)
+		require.Equal(t, expectedFileInfo.isImport, imageFile.BufExtension.GetIsImport())
+		delete(filesToCheck, filePath)
+	}
+	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
 }
