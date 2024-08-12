@@ -24,6 +24,13 @@ var (
 	// Spec is the v2 check.Spec.
 	Spec = &check.Spec{
 		Rules: []*check.RuleSpec{
+			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintCommentFieldRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintCommentMessageRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintCommentOneofRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintCommentRPCRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintCommentServiceRuleSpecBuilder.Build([]string{"COMMENTS"}),
 			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
 			bufcheckserverbuild.LintServiceSuffixRuleSpecBuilder.Build([]string{"DEFAULT"}),
 		},

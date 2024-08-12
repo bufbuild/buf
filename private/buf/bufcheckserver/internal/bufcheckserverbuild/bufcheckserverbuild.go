@@ -21,10 +21,59 @@ import (
 )
 
 var (
+	// LintCommentEnumRuleSpecBuilder is a rule builder.
+	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_ENUM",
+		Purpose: "Checks that enums have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentEnum,
+	}
+	// LintCommentEnumValueRuleSpecBuilder is a rule builder.
+	LintCommentEnumValueRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_ENUM_VALUE",
+		Purpose: "Checks that enum values have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentEnumValue,
+	}
+	// LintCommentFieldRuleSpecBuilder is a rule builder.
+	LintCommentFieldRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_FIELD",
+		Purpose: "Checks that fields have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentField,
+	}
+	// LintCommentMessageRuleSpecBuilder is a rule builder.
+	LintCommentMessageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_MESSAGE",
+		Purpose: "Checks that messages have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentMessage,
+	}
+	// LintCommentOneofRuleSpecBuilder is a rule builder.
+	LintCommentOneofRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_ONEOF",
+		Purpose: "Checks that oneofs have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentOneof,
+	}
+	// LintCommentRPCRuleSpecBuilder is a rule builder.
+	LintCommentRPCRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_RPC",
+		Purpose: "Checks that RPCs have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentRPC,
+	}
+	// LintCommentServiceRuleSpecBuilder is a rule builder.
+	LintCommentServiceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "COMMENT_SERVICE",
+		Purpose: "Checks that services have non-empty comments.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintCommentService,
+	}
 	// LintServicePascalCaseRuleSpecBuilder is a rule builder.
 	LintServicePascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "SERVICE_PASCAL_CASE",
-		Purpose: "Checks that services are PascalCase",
+		Purpose: "Checks that services are PascalCase.",
 		Type:    check.RuleTypeLint,
 		Handler: bufcheckserverhandle.HandleLintServicePascalCase,
 	}
