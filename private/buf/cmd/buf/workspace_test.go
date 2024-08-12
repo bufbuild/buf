@@ -24,8 +24,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
@@ -36,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestWorkspaceDir(t *testing.T) {
