@@ -52,14 +52,3 @@ func handleBreakingEnumSameType(
 	}
 	return nil
 }
-
-// UTILS
-
-func withBackupLocation(locs ...bufprotosource.Location) bufprotosource.Location {
-	for _, loc := range locs {
-		if loc != nil {
-			return loc
-		}
-	}
-	return nil
-}
