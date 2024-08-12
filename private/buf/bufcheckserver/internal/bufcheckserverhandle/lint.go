@@ -15,11 +15,13 @@
 package bufcheckserverhandle
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserveropt"
 	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -144,6 +146,46 @@ func handleLintCommentNamedDescriptor(
 			typeName,
 			namedDescriptor.Name(),
 		)
+	}
+	return nil
+}
+
+// HandleLintDirectorySamePackage is a handle function.
+var HandleLintDirectorySamePackage = bufcheckserverutil.NewLintDirPathToFilesRuleHandler(handleLintDirectorySamePackage)
+
+func handleLintDirectorySamePackage(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	_ bufcheckserverutil.Request,
+	dirPath string,
+	dirFiles []bufprotosource.File,
+) error {
+	pkgMap := make(map[string]struct{})
+	for _, file := range dirFiles {
+		// works for no package set as this will result in "" which is a valid map key
+		pkgMap[file.Package()] = struct{}{}
+	}
+	if len(pkgMap) > 1 {
+		var messagePrefix string
+		if _, ok := pkgMap[""]; ok {
+			delete(pkgMap, "")
+			if len(pkgMap) > 1 {
+				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+			} else {
+				// Join works with only one element as well by adding no comma
+				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+			}
+		} else {
+			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+		}
+		for _, file := range dirFiles {
+			responseWriter.AddProtosourceAnnotation(
+				file.PackageLocation(),
+				nil,
+				"%s detected within directory %q.",
+				messagePrefix,
+				dirPath,
+			)
+		}
 	}
 	return nil
 }

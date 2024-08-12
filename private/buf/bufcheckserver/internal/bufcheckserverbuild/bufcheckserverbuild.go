@@ -77,6 +77,13 @@ var (
 		Type:    check.RuleTypeLint,
 		Handler: bufcheckserverhandle.HandleLintCommentService,
 	}
+	// LintDirectorySamePackageRuleSpecBuilder is a rule builder.
+	LintDirectorySamePackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "DIRECTORY_SAME_PACKAGE",
+		Purpose: "Checks that all files in a given directory are in the same package.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintDirectorySamePackage,
+	}
 	// LintServicePascalCaseRuleSpecBuilder is a rule builder.
 	LintServicePascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "SERVICE_PASCAL_CASE",
