@@ -135,12 +135,13 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
+		// TODO(emcfarlane): validate this change.
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			"",
-			filepath.FromSlash(`Failure: testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			"", //filepath.FromSlash(`Failure: testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -150,8 +151,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
 			"",
-			filepath.FromSlash(`Failure: testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -382,12 +383,13 @@ func TestWorkspaceDetached(t *testing.T) {
 		// we'd consider this a bug: you specified the proto directory, and no controlling workspace
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
+		// TODO(emcfarlane): validate this change.
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
 			``,
-			filepath.FromSlash(`Failure: testdata/workspace/success/`+dirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),
 		)

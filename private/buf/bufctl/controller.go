@@ -1029,14 +1029,7 @@ func (c *controller) buildTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		module := moduleSet.GetModuleForOpaqueID(opaqueID)
-		if module == nil {
-			return nil, syserror.Newf("new ModuleSet from WithTargetOpaqueIDs did not have opaqueID %q", opaqueID)
-		}
-		moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
-		if err != nil {
-			return nil, err
-		}
+		moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 		targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 		if err != nil {
 			return nil, err
