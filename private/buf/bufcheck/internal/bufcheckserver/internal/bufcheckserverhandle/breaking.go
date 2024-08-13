@@ -19,9 +19,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
-var HandleBreakingEnumNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleCheckEnumNoDelete)
+var HandleBreakingEnumNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingEnumNoDelete)
 
-func handleCheckEnumNoDelete(
+func handleBreakingEnumNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
 	previousFile bufprotosource.File,
@@ -49,6 +49,43 @@ func handleCheckEnumNoDelete(
 				location,
 				previousLocation,
 				`Previously present enum %q was deleted from file.`,
+				previousNestedName,
+			)
+		}
+	}
+	return nil
+}
+
+var HandleBreakingExtensionNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingExtensionNoDelete)
+
+func handleBreakingExtensionNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	previousNestedNameToExtension, err := bufprotosource.NestedNameToExtension(previousFile)
+	if err != nil {
+		return err
+	}
+	nestedNameToExtension, err := bufprotosource.NestedNameToExtension(file)
+	if err != nil {
+		return err
+	}
+	for previousNestedName := range previousNestedNameToExtension {
+		if _, ok := nestedNameToExtension[previousNestedName]; !ok {
+			location, previousLocation, err := getLocationAndPreviousLocationForDeletedElement(
+				file,
+				previousFile,
+				previousNestedName,
+			)
+			if err != nil {
+				return err
+			}
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				previousLocation,
+				`Previously present extension %q was deleted from file.`,
 				previousNestedName,
 			)
 		}

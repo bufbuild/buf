@@ -28,6 +28,12 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumNoDelete,
 	}
+	BreakingExtensionNoDelete = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "EXTENSION_NO_DELETE",
+		Purpose: "Checks extensions are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingExtensionNoDelete,
+	}
 	BreakingEnumSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_SAME_TYPE",
 		Purpose: "Checks that enums have the same type (open vs closed).",

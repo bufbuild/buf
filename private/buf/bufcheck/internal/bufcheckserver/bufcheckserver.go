@@ -62,7 +62,8 @@ var (
 	// V2Spec is the v2 check.Spec.
 	V2Spec = &check.Spec{
 		Rules: []*check.RuleSpec{
-			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build(false, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingEnumNoDelete.Build([]string{"FILE"}),
+			bufcheckserverbuild.BreakingExtensionNoDelete.Build([]string{"FILE"}),
 			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build([]string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
