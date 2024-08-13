@@ -40,13 +40,18 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileNoDelete,
 	}
+	BreakingMessageNoDelete = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_NO_DELETE",
+		Purpose: "Checks messages are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingMessageNoDelete,
+	}
 	BreakingEnumSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_SAME_TYPE",
 		Purpose: "Checks that enums have the same type (open vs closed).",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumSameType,
 	}
-
 	// LintCommentEnumRuleSpecBuilder is a rule builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "COMMENT_ENUM",

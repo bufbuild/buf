@@ -128,6 +128,43 @@ func handleBreakingFileNoDelete(
 	return nil
 }
 
+var HandleBreakingMessageNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingMessageNoDelete)
+
+func handleBreakingMessageNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	previousNestedNameToMessage, err := bufprotosource.NestedNameToMessage(previousFile)
+	if err != nil {
+		return err
+	}
+	nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
+	if err != nil {
+		return err
+	}
+	for previousNestedName := range previousNestedNameToMessage {
+		if _, ok := nestedNameToMessage[previousNestedName]; !ok {
+			location, previousLocation, err := getLocationAndPreviousLocationForDeletedElement(
+				file,
+				previousFile,
+				previousNestedName,
+			)
+			if err != nil {
+				return err
+			}
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				previousLocation,
+				`Previously present message %q was deleted from file.`,
+				previousNestedName,
+			)
+		}
+	}
+	return nil
+}
+
 // HandleBreakingEnumSameType is a check function.
 var HandleBreakingEnumSameType = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumSameType)
 
