@@ -135,7 +135,6 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
-		// TODO(emcfarlane): validate this change.
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
@@ -383,7 +382,6 @@ func TestWorkspaceDetached(t *testing.T) {
 		// we'd consider this a bug: you specified the proto directory, and no controlling workspace
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
-		// TODO(emcfarlane): validate this change.
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,

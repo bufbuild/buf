@@ -290,15 +290,16 @@ func TestFail7(t *testing.T) {
 		"--input-config",
 		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
-	// TODO(emcfarlane): validate this change.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-	testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		// This is new behavior we introduced. When setting a config override, we no longer do
 		// a search for the controlling workspace. See bufctl/option.go for additional details.
+		// Only the paths specified in the command are considered.
+		// This avoids build failures from other proto files under testdata.
 		"",
 		"lint",
 		"--path",
@@ -316,7 +317,7 @@ func TestFail7(t *testing.T) {
 		// as if the buf.yaml at testdata/fail/buf.yaml mattered in some way. In fact, it doesn't -
 		// you've said that you have overridden it entirely.
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory ".".
-	testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
