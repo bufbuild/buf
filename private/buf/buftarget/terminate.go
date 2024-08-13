@@ -100,7 +100,7 @@ func terminateAtControllingWorkspace(
 			//   we still consider prefix to be the workspace that controls the input. It is then up
 			//   to the caller to decide what to do with this information. For example, the caller could
 			//   say this is equivalent to input being prefix/foo with --path=prefix/foo/suffix specified,
-			//   or it could say this is invalid, or the caller is not be concerned either way.
+			//   or it could say this is invalid, or the caller is not be concerned with validity.
 			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relDirPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
