@@ -77,7 +77,7 @@ func terminateAtControllingWorkspace(
 		// This isn't actually the external directory path, but we do the best we can here for now.
 		return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", prefix)
 	}
-	relDirPath, err := normalpath.Rel(prefix, originalInputPath)
+	relInputPath, err := normalpath.Rel(prefix, originalInputPath)
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +101,14 @@ func terminateAtControllingWorkspace(
 			//   to the caller to decide what to do with this information. For example, the caller could
 			//   say this is equivalent to input being prefix/foo with --path=prefix/foo/suffix specified,
 			//   or it could say this is invalid, or the caller is not be concerned with validity.
-			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relDirPath, normalpath.Relative) {
+			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relInputPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
 			// Only in v2: if the input is not any of the module paths but contains a module path,
 			// e.g. prefix/dir, we also consider prefix to be the controlling workspace, because in v2
 			// an input is allowed to be a subset of a workspace's modules. In this example, input prefix/dir
 			// is two modules, one at prefix/dir/bar and the other at prefix/dir/baz.
-			if normalpath.EqualsOrContainsPath(relDirPath, moduleConfig.DirPath(), normalpath.Relative) {
+			if normalpath.EqualsOrContainsPath(relInputPath, moduleConfig.DirPath(), normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
 		}
@@ -120,7 +120,7 @@ func terminateAtControllingWorkspace(
 			return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
 		}
 		for _, dirPath := range bufWorkYAMLFile.DirPaths() {
-			if normalpath.EqualsOrContainsPath(dirPath, relDirPath, normalpath.Relative) {
+			if normalpath.EqualsOrContainsPath(dirPath, relInputPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
 			}
 		}
