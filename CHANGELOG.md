@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix incorrect builds for directory input when it is a subdirectory in a v2 workspace and contains
+  module directories without being a module directory itself.
 
 ## [v1.36.0] - 2024-08-06
 
