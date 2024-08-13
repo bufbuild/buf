@@ -33,8 +33,8 @@ type TerminateFunc func(
 	originalInputPath string,
 ) (ControllingWorkspace, error)
 
-// TerminateAtControllingWorkspace implements a TerminateFunc and returns controlling workspace
-// if one is found at the given prefix.
+// TerminateAtControllingWorkspace implements a TerminateFunc and returns the workspace controlling
+// the input, if one is found at the given prefix.
 func TerminateAtControllingWorkspace(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -82,13 +82,32 @@ func terminateAtControllingWorkspace(
 		return nil, err
 	}
 	if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+		// If the input directory has a buf.yaml v2, then it is the controlling workspace for itself.
 		if prefix == originalInputPath {
 			return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 		}
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+			// For a prefix/buf.yaml with:
+			//  version: v2
+			//  modules:
+			//    - path: foo
+			//    - path: dir/bar
+			//    - path: dir/baz
+			//  ...
+			// - If the input is a module path (exactly one of prefix/foo, prefix/dir/bar or prefix/dir/baz),
+			//   then the input is a module controlled by the workspace at prefix.
+			// - If the input is inside one of the module DirPaths (e.g. prefix/foo/suffix or prefix/dir/bar/suffix)
+			//   we still consider prefix to be the workspace that controls the input. It is then up
+			//   to the caller to decide what to do with this information. For example, the caller could
+			//   say this is equivalent to input being prefix/foo with --path=prefix/foo/suffix specified,
+			//   or it could say this is invalid, or the caller is not be concerned either way.
 			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relDirPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
+			// Only in v2: if the input is not any of the module paths but contains a module path,
+			// e.g. prefix/dir, we also consider prefix to be the controlling workspace, because in v2
+			// an input is allowed to be a subset of a workspace's modules. In this example, input prefix/dir
+			// is two modules, one at prefix/dir/bar and the other at prefix/dir/baz.
 			if normalpath.EqualsOrContainsPath(relDirPath, moduleConfig.DirPath(), normalpath.Relative) {
 				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 			}
