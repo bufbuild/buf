@@ -298,8 +298,10 @@ func TestFail7(t *testing.T) {
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		// This is new behavior we introduced. When setting a config override, we no longer do
 		// a search for the controlling workspace. See bufctl/option.go for additional details.
-		// Only the paths specified in the command are considered.
-		// This avoids build failures from other proto files under testdata.
+		// Only the paths specified by "--path" in the command are considered. This avoids build
+		// failures from other proto files under testdata. Command "build" succeed with the path
+		// restriction and so should "lint". The error message should only be about the lint
+		// issues in the specified file.
 		"",
 		"lint",
 		"--path",
