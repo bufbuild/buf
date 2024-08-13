@@ -332,16 +332,22 @@ func isDeletedFieldAllowedWithRules(previousField bufprotosource.Field, message 
 }
 
 // CheckFieldSameCardinality is a check function.
-var CheckFieldSameCardinality = newFieldDescriptorPairCheckFunc(checkFieldSameCardinality)
+var CheckFieldSameCardinality = newFieldPairCheckFunc(checkFieldSameCardinality)
 
 func checkFieldSameCardinality(
 	add addFunc,
 	_ *corpus,
-	_ bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
+	previousField bufprotosource.Field,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
 		// Map entries are generated so nothing to do here. They
 		// usually would be safe to check anyway, but it's possible
@@ -366,16 +372,22 @@ func checkFieldSameCardinality(
 }
 
 // CheckFieldSameCppStringType is a check function.
-var CheckFieldSameCppStringType = newFieldDescriptorPairCheckFunc(checkFieldSameCppStringType)
+var CheckFieldSameCppStringType = newFieldPairCheckFunc(checkFieldSameCppStringType)
 
 func checkFieldSameCppStringType(
 	add addFunc,
 	corpus *corpus,
 	previousField bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
 		// Map entries, even with string or bytes keys or values,
 		// don't allow configuring the string type.
@@ -422,16 +434,22 @@ func checkFieldSameCppStringType(
 }
 
 // CheckFieldSameJavaUTF8Validation is a check function.
-var CheckFieldSameJavaUTF8Validation = newFieldDescriptorPairCheckFunc(checkFieldSameJavaUTF8Validation)
+var CheckFieldSameJavaUTF8Validation = newFieldPairCheckFunc(checkFieldSameJavaUTF8Validation)
 
 func checkFieldSameJavaUTF8Validation(
 	add addFunc,
 	corpus *corpus,
 	previousField bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
 		// this check only applies to string fields
 		return nil
@@ -459,16 +477,22 @@ func checkFieldSameJavaUTF8Validation(
 }
 
 // CheckFieldSameDefault is a check function.
-var CheckFieldSameDefault = newFieldDescriptorPairCheckFunc(checkFieldSameDefault)
+var CheckFieldSameDefault = newFieldPairCheckFunc(checkFieldSameDefault)
 
 func checkFieldSameDefault(
 	add addFunc,
 	corpus *corpus,
 	previousField bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if !canHaveDefault(previousDescriptor) || !canHaveDefault(descriptor) {
 		return nil
 	}
@@ -610,16 +634,22 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosour
 }
 
 // CheckFieldSameType is a check function.
-var CheckFieldSameType = newFieldDescriptorPairCheckFunc(checkFieldSameType)
+var CheckFieldSameType = newFieldPairCheckFunc(checkFieldSameType)
 
 func checkFieldSameType(
 	add addFunc,
 	_ *corpus,
 	previousField bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	// We use descriptor.Kind(), instead of field.Type(), because it also includes
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
@@ -641,16 +671,22 @@ func checkFieldSameType(
 }
 
 // CheckFieldSameUTF8Validation is a check function.
-var CheckFieldSameUTF8Validation = newFieldDescriptorPairCheckFunc(checkFieldSameUTF8Validation)
+var CheckFieldSameUTF8Validation = newFieldPairCheckFunc(checkFieldSameUTF8Validation)
 
 func checkFieldSameUTF8Validation(
 	add addFunc,
 	_ *corpus,
-	_ bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
+	previousField bufprotosource.Field,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
 		return nil
 	}
@@ -683,16 +719,22 @@ func checkFieldSameUTF8Validation(
 }
 
 // CheckFieldWireCompatibleCardinality is a check function.
-var CheckFieldWireCompatibleCardinality = newFieldDescriptorPairCheckFunc(checkFieldWireCompatibleCardinality)
+var CheckFieldWireCompatibleCardinality = newFieldPairCheckFunc(checkFieldWireCompatibleCardinality)
 
 func checkFieldWireCompatibleCardinality(
 	add addFunc,
 	_ *corpus,
-	_ bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
+	previousField bufprotosource.Field,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
 		// Map entries are generated so nothing to do here. They
 		// usually would be safe to check anyway, but it's possible
@@ -717,16 +759,22 @@ func checkFieldWireCompatibleCardinality(
 }
 
 // CheckFieldWireCompatibleType is a check function.
-var CheckFieldWireCompatibleType = newFieldDescriptorPairCheckFunc(checkFieldWireCompatibleType)
+var CheckFieldWireCompatibleType = newFieldPairCheckFunc(checkFieldWireCompatibleType)
 
 func checkFieldWireCompatibleType(
 	add addFunc,
 	corpus *corpus,
 	previousField bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	// We use descriptor.Kind(), instead of field.Type(), because it also includes
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
@@ -772,16 +820,22 @@ func checkFieldWireCompatibleType(
 }
 
 // CheckFieldWireJSONCompatibleCardinality is a check function.
-var CheckFieldWireJSONCompatibleCardinality = newFieldDescriptorPairCheckFunc(checkFieldWireJSONCompatibleCardinality)
+var CheckFieldWireJSONCompatibleCardinality = newFieldPairCheckFunc(checkFieldWireJSONCompatibleCardinality)
 
 func checkFieldWireJSONCompatibleCardinality(
 	add addFunc,
 	_ *corpus,
-	_ bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
+	previousField bufprotosource.Field,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
 		// Map entries are generated so nothing to do here. They
 		// usually would be safe to check anyway, but it's possible
@@ -806,16 +860,22 @@ func checkFieldWireJSONCompatibleCardinality(
 }
 
 // CheckFieldWireJSONCompatibleType is a check function.
-var CheckFieldWireJSONCompatibleType = newFieldDescriptorPairCheckFunc(checkFieldWireJSONCompatibleType)
+var CheckFieldWireJSONCompatibleType = newFieldPairCheckFunc(checkFieldWireJSONCompatibleType)
 
 func checkFieldWireJSONCompatibleType(
 	add addFunc,
 	corpus *corpus,
 	previousField bufprotosource.Field,
-	previousDescriptor protoreflect.FieldDescriptor,
 	field bufprotosource.Field,
-	descriptor protoreflect.FieldDescriptor,
 ) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
 	// We use descriptor.Kind(), instead of field.Type(), because it also includes
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
