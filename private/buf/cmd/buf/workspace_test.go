@@ -140,7 +140,7 @@ func TestWorkspaceDir(t *testing.T) {
 			nil,
 			bufctl.ExitCodeFileAnnotation,
 			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
-			"", //filepath.FromSlash(`Failure: testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
+			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
