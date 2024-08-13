@@ -53,11 +53,11 @@ func (h *handler) Check(
 	if config.Disabled() {
 		return nil
 	}
-	previousFiles, err := bufprotosource.NewFiles(ctx, previousImage)
+	previousFiles, err := bufprotosource.NewFiles(ctx, previousImage.Files(), previousImage.Resolver())
 	if err != nil {
 		return err
 	}
-	files, err := bufprotosource.NewFiles(ctx, image)
+	files, err := bufprotosource.NewFiles(ctx, image.Files(), image.Resolver())
 	if err != nil {
 		return err
 	}
