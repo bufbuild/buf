@@ -56,6 +56,9 @@ func enum(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state
 		// The enum name has already been added, can terminate here immediately.
 		return nil, nil, nil
 	case enumValuesTypeTag:
+		if len(sourcePath) < i+2 {
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum value declaration without index")
+		}
 		return enumValues, nil, nil
 	case enumOptionTypeTag:
 		// Return the entire path and then handle the option

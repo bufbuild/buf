@@ -77,12 +77,12 @@ func message(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (st
 		return nil, nil, nil
 	case mesasgeFieldsTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field declaraction without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field declaration without index")
 		}
 		return fields, nil, nil
 	case messageOneOfsTypeTag:
 		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have one of declaration without index")
+			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have oneof declaration without index")
 		}
 		return oneOfs, nil, nil
 	case nestedMessagesTypeTag:

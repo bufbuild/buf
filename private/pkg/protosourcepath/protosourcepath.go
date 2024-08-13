@@ -74,6 +74,8 @@ var (
 //	[4, 0, 2, 0] (.message[0].field[0])
 //
 // ]
+//
+// More details are available with the README for this package.
 func GetAssociatedSourcePaths(
 	sourcePath protoreflect.SourcePath,
 	excludeChildAssociatedPaths bool,
@@ -190,7 +192,7 @@ func reservedNames(_ int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 	associatedPaths := []protoreflect.SourcePath{
 		currentPath(sourcePath, i),
 	}
-	// All reserved name paths are considered terminal, can terminate here immeidately.
+	// All reserved name paths are considered terminal, can terminate here immediately.
 	return nil, associatedPaths, nil
 }
 
