@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix constraints of `--path` flag for lint and breaking rules to avoid resolving all files
+  within a module. This change can result in a performance improvement for large workspaces.
 
 ## [v1.36.0] - 2024-08-06
 
