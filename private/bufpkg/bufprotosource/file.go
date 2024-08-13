@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -30,7 +29,7 @@ type file struct {
 	descriptor
 	optionExtensionDescriptor
 
-	resolver       protoencoding.Resolver
+	resolver       protodesc.Resolver
 	fileDescriptor protodescriptor.FileDescriptor
 	syntax         Syntax
 	fileImports    []FileImport
@@ -228,19 +227,19 @@ func (f *file) SyntaxLocation() Location {
 
 // does not validation of the fileDescriptorProto - this is assumed to be done elsewhere
 // does no duplicate checking by name - could just have maps ie importToFileImport, enumNameToEnum, etc
-func newFile(imageFile bufimage.ImageFile, resolver protoencoding.Resolver) (*file, error) {
-	locationStore := newLocationStore(imageFile.FileDescriptorProto().GetSourceCodeInfo().GetLocation())
+func newFile(inputFile InputFile, resolver protodesc.Resolver) (*file, error) {
+	locationStore := newLocationStore(inputFile.FileDescriptorProto())
 	f := &file{
-		FileInfo:       imageFile,
+		FileInfo:       inputFile,
 		resolver:       resolver,
-		fileDescriptor: imageFile.FileDescriptorProto(),
+		fileDescriptor: inputFile.FileDescriptorProto(),
 		optionExtensionDescriptor: newOptionExtensionDescriptor(
-			imageFile.FileDescriptorProto().GetOptions(),
+			inputFile.FileDescriptorProto().GetOptions(),
 			[]int32{8},
 			locationStore,
 			50,
 		),
-		edition: imageFile.FileDescriptorProto().GetEdition(),
+		edition: inputFile.FileDescriptorProto().GetEdition(),
 	}
 	descriptor := newDescriptor(
 		f,
@@ -248,7 +247,7 @@ func newFile(imageFile bufimage.ImageFile, resolver protoencoding.Resolver) (*fi
 	)
 	f.descriptor = descriptor
 
-	if imageFile.IsSyntaxUnspecified() {
+	if inputFile.IsSyntaxUnspecified() {
 		// if the syntax is "proto2", protoc and buf will not set the syntax
 		// field even if it was explicitly set, this is why we have
 		// IsSyntaxUnspecified
@@ -297,7 +296,7 @@ func newFile(imageFile bufimage.ImageFile, resolver protoencoding.Resolver) (*fi
 		}
 		fileImport.setIsWeak()
 	}
-	for _, dependencyIndex := range imageFile.UnusedDependencyIndexes() {
+	for _, dependencyIndex := range inputFile.UnusedDependencyIndexes() {
 		if int(dependencyIndex) < 0 || len(f.fileImports) <= int(dependencyIndex) {
 			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}

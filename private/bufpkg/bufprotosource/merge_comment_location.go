@@ -30,6 +30,10 @@ func newMergeCommentLocation(base Location, delegate Location) *mergeCommentLoca
 	}
 }
 
+func (l *mergeCommentLocation) FilePath() string {
+	return l.base.FilePath()
+}
+
 func (l *mergeCommentLocation) StartLine() int {
 	return l.base.StartLine()
 }
@@ -67,6 +71,6 @@ func (l *mergeCommentLocation) LeadingDetachedComments() []string {
 	return l.delegate.LeadingDetachedComments()
 }
 
-func (l *mergeCommentLocation) Path() protoreflect.SourcePath {
-	return l.base.Path()
+func (l *mergeCommentLocation) SourcePath() protoreflect.SourcePath {
+	return l.base.SourcePath()
 }

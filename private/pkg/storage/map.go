@@ -232,8 +232,9 @@ func newMapWriteBucketCloser(
 	mapper Mapper,
 ) *mapWriteBucketCloser {
 	return &mapWriteBucketCloser{
-		delegate: delegate,
-		mapper:   mapper,
+		delegate:  delegate,
+		closeFunc: closeFunc,
+		mapper:    mapper,
 	}
 }
 
