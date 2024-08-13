@@ -82,7 +82,7 @@ func terminateAtControllingWorkspace(
 		return nil, err
 	}
 	if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-		// If the input directory has a buf.yaml v2, then it is the controlling workspace for itself.
+		// A input directory with a v2 buf.yaml is the controlling workspace for itself.
 		if prefix == originalInputPath {
 			return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 		}
@@ -114,12 +114,13 @@ func terminateAtControllingWorkspace(
 		}
 	}
 	if bufWorkYAMLExists {
-		// For v1 workspaces, we ensure that the module path list actually contains the original
-		// input paths.
+		// A input directory with a buf.work.yaml is the controlling workspace for itself.
 		if prefix == originalInputPath {
 			return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
 		}
 		for _, dirPath := range bufWorkYAMLFile.DirPaths() {
+			// Unlike v2 workspaces, we only check whether the input is a module path or is contained
+			// in a module path.
 			if normalpath.EqualsOrContainsPath(dirPath, relInputPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
 			}
