@@ -1234,10 +1234,7 @@ func testLintWithOptions(
 	// build the image for the specified module string (opaqueID)
 	moduleSet, err := workspace.WithTargetOpaqueIDs(opaqueID)
 	require.NoError(t, err)
-	module := moduleSet.GetModuleForOpaqueID(opaqueID)
-	require.NotNil(t, module)
-	moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
-	require.NoError(t, err)
+	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
