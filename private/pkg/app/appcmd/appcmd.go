@@ -74,7 +74,7 @@ type Command struct {
 	Version string
 }
 
-// NewInvalidArgumentError creates a new invalidArgumentError, indicating that
+// NewInvalidArgumentError creates a new InvalidArgumentError, indicating that
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
 func NewInvalidArgumentError(message string) error {
@@ -86,6 +86,13 @@ func NewInvalidArgumentError(message string) error {
 // help text for the command that it is returned from.
 func NewInvalidArgumentErrorf(format string, args ...any) error {
 	return newInvalidArgumentError(fmt.Errorf(format, args...))
+}
+
+// WrapInvalidArgumentError creates a new InvalidArgumentError, indicating that
+// the error was caused by argument validation. This causes us to print the usage
+// help text for the command that it is returned from.
+func WrapInvalidArgumentError(delegate error) error {
+	return newInvalidArgumentError(delegate)
 }
 
 // Main runs the application using the OS container and calling os.Exit on the return value of Run.
