@@ -94,7 +94,7 @@ func terminateAtControllingWorkspace(
 			//    - path: dir/bar
 			//    - path: dir/baz
 			//  ...
-			// - If the input is a module path (exactly one of prefix/foo, prefix/dir/bar or prefix/dir/baz),
+			// - If the input is a module path (one of prefix/foo, prefix/dir/bar or prefix/dir/baz),
 			//   then the input is a module controlled by the workspace at prefix.
 			// - If the input is inside one of the module DirPaths (e.g. prefix/foo/suffix or prefix/dir/bar/suffix)
 			//   we still consider prefix to be the workspace that controls the input. It is then up
