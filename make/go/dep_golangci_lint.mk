@@ -7,10 +7,10 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/golangci/golangci-lint/releases 20240609 checked 20240813
+# https://github.com/golangci/golangci-lint/releases 20240813 checked 20240813
+# TODO: Update to a release version instead of a commit on master when a version >1.59.1 is released
 # Contrast golangci-lint configuration with the one in https://github.com/connectrpc/connect-go/blob/main/.golangci.yml when upgrading
-#GOLANGCI_LINT_VERSION ?= v1.59.1
-GOLANGCI_LINT_VERSION ?= 45f4e7e937880b0024bbec20f3bda14dcd0c5f91
+GOLANGCI_LINT_VERSION ?= 1147824c61441fb1a928927ca095aa3d0f208459
 
 GOLANGCI_LINT := $(CACHE_VERSIONS)/golangci-lint/$(GOLANGCI_LINT_VERSION)
 $(GOLANGCI_LINT):
