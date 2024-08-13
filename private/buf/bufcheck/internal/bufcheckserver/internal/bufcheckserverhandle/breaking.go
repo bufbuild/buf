@@ -15,6 +15,8 @@
 package bufcheckserverhandle
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
@@ -87,6 +89,39 @@ func handleBreakingExtensionNoDelete(
 				previousLocation,
 				`Previously present extension %q was deleted from file.`,
 				previousNestedName,
+			)
+		}
+	}
+	return nil
+}
+
+var HandleBreakingFileNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingFileNoDelete)
+
+func handleBreakingFileNoDelete(
+	_ context.Context,
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+) error {
+	previousFilePathToFile, err := bufprotosource.FilePathToFile(request.AgainstProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	filePathToFile, err := bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	// TODO(doria): we could probably simplify the bufprotosource functions since we don't
+	// need the file here anymore.
+	for previousFilePath, _ := range previousFilePathToFile {
+		if _, ok := filePathToFile[previousFilePath]; !ok {
+			// Add previous descriptor to check for ignores. This will mean that if
+			// we have ignore_unstable_packages set, this file will cause the ignore
+			// to happen.
+			responseWriter.AddProtosourceAnnotation(
+				nil,
+				nil,
+				`Previously present file %q was deleted.`,
+				previousFilePath,
 			)
 		}
 	}
