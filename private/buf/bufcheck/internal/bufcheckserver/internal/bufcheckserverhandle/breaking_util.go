@@ -15,8 +15,40 @@
 package bufcheckserverhandle
 
 import (
+	"strings"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
+
+func getLocationAndPreviousLocationForDeletedElement(
+	file bufprotosource.File,
+	previousFile bufprotosource.File,
+	previousNestedName string,
+) (bufprotosource.Location, bufprotosource.Location, error) {
+	var location bufprotosource.Location
+	var previousLocation bufprotosource.Location
+	if strings.Contains(previousNestedName, ".") {
+		nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
+		if err != nil {
+			return nil, nil, err
+		}
+		previousNestedNameToMessage, err := bufprotosource.NestedNameToMessage(previousFile)
+		if err != nil {
+			return nil, nil, err
+		}
+		split := strings.Split(previousNestedName, ".")
+		for i := len(split) - 1; i > 0; i-- {
+			messageName := strings.Join(split[0:i], ".")
+			if message, ok := nestedNameToMessage[messageName]; ok {
+				location = message.Location()
+			}
+			if previousMessage, ok := previousNestedNameToMessage[messageName]; ok {
+				previousLocation = previousMessage.Location()
+			}
+		}
+	}
+	return location, previousLocation, nil
+}
 
 func withBackupLocation(locs ...bufprotosource.Location) bufprotosource.Location {
 	for _, loc := range locs {

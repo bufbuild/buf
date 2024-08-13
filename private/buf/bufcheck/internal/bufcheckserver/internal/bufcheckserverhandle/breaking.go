@@ -19,6 +19,43 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
+var HandleBreakingEnumNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleCheckEnumNoDelete)
+
+func handleCheckEnumNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	previousNestedNameToEnum, err := bufprotosource.NestedNameToEnum(previousFile)
+	if err != nil {
+		return err
+	}
+	nestedNameToEnum, err := bufprotosource.NestedNameToEnum(file)
+	if err != nil {
+		return err
+	}
+	for previousNestedName := range previousNestedNameToEnum {
+		if _, ok := nestedNameToEnum[previousNestedName]; !ok {
+			location, previousLocation, err := getLocationAndPreviousLocationForDeletedElement(
+				file,
+				previousFile,
+				previousNestedName,
+			)
+			if err != nil {
+				return err
+			}
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				previousLocation,
+				`Previously present enum %q was deleted from file.`,
+				previousNestedName,
+			)
+		}
+	}
+	return nil
+}
+
 // HandleBreakingEnumSameType is a check function.
 var HandleBreakingEnumSameType = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumSameType)
 

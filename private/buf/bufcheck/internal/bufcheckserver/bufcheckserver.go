@@ -63,6 +63,7 @@ var (
 	V2Spec = &check.Spec{
 		Rules: []*check.RuleSpec{
 			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build(false, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build([]string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentFieldRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

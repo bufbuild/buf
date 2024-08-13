@@ -22,12 +22,19 @@ import (
 
 var (
 	// BreakingEnumSameTypeRuleSpecBuilder is a rule builder.
+	BreakingEnumNoDelete = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_NO_DELETE",
+		Purpose: "Checks enums are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumNoDelete,
+	}
 	BreakingEnumSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_SAME_TYPE",
-		Purpose: "Checks that enums have the same type (open vs closed)",
+		Purpose: "Checks that enums have the same type (open vs closed).",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumSameType,
 	}
+
 	// LintCommentEnumRuleSpecBuilder is a rule builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "COMMENT_ENUM",
