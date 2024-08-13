@@ -16,9 +16,9 @@ package bufmodule
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
 // ModuleData presents raw Module data read by ModuleKey.
@@ -108,11 +108,11 @@ func newModuleData(
 	moduleData := &moduleData{
 		moduleKey:                moduleKey,
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
-		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
-		getV1BufYAMLObjectData:   syncext.OnceValues(getV1BufYAMLObjectData),
-		getV1BufLockObjectData:   syncext.OnceValues(getV1BufLockObjectData),
+		getDeclaredDepModuleKeys: sync.OnceValues(getDeclaredDepModuleKeys),
+		getV1BufYAMLObjectData:   sync.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData:   sync.OnceValues(getV1BufLockObjectData),
 	}
-	moduleData.checkDigest = syncext.OnceValue(
+	moduleData.checkDigest = sync.OnceValue(
 		func() error {
 			// We have to use the get.* functions so that we don't invoke checkDigest.
 			bucket, err := moduleData.getBucket()

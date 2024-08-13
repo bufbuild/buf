@@ -83,7 +83,7 @@ func run(
 ) error {
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {

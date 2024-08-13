@@ -66,11 +66,11 @@ func run(
 	identity, version, _ := strings.Cut(container.Arg(0), ":")
 	pluginIdentity, err := bufremotepluginref.PluginIdentityForString(identity)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	if version != "" {
 		if err := bufremotepluginref.ValidatePluginVersion(version); err != nil {
-			return appcmd.NewInvalidArgumentError(err.Error())
+			return appcmd.WrapInvalidArgumentError(err)
 		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)

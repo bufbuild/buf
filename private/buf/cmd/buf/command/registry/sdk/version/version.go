@@ -91,11 +91,11 @@ func run(
 ) error {
 	moduleRef, err := bufmodule.ParseModuleRef(flags.Module)
 	if err != nil {
-		return appcmd.NewInvalidArgumentErrorf(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	pluginIdentity, pluginVersion, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
 	if err != nil {
-		return appcmd.NewInvalidArgumentErrorf(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	if pluginIdentity.Remote() != moduleRef.ModuleFullName().Registry() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same BSR instance")
