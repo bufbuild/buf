@@ -32,6 +32,7 @@ var (
 			bufcheckserverbuild.LintCommentOneofRuleSpecBuilder.Build([]string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentRPCRuleSpecBuilder.Build([]string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentServiceRuleSpecBuilder.Build([]string{"COMMENTS"}),
+			bufcheckserverbuild.LintDirectorySamePackageRuleSpecBuilder.Build([]string{"MINIMAL", "BASIC"}), // leaving out DEFAULT
 			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build([]string{"BASIC", "DEFAULT"}),
 			bufcheckserverbuild.LintServiceSuffixRuleSpecBuilder.Build([]string{"DEFAULT"}),
 		},
