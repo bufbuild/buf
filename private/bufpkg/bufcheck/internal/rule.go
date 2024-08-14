@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -101,19 +100,6 @@ func (c *Rule) ReplacementIDs() []string {
 	return c.replacementIDs
 }
 
-// MarshalJSON implements Rule.
-func (c *Rule) MarshalJSON() ([]byte, error) {
-	return json.Marshal(ruleJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
-}
-
 func (c *Rule) check(ignoreFunc IgnoreFunc, previousFiles []bufprotosource.File, files []bufprotosource.File) (_ []bufanalysis.FileAnnotation, retErr error) {
 	return c.checkFunc(c.ID(), ignoreFunc, previousFiles, files)
-}
-
-type ruleJSON struct {
-	ID           string   `json:"id" yaml:"id"`
-	Categories   []string `json:"categories" yaml:"categories"`
-	Purpose      string   `json:"purpose" yaml:"purpose"`
-	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
-	Replacements []string `json:"replacements" yaml:"replacements"`
 }
