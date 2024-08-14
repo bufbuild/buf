@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protocompile/parser/fastscan"
 	"go.uber.org/multierr"
@@ -228,20 +229,39 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // GetDocStorageReadBucket gets a storage.ReadBucket that just contains the documentation file(s).
 //
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
-func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) storage.ReadBucket {
-	return storage.MapReadBucket(
-		bucket,
-		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
+func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) (storage.ReadBucket, error) {
+	// Store the documentation file in a new memory bucket for performance reasons.
+	docFilePath := getDocFilePathForStorageReadBucket(ctx, bucket)
+	if docFilePath == "" {
+		return storage.MultiReadBucket(), nil // nop bucket
+	}
+	content, err := storage.ReadPath(ctx, bucket, docFilePath)
+	if err != nil {
+		return nil, err
+	}
+	return storagemem.NewReadBucket(
+		map[string][]byte{
+			docFilePath: content,
+		},
 	)
 }
 
 // GetLicenseStorageReadBucket gets a storage.ReadBucket that just contains the license file(s).
 //
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
-func GetLicenseStorageReadBucket(bucket storage.ReadBucket) storage.ReadBucket {
-	return storage.MapReadBucket(
-		bucket,
-		storage.MatchPathEqual(licenseFilePath),
+func GetLicenseStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) (storage.ReadBucket, error) {
+	// Store the license file in a new memory bucket for performance reasons.
+	content, err := storage.ReadPath(ctx, bucket, licenseFilePath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return storage.MultiReadBucket(), nil // nop bucket
+		}
+		return nil, err
+	}
+	return storagemem.NewReadBucket(
+		map[string][]byte{
+			licenseFilePath: content,
+		},
 	)
 }
 
