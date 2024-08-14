@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
 )
@@ -108,7 +108,7 @@ func (a *addedModule) ToModule(
 		return a.localModule, nil
 	}
 	// Else, get the remote Module.
-	getModuleData := syncext.OnceValues(
+	getModuleData := sync.OnceValues(
 		func() (ModuleData, error) {
 			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(
 				ctx,
@@ -134,7 +134,7 @@ func (a *addedModule) ToModule(
 			return moduleData, nil
 		},
 	)
-	getBucket := syncext.OnceValues(
+	getBucket := sync.OnceValues(
 		func() (storage.ReadBucket, error) {
 			moduleData, err := getModuleData()
 			if err != nil {

@@ -1,14 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-# TODO: Remove go-winio v0.6.1 and otel v1.24.0 when we no longer need to support Golang <1.21
-# TODO: Remove antlr when we no longer need Golang <1.22
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/Microsoft/go-winio@v0.6.1 \
-	go.opentelemetry.io/otel@v1.24.0 \
-	go.opentelemetry.io/otel/sdk@v1.24.0 \
-	go.opentelemetry.io/otel/trace@v1.24.0 \
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.24.0 \
-	github.com/antlr4-go/antlr/v4@v4.13.1 \
-	github.com/bufbuild/bufplugin-go@latest
+#GO_GET_PKGS := $(GO_GET_PKGS)
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \

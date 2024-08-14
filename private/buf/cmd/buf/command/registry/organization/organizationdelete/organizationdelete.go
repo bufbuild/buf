@@ -73,7 +73,7 @@ func run(
 ) error {
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "organization", moduleOwner.Owner()); err != nil {

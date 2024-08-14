@@ -63,15 +63,15 @@ func NewRuleHandler(
 			responseWriter check.ResponseWriter,
 			request check.Request,
 		) error {
+			protosourceFiles, _ := ctx.Value(protosourceFilesContextKey{}).([]bufprotosource.File)
+			againstProtosourceFiles, _ := ctx.Value(againstProtosourceFilesContextKey{}).([]bufprotosource.File)
 			return f(
 				ctx,
 				newResponseWriter(responseWriter),
 				newRequest(
 					request,
-					// Is this OK with nil?
-					ctx.Value(protosourceFilesContextKey{}).([]bufprotosource.File),
-					// Is this OK with nil?
-					ctx.Value(againstProtosourceFilesContextKey{}).([]bufprotosource.File),
+					protosourceFiles,
+					againstProtosourceFiles,
 				),
 			)
 		},
