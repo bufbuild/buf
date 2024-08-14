@@ -140,7 +140,7 @@ func run(
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	source, err := bufcli.GetInputValue(container, "" /* The input hashtag is not supported here */, ".")
 	if err != nil {

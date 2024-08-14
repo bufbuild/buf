@@ -16,6 +16,7 @@ package oauth2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -87,7 +88,7 @@ func TestRegisterDevice(t *testing.T) {
 				Body:       io.NopCloser(strings.NewReader(`not implemented`)),
 			}, nil
 		},
-		err: fmt.Errorf("oauth2: %w: 501 not implemented", ErrUnsupported),
+		err: fmt.Errorf("oauth2: %w: 501 not implemented", errors.ErrUnsupported),
 	}}
 	for _, test := range tests {
 		test := test

@@ -178,7 +178,7 @@ func inner(
 		var err error
 		token, err = doBrowserLogin(ctx, container, remote)
 		if err != nil {
-			if !errors.Is(err, oauth2.ErrUnsupported) {
+			if !errors.Is(err, errors.ErrUnsupported) {
 				return fmt.Errorf("unable to complete authorize device grant: %w", err)
 			}
 			token, err = doPromptLogin(ctx, container, remote)
