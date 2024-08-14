@@ -16,6 +16,8 @@ package bufcheckclient
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -54,4 +56,32 @@ type Client interface {
 // If you want to also use a plugin Client, merge the Clients with a check.NewMultiClient.
 func NewClient(logger *zap.Logger, checkClient check.Client) Client {
 	return newClient(logger, checkClient)
+}
+
+func NewCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (Client, error) {
+	return nil, errors.New("TODO")
+}
+
+// PrintRules prints the rules to the Writer.
+func PrintRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOption) (retErr error) {
+	return printRules(writer, rules, options...)
+}
+
+// PrintRulesOption is an option for PrintRules.
+type PrintRulesOption func(*printRulesOptions)
+
+// PrintRulesWithJSON returns a new PrintRulesOption that says to print the rules as JSON.
+//
+// The default is to print as text.
+func PrintRulesWithJSON() PrintRulesOption {
+	return func(printRulesOptions *printRulesOptions) {
+		printRulesOptions.asJSON = true
+	}
+}
+
+// PrintRulesWithDeprecated returns a new PrintRulesOption that resullts in deprecated rules  being printed.
+func PrintRulesWithDeprecated() PrintRulesOption {
+	return func(printRulesOptions *printRulesOptions) {
+		printRulesOptions.includeDeprecated = true
+	}
 }
