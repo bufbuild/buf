@@ -27,6 +27,8 @@ import (
 
 // All functions that take a config ignore the FileVersion. The FileVersion should instruct
 // what check.Client is passed to NewClient, ie a v1beta1, v1, or v2 default client.
+//
+// Rules are returned sorted by ID, but PrintRules does our sort by category.
 type Client interface {
 	// Lint lints the given Image with the given LintConfig.
 	//

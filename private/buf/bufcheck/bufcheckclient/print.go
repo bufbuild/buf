@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -43,7 +45,7 @@ func printRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOptio
 			return err
 		}
 	}
-	for _, rule := range rules {
+	for _, rule := range cloneAndSortRules(rules) {
 		if !printRulesOptions.includeDeprecated && rule.Deprecated() {
 			continue
 		}
@@ -69,6 +71,46 @@ func printRule(writer io.Writer, rule check.Rule, asJSON bool) error {
 		return err
 	}
 	return nil
+}
+
+func cloneAndSortRules(rules []check.Rule) []check.Rule {
+	rules = slices.Clone(rules)
+	sort.Slice(
+		rules,
+		func(i int, j int) bool {
+			// categories are sorted at this point
+			// so we know the first category is a top-level category if present
+			one := rules[i]
+			two := rules[j]
+			oneCategories := one.Categories()
+			twoCategories := two.Categories()
+			if len(oneCategories) == 0 && len(twoCategories) > 0 {
+				return false
+			}
+			if len(oneCategories) > 0 && len(twoCategories) == 0 {
+				return true
+			}
+			if len(oneCategories) > 0 && len(twoCategories) > 0 {
+				compare := categoryCompare(oneCategories[0], twoCategories[0])
+				if compare < 0 {
+					return true
+				}
+				if compare > 0 {
+					return false
+				}
+			}
+			oneCategoriesString := strings.Join(oneCategories, ",")
+			twoCategoriesString := strings.Join(twoCategories, ",")
+			if oneCategoriesString < twoCategoriesString {
+				return true
+			}
+			if oneCategoriesString > twoCategoriesString {
+				return false
+			}
+			return one.ID() < two.ID()
+		},
+	)
+	return rules
 }
 
 type externalRule struct {
