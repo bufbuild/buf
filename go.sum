@@ -26,6 +26,8 @@ github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYW
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
 github.com/bufbuild/bufplugin-go v0.0.0-20240812183832-97c193b53847 h1:Ez2k3pMAtcjf7FgNc6qqUDUIdtGAZthUgA3qsNTmYlU=
 github.com/bufbuild/bufplugin-go v0.0.0-20240812183832-97c193b53847/go.mod h1:AzWTTa6SEoHm6QPy15sO0dJRrEPKeyNkSuq4N4+wIo4=
+github.com/bufbuild/bufplugin-go v0.0.0-20240814204948-fbce77385349 h1:PsoVVqUJhfxjK+2NarbCX6Go1A/iTC1GxVr43vKnV/M=
+github.com/bufbuild/bufplugin-go v0.0.0-20240814204948-fbce77385349/go.mod h1:C5reOX/JKoqJ1CUWzV4vxoFWuXHhTXcVHStECYxss78=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240806221947-0f4109e5de7f h1:CT5YS9uCbSqPLz9JfyHc2YLu4aYQDFI32yXF5q6ke48=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240806221947-0f4109e5de7f/go.mod h1:BWzAlu7udHYPr9mYfHEvqgwIKDmzxzVZoyQ0otMFPeE=
 github.com/bufbuild/protocompile v0.14.0 h1:z3DW4IvXE5G/uTOnSQn+qwQQxvhckkTWLS/0No/o7KU=

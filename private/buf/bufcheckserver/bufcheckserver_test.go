@@ -35,14 +35,16 @@ func TestServicePascalCase(t *testing.T) {
 		bufcheckserverv2.Spec,
 	} {
 		checktest.TestCase{
+			Request: &checktest.RequestSpec{
+				Files: &checktest.ProtoFileSpec{
+					DirPaths:  []string{"testdata/lint/service_pascal_case"},
+					FilePaths: []string{"a.proto"},
+				},
+				RuleIDs: []string{
+					"SERVICE_PASCAL_CASE",
+				},
+			},
 			Spec: spec,
-			Files: &checktest.ProtoFileSpec{
-				DirPaths:  []string{"testdata/lint/service_pascal_case"},
-				FilePaths: []string{"a.proto"},
-			},
-			RuleIDs: []string{
-				"SERVICE_PASCAL_CASE",
-			},
 			ExpectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					ID: "SERVICE_PASCAL_CASE",
