@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserveropt"
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -130,11 +130,11 @@ func handleLintCommentNamedDescriptor(
 	}
 	// Note that this does result in us parsing the comment excludes on every call to the rule.
 	// This is theoretically inefficient, but shouldn't have any real world impact. The alternative
-	// is doing a custom parse of all the options we expect within bufcheckserveropt, and attaching
+	// is doing a custom parse of all the options we expect within bufcheckopt, and attaching
 	// this result to the bufcheckserverutil.Request, which gets us even further from the bufplugin-go
 	// SDK. We want to do what is native as much as possible. If this is a real performance problem,
 	// we can update in the future.
-	commentExcludes, err := bufcheckserveropt.GetCommentExcludes(request.Options())
+	commentExcludes, err := bufcheckopt.GetCommentExcludes(request.Options())
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func handleLintServiceSuffix(
 	request bufcheckserverutil.Request,
 	service bufprotosource.Service,
 ) error {
-	suffix := bufcheckserveropt.GetServiceSuffix(request.Options())
+	suffix := bufcheckopt.GetServiceSuffix(request.Options())
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
 		responseWriter.AddProtosourceAnnotation(

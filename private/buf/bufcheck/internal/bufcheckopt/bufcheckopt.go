@@ -12,15 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: This will probably go into some common bufcheck package that includes
-// both the client and server. We will need to set options on the client side.
-//
-// Note that we don't expose OptionsBuilder for the server-side rules, instead we rely
-// on the static functions, as we want to move our rules to be as native to bufplugin-go
-// as possible. Instead of i.e. attaching an Options struct to bufcheckserverutil.Requests,
-// we have individual rules go through the direct reading of check.Options using
-// the static functions below.
-package bufcheckserveropt
+package bufcheckopt
 
 import (
 	"encoding/json"
@@ -44,6 +36,14 @@ const (
 // OptionsBuilder builds check.Options for clients.
 //
 // These can then be sent over the wire to servers.
+//
+// Note that we don't expose OptionsBuilder for the server-side rules, instead we rely
+// on the static functions, as we want to move our rules to be as native to bufplugin-go
+// as possible. Instead of i.e. attaching an Options struct to bufcheckserverutil.Requests,
+// we have individual rules go through the direct reading of check.Options using
+// the static functions below.
+//
+// Only use this on the client side.
 type OptionsBuilder struct {
 	EnumZeroValueSuffix                  string
 	RPCAllowSameRequestResponse          bool
