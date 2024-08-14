@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserveropt"
-	"github.com/bufbuild/buf/private/buf/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserveropt"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
