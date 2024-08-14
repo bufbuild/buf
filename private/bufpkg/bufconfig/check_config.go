@@ -43,6 +43,12 @@ type CheckConfig interface {
 	// We don't want to have to take FileVersion into account for *Configs, however
 	// with lint and breaking configurations, the FileVersion changes the interpretation
 	// of the IDs and categories.
+	//
+	// TODO: Investigate removing this once the refactor to the new bufcheck is complete.
+	// The bufcheckclient.Client does not take this into account, and in theory, we will
+	// just construct a bufcheckclient.Client using a BufYAMLFile or otherwise (ImageWithConfigs
+	// nonwithstanding). If we can remove this, we should, as it should not be passed
+	// to any functions on bufcheckclient.Client.
 	FileVersion() FileVersion
 
 	// Disabled says whether or not the given check should be entirely disabled.

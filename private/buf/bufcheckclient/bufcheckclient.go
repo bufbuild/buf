@@ -15,105 +15,26 @@
 package bufcheckclient
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"strings"
-	"text/tabwriter"
+	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/bufplugin-go/check"
-	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
-// PrintRules prints the rules to the writer.
-func PrintRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOption) (retErr error) {
-	printRulesOptions := newPrintRulesOptions()
-	for _, option := range options {
-		option(printRulesOptions)
-	}
-	if len(rules) == 0 {
-		return nil
-	}
-	if !printRulesOptions.asJSON {
-		tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
-		defer func() {
-			retErr = multierr.Append(retErr, tabWriter.Flush())
-		}()
-		writer = tabWriter
-		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tPURPOSE"); err != nil {
-			return err
-		}
-	}
-	for _, rule := range rules {
-		if !printRulesOptions.includeDeprecated && rule.Deprecated() {
-			continue
-		}
-		if err := printRule(writer, rule, printRulesOptions.asJSON); err != nil {
-			return err
-		}
-	}
-	return nil
+// All functions that take a config ignore the FileVersion. The FileVersion should instruct
+// what check.Client is passed to NewClient, ie a v1beta1, v1, or v2 default client.
+type Client interface {
+	Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image) error
+	ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error)
+	AllLintRules(ctx context.Context) ([]check.Rule, error)
+
+	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image) error
+	ConfiguredBreakingRules(ctx context.Context, config bufconfig.BreakingConfig) ([]check.Rule, error)
+	AllBreakingRules(ctx context.Context) ([]check.Rule, error)
 }
 
-// PrintRulesOption is an option for PrintRules.
-type PrintRulesOption func(*printRulesOptions)
-
-// PrintRulesWithJSON returns a new PrintRulesOption that says to print the rules as JSON.
-//
-// The default is to print as text.
-func PrintRulesWithJSON() PrintRulesOption {
-	return func(printRulesOptions *printRulesOptions) {
-		printRulesOptions.asJSON = true
-	}
-}
-
-// PrintRulesWithDeprecated returns a new PrintRulesOption that resullts in deprecated rules  being printed.
-func PrintRulesWithDeprecated() PrintRulesOption {
-	return func(printRulesOptions *printRulesOptions) {
-		printRulesOptions.includeDeprecated = true
-	}
-}
-
-func printRule(writer io.Writer, rule check.Rule, asJSON bool) error {
-	if asJSON {
-		data, err := json.Marshal(newExternalRule(rule))
-		if err != nil {
-			return err
-		}
-		if _, err := fmt.Fprintln(writer, string(data)); err != nil {
-			return err
-		}
-		return nil
-	}
-	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), rule.Purpose()); err != nil {
-		return err
-	}
-	return nil
-}
-
-type externalRule struct {
-	ID           string   `json:"id" yaml:"id"`
-	Categories   []string `json:"categories" yaml:"categories"`
-	Purpose      string   `json:"purpose" yaml:"purpose"`
-	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
-	Replacements []string `json:"replacements" yaml:"replacements"`
-}
-
-func newExternalRule(rule check.Rule) *externalRule {
-	return &externalRule{
-		ID:           rule.ID(),
-		Categories:   rule.Categories(),
-		Purpose:      rule.Purpose(),
-		Deprecated:   rule.Deprecated(),
-		Replacements: rule.ReplacementIDs(),
-	}
-}
-
-type printRulesOptions struct {
-	asJSON            bool
-	includeDeprecated bool
-}
-
-func newPrintRulesOptions() *printRulesOptions {
-	return &printRulesOptions{}
+func NewClient(logger *zap.Logger, clients []check.Client) Client {
+	return newClient(logger, clients)
 }
