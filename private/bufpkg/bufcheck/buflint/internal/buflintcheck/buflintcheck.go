@@ -1029,6 +1029,40 @@ func checkServiceSuffix(add addFunc, service bufprotosource.Service, suffix stri
 	return nil
 }
 
+// CheckStablePackageNoImportUnstable is a check function.
+var CheckStablePackageNoImportUnstable = newFilesCheckFunc(checkStablePackageNoImportUnstable)
+
+func checkStablePackageNoImportUnstable(add addFunc, files []bufprotosource.File) error {
+	filePathToFile, err := bufprotosource.FilePathToFile(files...)
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		packageVersion, ok := protoversion.NewPackageVersionForPackage(file.Package())
+		if !ok {
+			// No package, or no version on package - unstable to determine if stable.
+			continue
+		}
+		if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
+			// If package is not stable, no failure.
+			continue
+		}
+		// Package is stable. Check imports.
+		for _, fileImport := range file.FileImports() {
+			if importedFile, ok := filePathToFile[fileImport.Import()]; ok {
+				importedFilePackageVersion, ok := protoversion.NewPackageVersionForPackage(importedFile.Package())
+				if !ok {
+					continue
+				}
+				if importedFilePackageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
+					add(file, fileImport.Location(), nil, `This file is in stable package %q, so it should not depend on %q from unstable package %q.`, file.Package(), fileImport.Import(), importedFile.Package())
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // CheckSyntaxSpecified is a check function.
 var CheckSyntaxSpecified = newFileCheckFunc(checkSyntaxSpecified)
 
