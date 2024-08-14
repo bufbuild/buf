@@ -66,6 +66,7 @@ var (
 		buflintbuild.RPCResponseStandardNameRuleBuilder,
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
+		buflintbuild.StablePackageNoImportUnstableRuleBuilder,
 		buflintbuild.SyntaxSpecifiedRuleBuilder,
 	}
 
@@ -238,6 +239,7 @@ var (
 		"SERVICE_SUFFIX": {
 			"DEFAULT",
 		},
+		"STABLE_PACKAGE_NO_IMPORT_UNSTABLE": {},
 		"SYNTAX_SPECIFIED": {
 			"BASIC",
 			"DEFAULT",
