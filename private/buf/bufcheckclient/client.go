@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/bufplugin-go/check"
@@ -25,22 +26,40 @@ import (
 )
 
 type client struct {
-	logger       *zap.Logger
-	checkClients []check.Client
+	logger      *zap.Logger
+	checkClient check.Client
 }
 
 func newClient(
 	logger *zap.Logger,
-	checkClients []check.Client,
+	checkClient check.Client,
 ) *client {
 	return &client{
-		logger:       logger,
-		checkClients: checkClients,
+		logger:      logger,
+		checkClient: checkClient,
 	}
 }
 
 func (c *client) Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image) error {
-	return errors.New("TODO")
+	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
+	if err != nil {
+		return err
+	}
+	request, err := check.NewRequest(files)
+	if err != nil {
+		return err
+	}
+	response, err := c.checkClient.Check(ctx, request)
+	if err != nil {
+		return err
+	}
+	if annotations := response.Annotations(); len(annotations) > 0 {
+		// Note that NewFileAnnotationSet does its own sorting and deduplication.
+		// The bufplugin SDK does this as well, but we don't need to worry about the sort
+		// order being different.
+		return bufanalysis.NewFileAnnotationSet(annotationsToFileAnnotations(annotations, imageToPathToExternalPath(image))...)
+	}
+	return nil
 }
 
 func (c *client) ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error) {

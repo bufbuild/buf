@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: This entire package should be deleted once bufcheckserver is operational.
 package bufplugin
 
 import (

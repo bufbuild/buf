@@ -12,27 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugin
+// Generated. DO NOT EDIT.
 
-type fileInfo struct {
-	path         string
-	externalPath string
-}
+package pluginrpcutil
 
-func newFileInfo(path string, externalPath string) *fileInfo {
-	return &fileInfo{
-		path:         path,
-		externalPath: externalPath,
-	}
-}
-
-func (f *fileInfo) Path() string {
-	return f.path
-}
-
-func (f *fileInfo) ExternalPath() string {
-	if f.externalPath != "" {
-		return f.externalPath
-	}
-	return f.path
-}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -12,27 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugin
+package pluginrpcutil
 
-type fileInfo struct {
-	path         string
-	externalPath string
-}
+import (
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/pluginrpc-go"
+)
 
-func newFileInfo(path string, externalPath string) *fileInfo {
-	return &fileInfo{
-		path:         path,
-		externalPath: externalPath,
-	}
-}
-
-func (f *fileInfo) Path() string {
-	return f.path
-}
-
-func (f *fileInfo) ExternalPath() string {
-	if f.externalPath != "" {
-		return f.externalPath
-	}
-	return f.path
+// NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
+func NewRunner(delegate command.Runner, programName string) pluginrpc.Runner {
+	return newRunner(delegate, programName)
 }

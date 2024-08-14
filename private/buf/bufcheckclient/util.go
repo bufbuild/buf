@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugin
+package bufcheckclient
 
 import (
 	checkv1beta1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/check/v1beta1"
@@ -33,11 +33,37 @@ func imageFileToProtoFile(imageFile bufimage.ImageFile) *checkv1beta1.File {
 	}
 }
 
-func annotationsToFileAnnotations(annotations []check.Annotation) []bufanalysis.FileAnnotation {
-	return slicesext.Map(annotations, annotationToFileAnnotation)
+// imageToPathToExternalPath returns a map from path to external path for all ImageFiles in the Image.
+//
+// We do not transmit external path information over the wire to plugins, so we need to keep track
+// of this on the client side to properly construct bufanalysis.FileAnnotations when we get back
+// check.Annotations. This is used in annotationToFileAnnotation.
+func imageToPathToExternalPath(image bufimage.Image) map[string]string {
+	imageFiles := image.Files()
+	pathToExternalPath := make(map[string]string, len(imageFiles))
+	for _, imageFile := range imageFiles {
+		// We know that Images do not have overlapping paths.
+		pathToExternalPath[imageFile.Path()] = imageFile.ExternalPath()
+	}
+	return pathToExternalPath
 }
 
-func annotationToFileAnnotation(annotation check.Annotation) bufanalysis.FileAnnotation {
+func annotationsToFileAnnotations(
+	annotations []check.Annotation,
+	pathToExternalPath map[string]string,
+) []bufanalysis.FileAnnotation {
+	return slicesext.Map(
+		annotations,
+		func(annotation check.Annotation) bufanalysis.FileAnnotation {
+			return annotationToFileAnnotation(annotation, pathToExternalPath)
+		},
+	)
+}
+
+func annotationToFileAnnotation(
+	annotation check.Annotation,
+	pathToExternalPath map[string]string,
+) bufanalysis.FileAnnotation {
 	if annotation == nil {
 		return nil
 	}
@@ -47,7 +73,10 @@ func annotationToFileAnnotation(annotation check.Annotation) bufanalysis.FileAnn
 	var endLine int
 	var endColumn int
 	if location := annotation.Location(); location != nil {
-		fileInfo = newFileInfo(location.FileName(), "")
+		path := location.FileName()
+		// While it never should, it is OK if pathToExternalPath returns "" for a given path.
+		// We handle this in fileInfo.
+		fileInfo = newFileInfo(path, pathToExternalPath[path])
 		startLine = location.StartLine() + 1
 		startColumn = location.StartColumn() + 1
 		endLine = location.EndLine() + 1
