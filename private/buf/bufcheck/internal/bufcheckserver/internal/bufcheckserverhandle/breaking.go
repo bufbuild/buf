@@ -901,6 +901,45 @@ func handleBreakingFileSameObjcClassPrefix(
 	)
 }
 
+// HandleBreakingFileSameOptimizeFor is a check function.
+var HandleBreakingFileSameOptimizeFor = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameOptimizeFor)
+
+func handleBreakingFileSameOptimizeFor(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.OptimizeFor().String(),
+		file.OptimizeFor().String(), file,
+		file.OptimizeForLocation(),
+		previousFile.OptimizeForLocation(),
+		`option "optimize_for"`,
+	)
+}
+
+// HandleBreakingFileSamePhpClassPrefix is a check function.
+var HandleBreakingFileSamePhpClassPrefix = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSamePhpClassPrefix)
+
+func handleBreakingFileSamePhpClassPrefix(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.PhpClassPrefix(),
+		file.PhpClassPrefix(),
+		file,
+		file.PhpClassPrefixLocation(),
+		previousFile.PhpClassPrefixLocation(),
+		`option "php_class_prefix"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

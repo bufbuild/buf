@@ -190,6 +190,20 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameObjcClassPrefix,
 	}
+	// BreakingFileSameOptimizeForRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameOptimizeForRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_OPTIMIZE_FOR",
+		Purpose: "Checks files have the same value for the optimize_for option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameOptimizeFor,
+	}
+	// BreakingFileSamePhpClassPrefixRuleSpecBuilder is a rule spec builder.
+	BreakingFileSamePhpClassPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_PHP_CLASS_PREFIX",
+		Purpose: "Checks files have the same value for the php_class_prefix option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpClassPrefix,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
