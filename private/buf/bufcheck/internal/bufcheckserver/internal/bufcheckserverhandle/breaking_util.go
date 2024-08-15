@@ -39,7 +39,11 @@ func getDescriptorAndLocationForDeletedElement(
 	return file, nil, nil
 }
 
-func getDescriptorAndLocationForDeletedMessage(file bufprotosource.File, nestedNameToMessage map[string]bufprotosource.Message, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location) {
+func getDescriptorAndLocationForDeletedMessage(
+	file bufprotosource.File,
+	nestedNameToMessage map[string]bufprotosource.Message,
+	previousNestedName string,
+) (bufprotosource.Descriptor, bufprotosource.Location) {
 	if strings.Contains(previousNestedName, ".") {
 		split := strings.Split(previousNestedName, ".")
 		for i := len(split) - 1; i > 0; i-- {

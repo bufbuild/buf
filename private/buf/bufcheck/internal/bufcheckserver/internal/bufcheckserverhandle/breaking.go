@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
+// HandleBreakingEnumNoDelete is a check function.
 var HandleBreakingEnumNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingEnumNoDelete)
 
 func handleBreakingEnumNoDelete(
@@ -55,6 +56,7 @@ func handleBreakingEnumNoDelete(
 	return nil
 }
 
+// HandleBreakingExtensionNoDelete is a check function.
 var HandleBreakingExtensionNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingExtensionNoDelete)
 
 func handleBreakingExtensionNoDelete(
@@ -88,6 +90,7 @@ func handleBreakingExtensionNoDelete(
 	return nil
 }
 
+// HandleBreakingFileDelete is a check function.
 var HandleBreakingFileNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingFileNoDelete)
 
 func handleBreakingFileNoDelete(
@@ -110,7 +113,7 @@ func handleBreakingFileNoDelete(
 			// to happen.
 			responseWriter.AddProtosourceAnnotation(
 				nil,
-				nil, // TODO(doria): how should we handle the ignore here?
+				nil, // TODO: File does not have a Location, make sure that client handles the ignore checks
 				`Previously present file %q was deleted.`,
 				previousFilePath,
 			)
@@ -119,6 +122,7 @@ func handleBreakingFileNoDelete(
 	return nil
 }
 
+// HandleBreakingMessageNoDelete is a check function.
 var HandleBreakingMessageNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingMessageNoDelete)
 
 func handleBreakingMessageNoDelete(
@@ -149,6 +153,7 @@ func handleBreakingMessageNoDelete(
 	return nil
 }
 
+// HandleBreakingServiceNoDelete is a check function.
 var HandleBreakingServiceNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingServiceNoDelete)
 
 func handleBreakingServiceNoDelete(
