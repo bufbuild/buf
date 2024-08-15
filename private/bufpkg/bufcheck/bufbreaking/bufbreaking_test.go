@@ -1263,8 +1263,11 @@ func testBreaking(
 	defer cancel()
 	logger := zaptest.NewLogger(t)
 
-	previousDirPath := filepath.Join("testdata_previous", relDirPath)
-	dirPath := filepath.Join("testdata", relDirPath)
+	// TODO: change when new bufcheck deployed
+	baseDirPath := filepath.Join("..", "..", "..", "buf", "bufcheck", "bufcheckclient", "testdata", "breaking", "current")
+	basePreviousDirPath := filepath.Join("..", "..", "..", "buf", "bufcheck", "bufcheckclient", "testdata", "breaking", "previous")
+	previousDirPath := filepath.Join(basePreviousDirPath, relDirPath)
+	dirPath := filepath.Join(baseDirPath, relDirPath)
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	previousReadWriteBucket, err := storageosProvider.NewReadWriteBucket(

@@ -1204,7 +1204,9 @@ func testLintWithOptions(
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dirPath := filepath.Join("testdata", relDirPath)
+	// TODO: change when new bufcheck deployed
+	baseDirPath := filepath.Join("..", "..", "..", "buf", "bufcheck", "bufcheckclient", "testdata", "lint")
+	dirPath := filepath.Join(baseDirPath, relDirPath)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,

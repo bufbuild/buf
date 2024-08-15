@@ -123,7 +123,7 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+	rm -rf private/buf/bufcheck/bufcheckclient/testdata/lint/protovalidate/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
@@ -138,7 +138,7 @@ bufgeneratego:
 bufgeneratebuflinttestdata:
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+		--output private/buf/bufcheck/bufcheckclient/testdata/lint/protovalidate/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgeneratego \
