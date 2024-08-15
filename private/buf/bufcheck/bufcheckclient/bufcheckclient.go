@@ -57,8 +57,17 @@ type Client interface {
 
 // If you want to use the default v1beta1/v1/v2 Client, pass it.
 // If you want to also use a plugin Client, merge the Clients with a check.NewMultiClient.
-func NewClient(logger *zap.Logger, checkClient check.Client) Client {
-	return newClient(logger, checkClient)
+func NewClient(checkClient check.Client) Client {
+	return newClient(checkClient)
+}
+
+// This will eventually parse for plugins as well and create a multi client.
+func NewClientForBufYAMLFile(logger *zap.Logger, bufYAMLFile bufconfig.BufYAMLFile) (Client, error) {
+	checkClient, err := NewBuiltinCheckClientForFileVersion(bufYAMLFile.FileVersion())
+	if err != nil {
+		return nil, err
+	}
+	return newClient(checkClient), nil
 }
 
 func NewBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {

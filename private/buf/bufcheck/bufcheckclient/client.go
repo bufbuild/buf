@@ -27,20 +27,16 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/bufplugin-go/check"
-	"go.uber.org/zap"
 )
 
 type client struct {
-	logger      *zap.Logger
 	checkClient check.Client
 }
 
 func newClient(
-	logger *zap.Logger,
 	checkClient check.Client,
 ) *client {
 	return &client{
-		logger:      logger,
 		checkClient: checkClient,
 	}
 }
