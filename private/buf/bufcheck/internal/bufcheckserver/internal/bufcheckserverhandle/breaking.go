@@ -821,6 +821,26 @@ func handleBreakingFileSameJavaGenericServices(
 	)
 }
 
+// HandleBreakingFileSameJavaMultipleFiles is a check function.
+var HandleBreakingFileSameJavaMultipleFiles = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameJavaMultipleFiles)
+
+func handleBreakingFileSameJavaMultipleFiles(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		strconv.FormatBool(previousFile.JavaMultipleFiles()),
+		strconv.FormatBool(file.JavaMultipleFiles()),
+		file,
+		file.JavaMultipleFilesLocation(),
+		previousFile.JavaMultipleFilesLocation(),
+		`option "java_multiple_files"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

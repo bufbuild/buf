@@ -162,6 +162,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaGenericServices,
 	}
+	// BreakingFileSameJavaMultipleFilesRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameJavaMultipleFilesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_JAVA_MULTIPLE_FILES",
+		Purpose: "Checks files have the same value for the java_multiple_files option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaMultipleFiles,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
