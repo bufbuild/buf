@@ -76,7 +76,11 @@ var (
 // ]
 //
 // More details are available with the README for this package.
-func GetAssociatedSourcePaths(
+func GetAssociatedSourcePaths(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
+	return getAssociatedSourcePaths(sourcePath, true)
+}
+
+func getAssociatedSourcePaths(
 	sourcePath protoreflect.SourcePath,
 	excludeChildAssociatedPaths bool,
 ) ([]protoreflect.SourcePath, error) {
