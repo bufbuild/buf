@@ -447,6 +447,7 @@ func handleBreakingFieldSameCardinality(
 	return nil
 }
 
+// HandleBreakingFieldSameCppStringType is a check function.
 var HandleBreakingFieldSameCppStringType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameCppStringType)
 
 func handleBreakingFieldSameCppStringType(
@@ -502,6 +503,48 @@ func handleBreakingFieldSameCppStringType(
 			fieldDescription(field),
 			previousType,
 			currentType,
+		)
+	}
+	return nil
+}
+
+// HandleBreakingFieldSameJavaUTF8Validation is a check function.
+var HandleBreakingFieldSameJavaUTF8Validation = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameJavaUTF8Validation)
+
+func handleBreakingFieldSameJavaUTF8Validation(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
+		// this check only applies to string fields
+		return nil
+	}
+	previousValidation, err := fieldJavaUTF8Validation(previousDescriptor)
+	if err != nil {
+		return err
+	}
+	validation, err := fieldJavaUTF8Validation(descriptor)
+	if err != nil {
+		return err
+	}
+	if previousValidation != validation {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(field.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(field), field.Location()),
+			withBackupLocation(previousField.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(previousField), previousField.Location()),
+			`%s changed Java string UTF8 validation from %q to %q.`,
+			fieldDescription(field),
+			previousValidation,
+			validation,
 		)
 	}
 	return nil
