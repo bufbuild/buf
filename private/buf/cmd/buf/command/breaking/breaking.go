@@ -19,17 +19,16 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -205,16 +204,22 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
+	client, err := bufcheckclient.NewClient()
+	if err != nil {
+		return err
+	}
+	var breakingOptions []bufcheckclient.BreakingOption
+	if flags.ExcludeImports {
+		breakingOptions = append(breakingOptions, bufcheckclient.BreakingWithExcludeImports())
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		if err := bufbreaking.NewHandler(
-			container.Logger(),
-			tracing.NewTracer(container.Tracer()),
-		).Check(
+		if err := client.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
 			againstImageWithConfigs[i],
 			imageWithConfig,
+			breakingOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {
