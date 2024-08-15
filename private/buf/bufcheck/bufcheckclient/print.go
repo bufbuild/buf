@@ -116,8 +116,9 @@ func cloneAndSortRules(rules []check.Rule) []check.Rule {
 }
 
 type externalRule struct {
-	ID           string   `json:"id" yaml:"id"`
-	Categories   []string `json:"categories" yaml:"categories"`
+	ID         string   `json:"id" yaml:"id"`
+	Categories []string `json:"categories" yaml:"categories"`
+	//Default      bool     `json:"default" yaml:"default"`
 	Purpose      string   `json:"purpose" yaml:"purpose"`
 	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
 	Replacements []string `json:"replacements" yaml:"replacements"`
@@ -125,8 +126,9 @@ type externalRule struct {
 
 func newExternalRule(rule check.Rule) *externalRule {
 	return &externalRule{
-		ID:           rule.ID(),
-		Categories:   rule.Categories(),
+		ID:         rule.ID(),
+		Categories: rule.Categories(),
+		//Default:      rule.IsDefault(),
 		Purpose:      rule.Purpose(),
 		Deprecated:   rule.Deprecated(),
 		Replacements: rule.ReplacementIDs(),
