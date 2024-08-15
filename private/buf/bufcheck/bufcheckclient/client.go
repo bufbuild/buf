@@ -16,7 +16,6 @@ package bufcheckclient
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -28,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type client struct {
@@ -71,11 +69,98 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	if err != nil {
 		return err
 	}
-	annotations := response.Annotations()
+	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
+}
+
+func (c *client) ConfiguredLintRules(ctx context.Context, lintConfig bufconfig.LintConfig) ([]check.Rule, error) {
+	allRules, err := c.AllLintRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+	config, err := configForLintConfig(lintConfig, allRules)
+	if err != nil {
+		return nil, err
+	}
+	if len(config.RuleIDs) == 0 {
+		return slicesext.Filter(allRules, check.Rule.IsDefault), nil
+	}
+	return rulesForRuleIDs(allRules, config.RuleIDs), nil
+}
+
+func (c *client) AllLintRules(ctx context.Context) ([]check.Rule, error) {
+	allRules, err := c.checkClient.ListRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rulesForType(allRules, check.RuleTypeLint), nil
+}
+
+func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image) error {
+
+	allRules, err := c.AllBreakingRules(ctx)
+	if err != nil {
+		return err
+	}
+	config, err := configForBreakingConfig(breakingConfig, allRules)
+	if err != nil {
+		return err
+	}
+	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
+	if err != nil {
+		return err
+	}
+	againstFiles, err := check.FilesForProtoFiles(imageToProtoFiles(againstImage))
+	if err != nil {
+		return err
+	}
+	request, err := check.NewRequest(
+		files,
+		check.WithRuleIDs(config.RuleIDs...),
+		check.WithAgainstFiles(againstFiles),
+		check.WithOptions(config.Options),
+	)
+	if err != nil {
+		return err
+	}
+	response, err := c.checkClient.Check(ctx, request)
+	if err != nil {
+		return err
+	}
+	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
+}
+
+func (c *client) ConfiguredBreakingRules(ctx context.Context, breakingConfig bufconfig.BreakingConfig) ([]check.Rule, error) {
+	allRules, err := c.AllBreakingRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+	config, err := configForBreakingConfig(breakingConfig, allRules)
+	if err != nil {
+		return nil, err
+	}
+	if len(config.RuleIDs) == 0 {
+		return slicesext.Filter(allRules, check.Rule.IsDefault), nil
+	}
+	return rulesForRuleIDs(allRules, config.RuleIDs), nil
+}
+
+func (c *client) AllBreakingRules(ctx context.Context) ([]check.Rule, error) {
+	allRules, err := c.checkClient.ListRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rulesForType(allRules, check.RuleTypeBreaking), nil
+}
+
+func annotationsToFilteredFileAnnotationSetOrError(
+	config *config,
+	image bufimage.Image,
+	annotations []check.Annotation,
+) error {
 	if len(annotations) == 0 {
 		return nil
 	}
-	annotations, err = filterAnnotations(config, annotations)
+	annotations, err := filterAnnotations(config, annotations)
 	if err != nil {
 		return err
 	}
@@ -85,27 +170,14 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	// Note that NewFileAnnotationSet does its own sorting and deduplication.
 	// The bufplugin SDK does this as well, but we don't need to worry about the sort
 	// order being different.
-	return bufanalysis.NewFileAnnotationSet(annotationsToFileAnnotations(annotations, imageToPathToExternalPath(image))...)
-}
-
-func (c *client) ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error) {
-	return nil, errors.New("TODO")
-}
-
-func (c *client) AllLintRules(ctx context.Context) ([]check.Rule, error) {
-	return nil, errors.New("TODO")
-}
-
-func (c *client) Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image) error {
-	return errors.New("TODO")
-}
-
-func (c *client) ConfiguredBreakingRules(ctx context.Context, config bufconfig.BreakingConfig) ([]check.Rule, error) {
-	return nil, errors.New("TODO")
-}
-
-func (c *client) AllBreakingRules(ctx context.Context) ([]check.Rule, error) {
-	return nil, errors.New("TODO")
+	return bufanalysis.NewFileAnnotationSet(
+		annotationsToFileAnnotations(
+			imageToPathToExternalPath(
+				image,
+			),
+			annotations,
+		)...,
+	)
 }
 
 func filterAnnotations(
@@ -192,9 +264,4 @@ func ignoreLocation(
 	}
 
 	return false, nil
-}
-
-// TODO: replace
-func associatedSourcePathsForSourcePath(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
-	return nil, errors.New("TODO")
 }

@@ -15,14 +15,20 @@
 package bufcheckclient
 
 import (
+	"errors"
+
 	checkv1beta1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/check/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/bufplugin-go/check"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func imageToProtoFiles(image bufimage.Image) []*checkv1beta1.File {
+	if image == nil {
+		return nil
+	}
 	return slicesext.Map(image.Files(), imageFileToProtoFile)
 }
 
@@ -49,20 +55,20 @@ func imageToPathToExternalPath(image bufimage.Image) map[string]string {
 }
 
 func annotationsToFileAnnotations(
-	annotations []check.Annotation,
 	pathToExternalPath map[string]string,
+	annotations []check.Annotation,
 ) []bufanalysis.FileAnnotation {
 	return slicesext.Map(
 		annotations,
 		func(annotation check.Annotation) bufanalysis.FileAnnotation {
-			return annotationToFileAnnotation(annotation, pathToExternalPath)
+			return annotationToFileAnnotation(pathToExternalPath, annotation)
 		},
 	)
 }
 
 func annotationToFileAnnotation(
-	annotation check.Annotation,
 	pathToExternalPath map[string]string,
+	annotation check.Annotation,
 ) bufanalysis.FileAnnotation {
 	if annotation == nil {
 		return nil
@@ -91,4 +97,26 @@ func annotationToFileAnnotation(
 		annotation.RuleID(),
 		annotation.Message(),
 	)
+}
+
+// TODO: replace
+func associatedSourcePathsForSourcePath(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
+	return nil, errors.New("TODO")
+}
+
+// Returns Rules in same order as in allRules.
+func rulesForType(allRules []check.Rule, ruleType check.RuleType) []check.Rule {
+	return slicesext.Filter(allRules, func(rule check.Rule) bool { return rule.Type() == ruleType })
+}
+
+// Returns Rules in same order as in allRules.
+func rulesForRuleIDs(allRules []check.Rule, ruleIDs []string) []check.Rule {
+	rules := make([]check.Rule, 0, len(allRules))
+	ruleIDMap := slicesext.ToStructMap(ruleIDs)
+	for _, rule := range allRules {
+		if _, ok := ruleIDMap[rule.ID()]; ok {
+			rules = append(rules, rule)
+		}
+	}
+	return rules
 }
