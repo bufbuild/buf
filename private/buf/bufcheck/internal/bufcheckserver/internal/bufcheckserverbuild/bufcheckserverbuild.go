@@ -204,6 +204,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpClassPrefix,
 	}
+	// BreakingFileSamePhpMetadataNamespaceRuleSpecBuilder is a rule spec builder.
+	BreakingFileSamePhpMetadataNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_PHP_METADATA_NAMESPACE",
+		Purpose: "Checks files have the same value for the php_metadata_namespace option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpMetadataNamespace,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
