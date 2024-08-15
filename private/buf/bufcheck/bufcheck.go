@@ -62,8 +62,13 @@ func NewClient(options ...ClientOption) (Client, error) {
 	return newClient(options...)
 }
 
-// ClientOption will include ClientWithPluginConfig
 type ClientOption func(*clientOptions)
+
+func ClientWithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.pluginConfigs = append(clientOptions.pluginConfigs, pluginConfigs...)
+	}
+}
 
 // PrintRules prints the rules to the Writer.
 func PrintRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOption) (retErr error) {
