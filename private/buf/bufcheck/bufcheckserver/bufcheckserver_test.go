@@ -17,7 +17,7 @@ package bufcheckserver_test
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverv2"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 )
@@ -32,7 +32,7 @@ func TestServicePascalCase(t *testing.T) {
 	t.Parallel()
 
 	for _, spec := range []*check.Spec{
-		bufcheckserverv2.Spec,
+		bufcheckserver.V2Spec,
 	} {
 		checktest.TestCase{
 			Request: &checktest.RequestSpec{

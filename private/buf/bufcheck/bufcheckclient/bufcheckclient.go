@@ -16,9 +16,10 @@ package bufcheckclient
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/bufplugin-go/check"
@@ -60,8 +61,17 @@ func NewClient(logger *zap.Logger, checkClient check.Client) Client {
 	return newClient(logger, checkClient)
 }
 
-func NewCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (Client, error) {
-	return nil, errors.New("TODO")
+func NewBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {
+	switch fileVersion {
+	case bufconfig.FileVersionV1Beta1:
+		return check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
+	case bufconfig.FileVersionV1:
+		return check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
+	case bufconfig.FileVersionV2:
+		return check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }
 
 // PrintRules prints the rules to the Writer.

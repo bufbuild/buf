@@ -26,8 +26,7 @@ type RuleSpecBuilder struct {
 	// Required.
 	ID string
 	// Required.
-	Purpose   string
-	IsDefault bool
+	Purpose string
 	// Required.
 	Type           check.RuleType
 	Deprecated     bool
@@ -39,11 +38,11 @@ type RuleSpecBuilder struct {
 // Build builds the RuleSpec for the categories.
 //
 // Not making categories variadic in case we want to add extra parameters later easily.
-func (b *RuleSpecBuilder) Build(categories []string) *check.RuleSpec {
+func (b *RuleSpecBuilder) Build(isDefault bool, categories []string) *check.RuleSpec {
 	return &check.RuleSpec{
 		ID:             b.ID,
 		Categories:     categories,
-		IsDefault:      b.IsDefault,
+		IsDefault:      isDefault,
 		Purpose:        b.Purpose,
 		Type:           b.Type,
 		Deprecated:     b.Deprecated,
