@@ -34,8 +34,6 @@ func (i *inputFile) Path() string {
 	return i.File.FileDescriptorProto().GetName()
 }
 
-// TODO: We will need to reconcile this on the client-side as right now we rely on ExternalPath
-// being passed end-to-end.
 func (i *inputFile) ExternalPath() string {
 	return i.Path()
 }

@@ -26,7 +26,8 @@ type RuleSpecBuilder struct {
 	// Required.
 	ID string
 	// Required.
-	Purpose string
+	Purpose   string
+	IsDefault bool
 	// Required.
 	Type           check.RuleType
 	Deprecated     bool
@@ -42,6 +43,7 @@ func (b *RuleSpecBuilder) Build(categories []string) *check.RuleSpec {
 	return &check.RuleSpec{
 		ID:             b.ID,
 		Categories:     categories,
+		IsDefault:      b.IsDefault,
 		Purpose:        b.Purpose,
 		Type:           b.Type,
 		Deprecated:     b.Deprecated,
