@@ -861,6 +861,26 @@ func handleBreakingFileSameJavaOuterClassname(
 	)
 }
 
+// HandleBreakingFileSameJavaPackage is a check function.
+var HandleBreakingFileSameJavaPackage = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameJavaPackage)
+
+func handleBreakingFileSameJavaPackage(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.JavaPackage(),
+		file.JavaPackage(),
+		file,
+		file.JavaPackageLocation(),
+		previousFile.JavaPackageLocation(),
+		`option "java_package"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

@@ -84,6 +84,7 @@ var (
 			bufcheckserverbuild.BreakingFileSameJavaGenericServicesRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFileSameJavaMultipleFilesRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFileSameJavaOuterClassnameRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingFileSameJavaPackageRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
