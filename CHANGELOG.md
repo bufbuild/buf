@@ -4,6 +4,8 @@
 
 - Add `STABLE_PACKAGE_NO_IMPORT_UNSTABLE` lint rule which disallows files from stable packages
   to import files from unstable packages.
+- Fix bug in `buf dep update` where an empty `buf.lock` is created when one did not exist in
+  the first place and no new deps were found to update.
 
 ## [v1.36.0] - 2024-08-06
 
