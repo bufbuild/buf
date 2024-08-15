@@ -78,7 +78,8 @@ func NewRuleHandler(
 	)
 }
 
-func newMultiHandler(handlers ...check.RuleHandler) check.RuleHandler {
+// NewMultiHandler returns a new check.RuleHandler combined from multiple handlers.
+func NewMultiHandler(handlers ...check.RuleHandler) check.RuleHandler {
 	return multiRuleHandler(handlers)
 }
 

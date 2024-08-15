@@ -196,6 +196,9 @@ func handleLintDirectorySamePackage(
 	return nil
 }
 
+// HandleLintEnumNoAllowAlias is a handle function.
+var HandleLintEnumNoAllowAlias = bufcheckserverutil.NewLintEnumRuleHandler(handleLintEnumNoAllowAlias)
+
 func handleLintEnumNoAllowAlias(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -211,6 +214,9 @@ func handleLintEnumNoAllowAlias(
 	}
 	return nil
 }
+
+// HandleLintEnumPascalCase is a handle function.
+var HandleLintEnumPascalCase = bufcheckserverutil.NewLintEnumRuleHandler(handleLintEnumPascalCase)
 
 func handleLintEnumPascalCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -231,6 +237,9 @@ func handleLintEnumPascalCase(
 	return nil
 }
 
+// HandleLintEnumFirstValueZero is a handle function.
+var HandleLintEnumFirstValueZero = bufcheckserverutil.NewLintEnumRuleHandler(handleLintEnumFirstValueZero)
+
 func handleLintEnumFirstValueZero(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -249,6 +258,9 @@ func handleLintEnumFirstValueZero(
 	}
 	return nil
 }
+
+// HandleLintEnumValuePrefix is a handle function.
+var HandleLintEnumValuePrefix = bufcheckserverutil.NewLintEnumValueRuleHandler(handleLintEnumValuePrefix)
 
 func handleLintEnumValuePrefix(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -269,6 +281,9 @@ func handleLintEnumValuePrefix(
 	return nil
 }
 
+// HandleLintEnumValueUpperSnakeCase is a handle function.
+var HandleLintEnumValueUpperSnakeCase = bufcheckserverutil.NewLintEnumValueRuleHandler(handleLintEnumValueUpperSnakeCase)
+
 func handleLintEnumValueUpperSnakeCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -287,6 +302,9 @@ func handleLintEnumValueUpperSnakeCase(
 	}
 	return nil
 }
+
+// HandleLintEnumZeroValueSuffix is a handle function.
+var HandleLintEnumZeroValueSuffix = bufcheckserverutil.NewLintEnumValueRuleHandler(handleLintEnumZeroValueSuffix)
 
 func handleLintEnumZeroValueSuffix(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -310,6 +328,9 @@ func handleLintEnumZeroValueSuffix(
 	}
 	return nil
 }
+
+// HandleLintFieldLowerSnakeCase is a handle function.
+var HandleLintFieldLowerSnakeCase = bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldLowerSnakeCase)
 
 func handleLintFieldLowerSnakeCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -335,6 +356,9 @@ func handleLintFieldLowerSnakeCase(
 	return nil
 }
 
+// HandleLintFieldNoDescriptor is a handle function.
+var HandleLintFieldNoDescriptor = bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldNoDescriptor)
+
 func handleLintFieldNoDescriptor(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -351,6 +375,9 @@ func handleLintFieldNoDescriptor(
 	}
 	return nil
 }
+
+// HandleLintFieldNotRequired is a handle function.
+var HandleLintFieldNotRequired = bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldNotRequired)
 
 func handleLintFieldNotRequired(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -373,6 +400,9 @@ func handleLintFieldNotRequired(
 	}
 	return nil
 }
+
+// HandleLintFileLowerSnakeCase is a handle function.
+var HandleLintFileLowerSnakeCase = bufcheckserverutil.NewLintFileRuleHandler(handleLintFileLowerSnakeCase)
 
 func handleLintFileLowerSnakeCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -398,6 +428,9 @@ func handleLintFileLowerSnakeCase(
 	return nil
 }
 
+// HandleLintImportNoPublic is a handle function.
+var HandleLintImportNoPublic = bufcheckserverutil.NewLintFileImportRuleHandler(handleLintImportNoPublic)
+
 func handleLintImportNoPublic(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -413,6 +446,9 @@ func handleLintImportNoPublic(
 	}
 	return nil
 }
+
+// HandleLintImportNoWeak is a handle function.
+var HandleLintImportNoWeak = bufcheckserverutil.NewLintFileImportRuleHandler(handleLintImportNoWeak)
 
 func handleLintImportNoWeak(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -430,6 +466,9 @@ func handleLintImportNoWeak(
 	return nil
 }
 
+// HandleLintImportUsed is a handle function.
+var HandleLintImportUsed = bufcheckserverutil.NewLintFileImportRuleHandler(handleLintImportUsed)
+
 func handleLintImportUsed(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -445,6 +484,9 @@ func handleLintImportUsed(
 	}
 	return nil
 }
+
+// HandleLintMessagePascalCase is a handle function.
+var HandleLintMessagePascalCase = bufcheckserverutil.NewLintMessageRuleHandler(handleLintMessagePascalCase)
 
 func handleLintMessagePascalCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -468,6 +510,9 @@ func handleLintMessagePascalCase(
 	}
 	return nil
 }
+
+// HandleLintOneofLowerSnakeCase is a handle function.
+var HandleLintOneofLowerSnakeCase = bufcheckserverutil.NewLintOneofRuleHandler(handleLintOneofLowerSnakeCase)
 
 func handleLintOneofLowerSnakeCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -495,6 +540,9 @@ func handleLintOneofLowerSnakeCase(
 	return nil
 }
 
+// HandleLintPackageDefined is a handle function.
+var HandleLintPackageDefined = bufcheckserverutil.NewLintFileRuleHandler(handleLintPackageDefined)
+
 func handleLintPackageDefined(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -509,6 +557,10 @@ func handleLintPackageDefined(
 	}
 	return nil
 }
+
+// HandleLintPackageDirectoryMatch is a handle function.
+var HandleLintPackageDirectoryMatch = bufcheckserverutil.NewLintFileRuleHandler(handleLintPackageDirectoryMatch)
+
 func handleLintPackageDirectoryMatch(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -535,6 +587,9 @@ func handleLintPackageDirectoryMatch(
 	return nil
 }
 
+// HandleLintPackageLowerSnakeCase is a handle function.
+var HandleLintPackageLowerSnakeCase = bufcheckserverutil.NewLintFileRuleHandler(handleLintPackageLowerSnakeCase)
+
 func handleLintPackageLowerSnakeCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -560,6 +615,9 @@ func handleLintPackageLowerSnakeCase(
 	}
 	return nil
 }
+
+// HandleLintPackageNoImportCycle is a handle function.
+var HandleLintPackageNoImportCycle = bufcheckserverutil.NewLintFilesRuleHandler(handleLintPackageNoImportCycle)
 
 func handleLintPackageNoImportCycle(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -624,6 +682,9 @@ func handleLintPackageNoImportCycle(
 	return nil
 }
 
+// HandleLintPackageSameDirectory is a handle function.
+var HandleLintPackageSameDirectory = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameDirectory)
+
 func handleLintPackageSameDirectory(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -648,6 +709,23 @@ func handleLintPackageSameDirectory(
 	}
 	return nil
 }
+
+var (
+	// HandleLintPackageSameCsharpNamespace is a handle function.
+	HandleLintPackageSameCsharpNamespace = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameCsharpNamespace)
+	// HandleLintPackageSameGoPackage is a handle function.
+	HandleLintPackageSameGoPackage = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameGoPackage)
+	// HandleLintPackageSameJavaMultipleFiles is a handle function.
+	HandleLintPackageSameJavaMultipleFiles = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameJavaMultipleFiles)
+	// HandleLintPackageSameJavaPackage is a handle function.
+	HandleLintPackageSameJavaPackage = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameJavaPackage)
+	// HandleLintPackageSamePhpNamespace is a handle function.
+	HandleLintPackageSamePhpNamespace = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSamePhpNamespace)
+	// HandleLintPackageSameRubyPackage is a handle function.
+	HandleLintPackageSameRubyPackage = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameRubyPackage)
+	// HandleLintPackageSameSwiftPrefix is a handle function.
+	HandleLintPackageSameSwiftPrefix = bufcheckserverutil.NewLintPackageToFilesRuleHandler(handleLintPackageSameSwiftPrefix)
+)
 
 func handleLintPackageSameCsharpNamespace(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -804,6 +882,9 @@ func handleLintPackageSameOptionValue(
 	return nil
 }
 
+// HandleLintPackageVersionSuffix is a handle function.
+var HandleLintPackageVersionSuffix = bufcheckserverutil.NewLintFileRuleHandler(handleLintPackageVersionSuffix)
+
 func handleLintPackageVersionSuffix(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -823,6 +904,34 @@ func handleLintPackageVersionSuffix(
 		)
 	}
 	return nil
+}
+
+// HandleLintProtovalidate is a handle function.
+var HandleLintProtovalidate = bufcheckserverutil.NewMultiHandler(
+	bufcheckserverutil.NewLintMessageRuleHandler(handleLintMessageProtovalidate),
+	bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldProtovalidate),
+)
+
+func handleLintMessageProtovalidate(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	_ bufcheckserverutil.Request,
+	message bufprotosource.Message,
+) error {
+	add := func(
+		_ bufprotosource.Descriptor,
+		location bufprotosource.Location,
+		_ []bufprotosource.Location,
+		format string,
+		args ...interface{},
+	) {
+		responseWriter.AddProtosourceAnnotation(
+			location,
+			nil,
+			format,
+			args...,
+		)
+	}
+	return buflintvalidate.CheckMessage(add, message)
 }
 
 func handleLintFieldProtovalidate(
@@ -847,27 +956,8 @@ func handleLintFieldProtovalidate(
 	return buflintvalidate.CheckField(add, field)
 }
 
-func handleLintMessageProtovalidate(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	message bufprotosource.Message,
-) error {
-	add := func(
-		_ bufprotosource.Descriptor,
-		location bufprotosource.Location,
-		_ []bufprotosource.Location,
-		format string,
-		args ...interface{},
-	) {
-		responseWriter.AddProtosourceAnnotation(
-			location,
-			nil,
-			format,
-			args...,
-		)
-	}
-	return buflintvalidate.CheckMessage(add, message)
-}
+// HandleLintRPCNoClientStreaming is a handle function.
+var HandleLintRPCNoClientStreaming = bufcheckserverutil.NewLintMethodRuleHandler(handleLintRPCNoClientStreaming)
 
 func handleLintRPCNoClientStreaming(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -885,6 +975,9 @@ func handleLintRPCNoClientStreaming(
 	return nil
 }
 
+// HandleLintRPCNoServerStreaming is a handle function.
+var HandleLintRPCNoServerStreaming = bufcheckserverutil.NewLintMethodRuleHandler(handleLintRPCNoServerStreaming)
+
 func handleLintRPCNoServerStreaming(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -900,6 +993,9 @@ func handleLintRPCNoServerStreaming(
 	}
 	return nil
 }
+
+// HandleLintRPCPascalCase is a handle function.
+var HandleLintRPCPascalCase = bufcheckserverutil.NewLintMethodRuleHandler(handleLintRPCPascalCase)
 
 func handleLintRPCPascalCase(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -919,6 +1015,9 @@ func handleLintRPCPascalCase(
 	}
 	return nil
 }
+
+// HandleLintRPCRequestResponseUnique is a handle function.
+var HandleLintRPCRequestResponseUnique = bufcheckserverutil.NewLintFilesRuleHandler(handleLintRPCRequestResponseUnique)
 
 func handleLintRPCRequestResponseUnique(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -1031,6 +1130,9 @@ func handleLintRPCRequestResponseUnique(
 	return nil
 }
 
+// HandleLintRPCRequestStandardName is a handle function.
+var HandleLintRPCRequestStandardName = bufcheckserverutil.NewLintMethodRuleHandler(handleLintRPCRequestStandardName)
+
 func handleLintRPCRequestStandardName(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
@@ -1067,6 +1169,9 @@ func handleLintRPCRequestStandardName(
 
 	return nil
 }
+
+// HandleLintRPCResponseStandardName is a handle function.
+var HandleLintRPCResponseStandardName = bufcheckserverutil.NewLintMethodRuleHandler(handleLintRPCResponseStandardName)
 
 func handleLintRPCResponseStandardName(
 	responseWriter bufcheckserverutil.ResponseWriter,
@@ -1148,6 +1253,9 @@ func handleLintServiceSuffix(
 	return nil
 }
 
+// HandleLintStablePackageNoImportUnstable is a handle function.
+var HandleLintStablePackageNoImportUnstable = bufcheckserverutil.NewLintFilesRuleHandler(handleLintStablePackageNoImportUnstable)
+
 func handleLintStablePackageNoImportUnstable(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	_ bufcheckserverutil.Request,
@@ -1189,6 +1297,9 @@ func handleLintStablePackageNoImportUnstable(
 	}
 	return nil
 }
+
+// HandleLintSyntaxSpecified is a handle function.
+var HandleLintSyntaxSpecified = bufcheckserverutil.NewLintFileRuleHandler(handleLintSyntaxSpecified)
 
 func handleLintSyntaxSpecified(
 	responseWriter bufcheckserverutil.ResponseWriter,
