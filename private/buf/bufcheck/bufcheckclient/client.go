@@ -66,29 +66,22 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	if err != nil {
 		return err
 	}
-	if annotations := response.Annotations(); len(annotations) > 0 {
-		// TODO: Will likely need check.Annotation + pathToExternalPath for filter,
-		// not bufanalysis.FileAnnotation
-		fileAnnotations := annotationsToFileAnnotations(annotations, imageToPathToExternalPath(image))
-		fileAnnotations, err := slicesext.FilterError(
-			fileAnnotations,
-			func(fileAnnotation bufanalysis.FileAnnotation) (bool, error) {
-				ignore, err := ignoreFileAnnotation(config, fileAnnotation)
-				if err != nil {
-					return false, err
-				}
-				return ignore, nil
-			},
-		)
-		if err != nil {
-			return err
-		}
-		// Note that NewFileAnnotationSet does its own sorting and deduplication.
-		// The bufplugin SDK does this as well, but we don't need to worry about the sort
-		// order being different.
-		return bufanalysis.NewFileAnnotationSet(fileAnnotations...)
+	annotations := response.Annotations()
+	if len(annotations) == 0 {
+		return nil
 	}
-	return nil
+	pathToExternalPath := imageToPathToExternalPath(image)
+	annotations, err = filterAnnotations(config, pathToExternalPath, annotations)
+	if err != nil {
+		return err
+	}
+	if len(annotations) == 0 {
+		return nil
+	}
+	// Note that NewFileAnnotationSet does its own sorting and deduplication.
+	// The bufplugin SDK does this as well, but we don't need to worry about the sort
+	// order being different.
+	return bufanalysis.NewFileAnnotationSet(annotationsToFileAnnotations(annotations, imageToPathToExternalPath(image))...)
 }
 
 func (c *client) ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error) {
@@ -111,6 +104,23 @@ func (c *client) AllBreakingRules(ctx context.Context) ([]check.Rule, error) {
 	return nil, errors.New("TODO")
 }
 
-func ignoreFileAnnotation(config *config, fileAnnotation bufanalysis.FileAnnotation) (bool, error) {
+func filterAnnotations(
+	config *config,
+	pathToExternalPath map[string]string,
+	annotations []check.Annotation,
+) ([]check.Annotation, error) {
+	return slicesext.FilterError(
+		annotations,
+		func(annotation check.Annotation) (bool, error) {
+			return ignoreAnnotation(config, pathToExternalPath, annotation)
+		},
+	)
+}
+
+func ignoreAnnotation(
+	config *config,
+	pathToExternalPath map[string]string,
+	annotation check.Annotation,
+) (bool, error) {
 	return false, errors.New("TODO")
 }
