@@ -17,12 +17,15 @@ package bufcheckclient
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -72,8 +75,7 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	if len(annotations) == 0 {
 		return nil
 	}
-	pathToExternalPath := imageToPathToExternalPath(image)
-	annotations, err = filterAnnotations(config, pathToExternalPath, annotations)
+	annotations, err = filterAnnotations(config, annotations)
 	if err != nil {
 		return err
 	}
@@ -108,24 +110,22 @@ func (c *client) AllBreakingRules(ctx context.Context) ([]check.Rule, error) {
 
 func filterAnnotations(
 	config *config,
-	pathToExternalPath map[string]string,
 	annotations []check.Annotation,
 ) ([]check.Annotation, error) {
 	return slicesext.FilterError(
 		annotations,
 		func(annotation check.Annotation) (bool, error) {
-			return ignoreAnnotation(config, pathToExternalPath, annotation)
+			return ignoreAnnotation(config, annotation)
 		},
 	)
 }
 
 func ignoreAnnotation(
 	config *config,
-	pathToExternalPath map[string]string,
 	annotation check.Annotation,
 ) (bool, error) {
 	if location := annotation.Location(); location != nil {
-		ignore, err := ignoreLocation(config, pathToExternalPath, annotation.RuleID(), location)
+		ignore, err := ignoreLocation(config, annotation.RuleID(), location)
 		if err != nil {
 			return false, err
 		}
@@ -135,7 +135,7 @@ func ignoreAnnotation(
 	}
 	// TODO: Is this right? Does this properly encapsulate old extraIgnoreDescriptors logic?
 	if againstLocation := annotation.AgainstLocation(); againstLocation != nil {
-		return ignoreLocation(config, pathToExternalPath, annotation.RuleID(), againstLocation)
+		return ignoreLocation(config, annotation.RuleID(), againstLocation)
 
 	}
 	return false, nil
@@ -143,11 +143,12 @@ func ignoreAnnotation(
 
 func ignoreLocation(
 	config *config,
-	pathToExternalPath map[string]string,
 	ruleID string,
 	location check.Location,
 ) (bool, error) {
-	path := location.File().FileDescriptor().Path()
+	file := location.File()
+	fileDescriptor := file.FileDescriptor()
+	path := fileDescriptor.Path()
 	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
 		return true, nil
 	}
@@ -155,9 +156,45 @@ func ignoreLocation(
 	if !ok {
 		return false, nil
 	}
-	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative), nil
+	if normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative) {
+		return true, nil
+	}
+
+	if config.IgnoreUnstablePackages {
+		if packageVersion, ok := protoversion.NewPackageVersionForPackage(string(fileDescriptor.Package())); ok {
+			if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
+				return true, nil
+			}
+		}
+	}
+
+	if config.CommentIgnorePrefix != "" {
+		sourcePath := location.SourcePath()
+		if len(sourcePath) == 0 {
+			return false, nil
+		}
+		// TODO: replace
+		associatedSourcePaths, err := associatedSourcePathsForSourcePath(sourcePath)
+		if err != nil {
+			return false, err
+		}
+		sourceLocations := fileDescriptor.SourceLocations()
+		for _, associatedSourcePath := range associatedSourcePaths {
+			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
+			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
+				for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
+					if strings.HasPrefix(line, config.CommentIgnorePrefix) {
+						return true, nil
+					}
+				}
+			}
+		}
+	}
+
+	return false, nil
 }
 
+// TODO: replace
 func associatedSourcePathsForSourcePath(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
 	return nil, errors.New("TODO")
 }
