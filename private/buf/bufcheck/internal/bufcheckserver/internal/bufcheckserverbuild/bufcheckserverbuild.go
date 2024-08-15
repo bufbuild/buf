@@ -155,6 +155,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameGoPackage,
 	}
+	// BreakingFileSameJavaGenericServicesRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameJavaGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_JAVA_GENERIC_SERVICES",
+		Purpose: "Checks files have the same value for the java_generic_services option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaGenericServices,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

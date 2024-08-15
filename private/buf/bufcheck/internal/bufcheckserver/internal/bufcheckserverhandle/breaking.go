@@ -801,6 +801,26 @@ func handleBreakingFileSameGoPackage(
 	)
 }
 
+// HandleBreakingFileSameJavaGenericServices is a check function.
+var HandleBreakingFileSameJavaGenericServices = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameJavaGenericServices)
+
+func handleBreakingFileSameJavaGenericServices(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		strconv.FormatBool(previousFile.JavaGenericServices()),
+		strconv.FormatBool(file.JavaGenericServices()),
+		file,
+		file.JavaGenericServicesLocation(),
+		previousFile.JavaGenericServicesLocation(),
+		`option "java_generic_services"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},
