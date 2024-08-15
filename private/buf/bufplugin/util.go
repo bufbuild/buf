@@ -47,7 +47,7 @@ func annotationToFileAnnotation(annotation check.Annotation) bufanalysis.FileAnn
 	var endLine int
 	var endColumn int
 	if location := annotation.Location(); location != nil {
-		fileInfo = newFileInfo(location.FileName(), "")
+		fileInfo = newFileInfo(location.File().FileDescriptor().Path(), "")
 		startLine = location.StartLine() + 1
 		startColumn = location.StartColumn() + 1
 		endLine = location.EndLine() + 1
@@ -59,7 +59,7 @@ func annotationToFileAnnotation(annotation check.Annotation) bufanalysis.FileAnn
 		startColumn,
 		endLine,
 		endColumn,
-		annotation.ID(),
+		annotation.RuleID(),
 		annotation.Message(),
 	)
 }
