@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
@@ -238,25 +239,6 @@ func handleBreakingEnumValueNoDelete(
 	)
 }
 
-// HandleBreakingExtensionMessageNoDelete is a check function.
-var HandleBreakingExtensionMessageNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingExtensionMessageNoDelete)
-
-func handleBreakingExtensionMessageNoDelete(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
-	message bufprotosource.Message,
-) error {
-	return checkTagRanges(
-		responseWriter,
-		"extension",
-		message,
-		previousMessage,
-		previousMessage.ExtensionRanges(),
-		message.ExtensionRanges(),
-	)
-}
-
 // TODO: the functions below were previous in bufbreakingcheck.go, should these go into breaking_util.go?
 
 func checkEnumValueNoDeleteWithRules(
@@ -331,4 +313,98 @@ func isDeletedEnumValueAllowedWithRules(
 		return true
 	}
 	return false
+}
+
+// HandleBreakingExtensionMessageNoDelete is a check function.
+var HandleBreakingExtensionMessageNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingExtensionMessageNoDelete)
+
+func handleBreakingExtensionMessageNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	return checkTagRanges(
+		responseWriter,
+		"extension",
+		message,
+		previousMessage,
+		previousMessage.ExtensionRanges(),
+		message.ExtensionRanges(),
+	)
+}
+
+// HandleBreakingFieldNoDelete is a check function.
+var HandleBreakingFieldNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingFieldNoDelete)
+
+func handleBreakingFieldNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	return checkFieldNoDeleteWithRules(
+		responseWriter,
+		previousMessage,
+		message,
+		false,
+		false,
+	)
+}
+
+// TODO: the functions below were previous in bufbreakingcheck.go, should these go into breaking_util.go?
+
+func checkFieldNoDeleteWithRules(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+	allowIfNumberReserved bool,
+	allowIfNameReserved bool,
+) error {
+	previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
+	if err != nil {
+		return err
+	}
+	numberToField, err := bufprotosource.NumberToMessageField(message)
+	if err != nil {
+		return err
+	}
+	for previousNumber, previousField := range previousNumberToField {
+		if _, ok := numberToField[previousNumber]; !ok {
+			if !isDeletedFieldAllowedWithRules(previousField, message, allowIfNumberReserved, allowIfNameReserved) {
+				suffix := ""
+				if allowIfNumberReserved && allowIfNameReserved {
+					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
+				}
+				if allowIfNumberReserved {
+					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousField.Number())
+				}
+				if allowIfNameReserved {
+					suffix = fmt.Sprintf(` without reserving the name %q`, previousField.Name())
+				}
+				description := fieldDescription(previousField)
+				// Description will start with capital letter; lower-case it
+				// to better fit in this message.
+				description = strings.ToLower(description[:1]) + description[1:]
+				responseWriter.AddProtosourceAnnotation(
+					message.Location(),
+					previousMessage.Location(),
+					`Previously present %s was deleted%s.`,
+					description,
+					suffix,
+				)
+			}
+		}
+	}
+	return nil
+}
+
+func isDeletedFieldAllowedWithRules(
+	previousField bufprotosource.Field,
+	message bufprotosource.Message,
+	allowIfNumberReserved bool,
+	allowIfNameReserved bool,
+) bool {
+	return (allowIfNumberReserved && bufprotosource.NumberInReservedRanges(previousField.Number(), message.ReservedTagRanges()...)) ||
+		(allowIfNameReserved && bufprotosource.NameInReservedNames(previousField.Name(), message.ReservedNames()...))
 }
