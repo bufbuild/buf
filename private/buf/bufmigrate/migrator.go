@@ -22,9 +22,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -32,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -638,26 +637,11 @@ func resolvedDeclaredAndLockedDependencies(
 	return resolvedDeclaredDependencies, resolvedDepModuleKeys, nil
 }
 
-func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
-	deprecations, err := buflint.GetRelevantDeprecations(lintConfig.FileVersion())
-	if err != nil {
-		return nil, err
-	}
+func equivalentLintConfigInV2(ctx context.Context, lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
+		ctx,
+		check.RuleTypeLint,
 		lintConfig,
-		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
-			lintConfig := bufconfig.NewLintConfig(
-				checkConfig,
-				lintConfig.EnumZeroValueSuffix(),
-				lintConfig.RPCAllowSameRequestResponse(),
-				lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
-				lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
-				lintConfig.ServiceSuffix(),
-				lintConfig.AllowCommentIgnores(),
-			)
-			return buflint.RulesForConfig(lintConfig)
-		},
-		deprecations,
 	)
 	if err != nil {
 		return nil, err
@@ -673,21 +657,11 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 	), nil
 }
 
-func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
-	deprecations, err := bufbreaking.GetRelevantDeprecations(breakingConfig.FileVersion())
-	if err != nil {
-		return nil, err
-	}
+func equivalentBreakingConfigInV2(ctx context.Context, breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
+		ctx,
+		check.RuleTypeBreaking,
 		breakingConfig,
-		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
-			breakingConfig := bufconfig.NewBreakingConfig(
-				checkConfig,
-				breakingConfig.IgnoreUnstablePackages(),
-			)
-			return bufbreaking.RulesForConfig(breakingConfig)
-		},
-		deprecations,
 	)
 	if err != nil {
 		return nil, err
@@ -701,20 +675,26 @@ func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufc
 // Returns an equivalent check config with (close to) minimal difference in the
 // list of rules and categories specified.
 func equivalentCheckConfigInV2(
+	ctx context.Context,
+	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
-	getRulesFunc func(bufconfig.CheckConfig) ([]bufcheck.Rule, error),
-	deprecations map[string][]string,
 ) (bufconfig.CheckConfig, error) {
-	// These are the rules we want the returned config to have in effect.
-	// i.e. getRulesFunc(returnedConfig) should return this list.
-	expectedRules, err := getRulesFunc(checkConfig)
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return nil, err
 	}
-
+	expectedRules, err := client.ConfiguredRules(ctx, ruleType, checkConfig)
+	if err != nil {
+		return nil, err
+	}
+	deprecations, err := bufcheck.GetDeprecatedIDToReplacementIDs(expectedRules)
+	if err != nil {
+		return nil, err
+	}
+	expectedRules = slicesext.Filter(expectedRules, func(rule check.Rule) bool { return !rule.Deprecated() })
 	expectedIDs := slicesext.Map(
 		expectedRules,
-		func(rule bufcheck.Rule) string {
+		func(rule check.Rule) string {
 			return rule.ID()
 		},
 	)
@@ -731,13 +711,13 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	simplyTranslatedRules, err := getRulesFunc(simplyTranslatedCheckConfig)
+	simplyTranslatedRules, err := client.ConfiguredRules(ctx, ruleType, simplyTranslatedCheckConfig)
 	if err != nil {
 		return nil, err
 	}
 	simplyTranslatedIDs := slicesext.Map(
 		simplyTranslatedRules,
-		func(rule bufcheck.Rule) string {
+		func(rule check.Rule) string {
 			return rule.ID()
 		},
 	)

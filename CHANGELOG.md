@@ -4,6 +4,7 @@
 
 - Add `STABLE_PACKAGE_NO_IMPORT_UNSTABLE` lint rule which disallows files from stable packages
   to import files from unstable packages.
+- Fix plugin push failures when pushing an image built with containerd image store.
 
 ## [v1.36.0] - 2024-08-06
 

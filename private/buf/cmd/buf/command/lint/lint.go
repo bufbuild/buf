@@ -19,14 +19,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -83,7 +82,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors or check violations printed to stdout. Must be one of %s",
-			stringutil.SliceToString(buflint.AllFormatStrings),
+			stringutil.SliceToString(bufcli.AllLintFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -130,12 +129,13 @@ func run(
 	if err != nil {
 		return err
 	}
+	client, err := bufcheck.NewClient()
+	if err != nil {
+		return err
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		if err := buflint.NewHandler(
-			container.Logger(),
-			tracing.NewTracer(container.Tracer()),
-		).Check(
+		if err := client.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
@@ -151,7 +151,7 @@ func run(
 	if len(allFileAnnotations) > 0 {
 		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
 		if flags.ErrorFormat == "config-ignore-yaml" {
-			if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+			if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 				container.Stdout(),
 				allFileAnnotationSet,
 			); err != nil {

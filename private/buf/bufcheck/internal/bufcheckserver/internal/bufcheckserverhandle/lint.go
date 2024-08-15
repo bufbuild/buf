@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverhandle/buflintvalidate"
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckopt"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckclient
+package bufcheck
 
 // priority 1 is higher than priority two
 var topLevelCategoryToPriority = map[string]int{

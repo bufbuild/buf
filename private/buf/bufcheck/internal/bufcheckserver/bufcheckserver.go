@@ -15,21 +15,47 @@
 package bufcheckserver
 
 import (
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverbuild"
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverutil"
+	"context"
+
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverbuild"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
 var (
 	// V1Beta1Spec is the v1beta1 check.Spec.
 	V1Beta1Spec = &check.Spec{
-		Rules:  []*check.RuleSpec{},
+		// TODO
+		Rules: []*check.RuleSpec{
+			{
+				ID:      "PLACEHOLDER",
+				Purpose: "Have a single RuleSpec so that all of the code downstream doesn't error.",
+				Type:    check.RuleTypeLint,
+				Handler: check.RuleHandlerFunc(
+					func(context.Context, check.ResponseWriter, check.Request) error {
+						return nil
+					},
+				),
+			},
+		},
 		Before: bufcheckserverutil.Before,
 	}
 
 	// V1Spec is the v1beta1 check.Spec.
 	V1Spec = &check.Spec{
-		Rules:  []*check.RuleSpec{},
+		// TODO
+		Rules: []*check.RuleSpec{
+			{
+				ID:      "PLACEHOLDER",
+				Purpose: "Have a single RuleSpec so that all of the code downstream doesn't error.",
+				Type:    check.RuleTypeLint,
+				Handler: check.RuleHandlerFunc(
+					func(context.Context, check.ResponseWriter, check.Request) error {
+						return nil
+					},
+				),
+			},
+		},
 		Before: bufcheckserverutil.Before,
 	}
 

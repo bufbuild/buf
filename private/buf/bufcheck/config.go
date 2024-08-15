@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckclient
+package bufcheck
 
 import (
 	"fmt"
@@ -51,19 +51,23 @@ type config struct {
 	IgnoreUnstablePackages bool
 
 	CommentIgnorePrefix string
+	ExcludeImports      bool
+}
+
+// Only RuleIDs, IgnoreRootPaths,  IgnoreIDToRootPaths will be set. Options has no meaning.
+func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []check.Rule) (*config, error) {
+	return configSpecForCheckConfig(checkConfig).newConfig(allRules)
 }
 
 func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []check.Rule) (*config, error) {
 	return configSpecForLintConfig(lintConfig).newConfig(allRules)
 }
 
-var _ = configForBreakingConfig
-
-func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule) (*config, error) {
-	return configSpecForBreakingConfig(breakingConfig).newConfig(allRules)
+func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule, excludeImports bool) (*config, error) {
+	return configSpecForBreakingConfig(breakingConfig, excludeImports).newConfig(allRules)
 }
 
-// *** BELOW THIS LINE SHOULD OBLY BE USED BY THIS FILE ***
+// *** BELOW THIS LINE SHOULD ONLY BE USED BY THIS FILE ***
 
 // configSpec is a config spec.
 type configSpec struct {
@@ -86,6 +90,25 @@ type configSpec struct {
 	ServiceSuffix                        string
 
 	CommentIgnorePrefix string
+	ExcludeImports      bool
+}
+
+func configSpecForCheckConfig(checkConfig bufconfig.CheckConfig) *configSpec {
+	return &configSpec{
+		Use:                                  checkConfig.UseIDsAndCategories(),
+		Except:                               checkConfig.ExceptIDsAndCategories(),
+		IgnoreRootPaths:                      checkConfig.IgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths:        checkConfig.IgnoreIDOrCategoryToPaths(),
+		AllowCommentIgnores:                  false,
+		IgnoreUnstablePackages:               false,
+		EnumZeroValueSuffix:                  "",
+		RPCAllowSameRequestResponse:          false,
+		RPCAllowGoogleProtobufEmptyRequests:  false,
+		RPCAllowGoogleProtobufEmptyResponses: false,
+		ServiceSuffix:                        "",
+		CommentIgnorePrefix:                  "",
+		ExcludeImports:                       false,
+	}
 }
 
 func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {
@@ -102,10 +125,11 @@ func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {
 		RPCAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 		ServiceSuffix:                        lintConfig.ServiceSuffix(),
 		CommentIgnorePrefix:                  lintCommentIgnorePrefix,
+		ExcludeImports:                       false,
 	}
 }
 
-func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig) *configSpec {
+func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig, excludeImports bool) *configSpec {
 	return &configSpec{
 		Use:                                  breakingConfig.UseIDsAndCategories(),
 		Except:                               breakingConfig.ExceptIDsAndCategories(),
@@ -119,6 +143,7 @@ func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig) *confi
 		RPCAllowGoogleProtobufEmptyResponses: false,
 		ServiceSuffix:                        "",
 		CommentIgnorePrefix:                  "",
+		ExcludeImports:                       excludeImports,
 	}
 }
 
@@ -268,6 +293,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 		AllowCommentIgnores:    b.AllowCommentIgnores,
 		IgnoreUnstablePackages: b.IgnoreUnstablePackages,
 		CommentIgnorePrefix:    b.CommentIgnorePrefix,
+		ExcludeImports:         b.ExcludeImports,
 	}, nil
 }
 
