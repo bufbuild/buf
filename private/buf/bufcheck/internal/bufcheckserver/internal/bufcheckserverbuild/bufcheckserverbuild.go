@@ -148,6 +148,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameCsharpNamespace,
 	}
+	// BreakingFileSameGoPackageRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameGoPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_GO_PACKAGE",
+		Purpose: "Checks files have the same value for the go_package option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameGoPackage,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

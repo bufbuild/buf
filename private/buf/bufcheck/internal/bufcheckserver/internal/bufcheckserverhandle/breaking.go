@@ -764,7 +764,7 @@ func handleBreakingFileSameCcGenericServices(
 // HandleBreakingFileSameCsharpNamespace is a check function.
 var HandleBreakingFileSameCsharpNamespace = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameCsharpNamespace)
 
-func handleBreakingFileSameCsharpnamespace(
+func handleBreakingFileSameCsharpNamespace(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
 	previousFile bufprotosource.File,
@@ -778,6 +778,26 @@ func handleBreakingFileSameCsharpnamespace(
 		file.CsharpNamespaceLocation(),
 		previousFile.CsharpNamespaceLocation(),
 		`option "csharp_namespace"`,
+	)
+}
+
+// HandleBreakingFileSameGoPackage is a check function.
+var HandleBreakingFileSameGoPackage = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameGoPackage)
+
+func handleBreakingFileSameGoPackage(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.GoPackage(),
+		file.GoPackage(),
+		file,
+		file.GoPackageLocation(),
+		previousFile.GoPackageLocation(),
+		`option "go_package"`,
 	)
 }
 
