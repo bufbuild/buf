@@ -238,6 +238,27 @@ func handleBreakingEnumValueNoDelete(
 	)
 }
 
+// HandleBreakingExtensionMessageNoDelete is a check function.
+var HandleBreakingExtensionMessageNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingExtensionMessageNoDelete)
+
+func handleBreakingExtensionMessageNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	return checkTagRanges(
+		responseWriter,
+		"extension",
+		message,
+		previousMessage,
+		previousMessage.ExtensionRanges(),
+		message.ExtensionRanges(),
+	)
+}
+
+// TODO: the functions below were previous in bufbreakingcheck.go, should these go into breaking_util.go?
+
 func checkEnumValueNoDeleteWithRules(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousEnum bufprotosource.Enum,

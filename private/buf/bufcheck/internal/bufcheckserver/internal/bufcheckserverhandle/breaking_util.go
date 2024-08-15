@@ -103,7 +103,6 @@ func fieldDescriptorTypePrettyString(descriptor protoreflect.FieldDescriptor) st
 	return descriptor.Kind().String()
 }
 
-// addFunc adds a FileAnnotation.
 func getDescriptorAndLocationForDeletedElement(
 	file bufprotosource.File,
 	previousNestedName string,

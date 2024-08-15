@@ -70,6 +70,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDelete,
 	}
+	// BreakingExtensionMessageNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingExtensionMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "EXTENSION_MESSAGE_NO_DELETE",
+		Purpose: "Checks extension ranges are not deleted from a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingExtensionMessageNoDelete,
+	}
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "COMMENT_ENUM",

@@ -69,6 +69,7 @@ var (
 			bufcheckserverbuild.BreakingServiceNoDeleteRuleSpecBuilder.Build(true, []string{"FILE"}),
 			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingEnumValueNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingExtensionMessageNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
