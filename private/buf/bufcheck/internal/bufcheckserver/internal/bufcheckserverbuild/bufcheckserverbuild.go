@@ -127,6 +127,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameUTF8Validation,
 	}
+	// BreakingFileSameCcEnableArenasRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameCcEnableArenasRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_CC_ENABLE_ARENAS",
+		Purpose: "Check files have the same value for the cc_enable_arenas option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameCcEnableArenas,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

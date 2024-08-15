@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
@@ -715,6 +716,48 @@ func handleBreakingFieldSameUTF8Validation(
 			fieldDescription(field),
 			previousUTF8Validation,
 			utf8Validation,
+		)
+	}
+	return nil
+}
+
+// HandleBreakingFileSameCcEnableArenas is a check function.
+var HandleBreakingFileSameCcEnableArenas = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameCcEnableArenas)
+
+func handleBreakingFileSameCcEnableArenas(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		strconv.FormatBool(previousFile.CcEnableArenas()),
+		strconv.FormatBool(file.CcEnableArenas()),
+		file,
+		file.CcEnableArenasLocation(),
+		previousFile.CcEnableArenasLocation(),
+		`option "cc_enable_arenas"`,
+	)
+}
+
+func checkFileSameValue(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousValue interface{},
+	value interface{},
+	file bufprotosource.File,
+	location bufprotosource.Location,
+	previousLocation bufprotosource.Location,
+	name string,
+) error {
+	if previousValue != value {
+		responseWriter.AddProtosourceAnnotation(
+			location,
+			previousLocation,
+			`File %s changed from %q to %q.`,
+			name,
+			previousValue,
+			value,
 		)
 	}
 	return nil
