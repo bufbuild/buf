@@ -573,3 +573,101 @@ func handleBreakingFieldSameJSType(
 	}
 	return nil
 }
+
+// HandleBreakingFieldSameType is a check function.
+var HandleBreakingFieldSameType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameType)
+
+func handleBreakingFieldSameType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	// We use descriptor.Kind(), instead of field.Type(), because it also includes
+	// a check of resolved features in Editions files so it can distinguish between
+	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
+	// are not compatible.
+	if previousDescriptor.Kind() != descriptor.Kind() {
+		addFieldChangedType(
+			responseWriter,
+			previousField,
+			previousDescriptor,
+			field,
+			descriptor,
+		)
+		return nil
+	}
+
+	switch field.Type() {
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+		descriptorpb.FieldDescriptorProto_TYPE_GROUP,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		if previousField.TypeName() != field.TypeName() {
+			addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
+		}
+	}
+	return nil
+}
+
+func addFieldChangedType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+	extraMessages ...string,
+) {
+	combinedExtraMessage := ""
+	if len(extraMessages) > 0 {
+		// protect against mistakenly added empty extra messages
+		if joined := strings.TrimSpace(strings.Join(extraMessages, " ")); joined != "" {
+			combinedExtraMessage = " " + joined
+		}
+	}
+	var fieldLocation bufprotosource.Location
+	switch descriptor.Kind() {
+	case protoreflect.MessageKind, protoreflect.EnumKind, protoreflect.GroupKind:
+		fieldLocation = field.TypeNameLocation()
+	default:
+		fieldLocation = field.TypeLocation()
+	}
+	var previousFieldLocation bufprotosource.Location
+	switch previousDescriptor.Kind() {
+	case protoreflect.MessageKind, protoreflect.EnumKind, protoreflect.GroupKind:
+		previousFieldLocation = previousField.TypeNameLocation()
+	default:
+		previousFieldLocation = previousField.TypeLocation()
+	}
+	responseWriter.AddProtosourceAnnotation(
+		fieldLocation,
+		previousFieldLocation,
+		`%s changed type from %q to %q.%s`,
+		fieldDescription(field),
+		fieldDescriptorTypePrettyString(previousDescriptor),
+		fieldDescriptorTypePrettyString(descriptor),
+		combinedExtraMessage,
+	)
+}
+
+func addEnumGroupMessageFieldChangedTypeName(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) {
+	responseWriter.AddProtosourceAnnotation(
+		field.TypeNameLocation(),
+		previousField.TypeNameLocation(),
+		`%s changed type from %q to %q.`,
+		fieldDescription(field),
+		strings.TrimPrefix(previousField.TypeName(), "."),
+		strings.TrimPrefix(field.TypeName(), "."),
+	)
+}
