@@ -22,17 +22,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
@@ -101,8 +100,9 @@ func handle(
 	if err != nil {
 		return err
 	}
+	var breakingOptions []bufcheckclient.BreakingOption
 	if externalConfig.ExcludeImports {
-		againstImage = bufimage.ImageWithoutImports(againstImage)
+		breakingOptions = append(breakingOptions, bufcheckclient.BreakingWithExcludeImports())
 	}
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
@@ -116,11 +116,16 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if err := bufbreaking.NewHandler(container.Logger(), tracing.NopTracer).Check(
+	client, err := bufcheckclient.NewClient()
+	if err != nil {
+		return err
+	}
+	if err := client.Breaking(
 		ctx,
 		moduleConfig.BreakingConfig(),
 		againstImage,
 		image,
+		breakingOptions...,
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {

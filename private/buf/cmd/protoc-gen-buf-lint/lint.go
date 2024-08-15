@@ -22,14 +22,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
 )
 
@@ -61,10 +60,6 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := zaputil.NewLoggerForFlagValues(pluginEnv.Stderr, externalConfig.LogLevel, externalConfig.LogFormat)
-	if err != nil {
-		return err
-	}
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
@@ -81,7 +76,11 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if err := buflint.NewHandler(logger, tracing.NopTracer).Check(
+	client, err := bufcheckclient.NewClient()
+	if err != nil {
+		return err
+	}
+	if err := client.Lint(
 		ctx,
 		moduleConfig.LintConfig(),
 		image,
@@ -90,7 +89,7 @@ func handle(
 		if errors.As(err, &fileAnnotationSet) {
 			buffer := bytes.NewBuffer(nil)
 			if externalConfig.ErrorFormat == "config-ignore-yaml" {
-				if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+				if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 					buffer,
 					fileAnnotationSet,
 				); err != nil {
