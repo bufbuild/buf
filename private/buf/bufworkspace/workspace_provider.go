@@ -188,11 +188,13 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
+	opaqueIDToPluginConfigs := make(map[string][]bufconfig.PluginConfig)
 	for _, module := range moduleSet.Modules() {
 		if bufmodule.ModuleFullNameEqual(module.ModuleFullName(), moduleKey.ModuleFullName()) {
 			// Set the lint and breaking config for the single targeted Module.
 			opaqueIDToLintConfig[module.OpaqueID()] = targetModuleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = targetModuleConfig.BreakingConfig()
+			opaqueIDToPluginConfigs[module.OpaqueID()] = targetModuleConfig.PluginConfigs()
 		} else {
 			// For all non-targets, set the default lint and breaking config.
 			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfigV1
@@ -203,6 +205,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
+		opaqueIDToPluginConfigs,
 		nil,
 		false,
 	), nil
@@ -429,6 +432,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 ) (*workspace, error) {
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
+	opaqueIDToPluginConfigs := make(map[string][]bufconfig.PluginConfig)
 	for _, module := range moduleSet.Modules() {
 		if bucketID := module.BucketID(); bucketID != "" {
 			moduleConfig, ok := bucketIDToModuleConfig[bucketID]
@@ -438,6 +442,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 			}
 			opaqueIDToLintConfig[module.OpaqueID()] = moduleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = moduleConfig.BreakingConfig()
+			opaqueIDToPluginConfigs[module.OpaqueID()] = moduleConfig.PluginConfigs()
 		} else {
 			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfigV1
 			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfigV1
@@ -447,6 +452,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
+		opaqueIDToPluginConfigs,
 		configuredDepModuleRefs,
 		isV2,
 	), nil
