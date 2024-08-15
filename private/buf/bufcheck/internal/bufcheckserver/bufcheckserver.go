@@ -74,6 +74,7 @@ var (
 			bufcheckserverbuild.BreakingFieldSameCardinalityRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFieldSameCppStringTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFieldSameJavaUTF8ValidationRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingFieldSameJSTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

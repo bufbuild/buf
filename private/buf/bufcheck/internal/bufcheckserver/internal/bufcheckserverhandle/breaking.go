@@ -549,3 +549,27 @@ func handleBreakingFieldSameJavaUTF8Validation(
 	}
 	return nil
 }
+
+// HandleBreakingFieldSameJSType is a check function.
+var HandleBreakingFieldSameJSType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameJSType)
+
+func handleBreakingFieldSameJSType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	if !is64bitInteger(previousField.Type()) || !is64bitInteger(field.Type()) {
+		// this check only applies to 64-bit integer fields
+		return nil
+	}
+	if previousField.JSType() != field.JSType() {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(field.JSTypeLocation(), field.Location()),
+			withBackupLocation(previousField.JSTypeLocation(), previousField.Location()),
+			`%s changed option "jstype" from %q to %q.`,
+			fieldDescription(field),
+			previousField.JSType().String(), field.JSType().String())
+	}
+	return nil
+}

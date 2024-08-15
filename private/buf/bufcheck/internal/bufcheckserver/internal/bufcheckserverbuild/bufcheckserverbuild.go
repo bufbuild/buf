@@ -105,6 +105,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameJavaUTF8Validation,
 	}
+	// BreakingFieldSameJSTypeRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameJSTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_JSTYPE",
+		Purpose: "Checks fields have the same value for the jstype option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameJSType,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
