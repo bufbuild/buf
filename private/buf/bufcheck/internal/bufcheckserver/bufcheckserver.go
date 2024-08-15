@@ -17,8 +17,8 @@ package bufcheckserver
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverbuild"
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverbuild"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 

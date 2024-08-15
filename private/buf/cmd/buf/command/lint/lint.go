@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -129,7 +129,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	client, err := bufcheckclient.NewClient()
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
 	}

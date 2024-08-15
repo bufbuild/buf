@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -76,7 +76,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	client, err := bufcheckclient.NewClient()
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
 	}

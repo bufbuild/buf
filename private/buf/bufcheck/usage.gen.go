@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufcheckclient
+package bufcheck
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckclient
+package bufcheck
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"

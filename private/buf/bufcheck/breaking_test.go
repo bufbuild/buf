@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcheckclient_test
+package bufcheck_test
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -1344,7 +1344,7 @@ func testBreaking(
 
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheckclient.NewClient()
+	client, err := bufcheck.NewClient()
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,

@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -204,13 +204,13 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
-	client, err := bufcheckclient.NewClient()
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
 	}
-	var breakingOptions []bufcheckclient.BreakingOption
+	var breakingOptions []bufcheck.BreakingOption
 	if flags.ExcludeImports {
-		breakingOptions = append(breakingOptions, bufcheckclient.BreakingWithExcludeImports())
+		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {

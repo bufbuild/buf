@@ -28,7 +28,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
@@ -448,18 +448,18 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../bufcheck/bufcheckclient/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufcheckclient/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufcheckclient/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufcheckclient/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufcheckclient/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufcheckclient/testdata/breaking/current/breaking_field_no_delete",
+		"../../bufcheck/testdata/breaking/current/breaking_field_no_delete",
 		"--against",
-		"../../bufcheck/bufcheckclient/testdata/breaking/previous/breaking_field_no_delete",
+		"../../bufcheck/testdata/breaking/previous/breaking_field_no_delete",
 	)
 }
 
@@ -1007,7 +1007,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 		version := version
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
-			client, err := bufcheckclient.NewClient()
+			client, err := bufcheck.NewClient()
 			require.NoError(t, err)
 			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
 			require.NoError(t, err)
@@ -1031,7 +1031,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 				}
 			}
 			sort.Strings(allPackageIDs)
-			deprecations, err := bufcheckclient.GetDeprecatedIDToReplacementIDs(allRules)
+			deprecations, err := bufcheck.GetDeprecatedIDToReplacementIDs(allRules)
 			require.NoError(t, err)
 
 			for deprecatedRule := range deprecations {

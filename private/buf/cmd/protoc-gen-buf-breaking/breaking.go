@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
@@ -100,9 +100,9 @@ func handle(
 	if err != nil {
 		return err
 	}
-	var breakingOptions []bufcheckclient.BreakingOption
+	var breakingOptions []bufcheck.BreakingOption
 	if externalConfig.ExcludeImports {
-		breakingOptions = append(breakingOptions, bufcheckclient.BreakingWithExcludeImports())
+		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 	}
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
@@ -116,7 +116,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	client, err := bufcheckclient.NewClient()
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
 	}

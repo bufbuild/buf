@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/buf/private/buf/bufcheck"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -182,7 +182,7 @@ func lsRun(
 		}
 	}
 
-	client, err := bufcheckclient.NewClient()
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
 	}
