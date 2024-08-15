@@ -22,6 +22,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 )
@@ -105,4 +107,28 @@ func PrintRulesWithDeprecated() PrintRulesOption {
 	return func(printRulesOptions *printRulesOptions) {
 		printRulesOptions.includeDeprecated = true
 	}
+}
+
+// GetDeprecatedIDToReplacementIDs gets a map from deprecated ID to replacement IDs.
+func GetDeprecatedIDToReplacementIDs(rules []check.Rule) (map[string][]string, error) {
+	idToRule, err := slicesext.ToUniqueValuesMap(rules, check.Rule.ID)
+	if err != nil {
+		return nil, err
+	}
+	idToReplacementIDs := make(map[string][]string)
+	for _, rule := range rules {
+		if rule.Deprecated() {
+			replacementIDs := rule.ReplacementIDs()
+			if replacementIDs == nil {
+				replacementIDs = []string{}
+			}
+			for _, replacementID := range replacementIDs {
+				if _, ok := idToRule[replacementID]; !ok {
+					return nil, syserror.Newf("unknown rule ID given as a replacement ID: %q", replacementID)
+				}
+			}
+			idToReplacementIDs[rule.ID()] = replacementIDs
+		}
+	}
+	return idToReplacementIDs, nil
 }
