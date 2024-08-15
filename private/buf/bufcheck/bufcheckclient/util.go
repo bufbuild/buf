@@ -73,7 +73,7 @@ func annotationToFileAnnotation(
 	var endLine int
 	var endColumn int
 	if location := annotation.Location(); location != nil {
-		path := location.FileName()
+		path := location.File().FileDescriptor().Path()
 		// While it never should, it is OK if pathToExternalPath returns "" for a given path.
 		// We handle this in fileInfo.
 		fileInfo = newFileInfo(path, pathToExternalPath[path])
@@ -88,7 +88,7 @@ func annotationToFileAnnotation(
 		startColumn,
 		endLine,
 		endColumn,
-		annotation.ID(),
+		annotation.RuleID(),
 		annotation.Message(),
 	)
 }

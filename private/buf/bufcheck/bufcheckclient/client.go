@@ -21,9 +21,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type client struct {
@@ -122,5 +124,40 @@ func ignoreAnnotation(
 	pathToExternalPath map[string]string,
 	annotation check.Annotation,
 ) (bool, error) {
-	return false, errors.New("TODO")
+	if location := annotation.Location(); location != nil {
+		ignore, err := ignoreLocation(config, pathToExternalPath, annotation.RuleID(), location)
+		if err != nil {
+			return false, err
+		}
+		if ignore {
+			return true, nil
+		}
+	}
+	// TODO: Is this right? Does this properly encapsulate old extraIgnoreDescriptors logic?
+	if againstLocation := annotation.AgainstLocation(); againstLocation != nil {
+		return ignoreLocation(config, pathToExternalPath, annotation.RuleID(), againstLocation)
+
+	}
+	return false, nil
+}
+
+func ignoreLocation(
+	config *config,
+	pathToExternalPath map[string]string,
+	ruleID string,
+	location check.Location,
+) (bool, error) {
+	path := location.File().FileDescriptor().Path()
+	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
+		return true, nil
+	}
+	ignoreRootPaths, ok := config.IgnoreIDToRootPaths[ruleID]
+	if !ok {
+		return false, nil
+	}
+	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative), nil
+}
+
+func associatedSourcePathsForSourcePath(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
+	return nil, errors.New("TODO")
 }

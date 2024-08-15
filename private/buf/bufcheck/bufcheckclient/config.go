@@ -33,7 +33,13 @@ const lintCommentIgnorePrefix = "buf:lint:ignore"
 // This should only be built via a configSpec. If we were exposing this API publicly, we would
 // enforce this.
 type config struct {
-	// If empty, all default Rules should be used.
+	// RuleIDs contains the specific RuleIDs to use.
+	//
+	// If not set, all default Rules should be used.
+	//
+	// Note that ignoreAnnotation does not need to take this into account as the plugins
+	// themselves will only return RuleIDs in this list TODO make sure bufplugin-go
+	// validates this and that this is documented.
 	RuleIDs []string
 	// Will never be nil.
 	Options check.Options
