@@ -1,0 +1,74 @@
+// Copyright 2020-2024 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package protosourcepath
+
+import (
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"google.golang.org/protobuf/reflect/protoreflect"
+)
+
+const (
+	enumValueNameTypeTag   = int32(1)
+	enumValueNumberTypeTag = int32(2)
+	enumValueOptionTypeTag = int32(3)
+)
+
+var (
+	terminalEnumValueTokens = []int32{
+		enumValueNameTypeTag,
+		enumValueNumberTypeTag,
+	}
+)
+
+func enumValues(
+	_ int32,
+	sourcePath protoreflect.SourcePath,
+	i int,
+	excludeChildAssociatedPaths bool,
+) (state, []protoreflect.SourcePath, error) {
+	associatedPaths := []protoreflect.SourcePath{
+		currentPath(sourcePath, i),
+	}
+	if !excludeChildAssociatedPaths {
+		associatedPaths = append(
+			associatedPaths,
+			childAssociatedPath(sourcePath, i, enumValueNameTypeTag),
+			childAssociatedPath(sourcePath, i, enumValueNumberTypeTag),
+		)
+	}
+	if len(sourcePath) == i+1 {
+		// This does not extend beyond the enum value declaration, return associated paths and
+		// terminate here.
+		return nil, associatedPaths, nil
+	}
+	return enumValue, associatedPaths, nil
+}
+
+func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+	// TODO: use slices.Contains in the future
+	if slicesext.ElementsContained(
+		terminalEnumValueTokens,
+		[]int32{token},
+	) {
+		// Encountered a terminal enum value path, terminate here.
+		return nil, nil, nil
+	}
+	switch token {
+	case enumValueOptionTypeTag:
+		// Return the entire path and then handle the option
+		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+	}
+	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")
+}
