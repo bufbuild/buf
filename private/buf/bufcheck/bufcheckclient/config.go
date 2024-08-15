@@ -43,7 +43,21 @@ type config struct {
 
 	AllowCommentIgnores    bool
 	IgnoreUnstablePackages bool
+
+	CommentIgnorePrefix string
 }
+
+func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []check.Rule) (*config, error) {
+	return configSpecForLintConfig(lintConfig).newConfig(allRules)
+}
+
+var _ = configForBreakingConfig
+
+func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule) (*config, error) {
+	return configSpecForBreakingConfig(breakingConfig).newConfig(allRules)
+}
+
+// *** BELOW THIS LINE SHOULD OBLY BE USED BY THIS FILE ***
 
 // configSpec is a config spec.
 type configSpec struct {
@@ -64,10 +78,11 @@ type configSpec struct {
 	RPCAllowGoogleProtobufEmptyRequests  bool
 	RPCAllowGoogleProtobufEmptyResponses bool
 	ServiceSuffix                        string
-	CommentExcludes                      []string
+
+	CommentIgnorePrefix string
 }
 
-func newLintConfigSpec(lintConfig bufconfig.LintConfig) *configSpec {
+func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {
 	return &configSpec{
 		Use:                                  lintConfig.UseIDsAndCategories(),
 		Except:                               lintConfig.ExceptIDsAndCategories(),
@@ -80,11 +95,11 @@ func newLintConfigSpec(lintConfig bufconfig.LintConfig) *configSpec {
 		RPCAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
 		RPCAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 		ServiceSuffix:                        lintConfig.ServiceSuffix(),
-		CommentExcludes:                      []string{lintCommentIgnorePrefix},
+		CommentIgnorePrefix:                  lintCommentIgnorePrefix,
 	}
 }
 
-func newBreakingConfigSpec(breakingConfig bufconfig.BreakingConfig) *configSpec {
+func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig) *configSpec {
 	return &configSpec{
 		Use:                                  breakingConfig.UseIDsAndCategories(),
 		Except:                               breakingConfig.ExceptIDsAndCategories(),
@@ -97,14 +112,17 @@ func newBreakingConfigSpec(breakingConfig bufconfig.BreakingConfig) *configSpec 
 		RPCAllowGoogleProtobufEmptyRequests:  false,
 		RPCAllowGoogleProtobufEmptyResponses: false,
 		ServiceSuffix:                        "",
-		CommentExcludes:                      nil,
+		CommentIgnorePrefix:                  "",
 	}
 }
 
-// NewConfig returns a new Config.
-//
-// TransformDeprecated should always be true if building a Config for a Runner.
-func (b *configSpec) NewConfig(allRules []check.Rule, transformDeprecated bool) (*config, error) {
+// newConfig returns a new Config.
+func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
+	// transformDeprecated should always be true if building a Config for a Runner.
+	// TODO: Evaluate whether we still need this after the refactor. Keeping logic
+	// around for now
+	transformDeprecated := true
+
 	// this checks that there are not duplicate IDs for a given revision
 	// which would be a system error
 	idToRule, err := getIDToRule(allRules)
@@ -131,7 +149,6 @@ func (b *configSpec) NewConfig(allRules []check.Rule, transformDeprecated bool) 
 		b.Use = slicesext.Map(slicesext.Filter(allRules, check.Rule.IsDefault), check.Rule.ID)
 	}
 	if len(b.Use) > 0 || len(b.Except) > 0 {
-
 		useIDMap, err := transformToIDMap(b.Use, idToCategories, categoryToIDs)
 		if err != nil {
 			return nil, err
@@ -228,7 +245,9 @@ func (b *configSpec) NewConfig(allRules []check.Rule, transformDeprecated bool) 
 		RPCAllowGoogleProtobufEmptyRequests:  b.RPCAllowGoogleProtobufEmptyRequests,
 		RPCAllowGoogleProtobufEmptyResponses: b.RPCAllowGoogleProtobufEmptyResponses,
 		ServiceSuffix:                        b.ServiceSuffix,
-		CommentExcludes:                      b.CommentExcludes,
+	}
+	if b.CommentIgnorePrefix != "" {
+		optionsSpec.CommentExcludes = []string{b.CommentIgnorePrefix}
 	}
 	options, err := optionsSpec.ToOptions()
 	if err != nil {
@@ -242,6 +261,7 @@ func (b *configSpec) NewConfig(allRules []check.Rule, transformDeprecated bool) 
 		IgnoreRootPaths:        ignoreRootPaths,
 		AllowCommentIgnores:    b.AllowCommentIgnores,
 		IgnoreUnstablePackages: b.IgnoreUnstablePackages,
+		CommentIgnorePrefix:    b.CommentIgnorePrefix,
 	}, nil
 }
 

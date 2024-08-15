@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 )
@@ -40,12 +41,24 @@ func newClient(
 	}
 }
 
-func (c *client) Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image) error {
+func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, image bufimage.Image) error {
+	allRules, err := c.AllLintRules(ctx)
+	if err != nil {
+		return err
+	}
+	config, err := configForLintConfig(lintConfig, allRules)
+	if err != nil {
+		return err
+	}
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		return err
 	}
-	request, err := check.NewRequest(files)
+	request, err := check.NewRequest(
+		files,
+		check.WithRuleIDs(config.RuleIDs...),
+		check.WithOptions(config.Options),
+	)
 	if err != nil {
 		return err
 	}
@@ -54,10 +67,26 @@ func (c *client) Lint(ctx context.Context, config bufconfig.LintConfig, image bu
 		return err
 	}
 	if annotations := response.Annotations(); len(annotations) > 0 {
+		// TODO: Will likely need check.Annotation + pathToExternalPath for filter,
+		// not bufanalysis.FileAnnotation
+		fileAnnotations := annotationsToFileAnnotations(annotations, imageToPathToExternalPath(image))
+		fileAnnotations, err := slicesext.FilterError(
+			fileAnnotations,
+			func(fileAnnotation bufanalysis.FileAnnotation) (bool, error) {
+				ignore, err := ignoreFileAnnotation(config, fileAnnotation)
+				if err != nil {
+					return false, err
+				}
+				return ignore, nil
+			},
+		)
+		if err != nil {
+			return err
+		}
 		// Note that NewFileAnnotationSet does its own sorting and deduplication.
 		// The bufplugin SDK does this as well, but we don't need to worry about the sort
 		// order being different.
-		return bufanalysis.NewFileAnnotationSet(annotationsToFileAnnotations(annotations, imageToPathToExternalPath(image))...)
+		return bufanalysis.NewFileAnnotationSet(fileAnnotations...)
 	}
 	return nil
 }
@@ -80,4 +109,8 @@ func (c *client) ConfiguredBreakingRules(ctx context.Context, config bufconfig.B
 
 func (c *client) AllBreakingRules(ctx context.Context) ([]check.Rule, error) {
 	return nil, errors.New("TODO")
+}
+
+func ignoreFileAnnotation(config *config, fileAnnotation bufanalysis.FileAnnotation) (bool, error) {
+	return false, errors.New("TODO")
 }

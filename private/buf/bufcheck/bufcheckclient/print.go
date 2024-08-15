@@ -83,7 +83,9 @@ func cloneAndSortRules(rules []check.Rule) []check.Rule {
 			one := rules[i]
 			two := rules[j]
 			oneCategories := one.Categories()
+			sort.Slice(oneCategories, func(i int, j int) bool { return categoryLess(oneCategories[i], oneCategories[j]) })
 			twoCategories := two.Categories()
+			sort.Slice(twoCategories, func(i int, j int) bool { return categoryLess(twoCategories[i], twoCategories[j]) })
 			if len(oneCategories) == 0 && len(twoCategories) > 0 {
 				return false
 			}
