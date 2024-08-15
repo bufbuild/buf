@@ -15,14 +15,11 @@
 package bufcheckclient
 
 import (
-	"errors"
-
 	checkv1beta1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/check/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/bufplugin-go/check"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func imageToProtoFiles(image bufimage.Image) []*checkv1beta1.File {
@@ -97,11 +94,6 @@ func annotationToFileAnnotation(
 		annotation.RuleID(),
 		annotation.Message(),
 	)
-}
-
-// TODO: replace
-func associatedSourcePathsForSourcePath(sourcePath protoreflect.SourcePath) ([]protoreflect.SourcePath, error) {
-	return nil, errors.New("TODO")
 }
 
 // Returns Rules in same order as in allRules.

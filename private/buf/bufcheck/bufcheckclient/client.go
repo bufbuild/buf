@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -245,8 +246,7 @@ func ignoreLocation(
 		if len(sourcePath) == 0 {
 			return false, nil
 		}
-		// TODO: replace
-		associatedSourcePaths, err := associatedSourcePathsForSourcePath(sourcePath)
+		associatedSourcePaths, err := protosourcepath.GetAssociatedSourcePaths(sourcePath)
 		if err != nil {
 			return false, err
 		}
