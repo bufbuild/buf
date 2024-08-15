@@ -22,7 +22,10 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // HandleBreakingEnumNoDelete is a check function.
@@ -112,9 +115,6 @@ func handleBreakingFileNoDelete(
 	}
 	for previousFilePath := range previousFilePathToFile {
 		if _, ok := filePathToFile[previousFilePath]; !ok {
-			// Add previous descriptor to check for ignores. This will mean that if
-			// we have ignore_unstable_packages set, this file will cause the ignore
-			// to happen.
 			responseWriter.AddProtosourceAnnotation(
 				nil,
 				nil, // TODO: File does not have a Location, make sure that client handles the ignore checks
@@ -239,8 +239,6 @@ func handleBreakingEnumValueNoDelete(
 	)
 }
 
-// TODO: the functions below were previous in bufbreakingcheck.go, should these go into breaking_util.go?
-
 func checkEnumValueNoDeleteWithRules(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousEnum bufprotosource.Enum,
@@ -352,8 +350,6 @@ func handleBreakingFieldNoDelete(
 	)
 }
 
-// TODO: the functions below were previous in bufbreakingcheck.go, should these go into breaking_util.go?
-
 func checkFieldNoDeleteWithRules(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousMessage bufprotosource.Message,
@@ -446,6 +442,66 @@ func handleBreakingFieldSameCardinality(
 			fieldDescription(field),
 			previousCardinality,
 			currentCardinality,
+		)
+	}
+	return nil
+}
+
+var HandleBreakingFieldSameCppStringType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameCppStringType)
+
+func handleBreakingFieldSameCppStringType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries, even with string or bytes keys or values,
+		// don't allow configuring the string type.
+		return nil
+	}
+	if (previousDescriptor.Kind() != protoreflect.StringKind && previousDescriptor.Kind() != protoreflect.BytesKind) ||
+		(descriptor.Kind() != protoreflect.StringKind && descriptor.Kind() != protoreflect.BytesKind) {
+		// this check only applies to string/bytes fields
+		return nil
+	}
+	previousStringType, previousIsStringPiece, err := fieldCppStringType(previousField, previousDescriptor)
+	if err != nil {
+		return err
+	}
+	stringType, isStringPiece, err := fieldCppStringType(field, descriptor)
+	if err != nil {
+		return err
+	}
+	if (previousStringType != stringType || previousIsStringPiece != isStringPiece) &&
+		// it is NOT breaking to move from string_piece -> string
+		!(previousIsStringPiece && stringType == protobuf.CppFeatures_STRING) {
+		var previousType, currentType fmt.Stringer
+		if previousIsStringPiece {
+			previousType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			previousType = previousStringType
+		}
+		if isStringPiece {
+			currentType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			currentType = stringType
+		}
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
+			withBackupLocation(previousField.CTypeLocation(), fieldCppStringTypeLocation(previousField), previousField.Location()),
+			`%s changed C++ string type from %q to %q.`,
+			fieldDescription(field),
+			previousType,
+			currentType,
 		)
 	}
 	return nil

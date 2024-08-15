@@ -91,6 +91,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameCardinality,
 	}
+	// BreakingFieldSameCppStringTypeRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameCppStringTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_CPP_STRING_TYPE",
+		Purpose: "Checks fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameCppStringType,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
