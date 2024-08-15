@@ -260,11 +260,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			if err != nil {
 				return err
 			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
@@ -295,11 +295,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
-		lintConfig, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+		lintConfig, err := equivalentLintConfigInV2(ctx, moduleConfig.LintConfig())
 		if err != nil {
 			return err
 		}
-		breakingConfig, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+		breakingConfig, err := equivalentBreakingConfigInV2(ctx, moduleConfig.BreakingConfig())
 		if err != nil {
 			return err
 		}
