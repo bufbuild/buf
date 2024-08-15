@@ -841,6 +841,26 @@ func handleBreakingFileSameJavaMultipleFiles(
 	)
 }
 
+// HandleBreakingFileSameJavaOuterClassname is a check function.
+var HandleBreakingFileSameJavaOuterClassname = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameJavaOuterClassname)
+
+func handleBreakingFileSameJavaOuterClassname(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.JavaOuterClassname(),
+		file.JavaOuterClassname(),
+		file,
+		file.JavaOuterClassnameLocation(),
+		previousFile.JavaOuterClassnameLocation(),
+		`option "java_outer_classname"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

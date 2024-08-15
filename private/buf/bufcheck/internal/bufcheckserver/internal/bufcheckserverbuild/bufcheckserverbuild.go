@@ -169,6 +169,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaMultipleFiles,
 	}
+	// BreakingFileSameJavaOuterClassnameRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameJavaOuterClassnameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:       "FILE_SAME_JAVA_OUTER_CLASSNAME",
+		Purpopse: "Check files have the same value for the java_outer_classname option.",
+		Type:     check.RuleTypeBreaking,
+		Handler:  bufcheckserverhandle.HandleBreakingFileSameJavaOuterClassname,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
