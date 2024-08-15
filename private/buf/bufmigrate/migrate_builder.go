@@ -201,6 +201,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				),
 				false,
 			),
+			nil,
 		)
 		if err != nil {
 			return err
@@ -276,6 +277,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				map[string][]string{".": moduleConfig.RootToExcludes()[root]},
 				lintConfigForRoot,
 				breakingConfigForRoot,
+				nil,
 			)
 			if err != nil {
 				return err
@@ -311,6 +313,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			moduleConfig.RootToExcludes(),
 			lintConfig,
 			breakingConfig,
+			nil,
 		)
 		if err != nil {
 			return err

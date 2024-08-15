@@ -388,7 +388,7 @@ func testGetAssociatedSourcePaths(
 	// SourceLocations are indexed starting from 1
 	for i := 1; i < sourceLocations.Len(); i++ {
 		sourceLocation := sourceLocations.Get(i)
-		associatedSourcePaths, err := GetAssociatedSourcePaths(sourceLocation.Path, excludeChildAssociatedPaths)
+		associatedSourcePaths, err := getAssociatedSourcePaths(sourceLocation.Path, excludeChildAssociatedPaths)
 		require.NoError(t, err)
 		expectedAssociatedPaths, ok := sourcePathToExpectedAssociatedPaths[sourceLocation.Path.String()]
 		require.True(t, ok, sourceLocation.Path)
