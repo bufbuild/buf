@@ -761,6 +761,26 @@ func handleBreakingFileSameCcGenericServices(
 	)
 }
 
+// HandleBreakingFileSameCsharpNamespace is a check function.
+var HandleBreakingFileSameCsharpNamespace = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameCsharpNamespace)
+
+func handleBreakingFileSameCsharpnamespace(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.CsharpNamespace(),
+		file.CsharpNamespace(),
+		file,
+		file.CsharpNamespaceLocation(),
+		previousFile.CsharpNamespaceLocation(),
+		`option "csharp_namespace"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

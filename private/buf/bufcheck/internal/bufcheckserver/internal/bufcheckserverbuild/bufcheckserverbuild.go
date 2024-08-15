@@ -141,6 +141,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameCcGenericServices,
 	}
+	// BreakingFileSameCsharpNamesapceRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameCsharpNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_CSHARP_NAMESPACE",
+		Purpose: "Checks files have the same value for the csharp_namespace option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameCsharpNamespace,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
