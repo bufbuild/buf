@@ -103,6 +103,32 @@ func TestMain(m *testing.M) {
 	}
 }
 
+func TestGetImageDigestFromMessage(t *testing.T) {
+	t.Parallel()
+	assertImageDigestFromStatusString(t,
+		"v1.4.0: digest: sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8 size: 855",
+		"sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+	)
+	assertImageDigestFromStatusString(t,
+		"v1.4.0: digest: sha512:4b230b5e4e3518cf1f16e0a5d3293245cd6f27df350aed72c9eb59fc4b5b5ef764cb0aaea201ea70eab68ca7388533384c4d0e690eaba7f2cd7a0e8939db986f size: 855", "sha512:4b230b5e4e3518cf1f16e0a5d3293245cd6f27df350aed72c9eb59fc4b5b5ef764cb0aaea201ea70eab68ca7388533384c4d0e690eaba7f2cd7a0e8939db986f",
+	)
+	assertImageDigestFromStatusString(t,
+		"digest: sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+		"sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+	)
+	// malformed, missing "digest:"
+	assertImageDigestFromStatusString(t,
+		"sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+		"",
+	)
+}
+
+func assertImageDigestFromStatusString(t *testing.T, status string, expectedDigest string) {
+	t.Helper()
+	digest := getImageDigestFromMessage(jsonmessage.JSONMessage{Status: status})
+	assert.Equal(t, expectedDigest, digest)
+}
+
 func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
