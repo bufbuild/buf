@@ -40,7 +40,7 @@ type Client interface {
 	// Images should *not* be filtered with regards to imports before passing to this function.
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
-	Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image) error
+	Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image, options ...LintOption) error
 	ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error)
 	AllLintRules(ctx context.Context) ([]check.Rule, error)
 
@@ -49,12 +49,22 @@ type Client interface {
 	// The Images should have source code info for this to work properly.
 	//
 	// Images should *not* be filtered with regards to imports before passing to this function.
-	// TODO: reconcile with bufbreaking.
+	// To exclude imports, pass BreakingWithExcludeImports.
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
-	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image) error
+	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
 	ConfiguredBreakingRules(ctx context.Context, config bufconfig.BreakingConfig) ([]check.Rule, error)
 	AllBreakingRules(ctx context.Context) ([]check.Rule, error)
+}
+
+type LintOption func(*lintOptions)
+
+type BreakingOption func(*breakingOptions)
+
+func BreakingWithExcludeImports() BreakingOption {
+	return func(breakingOptions *breakingOptions) {
+		breakingOptions.excludeImports = true
+	}
 }
 
 // If you want to use the default v1beta1/v1/v2 Client, pass it.

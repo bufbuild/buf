@@ -51,6 +51,7 @@ type config struct {
 	IgnoreUnstablePackages bool
 
 	CommentIgnorePrefix string
+	ExcludeImports      bool
 }
 
 func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []check.Rule) (*config, error) {
@@ -59,8 +60,8 @@ func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []check.Rule)
 
 var _ = configForBreakingConfig
 
-func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule) (*config, error) {
-	return configSpecForBreakingConfig(breakingConfig).newConfig(allRules)
+func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule, excludeImports bool) (*config, error) {
+	return configSpecForBreakingConfig(breakingConfig, excludeImports).newConfig(allRules)
 }
 
 // *** BELOW THIS LINE SHOULD OBLY BE USED BY THIS FILE ***
@@ -86,6 +87,7 @@ type configSpec struct {
 	ServiceSuffix                        string
 
 	CommentIgnorePrefix string
+	ExcludeImports      bool
 }
 
 func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {
@@ -102,10 +104,11 @@ func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {
 		RPCAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 		ServiceSuffix:                        lintConfig.ServiceSuffix(),
 		CommentIgnorePrefix:                  lintCommentIgnorePrefix,
+		ExcludeImports:                       false,
 	}
 }
 
-func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig) *configSpec {
+func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig, excludeImports bool) *configSpec {
 	return &configSpec{
 		Use:                                  breakingConfig.UseIDsAndCategories(),
 		Except:                               breakingConfig.ExceptIDsAndCategories(),
@@ -119,6 +122,7 @@ func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig) *confi
 		RPCAllowGoogleProtobufEmptyResponses: false,
 		ServiceSuffix:                        "",
 		CommentIgnorePrefix:                  "",
+		ExcludeImports:                       excludeImports,
 	}
 }
 
@@ -268,6 +272,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 		AllowCommentIgnores:    b.AllowCommentIgnores,
 		IgnoreUnstablePackages: b.IgnoreUnstablePackages,
 		CommentIgnorePrefix:    b.CommentIgnorePrefix,
+		ExcludeImports:         b.ExcludeImports,
 	}, nil
 }
 

@@ -41,7 +41,7 @@ func newClient(
 	}
 }
 
-func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, image bufimage.Image) error {
+func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, image bufimage.Image, _ ...LintOption) error {
 	allRules, err := c.AllLintRules(ctx)
 	if err != nil {
 		return err
@@ -92,13 +92,16 @@ func (c *client) AllLintRules(ctx context.Context) ([]check.Rule, error) {
 	return rulesForType(allRules, check.RuleTypeLint), nil
 }
 
-func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image) error {
-
+func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error {
+	breakingOptions := newBreakingOptions()
+	for _, option := range options {
+		option(breakingOptions)
+	}
 	allRules, err := c.AllBreakingRules(ctx)
 	if err != nil {
 		return err
 	}
-	config, err := configForBreakingConfig(breakingConfig, allRules)
+	config, err := configForBreakingConfig(breakingConfig, allRules, breakingOptions.excludeImports)
 	if err != nil {
 		return err
 	}
@@ -131,7 +134,7 @@ func (c *client) ConfiguredBreakingRules(ctx context.Context, breakingConfig buf
 	if err != nil {
 		return nil, err
 	}
-	config, err := configForBreakingConfig(breakingConfig, allRules)
+	config, err := configForBreakingConfig(breakingConfig, allRules, false)
 	if err != nil {
 		return nil, err
 	}
@@ -216,6 +219,10 @@ func ignoreLocation(
 	location check.Location,
 ) (bool, error) {
 	file := location.File()
+	if config.ExcludeImports && file.IsImport() {
+		return true, nil
+	}
+
 	fileDescriptor := file.FileDescriptor()
 	path := fileDescriptor.Path()
 	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
@@ -229,6 +236,7 @@ func ignoreLocation(
 		return true, nil
 	}
 
+	// Not a great design, but will never be triggered by lint since this is never set.
 	if config.IgnoreUnstablePackages {
 		if packageVersion, ok := protoversion.NewPackageVersionForPackage(string(fileDescriptor.Package())); ok {
 			if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
@@ -237,6 +245,8 @@ func ignoreLocation(
 		}
 	}
 
+	// Not a great design, but will never be triggered by breaking since this is never set.
+	// Therefore, never called for an againstLocation  (since lint neve has againstLocations).
 	if config.CommentIgnorePrefix != "" {
 		sourcePath := location.SourcePath()
 		if len(sourcePath) == 0 {
@@ -260,4 +270,14 @@ func ignoreLocation(
 	}
 
 	return false, nil
+}
+
+type lintOptions struct{}
+
+type breakingOptions struct {
+	excludeImports bool
+}
+
+func newBreakingOptions() *breakingOptions {
+	return &breakingOptions{}
 }
