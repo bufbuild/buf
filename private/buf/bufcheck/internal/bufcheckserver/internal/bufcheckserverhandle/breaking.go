@@ -741,6 +741,26 @@ func handleBreakingFileSameCcEnableArenas(
 	)
 }
 
+// HandleBreakingFileSameCcGenericServices is a check function.
+var HandleBreakingFileSameCcGenericServices = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameCcGenericServices)
+
+func handleBreakingFileSameCcGenericServices(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		strconv.FormatBool(previousFile.CcGenericServices()),
+		strconv.FormatBool(file.CcGenericServices()),
+		file,
+		file.CcGenericServicesLocation(),
+		previousFile.CcGenericServicesLocation(),
+		`option "cc_generic_services"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

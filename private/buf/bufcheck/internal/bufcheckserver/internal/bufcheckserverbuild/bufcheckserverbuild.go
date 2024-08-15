@@ -134,6 +134,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameCcEnableArenas,
 	}
+	// BreakingFileSameCcGenericServicesRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameCcGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_CC_GENERIC_SERVICES",
+		Purpose: "Checks files have the same value for the cc_generic_services option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameCcGenericServices,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
