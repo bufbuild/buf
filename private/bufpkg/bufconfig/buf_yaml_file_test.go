@@ -214,6 +214,73 @@ modules:
 		// input
 		`version: v2
 modules:
+  - path: foo
+    plugins:
+      - local: buf-plugin-foo
+        options:
+          - key: key1
+            value: value1
+  - path: bar
+    plugins:
+      - local: buf-plugin-foo
+        options:
+          - key: key1
+            value: value1
+`,
+		// expected output
+		`version: v2
+modules:
+  - path: bar
+  - path: foo
+plugins:
+  - local: buf-plugin-foo
+    options:
+      - key: key1
+        value: value1
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: foo
+    plugins:
+      - local: buf-plugin-foo
+        options:
+          - key: key1
+            value: value1
+  - path: bar
+    plugins:
+      - local: buf-plugin-foo
+        options:
+          - key: key1
+            value: value2
+`,
+		// expected output
+		`version: v2
+modules:
+  - path: bar
+    plugins:
+      - local: buf-plugin-foo
+        options:
+          - key: key1
+            value: value2
+  - path: foo
+    plugins:
+      - local: buf-plugin-foo
+        options:
+          - key: key1
+            value: value1
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
   - path: .
 `,
 		// expected output

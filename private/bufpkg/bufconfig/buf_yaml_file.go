@@ -467,6 +467,7 @@ func readBufYAMLFile(
 		// If a module does not have its own lint section, then we use this as the default.
 		defaultExternalLintConfig := externalBufYAMLFile.Lint
 		defaultExternalBreakingConfig := externalBufYAMLFile.Breaking
+		defaultExternalPluginConfigs := externalBufYAMLFile.Plugins
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalModules {
 			dirPath := externalModule.Path
@@ -593,12 +594,14 @@ func readBufYAMLFile(
 			}
 		}
 		var topLevelPluginConfigs []PluginConfig
-		for _, externalPluginConfig := range externalBufYAMLFile.Plugins {
-			topLevelPluginConfig, err := newPluginConfigForExternalV2(externalPluginConfig)
-			if err != nil {
-				return nil, err
+		if len(defaultExternalPluginConfigs) > 0 {
+			for _, externalPluginConfig := range defaultExternalPluginConfigs {
+				topLevelPluginConfig, err := newPluginConfigForExternalV2(externalPluginConfig)
+				if err != nil {
+					return nil, err
+				}
+				topLevelPluginConfigs = append(topLevelPluginConfigs, topLevelPluginConfig)
 			}
-			topLevelPluginConfigs = append(topLevelPluginConfigs, topLevelPluginConfig)
 		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
@@ -783,6 +786,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				return syserror.Wrap(err)
 			}
 			stringToExternalPlugins[string(externalPluginsData)] = externalPlugins
+			externalModule.Plugins = externalPlugins
 
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
