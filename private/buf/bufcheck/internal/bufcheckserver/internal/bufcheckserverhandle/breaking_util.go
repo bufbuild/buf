@@ -20,34 +20,35 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
-func getLocationAndPreviousLocationForDeletedElement(
+func getDescriptorAndLocationForDeletedElement(
 	file bufprotosource.File,
-	previousFile bufprotosource.File,
 	previousNestedName string,
-) (bufprotosource.Location, bufprotosource.Location, error) {
-	var location bufprotosource.Location
-	var previousLocation bufprotosource.Location
+) (bufprotosource.Descriptor, bufprotosource.Location, error) {
 	if strings.Contains(previousNestedName, ".") {
 		nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
 		if err != nil {
 			return nil, nil, err
 		}
-		previousNestedNameToMessage, err := bufprotosource.NestedNameToMessage(previousFile)
-		if err != nil {
-			return nil, nil, err
-		}
 		split := strings.Split(previousNestedName, ".")
 		for i := len(split) - 1; i > 0; i-- {
-			messageName := strings.Join(split[0:i], ".")
-			if message, ok := nestedNameToMessage[messageName]; ok {
-				location = message.Location()
-			}
-			if previousMessage, ok := previousNestedNameToMessage[messageName]; ok {
-				previousLocation = previousMessage.Location()
+			if message, ok := nestedNameToMessage[strings.Join(split[0:i], ".")]; ok {
+				return message, message.Location(), nil
 			}
 		}
 	}
-	return location, previousLocation, nil
+	return file, nil, nil
+}
+
+func getDescriptorAndLocationForDeletedMessage(file bufprotosource.File, nestedNameToMessage map[string]bufprotosource.Message, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location) {
+	if strings.Contains(previousNestedName, ".") {
+		split := strings.Split(previousNestedName, ".")
+		for i := len(split) - 1; i > 0; i-- {
+			if message, ok := nestedNameToMessage[strings.Join(split[0:i], ".")]; ok {
+				return message, message.Location()
+			}
+		}
+	}
+	return file, nil
 }
 
 func withBackupLocation(locs ...bufprotosource.Location) bufprotosource.Location {

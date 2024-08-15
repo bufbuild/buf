@@ -37,19 +37,16 @@ func handleBreakingEnumNoDelete(
 	if err != nil {
 		return err
 	}
-	for previousNestedName := range previousNestedNameToEnum {
+	for previousNestedName, previousEnum := range previousNestedNameToEnum {
 		if _, ok := nestedNameToEnum[previousNestedName]; !ok {
-			location, previousLocation, err := getLocationAndPreviousLocationForDeletedElement(
-				file,
-				previousFile,
-				previousNestedName,
-			)
+			// TODO: search for enum in other files and return that the enum was moved?
+			_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 			if err != nil {
 				return err
 			}
 			responseWriter.AddProtosourceAnnotation(
 				location,
-				previousLocation,
+				previousEnum.Location(),
 				`Previously present enum %q was deleted from file.`,
 				previousNestedName,
 			)
@@ -74,19 +71,15 @@ func handleBreakingExtensionNoDelete(
 	if err != nil {
 		return err
 	}
-	for previousNestedName := range previousNestedNameToExtension {
+	for previousNestedName, previousExtension := range previousNestedNameToExtension {
 		if _, ok := nestedNameToExtension[previousNestedName]; !ok {
-			location, previousLocation, err := getLocationAndPreviousLocationForDeletedElement(
-				file,
-				previousFile,
-				previousNestedName,
-			)
+			_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 			if err != nil {
 				return err
 			}
 			responseWriter.AddProtosourceAnnotation(
 				location,
-				previousLocation,
+				previousExtension.Location(),
 				`Previously present extension %q was deleted from file.`,
 				previousNestedName,
 			)
@@ -110,16 +103,14 @@ func handleBreakingFileNoDelete(
 	if err != nil {
 		return err
 	}
-	// TODO(doria): we could probably simplify the bufprotosource functions since we don't
-	// need the file here anymore.
-	for previousFilePath, _ := range previousFilePathToFile {
+	for previousFilePath := range previousFilePathToFile {
 		if _, ok := filePathToFile[previousFilePath]; !ok {
 			// Add previous descriptor to check for ignores. This will mean that if
 			// we have ignore_unstable_packages set, this file will cause the ignore
 			// to happen.
 			responseWriter.AddProtosourceAnnotation(
 				nil,
-				nil,
+				nil, // TODO(doria): how should we handle the ignore here?
 				`Previously present file %q was deleted.`,
 				previousFilePath,
 			)
@@ -144,21 +135,43 @@ func handleBreakingMessageNoDelete(
 	if err != nil {
 		return err
 	}
-	for previousNestedName := range previousNestedNameToMessage {
+	for previousNestedName, previousMessage := range previousNestedNameToMessage {
 		if _, ok := nestedNameToMessage[previousNestedName]; !ok {
-			location, previousLocation, err := getLocationAndPreviousLocationForDeletedElement(
-				file,
-				previousFile,
-				previousNestedName,
-			)
-			if err != nil {
-				return err
-			}
+			_, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
 			responseWriter.AddProtosourceAnnotation(
 				location,
-				previousLocation,
+				previousMessage.Location(),
 				`Previously present message %q was deleted from file.`,
 				previousNestedName,
+			)
+		}
+	}
+	return nil
+}
+
+var HandleBreakingServiceNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingServiceNoDelete)
+
+func handleBreakingServiceNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	previousNameToService, err := bufprotosource.NameToService(previousFile)
+	if err != nil {
+		return err
+	}
+	nameToService, err := bufprotosource.NameToService(file)
+	if err != nil {
+		return err
+	}
+	for previousName, previousService := range previousNameToService {
+		if _, ok := nameToService[previousName]; !ok {
+			responseWriter.AddProtosourceAnnotation(
+				nil,
+				previousService.Location(),
+				`Previously present service %q was deleted from file.`,
+				previousName,
 			)
 		}
 	}

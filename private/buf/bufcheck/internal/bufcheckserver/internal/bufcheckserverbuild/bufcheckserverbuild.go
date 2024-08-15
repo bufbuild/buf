@@ -46,6 +46,12 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingMessageNoDelete,
 	}
+	BreakingServiceNoDelete = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "SERVICE_NO_DELETE",
+		Purpose: "Checks services are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingServiceNoDelete,
+	}
 	BreakingEnumSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_SAME_TYPE",
 		Purpose: "Checks that enums have the same type (open vs closed).",
