@@ -383,6 +383,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		bufYAML, err := bufconfig.NewBufYAMLFile(
 			bufconfig.FileVersionV2,
 			migrateBuilder.moduleConfigs,
+			// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+			nil,
 			resolvedDeclaredRefs,
 		)
 		if err != nil {
@@ -429,6 +431,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		migrateBuilder.moduleConfigs,
+		// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+		nil,
 		resolvedDepModuleRefs,
 	)
 	if err != nil {

@@ -70,9 +70,8 @@ type Workspace interface {
 	// in the workspace. This should result in items such as the linter or breaking change
 	// detector ignoring these configs anyways.
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
-	// GetPluginConfigsForOpaqueID gets the PluginConfigs for the OpaqueID, if the OpaqueID
-	// represents a Module within the workspace.
-	GetPluginConfigsForOpaqueID(opaqueID string) []bufconfig.PluginConfig
+	// PluginConfigs gets the configured PluginConfigs of the Workspace.
+	PluginConfigs() []bufconfig.PluginConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -104,7 +103,7 @@ type workspace struct {
 
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
-	opaqueIDToPluginConfigs  map[string][]bufconfig.PluginConfig
+	pluginConfigs            []bufconfig.PluginConfig
 	configuredDepModuleRefs  []bufmodule.ModuleRef
 
 	// If true, the workspace was created from v2 buf.yamls.
@@ -116,7 +115,7 @@ func newWorkspace(
 	moduleSet bufmodule.ModuleSet,
 	opaqueIDToLintConfig map[string]bufconfig.LintConfig,
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
-	opaqueIDToPluginConfigs map[string][]bufconfig.PluginConfig,
+	pluginConfigs []bufconfig.PluginConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	isV2 bool,
 ) *workspace {
@@ -137,8 +136,8 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 	return w.opaqueIDToBreakingConfig[opaqueID]
 }
 
-func (w *workspace) GetPluginConfigsForOpaqueID(opaqueID string) []bufconfig.PluginConfig {
-	return slicesext.Copy(w.opaqueIDToPluginConfigs[opaqueID])
+func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
+	return slicesext.Copy(w.pluginConfigs)
 }
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {

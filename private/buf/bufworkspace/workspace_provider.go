@@ -188,13 +188,11 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
-	opaqueIDToPluginConfigs := make(map[string][]bufconfig.PluginConfig)
 	for _, module := range moduleSet.Modules() {
 		if bufmodule.ModuleFullNameEqual(module.ModuleFullName(), moduleKey.ModuleFullName()) {
 			// Set the lint and breaking config for the single targeted Module.
 			opaqueIDToLintConfig[module.OpaqueID()] = targetModuleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = targetModuleConfig.BreakingConfig()
-			opaqueIDToPluginConfigs[module.OpaqueID()] = targetModuleConfig.PluginConfigs()
 		} else {
 			// For all non-targets, set the default lint and breaking config.
 			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfigV1
@@ -205,7 +203,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
-		opaqueIDToPluginConfigs,
+		nil,
 		nil,
 		false,
 	), nil
@@ -346,6 +344,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
+		nil,
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -417,6 +416,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v2Targeting.bucketIDToModuleConfig,
+		v2Targeting.bufYAMLFile.PluginConfigs(),
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -426,13 +426,13 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	moduleSet bufmodule.ModuleSet,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
+	pluginConfigs []bufconfig.PluginConfig,
 	// Expected to already be unique by ModuleFullName.
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	isV2 bool,
 ) (*workspace, error) {
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
-	opaqueIDToPluginConfigs := make(map[string][]bufconfig.PluginConfig)
 	for _, module := range moduleSet.Modules() {
 		if bucketID := module.BucketID(); bucketID != "" {
 			moduleConfig, ok := bucketIDToModuleConfig[bucketID]
@@ -442,7 +442,6 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 			}
 			opaqueIDToLintConfig[module.OpaqueID()] = moduleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = moduleConfig.BreakingConfig()
-			opaqueIDToPluginConfigs[module.OpaqueID()] = moduleConfig.PluginConfigs()
 		} else {
 			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfigV1
 			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfigV1
@@ -452,7 +451,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
-		opaqueIDToPluginConfigs,
+		pluginConfigs,
 		configuredDepModuleRefs,
 		isV2,
 	), nil

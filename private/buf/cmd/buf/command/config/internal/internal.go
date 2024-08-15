@@ -176,6 +176,7 @@ func lsRun(
 				bufconfig.DefaultModuleConfigV2,
 			},
 			nil,
+			nil,
 		)
 		if err != nil {
 			return err

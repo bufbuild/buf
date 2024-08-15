@@ -420,8 +420,7 @@ func (c *controller) GetTargetImageWithConfigs(
 				image,
 				lintConfig,
 				breakingConfig,
-				// Only top-level can be used, we don't have a module name.
-				bufYAMLFile.TopLevelPluginConfigs(),
+				bufYAMLFile.PluginConfigs(),
 			),
 		}, nil
 	default:
@@ -1069,7 +1068,7 @@ func (c *controller) buildTargetImageWithConfigs(
 				image,
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
-				workspace.GetPluginConfigsForOpaqueID(module.OpaqueID()),
+				workspace.PluginConfigs(),
 			),
 		)
 	}
