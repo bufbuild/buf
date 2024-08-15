@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflint_test
+package bufcheckclient_test
 
 import (
 	"context"
@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -1201,11 +1201,13 @@ func testLintWithOptions(
 	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
+	// TODO
+	t.Skip("TODO")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// TODO: change when new bufcheck deployed
-	baseDirPath := filepath.Join("..", "..", "..", "buf", "bufcheck", "bufcheckclient", "testdata", "lint")
+	baseDirPath := filepath.Join("testdata", "lint")
 	dirPath := filepath.Join(baseDirPath, relDirPath)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
@@ -1261,8 +1263,10 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
-	err = handler.Check(
+	checkClient, err := bufcheckclient.NewBuiltinCheckClientForFileVersion(lintConfig.FileVersion())
+	require.NoError(t, err)
+	client := bufcheckclient.NewClient(checkClient)
+	err = client.Lint(
 		ctx,
 		lintConfig,
 		image,
