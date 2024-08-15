@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -670,4 +671,51 @@ func addEnumGroupMessageFieldChangedTypeName(
 		strings.TrimPrefix(previousField.TypeName(), "."),
 		strings.TrimPrefix(field.TypeName(), "."),
 	)
+}
+
+// HandleBreakingFieldSameUTF8Validation is a check function.
+var HandleBreakingFieldSameUTF8Validation = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameUTF8Validation)
+
+func handleBreakingFieldSameUTF8Validation(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
+		return nil
+	}
+	featureField, err := findFeatureField(featureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return err
+	}
+	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	previousUTF8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
+	val, err = protoutil.ResolveFeature(descriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	utf8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
+	if previousUTF8Validation != utf8Validation {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location()),
+			withBackupLocation(previousField.Features().UTF8ValidationLocation(), previousField.Location()),
+			`%s changed UTF8 validation from %v to %v.`,
+			fieldDescription(field),
+			previousUTF8Validation,
+			utf8Validation,
+		)
+	}
+	return nil
 }

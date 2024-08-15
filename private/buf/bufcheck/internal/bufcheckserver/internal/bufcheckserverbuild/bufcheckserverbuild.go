@@ -120,6 +120,14 @@ var (
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameType,
 	}
 
+	// BreakingFieldSameUTF8ValidationRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameUTF8ValidationRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_UTF8_VALIDATION",
+		Purpose: "Checks string fields have the same UTF8 validation mode.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameUTF8Validation,
+	}
+
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "COMMENT_ENUM",
