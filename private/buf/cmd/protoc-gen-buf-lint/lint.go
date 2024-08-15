@@ -76,6 +76,7 @@ func handle(
 	if err != nil {
 		return err
 	}
+	// The protoc plugins do not support custom lint/breaking change plugins for now.
 	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err

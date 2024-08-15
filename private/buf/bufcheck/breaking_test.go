@@ -1330,8 +1330,6 @@ func testBreaking(
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
-	// TODO: this should go away
-	previousImage = bufimage.ImageWithoutImports(previousImage)
 
 	image, err := bufimage.BuildImage(
 		ctx,
@@ -1339,11 +1337,10 @@ func testBreaking(
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	// TODO: this should go away
-	image = bufimage.ImageWithoutImports(image)
 
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
 	require.NotNil(t, breakingConfig)
+	// TODO: Add in a custom plugin for this integration testing.
 	client, err := bufcheck.NewClient()
 	require.NoError(t, err)
 	err = client.Breaking(
@@ -1351,6 +1348,7 @@ func testBreaking(
 		breakingConfig,
 		previousImage,
 		image,
+		bufcheck.BreakingWithExcludeImports(),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)

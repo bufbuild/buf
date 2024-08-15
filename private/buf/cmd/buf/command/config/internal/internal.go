@@ -182,11 +182,13 @@ func lsRun(
 			return err
 		}
 	}
-
-	client, err := bufcheck.NewClient()
+	client, err := bufcheck.NewClient(
+		bufcheck.ClientWithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+	)
 	if err != nil {
 		return err
 	}
+
 	var rules []check.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()

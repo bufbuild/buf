@@ -1007,6 +1007,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 		version := version
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
+			// Do not need any custom lint/breaking plugins here.
 			client, err := bufcheck.NewClient()
 			require.NoError(t, err)
 			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)

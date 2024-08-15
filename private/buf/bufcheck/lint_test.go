@@ -1263,6 +1263,7 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
+	// TODO: Add in a custom plugin for this integration testing.
 	client, err := bufcheck.NewClient()
 	require.NoError(t, err)
 	err = client.Lint(

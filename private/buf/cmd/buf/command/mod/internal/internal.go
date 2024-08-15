@@ -172,6 +172,7 @@ func lsRun(
 	if fileVersion == bufconfig.FileVersionV2 {
 		return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
 	}
+	// BufYAMLFiles <=v1 never had plugins.
 	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
