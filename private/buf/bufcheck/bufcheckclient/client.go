@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
@@ -41,15 +42,15 @@ func newClient(...ClientOption) (*client, error) {
 	// them on every lint and breaking  call.
 	v1beta1CheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
 	if err != nil {
-		return nil, err
+		return nil, syserror.Wrap(err)
 	}
 	v1CheckClient, err := check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
 	if err != nil {
-		return nil, err
+		return nil, syserror.Wrap(err)
 	}
 	v2CheckClient, err := check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
 	if err != nil {
-		return nil, err
+		return nil, syserror.Wrap(err)
 	}
 	return &client{
 		fileVersionToCheckClient: map[bufconfig.FileVersion]check.Client{
@@ -71,7 +72,8 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	}
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
-		return err
+		// If a validated Image results in an error, this is a system error.
+		return syserror.Wrap(err)
 	}
 	request, err := check.NewRequest(
 		files,
@@ -107,11 +109,13 @@ func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.Breaking
 	}
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
-		return err
+		// If a validated Image results in an error, this is a system error.
+		return syserror.Wrap(err)
 	}
 	againstFiles, err := check.FilesForProtoFiles(imageToProtoFiles(againstImage))
 	if err != nil {
-		return err
+		// If a validated Image results in an error, this is a system error.
+		return syserror.Wrap(err)
 	}
 	request, err := check.NewRequest(
 		files,
