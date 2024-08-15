@@ -1344,9 +1344,8 @@ func testBreaking(
 
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
 	require.NotNil(t, breakingConfig)
-	checkClient, err := bufcheckclient.NewBuiltinCheckClientForFileVersion(breakingConfig.FileVersion())
+	client, err := bufcheckclient.NewClient()
 	require.NoError(t, err)
-	client := bufcheckclient.NewClient(checkClient)
 	err = client.Breaking(
 		ctx,
 		breakingConfig,

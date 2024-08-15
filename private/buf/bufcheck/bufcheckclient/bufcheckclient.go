@@ -16,21 +16,15 @@ package bufcheckclient
 
 import (
 	"context"
-	"fmt"
 	"io"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
-	"go.uber.org/zap"
 )
 
-// All functions that take a config ignore the FileVersion. The FileVersion should instruct
-// what check.Client is passed to NewClient, ie a v1beta1, v1, or v2 default client.
-//
 // Rules are returned sorted by ID, but PrintRules does our sort by category.
 type Client interface {
 	// Lint lints the given Image with the given LintConfig.
@@ -42,7 +36,7 @@ type Client interface {
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image, options ...LintOption) error
 	ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error)
-	AllLintRules(ctx context.Context) ([]check.Rule, error)
+	AllLintRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error)
 
 	// Breaking checks the given Images for breaking changes with the given BreakingConfig.
 	//
@@ -54,7 +48,7 @@ type Client interface {
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
 	ConfiguredBreakingRules(ctx context.Context, config bufconfig.BreakingConfig) ([]check.Rule, error)
-	AllBreakingRules(ctx context.Context) ([]check.Rule, error)
+	AllBreakingRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error)
 }
 
 type LintOption func(*lintOptions)
@@ -67,33 +61,12 @@ func BreakingWithExcludeImports() BreakingOption {
 	}
 }
 
-// If you want to use the default v1beta1/v1/v2 Client, pass it.
-// If you want to also use a plugin Client, merge the Clients with a check.NewMultiClient.
-func NewClient(checkClient check.Client) Client {
-	return newClient(checkClient)
+func NewClient(options ...ClientOption) (Client, error) {
+	return newClient(options...)
 }
 
-// This will eventually parse for plugins as well and create a multi client.
-func NewClientForBufYAMLFile(logger *zap.Logger, bufYAMLFile bufconfig.BufYAMLFile) (Client, error) {
-	checkClient, err := NewBuiltinCheckClientForFileVersion(bufYAMLFile.FileVersion())
-	if err != nil {
-		return nil, err
-	}
-	return newClient(checkClient), nil
-}
-
-func NewBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {
-	switch fileVersion {
-	case bufconfig.FileVersionV1Beta1:
-		return check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
-	case bufconfig.FileVersionV1:
-		return check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
-	case bufconfig.FileVersionV2:
-		return check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
-	default:
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
-	}
-}
+// ClientOption will include ClientWithPluginConfig
+type ClientOption func(*clientOptions)
 
 // PrintRules prints the rules to the Writer.
 func PrintRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOption) (retErr error) {

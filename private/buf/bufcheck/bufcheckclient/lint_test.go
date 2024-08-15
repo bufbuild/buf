@@ -1263,9 +1263,8 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	checkClient, err := bufcheckclient.NewBuiltinCheckClientForFileVersion(lintConfig.FileVersion())
+	client, err := bufcheckclient.NewClient()
 	require.NoError(t, err)
-	client := bufcheckclient.NewClient(checkClient)
 	err = client.Lint(
 		ctx,
 		lintConfig,

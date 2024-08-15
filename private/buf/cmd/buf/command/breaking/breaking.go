@@ -161,11 +161,12 @@ func run(
 	if err != nil {
 		return err
 	}
+	// Do not exclude imports here. bufcheck's Client requires all imports.
+	// Use bufcheck's BreakingWithExcludeImports.
 	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		input,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithImageExcludeImports(flags.ExcludeImports),
 		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
@@ -180,11 +181,12 @@ func run(
 			return err
 		}
 	}
+	// Do not exclude imports here. bufcheck's Client requires all imports.
+	// Use bufcheck's BreakingWithExcludeImports.
 	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		flags.Against,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
-		bufctl.WithImageExcludeImports(flags.ExcludeImports),
 		bufctl.WithConfigOverride(flags.AgainstConfig),
 	)
 	if err != nil {

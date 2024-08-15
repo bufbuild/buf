@@ -16,8 +16,10 @@ package bufcheckclient
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -30,19 +32,36 @@ import (
 )
 
 type client struct {
-	checkClient check.Client
+	fileVersionToCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(
-	checkClient check.Client,
-) *client {
-	return &client{
-		checkClient: checkClient,
+func newClient(...ClientOption) (*client, error) {
+	// Eventually, we're going to have to make a MultiClient for each of these with the plugin Clients,
+	// and that MultiClient may do caching of its own, so we want to keep these static instead of creating
+	// them on every lint and breaking  call.
+	v1beta1CheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
+	if err != nil {
+		return nil, err
 	}
+	v1CheckClient, err := check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
+	if err != nil {
+		return nil, err
+	}
+	v2CheckClient, err := check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
+	if err != nil {
+		return nil, err
+	}
+	return &client{
+		fileVersionToCheckClient: map[bufconfig.FileVersion]check.Client{
+			bufconfig.FileVersionV1Beta1: v1beta1CheckClient,
+			bufconfig.FileVersionV1:      v1CheckClient,
+			bufconfig.FileVersionV2:      v2CheckClient,
+		},
+	}, nil
 }
 
 func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, image bufimage.Image, _ ...LintOption) error {
-	allRules, err := c.AllLintRules(ctx)
+	allRules, err := c.AllLintRules(ctx, lintConfig.FileVersion())
 	if err != nil {
 		return err
 	}
@@ -62,7 +81,11 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	if err != nil {
 		return err
 	}
-	response, err := c.checkClient.Check(ctx, request)
+	checkClient, ok := c.fileVersionToCheckClient[lintConfig.FileVersion()]
+	if !ok {
+		return fmt.Errorf("unknown FileVersion: %v", lintConfig.FileVersion())
+	}
+	response, err := checkClient.Check(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -70,7 +93,7 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 }
 
 func (c *client) ConfiguredLintRules(ctx context.Context, lintConfig bufconfig.LintConfig) ([]check.Rule, error) {
-	allRules, err := c.AllLintRules(ctx)
+	allRules, err := c.AllLintRules(ctx, lintConfig.FileVersion())
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +107,12 @@ func (c *client) ConfiguredLintRules(ctx context.Context, lintConfig bufconfig.L
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }
 
-func (c *client) AllLintRules(ctx context.Context) ([]check.Rule, error) {
-	allRules, err := c.checkClient.ListRules(ctx)
+func (c *client) AllLintRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error) {
+	checkClient, ok := c.fileVersionToCheckClient[fileVersion]
+	if !ok {
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
+	allRules, err := checkClient.ListRules(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +124,7 @@ func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.Breaking
 	for _, option := range options {
 		option(breakingOptions)
 	}
-	allRules, err := c.AllBreakingRules(ctx)
+	allRules, err := c.AllBreakingRules(ctx, breakingConfig.FileVersion())
 	if err != nil {
 		return err
 	}
@@ -122,7 +149,11 @@ func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.Breaking
 	if err != nil {
 		return err
 	}
-	response, err := c.checkClient.Check(ctx, request)
+	checkClient, ok := c.fileVersionToCheckClient[breakingConfig.FileVersion()]
+	if !ok {
+		return fmt.Errorf("unknown FileVersion: %v", breakingConfig.FileVersion())
+	}
+	response, err := checkClient.Check(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -130,7 +161,7 @@ func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.Breaking
 }
 
 func (c *client) ConfiguredBreakingRules(ctx context.Context, breakingConfig bufconfig.BreakingConfig) ([]check.Rule, error) {
-	allRules, err := c.AllBreakingRules(ctx)
+	allRules, err := c.AllBreakingRules(ctx, breakingConfig.FileVersion())
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +175,29 @@ func (c *client) ConfiguredBreakingRules(ctx context.Context, breakingConfig buf
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }
 
-func (c *client) AllBreakingRules(ctx context.Context) ([]check.Rule, error) {
-	allRules, err := c.checkClient.ListRules(ctx)
+func (c *client) AllBreakingRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error) {
+	checkClient, ok := c.fileVersionToCheckClient[fileVersion]
+	if !ok {
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
+	allRules, err := checkClient.ListRules(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForType(allRules, check.RuleTypeBreaking), nil
+}
+
+func newBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {
+	switch fileVersion {
+	case bufconfig.FileVersionV1Beta1:
+		return check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
+	case bufconfig.FileVersionV1:
+		return check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
+	case bufconfig.FileVersionV2:
+		return check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
@@ -281,3 +329,5 @@ type breakingOptions struct {
 func newBreakingOptions() *breakingOptions {
 	return &breakingOptions{}
 }
+
+type clientOptions struct{}
