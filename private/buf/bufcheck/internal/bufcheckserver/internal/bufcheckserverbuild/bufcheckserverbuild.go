@@ -171,10 +171,10 @@ var (
 	}
 	// BreakingFileSameJavaOuterClassnameRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameJavaOuterClassnameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:       "FILE_SAME_JAVA_OUTER_CLASSNAME",
-		Purpopse: "Check files have the same value for the java_outer_classname option.",
-		Type:     check.RuleTypeBreaking,
-		Handler:  bufcheckserverhandle.HandleBreakingFileSameJavaOuterClassname,
+		ID:      "FILE_SAME_JAVA_OUTER_CLASSNAME",
+		Purpose: "Check files have the same value for the java_outer_classname option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaOuterClassname,
 	}
 	// BreakingFileSameJavaPackageRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameJavaPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -182,6 +182,13 @@ var (
 		Purpose: "Checks files have the same value for the java_package option.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaPackage,
+	}
+	// BreakingFileSameObjcClassPrefixRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameObjcClassPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_OBJC_CLASS_PREFIX",
+		Purpose: "Checks files have the same value for the objc_class_prefix option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameObjcClassPrefix,
 	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.

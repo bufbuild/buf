@@ -881,6 +881,26 @@ func handleBreakingFileSameJavaPackage(
 	)
 }
 
+// HandleBreakingfileSameObjcClassPrefix is a check function.
+var HandleBreakingFileSameObjcClassPrefix = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameObjcClassPrefix)
+
+func handleBreakingFileSameObjcClassPrefix(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.ObjcClassPrefix(),
+		file.ObjcClassPrefix(),
+		file,
+		file.ObjcClassPrefixLocation(),
+		previousFile.ObjcClassPrefixLocation(),
+		`option "objc_class_prefix"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},
