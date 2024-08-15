@@ -19,7 +19,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufcheckclient"
+	"github.com/bufbuild/bufplugin-go/check"
 )
 
 // AllRuleFormatStrings is all rule format strings.
@@ -29,17 +30,17 @@ var AllRuleFormatStrings = []string{
 }
 
 // PrintRules prints the Rules to the writer given the --format and --include-deprecated flag values.
-func PrintRules(writer io.Writer, rules []bufcheck.Rule, format string, includeDeprecated bool) error {
-	var printRulesOptions []bufcheck.PrintRulesOption
+func PrintRules(writer io.Writer, rules []check.Rule, format string, includeDeprecated bool) error {
+	var printRulesOptions []bufcheckclient.PrintRulesOption
 	switch s := strings.ToLower(strings.TrimSpace(format)); s {
 	case "", "text":
 	case "json":
-		printRulesOptions = append(printRulesOptions, bufcheck.PrintRulesWithJSON())
+		printRulesOptions = append(printRulesOptions, bufcheckclient.PrintRulesWithJSON())
 	default:
 		return fmt.Errorf("unknown format: %q", s)
 	}
 	if includeDeprecated {
-		printRulesOptions = append(printRulesOptions, bufcheck.PrintRulesWithDeprecated())
+		printRulesOptions = append(printRulesOptions, bufcheckclient.PrintRulesWithDeprecated())
 	}
-	return bufcheck.PrintRules(writer, rules, printRulesOptions...)
+	return bufcheckclient.PrintRules(writer, rules, printRulesOptions...)
 }

@@ -61,7 +61,7 @@ func newClient(...ClientOption) (*client, error) {
 }
 
 func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, image bufimage.Image, _ ...LintOption) error {
-	allRules, err := c.AllLintRules(ctx, lintConfig.FileVersion())
+	allRules, err := c.AllRules(ctx, check.RuleTypeLint, lintConfig.FileVersion())
 	if err != nil {
 		return err
 	}
@@ -92,39 +92,12 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
 }
 
-func (c *client) ConfiguredLintRules(ctx context.Context, lintConfig bufconfig.LintConfig) ([]check.Rule, error) {
-	allRules, err := c.AllLintRules(ctx, lintConfig.FileVersion())
-	if err != nil {
-		return nil, err
-	}
-	config, err := configForLintConfig(lintConfig, allRules)
-	if err != nil {
-		return nil, err
-	}
-	if len(config.RuleIDs) == 0 {
-		return slicesext.Filter(allRules, check.Rule.IsDefault), nil
-	}
-	return rulesForRuleIDs(allRules, config.RuleIDs), nil
-}
-
-func (c *client) AllLintRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error) {
-	checkClient, ok := c.fileVersionToCheckClient[fileVersion]
-	if !ok {
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
-	}
-	allRules, err := checkClient.ListRules(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return rulesForType(allRules, check.RuleTypeLint), nil
-}
-
 func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error {
 	breakingOptions := newBreakingOptions()
 	for _, option := range options {
 		option(breakingOptions)
 	}
-	allRules, err := c.AllBreakingRules(ctx, breakingConfig.FileVersion())
+	allRules, err := c.AllRules(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion())
 	if err != nil {
 		return err
 	}
@@ -160,12 +133,12 @@ func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.Breaking
 	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
 }
 
-func (c *client) ConfiguredBreakingRules(ctx context.Context, breakingConfig bufconfig.BreakingConfig) ([]check.Rule, error) {
-	allRules, err := c.AllBreakingRules(ctx, breakingConfig.FileVersion())
+func (c *client) ConfiguredRules(ctx context.Context, ruleType check.RuleType, checkConfig bufconfig.CheckConfig) ([]check.Rule, error) {
+	allRules, err := c.AllRules(ctx, ruleType, checkConfig.FileVersion())
 	if err != nil {
 		return nil, err
 	}
-	config, err := configForBreakingConfig(breakingConfig, allRules, false)
+	config, err := configForCheckConfig(checkConfig, allRules)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +148,7 @@ func (c *client) ConfiguredBreakingRules(ctx context.Context, breakingConfig buf
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }
 
-func (c *client) AllBreakingRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error) {
+func (c *client) AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion) ([]check.Rule, error) {
 	checkClient, ok := c.fileVersionToCheckClient[fileVersion]
 	if !ok {
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
@@ -184,7 +157,7 @@ func (c *client) AllBreakingRules(ctx context.Context, fileVersion bufconfig.Fil
 	if err != nil {
 		return nil, err
 	}
-	return rulesForType(allRules, check.RuleTypeBreaking), nil
+	return rulesForType(allRules, ruleType), nil
 }
 
 func newBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {

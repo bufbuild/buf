@@ -16,11 +16,9 @@ package configlslintrules
 
 import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/bufplugin-go/check"
 )
 
 // NewCommand returns a new Command.
@@ -31,12 +29,6 @@ func NewCommand(
 	return internal.NewLSCommand(
 		name,
 		builder,
-		"lint",
-		buflint.GetAllRulesV1Beta1,
-		buflint.GetAllRulesV1,
-		buflint.GetAllRulesV2,
-		func(moduleConfig bufconfig.ModuleConfig) ([]bufcheck.Rule, error) {
-			return buflint.RulesForConfig(moduleConfig.LintConfig())
-		},
+		check.RuleTypeLint,
 	)
 }

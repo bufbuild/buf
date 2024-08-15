@@ -54,17 +54,20 @@ type config struct {
 	ExcludeImports      bool
 }
 
+// Only RuleIDs, IgnoreRootPaths,  IgnoreIDToRootPaths will be set. Options has no meaning.
+func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []check.Rule) (*config, error) {
+	return configSpecForCheckConfig(checkConfig).newConfig(allRules)
+}
+
 func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []check.Rule) (*config, error) {
 	return configSpecForLintConfig(lintConfig).newConfig(allRules)
 }
-
-var _ = configForBreakingConfig
 
 func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule, excludeImports bool) (*config, error) {
 	return configSpecForBreakingConfig(breakingConfig, excludeImports).newConfig(allRules)
 }
 
-// *** BELOW THIS LINE SHOULD OBLY BE USED BY THIS FILE ***
+// *** BELOW THIS LINE SHOULD ONLY BE USED BY THIS FILE ***
 
 // configSpec is a config spec.
 type configSpec struct {
@@ -88,6 +91,24 @@ type configSpec struct {
 
 	CommentIgnorePrefix string
 	ExcludeImports      bool
+}
+
+func configSpecForCheckConfig(checkConfig bufconfig.CheckConfig) *configSpec {
+	return &configSpec{
+		Use:                                  checkConfig.UseIDsAndCategories(),
+		Except:                               checkConfig.ExceptIDsAndCategories(),
+		IgnoreRootPaths:                      checkConfig.IgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths:        checkConfig.IgnoreIDOrCategoryToPaths(),
+		AllowCommentIgnores:                  false,
+		IgnoreUnstablePackages:               false,
+		EnumZeroValueSuffix:                  "",
+		RPCAllowSameRequestResponse:          false,
+		RPCAllowGoogleProtobufEmptyRequests:  false,
+		RPCAllowGoogleProtobufEmptyResponses: false,
+		ServiceSuffix:                        "",
+		CommentIgnorePrefix:                  "",
+		ExcludeImports:                       false,
+	}
 }
 
 func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {

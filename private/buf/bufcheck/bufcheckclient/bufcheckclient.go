@@ -35,9 +35,6 @@ type Client interface {
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image, options ...LintOption) error
-	ConfiguredLintRules(ctx context.Context, config bufconfig.LintConfig) ([]check.Rule, error)
-	AllLintRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error)
-
 	// Breaking checks the given Images for breaking changes with the given BreakingConfig.
 	//
 	// The Images should have source code info for this to work properly.
@@ -47,8 +44,8 @@ type Client interface {
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
-	ConfiguredBreakingRules(ctx context.Context, config bufconfig.BreakingConfig) ([]check.Rule, error)
-	AllBreakingRules(ctx context.Context, fileVersion bufconfig.FileVersion) ([]check.Rule, error)
+	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig) ([]check.Rule, error)
+	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion) ([]check.Rule, error)
 }
 
 type LintOption func(*lintOptions)

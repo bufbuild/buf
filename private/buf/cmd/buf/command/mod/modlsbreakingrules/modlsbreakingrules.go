@@ -16,11 +16,9 @@ package modlsbreakingrules
 
 import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/bufplugin-go/check"
 )
 
 // NewCommand returns a new Command.
@@ -31,11 +29,6 @@ func NewCommand(
 	return internal.NewLSCommand(
 		name,
 		builder,
-		"breaking",
-		bufbreaking.GetAllRulesV1Beta1,
-		bufbreaking.GetAllRulesV1,
-		func(moduleConfig bufconfig.ModuleConfig) ([]bufcheck.Rule, error) {
-			return bufbreaking.RulesForConfig(moduleConfig.BreakingConfig())
-		},
+		check.RuleTypeBreaking,
 	)
 }
