@@ -33,18 +33,18 @@ const (
 	defaultServiceSuffix       = "Service"
 )
 
-// OptionsBuilder builds check.Options for clients.
+// OptionsSpec builds check.Options for clients.
 //
 // These can then be sent over the wire to servers.
 //
-// Note that we don't expose OptionsBuilder for the server-side rules, instead we rely
+// Note that we don't expose OptionsSpec for the server-side rules, instead we rely
 // on the static functions, as we want to move our rules to be as native to bufplugin-go
 // as possible. Instead of i.e. attaching an Options struct to bufcheckserverutil.Requests,
 // we have individual rules go through the direct reading of check.Options using
 // the static functions below.
 //
 // Only use this on the client side.
-type OptionsBuilder struct {
+type OptionsSpec struct {
 	EnumZeroValueSuffix                  string
 	RPCAllowSameRequestResponse          bool
 	RPCAllowGoogleProtobufEmptyRequests  bool
@@ -68,8 +68,8 @@ type OptionsBuilder struct {
 	CommentExcludes []string
 }
 
-// Build builds a check.Options.
-func (o OptionsBuilder) Build() (check.Options, error) {
+// ToOptions builds a check.Options.
+func (o *OptionsSpec) ToOptions() (check.Options, error) {
 	keyToValue := make(map[string][]byte, 5)
 	if value := o.EnumZeroValueSuffix; len(value) > 0 {
 		keyToValue[enumZeroValueSuffixKey] = []byte(value)
