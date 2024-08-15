@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -61,12 +62,9 @@ func newClient(options ...ClientOption) (*client, error) {
 	v1CheckClient := v1DefaultCheckClient
 	v2CheckClient := v2DefaultCheckClient
 
-	//if pluginConfigs := clientOptions.pluginConfigs; len(pluginConfigs) > 0 {
-	//pluginCheckClients := make([]check.Client, 0, len(pluginConfigs))
-	//for _, pluginConfig := range pluginConfigs {
-
-	//}
-	//}
+	if pluginConfigs := clientOptions.pluginConfigs; len(pluginConfigs) > 0 {
+		return nil, errors.New("TODO")
+	}
 
 	return &client{
 		fileVersionToCheckClient: map[bufconfig.FileVersion]check.Client{
