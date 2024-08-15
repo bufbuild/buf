@@ -62,12 +62,13 @@ var (
 	// V2Spec is the v2 check.Spec.
 	V2Spec = &check.Spec{
 		Rules: []*check.RuleSpec{
-			bufcheckserverbuild.BreakingEnumNoDelete.Build(true, []string{"FILE"}),
-			bufcheckserverbuild.BreakingExtensionNoDelete.Build(true, []string{"FILE"}),
-			bufcheckserverbuild.BreakingFileNoDelete.Build(true, []string{"FILE"}),
-			bufcheckserverbuild.BreakingMessageNoDelete.Build(true, []string{"FILE"}),
-			bufcheckserverbuild.BreakingServiceNoDelete.Build(true, []string{"FILE"}),
+			bufcheckserverbuild.BreakingEnumNoDeleteRuleSpecBuilder.Build(true, []string{"FILE"}),
+			bufcheckserverbuild.BreakingExtensionNoDeleteRuleSpecBuilder.Build(true, []string{"FILE"}),
+			bufcheckserverbuild.BreakingFileNoDeleteRuleSpecBuilder.Build(true, []string{"FILE"}),
+			bufcheckserverbuild.BreakingMessageNoDeleteRuleSpecBuilder.Build(true, []string{"FILE"}),
+			bufcheckserverbuild.BreakingServiceNoDeleteRuleSpecBuilder.Build(true, []string{"FILE"}),
 			bufcheckserverbuild.BreakingEnumSameTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingEnumValueNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

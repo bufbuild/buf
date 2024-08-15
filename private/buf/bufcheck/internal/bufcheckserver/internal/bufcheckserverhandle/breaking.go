@@ -16,9 +16,12 @@ package bufcheckserverhandle
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 // HandleBreakingEnumNoDelete is a check function.
@@ -215,4 +218,96 @@ func handleBreakingEnumSameType(
 		)
 	}
 	return nil
+}
+
+// HandleBreakingEnumValueNoDelete is a check function.
+var HandleBreakingEnumValueNoDelete = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumValueNoDelete)
+
+func handleBreakingEnumValueNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+) error {
+	return checkEnumValueNoDeleteWithRules(
+		responseWriter,
+		previousEnum,
+		enum,
+		false,
+		false,
+	)
+}
+
+func checkEnumValueNoDeleteWithRules(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+	allowIfNumberReserved bool,
+	allowIfNameReserved bool,
+) error {
+	previousNumberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(previousEnum)
+	if err != nil {
+		return err
+	}
+	numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
+	if err != nil {
+		return err
+	}
+	for previousNumber, previousNameToEnumValue := range previousNumberToNameToEnumValue {
+		if _, ok := numberToNameToEnumValue[previousNumber]; !ok {
+			if !isDeletedEnumValueAllowedWithRules(
+				previousNumber,
+				previousNameToEnumValue,
+				enum,
+				allowIfNumberReserved,
+				allowIfNameReserved,
+			) {
+				suffix := ""
+				if allowIfNumberReserved && allowIfNameReserved {
+					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
+				}
+				if allowIfNumberReserved {
+					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousNumber)
+				}
+				if allowIfNameReserved {
+					nameSuffix := ""
+					if len(previousNameToEnumValue) > 1 {
+						nameSuffix = "s"
+					}
+					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, stringutil.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
+				}
+				responseWriter.AddProtosourceAnnotation(
+					enum.Location(),
+					previousEnum.Location(),
+					`Previously present enum value "%d" on enum %q was deleted%s.`,
+					previousNumber,
+					enum.Name(),
+					suffix,
+				)
+			}
+		}
+	}
+	return nil
+}
+
+func isDeletedEnumValueAllowedWithRules(
+	previousNumber int,
+	previousNameToEnumValue map[string]bufprotosource.EnumValue,
+	enum bufprotosource.Enum,
+	allowIfNumberReserved bool,
+	allowIfNameReserved bool,
+) bool {
+	if allowIfNumberReserved {
+		return bufprotosource.NumberInReservedRanges(previousNumber, enum.ReservedTagRanges()...)
+	}
+	if allowIfNameReserved {
+		// if true for all names, then ok
+		for previousName := range previousNameToEnumValue {
+			if !bufprotosource.NameInReservedNames(previousName, enum.ReservedNames()...) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
