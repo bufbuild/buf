@@ -89,6 +89,13 @@ type BufYAMLFile interface {
 	// breaking config. Otherwise, this will return nil, so callers should be aware this may be
 	// empty.
 	TopLevelBreakingConfig() BreakingConfig
+	// TopLevelPluginConfig returns the top-level PluginConfig for the File.
+	//
+	// For v1 buf.yaml files, this will always return nil.
+	// For v2 buf.yaml files, if a top-level plugin config exists, then it will be the top-level
+	// plugin config. Otherwise, this will return nil, so callers should be aware this may be
+	// empty.
+	TopLevelPluginConfigs() []PluginConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -122,6 +129,7 @@ func NewBufYAMLFile(
 		moduleConfigs,
 		nil, // Do not set top-level lint config, use only module configs
 		nil, // Do not set top-level breaking config, use only module configs
+		nil, // Do not set top-level plugin configs, use only module configs
 		configuredDepModuleRefs,
 		bufYAMLFileOptions.includeDocsLink,
 	)
@@ -235,6 +243,7 @@ type bufYAMLFile struct {
 	moduleConfigs           []ModuleConfig
 	topLevelLintConfig      LintConfig
 	topLevelBreakingConfig  BreakingConfig
+	topLevelPluginConfigs   []PluginConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 	includeDocsLink         bool
 }
@@ -245,6 +254,7 @@ func newBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	topLevelLintConfig LintConfig,
 	topLevelBreakingConfig BreakingConfig,
+	topLevelPluginConfigs []PluginConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
@@ -306,6 +316,7 @@ func newBufYAMLFile(
 		moduleConfigs:           moduleConfigs,
 		topLevelLintConfig:      topLevelLintConfig,
 		topLevelBreakingConfig:  topLevelBreakingConfig,
+		topLevelPluginConfigs:   topLevelPluginConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 		includeDocsLink:         includeDocsLink,
 	}, nil
@@ -333,6 +344,10 @@ func (c *bufYAMLFile) TopLevelLintConfig() LintConfig {
 
 func (c *bufYAMLFile) TopLevelBreakingConfig() BreakingConfig {
 	return c.topLevelBreakingConfig
+}
+
+func (c *bufYAMLFile) TopLevelPluginConfigs() []PluginConfig {
+	return c.topLevelPluginConfigs
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
@@ -416,6 +431,7 @@ func readBufYAMLFile(
 			rootToExcludes,
 			lintConfig,
 			breakingConfig,
+			nil,
 		)
 		if err != nil {
 			return nil, err
@@ -428,6 +444,7 @@ func readBufYAMLFile(
 			},
 			lintConfig,
 			breakingConfig,
+			nil,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -450,6 +467,7 @@ func readBufYAMLFile(
 		// If a module does not have its own lint section, then we use this as the default.
 		defaultExternalLintConfig := externalBufYAMLFile.Lint
 		defaultExternalBreakingConfig := externalBufYAMLFile.Breaking
+		defaultExternalPluginConfigs := externalBufYAMLFile.Plugins
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalModules {
 			dirPath := externalModule.Path
@@ -530,12 +548,21 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, err
 			}
+			var pluginConfigs []PluginConfig
+			for _, externalPluginConfig := range externalModule.Plugins {
+				pluginConfig, err := newPluginConfigForExternalV2(externalPluginConfig)
+				if err != nil {
+					return nil, err
+				}
+				pluginConfigs = append(pluginConfigs, pluginConfig)
+			}
 			moduleConfig, err := newModuleConfig(
 				dirPath,
 				moduleFullName,
 				rootToExcludes,
 				lintConfig,
 				breakingConfig,
+				pluginConfigs,
 			)
 			if err != nil {
 				return nil, err
@@ -566,6 +593,16 @@ func readBufYAMLFile(
 				return nil, err
 			}
 		}
+		var topLevelPluginConfigs []PluginConfig
+		if len(defaultExternalPluginConfigs) > 0 {
+			for _, externalPluginConfig := range defaultExternalPluginConfigs {
+				topLevelPluginConfig, err := newPluginConfigForExternalV2(externalPluginConfig)
+				if err != nil {
+					return nil, err
+				}
+				topLevelPluginConfigs = append(topLevelPluginConfigs, topLevelPluginConfig)
+			}
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -576,6 +613,7 @@ func readBufYAMLFile(
 			moduleConfigs,
 			topLevelLintConfig,
 			topLevelBreakingConfig,
+			topLevelPluginConfigs,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -691,8 +729,12 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// We could make other decisions: if there are two or more matching configs, do a default,
 		// and then just override the non-matching, but this gets complicated. The current logic
 		// takes care of the base case when writing buf.yaml files.
+		//
+		// Edit: We added in plugin configs to this as well, so assume the above applies to
+		// plugin configs too.
 		stringToExternalLint := make(map[string]externalBufYAMLFileLintV2)
 		stringToExternalBreaking := make(map[string]externalBufYAMLFileBreakingV1Beta1V1V2)
+		stringToExternalPlugins := make(map[string][]externalBufYAMLFilePluginV2)
 
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
@@ -731,10 +773,25 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			stringToExternalBreaking[string(externalBreakingData)] = externalBreaking
 			externalModule.Breaking = externalBreaking
 
+			var externalPlugins []externalBufYAMLFilePluginV2
+			for _, pluginConfig := range moduleConfig.PluginConfigs() {
+				externalPlugin, err := newExternalV2ForPluginConfig(pluginConfig)
+				if err != nil {
+					return syserror.Wrap(err)
+				}
+				externalPlugins = append(externalPlugins, externalPlugin)
+			}
+			externalPluginsData, err := json.Marshal(externalPlugins)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			stringToExternalPlugins[string(externalPluginsData)] = externalPlugins
+			externalModule.Plugins = externalPlugins
+
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
 
-		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 {
+		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 && len(stringToExternalPlugins) <= 1 {
 			externalLint, err := getZeroOrSingleValueForMap(stringToExternalLint)
 			if err != nil {
 				return syserror.Wrap(err)
@@ -743,11 +800,17 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if err != nil {
 				return syserror.Wrap(err)
 			}
+			externalPlugins, err := getZeroOrSingleValueForMap(stringToExternalPlugins)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
 			externalBufYAMLFile.Lint = externalLint
 			externalBufYAMLFile.Breaking = externalBreaking
+			externalBufYAMLFile.Plugins = externalPlugins
 			for i := 0; i < len(externalBufYAMLFile.Modules); i++ {
 				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV2{}
 				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
+				externalBufYAMLFile.Modules[i].Plugins = make([]externalBufYAMLFilePluginV2, 0)
 			}
 		}
 		if len(externalBufYAMLFile.Modules) == 1 && externalBufYAMLFile.Modules[0].Path == "." && len(externalBufYAMLFile.Modules[0].Excludes) == 0 {
@@ -1155,6 +1218,7 @@ type externalBufYAMLFileV2 struct {
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 // externalBufYAMLFileModuleV2 represents a single module configuation within a v2 buf.yaml file.
@@ -1164,6 +1228,7 @@ type externalBufYAMLFileModuleV2 struct {
 	Excludes []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 // externalBufYAMLFileBuildV1Beta1V1 represents build configuation within a v1 or
@@ -1263,6 +1328,22 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 		len(eb.Ignore) == 0 &&
 		len(eb.IgnoreOnly) == 0 &&
 		!eb.IgnoreUnstablePackages
+}
+
+// externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.gyaml file.
+type externalBufYAMLFilePluginV2 struct {
+	// Local is the local path (either relative or absolute) to a binary or other runnable program which
+	// implements the plugin interface. This can be one string (the program) or multiple (remaining
+	// strings are arguments to the program).
+	Local any `json:"local,omitempty" yaml:"local,omitempty"`
+	// Options can be one string or multiple strings.
+	Options []externalBufYAMLFilePluginOptionV2 `json:"options,omitempty" yaml:"options,omitempty"`
+}
+
+type externalBufYAMLFilePluginOptionV2 struct {
+	Key string `json:"key,omitempty" yaml:"key,omitempty"`
+	// TODO: We may want to split this by type, so that we can do base64-encoding for bytes.
+	Value string `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {

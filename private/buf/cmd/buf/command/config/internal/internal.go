@@ -201,7 +201,7 @@ func lsRun(
 			case 0:
 				return syserror.New("got 0 ModuleConfigs from a BufYAMLFile")
 			case 1:
-				moduleConfig = moduleConfigs[1]
+				moduleConfig = moduleConfigs[0]
 			default:
 				if flags.ModulePath == "" {
 					return appcmd.NewInvalidArgumentErrorf("--%s must be specified if the the buf.yaml has more than one module", modulePathFlagName)

@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -36,22 +37,35 @@ type client struct {
 	fileVersionToCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(...ClientOption) (*client, error) {
-	// Eventually, we're going to have to make a MultiClient for each of these with the plugin Clients,
-	// and that MultiClient may do caching of its own, so we want to keep these static instead of creating
-	// them on every lint and breaking  call.
-	v1beta1CheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
+func newClient(options ...ClientOption) (*client, error) {
+	clientOptions := newClientOptions()
+	for _, option := range options {
+		option(clientOptions)
+	}
+
+	// The MultiClient may do caching of its own, so we want to keep our check.Clients static instead of creating
+	// them on every lint and breaking call.
+	v1beta1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
-	v1CheckClient, err := check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
+	v1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
-	v2CheckClient, err := check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
+	v2DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
+
+	v1beta1CheckClient := v1beta1DefaultCheckClient
+	v1CheckClient := v1DefaultCheckClient
+	v2CheckClient := v2DefaultCheckClient
+
+	if pluginConfigs := clientOptions.pluginConfigs; len(pluginConfigs) > 0 {
+		return nil, errors.New("TODO")
+	}
+
 	return &client{
 		fileVersionToCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1CheckClient,
@@ -307,4 +321,10 @@ func newBreakingOptions() *breakingOptions {
 	return &breakingOptions{}
 }
 
-type clientOptions struct{}
+type clientOptions struct {
+	pluginConfigs []bufconfig.PluginConfig
+}
+
+func newClientOptions() *clientOptions {
+	return &clientOptions{}
+}

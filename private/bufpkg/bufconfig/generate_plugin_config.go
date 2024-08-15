@@ -366,7 +366,7 @@ func newGeneratePluginConfigFromExternalV1(
 	)
 }
 
-func newPluginConfigFromExternalV2(
+func newGeneratePluginConfigFromExternalV2(
 	externalConfig externalGeneratePluginConfigV2,
 ) (GeneratePluginConfig, error) {
 	var pluginTypeCount int
