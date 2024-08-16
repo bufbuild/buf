@@ -391,6 +391,24 @@ func handleBreakingFieldNoDelete(
 	)
 }
 
+// HandleBreakingFieldNoDeleteUnlessNameReserved is a check function.
+var HandleBreakingFieldNoDeleteUnlessNameReserved = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingFieldNoDeleteUnlessNameReserved)
+
+func handleBreakingFieldNoDeleteUnlessNameReserved(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	return checkFieldNoDeleteWithRules(
+		responseWriter,
+		previousMessage,
+		message,
+		false,
+		true,
+	)
+}
+
 func checkFieldNoDeleteWithRules(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousMessage bufprotosource.Message,

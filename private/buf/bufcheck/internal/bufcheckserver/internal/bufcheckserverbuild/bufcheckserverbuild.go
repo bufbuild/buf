@@ -448,6 +448,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleType,
 	}
+	// BreakingFieldNoDeleteUnlessNameReservedRuleSpecBuilder is a rule spec builder.
+	BreakingFieldNoDeleteUnlessNameReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_NO_DELETE_UNLESS_NAME_RESERVED",
+		Purpose: "fields are not deleted from a given message unless the name is reserved",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNameReserved,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
