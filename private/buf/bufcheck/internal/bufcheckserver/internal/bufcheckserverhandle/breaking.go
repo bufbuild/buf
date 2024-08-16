@@ -1408,3 +1408,78 @@ func handleBreakingFieldSameDefault(
 	}
 	return nil
 }
+
+// HandleBreakingFieldSameOneof is a check function.
+var HandleBreakingFieldSameOneof = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameOneof)
+
+func handleBreakingFieldSameOneof(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	if previousField.Extendee() != "" {
+		// extensions can't be defined inside oneofs
+		return nil
+	}
+	previousOneof := previousField.Oneof()
+	if previousOneof != nil {
+		previousOneofDescriptor, err := previousOneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if previousOneofDescriptor.IsSynthetic() {
+			// Not considering synthetic oneofs since those are really
+			// just strange byproducts of how "explicit presence" is
+			// modeled in proto3 syntax. We will separately detect this
+			// kind of change via field presence check.
+			previousOneof = nil
+		}
+	}
+	oneof := field.Oneof()
+	if oneof != nil {
+		oneofDescriptor, err := oneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if oneofDescriptor.IsSynthetic() {
+			// Same remark as above.
+			oneof = nil
+		}
+	}
+
+	previousInsideOneof := previousOneof != nil
+	insideOneof := oneof != nil
+	if !previousInsideOneof && !insideOneof {
+		return nil
+	}
+	if previousInsideOneof && insideOneof {
+		if previousOneof.Name() != oneof.Name() {
+			responseWriter.AddProtosourceAnnotation(
+				field.Location(),
+				previousField.Location(),
+				`%sq moved from oneof %q to oneof %q.`,
+				fieldDescription(field),
+				previousOneof.Name(),
+				oneof.Name(),
+			)
+		}
+		return nil
+	}
+
+	previous := "inside"
+	current := "outside"
+	if insideOneof {
+		previous = "outside"
+		current = "inside"
+	}
+	responseWriter.AddProtosourceAnnotation(
+		field.Location(),
+		previousField.Location(),
+		`%s moved from %s to %s a oneof.`,
+		fieldDescription(field),
+		previous,
+		current,
+	)
+	return nil
+}
