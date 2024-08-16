@@ -456,11 +456,11 @@ func getImageIDAndDigestFromReference(
 
 	switch {
 	case desc.MediaType.IsIndex():
-		index, err := desc.ImageIndex()
+		imageIndex, err := desc.ImageIndex()
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get image index: %w", err)
 		}
-		indexManifest, err := index.IndexManifest()
+		indexManifest, err := imageIndex.IndexManifest()
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get image manifests: %w", err)
 		}
@@ -475,19 +475,19 @@ func getImageIDAndDigestFromReference(
 				break
 			}
 		}
-		repoName, _, ok := strings.Cut(ref.Name(), "@")
+		refNameWithoutDigest, _, ok := strings.Cut(ref.Name(), "@")
 		if !ok {
-			return "", "", fmt.Errorf("could not resolve repository name from %q", ref.Name())
+			return "", "", fmt.Errorf("failed to parse reference name %q", ref)
 		}
-		repo, err := name.NewRepository(repoName)
+		repository, err := name.NewRepository(refNameWithoutDigest)
 		if err != nil {
-			return "", "", err
+			return "", "", fmt.Errorf("failed to construct repository %q: %w", refNameWithoutDigest, err)
 		}
 		// We resolved the image index to an image manifest digest, we can now call this function
 		// again to resolve the image manifest digest to an image config digest.
 		return getImageIDAndDigestFromReference(
 			ctx,
-			repo.Digest(manifest.Digest.String()),
+			repository.Digest(manifest.Digest.String()),
 			options...,
 		)
 	case desc.MediaType.IsImage():
