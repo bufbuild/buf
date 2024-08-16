@@ -119,7 +119,6 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameType,
 	}
-
 	// BreakingFieldSameUTF8ValidationRuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameUTF8ValidationRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FIELD_SAME_UTF8_VALIDATION",
@@ -245,6 +244,13 @@ var (
 		Purpose: "Checks files have the same syntax.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameSyntax,
+	}
+	// BreakingMessageNoRemoveStandardDescriptorAccessorRuleSpecBuilder is a rule spec builder.
+	BreakingMessageNoRemoveStandardDescriptorAccessorRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR",
+		Purpose: "Checks messages do not change the no_standard_descriptor_accessor option from false or unset to true.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingMessageNoRemoveStandardDescriptorAccessor,
 	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.

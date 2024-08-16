@@ -118,7 +118,7 @@ func handleBreakingFileNoDelete(
 	}
 	for previousFilePath := range previousFilePathToFile {
 		if _, ok := filePathToFile[previousFilePath]; !ok {
-			responseWriter.AddAnnotaton(
+			responseWriter.AddAnnotation(
 				check.WithAgainstFileName(previousFilePath),
 				check.WithMessagef(
 					`Previously present file %q was deleted.`,
@@ -1087,6 +1087,29 @@ func checkFileSameValue(
 			name,
 			previousValue,
 			value,
+		)
+	}
+	return nil
+}
+
+// HandleBreakingMessageNoRemoveStandardDescriptorAccessor is a check function.
+var HandleBreakingMessageNoRemoveStandardDescriptorAccessor = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingMessageNoRemoveStandardDescriptorAccessor)
+
+func handleBreakingMessageNoRemoveStandardDescriptorAccessor(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	previous := strconv.FormatBool(previousMessage.NoStandardDescriptorAccessor())
+	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
+	if previous == "false" && current == "true" {
+		responseWriter.AddProtosourceAnnotation(
+			message.NoStandardDescriptorAccessorLocation(),
+			previousMessage.NoStandardDescriptorAccessorLocation(),
+			`Message option "no_standard_descriptor_accessor" changed from %q to %q.`,
+			previous,
+			current,
 		)
 	}
 	return nil
