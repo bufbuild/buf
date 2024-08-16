@@ -1269,3 +1269,28 @@ func handleBreakingEnumValueSameName(
 	}
 	return nil
 }
+
+var HandleBreakingFieldSameJSONName = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameJSONName)
+
+func handleBreakingFieldSameJSONName(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	if previousField.Extendee() != "" {
+		// JSON name can't be set explicitly for extensions
+		return nil
+	}
+	if previousField.JSONName() != field.JSONName() {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(field.JSONNameLocation(), field.Location()),
+			withBackupLocation(previousField.JSONNameLocation(), previousField.Location()),
+			`%s changed option "json_name" from %q to %q.`,
+			fieldDescription(field),
+			previousField.JSONName(),
+			field.JSONName(),
+		)
+	}
+	return nil
+}

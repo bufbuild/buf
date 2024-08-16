@@ -280,6 +280,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueSameName,
 	}
+	// BreakingFieldSameJSONNameRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameJSONNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_JSON_NAME",
+		Purpose: "Checks fields have the same value for the json_name option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameJSONName,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
