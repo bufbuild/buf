@@ -1775,3 +1775,67 @@ func handleBreakingRPCSameServerStreaming(
 	}
 	return nil
 }
+
+// HandleBreakingPackageEnumNoDelete is a check function.
+var HandleBreakingPackageEnumNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingPackageEnumNoDelete)
+
+func handleBreakingPackageEnumNoDelete(
+	_ context.Context,
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+) error {
+	previousPackageToNestedNameToEnum, err := bufprotosource.PackageToNestedNameToEnum(request.AgainstProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	packageToNestedNameToEnum, err := bufprotosource.PackageToNestedNameToEnum(request.ProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	// caching across loops
+	var filePathToFile map[string]bufprotosource.File
+	for previousPackage, previousNestedNameToEnum := range previousPackageToNestedNameToEnum {
+		if nestedNameToEnum, ok := packageToNestedNameToEnum[previousPackage]; ok {
+			for previousNestedName, previousEnum := range previousNestedNameToEnum {
+				if _, ok := nestedNameToEnum[previousNestedName]; !ok {
+					// if cache not populated, populate it
+					if filePathToFile == nil {
+						filePathToFile, err = bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
+						if err != nil {
+							return err
+						}
+					}
+					// Check if the file still exists.
+					file, ok := filePathToFile[previousEnum.File().Path()]
+					if ok {
+						// File exists, try to get a location to attach the error to.
+						_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						if err != nil {
+							return err
+						}
+						responseWriter.AddProtosourceAnnotation(
+							location,
+							previousEnum.Location(),
+							`Previously present enum %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						)
+					} else {
+						// File does not exist, we don't know where the enum was deleted from.
+						// Add the previous enum to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous enum was in an unstable package.
+						responseWriter.AddProtosourceAnnotation(
+							nil,
+							previousEnum.Location(),
+							`Previously present enum %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}

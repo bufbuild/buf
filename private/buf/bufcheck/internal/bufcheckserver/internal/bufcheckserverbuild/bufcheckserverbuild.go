@@ -385,6 +385,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingRPCSameServerStreaming,
 	}
+	// BreakingPackageEnumNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingPackageEnumNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_ENUM_NO_DELETE",
+		Purpose: "Checks enums are not deleted from a given package.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingPackageEnumNoDelete,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
