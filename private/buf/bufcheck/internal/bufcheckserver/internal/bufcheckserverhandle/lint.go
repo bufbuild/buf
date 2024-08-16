@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/bufplugin-go/check"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -415,14 +416,14 @@ func handleLintFileLowerSnakeCase(
 	baseWithoutExt := strings.TrimSuffix(base, ext)
 	expectedBaseWithoutExt := stringutil.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
-		responseWriter.AddProtosourceAnnotation(
-			nil, // TODO: is no location correct?
-			nil,
-			`Filename %q should be lower_snake_case%s, such as "%s%s".`,
-			base,
-			ext,
-			expectedBaseWithoutExt,
-			ext,
+		responseWriter.AddAnnotation(
+			check.WithFileName(filename),
+			check.WithMessagef(`Filename %q should be lower_snake_case%s, such as "%s%s".`,
+				base,
+				ext,
+				expectedBaseWithoutExt,
+				ext,
+			),
 		)
 	}
 	return nil
@@ -549,10 +550,9 @@ func handleLintPackageDefined(
 	file bufprotosource.File,
 ) error {
 	if file.Package() == "" {
-		responseWriter.AddProtosourceAnnotation(
-			nil, // TODO: double check it's correct that no location is specified
-			nil,
-			"Files must have a package defined.",
+		responseWriter.AddAnnotation(
+			check.WithFileName(file.Path()),
+			check.WithMessage("Files must have a package defined."),
 		)
 	}
 	return nil
