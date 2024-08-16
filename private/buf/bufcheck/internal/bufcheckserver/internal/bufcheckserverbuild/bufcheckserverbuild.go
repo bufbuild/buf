@@ -420,19 +420,26 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingPackageServiceNoDelete,
 	}
-	// BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder is a spec builder.
+	// BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder is a rule spec builder.
 	BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED",
 		Purpose: "Checks enum values are not deleted from a given enum unless the name is reserved.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNameReserved,
 	}
-	// BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder is a spec builder.
+	// BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder is a rule spec builder.
 	BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED",
 		Purpose: "Checks enum values are not deleted from a given enum unless the number is reserved.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNumberReserved,
+	}
+	// BreakingFieldWireJSONCompatibleCardinalityRuleSpecBuilder is a rule spec builder.
+	BreakingFieldWireJSONCompatibleCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		Purpose: "Checks fields have wire and JSON compatible cardinalities in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleCardinality,
 	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.

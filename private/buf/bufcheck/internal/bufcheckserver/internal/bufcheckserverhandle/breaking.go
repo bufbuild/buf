@@ -2100,3 +2100,45 @@ func handleBreakingPackageServiceNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingFieldWireJSONCompatibleCardinality is a check function.
+var HandleBreakingFieldWireJSONCompatibleCardinality = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldWireJSONCompatibleCardinality)
+
+func handleBreakingFieldWireJSONCompatibleCardinality(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
+		responseWriter.AddProtosourceAnnotation(
+			field.Location(),
+			previousField.Location(),
+			`%s changed cardinality from %q to %q.`,
+			fieldDescription(field),
+			previousCardinality,
+			currentCardinality,
+		)
+	}
+	return nil
+}
