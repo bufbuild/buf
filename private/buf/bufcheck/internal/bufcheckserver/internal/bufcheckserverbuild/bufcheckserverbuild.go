@@ -413,6 +413,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingPackageNoDelete,
 	}
+	// BreakingPackageServiceNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingPackageServiceNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SERVICE_NO_DELETE",
+		Purpose: "Checks services are not deleted from a given package.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingPackageServiceNoDelete,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

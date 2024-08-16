@@ -118,6 +118,7 @@ var (
 			bufcheckserverbuild.BreakingPackageExtensionNoDeleteRuleSpecBuilder.Build(false, []string{"PACKAGE"}),
 			bufcheckserverbuild.BreakingPackageMessageNoDeleteRuleSpecBuilder.Build(false, []string{"PACKAGE"}),
 			bufcheckserverbuild.BreakingPackageNoDeleteRuleSpecBuilder.Build(false, []string{"PACKAGE"}),
+			bufcheckserverbuild.BreakingPackageServiceNoDeleteRuleSpecBuilder.Build(false, []string{"PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

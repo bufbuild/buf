@@ -2003,3 +2003,64 @@ func handleBreakingPackageNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingPackageServiceNoDelete is a check function.
+var HandleBreakingPackageServiceNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingPackageServiceNoDelete)
+
+func handleBreakingPackageServiceNoDelete(
+	_ context.Context,
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+) error {
+	previousPackageToNameToService, err := bufprotosource.PackageToNameToService(request.AgainstProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	packageToNameToService, err := bufprotosource.PackageToNameToService(request.ProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	// caching across loops
+	var filePathToFile map[string]bufprotosource.File
+	for previousPackage, previousNameToService := range previousPackageToNameToService {
+		if nameToService, ok := packageToNameToService[previousPackage]; ok {
+			for previousName, previousService := range previousNameToService {
+				if _, ok := nameToService[previousName]; !ok {
+					// if cache not populated, populate it
+					if filePathToFile == nil {
+						filePathToFile, err = bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
+						if err != nil {
+							return err
+						}
+					}
+					// Check if the file still exists.
+					_, ok := filePathToFile[previousService.File().Path()]
+					if ok {
+						// File exists.
+						responseWriter.AddProtosourceAnnotation(
+							nil,
+							previousService.Location(),
+							`Previously present service %q was deleted from package %q.`,
+							previousName,
+							previousPackage,
+						)
+					} else {
+						// File does not exist, we don't know where the service was deleted from.
+						// Add the previous service to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous service was in an unstable package.
+						// TODO: find the service and print that this moved?
+						responseWriter.AddProtosourceAnnotation(
+							nil,
+							previousService.Location(),
+							`Previously present service %q was deleted from package %q.`,
+							previousName,
+							previousPackage,
+						)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
