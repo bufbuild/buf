@@ -399,6 +399,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingPackageExtensionNoDelete,
 	}
+	// BreakingPackageMessageNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingPackageMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_MESSAGE_NO_DELETE",
+		Purpose: "Checks messages are not deleted from a given package.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingPackageMessageNoDelete,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

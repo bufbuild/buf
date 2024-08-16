@@ -1903,3 +1903,64 @@ func handleBreakingPackageExtensionNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingPackageMessageNoDelete is a check function.
+var HandleBreakingPackageMessageNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingPackageMessageNoDelete)
+
+func handleBreakingPackageMessageNoDelete(
+	_ context.Context,
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+) error {
+	previousPackageToNestedNameToMessage, err := bufprotosource.PackageToNestedNameToMessage(request.AgainstProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	packageToNestedNameToMessage, err := bufprotosource.PackageToNestedNameToMessage(request.ProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	// caching across loops
+	var filePathToFile map[string]bufprotosource.File
+	for previousPackage, previousNestedNameToMessage := range previousPackageToNestedNameToMessage {
+		if nestedNameToMessage, ok := packageToNestedNameToMessage[previousPackage]; ok {
+			for previousNestedName, previousMessage := range previousNestedNameToMessage {
+				if _, ok := nestedNameToMessage[previousNestedName]; !ok {
+					// if cache not populated, populate it
+					if filePathToFile == nil {
+						filePathToFile, err = bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
+						if err != nil {
+							return err
+						}
+					}
+					// Check if the file still exists.
+					file, ok := filePathToFile[previousMessage.File().Path()]
+					if ok {
+						// File exists, try to get a location to attach the error to.
+						_, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
+						responseWriter.AddProtosourceAnnotation(
+							location,
+							previousMessage.Location(),
+							`Previously present message %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						)
+					} else {
+						// File does not exist, we don't know where the message was deleted from.
+						// Add the previous message to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous message was in an unstable package.
+						responseWriter.AddProtosourceAnnotation(
+							nil,
+							previousMessage.Location(),
+							`Previously present message %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
