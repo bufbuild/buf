@@ -1964,3 +1964,42 @@ func handleBreakingPackageMessageNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingPackageNoDelete is check function.
+var HandleBreakingPackageNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingPackageNoDelete)
+
+func handleBreakingPackageNoDelete(
+	_ context.Context,
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+) error {
+	previousPackageToFiles, err := bufprotosource.PackageToFiles(request.AgainstProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	packageToFiles, err := bufprotosource.PackageToFiles(request.ProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	for previousPackage, previousFiles := range previousPackageToFiles {
+		if _, ok := packageToFiles[previousPackage]; !ok {
+			// Add previous descriptors in the same package as other descriptors to check
+			// for ignores. This will mean that if we have ignore_unstable_packages set,
+			// any one of these files will cause the ignore to happen. Note that we
+			// could probably just attach a single file, but we do this in case we
+			// have other ways to ignore in the future.
+			previousDescriptors := make([]bufprotosource.Descriptor, len(previousFiles))
+			for i, previousFile := range previousFiles {
+				previousDescriptors[i] = previousFile
+			}
+			responseWriter.AddAnnotation(
+				// TODO: figure out which descriptor for this check
+				check.WithMessagef(
+					`Previously present package %q was deleted.`,
+					previousPackage,
+				),
+			)
+		}
+	}
+	return nil
+}
