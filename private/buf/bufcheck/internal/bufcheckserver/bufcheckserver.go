@@ -115,6 +115,7 @@ var (
 			bufcheckserverbuild.BreakingRPCSameResponseTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingRPCSameServerStreamingRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingPackageEnumNoDeleteRuleSpecBuilder.Build(false, []string{"PACKAGE"}),
+			bufcheckserverbuild.BreakingPackageExtensionNoDeleteRuleSpecBuilder.Build(false, []string{"PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

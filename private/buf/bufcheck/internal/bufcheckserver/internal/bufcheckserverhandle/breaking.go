@@ -1839,3 +1839,67 @@ func handleBreakingPackageEnumNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingPackageExtensionNoDelete is a check function.
+var HandleBreakingPackageExtensionNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingPackageExtensionNoDelete)
+
+func handleBreakingPackageExtensionNoDelete(
+	_ context.Context,
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+) error {
+	previousPackageToNestedNameToExtension, err := bufprotosource.PackageToNestedNameToExtension(request.AgainstProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	packageToNestedNameToExtension, err := bufprotosource.PackageToNestedNameToExtension(request.ProtosourceFiles()...)
+	if err != nil {
+		return err
+	}
+	// caching across loops
+	var filePathToFile map[string]bufprotosource.File
+	for previousPackage, previousNestedNameToExtension := range previousPackageToNestedNameToExtension {
+		if nestedNameToExtension, ok := packageToNestedNameToExtension[previousPackage]; ok {
+			for previousNestedName, previousExtension := range previousNestedNameToExtension {
+				if _, ok := nestedNameToExtension[previousNestedName]; !ok {
+					// if cache not populated, populate it
+					if filePathToFile == nil {
+						filePathToFile, err = bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
+						if err != nil {
+							return err
+						}
+					}
+					// Check if the file still exists.
+					file, ok := filePathToFile[previousExtension.File().Path()]
+					if ok {
+						// File exists, try to get a location to attach the error to.
+						_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						if err != nil {
+							return err
+						}
+						responseWriter.AddProtosourceAnnotation(
+							location,
+							previousExtension.Location(),
+							`Previously present extension %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						)
+					} else {
+						// File does not exist, we don't know where the enum was deleted from.
+						// Add the previous enum to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous enum was in an unstable package.
+						responseWriter.AddProtosourceAnnotation(
+							nil,
+							previousExtension.Location(),
+							`Previously present extension %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
