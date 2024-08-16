@@ -980,6 +980,26 @@ func handleBreakingFileSamePhpNamespace(
 	)
 }
 
+// HandleBreakingFileSamePyGenericServices is a check function.
+var HandleBreakingFileSamePyGenericServices = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSamePyGenericServices)
+
+func handleBreakingFileSamePyGenericServices(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		strconv.FormatBool(previousFile.PyGenericServices()),
+		strconv.FormatBool(file.PyGenericServices()),
+		file,
+		file.PyGenericServicesLocation(),
+		previousFile.PyGenericServicesLocation(),
+		`option "py_generic_services"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

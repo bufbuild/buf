@@ -219,7 +219,7 @@ var (
 		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpNamespace,
 	}
 	// BreakingFileSamePyGenericServicesRuleBuilder is a rule spec builder.
-	BreakingFileSamePyGenericServicesRuleBuilder = &bufcheckserverutil.RuleSpecBuilder{
+	BreakingFileSamePyGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FILE_SAME_PY_GENERIC_SERVICES",
 		Purpose: "Checks files have the same value for the py_generic_services option.",
 		Type:    check.RuleTypeBreaking,
