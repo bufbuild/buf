@@ -86,7 +86,7 @@ func (c *client) Lint(
 	request, err := check.NewRequest(
 		files,
 		check.WithRuleIDs(config.RuleIDs...),
-		check.WithOptions(config.Options),
+		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func (c *client) Breaking(
 		files,
 		check.WithRuleIDs(config.RuleIDs...),
 		check.WithAgainstFiles(againstFiles),
-		check.WithOptions(config.Options),
+		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
 		return err

@@ -37,7 +37,10 @@ type PluginConfig interface {
 	// Name returns the plugin name. This is never empty.
 	Name() string
 	// Options returns the plugin options.
-	Options() map[string][]byte
+	//
+	// TODO: Will want good validation and good error messages for what this decodes.
+	// Otherwise we will confuse users. Do QA.
+	Options() map[string]any
 	// Path returns the path, including arguments, to invoke the binary plugin.
 	//
 	// This is not empty only when the plugin is local.
@@ -49,7 +52,7 @@ type PluginConfig interface {
 // NewLocalPluginConfig returns a new PluginConfig for a local plugin.
 func NewLocalPluginConfig(
 	name string,
-	options map[string][]byte,
+	options map[string]any,
 	path []string,
 ) (PluginConfig, error) {
 	return newLocalPluginConfig(
@@ -64,7 +67,7 @@ func NewLocalPluginConfig(
 type pluginConfig struct {
 	pluginConfigType PluginConfigType
 	name             string
-	options          map[string][]byte
+	options          map[string]any
 	path             []string
 }
 
@@ -81,15 +84,16 @@ func newPluginConfigForExternalV2(
 	if pluginTypeCount > 1 {
 		return nil, errors.New("must specify local")
 	}
-	options := make(map[string][]byte)
+	options := make(map[string]any)
 	for _, option := range externalConfig.Options {
 		if len(option.Key) == 0 {
 			return nil, errors.New("must specify option key")
 		}
-		if len(option.Value) == 0 {
+		// TODO: Validation here, how to expose from bufplugin?
+		if option.Value == nil {
 			return nil, errors.New("must specify option value")
 		}
-		options[option.Key] = []byte(option.Value)
+		options[option.Key] = option.Value
 	}
 	switch {
 	case externalConfig.Local != nil:
@@ -109,7 +113,7 @@ func newPluginConfigForExternalV2(
 
 func newLocalPluginConfig(
 	name string,
-	options map[string][]byte,
+	options map[string]any,
 	path []string,
 ) (*pluginConfig, error) {
 	if len(path) == 0 {
@@ -131,7 +135,7 @@ func (p *pluginConfig) Name() string {
 	return p.name
 }
 
-func (p *pluginConfig) Options() map[string][]byte {
+func (p *pluginConfig) Options() map[string]any {
 	return p.options
 }
 
@@ -154,7 +158,7 @@ func newExternalV2ForPluginConfig(
 			externalBufYAMLFilePluginV2.Options,
 			externalBufYAMLFilePluginOptionV2{
 				Key:   key,
-				Value: string(value),
+				Value: value,
 			},
 		)
 	}

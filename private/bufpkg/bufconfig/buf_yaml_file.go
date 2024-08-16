@@ -1319,9 +1319,8 @@ type externalBufYAMLFilePluginV2 struct {
 }
 
 type externalBufYAMLFilePluginOptionV2 struct {
-	Key string `json:"key,omitempty" yaml:"key,omitempty"`
-	// TODO: We may want to split this by type, so that we can do base64-encoding for bytes.
-	Value string `json:"value,omitempty" yaml:"value,omitempty"`
+	Key   string `json:"key,omitempty" yaml:"key,omitempty"`
+	Value any    `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {
