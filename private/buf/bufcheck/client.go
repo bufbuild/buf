@@ -23,20 +23,24 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
+	"github.com/bufbuild/pluginrpc-go"
 )
 
 type client struct {
+	runner                          command.Runner
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(...ClientOption) (*client, error) {
+func newClient(runner command.Runner, _ ...ClientOption) (*client, error) {
 	// We want to keep our check.Clients static for caching instead of creating them on every lint and breaking call.
 	v1beta1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
 	if err != nil {
@@ -52,6 +56,7 @@ func newClient(...ClientOption) (*client, error) {
 	}
 
 	return &client{
+		runner: runner,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
@@ -91,15 +96,15 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	checkClientSpec, err := c.getCheckClientSpec(lintConfig.FileVersion(), lintOptions.pluginConfigs, config.DefaultOptions)
+	multiClient, err := c.getMultiClient(lintConfig.FileVersion(), lintOptions.pluginConfigs, config.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	response, err := checkClientSpec.Client.Check(ctx, request)
+	annotations, err := multiClient.Check(ctx, request)
 	if err != nil {
 		return err
 	}
-	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
+	return annotationsToFilteredFileAnnotationSetOrError(config, image, annotations)
 }
 
 func (c *client) Breaking(
@@ -140,15 +145,15 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	checkClientSpec, err := c.getCheckClientSpec(breakingConfig.FileVersion(), breakingOptions.pluginConfigs, config.DefaultOptions)
+	multiClient, err := c.getMultiClient(breakingConfig.FileVersion(), breakingOptions.pluginConfigs, config.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	response, err := checkClientSpec.Client.Check(ctx, request)
+	annotations, err := multiClient.Check(ctx, request)
 	if err != nil {
 		return err
 	}
-	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
+	return annotationsToFilteredFileAnnotationSetOrError(config, image, annotations)
 }
 
 func (c *client) ConfiguredRules(
@@ -201,27 +206,60 @@ func (c *client) allRules(
 	if err != nil {
 		return nil, err
 	}
-	checkClientSpec, err := c.getCheckClientSpec(fileVersion, pluginConfigs, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, emptyOptions)
 	if err != nil {
 		return nil, err
 	}
-	allRules, err := checkClientSpec.Client.ListRules(ctx)
+	allRules, err := multiClient.ListRules(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForType(allRules, ruleType), nil
 }
 
-func (c *client) getCheckClientSpec(
+func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 	defaultOptions check.Options,
-) (*checkClientSpec, error) {
+) (*multiClient, error) {
 	defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
 	if !ok {
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
-	return newCheckClientSpec(defaultCheckClient, defaultOptions), nil
+	checkClientSpecs := []*checkClientSpec{
+		newCheckClientSpec(defaultCheckClient, defaultOptions),
+	}
+	for _, pluginConfig := range pluginConfigs {
+		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
+			return nil, syserror.New("we only handle local plugins for now with lint and breaking")
+		}
+		options, err := check.NewOptions(pluginConfig.Options())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
+		}
+		pluginPath := pluginConfig.Path()
+		checkClient := check.NewClient(
+			pluginrpc.NewClient(
+				pluginrpcutil.NewRunner(
+					c.runner,
+					// We know that Path is of at least length 1.
+					pluginPath[0],
+					pluginrpcutil.RunnerWithArgs(pluginPath[1:]...),
+				),
+				// TODO
+				pluginrpc.ClientWithStderr(nil),
+			),
+			check.ClientWithCacheRules(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		checkClientSpecs = append(
+			checkClientSpecs,
+			newCheckClientSpec(checkClient, options),
+		)
+	}
+	return newMultiClient(checkClientSpecs), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(

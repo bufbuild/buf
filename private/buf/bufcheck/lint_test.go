@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -1264,7 +1265,7 @@ func testLintWithOptions(
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
 	// TODO: Add in a custom plugin for this integration testing.
-	client, err := bufcheck.NewClient()
+	client, err := bufcheck.NewClient(command.NewRunner())
 	require.NoError(t, err)
 	err = client.Lint(
 		ctx,

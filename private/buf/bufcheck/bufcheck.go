@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
@@ -81,8 +82,8 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) PluginOption {
 	}
 }
 
-func NewClient(options ...ClientOption) (Client, error) {
-	return newClient(options...)
+func NewClient(runner command.Runner, options ...ClientOption) (Client, error) {
+	return newClient(runner, options...)
 }
 
 type ClientOption func(*clientOptions)
