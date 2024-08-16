@@ -312,7 +312,10 @@ func handleLintEnumZeroValueSuffix(
 	request bufcheckserverutil.Request,
 	enumValue bufprotosource.EnumValue,
 ) error {
-	suffix := bufcheckopt.GetEnumZeroValueSuffix(request.Options())
+	suffix, err := bufcheckopt.GetEnumZeroValueSuffix(request.Options())
+	if err != nil {
+		return err
+	}
 	request.Options()
 	if enumValue.Number() != 0 {
 		return nil
