@@ -1243,7 +1243,10 @@ func handleLintServiceSuffix(
 	request bufcheckserverutil.Request,
 	service bufprotosource.Service,
 ) error {
-	suffix := bufcheckopt.GetServiceSuffix(request.Options())
+	suffix, err := bufcheckopt.GetServiceSuffix(request.Options())
+	if err != nil {
+		return err
+	}
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
 		responseWriter.AddProtosourceAnnotation(

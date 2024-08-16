@@ -15,9 +15,6 @@
 package bufcheckopt
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
@@ -70,28 +67,24 @@ type OptionsSpec struct {
 
 // ToOptions builds a check.Options.
 func (o *OptionsSpec) ToOptions() (check.Options, error) {
-	keyToValue := make(map[string][]byte, 5)
+	keyToValue := make(map[string]any, 5)
 	if value := o.EnumZeroValueSuffix; len(value) > 0 {
-		keyToValue[enumZeroValueSuffixKey] = []byte(value)
+		keyToValue[enumZeroValueSuffixKey] = value
 	}
 	if o.RPCAllowSameRequestResponse {
-		keyToValue[rpcAllowSameRequestResponseKey] = []byte("true")
+		keyToValue[rpcAllowSameRequestResponseKey] = true
 	}
 	if o.RPCAllowGoogleProtobufEmptyRequests {
-		keyToValue[rpcAllowGoogleProtobufEmptyRequestsKey] = []byte("true")
+		keyToValue[rpcAllowGoogleProtobufEmptyRequestsKey] = true
 	}
 	if o.RPCAllowGoogleProtobufEmptyResponses {
-		keyToValue[rpcAllowGoogleProtobufEmptyResponsesKey] = []byte("true")
+		keyToValue[rpcAllowGoogleProtobufEmptyResponsesKey] = true
 	}
 	if value := o.ServiceSuffix; len(value) > 0 {
-		keyToValue[serviceSuffixKey] = []byte(value)
+		keyToValue[serviceSuffixKey] = value
 	}
 	if value := o.CommentExcludes; len(value) > 0 {
-		optionValue, err := toStringSliceValue(value)
-		if err != nil {
-			return nil, err
-		}
-		keyToValue[commentExcludesKey] = optionValue
+		keyToValue[commentExcludesKey] = value
 	}
 	return check.NewOptions(keyToValue)
 }
@@ -99,18 +92,22 @@ func (o *OptionsSpec) ToOptions() (check.Options, error) {
 // GetEnumZeroValueSuffix gets the enum zero-value suffix.
 //
 // Returns the default suffix if the option is not set.
-func GetEnumZeroValueSuffix(options check.Options) string {
-	if value := options.Get(enumZeroValueSuffixKey); len(value) > 0 {
-		return string(value)
+func GetEnumZeroValueSuffix(options check.Options) (string, error) {
+	value, err := check.GetStringValue(options, enumZeroValueSuffixKey)
+	if err != nil {
+		return "", err
 	}
-	return defaultEnumZeroValueSuffix
+	if value != "" {
+		return value, nil
+	}
+	return defaultEnumZeroValueSuffix, nil
 }
 
 // GetRPCAllowSameRequestResponse returns true if the rpc_allow_same_request_response option is set to true.
 //
 // Returns error if the value was unrecognized.
 func GetRPCAllowSameRequestResponse(options check.Options) (bool, error) {
-	return getBoolValue(options, rpcAllowSameRequestResponseKey)
+	return check.GetBoolValue(options, rpcAllowSameRequestResponseKey)
 }
 
 // GetRPCAllowGoogleProtobufEmptyRequests returns true if the rpc_allow_google_protobuf_empty_requests
@@ -118,7 +115,7 @@ func GetRPCAllowSameRequestResponse(options check.Options) (bool, error) {
 //
 // Returns error if the value was unrecognized.
 func GetRPCAllowGoogleProtobufEmptyRequests(options check.Options) (bool, error) {
-	return getBoolValue(options, rpcAllowGoogleProtobufEmptyRequestsKey)
+	return check.GetBoolValue(options, rpcAllowGoogleProtobufEmptyRequestsKey)
 }
 
 // GetRPCAllowGoogleProtobufEmptyResponses returns true if the rpc_allow_google_protobuf_empty_responses
@@ -126,17 +123,21 @@ func GetRPCAllowGoogleProtobufEmptyRequests(options check.Options) (bool, error)
 //
 // Returns error if the value was unrecognized.
 func GetRPCAllowGoogleProtobufEmptyResponses(options check.Options) (bool, error) {
-	return getBoolValue(options, rpcAllowGoogleProtobufEmptyResponsesKey)
+	return check.GetBoolValue(options, rpcAllowGoogleProtobufEmptyResponsesKey)
 }
 
 // GetServiceSuffix gets the service suffix.
 //
 // Returns the default suffix if the option is not set.
-func GetServiceSuffix(options check.Options) string {
-	if value := options.Get(serviceSuffixKey); len(value) > 0 {
-		return string(value)
+func GetServiceSuffix(options check.Options) (string, error) {
+	value, err := check.GetStringValue(options, serviceSuffixKey)
+	if err != nil {
+		return "", err
 	}
-	return defaultServiceSuffix
+	if value != "" {
+		return value, nil
+	}
+	return defaultServiceSuffix, nil
 }
 
 // CommentExcludes are lines of comments that should be excluded for the COMMENT.* Rules.
@@ -145,51 +146,5 @@ func GetServiceSuffix(options check.Options) string {
 //
 // The returned slice is guaranteed to have only non-empty elements.
 func GetCommentExcludes(options check.Options) ([]string, error) {
-	return getStringSliceValue(options, commentExcludesKey)
-}
-
-// *** PRIVATE ***
-
-func getBoolValue(options check.Options, key string) (bool, error) {
-	switch value := string(options.Get(key)); value {
-	case "true":
-		return true, nil
-	case "false", "":
-		return false, nil
-	default:
-		return false, fmt.Errorf("invalid value for option %s: %q", key, value)
-	}
-}
-
-func getStringSliceValue(options check.Options, key string) ([]string, error) {
-	value := options.Get(key)
-	if len(value) == 0 {
-		return nil, nil
-	}
-	var s []string
-	if err := json.Unmarshal(value, &s); err != nil {
-		return nil, fmt.Errorf("invalid value for option %s: %q: %w", key, string(value), err)
-	}
-	for _, e := range s {
-		if len(e) == 0 {
-			return nil, fmt.Errorf("invalid value for option %s: %q: all elements must be non-empty", key, string(value))
-		}
-	}
-	return s, nil
-}
-
-func toStringSliceValue(s []string) ([]byte, error) {
-	if len(s) == 0 {
-		return nil, nil
-	}
-	for _, e := range s {
-		if len(e) == 0 {
-			return nil, fmt.Errorf("could not marshal %v into a value to be sent as a check.Options value: all elements must be non-empty", s)
-		}
-	}
-	data, err := json.Marshal(s)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal %v into a value to be sent as a check.Options value: %w", s, err)
-	}
-	return data, nil
+	return check.GetStringSliceValue(options, commentExcludesKey)
 }

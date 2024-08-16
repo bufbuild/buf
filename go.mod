@@ -3,13 +3,13 @@ module github.com/bufbuild/buf
 go 1.22
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240815163817-276226ba7390.2
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240816190836-4b7606133d85.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240801134127-09fbc17f7c9e.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240801134127-09fbc17f7c9e.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1
-	github.com/bufbuild/bufplugin-go v0.0.0-20240815165056-42f9ee3d6c9e
+	github.com/bufbuild/bufplugin-go v0.0.0-20240816194009-97150cf47873
 	github.com/bufbuild/pluginrpc-go v0.0.0-20240806221947-0f4109e5de7f
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
