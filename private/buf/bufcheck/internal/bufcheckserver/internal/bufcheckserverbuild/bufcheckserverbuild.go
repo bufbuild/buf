@@ -336,6 +336,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingMessageSameRequiredFields,
 	}
+	// BreakingReservedEnumNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingReservedEnumNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RESERVED_ENUM_NO_DELETE",
+		Purpose: "Checks reserved ranges and names are not deleted from a given enum.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingReservedEnumNoDelete,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

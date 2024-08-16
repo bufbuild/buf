@@ -1576,3 +1576,38 @@ func handleBreakingMessageSameRequiredFields(
 	}
 	return nil
 }
+
+// HandleBreakingReservedEnumNoDelete is a check function.
+var HandleBreakingReservedEnumNoDelete = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingReservedEnumNoDelete)
+
+func handleBreakingReservedEnumNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+) error {
+	if err := checkTagRanges(
+		responseWriter,
+		"reserved",
+		enum,
+		previousEnum,
+		previousEnum.ReservedEnumRanges(),
+		enum.ReservedEnumRanges(),
+	); err != nil {
+		return err
+	}
+	previousValueToReservedName := bufprotosource.ValueToReservedName(previousEnum)
+	valueToReservedName := bufprotosource.ValueToReservedName(enum)
+	for previousValue := range previousValueToReservedName {
+		if _, ok := valueToReservedName[previousValue]; !ok {
+			responseWriter.AddProtosourceAnnotation(
+				enum.Location(),
+				previousEnum.Location(),
+				`Previously present reserved name %q on enum %q was deleted.`,
+				previousValue,
+				enum.Name(),
+			)
+		}
+	}
+	return nil
+}
