@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	pkgv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/spf13/pflag"
@@ -397,7 +398,7 @@ func findExistingDigestForImageID(
 	remoteOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(auth)}
 	// First attempt to see if the current image digest matches the image ID
 	if currentImageDigest != "" {
-		remoteImageID, _, err := getImageIDAndDigestFromReference(repo.Digest(currentImageDigest), remoteOpts...)
+		remoteImageID, _, err := getImageIDAndDigestFromReference(ctx, repo.Digest(currentImageDigest), remoteOpts...)
 		if err != nil {
 			return "", err
 		}
@@ -421,7 +422,7 @@ func findExistingDigestForImageID(
 	}
 	existingImageDigest := ""
 	for _, tag := range tags {
-		remoteImageID, imageDigest, err := getImageIDAndDigestFromReference(repo.Tag(tag), remoteOpts...)
+		remoteImageID, imageDigest, err := getImageIDAndDigestFromReference(ctx, repo.Tag(tag), remoteOpts...)
 		if err != nil {
 			return "", err
 		}
@@ -433,20 +434,78 @@ func findExistingDigestForImageID(
 	return existingImageDigest, nil
 }
 
-func getImageIDAndDigestFromReference(ref name.Reference, options ...remote.Option) (string, string, error) {
-	image, err := remote.Image(ref, options...)
+// getImageIDAndDigestFromReference takes an image reference and returns 2 resolved digests:
+//
+//  1. The image config digest (https://github.com/opencontainers/image-spec/blob/v1.1.0/config.md)
+//  2. The image manifest digest (https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md)
+//
+// The incoming ref is expected to be either an image manifest digest or an image index digest.
+func getImageIDAndDigestFromReference(
+	ctx context.Context,
+	ref name.Reference,
+	options ...remote.Option,
+) (string, string, error) {
+	puller, err := remote.NewPuller(options...)
 	if err != nil {
 		return "", "", err
 	}
-	imageDigest, err := image.Digest()
+	desc, err := puller.Get(ctx, ref)
 	if err != nil {
 		return "", "", err
 	}
-	manifest, err := image.Manifest()
-	if err != nil {
-		return "", "", err
+
+	switch {
+	case desc.MediaType.IsIndex():
+		index, err := desc.ImageIndex()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image index: %w", err)
+		}
+		indexManifest, err := index.IndexManifest()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image manifests: %w", err)
+		}
+		var manifest pkgv1.Descriptor
+		for _, desc := range indexManifest.Manifests {
+			if p := desc.Platform; p != nil {
+				//  Drop attestations, which don't have a valid platform set.
+				if p.OS == "unknown" && p.Architecture == "unknown" {
+					continue
+				}
+				manifest = desc
+				break
+			}
+		}
+		repoName, _, ok := strings.Cut(ref.Name(), "@")
+		if !ok {
+			return "", "", fmt.Errorf("could not resolve repository name from %q", ref.Name())
+		}
+		repo, err := name.NewRepository(repoName)
+		if err != nil {
+			return "", "", err
+		}
+		// We resolved the image index to an image manifest digest, we can now call this function
+		// again to resolve the image manifest digest to an image config digest.
+		return getImageIDAndDigestFromReference(
+			ctx,
+			repo.Digest(manifest.Digest.String()),
+			options...,
+		)
+	case desc.MediaType.IsImage():
+		imageManifest, err := desc.Image()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image: %w", err)
+		}
+		imageManifestDigest, err := imageManifest.Digest()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image digest for %q: %w", ref, err)
+		}
+		manifest, err := imageManifest.Manifest()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image manifest for %q: %w", ref, err)
+		}
+		return manifest.Config.Digest.String(), imageManifestDigest.String(), nil
 	}
-	return manifest.Config.Digest.String(), imageDigest.String(), nil
+	return "", "", fmt.Errorf("unsupported media type: %q", desc.MediaType)
 }
 
 func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64, bucket storage.ReadWriteBucket) (retErr error) {
