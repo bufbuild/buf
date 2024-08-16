@@ -91,11 +91,11 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	checkClient, err := c.getCheckClient(lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	checkClientSpec, err := c.getCheckClientSpec(lintConfig.FileVersion(), lintOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
-	response, err := checkClient.Check(ctx, request)
+	response, err := checkClientSpec.Client().Check(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -140,11 +140,11 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	checkClient, err := c.getCheckClient(breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	checkClientSpec, err := c.getCheckClientSpec(breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
-	response, err := checkClient.Check(ctx, request)
+	response, err := checkClientSpec.Client().Check(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -194,23 +194,26 @@ func (c *client) allRules(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 ) ([]check.Rule, error) {
-	checkClient, err := c.getCheckClient(fileVersion, pluginConfigs)
+	checkClientSpec, err := c.getCheckClientSpec(fileVersion, pluginConfigs)
 	if err != nil {
 		return nil, err
 	}
-	allRules, err := checkClient.ListRules(ctx)
+	allRules, err := checkClientSpec.Client().ListRules(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForType(allRules, ruleType), nil
 }
 
-func (c *client) getCheckClient(fileVersion bufconfig.FileVersion, pluginConfigs []bufconfig.PluginConfig) (check.Client, error) {
-	checkClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
+func (c *client) getCheckClientSpec(
+	fileVersion bufconfig.FileVersion,
+	pluginConfigs []bufconfig.PluginConfig,
+) (*checkClientSpec, error) {
+	defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
 	if !ok {
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
-	return checkClient, nil
+	return newDefaultCheckClientSpec(defaultCheckClient), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
