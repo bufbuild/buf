@@ -273,6 +273,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumSameJSONFormat,
 	}
+	// BreakingEnumValueSameNameRuleSpecBuilder is a rule spec builder.
+	BreakingEnumValueSameNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_SAME_NAME",
+		Purpose: "Checks enum values have the same name.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumValueSameName,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

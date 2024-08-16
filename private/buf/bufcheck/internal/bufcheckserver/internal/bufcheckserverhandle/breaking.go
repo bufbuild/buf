@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -1227,6 +1228,44 @@ func handleBreakingEnumSameJSONFormat(
 			previousJSONFormat,
 			jsonFormat,
 		)
+	}
+	return nil
+}
+
+// HandleBreakingEnumValueSameName is a check function.
+var HandleBreakingEnumValueSameName = bufcheckserverutil.NewBreakingEnumValuePairRuleHandler(handleBreakingEnumValueSameName)
+
+func handleBreakingEnumValueSameName(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousNameToEnumValue map[string]bufprotosource.EnumValue,
+	nameToEnumValue map[string]bufprotosource.EnumValue,
+) error {
+	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
+	names := getSortedEnumValueNames(nameToEnumValue)
+	// all current names for this number need to be in the previous set
+	// ie if you now have FOO=2, BAR=2, you need to have had FOO=2, BAR=2 previously
+	// FOO=2, BAR=2, BAZ=2 now would pass
+	// FOO=2, BAR=2, BAZ=2 previously would fail
+	if !slicesext.ElementsContained(names, previousNames) {
+		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
+		namesString := stringutil.JoinSliceQuoted(names, ", ")
+		nameSuffix := ""
+		if len(previousNames) > 1 && len(names) > 1 {
+			nameSuffix = "s"
+		}
+		for _, enumValue := range nameToEnumValue {
+			responseWriter.AddProtosourceAnnotation(
+				enumValue.NumberLocation(),
+				nil, // TODO: figure out how to determine the previous location for this
+				`Enum value "%d" on enum %q changed name%s from %s to %s.`,
+				enumValue.Number(),
+				enumValue.Enum().Name(),
+				nameSuffix,
+				previousNamesString,
+				namesString,
+			)
+		}
 	}
 	return nil
 }
