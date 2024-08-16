@@ -933,6 +933,8 @@ func handleLintMessageProtovalidate(
 			args...,
 		)
 	}
+	// TODO: make buflintvalidate.CheckMessage's signature the same as this function,
+	// instead of accepting a legacy addFunc as an argument. Same comment for CheckField.
 	return buflintvalidate.CheckMessage(add, message)
 }
 
