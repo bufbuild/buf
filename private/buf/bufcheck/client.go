@@ -226,7 +226,11 @@ func filterAnnotations(
 	return slicesext.FilterError(
 		annotations,
 		func(annotation check.Annotation) (bool, error) {
-			return ignoreAnnotation(config, annotation)
+			ignore, err := ignoreAnnotation(config, annotation)
+			if err != nil {
+				return false, err
+			}
+			return !ignore, nil
 		},
 	)
 }
