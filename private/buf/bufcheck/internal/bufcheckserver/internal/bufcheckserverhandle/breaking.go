@@ -1611,3 +1611,38 @@ func handleBreakingReservedEnumNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingReservedMessageNoDelete is a check function.
+var HandleBreakingReservedMessageNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingReservedMessageNoDelete)
+
+func handleBreakingReservedMessageNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	if err := checkTagRanges(
+		responseWriter,
+		"reserved",
+		message,
+		previousMessage,
+		previousMessage.ReservedMessageRanges(),
+		message.ReservedMessageRanges(),
+	); err != nil {
+		return err
+	}
+	previousValueToReservedName := bufprotosource.ValueToReservedName(previousMessage)
+	valueToReservedName := bufprotosource.ValueToReservedName(message)
+	for previousValue := range previousValueToReservedName {
+		if _, ok := valueToReservedName[previousValue]; !ok {
+			responseWriter.AddProtosourceAnnotation(
+				message.Location(),
+				previousMessage.Location(),
+				`Previously present reserved name %q on message %q was deleted.`,
+				previousValue,
+				message.Name(),
+			)
+		}
+	}
+	return nil
+}

@@ -343,6 +343,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingReservedEnumNoDelete,
 	}
+	// BreakingReservedMessageNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingReservedMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RESERVED_MESSAGE_NO_DELETE",
+		Purpose: "Checks reserved ranges and names are not deleted from a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingReservedMessageNoDelete,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
