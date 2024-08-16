@@ -232,6 +232,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameRubyPackage,
 	}
+	// BreakingFileSameSwiftPrefixRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameSwiftPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_SWIFT_PREFIX",
+		Purpose: "Checks files have the same value for the swift_prefix option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameSwiftPrefix,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

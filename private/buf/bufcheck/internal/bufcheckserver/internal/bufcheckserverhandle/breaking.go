@@ -1020,6 +1020,26 @@ func handleBreakingFileSameRubyPackage(
 	)
 }
 
+// HandleBreakingFileSameSwiftPrefix is a check function.
+var HandleBreakingFileSameSwiftPrefix = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameSwiftPrefix)
+
+func handleBreakingFileSameSwiftPrefix(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.SwiftPrefix(),
+		file.SwiftPrefix(),
+		file,
+		file.SwiftPrefixLocation(),
+		previousFile.SwiftPrefixLocation(),
+		`option "swift_prefix"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},
