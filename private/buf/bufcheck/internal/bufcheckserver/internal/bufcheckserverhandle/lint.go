@@ -207,7 +207,7 @@ func handleLintEnumNoAllowAlias(
 ) error {
 	if enum.AllowAlias() {
 		responseWriter.AddProtosourceAnnotation(
-			enum.Location(),
+			enum.AllowAliasLocation(),
 			nil,
 			`Enum option "allow_alias" on enum %q must be false.`,
 			enum.Name(),
