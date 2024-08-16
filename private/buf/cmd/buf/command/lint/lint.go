@@ -131,9 +131,7 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(
-			bufcheck.ClientWithPluginConfigs(imageWithConfig.PluginConfigs()...),
-		)
+		client, err := bufcheck.NewClient()
 		if err != nil {
 			return err
 		}
@@ -141,6 +139,7 @@ func run(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {

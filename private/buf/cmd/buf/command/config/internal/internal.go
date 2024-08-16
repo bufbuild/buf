@@ -182,9 +182,7 @@ func lsRun(
 			return err
 		}
 	}
-	client, err := bufcheck.NewClient(
-		bufcheck.ClientWithPluginConfigs(bufYAMLFile.PluginConfigs()...),
-	)
+	client, err := bufcheck.NewClient()
 	if err != nil {
 		return err
 	}
@@ -226,12 +224,22 @@ func lsRun(
 		default:
 			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
 		}
-		rules, err = client.ConfiguredRules(ctx, ruleType, checkConfig)
+		rules, err = client.ConfiguredRules(
+			ctx,
+			ruleType,
+			checkConfig,
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		)
 		if err != nil {
 			return err
 		}
 	} else {
-		rules, err = client.AllRules(ctx, ruleType, bufYAMLFile.FileVersion())
+		rules, err = client.AllRules(
+			ctx,
+			ruleType,
+			bufYAMLFile.FileVersion(),
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		)
 		if err != nil {
 			return err
 		}
