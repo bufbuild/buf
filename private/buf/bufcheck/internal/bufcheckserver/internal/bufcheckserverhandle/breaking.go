@@ -1369,3 +1369,42 @@ func handleBreakingMessageSameJSONFormat(
 	}
 	return nil
 }
+
+// HandleBreakingFieldSameDefault is a check function.
+var HandleBreakingFieldSameDefault = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameDefault)
+
+func handleBreakingFieldSameDefault(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if !canHaveDefault(previousDescriptor) || !canHaveDefault(descriptor) {
+		return nil
+	}
+	previousDefault := getDefault(previousDescriptor)
+	currentDefault := getDefault(descriptor)
+	if previousDefault.isZero() && currentDefault.isZero() {
+		// no defaults to check
+		return nil
+	}
+	if !defaultsEqual(previousDefault, currentDefault) {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(field.DefaultLocation(), field.Location()),
+			withBackupLocation(previousField.DefaultLocation(), previousField.Location()),
+			`% changed default value from %v to %v.`,
+			fieldDescription(field),
+			previousDefault.printable,
+			currentDefault.printable,
+		)
+	}
+	return nil
+}
