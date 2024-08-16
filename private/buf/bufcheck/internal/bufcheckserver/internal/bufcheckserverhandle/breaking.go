@@ -1646,3 +1646,32 @@ func handleBreakingReservedMessageNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingRPCSameClientStreaming is a check function.
+var HandleBreakingRPCSameClientStreaming = bufcheckserverutil.NewBreakingMethodPairRuleHandler(handleBreakingRPCSameClientStreaming)
+
+func handleBreakingRPCSameClientStreaming(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMethod bufprotosource.Method,
+	method bufprotosource.Method,
+) error {
+	if previousMethod.ClientStreaming() != method.ClientStreaming() {
+		previous := "streaming"
+		current := "unary"
+		if method.ClientStreaming() {
+			previous = "unary"
+			current = "streaming"
+		}
+		responseWriter.AddProtosourceAnnotation(
+			method.Location(),
+			previousMethod.Location(),
+			`RPC %q on service %q changed from client %s to client %s.`,
+			method.Name(),
+			method.Service().Name(),
+			previous,
+			current,
+		)
+	}
+	return nil
+}
