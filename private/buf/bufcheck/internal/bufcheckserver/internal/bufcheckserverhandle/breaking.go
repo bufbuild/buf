@@ -1700,3 +1700,26 @@ func handleBreakingRPCSameIdempotencyLevel(
 	}
 	return nil
 }
+
+// HandleBreakingRPCSameRequestType is a check function.
+var HandleBreakingRPCSameRequestType = bufcheckserverutil.NewBreakingMethodPairRuleHandler(handleBreakingRPCSameRequestType)
+
+func handleBreakingRPCSameRequestType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMethod bufprotosource.Method,
+	method bufprotosource.Method,
+) error {
+	if previousMethod.InputTypeName() != method.InputTypeName() {
+		responseWriter.AddProtosourceAnnotation(
+			method.InputTypeLocation(),
+			previousMethod.InputTypeLocation(),
+			`RPC %q on service %q changed request type from %q to %q.`,
+			method.Name(),
+			method.Service().Name(),
+			previousMethod.InputTypeName(),
+			method.InputTypeName(),
+		)
+	}
+	return nil
+}

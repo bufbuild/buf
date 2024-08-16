@@ -364,6 +364,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingRPCSameIdempotencyLevel,
 	}
+	// BreakingRPCSameRequestTypeRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameRequestTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_REQUEST_TYPE",
+		Purpose: "Checks rpcs are have the same request type.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameRequestType,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
