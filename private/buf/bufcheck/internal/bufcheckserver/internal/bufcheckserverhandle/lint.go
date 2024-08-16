@@ -910,6 +910,8 @@ func handleLintPackageVersionSuffix(
 var HandleLintProtovalidate = bufcheckserverutil.NewMultiHandler(
 	bufcheckserverutil.NewLintMessageRuleHandler(handleLintMessageProtovalidate),
 	bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldProtovalidate),
+	// NOTE: Oneofs also have protovalidate support, but they
+	//       only have a "required" field, so nothing to lint.
 )
 
 func handleLintMessageProtovalidate(
