@@ -91,11 +91,11 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	checkClientSpec, err := c.getCheckClientSpec(lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	checkClientSpec, err := c.getCheckClientSpec(lintConfig.FileVersion(), lintOptions.pluginConfigs, config.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	response, err := checkClientSpec.Client().Check(ctx, request)
+	response, err := checkClientSpec.Client.Check(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -140,11 +140,11 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	checkClientSpec, err := c.getCheckClientSpec(breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	checkClientSpec, err := c.getCheckClientSpec(breakingConfig.FileVersion(), breakingOptions.pluginConfigs, config.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	response, err := checkClientSpec.Client().Check(ctx, request)
+	response, err := checkClientSpec.Client.Check(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -194,11 +194,18 @@ func (c *client) allRules(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 ) ([]check.Rule, error) {
-	checkClientSpec, err := c.getCheckClientSpec(fileVersion, pluginConfigs)
+	// Just passing through to fufill all contracts, ie checkClientSpec has non-nil Options.
+	// Options are not used here.
+	// config struct really just needs refactoring.
+	emptyOptions, err := check.NewOptions(nil)
 	if err != nil {
 		return nil, err
 	}
-	allRules, err := checkClientSpec.Client().ListRules(ctx)
+	checkClientSpec, err := c.getCheckClientSpec(fileVersion, pluginConfigs, emptyOptions)
+	if err != nil {
+		return nil, err
+	}
+	allRules, err := checkClientSpec.Client.ListRules(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -208,12 +215,13 @@ func (c *client) allRules(
 func (c *client) getCheckClientSpec(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	defaultOptions check.Options,
 ) (*checkClientSpec, error) {
 	defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
 	if !ok {
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
-	return newDefaultCheckClientSpec(defaultCheckClient), nil
+	return newCheckClientSpec(defaultCheckClient, defaultOptions), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(

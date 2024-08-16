@@ -15,7 +15,6 @@
 package bufcheck
 
 import (
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
@@ -23,42 +22,14 @@ import (
 // options it should pass when calling check.
 //
 // This allows us to take a bufconfig.PluginConfig and turn it into a client/options pair.
-//
-// options will be non-nil or useDefaultOptions will be true, but they will not be non-nil
-// and true on the same checkClientSpec.
 type checkClientSpec struct {
-	client check.Client
-	// options are plugin-specific Options to pass.
-	options check.Options
-	// useDefaultOptions says to use the DefaultOptions from a config instead of
-	// the Options above.
-	useDefaultOptions bool
+	Client  check.Client
+	Options check.Options
 }
 
-func newDefaultCheckClientSpec(defaultClient check.Client) *checkClientSpec {
+func newCheckClientSpec(client check.Client, options check.Options) *checkClientSpec {
 	return &checkClientSpec{
-		client:            defaultClient,
-		useDefaultOptions: true,
+		Client:  client,
+		Options: options,
 	}
-}
-
-func newPluginCheckClientSpec(pluginClient check.Client, options check.Options) *checkClientSpec {
-	return &checkClientSpec{
-		client:  pluginClient,
-		options: options,
-	}
-}
-
-func (c *checkClientSpec) Client() check.Client {
-	return c.client
-}
-
-func (c *checkClientSpec) Options(config *config) (check.Options, error) {
-	if c.options != nil {
-		return c.options, nil
-	}
-	if c.useDefaultOptions {
-		return config.DefaultOptions, nil
-	}
-	return nil, syserror.New("checkClientSpec did not have Options or UseDefaultOptions")
 }
