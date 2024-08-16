@@ -1071,6 +1071,26 @@ func handleBreakingFileSameSyntax(
 	)
 }
 
+// HandleBreakingFileSamePackage is a check function.
+var HandleBreakingFileSamePackage = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSamePackage)
+
+func handleBreakingFileSamePackage(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.Package(),
+		file.Package(),
+		file,
+		file.PackageLocation(),
+		previousFile.PackageLocation(),
+		`package`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},
