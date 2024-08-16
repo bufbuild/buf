@@ -322,6 +322,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSamePackage,
 	}
+	// BreakingMessageSameMessageSetWireFormatRuleSpecBuilder is a rule spec builder.
+	BreakingMessageSameMessageSetWireFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT",
+		Purpose: "Checks messages have the same value for the message_set_wire_format option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingMessageSameMessageSetWireFormat,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
