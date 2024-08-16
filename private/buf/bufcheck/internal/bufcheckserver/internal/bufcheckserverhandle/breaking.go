@@ -1675,3 +1675,28 @@ func handleBreakingRPCSameClientStreaming(
 	}
 	return nil
 }
+
+// HandleBreakingRPCSameIdempotencyLevel is a check function.
+var HandleBreakingRPCSameIdempotencyLevel = bufcheckserverutil.NewBreakingMethodPairRuleHandler(handleBreakingRPCSameIdempotencyLevel)
+
+func handleBreakingRPCSameIdempotencyLevel(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMethod bufprotosource.Method,
+	method bufprotosource.Method,
+) error {
+	previous := previousMethod.IdempotencyLevel()
+	current := method.IdempotencyLevel()
+	if previous != current {
+		responseWriter.AddProtosourceAnnotation(
+			method.IdempotencyLevelLocation(),
+			previousMethod.IdempotencyLevelLocation(),
+			`RPC %q on service %q changed option "idempotency_level" from %q to %q.`,
+			method.Name(),
+			method.Service().Name(),
+			previous.String(),
+			current.String(),
+		)
+	}
+	return nil
+}

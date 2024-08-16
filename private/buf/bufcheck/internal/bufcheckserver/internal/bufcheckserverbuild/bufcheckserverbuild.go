@@ -357,6 +357,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingRPCSameClientStreaming,
 	}
+	// BreakingRPCSameIdempotencyLevelRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameIdempotencyLevelRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_IDEMPOTENCY_LEVEL",
+		Purpose: "Checks rpcs have the same value for the idempotency_level option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameIdempotencyLevel,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
