@@ -15,6 +15,8 @@
 package bufcheckserverbuild
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverhandle"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/bufplugin-go/check"
@@ -28,33 +30,12 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumNoDelete,
 	}
-	// BreakingExtensionNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingExtensionNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "EXTENSION_NO_DELETE",
-		Purpose: "Checks extensions are not deleted from a given file.",
+	// BreakingEnumSameJSONFormatRuleSpecBuilder is a rule spec builder.
+	BreakingEnumSameJSONFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_SAME_JSON_FORMAT",
+		Purpose: "Checks enums have the same JSON format support.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingExtensionNoDelete,
-	}
-	// BreakingFileNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingFileNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_NO_DELETE",
-		Purpose: "Checks files are not deleted.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileNoDelete,
-	}
-	// BreakingMessageNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "MESSAGE_NO_DELETE",
-		Purpose: "Checks messages are not deleted from a given file.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingMessageNoDelete,
-	}
-	// BreakingServiceNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingServiceNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "SERVICE_NO_DELETE",
-		Purpose: "Checks services are not deleted from a given file.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingServiceNoDelete,
+		Handler: bufcheckserverhandle.HandleBreakingEnumSameJSONFormat,
 	}
 	// BreakingEnumSameTypeRuleSpecBuilder is a rule spec builder.
 	BreakingEnumSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -70,6 +51,27 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDelete,
 	}
+	// BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder is a rule spec builder.
+	BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED",
+		Purpose: "Checks enum values are not deleted from a given enum unless the name is reserved.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNameReserved,
+	}
+	// BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder is a rule spec builder.
+	BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED",
+		Purpose: "Checks enum values are not deleted from a given enum unless the number is reserved.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNumberReserved,
+	}
+	// BreakingEnumValueSameNameRuleSpecBuilder is a rule spec builder.
+	BreakingEnumValueSameNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_SAME_NAME",
+		Purpose: "Checks enum values have the same name.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumValueSameName,
+	}
 	// BreakingExtensionMessageNoDeleteRuleSpecBuilder is a rule spec builder.
 	BreakingExtensionMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "EXTENSION_MESSAGE_NO_DELETE",
@@ -77,12 +79,33 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingExtensionMessageNoDelete,
 	}
+	// BreakingExtensionNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingExtensionNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "EXTENSION_NO_DELETE",
+		Purpose: "Checks extensions are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingExtensionNoDelete,
+	}
 	// BreakingFieldNoDeleteRuleSpecBuilder is a rule spec builder.
 	BreakingFieldNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FIELD_NO_DELETE",
 		Purpose: "Checks fields are not deleted from a given message.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldNoDelete,
+	}
+	// BreakingFieldNoDeleteUnlessNameReservedRuleSpecBuilder is a rule spec builder.
+	BreakingFieldNoDeleteUnlessNameReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_NO_DELETE_UNLESS_NAME_RESERVED",
+		Purpose: "fields are not deleted from a given message unless the name is reserved",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNameReserved,
+	}
+	// BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder is a rule spec builder.
+	BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED",
+		Purpose: "Checks fields are not deleted from a given message unless the number is reserved.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNumberReserved,
 	}
 	// BreakingFieldSameCardinalityRuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -98,12 +121,39 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameCppStringType,
 	}
+	// BreakingFieldSameCTypeRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameCTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:             "FIELD_SAME_CTYPE",
+		Purpose:        "Checks fields have the same value for the ctype option.",
+		Deprecated:     true,
+		Type:           check.RuleTypeBreaking,
+		ReplacementIDs: []string{"FIELD_SAME_CPP_STRING_TYPE"},
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
+	}
 	// BreakingFieldSameJavaUTF8ValidationRuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameJavaUTF8ValidationRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FIELD_SAME_JAVA_UTF8_VALIDATION",
 		Purpose: "Checks fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameJavaUTF8Validation,
+	}
+	// BreakingFieldSameDefaultRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameDefaultRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_DEFAULT",
+		Purpose: "Checks fields have the same default value, if a default is specified.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameDefault,
+	}
+	// BreakingFieldSameJSONNameRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameJSONNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_JSON_NAME",
+		Purpose: "Checks fields have the same value for the json_name option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameJSONName,
 	}
 	// BreakingFieldSameJSTypeRuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameJSTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -112,12 +162,49 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameJSType,
 	}
-	// BreakingFieldSameTypeRuleSpecBuilder is a rule spec builder.
-	BreakingFieldSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_SAME_TYPE",
-		Purpose: "Checks fields have the same types in a given message.",
+	// BreakingFieldSameLabelRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameLabelRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:         "FIELD_SAME_LABEL",
+		Purpose:    "Checks fields have the same labels in a given message.",
+		Deprecated: true,
+		Type:       check.RuleTypeBreaking,
+		ReplacementIDs: []string{
+			"FIELD_SAME_CARDINALITY",
+			"FIELD_WIRE_COMPATIBLE_CARDINALITY",
+			"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		},
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
+	}
+	// FieldSameLabelV1Beta1RuleBuilder is a rule spec builder.
+	BreakingFieldSameLabelV1Beta1RuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:             "FIELD_SAME_LABEL",
+		Purpose:        "Checks fields have the same labels in a given message.",
+		Deprecated:     true,
+		Type:           check.RuleTypeBreaking,
+		ReplacementIDs: []string{"FIELD_SAME_CARDINALITY"},
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
+	}
+	// BreakingFieldSameNameRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_NAME",
+		Purpose: "Checks fields have the same names in a given message.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldSameType,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameName,
+	}
+	// BreakingFieldSameOneofRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameOneofRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_ONEOF",
+		Purpose: "Checks fields have the same oneofs in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameOneof,
 	}
 	// BreakingFieldSameUTF8ValidationRuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameUTF8ValidationRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -126,19 +213,47 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameUTF8Validation,
 	}
-	// BreakingFileSameCcEnableArenasRuleSpecBuilder is a rule spec builder.
-	BreakingFileSameCcEnableArenasRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_SAME_CC_ENABLE_ARENAS",
-		Purpose: "Check files have the same value for the cc_enable_arenas option.",
+	// BreakingFieldSameTypeRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_TYPE",
+		Purpose: "Checks fields have the same types in a given message.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileSameCcEnableArenas,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameType,
 	}
-	// BreakingFileSameCcGenericServicesRuleSpecBuilder is a rule spec builder.
-	BreakingFileSameCcGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_SAME_CC_GENERIC_SERVICES",
-		Purpose: "Checks files have the same value for the cc_generic_services option.",
+	// BreakingFieldWireCompatibleCardinalityRuleSpecBuilder is a rule spec builder.
+	BreakingFieldWireCompatibleCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_COMPATIBLE_CARDINALITY",
+		Purpose: "Checks fields have wire-compatible cardinalities in a given message.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileSameCcGenericServices,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleCardinality,
+	}
+	// BreakingFieldWireCompatibleTypeRuleSpecBuilder  is a rule spec builder.
+	BreakingFieldWireCompatibleTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_COMPATIBLE_TYPE",
+		Purpose: "Checks fields have wire-compatible types in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleType,
+	}
+	// BreakingFieldWireJSONCompatibleCardinalityRuleSpecBuilder is a rule spec builder.
+	BreakingFieldWireJSONCompatibleCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		Purpose: "Checks fields have wire and JSON compatible cardinalities in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleCardinality,
+	}
+	// BreakingFieldWireJSONCompatibleTypeRuleSpecBuilder is a rule spec builder.
+	BreakingFieldWireJSONCompatibleTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_JSON_COMPATIBLE_TYPE",
+		Purpose: "Checks fields have wire and JSON compatible types in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleType,
+	}
+	// BreakingFileNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingFileNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_NO_DELETE",
+		Purpose: "Checks files are not deleted.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileNoDelete,
 	}
 	// BreakingFileSameCsharpNamesapceRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameCsharpNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -153,13 +268,6 @@ var (
 		Purpose: "Checks files have the same value for the go_package option.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameGoPackage,
-	}
-	// BreakingFileSameJavaGenericServicesRuleSpecBuilder is a rule spec builder.
-	BreakingFileSameJavaGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_SAME_JAVA_GENERIC_SERVICES",
-		Purpose: "Checks files have the same value for the java_generic_services option.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaGenericServices,
 	}
 	// BreakingFileSameJavaMultipleFilesRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameJavaMultipleFilesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -182,6 +290,19 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaPackage,
 	}
+	// BreakingFileSameJavaStringCheckUtf8RuleSpecBuilder is a rule spec builder.
+	BreakingFileSameJavaStringCheckUtf8RuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:             "FILE_SAME_JAVA_STRING_CHECK_UTF8",
+		Purpose:        "Checks files have the same value for the java_string_check_utf8 option.",
+		Deprecated:     true,
+		Type:           check.RuleTypeBreaking,
+		ReplacementIDs: []string{"FIELD_SAME_JAVA_UTF8_VALIDATION"},
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
+	}
 	// BreakingFileSameObjcClassPrefixRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameObjcClassPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FILE_SAME_OBJC_CLASS_PREFIX",
@@ -189,12 +310,12 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameObjcClassPrefix,
 	}
-	// BreakingFileSameOptimizeForRuleSpecBuilder is a rule spec builder.
-	BreakingFileSameOptimizeForRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_SAME_OPTIMIZE_FOR",
-		Purpose: "Checks files have the same value for the optimize_for option.",
+	// BreakingFileSamePackageRuleSpecBuilder is a rule spec builder.
+	BreakingFileSamePackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_PACKAGE",
+		Purpose: "Checks files have the same package.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileSameOptimizeFor,
+		Handler: bufcheckserverhandle.HandleBreakingFileSamePackage,
 	}
 	// BreakingFileSamePhpClassPrefixRuleSpecBuilder is a rule spec builder.
 	BreakingFileSamePhpClassPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -217,13 +338,6 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpNamespace,
 	}
-	// BreakingFileSamePyGenericServicesRuleBuilder is a rule spec builder.
-	BreakingFileSamePyGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_SAME_PY_GENERIC_SERVICES",
-		Purpose: "Checks files have the same value for the py_generic_services option.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileSamePyGenericServices,
-	}
 	// BreakingFileSameRubyPackageRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameRubyPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FILE_SAME_RUBY_PACKAGE",
@@ -238,12 +352,66 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameSwiftPrefix,
 	}
+	// BreakingFileSameOptimizeForRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameOptimizeForRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_OPTIMIZE_FOR",
+		Purpose: "Checks files have the same value for the optimize_for option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameOptimizeFor,
+	}
+	// BreakingFileSameCcGenericServicesRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameCcGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_CC_GENERIC_SERVICES",
+		Purpose: "Checks files have the same value for the cc_generic_services option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameCcGenericServices,
+	}
+	// BreakingFileSameJavaGenericServicesRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameJavaGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_JAVA_GENERIC_SERVICES",
+		Purpose: "Checks files have the same value for the java_generic_services option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaGenericServices,
+	}
+	// BreakingFileSamePyGenericServicesRuleBuilder is a rule spec builder.
+	BreakingFileSamePyGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_PY_GENERIC_SERVICES",
+		Purpose: "Checks files have the same value for the py_generic_services option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSamePyGenericServices,
+	}
+	// BreakingFileSamePhpGenericServicesRuleSpecBuilder is a rule spec builder.
+	BreakingFileSamePhpGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:         "FILE_SAME_PHP_GENERIC_SERVICES",
+		Purpose:    "Checks files have the same value for the php_generic_services option.",
+		Deprecated: true,
+		Type:       check.RuleTypeBreaking,
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
+	}
+	// BreakingFileSameCcEnableArenasRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameCcEnableArenasRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_CC_ENABLE_ARENAS",
+		Purpose: "Check files have the same value for the cc_enable_arenas option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameCcEnableArenas,
+	}
 	// BreakingFileSameSyntaxRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameSyntaxRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FILE_SAME_SYNTAX",
 		Purpose: "Checks files have the same syntax.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameSyntax,
+	}
+	// BreakingMessageNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_NO_DELETE",
+		Purpose: "Checks messages are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingMessageNoDelete,
 	}
 	// BreakingMessageNoRemoveStandardDescriptorAccessorRuleSpecBuilder is a rule spec builder.
 	BreakingMessageNoRemoveStandardDescriptorAccessorRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -252,75 +420,12 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingMessageNoRemoveStandardDescriptorAccessor,
 	}
-	// BreakingOneofNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingOneofNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "ONEOF_NO_DELETE",
-		Purpose: "Checks oneofs are not deleted from a given message.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingOneofNoDelete,
-	}
-	// BreakingRPCNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingRPCNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RPC_NO_DELETE",
-		Purpose: "Checks rpcs are not deleted from a given service.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingRPCNoDelete,
-	}
-	// BreakingEnumSameJSONFormatRuleSpecBuilder is a rule spec builder.
-	BreakingEnumSameJSONFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "ENUM_SAME_JSON_FORMAT",
-		Purpose: "Checks enums have the same JSON format support.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingEnumSameJSONFormat,
-	}
-	// BreakingEnumValueSameNameRuleSpecBuilder is a rule spec builder.
-	BreakingEnumValueSameNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "ENUM_VALUE_SAME_NAME",
-		Purpose: "Checks enum values have the same name.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingEnumValueSameName,
-	}
-	// BreakingFieldSameJSONNameRuleSpecBuilder is a rule spec builder.
-	BreakingFieldSameJSONNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_SAME_JSON_NAME",
-		Purpose: "Checks fields have the same value for the json_name option.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldSameJSONName,
-	}
-	// BreakingFieldSameNameRuleSpecBuilder is a rule spec builder.
-	BreakingFieldSameNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_SAME_NAME",
-		Purpose: "Checks fields have the same names in a given message.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldSameName,
-	}
 	// BreakingMessageSameJSONFormatRuleSpecBuilder is a rule spec builder.
 	BreakingMessageSameJSONFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "MESSAGE_SAME_JSON_FORMAT",
 		Purpose: "Checks messages have the same JSON format support.",
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingMessageSameJSONFormat,
-	}
-	// BreakingFieldSameDefaultRuleSpecBuilder is a rule spec builder.
-	BreakingFieldSameDefaultRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_SAME_DEFAULT",
-		Purpose: "Checks fields have the same default value, if a default is specified.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldSameDefault,
-	}
-	// BreakingFieldSameOneofRuleSpecBuilder is a rule spec builder.
-	BreakingFieldSameOneofRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_SAME_ONEOF",
-		Purpose: "Checks fields have the same oneofs in a given message.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldSameOneof,
-	}
-	// BreakingFileSamePackageRuleSpecBuilder is a rule spec builder.
-	BreakingFileSamePackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FILE_SAME_PACKAGE",
-		Purpose: "Checks files have the same package.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFileSamePackage,
 	}
 	// BreakingMessageSameMessageSetWireFormatRuleSpecBuilder is a rule spec builder.
 	BreakingMessageSameMessageSetWireFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -336,54 +441,12 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingMessageSameRequiredFields,
 	}
-	// BreakingReservedEnumNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingReservedEnumNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RESERVED_ENUM_NO_DELETE",
-		Purpose: "Checks reserved ranges and names are not deleted from a given enum.",
+	// BreakingOneofNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingOneofNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ONEOF_NO_DELETE",
+		Purpose: "Checks oneofs are not deleted from a given message.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingReservedEnumNoDelete,
-	}
-	// BreakingReservedMessageNoDeleteRuleSpecBuilder is a rule spec builder.
-	BreakingReservedMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RESERVED_MESSAGE_NO_DELETE",
-		Purpose: "Checks reserved ranges and names are not deleted from a given message.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingReservedMessageNoDelete,
-	}
-	// BreakingRPCSameClientStreamingRuleSpecBuilder is a rule spec builder.
-	BreakingRPCSameClientStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RPC_SAME_CLIENT_STREAMING",
-		Purpose: "Checks rpcs have the same client streaming value.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingRPCSameClientStreaming,
-	}
-	// BreakingRPCSameIdempotencyLevelRuleSpecBuilder is a rule spec builder.
-	BreakingRPCSameIdempotencyLevelRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RPC_SAME_IDEMPOTENCY_LEVEL",
-		Purpose: "Checks rpcs have the same value for the idempotency_level option.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingRPCSameIdempotencyLevel,
-	}
-	// BreakingRPCSameRequestTypeRuleSpecBuilder is a rule spec builder.
-	BreakingRPCSameRequestTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RPC_SAME_REQUEST_TYPE",
-		Purpose: "Checks rpcs are have the same request type.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingRPCSameRequestType,
-	}
-	// BreakingRPCSameResponseTypeRuleSpecBuilder is a rule spec builder.
-	BreakingRPCSameResponseTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RPC_SAME_RESPONSE_TYPE",
-		Purpose: "Checks rpcs are have the same response type.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingRPCSameResponseType,
-	}
-	// BreakingRPCSameServerStreamingRuleSpecBuilder is a rule spec builder.
-	BreakingRPCSameServerStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "RPC_SAME_SERVER_STREAMING",
-		Purpose: "Checks rpcs have the same server streaming value.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingRPCSameServerStreaming,
+		Handler: bufcheckserverhandle.HandleBreakingOneofNoDelete,
 	}
 	// BreakingPackageEnumNoDeleteRuleSpecBuilder is a rule spec builder.
 	BreakingPackageEnumNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
@@ -420,61 +483,68 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingPackageServiceNoDelete,
 	}
-	// BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder is a rule spec builder.
-	BreakingEnumValueNoDeleteUnlessNameReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED",
-		Purpose: "Checks enum values are not deleted from a given enum unless the name is reserved.",
+	// BreakingReservedEnumNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingReservedEnumNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RESERVED_ENUM_NO_DELETE",
+		Purpose: "Checks reserved ranges and names are not deleted from a given enum.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNameReserved,
+		Handler: bufcheckserverhandle.HandleBreakingReservedEnumNoDelete,
 	}
-	// BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder is a rule spec builder.
-	BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED",
-		Purpose: "Checks enum values are not deleted from a given enum unless the number is reserved.",
+	// BreakingReservedMessageNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingReservedMessageNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RESERVED_MESSAGE_NO_DELETE",
+		Purpose: "Checks reserved ranges and names are not deleted from a given message.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNumberReserved,
+		Handler: bufcheckserverhandle.HandleBreakingReservedMessageNoDelete,
 	}
-	// BreakingFieldWireJSONCompatibleCardinalityRuleSpecBuilder is a rule spec builder.
-	BreakingFieldWireJSONCompatibleCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
-		Purpose: "Checks fields have wire and JSON compatible cardinalities in a given message.",
+	// BreakingRPCNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingRPCNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_NO_DELETE",
+		Purpose: "Checks rpcs are not deleted from a given service.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleCardinality,
+		Handler: bufcheckserverhandle.HandleBreakingRPCNoDelete,
 	}
-	// BreakingFieldWireJSONCompatibleTypeRuleSpecBuilder is a rule spec builder.
-	BreakingFieldWireJSONCompatibleTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_WIRE_JSON_COMPATIBLE_TYPE",
-		Purpose: "Checks fields have wire and JSON compatible types in a given message.",
+	// BreakingRPCSameClientStreamingRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameClientStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_CLIENT_STREAMING",
+		Purpose: "Checks rpcs have the same client streaming value.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleType,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameClientStreaming,
 	}
-	// BreakingFieldNoDeleteUnlessNameReservedRuleSpecBuilder is a rule spec builder.
-	BreakingFieldNoDeleteUnlessNameReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_NO_DELETE_UNLESS_NAME_RESERVED",
-		Purpose: "fields are not deleted from a given message unless the name is reserved",
+	// BreakingRPCSameIdempotencyLevelRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameIdempotencyLevelRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_IDEMPOTENCY_LEVEL",
+		Purpose: "Checks rpcs have the same value for the idempotency_level option.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNameReserved,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameIdempotencyLevel,
 	}
-	// BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder is a rule spec builder.
-	BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED",
-		Purpose: "Checks fields are not deleted from a given message unless the number is reserved.",
+	// BreakingRPCSameRequestTypeRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameRequestTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_REQUEST_TYPE",
+		Purpose: "Checks rpcs are have the same request type.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNumberReserved,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameRequestType,
 	}
-	// BreakingFieldWireCompatibleCardinalityRuleSpecBuilder is a rule spec builder.
-	BreakingFieldWireCompatibleCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_WIRE_COMPATIBLE_CARDINALITY",
-		Purpose: "Checks fields have wire-compatible cardinalities in a given message.",
+	// BreakingRPCSameResponseTypeRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameResponseTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_RESPONSE_TYPE",
+		Purpose: "Checks rpcs are have the same response type.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleCardinality,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameResponseType,
 	}
-	// BreakingFieldWireCompatibleTypeRuleSpecBuilder  is a rule spec builder.
-	BreakingFieldWireCompatibleTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "FIELD_WIRE_COMPATIBLE_TYPE",
-		Purpose: "Checks fields have wire-compatible types in a given message.",
+	// BreakingRPCSameServerStreamingRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameServerStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_SERVER_STREAMING",
+		Purpose: "Checks rpcs have the same server streaming value.",
 		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleType,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameServerStreaming,
+	}
+	// BreakingServiceNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingServiceNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "SERVICE_NO_DELETE",
+		Purpose: "Checks services are not deleted from a given file.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingServiceNoDelete,
 	}
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
