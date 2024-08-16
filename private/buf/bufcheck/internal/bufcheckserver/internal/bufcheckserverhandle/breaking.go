@@ -1114,3 +1114,44 @@ func handleBreakingMessageNoRemoveStandardDescriptorAccessor(
 	}
 	return nil
 }
+
+// HandleBreakingOneofNoDelete is a check function.
+var HandleBreakingOneofNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingOneofNoDelete)
+
+func handleBreakingOneofNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	previousNameToOneof, err := bufprotosource.NameToMessageOneof(previousMessage)
+	if err != nil {
+		return err
+	}
+	nameToOneof, err := bufprotosource.NameToMessageOneof(message)
+	if err != nil {
+		return err
+	}
+	for previousName, previousOneof := range previousNameToOneof {
+		if _, ok := nameToOneof[previousName]; !ok {
+			previousOneofDescriptor, err := previousOneof.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			if previousOneofDescriptor.IsSynthetic() {
+				// Not considering synthetic oneofs since those are really
+				// just strange byproducts of how "explicit presence" is
+				// modeled in proto3 syntax. We will separately detect this
+				// kind of change via field presence check.
+				continue
+			}
+			responseWriter.AddProtosourceAnnotation(
+				message.Location(),
+				previousMessage.Location(),
+				`Previously present oneof %q on message %q was deleted.`,
+				previousName, message.Name(),
+			)
+		}
+	}
+	return nil
+}
