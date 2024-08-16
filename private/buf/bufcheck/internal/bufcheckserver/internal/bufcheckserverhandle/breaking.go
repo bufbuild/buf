@@ -1000,6 +1000,26 @@ func handleBreakingFileSamePyGenericServices(
 	)
 }
 
+// HandleBreakingFileSameRubyPackage is a check function.
+var HandleBreakingFileSameRubyPackage = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameRubyPackage)
+
+func handleBreakingFileSameRubyPackage(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.RubyPackage(),
+		file.RubyPackage(),
+		file,
+		file.RubyPackageLocation(),
+		previousFile.RubyPackageLocation(),
+		`option "ruby_package"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

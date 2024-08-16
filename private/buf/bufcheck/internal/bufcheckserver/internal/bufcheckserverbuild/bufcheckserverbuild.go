@@ -225,6 +225,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSamePyGenericServices,
 	}
+	// BreakingFileSameRubyPackageRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameRubyPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_RUBY_PACKAGE",
+		Purpose: "Checks files have the same value for the ruby_package option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameRubyPackage,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

@@ -91,6 +91,7 @@ var (
 			bufcheckserverbuild.BreakingFileSamePhpMetadataNamespaceRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFileSamePhpNamespaceRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFileSamePyGenericServicesRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingFileSameRubyPackageRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
