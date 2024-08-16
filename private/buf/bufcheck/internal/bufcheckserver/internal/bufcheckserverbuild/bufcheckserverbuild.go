@@ -378,6 +378,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingRPCSameResponseType,
 	}
+	// BreakingRPCSameServerStreamingRuleSpecBuilder is a rule spec builder.
+	BreakingRPCSameServerStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_SAME_SERVER_STREAMING",
+		Purpose: "Checks rpcs have the same server streaming value.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingRPCSameServerStreaming,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

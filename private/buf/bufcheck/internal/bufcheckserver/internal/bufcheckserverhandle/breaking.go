@@ -1746,3 +1746,32 @@ func handleBreakingRPCSameResponseType(
 	}
 	return nil
 }
+
+// HandleBreakingRPCSameServerStreaming is a check function.
+var HandleBreakingRPCSameServerStreaming = bufcheckserverutil.NewBreakingMethodPairRuleHandler(handleBreakingRPCSameServerStreaming)
+
+func handleBreakingRPCSameServerStreaming(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMethod bufprotosource.Method,
+	method bufprotosource.Method,
+) error {
+	if previousMethod.ServerStreaming() != method.ServerStreaming() {
+		previous := "streaming"
+		current := "unary"
+		if method.ServerStreaming() {
+			previous = "unary"
+			current = "streaming"
+		}
+		responseWriter.AddProtosourceAnnotation(
+			method.Location(),
+			previousMethod.Location(),
+			`RPC %q on service %q changed from server %s to server %s.`,
+			method.Name(),
+			method.Service().Name(),
+			previous,
+			current,
+		)
+	}
+	return nil
+}
