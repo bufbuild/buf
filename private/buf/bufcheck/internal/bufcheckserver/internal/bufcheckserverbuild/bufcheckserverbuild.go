@@ -124,6 +124,7 @@ var (
 		ID:      "ENUM_ZERO_VALUE_SUFFIX",
 		Purpose: `Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").`,
 		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumZeroValueSuffix,
 	}
 	// LintFieldLowerSnakeCaseRuleSpecBuilder is a rule builder.
 	LintFieldLowerSnakeCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
