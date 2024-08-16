@@ -97,6 +97,7 @@ var (
 			bufcheckserverbuild.BreakingMessageNoRemoveStandardDescriptorAccessorRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingOneofNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingRPCNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingEnumSameJSONFormatRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

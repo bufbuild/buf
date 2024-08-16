@@ -266,6 +266,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingRPCNoDelete,
 	}
+	// BreakingEnumSameJSONFormatRuleSpecBuilder is a rule spec builder.
+	BreakingEnumSameJSONFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_SAME_JSON_FORMAT",
+		Purpose: "Checks enums have the same JSON format support.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumSameJSONFormat,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

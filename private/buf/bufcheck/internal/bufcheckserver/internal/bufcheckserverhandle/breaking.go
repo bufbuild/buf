@@ -1186,3 +1186,47 @@ func handleBreakingRPCNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingEnumSameJSONFormat is a check function.
+var HandleBreakingEnumSameJSONFormat = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumSameJSONFormat)
+
+func handleBreakingEnumSameJSONFormat(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	featureField, err := findFeatureField(featureNameJSONFormat, protoreflect.EnumKind)
+	if err != nil {
+		return err
+	}
+	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	previousJSONFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	val, err = protoutil.ResolveFeature(descriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	if previousJSONFormat == descriptorpb.FeatureSet_ALLOW && jsonFormat != descriptorpb.FeatureSet_ALLOW {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(enum.Features().JSONFormatLocation(), enum.Location()),
+			withBackupLocation(previousEnum.Features().JSONFormatLocation(), previousEnum.Location()),
+			`Enum %q JSON format support changed from %v to %v.`,
+			enum.Name(),
+			previousJSONFormat,
+			jsonFormat,
+		)
+	}
+	return nil
+}
