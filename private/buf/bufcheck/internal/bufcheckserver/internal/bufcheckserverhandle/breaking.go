@@ -1723,3 +1723,26 @@ func handleBreakingRPCSameRequestType(
 	}
 	return nil
 }
+
+// HandleBreakingRPCSameResponseType is a check function.
+var HandleBreakingRPCSameResponseType = bufcheckserverutil.NewBreakingMethodPairRuleHandler(handleBreakingRPCSameResponseType)
+
+func handleBreakingRPCSameResponseType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMethod bufprotosource.Method,
+	method bufprotosource.Method,
+) error {
+	if previousMethod.OutputTypeName() != method.OutputTypeName() {
+		responseWriter.AddProtosourceAnnotation(
+			method.OutputTypeLocation(),
+			previousMethod.OutputTypeLocation(),
+			`RPC %q on service %q changed response type from %q to %q.`,
+			method.Name(),
+			method.Service().Name(),
+			previousMethod.OutputTypeName(),
+			method.OutputTypeName(),
+		)
+	}
+	return nil
+}
