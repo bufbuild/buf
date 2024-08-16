@@ -294,6 +294,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameName,
 	}
+	// BreakingMessageSameJSONFormatRuleSpecBuilder is a rule spec builder.
+	BreakingMessageSameJSONFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_SAME_JSON_FORMAT",
+		Purpose: "Checks messages have the same JSON format support.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingMessageSameJSONFormat,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

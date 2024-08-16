@@ -1325,3 +1325,47 @@ func handleBreakingFieldSameName(
 	}
 	return nil
 }
+
+// HandleBreakingMessageSameJSONFormat is a check function.
+var HandleBreakingMessageSameJSONFormat = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingMessageSameJSONFormat)
+
+func handleBreakingMessageSameJSONFormat(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	previousDescriptor, err := previousMessage.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := message.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	featureField, err := findFeatureField(featureNameJSONFormat, protoreflect.EnumKind)
+	if err != nil {
+		return err
+	}
+	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	previousJSONFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	val, err = protoutil.ResolveFeature(descriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	if previousJSONFormat == descriptorpb.FeatureSet_ALLOW && jsonFormat != descriptorpb.FeatureSet_ALLOW {
+		responseWriter.AddProtosourceAnnotation(
+			withBackupLocation(message.Features().JSONFormatLocation(), message.Location()),
+			withBackupLocation(previousMessage.Features().JSONFormatLocation(), previousMessage.Location()),
+			`Message %q JSON format support changed from %v to %v.`,
+			message.Name(),
+			previousJSONFormat,
+			jsonFormat,
+		)
+	}
+	return nil
+}
