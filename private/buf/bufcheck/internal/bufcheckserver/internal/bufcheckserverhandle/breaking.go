@@ -1270,6 +1270,7 @@ func handleBreakingEnumValueSameName(
 	return nil
 }
 
+// HandleBreakingFieldSameJSONName is a check function.
 var HandleBreakingFieldSameJSONName = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameJSONName)
 
 func handleBreakingFieldSameJSONName(
@@ -1290,6 +1291,36 @@ func handleBreakingFieldSameJSONName(
 			fieldDescription(field),
 			previousField.JSONName(),
 			field.JSONName(),
+		)
+	}
+	return nil
+}
+
+// HandleBreakingFieldSameName is a check function.
+var HandleBreakingFieldSameName = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameName)
+
+func handleBreakingFieldSameName(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	var previousName, name string
+	if previousField.Extendee() != "" {
+		previousName = previousField.FullName()
+		name = field.FullName()
+	} else {
+		previousName = previousField.Name()
+		name = field.Name()
+	}
+	if previousName != name {
+		responseWriter.AddProtosourceAnnotation(
+			field.NameLocation(),
+			previousField.NameLocation(),
+			`%s changed name from %q to %q.`,
+			fieldDescriptionWithName(field, ""), // don't include name in description
+			previousName,
+			name,
 		)
 	}
 	return nil
