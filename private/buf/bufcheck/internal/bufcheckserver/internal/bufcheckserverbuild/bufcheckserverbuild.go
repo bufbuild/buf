@@ -455,6 +455,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNameReserved,
 	}
+	// BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder is a rule spec builder.
+	BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED",
+		Purpose: "Checks fields are not deleted from a given message unless the number is reserved.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNumberReserved,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
