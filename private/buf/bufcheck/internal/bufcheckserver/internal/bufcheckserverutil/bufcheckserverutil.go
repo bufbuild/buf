@@ -36,7 +36,7 @@ func Before(
 	if err != nil {
 		return nil, nil, err
 	}
-	againstProtosourceFiles, err := protosourceFilesForFiles(ctx, request.Files())
+	againstProtosourceFiles, err := protosourceFilesForFiles(ctx, request.AgainstFiles())
 	if err != nil {
 		return nil, nil, err
 	}

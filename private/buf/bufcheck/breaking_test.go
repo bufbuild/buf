@@ -1260,9 +1260,6 @@ func testBreaking(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	// TODO
-	t.Skip("TODO")
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	logger := zaptest.NewLogger(t)
@@ -1328,7 +1325,6 @@ func testBreaking(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
-		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 

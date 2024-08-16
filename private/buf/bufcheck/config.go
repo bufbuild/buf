@@ -179,7 +179,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 	b.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Except)
 	// If Use is empty but except is not, we need to populate Use with the default Rule IDs
 	// so that we can then remove the exceptions.
-	if len(b.Use) == 0 && len(b.Except) > 0 {
+	if len(b.Use) == 0 {
 		b.Use = slicesext.Map(slicesext.Filter(allRules, check.Rule.IsDefault), check.Rule.ID)
 	}
 	if len(b.Use) > 0 || len(b.Except) > 0 {

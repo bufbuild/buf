@@ -52,16 +52,22 @@ func handleBreakingEnumNoDelete(
 	for previousNestedName, previousEnum := range previousNestedNameToEnum {
 		if _, ok := nestedNameToEnum[previousNestedName]; !ok {
 			// TODO: search for enum in other files and return that the enum was moved?
-			_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+			descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 			if err != nil {
 				return err
 			}
-			responseWriter.AddProtosourceAnnotation(
-				location,
-				previousEnum.Location(),
-				`Previously present enum %q was deleted from file.`,
-				previousNestedName,
-			)
+			addAnnotationOptions := []check.AddAnnotationOption{
+				check.WithFileName(descriptor.File().Path()),
+				check.WithAgainstFileName(previousFile.Path()),
+				check.WithMessagef(`Previously present enum %q was deleted from file.`, previousNestedName),
+			}
+			if previousEnum.Location() != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousEnum.Location().SourcePath()))
+			}
+			if location != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+			}
+			responseWriter.AddAnnotation(addAnnotationOptions...)
 		}
 	}
 	return nil
@@ -86,16 +92,25 @@ func handleBreakingExtensionNoDelete(
 	}
 	for previousNestedName, previousExtension := range previousNestedNameToExtension {
 		if _, ok := nestedNameToExtension[previousNestedName]; !ok {
-			_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+			descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 			if err != nil {
 				return err
 			}
-			responseWriter.AddProtosourceAnnotation(
-				location,
-				previousExtension.Location(),
-				`Previously present extension %q was deleted from file.`,
-				previousNestedName,
-			)
+			addAnnotationOptions := []check.AddAnnotationOption{
+				check.WithMessagef(
+					`Previously present extension %q was deleted from file.`,
+					previousNestedName,
+				),
+				check.WithAgainstFileName(previousFile.Path()),
+				check.WithFileName(descriptor.File().Path()),
+			}
+			if previousExtension.Location() != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousExtension.Location().SourcePath()))
+			}
+			if location != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+			}
+			responseWriter.AddAnnotation(addAnnotationOptions...)
 		}
 	}
 	return nil
@@ -150,13 +165,22 @@ func handleBreakingMessageNoDelete(
 	}
 	for previousNestedName, previousMessage := range previousNestedNameToMessage {
 		if _, ok := nestedNameToMessage[previousNestedName]; !ok {
-			_, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-			responseWriter.AddProtosourceAnnotation(
-				location,
-				previousMessage.Location(),
-				`Previously present message %q was deleted from file.`,
-				previousNestedName,
-			)
+			descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
+			addAnnotationOptions := []check.AddAnnotationOption{
+				check.WithMessagef(
+					`Previously present message %q was deleted from file.`,
+					previousNestedName,
+				),
+				check.WithFileName(descriptor.File().Path()),
+				check.WithAgainstFileName(previousFile.Path()),
+			}
+			if previousMessage.Location() != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousMessage.Location().SourcePath()))
+			}
+			if location != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+			}
+			responseWriter.AddAnnotation(addAnnotationOptions...)
 		}
 	}
 	return nil
@@ -181,12 +205,18 @@ func handleBreakingServiceNoDelete(
 	}
 	for previousName, previousService := range previousNameToService {
 		if _, ok := nameToService[previousName]; !ok {
-			responseWriter.AddProtosourceAnnotation(
-				nil,
-				previousService.Location(),
-				`Previously present service %q was deleted from file.`,
-				previousName,
-			)
+			addAnnotationOptions := []check.AddAnnotationOption{
+				check.WithMessagef(
+					`Previously present service %q was deleted from file.`,
+					previousName,
+				),
+				check.WithFileName(file.Path()),
+				check.WithAgainstFileName(previousFile.Path()),
+			}
+			if previousService.Location() != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousService.Location().SourcePath()))
+			}
+			responseWriter.AddAnnotation(addAnnotationOptions...)
 		}
 	}
 	return nil
@@ -512,14 +542,23 @@ func handleBreakingFieldSameCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if previousCardinality != currentCardinality {
-		responseWriter.AddProtosourceAnnotation(
-			field.Location(),
-			previousField.Location(),
-			`%s changed cardinality from %q to %q.`,
-			fieldDescription(field),
-			previousCardinality,
-			currentCardinality,
-		)
+		addAnnotationOptions := []check.AddAnnotationOption{
+			check.WithMessagef(
+				`%s changed cardinality from %q to %q.`,
+				fieldDescription(field),
+				previousCardinality,
+				currentCardinality,
+			),
+			check.WithFileName(field.File().Path()),
+			check.WithAgainstFileName(previousField.File().Path()),
+		}
+		if field.Location() != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(field.Location().SourcePath()))
+		}
+		if previousField.Location() != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousField.Location().SourcePath()))
+		}
+		responseWriter.AddAnnotation(addAnnotationOptions...)
 	}
 	return nil
 }
@@ -573,14 +612,25 @@ func handleBreakingFieldSameCppStringType(
 		} else {
 			currentType = stringType
 		}
-		responseWriter.AddProtosourceAnnotation(
-			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
-			withBackupLocation(previousField.CTypeLocation(), fieldCppStringTypeLocation(previousField), previousField.Location()),
-			`%s changed C++ string type from %q to %q.`,
-			fieldDescription(field),
-			previousType,
-			currentType,
-		)
+		addAnnotationOptions := []check.AddAnnotationOption{
+			check.WithMessagef(
+				`%s changed C++ string type from %q to %q.`,
+				fieldDescription(field),
+				previousType,
+				currentType,
+			),
+			check.WithFileName(field.File().Path()),
+			check.WithAgainstFileName(previousField.File().Path()),
+		}
+		location := withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location())
+		againstLocation := withBackupLocation(previousField.CTypeLocation(), fieldCppStringTypeLocation(previousField), previousField.Location())
+		if location != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+		}
+		if againstLocation != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(againstLocation.SourcePath()))
+		}
+		responseWriter.AddAnnotation(addAnnotationOptions...)
 	}
 	return nil
 }
@@ -854,14 +904,23 @@ func addEnumGroupMessageFieldChangedTypeName(
 	previousField bufprotosource.Field,
 	field bufprotosource.Field,
 ) {
-	responseWriter.AddProtosourceAnnotation(
-		field.TypeNameLocation(),
-		previousField.TypeNameLocation(),
-		`%s changed type from %q to %q.`,
-		fieldDescription(field),
-		strings.TrimPrefix(previousField.TypeName(), "."),
-		strings.TrimPrefix(field.TypeName(), "."),
-	)
+	addAnnotationOptions := []check.AddAnnotationOption{
+		check.WithMessagef(
+			`%s changed type from %q to %q.`,
+			fieldDescription(field),
+			strings.TrimPrefix(previousField.TypeName(), "."),
+			strings.TrimPrefix(field.TypeName(), "."),
+		),
+		check.WithFileName(field.File().Path()),
+		check.WithAgainstFileName(previousField.File().Path()),
+	}
+	if field.TypeNameLocation() != nil {
+		addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(field.TypeNameLocation().SourcePath()))
+	}
+	if previousField.TypeNameLocation() != nil {
+		addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousField.TypeNameLocation().SourcePath()))
+	}
+	responseWriter.AddAnnotation(addAnnotationOptions...)
 }
 
 func addFieldChangedType(
@@ -893,15 +952,24 @@ func addFieldChangedType(
 	default:
 		previousFieldLocation = previousField.TypeLocation()
 	}
-	responseWriter.AddProtosourceAnnotation(
-		fieldLocation,
-		previousFieldLocation,
-		`%s changed type from %q to %q.%s`,
-		fieldDescription(field),
-		fieldDescriptorTypePrettyString(previousDescriptor),
-		fieldDescriptorTypePrettyString(descriptor),
-		combinedExtraMessage,
-	)
+	addAnnotationOptions := []check.AddAnnotationOption{
+		check.WithMessagef(
+			`%s changed type from %q to %q.%s`,
+			fieldDescription(field),
+			fieldDescriptorTypePrettyString(previousDescriptor),
+			fieldDescriptorTypePrettyString(descriptor),
+			combinedExtraMessage,
+		),
+		check.WithFileName(field.File().Path()),
+		check.WithAgainstFileName(previousField.File().Path()),
+	}
+	if fieldLocation != nil {
+		addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(fieldLocation.SourcePath()))
+	}
+	if previousFieldLocation != nil {
+		addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousFieldLocation.SourcePath()))
+	}
+	responseWriter.AddAnnotation(addAnnotationOptions...)
 }
 
 // HandleBreakingFieldSameUTF8Validation is a check function.
@@ -939,14 +1007,25 @@ func handleBreakingFieldSameUTF8Validation(
 	}
 	utf8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
 	if previousUTF8Validation != utf8Validation {
-		responseWriter.AddProtosourceAnnotation(
-			withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location()),
-			withBackupLocation(previousField.Features().UTF8ValidationLocation(), previousField.Location()),
-			`%s changed UTF8 validation from %v to %v.`,
-			fieldDescription(field),
-			previousUTF8Validation,
-			utf8Validation,
-		)
+		addAnnotationOptions := []check.AddAnnotationOption{
+			check.WithMessagef(
+				`%s changed UTF8 validation from %v to %v.`,
+				fieldDescription(field),
+				previousUTF8Validation,
+				utf8Validation,
+			),
+			check.WithFileName(field.File().Path()),
+			check.WithAgainstFileName(previousField.File().Path()),
+		}
+		location := withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location())
+		againstLocation := withBackupLocation(previousField.Features().UTF8ValidationLocation(), previousField.Location())
+		if location != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+		}
+		if againstLocation != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(againstLocation.SourcePath()))
+		}
+		responseWriter.AddAnnotation(addAnnotationOptions...)
 	}
 	return nil
 }
@@ -1531,14 +1610,25 @@ func handleBreakingFieldSameJSONName(
 		return nil
 	}
 	if previousField.JSONName() != field.JSONName() {
-		responseWriter.AddProtosourceAnnotation(
-			withBackupLocation(field.JSONNameLocation(), field.Location()),
-			withBackupLocation(previousField.JSONNameLocation(), previousField.Location()),
-			`%s changed option "json_name" from %q to %q.`,
-			fieldDescription(field),
-			previousField.JSONName(),
-			field.JSONName(),
-		)
+		addAnnotationOptions := []check.AddAnnotationOption{
+			check.WithMessagef(
+				`%s changed option "json_name" from %q to %q.`,
+				fieldDescription(field),
+				previousField.JSONName(),
+				field.JSONName(),
+			),
+			check.WithFileName(field.File().Path()),
+			check.WithAgainstFileName(previousField.File().Path()),
+		}
+		location := withBackupLocation(field.JSONNameLocation(), field.Location())
+		againstLocation := withBackupLocation(previousField.JSONNameLocation(), previousField.Location())
+		if location != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+		}
+		if againstLocation != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(againstLocation.SourcePath()))
+		}
+		responseWriter.AddAnnotation(addAnnotationOptions...)
 	}
 	return nil
 }
@@ -1702,14 +1792,23 @@ func handleBreakingFieldSameOneof(
 	}
 	if previousInsideOneof && insideOneof {
 		if previousOneof.Name() != oneof.Name() {
-			responseWriter.AddProtosourceAnnotation(
-				field.Location(),
-				previousField.Location(),
-				`%sq moved from oneof %q to oneof %q.`,
-				fieldDescription(field),
-				previousOneof.Name(),
-				oneof.Name(),
-			)
+			addAnnotationOptions := []check.AddAnnotationOption{
+				check.WithMessagef(
+					`%sq moved from oneof %q to oneof %q.`,
+					fieldDescription(field),
+					previousOneof.Name(),
+					oneof.Name(),
+				),
+				check.WithFileName(field.File().Path()),
+				check.WithAgainstFileName(previousField.File().Path()),
+			}
+			if field.Location() != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(field.Location().SourcePath()))
+			}
+			if previousField.Location() != nil {
+				addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousField.Location().SourcePath()))
+			}
+			responseWriter.AddAnnotation(addAnnotationOptions...)
 		}
 		return nil
 	}
@@ -1720,14 +1819,23 @@ func handleBreakingFieldSameOneof(
 		previous = "outside"
 		current = "inside"
 	}
-	responseWriter.AddProtosourceAnnotation(
-		field.Location(),
-		previousField.Location(),
-		`%s moved from %s to %s a oneof.`,
-		fieldDescription(field),
-		previous,
-		current,
-	)
+	addAnnotationOptions := []check.AddAnnotationOption{
+		check.WithMessagef(
+			`%s moved from %s to %s a oneof.`,
+			fieldDescription(field),
+			previous,
+			current,
+		),
+		check.WithFileName(field.File().Path()),
+		check.WithAgainstFileName(previousField.File().Path()),
+	}
+	if field.Location() != nil {
+		addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(field.Location().SourcePath()))
+	}
+	if previousField.Location() != nil {
+		addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousField.Location().SourcePath()))
+	}
+	responseWriter.AddAnnotation(addAnnotationOptions...)
 	return nil
 }
 
@@ -2032,34 +2140,29 @@ func handleBreakingPackageEnumNoDelete(
 							return err
 						}
 					}
+					addAnnotationOptions := []check.AddAnnotationOption{
+						check.WithAgainstSourcePath(previousEnum.Location().SourcePath()),
+						check.WithAgainstFileName(previousEnum.Location().FilePath()),
+						check.WithMessagef(
+							`Previously present enum %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						),
+					}
 					// Check if the file still exists.
 					file, ok := filePathToFile[previousEnum.File().Path()]
 					if ok {
 						// File exists, try to get a location to attach the error to.
-						_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 						if err != nil {
 							return err
 						}
-						responseWriter.AddProtosourceAnnotation(
-							location,
-							previousEnum.Location(),
-							`Previously present enum %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
-					} else {
-						// File does not exist, we don't know where the enum was deleted from.
-						// Add the previous enum to check for ignores. This means that if
-						// ignore_unstable_packages is set, this will be triggered if the
-						// previous enum was in an unstable package.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousEnum.Location(),
-							`Previously present enum %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
+						addAnnotationOptions = append(addAnnotationOptions, check.WithFileName(descriptor.File().Path()))
+						if location != nil {
+							addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+						}
 					}
+					responseWriter.AddAnnotation(addAnnotationOptions...)
 				}
 			}
 		}
@@ -2096,34 +2199,32 @@ func handleBreakingPackageExtensionNoDelete(
 							return err
 						}
 					}
+					addAnnotationOptions := []check.AddAnnotationOption{
+						check.WithAgainstSourcePath(previousExtension.Location().SourcePath()),
+						check.WithAgainstFileName(previousExtension.Location().FilePath()),
+						check.WithMessagef(
+							`Previously present extension %q was deleted from package %q.`,
+							previousNestedName,
+							previousPackage,
+						),
+					}
 					// Check if the file still exists.
 					file, ok := filePathToFile[previousExtension.File().Path()]
 					if ok {
 						// File exists, try to get a location to attach the error to.
-						_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 						if err != nil {
 							return err
 						}
-						responseWriter.AddProtosourceAnnotation(
-							location,
-							previousExtension.Location(),
-							`Previously present extension %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
+						addAnnotationOptions = append(
+							addAnnotationOptions,
+							check.WithFileName(descriptor.File().Path()),
 						)
-					} else {
-						// File does not exist, we don't know where the enum was deleted from.
-						// Add the previous enum to check for ignores. This means that if
-						// ignore_unstable_packages is set, this will be triggered if the
-						// previous enum was in an unstable package.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousExtension.Location(),
-							`Previously present extension %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
+						if location != nil {
+							addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(location.SourcePath()))
+						}
 					}
+					responseWriter.AddAnnotation(addAnnotationOptions...)
 				}
 			}
 		}
@@ -2322,14 +2423,23 @@ func handleBreakingFieldWireJSONCompatibleCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
-		responseWriter.AddProtosourceAnnotation(
-			field.Location(),
-			previousField.Location(),
-			`%s changed cardinality from %q to %q.`,
-			fieldDescription(field),
-			previousCardinality,
-			currentCardinality,
-		)
+		addAnnotationOptions := []check.AddAnnotationOption{
+			check.WithMessagef(
+				`%s changed cardinality from %q to %q.`,
+				fieldDescription(field),
+				previousCardinality,
+				currentCardinality,
+			),
+			check.WithFileName(field.File().Path()),
+			check.WithAgainstFileName(previousField.File().Path()),
+		}
+		if field.Location() != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(field.Location().SourcePath()))
+		}
+		if previousField.Location() != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousField.Location().SourcePath()))
+		}
+		responseWriter.AddAnnotation(addAnnotationOptions...)
 	}
 	return nil
 }
@@ -2364,14 +2474,23 @@ func handleBreakingFieldWireCompatibleCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if cardinalityToWireCompatiblityGroup[previousCardinality] != cardinalityToWireCompatiblityGroup[currentCardinality] {
-		responseWriter.AddProtosourceAnnotation(
-			field.Location(),
-			previousField.Location(),
-			`%s changed cardinality from %q to %q.`,
-			fieldDescription(field),
-			previousCardinality,
-			currentCardinality,
-		)
+		addAnnotationOptions := []check.AddAnnotationOption{
+			check.WithMessagef(
+				`%s changed cardinality from %q to %q.`,
+				fieldDescription(field),
+				previousCardinality,
+				currentCardinality,
+			),
+			check.WithFileName(field.File().Path()),
+			check.WithAgainstFileName(previousField.File().Path()),
+		}
+		if field.Location() != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithSourcePath(field.Location().SourcePath()))
+		}
+		if previousField.Location() != nil {
+			addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousField.Location().SourcePath()))
+		}
+		responseWriter.AddAnnotation(addAnnotationOptions...)
 	}
 	return nil
 }
