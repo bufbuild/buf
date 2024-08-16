@@ -15,6 +15,7 @@
 package bufcheckserverhandle
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -185,13 +186,24 @@ func handleLintDirectorySamePackage(
 			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range dirFiles {
-			responseWriter.AddProtosourceAnnotation(
-				file.PackageLocation(),
-				nil,
-				"%s detected within directory %q.",
-				messagePrefix,
-				dirPath,
-			)
+			if packageLocation := file.PackageLocation(); packageLocation != nil {
+				responseWriter.AddProtosourceAnnotation(
+					packageLocation,
+					nil,
+					"%s detected within directory %q.",
+					messagePrefix,
+					dirPath,
+				)
+			} else {
+				responseWriter.AddAnnotation(
+					check.WithFileName(file.Path()),
+					check.WithMessagef(
+						"%s detected within directory %q.",
+						messagePrefix,
+						dirPath,
+					),
+				)
+			}
 		}
 	}
 	return nil
@@ -620,13 +632,18 @@ func handleLintPackageLowerSnakeCase(
 }
 
 // HandleLintPackageNoImportCycle is a handle function.
-var HandleLintPackageNoImportCycle = bufcheckserverutil.NewLintFilesRuleHandler(handleLintPackageNoImportCycle)
+//
+// Note that imports are not skipped via the helper, as we want to detect import cycles
+// even if they are within imports, and report on them. If a non-import is part of an
+// import cycle, we report it, even if the import cycle includes imports in it.
+var HandleLintPackageNoImportCycle = bufcheckserverutil.NewRuleHandler(handleLintPackageNoImportCycle)
 
 func handleLintPackageNoImportCycle(
+	_ context.Context,
 	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	files []bufprotosource.File,
+	request bufcheckserverutil.Request,
 ) error {
+	files := request.ProtosourceFiles()
 	packageToDirectlyImportedPackageToFileImports, err := bufprotosource.PackageToDirectlyImportedPackageToFileImports(files...)
 	if err != nil {
 		return err
@@ -701,13 +718,24 @@ func handleLintPackageSameDirectory(
 	if len(dirMap) > 1 {
 		dirs := slicesext.MapKeysToSortedSlice(dirMap)
 		for _, file := range pkgFiles {
-			responseWriter.AddProtosourceAnnotation(
-				file.PackageLocation(),
-				nil,
-				"Multiple directories %q contain files with package %q.",
-				strings.Join(dirs, ","),
-				pkg,
-			)
+			if packageLocation := file.PackageLocation(); packageLocation != nil {
+				responseWriter.AddProtosourceAnnotation(
+					packageLocation,
+					nil,
+					"Multiple directories %q contain files with package %q.",
+					strings.Join(dirs, ","),
+					pkg,
+				)
+			} else {
+				responseWriter.AddAnnotation(
+					check.WithFileName(file.Path()),
+					check.WithMessagef(
+						"Multiple directories %q contain files with package %q.",
+						strings.Join(dirs, ","),
+						pkg,
+					),
+				)
+			}
 		}
 	}
 	return nil
@@ -861,23 +889,33 @@ func handleLintPackageSameOptionValue(
 		delete(optionValueMap, "")
 		optionValues := slicesext.MapKeysToSortedSlice(optionValueMap)
 		for _, file := range pkgFiles {
+			var message string
 			if noOptionValue {
-				responseWriter.AddProtosourceAnnotation(
-					getFileOptionLocation(file),
-					nil,
+				message = fmt.Sprintf(
 					"Files in package %q have both values %q and no value for option %q and all values must be equal.",
 					pkg,
 					strings.Join(optionValues, ","),
 					name,
 				)
 			} else {
-				responseWriter.AddProtosourceAnnotation(
-					getFileOptionLocation(file),
-					nil,
+				message = fmt.Sprintf(
 					"Files in package %q have multiple values %q for option %q and all values must be equal.",
 					pkg,
 					strings.Join(optionValues, ","),
 					name,
+				)
+			}
+			// TODO: investigate the case where noOptionValue is false but fileOptionLocation is nil.
+			if fileOptionLocation := getFileOptionLocation(file); fileOptionLocation != nil {
+				responseWriter.AddProtosourceAnnotation(
+					fileOptionLocation,
+					nil,
+					message,
+				)
+			} else {
+				responseWriter.AddAnnotation(
+					check.WithFileName(file.Path()),
+					check.WithMessage(message),
 				)
 			}
 		}
@@ -911,10 +949,9 @@ func handleLintPackageVersionSuffix(
 
 // HandleLintProtovalidate is a handle function.
 var HandleLintProtovalidate = bufcheckserverutil.NewMultiHandler(
+	// NOTE: Oneofs also have protovalidate support, but they only have a "required" field, so nothing to lint.
 	bufcheckserverutil.NewLintMessageRuleHandler(handleLintMessageProtovalidate),
 	bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldProtovalidate),
-	// NOTE: Oneofs also have protovalidate support, but they
-	//       only have a "required" field, so nothing to lint.
 )
 
 func handleLintMessageProtovalidate(
@@ -1317,10 +1354,9 @@ func handleLintSyntaxSpecified(
 	file bufprotosource.File,
 ) error {
 	if file.Syntax() == bufprotosource.SyntaxUnspecified {
-		responseWriter.AddProtosourceAnnotation(
-			file.SyntaxLocation(),
-			nil,
-			`Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`,
+		responseWriter.AddAnnotation(
+			check.WithFileName(file.Path()),
+			check.WithMessage(`Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`),
 		)
 	}
 	return nil
