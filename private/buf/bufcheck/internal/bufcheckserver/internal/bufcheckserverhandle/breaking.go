@@ -694,6 +694,67 @@ func handleBreakingFieldSameType(
 	return nil
 }
 
+// HandleBreakingFieldWireCompatibleType is a check function.
+var HandleBreakingFieldWireCompatibleType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldWireCompatibleType)
+
+func handleBreakingFieldWireCompatibleType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	// We use descriptor.Kind(), instead of field.Type(), because it also includes
+	// a check of resolved features in Editions files so it can distinguish between
+	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
+	// are not compatible.
+	previousWireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[previousDescriptor.Kind()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
+	}
+	wireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[descriptor.Kind()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
+	}
+	if previousWireCompatibilityGroup != wireCompatibilityGroup {
+		extraMessages := []string{
+			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules.",
+		}
+		switch {
+		case previousDescriptor.Kind() == protoreflect.StringKind && descriptor.Kind() == protoreflect.BytesKind:
+			// It is OK to evolve from string to bytes
+			return nil
+		case previousDescriptor.Kind() == protoreflect.BytesKind && descriptor.Kind() == protoreflect.StringKind:
+			extraMessages = append(
+				extraMessages,
+				"Note that while string and bytes are compatible if the data is valid UTF-8, there is no way to enforce that a bytes field is UTF-8, so these fields may be incompatible.",
+			)
+		}
+		addFieldChangedType(responseWriter, previousField, previousDescriptor, field, descriptor, extraMessages...)
+		return nil
+	}
+	switch field.Type() {
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+		if previousField.TypeName() != field.TypeName() {
+			return checkEnumWireCompatibleForField(responseWriter, request, previousField, field)
+		}
+	case descriptorpb.FieldDescriptorProto_TYPE_GROUP,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		if previousField.TypeName() != field.TypeName() {
+			addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
+			return nil
+		}
+	}
+	return nil
+}
+
 // HandleBreakingFieldWireJSONCompatibleType is a check function.
 var HandleBreakingFieldWireJSONCompatibleType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldWireJSONCompatibleType)
 

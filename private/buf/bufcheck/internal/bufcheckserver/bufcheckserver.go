@@ -126,7 +126,7 @@ var (
 			bufcheckserverbuild.BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder.Build(false, []string{"WIRE_JSON", "WIRE"}),
 			bufcheckserverbuild.BreakingFieldNoDeleteUnlessNumberReservedRuleSpecBuilder.Build(false, []string{"WIRE_JSON", "WIRE"}),
 			bufcheckserverbuild.BreakingFieldWireCompatibleCardinalityRuleSpecBuilder.Build(false, []string{"WIRE"}),
-
+			bufcheckserverbuild.BreakingFieldWireCompatibleTypeRuleSpecBuilder.Build(false, []string{"WIRE"}),
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentFieldRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

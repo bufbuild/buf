@@ -469,7 +469,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleCardinality,
 	}
-
+	// BreakingFieldWireCompatibleTypeRuleSpecBuilder  is a rule spec builder.
+	BreakingFieldWireCompatibleTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_COMPATIBLE_TYPE",
+		Purpose: "Checks fields have wire-compatible types in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleType,
+	}
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "COMMENT_ENUM",
