@@ -262,6 +262,24 @@ func handleBreakingEnumValueNoDeleteUnlessNameReserved(
 	)
 }
 
+// HandleBreakingEnumValueNoDeleteUnlessNumberReserved is a check function.
+var HandleBreakingEnumValueNoDeleteUnlessNumberReserved = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumValueNoDeleteUnlessNumberReserved)
+
+func handleBreakingEnumValueNoDeleteUnlessNumberReserved(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+) error {
+	return checkEnumValueNoDeleteWithRules(
+		responseWriter,
+		previousEnum,
+		enum,
+		true,
+		false,
+	)
+}
+
 func checkEnumValueNoDeleteWithRules(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousEnum bufprotosource.Enum,

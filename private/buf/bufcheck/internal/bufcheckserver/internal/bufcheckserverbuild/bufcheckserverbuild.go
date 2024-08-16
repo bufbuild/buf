@@ -427,6 +427,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNameReserved,
 	}
+	// BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder is a spec builder.
+	BreakingEnumValueNoDeleteUnlessNumberReservedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED",
+		Purpose: "Checks enum values are not deleted from a given enum unless the number is reserved.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNumberReserved,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
