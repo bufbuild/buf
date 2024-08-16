@@ -17,6 +17,7 @@ package bufcheck
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver"
@@ -37,10 +38,15 @@ import (
 
 type client struct {
 	runner                          command.Runner
+	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(runner command.Runner, _ ...ClientOption) (*client, error) {
+func newClient(runner command.Runner, options ...ClientOption) (*client, error) {
+	clientOptions := newClientOptions()
+	for _, option := range options {
+		option(clientOptions)
+	}
 	// We want to keep our check.Clients static for caching instead of creating them on every lint and breaking call.
 	v1beta1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
 	if err != nil {
@@ -57,6 +63,7 @@ func newClient(runner command.Runner, _ ...ClientOption) (*client, error) {
 
 	return &client{
 		runner: runner,
+		stderr: clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
@@ -246,8 +253,7 @@ func (c *client) getMultiClient(
 					pluginPath[0],
 					pluginrpcutil.RunnerWithArgs(pluginPath[1:]...),
 				),
-				// TODO
-				pluginrpc.ClientWithStderr(nil),
+				pluginrpc.ClientWithStderr(c.stderr),
 			),
 			check.ClientWithCacheRules(),
 		)
@@ -415,7 +421,13 @@ func newAllRulesOptions() *allRulesOptions {
 	return &allRulesOptions{}
 }
 
-type clientOptions struct{}
+type clientOptions struct {
+	stderr io.Writer
+}
+
+func newClientOptions() *clientOptions {
+	return &clientOptions{}
+}
 
 type excludeImportsOption struct{}
 

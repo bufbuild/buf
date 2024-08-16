@@ -88,6 +88,12 @@ func NewClient(runner command.Runner, options ...ClientOption) (Client, error) {
 
 type ClientOption func(*clientOptions)
 
+func ClientWithStderr(stderr io.Writer) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.stderr = stderr
+	}
+}
+
 // PrintRules prints the rules to the Writer.
 func PrintRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOption) (retErr error) {
 	return printRules(writer, rules, options...)

@@ -174,7 +174,7 @@ func lsRun(
 		return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
 	}
 	// BufYAMLFiles <=v1 never had plugins.
-	client, err := bufcheck.NewClient(command.NewRunner())
+	client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}
