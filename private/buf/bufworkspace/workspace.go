@@ -123,6 +123,7 @@ func newWorkspace(
 		ModuleSet:                moduleSet,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
+		pluginConfigs:            pluginConfigs,
 		configuredDepModuleRefs:  configuredDepModuleRefs,
 		isV2:                     isV2,
 	}
