@@ -462,6 +462,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldNoDeleteUnlessNumberReserved,
 	}
+	// BreakingFieldWireCompatibleCardinalityRuleSpecBuilder is a rule spec builder.
+	BreakingFieldWireCompatibleCardinalityRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_COMPATIBLE_CARDINALITY",
+		Purpose: "Checks fields have wire-compatible cardinalities in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireCompatibleCardinality,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
