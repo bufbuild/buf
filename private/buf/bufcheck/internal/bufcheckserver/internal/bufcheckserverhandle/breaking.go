@@ -1040,6 +1040,34 @@ func handleBreakingFileSameSwiftPrefix(
 	)
 }
 
+// HandleBreakingFileSameSyntax is a check function.
+var HandleBreakingFileSameSyntax = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameSyntax)
+
+func handleBreakingFileSameSyntax(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	previousSyntax := previousFile.Syntax()
+	if previousSyntax == bufprotosource.SyntaxUnspecified {
+		previousSyntax = bufprotosource.SyntaxProto2
+	}
+	syntax := file.Syntax()
+	if syntax == bufprotosource.SyntaxUnspecified {
+		syntax = bufprotosource.SyntaxProto2
+	}
+	return checkFileSameValue(
+		responseWriter,
+		previousSyntax.String(),
+		syntax.String(),
+		file,
+		file.SyntaxLocation(),
+		previousFile.SyntaxLocation(),
+		`syntax`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

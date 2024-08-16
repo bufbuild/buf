@@ -239,6 +239,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameSwiftPrefix,
 	}
+	// BreakingFileSameSyntaxRuleSpecBuilder is a rule spec builder.
+	BreakingFileSameSyntaxRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_SYNTAX",
+		Purpose: "Checks files have the same syntax.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSameSyntax,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
