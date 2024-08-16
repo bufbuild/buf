@@ -441,6 +441,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleCardinality,
 	}
+	// BreakingFieldWireJSONCompatibleTypeRuleSpecBuilder is a rule spec builder.
+	BreakingFieldWireJSONCompatibleTypeRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_WIRE_JSON_COMPATIBLE_TYPE",
+		Purpose: "Checks fields have wire and JSON compatible types in a given message.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldWireJSONCompatibleType,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

@@ -658,6 +658,115 @@ func handleBreakingFieldSameType(
 	return nil
 }
 
+// HandleBreakingFieldWireJSONCompatibleType is a check function.
+var HandleBreakingFieldWireJSONCompatibleType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldWireJSONCompatibleType)
+
+func handleBreakingFieldWireJSONCompatibleType(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousDescriptor, err := previousField.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := field.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	// We use descriptor.Kind(), instead of field.Type(), because it also includes
+	// a check of resolved features in Editions files so it can distinguish between
+	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
+	// are not compatible.
+	previousWireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[previousDescriptor.Kind()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
+	}
+	wireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[descriptor.Kind()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
+	}
+	if previousWireJSONCompatibilityGroup != wireJSONCompatibilityGroup {
+		addFieldChangedType(
+			responseWriter,
+			previousField,
+			previousDescriptor,
+			field,
+			descriptor,
+			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules and https://developers.google.com/protocol-buffers/docs/proto3#json for JSON compatibility rules.",
+		)
+		return nil
+	}
+	switch descriptor.Kind() {
+	case protoreflect.EnumKind:
+		if previousField.TypeName() != field.TypeName() {
+			return checkEnumWireCompatibleForField(responseWriter, request, previousField, field)
+		}
+	case protoreflect.GroupKind, protoreflect.MessageKind:
+		if previousField.TypeName() != field.TypeName() {
+			addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
+			return nil
+		}
+	}
+	return nil
+}
+
+func checkEnumWireCompatibleForField(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) error {
+	previousEnum, err := getEnumByFullName(
+		request.AgainstProtosourceFiles(),
+		strings.TrimPrefix(previousField.TypeName(), "."),
+	)
+	if err != nil {
+		return err
+	}
+	enum, err := getEnumByFullName(
+		request.ProtosourceFiles(),
+		strings.TrimPrefix(field.TypeName(), "."),
+	)
+	if err != nil {
+		return err
+	}
+	if previousEnum.Name() != enum.Name() {
+		// If the short names are not equal, we say that this is a different enum.
+		addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
+		return nil
+	}
+	isSubset, err := bufprotosource.EnumIsSubset(enum, previousEnum)
+	if err != nil {
+		return err
+	}
+	if !isSubset {
+		// If the previous enum is not a subset of the new enum, we say that
+		// this is a different enum.
+		// We allow subsets so that enum values can be added within the
+		// same change.
+		addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
+		return nil
+	}
+	return nil
+}
+
+func addEnumGroupMessageFieldChangedTypeName(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousField bufprotosource.Field,
+	field bufprotosource.Field,
+) {
+	responseWriter.AddProtosourceAnnotation(
+		field.TypeNameLocation(),
+		previousField.TypeNameLocation(),
+		`%s changed type from %q to %q.`,
+		fieldDescription(field),
+		strings.TrimPrefix(previousField.TypeName(), "."),
+		strings.TrimPrefix(field.TypeName(), "."),
+	)
+}
+
 func addFieldChangedType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousField bufprotosource.Field,
@@ -695,21 +804,6 @@ func addFieldChangedType(
 		fieldDescriptorTypePrettyString(previousDescriptor),
 		fieldDescriptorTypePrettyString(descriptor),
 		combinedExtraMessage,
-	)
-}
-
-func addEnumGroupMessageFieldChangedTypeName(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	previousField bufprotosource.Field,
-	field bufprotosource.Field,
-) {
-	responseWriter.AddProtosourceAnnotation(
-		field.TypeNameLocation(),
-		previousField.TypeNameLocation(),
-		`%s changed type from %q to %q.`,
-		fieldDescription(field),
-		strings.TrimPrefix(previousField.TypeName(), "."),
-		strings.TrimPrefix(field.TypeName(), "."),
 	)
 }
 
