@@ -259,6 +259,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingOneofNoDelete,
 	}
+	// BreakingRPCNoDeleteRuleSpecBuilder is a rule spec builder.
+	BreakingRPCNoDeleteRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_NO_DELETE",
+		Purpose: "Checks rpcs are not deleted from a given service.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingRPCNoDelete,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

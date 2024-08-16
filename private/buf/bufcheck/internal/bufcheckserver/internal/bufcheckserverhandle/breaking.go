@@ -1155,3 +1155,34 @@ func handleBreakingOneofNoDelete(
 	}
 	return nil
 }
+
+// HandleBreakingRPCNoDelete is a check function.
+var HandleBreakingRPCNoDelete = bufcheckserverutil.NewBreakingServicePairRuleHandler(handleBreakingRPCNoDelete)
+
+func handleBreakingRPCNoDelete(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousService bufprotosource.Service,
+	service bufprotosource.Service,
+) error {
+	previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
+	if err != nil {
+		return err
+	}
+	nameToMethod, err := bufprotosource.NameToMethod(service)
+	if err != nil {
+		return err
+	}
+	for previousName := range previousNameToMethod {
+		if _, ok := nameToMethod[previousName]; !ok {
+			responseWriter.AddProtosourceAnnotation(
+				service.Location(),
+				previousService.Location(),
+				`Previously present RPC %q on service %q was deleted.`,
+				previousName,
+				service.Name(),
+			)
+		}
+	}
+	return nil
+}
