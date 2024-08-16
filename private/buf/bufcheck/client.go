@@ -70,7 +70,7 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	allRules, err := c.AllRules(ctx, check.RuleTypeLint, lintConfig.FileVersion())
+	allRules, err := c.allRules(ctx, check.RuleTypeLint, lintConfig.FileVersion(), lintOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
@@ -91,9 +91,9 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	checkClient, ok := c.fileVersionToDefaultCheckClient[lintConfig.FileVersion()]
-	if !ok {
-		return fmt.Errorf("unknown FileVersion: %v", lintConfig.FileVersion())
+	checkClient, err := c.getCheckClient(lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	if err != nil {
+		return err
 	}
 	response, err := checkClient.Check(ctx, request)
 	if err != nil {
@@ -113,7 +113,7 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	allRules, err := c.AllRules(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion())
+	allRules, err := c.allRules(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
@@ -140,9 +140,9 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	checkClient, ok := c.fileVersionToDefaultCheckClient[breakingConfig.FileVersion()]
-	if !ok {
-		return fmt.Errorf("unknown FileVersion: %v", breakingConfig.FileVersion())
+	checkClient, err := c.getCheckClient(breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	if err != nil {
+		return err
 	}
 	response, err := checkClient.Check(ctx, request)
 	if err != nil {
@@ -161,7 +161,7 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, err := c.AllRules(ctx, ruleType, checkConfig.FileVersion())
+	allRules, err := c.allRules(ctx, ruleType, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -185,9 +185,18 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	checkClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
-	if !ok {
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	return c.allRules(ctx, ruleType, fileVersion, allRulesOptions.pluginConfigs)
+}
+
+func (c *client) allRules(
+	ctx context.Context,
+	ruleType check.RuleType,
+	fileVersion bufconfig.FileVersion,
+	pluginConfigs []bufconfig.PluginConfig,
+) ([]check.Rule, error) {
+	checkClient, err := c.getCheckClient(fileVersion, pluginConfigs)
+	if err != nil {
+		return nil, err
 	}
 	allRules, err := checkClient.ListRules(ctx)
 	if err != nil {
@@ -196,17 +205,12 @@ func (c *client) AllRules(
 	return rulesForType(allRules, ruleType), nil
 }
 
-func newBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {
-	switch fileVersion {
-	case bufconfig.FileVersionV1Beta1:
-		return check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
-	case bufconfig.FileVersionV1:
-		return check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
-	case bufconfig.FileVersionV2:
-		return check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
-	default:
+func (c *client) getCheckClient(fileVersion bufconfig.FileVersion, pluginConfigs []bufconfig.PluginConfig) (check.Client, error) {
+	checkClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
+	if !ok {
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
+	return checkClient, nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
