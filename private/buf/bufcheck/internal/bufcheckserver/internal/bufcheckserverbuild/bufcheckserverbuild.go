@@ -329,6 +329,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingMessageSameMessageSetWireFormat,
 	}
+	// BreakingMessageSameRequiredFieldsRuleSpecBuilder is a rule spec builder.
+	BreakingMessageSameRequiredFieldsRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_SAME_REQUIRED_FIELDS",
+		Purpose: "Checks messages have no added or deleted required fields.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingMessageSameRequiredFields,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

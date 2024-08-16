@@ -106,6 +106,7 @@ var (
 			bufcheckserverbuild.BreakingFieldSameOneofRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingFileSamePackageRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingMessageSameMessageSetWireFormatRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
+			bufcheckserverbuild.BreakingMessageSameRequiredFieldsRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON"}),
 
 			bufcheckserverbuild.LintCommentEnumRuleSpecBuilder.Build(false, []string{"COMMENTS"}),
 			bufcheckserverbuild.LintCommentEnumValueRuleSpecBuilder.Build(false, []string{"COMMENTS"}),

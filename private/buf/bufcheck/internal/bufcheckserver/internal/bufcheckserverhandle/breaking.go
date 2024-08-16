@@ -1526,3 +1526,53 @@ func handleBreakingMessageSameMessageSetWireFormat(
 	}
 	return nil
 }
+
+// HandleBreakingMessageSameRequiredFields is a check function.
+var HandleBreakingMessageSameRequiredFields = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingMessageSameRequiredFields)
+
+func handleBreakingMessageSameRequiredFields(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	previousNumberToRequiredField, err := bufprotosource.NumberToMessageFieldForLabel(
+		previousMessage,
+		descriptorpb.FieldDescriptorProto_LABEL_REQUIRED,
+	)
+	if err != nil {
+		return err
+	}
+	numberToRequiredField, err := bufprotosource.NumberToMessageFieldForLabel(
+		message,
+		descriptorpb.FieldDescriptorProto_LABEL_REQUIRED,
+	)
+	if err != nil {
+		return err
+	}
+	for previousNumber := range previousNumberToRequiredField {
+		if _, ok := numberToRequiredField[previousNumber]; !ok {
+			// we attach the error to the message as the field no longer exists
+			responseWriter.AddProtosourceAnnotation(
+				message.Location(),
+				previousMessage.Location(),
+				`Message %q had required field "%d" deleted. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`,
+				previousMessage.Name(),
+				previousNumber,
+			)
+		}
+	}
+	for number, requiredField := range numberToRequiredField {
+		if _, ok := previousNumberToRequiredField[number]; !ok {
+			// we attach the error to the added required field
+			responseWriter.AddProtosourceAnnotation(
+				requiredField.Location(),
+				nil, // TODO:figure out the correct against location for this
+				`Message %q had required field "%d" added. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`,
+				message.Name(),
+				number,
+			)
+		}
+	}
+	return nil
+}
