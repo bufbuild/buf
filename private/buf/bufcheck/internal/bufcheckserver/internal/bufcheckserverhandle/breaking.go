@@ -960,6 +960,26 @@ func handleBreakingFileSamePhpMetadataNamespace(
 	)
 }
 
+// HandleBreakingFileSamePhpNamespace is a check function.
+var HandleBreakingFileSamePhpNamespace = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSamePhpNamespace)
+
+func handleBreakingFileSamePhpNamespace(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	previousFile bufprotosource.File,
+	file bufprotosource.File,
+) error {
+	return checkFileSameValue(
+		responseWriter,
+		previousFile.PhpNamespace(),
+		file.PhpNamespace(),
+		file,
+		file.PhpNamespaceLocation(),
+		previousFile.PhpNamespaceLocation(),
+		`option "php_namespace"`,
+	)
+}
+
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	previousValue interface{},

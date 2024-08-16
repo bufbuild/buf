@@ -211,6 +211,20 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpMetadataNamespace,
 	}
+	// BreakingFileSamePhpNamespaceRuleSpecBuilder is a rule spec builder.
+	BreakingFileSamePhpNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_PHP_NAMESPACE",
+		Purpose: "Checks files have the same value for the php_namespace option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSamePhpNamespace,
+	}
+	// BreakingFileSamePyGenericServicesRuleBuilder is a rule spec builder.
+	BreakingFileSamePyGenericServicesRuleBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_SAME_PY_GENERIC_SERVICES",
+		Purpose: "Checks files have the same value for the py_generic_services option.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFileSamePyGenericServices,
+	}
 
 	// LintCommentEnumRuleSpecBuilder is a rule spec builder.
 	LintCommentEnumRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
