@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -117,11 +118,12 @@ func handleBreakingFileNoDelete(
 	}
 	for previousFilePath := range previousFilePathToFile {
 		if _, ok := filePathToFile[previousFilePath]; !ok {
-			responseWriter.AddProtosourceAnnotation(
-				nil,
-				nil, // TODO: File does not have a Location, make sure that client handles the ignore checks
-				`Previously present file %q was deleted.`,
-				previousFilePath,
+			responseWriter.AddAnnotaton(
+				check.WithAgainstFileName(previousFilePath),
+				check.WithMessagef(
+					`Previously present file %q was deleted.`,
+					previousFilePath,
+				),
 			)
 		}
 	}
