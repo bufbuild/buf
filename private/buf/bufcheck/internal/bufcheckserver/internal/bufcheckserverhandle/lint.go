@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckopt"
+	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -220,7 +220,10 @@ func handleLintServiceSuffix(
 	request bufcheckserverutil.Request,
 	service bufprotosource.Service,
 ) error {
-	suffix := bufcheckopt.GetServiceSuffix(request.Options())
+	suffix, err := bufcheckopt.GetServiceSuffix(request.Options())
+	if err != nil {
+		return err
+	}
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
 		responseWriter.AddProtosourceAnnotation(
