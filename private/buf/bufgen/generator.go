@@ -295,12 +295,10 @@ func (g *generator) execPlugins(
 	//      out: gen/proto
 	//    - name: insertion-point-writer
 	//      out: gen/proto
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	if err := thread.Parallelize(
 		ctx,
 		jobs,
-		thread.ParallelizeWithCancel(cancel),
+		thread.ParallelizeWithCancelOnFailure(),
 	); err != nil {
 		if errs := multierr.Errors(err); len(errs) > 0 {
 			return nil, errs[0]

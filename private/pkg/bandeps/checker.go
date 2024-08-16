@@ -144,9 +144,7 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 			},
 		)
 	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
+	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancelOnFailure()); err != nil {
 		return err
 	}
 
@@ -161,5 +159,5 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 			},
 		)
 	}
-	return thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel))
+	return thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancelOnFailure())
 }
