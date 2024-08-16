@@ -204,6 +204,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
 		nil,
+		nil,
 		false,
 	), nil
 }
@@ -343,6 +344,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
+		nil,
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -414,6 +416,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v2Targeting.bucketIDToModuleConfig,
+		v2Targeting.bufYAMLFile.PluginConfigs(),
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -423,6 +426,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	moduleSet bufmodule.ModuleSet,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
+	pluginConfigs []bufconfig.PluginConfig,
 	// Expected to already be unique by ModuleFullName.
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	isV2 bool,
@@ -447,6 +451,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
+		pluginConfigs,
 		configuredDepModuleRefs,
 		isV2,
 	), nil

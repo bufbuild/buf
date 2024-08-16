@@ -383,6 +383,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		bufYAML, err := bufconfig.NewBufYAMLFile(
 			bufconfig.FileVersionV2,
 			migrateBuilder.moduleConfigs,
+			// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+			nil,
 			resolvedDeclaredRefs,
 		)
 		if err != nil {
@@ -429,6 +431,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		migrateBuilder.moduleConfigs,
+		// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+		nil,
 		resolvedDepModuleRefs,
 	)
 	if err != nil {
@@ -679,6 +683,8 @@ func equivalentCheckConfigInV2(
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 ) (bufconfig.CheckConfig, error) {
+	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
+	// TODO: If we ever need v3, then we will have to deal with this.
 	client, err := bufcheck.NewClient()
 	if err != nil {
 		return nil, err

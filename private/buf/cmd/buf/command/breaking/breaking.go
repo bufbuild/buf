@@ -204,16 +204,18 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
-	client, err := bufcheck.NewClient()
-	if err != nil {
-		return err
-	}
 	var breakingOptions []bufcheck.BreakingOption
 	if flags.ExcludeImports {
 		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
+		client, err := bufcheck.NewClient(
+			bufcheck.ClientWithPluginConfigs(imageWithConfig.PluginConfigs()...),
+		)
+		if err != nil {
+			return err
+		}
 		if err := client.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),

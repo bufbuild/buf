@@ -158,7 +158,6 @@ func run(
 			),
 			false,
 		),
-		nil,
 	)
 	if err != nil {
 		return err
@@ -168,6 +167,7 @@ func run(
 		[]bufconfig.ModuleConfig{
 			moduleConfig,
 		},
+		nil,
 		nil,
 		bufconfig.BufYAMLFileWithIncludeDocsLink(),
 	)

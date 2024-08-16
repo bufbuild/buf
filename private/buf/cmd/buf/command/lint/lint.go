@@ -129,12 +129,14 @@ func run(
 	if err != nil {
 		return err
 	}
-	client, err := bufcheck.NewClient()
-	if err != nil {
-		return err
-	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
+		client, err := bufcheck.NewClient(
+			bufcheck.ClientWithPluginConfigs(imageWithConfig.PluginConfigs()...),
+		)
+		if err != nil {
+			return err
+		}
 		if err := client.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),

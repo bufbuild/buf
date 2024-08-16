@@ -41,7 +41,6 @@ func init() {
 		},
 		DefaultLintConfigV1,
 		DefaultBreakingConfigV1,
-		nil,
 	)
 	if err != nil {
 		panic(err.Error())
@@ -54,7 +53,6 @@ func init() {
 		},
 		DefaultLintConfigV2,
 		DefaultBreakingConfigV2,
-		nil,
 	)
 	if err != nil {
 		panic(err.Error())
@@ -114,10 +112,6 @@ type ModuleConfig interface {
 	//
 	// If this was not set, this will be set to the default breaking configuration.
 	BreakingConfig() BreakingConfig
-	// PluginConfigs returns the plugins configuration.
-	//
-	// If this was not set, this will be set to the default plugins configuration.
-	PluginConfigs() []PluginConfig
 
 	isModuleConfig()
 }
@@ -129,7 +123,6 @@ func NewModuleConfig(
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
-	pluginConfigs []PluginConfig,
 ) (ModuleConfig, error) {
 	return newModuleConfig(
 		dirPath,
@@ -137,7 +130,6 @@ func NewModuleConfig(
 		rootToExcludes,
 		lintConfig,
 		breakingConfig,
-		pluginConfigs,
 	)
 }
 
@@ -149,7 +141,6 @@ type moduleConfig struct {
 	rootToExcludes map[string][]string
 	lintConfig     LintConfig
 	breakingConfig BreakingConfig
-	pluginConfigs  []PluginConfig
 }
 
 // All validations are syserrors as we only ever read ModuleConfigs.
@@ -159,7 +150,6 @@ func newModuleConfig(
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
-	pluginConfigs []PluginConfig,
 ) (*moduleConfig, error) {
 	// Returns "." on empty input.
 	dirPath, err := normalpath.NormalizeAndValidate(dirPath)
@@ -209,7 +199,6 @@ func newModuleConfig(
 		rootToExcludes: newRootToExcludes,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
-		pluginConfigs:  pluginConfigs,
 	}, nil
 }
 
@@ -231,10 +220,6 @@ func (m *moduleConfig) LintConfig() LintConfig {
 
 func (m *moduleConfig) BreakingConfig() BreakingConfig {
 	return m.breakingConfig
-}
-
-func (m *moduleConfig) PluginConfigs() []PluginConfig {
-	return m.pluginConfigs
 }
 
 func (*moduleConfig) isModuleConfig() {}
