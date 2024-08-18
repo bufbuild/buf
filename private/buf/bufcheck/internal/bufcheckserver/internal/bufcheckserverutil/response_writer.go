@@ -50,8 +50,13 @@ func (w *responseWriter) AddProtosourceAnnotation(
 ) {
 	addAnnotationOptions := []check.AddAnnotationOption{
 		check.WithMessagef(format, args...),
-		check.WithFileName(location.FilePath()),
-		check.WithSourcePath(location.SourcePath()),
+	}
+	if location != nil {
+		addAnnotationOptions = append(
+			addAnnotationOptions,
+			check.WithFileName(location.FilePath()),
+			check.WithSourcePath(location.SourcePath()),
+		)
 	}
 	if againstLocation != nil {
 		addAnnotationOptions = append(

@@ -38,8 +38,8 @@ var HandleBreakingEnumNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHandl
 func handleBreakingEnumNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	previousNestedNameToEnum, err := bufprotosource.NestedNameToEnum(previousFile)
 	if err != nil {
@@ -79,8 +79,8 @@ var HandleBreakingExtensionNoDelete = bufcheckserverutil.NewBreakingFilePairRule
 func handleBreakingExtensionNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	previousNestedNameToExtension, err := bufprotosource.NestedNameToExtension(previousFile)
 	if err != nil {
@@ -152,8 +152,8 @@ var HandleBreakingMessageNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHa
 func handleBreakingMessageNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	previousNestedNameToMessage, err := bufprotosource.NestedNameToMessage(previousFile)
 	if err != nil {
@@ -192,8 +192,8 @@ var HandleBreakingServiceNoDelete = bufcheckserverutil.NewBreakingFilePairRuleHa
 func handleBreakingServiceNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	previousNameToService, err := bufprotosource.NameToService(previousFile)
 	if err != nil {
@@ -228,8 +228,8 @@ var HandleBreakingEnumSameType = bufcheckserverutil.NewBreakingEnumPairRuleHandl
 func handleBreakingEnumSameType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousEnum bufprotosource.Enum,
 	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
 ) error {
 	previousDescriptor, err := previousEnum.AsDescriptor()
 	if err != nil {
@@ -262,8 +262,8 @@ var HandleBreakingEnumValueNoDelete = bufcheckserverutil.NewBreakingEnumPairRule
 func handleBreakingEnumValueNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousEnum bufprotosource.Enum,
 	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
 ) error {
 	return checkEnumValueNoDeleteWithRules(
 		responseWriter,
@@ -280,8 +280,8 @@ var HandleBreakingEnumValueNoDeleteUnlessNameReserved = bufcheckserverutil.NewBr
 func handleBreakingEnumValueNoDeleteUnlessNameReserved(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousEnum bufprotosource.Enum,
 	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
 ) error {
 	return checkEnumValueNoDeleteWithRules(
 		responseWriter,
@@ -298,8 +298,8 @@ var HandleBreakingEnumValueNoDeleteUnlessNumberReserved = bufcheckserverutil.New
 func handleBreakingEnumValueNoDeleteUnlessNumberReserved(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousEnum bufprotosource.Enum,
 	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
 ) error {
 	return checkEnumValueNoDeleteWithRules(
 		responseWriter,
@@ -390,8 +390,8 @@ var HandleBreakingExtensionMessageNoDelete = bufcheckserverutil.NewBreakingMessa
 func handleBreakingExtensionMessageNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	return checkTagRanges(
 		responseWriter,
@@ -409,8 +409,8 @@ var HandleBreakingFieldNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleH
 func handleBreakingFieldNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	return checkFieldNoDeleteWithRules(
 		responseWriter,
@@ -427,8 +427,8 @@ var HandleBreakingFieldNoDeleteUnlessNameReserved = bufcheckserverutil.NewBreaki
 func handleBreakingFieldNoDeleteUnlessNameReserved(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	return checkFieldNoDeleteWithRules(
 		responseWriter,
@@ -445,8 +445,8 @@ var HandleBreakingFieldNoDeleteUnlessNumberReserved = bufcheckserverutil.NewBrea
 func handleBreakingFieldNoDeleteUnlessNumberReserved(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	return checkFieldNoDeleteWithRules(
 		responseWriter,
@@ -518,8 +518,8 @@ var HandleBreakingFieldSameCardinality = bufcheckserverutil.NewBreakingFieldPair
 func handleBreakingFieldSameCardinality(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -569,8 +569,8 @@ var HandleBreakingFieldSameCppStringType = bufcheckserverutil.NewBreakingFieldPa
 func handleBreakingFieldSameCppStringType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -641,8 +641,8 @@ var HandleBreakingFieldSameJavaUTF8Validation = bufcheckserverutil.NewBreakingFi
 func handleBreakingFieldSameJavaUTF8Validation(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -683,8 +683,8 @@ var HandleBreakingFieldSameJSType = bufcheckserverutil.NewBreakingFieldPairRuleH
 func handleBreakingFieldSameJSType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	if !is64bitInteger(previousField.Type()) || !is64bitInteger(field.Type()) {
 		// this check only applies to 64-bit integer fields
@@ -707,8 +707,8 @@ var HandleBreakingFieldSameType = bufcheckserverutil.NewBreakingFieldPairRuleHan
 func handleBreakingFieldSameType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -750,8 +750,8 @@ var HandleBreakingFieldWireCompatibleType = bufcheckserverutil.NewBreakingFieldP
 func handleBreakingFieldWireCompatibleType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -811,8 +811,8 @@ var HandleBreakingFieldWireJSONCompatibleType = bufcheckserverutil.NewBreakingFi
 func handleBreakingFieldWireJSONCompatibleType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -978,8 +978,8 @@ var HandleBreakingFieldSameUTF8Validation = bufcheckserverutil.NewBreakingFieldP
 func handleBreakingFieldSameUTF8Validation(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -1036,8 +1036,8 @@ var HandleBreakingFileSameCcEnableArenas = bufcheckserverutil.NewBreakingFilePai
 func handleBreakingFileSameCcEnableArenas(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1056,8 +1056,8 @@ var HandleBreakingFileSameCcGenericServices = bufcheckserverutil.NewBreakingFile
 func handleBreakingFileSameCcGenericServices(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1076,8 +1076,8 @@ var HandleBreakingFileSameCsharpNamespace = bufcheckserverutil.NewBreakingFilePa
 func handleBreakingFileSameCsharpNamespace(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1096,8 +1096,8 @@ var HandleBreakingFileSameGoPackage = bufcheckserverutil.NewBreakingFilePairRule
 func handleBreakingFileSameGoPackage(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1116,8 +1116,8 @@ var HandleBreakingFileSameJavaGenericServices = bufcheckserverutil.NewBreakingFi
 func handleBreakingFileSameJavaGenericServices(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1136,8 +1136,8 @@ var HandleBreakingFileSameJavaMultipleFiles = bufcheckserverutil.NewBreakingFile
 func handleBreakingFileSameJavaMultipleFiles(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1156,8 +1156,8 @@ var HandleBreakingFileSameJavaOuterClassname = bufcheckserverutil.NewBreakingFil
 func handleBreakingFileSameJavaOuterClassname(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1176,8 +1176,8 @@ var HandleBreakingFileSameJavaPackage = bufcheckserverutil.NewBreakingFilePairRu
 func handleBreakingFileSameJavaPackage(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1196,8 +1196,8 @@ var HandleBreakingFileSameObjcClassPrefix = bufcheckserverutil.NewBreakingFilePa
 func handleBreakingFileSameObjcClassPrefix(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1216,8 +1216,8 @@ var HandleBreakingFileSameOptimizeFor = bufcheckserverutil.NewBreakingFilePairRu
 func handleBreakingFileSameOptimizeFor(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1235,8 +1235,8 @@ var HandleBreakingFileSamePhpClassPrefix = bufcheckserverutil.NewBreakingFilePai
 func handleBreakingFileSamePhpClassPrefix(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1255,8 +1255,8 @@ var HandleBreakingFileSamePhpMetadataNamespace = bufcheckserverutil.NewBreakingF
 func handleBreakingFileSamePhpMetadataNamespace(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1275,8 +1275,8 @@ var HandleBreakingFileSamePhpNamespace = bufcheckserverutil.NewBreakingFilePairR
 func handleBreakingFileSamePhpNamespace(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1295,8 +1295,8 @@ var HandleBreakingFileSamePyGenericServices = bufcheckserverutil.NewBreakingFile
 func handleBreakingFileSamePyGenericServices(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1315,8 +1315,8 @@ var HandleBreakingFileSameRubyPackage = bufcheckserverutil.NewBreakingFilePairRu
 func handleBreakingFileSameRubyPackage(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1335,8 +1335,8 @@ var HandleBreakingFileSameSwiftPrefix = bufcheckserverutil.NewBreakingFilePairRu
 func handleBreakingFileSameSwiftPrefix(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1355,8 +1355,8 @@ var HandleBreakingFileSameSyntax = bufcheckserverutil.NewBreakingFilePairRuleHan
 func handleBreakingFileSameSyntax(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	previousSyntax := previousFile.Syntax()
 	if previousSyntax == bufprotosource.SyntaxUnspecified {
@@ -1383,8 +1383,8 @@ var HandleBreakingFileSamePackage = bufcheckserverutil.NewBreakingFilePairRuleHa
 func handleBreakingFileSamePackage(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousFile bufprotosource.File,
 	file bufprotosource.File,
+	previousFile bufprotosource.File,
 ) error {
 	return checkFileSameValue(
 		responseWriter,
@@ -1425,8 +1425,8 @@ var HandleBreakingMessageNoRemoveStandardDescriptorAccessor = bufcheckserverutil
 func handleBreakingMessageNoRemoveStandardDescriptorAccessor(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	previous := strconv.FormatBool(previousMessage.NoStandardDescriptorAccessor())
 	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
@@ -1448,8 +1448,8 @@ var HandleBreakingOneofNoDelete = bufcheckserverutil.NewBreakingMessagePairRuleH
 func handleBreakingOneofNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	previousNameToOneof, err := bufprotosource.NameToMessageOneof(previousMessage)
 	if err != nil {
@@ -1489,8 +1489,8 @@ var HandleBreakingRPCNoDelete = bufcheckserverutil.NewBreakingServicePairRuleHan
 func handleBreakingRPCNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousService bufprotosource.Service,
 	service bufprotosource.Service,
+	previousService bufprotosource.Service,
 ) error {
 	previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
 	if err != nil {
@@ -1520,8 +1520,8 @@ var HandleBreakingEnumSameJSONFormat = bufcheckserverutil.NewBreakingEnumPairRul
 func handleBreakingEnumSameJSONFormat(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousEnum bufprotosource.Enum,
 	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
 ) error {
 	previousDescriptor, err := previousEnum.AsDescriptor()
 	if err != nil {
@@ -1564,8 +1564,8 @@ var HandleBreakingEnumValueSameName = bufcheckserverutil.NewBreakingEnumValuePai
 func handleBreakingEnumValueSameName(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousNameToEnumValue map[string]bufprotosource.EnumValue,
 	nameToEnumValue map[string]bufprotosource.EnumValue,
+	previousNameToEnumValue map[string]bufprotosource.EnumValue,
 ) error {
 	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
 	names := getSortedEnumValueNames(nameToEnumValue)
@@ -1602,8 +1602,8 @@ var HandleBreakingFieldSameJSONName = bufcheckserverutil.NewBreakingFieldPairRul
 func handleBreakingFieldSameJSONName(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	if previousField.Extendee() != "" {
 		// JSON name can't be set explicitly for extensions
@@ -1639,8 +1639,8 @@ var HandleBreakingFieldSameName = bufcheckserverutil.NewBreakingFieldPairRuleHan
 func handleBreakingFieldSameName(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	var previousName, name string
 	if previousField.Extendee() != "" {
@@ -1669,8 +1669,8 @@ var HandleBreakingMessageSameJSONFormat = bufcheckserverutil.NewBreakingMessageP
 func handleBreakingMessageSameJSONFormat(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	previousDescriptor, err := previousMessage.AsDescriptor()
 	if err != nil {
@@ -1713,8 +1713,8 @@ var HandleBreakingFieldSameDefault = bufcheckserverutil.NewBreakingFieldPairRule
 func handleBreakingFieldSameDefault(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -1752,8 +1752,8 @@ var HandleBreakingFieldSameOneof = bufcheckserverutil.NewBreakingFieldPairRuleHa
 func handleBreakingFieldSameOneof(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	if previousField.Extendee() != "" {
 		// extensions can't be defined inside oneofs
@@ -1845,8 +1845,8 @@ var HandleBreakingMessageSameMessageSetWireFormat = bufcheckserverutil.NewBreaki
 func handleBreakingMessageSameMessageSetWireFormat(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	previous := strconv.FormatBool(previousMessage.MessageSetWireFormat())
 	current := strconv.FormatBool(message.MessageSetWireFormat())
@@ -1868,8 +1868,8 @@ var HandleBreakingMessageSameRequiredFields = bufcheckserverutil.NewBreakingMess
 func handleBreakingMessageSameRequiredFields(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	previousNumberToRequiredField, err := bufprotosource.NumberToMessageFieldForLabel(
 		previousMessage,
@@ -1918,8 +1918,8 @@ var HandleBreakingReservedEnumNoDelete = bufcheckserverutil.NewBreakingEnumPairR
 func handleBreakingReservedEnumNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousEnum bufprotosource.Enum,
 	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
 ) error {
 	if err := checkTagRanges(
 		responseWriter,
@@ -1953,8 +1953,8 @@ var HandleBreakingReservedMessageNoDelete = bufcheckserverutil.NewBreakingMessag
 func handleBreakingReservedMessageNoDelete(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMessage bufprotosource.Message,
 	message bufprotosource.Message,
+	previousMessage bufprotosource.Message,
 ) error {
 	if err := checkTagRanges(
 		responseWriter,
@@ -1988,8 +1988,8 @@ var HandleBreakingRPCSameClientStreaming = bufcheckserverutil.NewBreakingMethodP
 func handleBreakingRPCSameClientStreaming(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMethod bufprotosource.Method,
 	method bufprotosource.Method,
+	previousMethod bufprotosource.Method,
 ) error {
 	if previousMethod.ClientStreaming() != method.ClientStreaming() {
 		previous := "streaming"
@@ -2017,8 +2017,8 @@ var HandleBreakingRPCSameIdempotencyLevel = bufcheckserverutil.NewBreakingMethod
 func handleBreakingRPCSameIdempotencyLevel(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMethod bufprotosource.Method,
 	method bufprotosource.Method,
+	previousMethod bufprotosource.Method,
 ) error {
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
@@ -2042,8 +2042,8 @@ var HandleBreakingRPCSameRequestType = bufcheckserverutil.NewBreakingMethodPairR
 func handleBreakingRPCSameRequestType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMethod bufprotosource.Method,
 	method bufprotosource.Method,
+	previousMethod bufprotosource.Method,
 ) error {
 	if previousMethod.InputTypeName() != method.InputTypeName() {
 		responseWriter.AddProtosourceAnnotation(
@@ -2065,8 +2065,8 @@ var HandleBreakingRPCSameResponseType = bufcheckserverutil.NewBreakingMethodPair
 func handleBreakingRPCSameResponseType(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMethod bufprotosource.Method,
 	method bufprotosource.Method,
+	previousMethod bufprotosource.Method,
 ) error {
 	if previousMethod.OutputTypeName() != method.OutputTypeName() {
 		responseWriter.AddProtosourceAnnotation(
@@ -2088,8 +2088,8 @@ var HandleBreakingRPCSameServerStreaming = bufcheckserverutil.NewBreakingMethodP
 func handleBreakingRPCSameServerStreaming(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousMethod bufprotosource.Method,
 	method bufprotosource.Method,
+	previousMethod bufprotosource.Method,
 ) error {
 	if previousMethod.ServerStreaming() != method.ServerStreaming() {
 		previous := "streaming"
@@ -2261,29 +2261,49 @@ func handleBreakingPackageMessageNoDelete(
 							return err
 						}
 					}
+					previousFilePath := previousMessage.File().Path()
+					var previousSourcePath protoreflect.SourcePath
+					// TODO: This came back as nil post-refactor, should it?
+					if location := previousMessage.Location(); location != nil {
+						previousSourcePath = location.SourcePath()
+					}
 					// Check if the file still exists.
-					file, ok := filePathToFile[previousMessage.File().Path()]
+					file, ok := filePathToFile[previousFilePath]
 					if ok {
 						// File exists, try to get a location to attach the error to.
 						_, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-						responseWriter.AddProtosourceAnnotation(
-							location,
-							previousMessage.Location(),
-							`Previously present message %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
+						var filePath string
+						var sourcePath protoreflect.SourcePath
+						if location != nil {
+							filePath = location.FilePath()
+							if filePath != "" {
+								sourcePath = location.SourcePath()
+							}
+						}
+						responseWriter.AddAnnotation(
+							check.WithMessagef(
+								`Previously present message %q was deleted from package %q.`,
+								previousNestedName,
+								previousPackage,
+							),
+							check.WithFileName(filePath),
+							check.WithSourcePath(sourcePath),
+							check.WithAgainstFileName(previousFilePath),
+							check.WithAgainstSourcePath(previousSourcePath),
 						)
 					} else {
 						// File does not exist, we don't know where the message was deleted from.
 						// Add the previous message to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous message was in an unstable package.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousMessage.Location(),
-							`Previously present message %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
+						responseWriter.AddAnnotation(
+							check.WithMessagef(
+								`Previously present message %q was deleted from package %q.`,
+								previousNestedName,
+								previousPackage,
+							),
+							check.WithAgainstFileName(previousFilePath),
+							check.WithAgainstSourcePath(previousSourcePath),
 						)
 					}
 				}
@@ -2361,16 +2381,25 @@ func handleBreakingPackageServiceNoDelete(
 							return err
 						}
 					}
+					previousFilePath := previousService.File().Path()
+					var previousSourcePath protoreflect.SourcePath
+					// TODO: This came back as nil post-refactor, should it?
+					if location := previousService.Location(); location != nil {
+						previousSourcePath = location.SourcePath()
+					}
 					// Check if the file still exists.
-					_, ok := filePathToFile[previousService.File().Path()]
+					_, ok := filePathToFile[previousFilePath]
 					if ok {
 						// File exists.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousService.Location(),
-							`Previously present service %q was deleted from package %q.`,
-							previousName,
-							previousPackage,
+						// TODO: Is this supposed to have the main location?
+						responseWriter.AddAnnotation(
+							check.WithMessagef(
+								`Previously present service %q was deleted from package %q.`,
+								previousName,
+								previousPackage,
+							),
+							check.WithAgainstFileName(previousFilePath),
+							check.WithAgainstSourcePath(previousSourcePath),
 						)
 					} else {
 						// File does not exist, we don't know where the service was deleted from.
@@ -2378,12 +2407,15 @@ func handleBreakingPackageServiceNoDelete(
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous service was in an unstable package.
 						// TODO: find the service and print that this moved?
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousService.Location(),
-							`Previously present service %q was deleted from package %q.`,
-							previousName,
-							previousPackage,
+						// TODO: This is no different than the if block?
+						responseWriter.AddAnnotation(
+							check.WithMessagef(
+								`Previously present service %q was deleted from package %q.`,
+								previousName,
+								previousPackage,
+							),
+							check.WithAgainstFileName(previousFilePath),
+							check.WithAgainstSourcePath(previousSourcePath),
 						)
 					}
 				}
@@ -2399,8 +2431,8 @@ var HandleBreakingFieldWireJSONCompatibleCardinality = bufcheckserverutil.NewBre
 func handleBreakingFieldWireJSONCompatibleCardinality(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {
@@ -2450,8 +2482,8 @@ var HandleBreakingFieldWireCompatibleCardinality = bufcheckserverutil.NewBreakin
 func handleBreakingFieldWireCompatibleCardinality(
 	responseWriter bufcheckserverutil.ResponseWriter,
 	request bufcheckserverutil.Request,
-	previousField bufprotosource.Field,
 	field bufprotosource.Field,
+	previousField bufprotosource.Field,
 ) error {
 	previousDescriptor, err := previousField.AsDescriptor()
 	if err != nil {

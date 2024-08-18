@@ -67,24 +67,27 @@ func annotationToFileAnnotation(
 	pathToExternalPath map[string]string,
 	annotation check.Annotation,
 ) bufanalysis.FileAnnotation {
-	if annotation == nil {
-		return nil
+	location := annotation.Location()
+	if location == nil {
+		// We have to do this or we get a weird fileInfo != nil but it is nil thing.
+		return bufanalysis.NewFileAnnotation(
+			nil,
+			0,
+			0,
+			0,
+			0,
+			annotation.RuleID(),
+			annotation.Message(),
+		)
 	}
-	var fileInfo *fileInfo
-	var startLine int
-	var startColumn int
-	var endLine int
-	var endColumn int
-	if location := annotation.Location(); location != nil {
-		path := location.File().FileDescriptor().Path()
-		// While it never should, it is OK if pathToExternalPath returns "" for a given path.
-		// We handle this in fileInfo.
-		fileInfo = newFileInfo(path, pathToExternalPath[path])
-		startLine = location.StartLine() + 1
-		startColumn = location.StartColumn() + 1
-		endLine = location.EndLine() + 1
-		endColumn = location.EndColumn() + 1
-	}
+	path := location.File().FileDescriptor().Path()
+	// While it never should, it is OK if pathToExternalPath returns "" for a given path.
+	// We handle this in fileInfo.
+	fileInfo := newFileInfo(path, pathToExternalPath[path])
+	startLine := location.StartLine() + 1
+	startColumn := location.StartColumn() + 1
+	endLine := location.EndLine() + 1
+	endColumn := location.EndColumn() + 1
 	return bufanalysis.NewFileAnnotation(
 		fileInfo,
 		startLine,

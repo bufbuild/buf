@@ -27,8 +27,8 @@ func NewBreakingFilePairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousFile bufprotosource.File,
 		file bufprotosource.File,
+		previousFile bufprotosource.File,
 	) error,
 ) check.RuleHandler {
 	return NewRuleHandler(
@@ -37,11 +37,11 @@ func NewBreakingFilePairRuleHandler(
 			responseWriter ResponseWriter,
 			request Request,
 		) error {
-			previousFilePathToFile, err := bufprotosource.FilePathToFile(request.AgainstProtosourceFiles()...)
+			filePathToFile, err := bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
-			filePathToFile, err := bufprotosource.FilePathToFile(request.ProtosourceFiles()...)
+			previousFilePathToFile, err := bufprotosource.FilePathToFile(request.AgainstProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
@@ -62,8 +62,8 @@ func NewBreakingEnumPairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousEnum bufprotosource.Enum,
 		enum bufprotosource.Enum,
+		previousEnum bufprotosource.Enum,
 	) error,
 ) check.RuleHandler {
 	return NewRuleHandler(
@@ -72,11 +72,11 @@ func NewBreakingEnumPairRuleHandler(
 			responseWriter ResponseWriter,
 			request Request,
 		) error {
-			previousFullNameToEnum, err := bufprotosource.FullNameToEnum(request.AgainstProtosourceFiles()...)
+			fullNameToEnum, err := bufprotosource.FullNameToEnum(request.ProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
-			fullNameToEnum, err := bufprotosource.FullNameToEnum(request.ProtosourceFiles()...)
+			previousFullNameToEnum, err := bufprotosource.FullNameToEnum(request.AgainstProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
@@ -97,8 +97,8 @@ func NewBreakingEnumValuePairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousNameToEnumValue map[string]bufprotosource.EnumValue,
 		nameToEnumValue map[string]bufprotosource.EnumValue,
+		previousNameToEnumValue map[string]bufprotosource.EnumValue,
 	) error,
 ) check.RuleHandler {
 	return NewBreakingEnumPairRuleHandler(
@@ -108,17 +108,17 @@ func NewBreakingEnumValuePairRuleHandler(
 			previousEnum bufprotosource.Enum,
 			enum bufprotosource.Enum,
 		) error {
-			previousNumberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(previousEnum)
+			numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
 			if err != nil {
 				return err
 			}
-			numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
+			previousNumberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(previousEnum)
 			if err != nil {
 				return err
 			}
 			for previousNumber, previousNameToEnumValue := range previousNumberToNameToEnumValue {
 				if nameToEnumValue, ok := numberToNameToEnumValue[previousNumber]; ok {
-					if err := f(responseWriter, request, previousNameToEnumValue, nameToEnumValue); err != nil {
+					if err := f(responseWriter, request, nameToEnumValue, previousNameToEnumValue); err != nil {
 						return err
 					}
 				}
@@ -133,8 +133,8 @@ func NewBreakingMessagePairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousMessage bufprotosource.Message,
 		message bufprotosource.Message,
+		previousMessage bufprotosource.Message,
 	) error,
 ) check.RuleHandler {
 	return NewRuleHandler(
@@ -143,11 +143,11 @@ func NewBreakingMessagePairRuleHandler(
 			responseWriter ResponseWriter,
 			request Request,
 		) error {
-			previousFullNameToMessage, err := bufprotosource.FullNameToMessage(request.AgainstProtosourceFiles()...)
+			fullNameToMessage, err := bufprotosource.FullNameToMessage(request.ProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
-			fullNameToMessage, err := bufprotosource.FullNameToMessage(request.ProtosourceFiles()...)
+			previousFullNameToMessage, err := bufprotosource.FullNameToMessage(request.AgainstProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
@@ -168,8 +168,8 @@ func NewBreakingFieldPairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousField bufprotosource.Field,
 		field bufprotosource.Field,
+		previousField bufprotosource.Field,
 	) error,
 ) check.RuleHandler {
 	return NewRuleHandler(
@@ -179,11 +179,11 @@ func NewBreakingFieldPairRuleHandler(
 			request Request,
 		) error {
 			// Fields on messages.
-			previousFullNameToMessage, err := bufprotosource.FullNameToMessage(request.AgainstProtosourceFiles()...)
+			fullNameToMessage, err := bufprotosource.FullNameToMessage(request.ProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
-			fullNameToMessage, err := bufprotosource.FullNameToMessage(request.ProtosourceFiles()...)
+			previousFullNameToMessage, err := bufprotosource.FullNameToMessage(request.AgainstProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
@@ -199,7 +199,7 @@ func NewBreakingFieldPairRuleHandler(
 					}
 					for previousNumber, previousField := range previousNumberToField {
 						if field, ok := numberToField[previousNumber]; ok {
-							if err := f(responseWriter, request, previousField, field); err != nil {
+							if err := f(responseWriter, request, field, previousField); err != nil {
 								return err
 							}
 						}
@@ -207,15 +207,15 @@ func NewBreakingFieldPairRuleHandler(
 				}
 			}
 			// Extensions.
-			previousTypeToNumberToField := make(map[string]map[int]bufprotosource.Field)
-			for _, previousFile := range request.AgainstProtosourceFiles() {
-				if err := addToTypeToNumberToExtension(previousFile, previousTypeToNumberToField); err != nil {
-					return err
-				}
-			}
 			typeToNumberToField := make(map[string]map[int]bufprotosource.Field)
 			for _, file := range request.ProtosourceFiles() {
 				if err := addToTypeToNumberToExtension(file, typeToNumberToField); err != nil {
+					return err
+				}
+			}
+			previousTypeToNumberToField := make(map[string]map[int]bufprotosource.Field)
+			for _, previousFile := range request.AgainstProtosourceFiles() {
+				if err := addToTypeToNumberToExtension(previousFile, previousTypeToNumberToField); err != nil {
 					return err
 				}
 			}
@@ -223,7 +223,7 @@ func NewBreakingFieldPairRuleHandler(
 				numberToField := typeToNumberToField[previousType]
 				for previousNumber, previousField := range previousNumberToField {
 					if field, ok := numberToField[previousNumber]; ok {
-						if err := f(responseWriter, request, previousField, field); err != nil {
+						if err := f(responseWriter, request, field, previousField); err != nil {
 							return err
 						}
 					}
@@ -239,8 +239,8 @@ func NewBreakingServicePairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousService bufprotosource.Service,
 		service bufprotosource.Service,
+		previousService bufprotosource.Service,
 	) error,
 ) check.RuleHandler {
 	return NewRuleHandler(
@@ -249,11 +249,11 @@ func NewBreakingServicePairRuleHandler(
 			responseWriter ResponseWriter,
 			request Request,
 		) error {
-			previousFullNameToService, err := bufprotosource.FullNameToService(request.AgainstProtosourceFiles()...)
+			fullNameToService, err := bufprotosource.FullNameToService(request.ProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
-			fullNameToService, err := bufprotosource.FullNameToService(request.ProtosourceFiles()...)
+			previousFullNameToService, err := bufprotosource.FullNameToService(request.AgainstProtosourceFiles()...)
 			if err != nil {
 				return err
 			}
@@ -274,8 +274,8 @@ func NewBreakingMethodPairRuleHandler(
 	f func(
 		responseWriter ResponseWriter,
 		request Request,
-		previousMethod bufprotosource.Method,
 		method bufprotosource.Method,
+		previousMethod bufprotosource.Method,
 	) error,
 ) check.RuleHandler {
 	return NewBreakingServicePairRuleHandler(
@@ -285,17 +285,17 @@ func NewBreakingMethodPairRuleHandler(
 			previousService bufprotosource.Service,
 			service bufprotosource.Service,
 		) error {
-			previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
+			nameToMethod, err := bufprotosource.NameToMethod(service)
 			if err != nil {
 				return err
 			}
-			nameToMethod, err := bufprotosource.NameToMethod(service)
+			previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
 			if err != nil {
 				return err
 			}
 			for previousName, previousMethod := range previousNameToMethod {
 				if method, ok := nameToMethod[previousName]; ok {
-					if err := f(responseWriter, request, previousMethod, method); err != nil {
+					if err := f(responseWriter, request, method, previousMethod); err != nil {
 						return err
 					}
 				}
