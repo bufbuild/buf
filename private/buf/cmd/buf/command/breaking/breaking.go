@@ -220,8 +220,8 @@ func run(
 		if err := client.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
-			againstImageWithConfigs[i],
 			imageWithConfig,
+			againstImageWithConfigs[i],
 			breakingOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet

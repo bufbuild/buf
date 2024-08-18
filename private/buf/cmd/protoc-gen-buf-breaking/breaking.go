@@ -125,8 +125,8 @@ func handle(
 	if err := client.Breaking(
 		ctx,
 		moduleConfig.BreakingConfig(),
-		againstImage,
 		image,
+		againstImage,
 		breakingOptions...,
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
