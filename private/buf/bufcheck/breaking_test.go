@@ -1347,8 +1347,8 @@ func testBreaking(
 	err = client.Breaking(
 		ctx,
 		breakingConfig,
-		previousImage,
 		image,
+		previousImage,
 		bufcheck.BreakingWithExcludeImports(),
 	)
 	if len(expectedFileAnnotations) == 0 {
