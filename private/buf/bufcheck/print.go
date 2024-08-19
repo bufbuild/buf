@@ -41,7 +41,7 @@ func printRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOptio
 			retErr = multierr.Append(retErr, tabWriter.Flush())
 		}()
 		writer = tabWriter
-		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tPURPOSE"); err != nil {
+		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tDEFAULT\tPURPOSE"); err != nil {
 			return err
 		}
 	}
@@ -67,7 +67,11 @@ func printRule(writer io.Writer, rule check.Rule, asJSON bool) error {
 		}
 		return nil
 	}
-	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), rule.Purpose()); err != nil {
+	var defaultString string
+	if rule.IsDefault() {
+		defaultString = "*"
+	}
+	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), defaultString, rule.Purpose()); err != nil {
 		return err
 	}
 	return nil
@@ -116,9 +120,9 @@ func cloneAndSortRules(rules []check.Rule) []check.Rule {
 }
 
 type externalRule struct {
-	ID         string   `json:"id" yaml:"id"`
-	Categories []string `json:"categories" yaml:"categories"`
-	//Default      bool     `json:"default" yaml:"default"`
+	ID           string   `json:"id" yaml:"id"`
+	Categories   []string `json:"categories" yaml:"categories"`
+	Default      bool     `json:"default" yaml:"default"`
 	Purpose      string   `json:"purpose" yaml:"purpose"`
 	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
 	Replacements []string `json:"replacements" yaml:"replacements"`
