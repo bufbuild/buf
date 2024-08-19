@@ -41,7 +41,7 @@ func printRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (re
 			retErr = multierr.Append(retErr, tabWriter.Flush())
 		}()
 		writer = tabWriter
-		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tDEFAULT\tPURPOSE\tPLUGIN"); err != nil {
+		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tDEFAULT\tPLUGIN\tPURPOSE"); err != nil {
 			return err
 		}
 	}
@@ -71,7 +71,7 @@ func printRule(writer io.Writer, rule Rule, asJSON bool) error {
 	if rule.IsDefault() {
 		defaultString = "*"
 	}
-	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), defaultString, rule.Purpose(), rule.PluginName()); err != nil {
+	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), defaultString, rule.PluginName(), rule.Purpose()); err != nil {
 		return err
 	}
 	return nil
