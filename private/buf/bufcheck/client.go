@@ -100,8 +100,6 @@ func (c *client) Lint(
 	}
 	request, err := check.NewRequest(
 		files,
-		// Note that if we did not set Use or Except in the buf.yaml config, this will be empty,
-		// which is correct - this will result in the default Rules being used per the bufplugin-go API.
 		check.WithRuleIDs(config.RuleIDs...),
 		check.WithOptions(config.DefaultOptions),
 	)
@@ -182,12 +180,9 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	config, err := configForCheckConfig(checkConfig, allRules)
+	config, err := configForCheckConfig(checkConfig, allRules, ruleType)
 	if err != nil {
 		return nil, err
-	}
-	if len(config.RuleIDs) == 0 {
-		return slicesext.Filter(allRules, Rule.IsDefault), nil
 	}
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }

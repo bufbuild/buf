@@ -35,9 +35,12 @@ const lintCommentIgnorePrefix = "buf:lint:ignore"
 type config struct {
 	// RuleIDs contains the specific RuleIDs to use.
 	//
-	// If not set, all default Rules should be used.
+	// Will always be non-empty.
 	//
-	// Note that ignoreAnnotation does not need to take this into account as the plugins
+	// If no specific RuleIDs were configured, this will return all default RuleIDs that were of
+	// the specified RuleType.
+	//
+	// Note that ignoreAnnotation does not need to take this field into account as the plugins
 	// themselves will only return RuleIDs in this list TODO make sure bufplugin-go
 	// validates this and that this is documented.
 	RuleIDs []string
@@ -58,16 +61,16 @@ type config struct {
 }
 
 // Only RuleIDs, IgnoreRootPaths,  IgnoreIDToRootPaths will be set. Options has no meaning.
-func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []Rule) (*config, error) {
-	return configSpecForCheckConfig(checkConfig).newConfig(allRules)
+func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []Rule, ruleType check.RuleType) (*config, error) {
+	return configSpecForCheckConfig(checkConfig).newConfig(allRules, ruleType)
 }
 
 func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []Rule) (*config, error) {
-	return configSpecForLintConfig(lintConfig).newConfig(allRules)
+	return configSpecForLintConfig(lintConfig).newConfig(allRules, check.RuleTypeLint)
 }
 
 func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []Rule, excludeImports bool) (*config, error) {
-	return configSpecForBreakingConfig(breakingConfig, excludeImports).newConfig(allRules)
+	return configSpecForBreakingConfig(breakingConfig, excludeImports).newConfig(allRules, check.RuleTypeBreaking)
 }
 
 // *** BELOW THIS LINE SHOULD ONLY BE USED BY THIS FILE ***
@@ -151,7 +154,10 @@ func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig, exclud
 }
 
 // newConfig returns a new Config.
-func (b *configSpec) newConfig(allRules []Rule) (*config, error) {
+func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*config, error) {
+	if len(allRules) == 0 {
+		return nil, syserror.New("no rules configured")
+	}
 	// transformDeprecated should always be true if building a Config for a Runner.
 	// TODO: Evaluate whether we still need this after the refactor. Keeping logic
 	// around for now
@@ -175,56 +181,56 @@ func (b *configSpec) newConfig(allRules []Rule) (*config, error) {
 
 	// These may both be empty, and that's OK.
 	b.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Use)
+	if len(b.Use) == 0 {
+		b.Use = slicesext.Map(rulesForType(slicesext.Filter(allRules, Rule.IsDefault), ruleType), Rule.ID)
+	}
 	b.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Except)
-	// If Use is empty but Except is not, we need to populate Use with the default Rule IDs
-	// so that we can then remove the exceptions.
-	//
-	// If both Use and Except are empty, we want Use to remain empty, so that RuleIDs
-	// is empty, which results in default rules being used for the builtin CheckClient.
-	if len(b.Use) == 0 && len(b.Except) > 0 {
-		b.Use = slicesext.Map(slicesext.Filter(allRules, Rule.IsDefault), Rule.ID)
+	if len(b.Use) == 0 || len(b.Except) == 0 {
+		return nil, syserror.New("b.Use or b.Except should always be non-empty at this point")
 	}
 
-	// Will be empty if Use and Except are both empty.
-	var resultRules []Rule
-	if len(b.Use) > 0 || len(b.Except) > 0 {
-		useIDMap, err := transformToIDMap(b.Use, idToCategories, categoryToIDs)
-		if err != nil {
-			return nil, err
-		}
-		if transformDeprecated {
-			useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
-		}
-		exceptIDMap, err := transformToIDMap(b.Except, idToCategories, categoryToIDs)
-		if err != nil {
-			return nil, err
-		}
-		if transformDeprecated {
-			exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
-		}
+	useIDMap, err := transformToIDMap(b.Use, idToCategories, categoryToIDs)
+	if err != nil {
+		return nil, err
+	}
+	if transformDeprecated {
+		useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
+	}
+	exceptIDMap, err := transformToIDMap(b.Except, idToCategories, categoryToIDs)
+	if err != nil {
+		return nil, err
+	}
+	if transformDeprecated {
+		exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
+	}
 
-		// this removes duplicates
-		// we already know that a given rule with the same ID is equivalent
-		resultIDToRule := make(map[string]Rule)
+	// this removes duplicates
+	// we already know that a given rule with the same ID is equivalent
+	resultIDToRule := make(map[string]Rule)
 
-		for id := range useIDMap {
-			rule, ok := idToRule[id]
-			if !ok {
-				return nil, fmt.Errorf("%q is not a known id after verification", id)
-			}
-			resultIDToRule[rule.ID()] = rule
+	for id := range useIDMap {
+		rule, ok := idToRule[id]
+		if !ok {
+			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
-		for id := range exceptIDMap {
-			if _, ok := idToRule[id]; !ok {
-				return nil, fmt.Errorf("%q is not a known id after verification", id)
-			}
-			delete(resultIDToRule, id)
+		resultIDToRule[rule.ID()] = rule
+	}
+	for id := range exceptIDMap {
+		if _, ok := idToRule[id]; !ok {
+			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
+		delete(resultIDToRule, id)
+	}
 
-		resultRules = make([]Rule, 0, len(resultIDToRule))
-		for _, rule := range resultIDToRule {
-			resultRules = append(resultRules, rule)
+	resultRules := make([]Rule, 0, len(resultIDToRule))
+	for _, rule := range resultIDToRule {
+		if rule.Type() != ruleType {
+			return nil, fmt.Errorf("%q was configured in a non-%s configuration section but is of type %s", rule.ID(), ruleType.String(), ruleType.String())
 		}
+		resultRules = append(resultRules, rule)
+	}
+	if len(resultRules) == 0 {
+		return nil, syserror.New("resultRules was empty")
 	}
 
 	ignoreIDToRootPathsUnnormalized, err := transformToIDToListMap(
