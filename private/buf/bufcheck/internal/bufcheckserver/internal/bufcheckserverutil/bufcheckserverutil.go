@@ -78,6 +78,22 @@ func NewRuleHandler(
 	)
 }
 
+// NewMultiHandler returns a new check.RuleHandler combined from multiple handlers.
+func NewMultiHandler(handlers ...check.RuleHandler) check.RuleHandler {
+	return multiRuleHandler(handlers)
+}
+
+type multiRuleHandler []check.RuleHandler
+
+func (h multiRuleHandler) Handle(ctx context.Context, responseWriter check.ResponseWriter, request check.Request) error {
+	for _, ruleHandler := range h {
+		if err := ruleHandler.Handle(ctx, responseWriter, request); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func protosourceFilesForFiles(ctx context.Context, files []check.File) ([]bufprotosource.File, error) {
 	if len(files) == 0 {
 		return nil, nil

@@ -33,6 +33,8 @@ func imageFileToProtoFile(imageFile bufimage.ImageFile) *checkv1beta1.File {
 	return &checkv1beta1.File{
 		FileDescriptorProto: imageFile.FileDescriptorProto(),
 		IsImport:            imageFile.IsImport(),
+		IsSyntaxUnspecified: imageFile.IsSyntaxUnspecified(),
+		UnusedDependency:    imageFile.UnusedDependencyIndexes(),
 	}
 }
 

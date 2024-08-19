@@ -16,7 +16,6 @@ package bufcheck_test
 
 import (
 	"context"
-	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -1276,7 +1275,7 @@ func testLintWithOptions(
 		assert.NoError(t, err)
 	} else {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		require.True(t, errors.As(err, &fileAnnotationSet), "error has unexpected type: %T", err)
+		require.ErrorAs(t, err, &fileAnnotationSet, "error has unexpected type: %T", err)
 		bufanalysistesting.AssertFileAnnotationsEqual(
 			t,
 			expectedFileAnnotations,

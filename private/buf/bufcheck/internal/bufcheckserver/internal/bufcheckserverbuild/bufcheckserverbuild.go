@@ -602,6 +602,251 @@ var (
 		Type:    check.RuleTypeLint,
 		Handler: bufcheckserverhandle.HandleLintDirectorySamePackage,
 	}
+	// LintEnumFirstValueZeroRuleSpecBuilder is a rule spec builder.
+	LintEnumFirstValueZeroRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_FIRST_VALUE_ZERO",
+		Purpose: "Checks that all first values of enums have a numeric value of 0.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumFirstValueZero,
+	}
+	// LintEnumNoAllowAliasRuleSpecBuilder is a rule spec builder.
+	LintEnumNoAllowAliasRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_NO_ALLOW_ALIAS",
+		Purpose: "Checks that enums do not have the allow_alias option set.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumNoAllowAlias,
+	}
+	// LintEnumPascalCaseRuleSpecBuilder is a rule spec builder.
+	LintEnumPascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_PASCAL_CASE",
+		Purpose: "Checks that enums are PascalCase.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumPascalCase,
+	}
+	// LintEnumValuePrefixRuleSpecBuilder is a rule spec builder.
+	LintEnumValuePrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_PREFIX",
+		Purpose: "Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumValuePrefix,
+	}
+	// LintEnumValueUpperSnakeCaseRuleSpecBuilder is a rule spec builder.
+	LintEnumValueUpperSnakeCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_UPPER_SNAKE_CASE",
+		Purpose: "Checks that enum values are UPPER_SNAKE_CASE.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumValueUpperSnakeCase,
+	}
+	// LintEnumZeroValueSuffixRuleSpecBuilder is a rule spec builder.
+	LintEnumZeroValueSuffixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_ZERO_VALUE_SUFFIX",
+		Purpose: `Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").`,
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintEnumZeroValueSuffix,
+	}
+	// LintFieldLowerSnakeCaseRuleSpecBuilder is a rule spec builder.
+	LintFieldLowerSnakeCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_LOWER_SNAKE_CASE",
+		Purpose: "Checks that field names are lower_snake_case.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintFieldLowerSnakeCase,
+	}
+	// LintFieldNoDescriptorRuleSpecBuilder is a rule spec builder.
+	LintFieldNoDescriptorRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_NO_DESCRIPTOR",
+		Purpose: `Checks that field names are not any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintFieldNoDescriptor,
+	}
+	// LintFieldNotRequiredRuleSpecBuilder is a rule spec builder.
+	LintFieldNotRequiredRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_NOT_REQUIRED",
+		Purpose: `Checks that fields are not configured to be required.`,
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintFieldNotRequired,
+	}
+	// LintFileLowerSnakeCaseRuleSpecBuilder is a rule spec builder.
+	LintFileLowerSnakeCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FILE_LOWER_SNAKE_CASE",
+		Purpose: "Checks that filenames are lower_snake_case.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintFileLowerSnakeCase,
+	}
+	// LintImportNoPublicRuleSpecBuilder is a rule spec builder.
+	LintImportNoPublicRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "IMPORT_NO_PUBLIC",
+		Purpose: "Checks that imports are not public.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintImportNoPublic,
+	}
+	// LintImportNoWeakRuleSpecBuilder is a rule spec builder.
+	LintImportNoWeakRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "IMPORT_NO_WEAK",
+		Purpose: "Checks that imports are not weak.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintImportNoWeak,
+	}
+	// LintImportUsedRuleSpecBuilder is a rule spec builder.
+	LintImportUsedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "IMPORT_USED",
+		Purpose: "Checks that imports are used.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintImportUsed,
+	}
+	// LintMessagePascalCaseRuleSpecBuilder is a rule spec builder.
+	LintMessagePascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "MESSAGE_PASCAL_CASE",
+		Purpose: "Checks that messages are PascalCase.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintMessagePascalCase,
+	}
+	// LintOneofLowerSnakeCaseRuleSpecBuilder is a rule spec builder.
+	LintOneofLowerSnakeCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ONEOF_LOWER_SNAKE_CASE",
+		Purpose: "Checks that oneof names are lower_snake_case.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintOneofLowerSnakeCase,
+	}
+	// LintPackageDefinedRuleSpecBuilder is a rule spec builder.
+	LintPackageDefinedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_DEFINED",
+		Purpose: "Checks that all files have a package defined.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageDefined,
+	}
+	// LintPackageDirectoryMatchRuleSpecBuilder is a rule spec builder.
+	LintPackageDirectoryMatchRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_DIRECTORY_MATCH",
+		Purpose: "Checks that all files are in a directory that matches their package name.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageDirectoryMatch,
+	}
+	// LintPackageLowerSnakeCaseRuleSpecBuilder is a rule spec builder.
+	LintPackageLowerSnakeCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_LOWER_SNAKE_CASE",
+		Purpose: "Checks that packages are lower_snake.case.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageLowerSnakeCase,
+	}
+	// LintPackageNoImportCycleRuleSpecBuilder is a rule spec builder.
+	LintPackageNoImportCycleRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_NO_IMPORT_CYCLE",
+		Purpose: "Checks that packages do not have import cycles.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageNoImportCycle,
+	}
+	// LintPackageSameCsharpNamespaceRuleSpecBuilder is a rule spec builder.
+	LintPackageSameCsharpNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_CSHARP_NAMESPACE",
+		Purpose: "Checks that all files with a given package have the same value for the csharp_namespace option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameCsharpNamespace,
+	}
+	// LintPackageSameDirectoryRuleSpecBuilder is a rule spec builder.
+	LintPackageSameDirectoryRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_DIRECTORY",
+		Purpose: "Checks that all files with a given package are in the same directory.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameDirectory,
+	}
+	// LintPackageSameGoPackageRuleSpecBuilder is a rule spec builder.
+	LintPackageSameGoPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_GO_PACKAGE",
+		Purpose: "Checks that all files with a given package have the same value for the go_package option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameGoPackage,
+	}
+	// LintPackageSameJavaMultipleFilesRuleSpecBuilder is a rule spec builder.
+	LintPackageSameJavaMultipleFilesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_JAVA_MULTIPLE_FILES",
+		Purpose: "Checks that all files with a given package have the same value for the java_multiple_files option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameJavaMultipleFiles,
+	}
+	// LintPackageSameJavaPackageRuleSpecBuilder is a rule spec builder.
+	LintPackageSameJavaPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_JAVA_PACKAGE",
+		Purpose: "Checks that all files with a given package have the same value for the java_package option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameJavaPackage,
+	}
+	// LintPackageSamePhpNamespaceRuleSpecBuilder is a rule spec builder.
+	LintPackageSamePhpNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_PHP_NAMESPACE",
+		Purpose: "Checks that all files with a given package have the same value for the php_namespace option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSamePhpNamespace,
+	}
+	// LintPackageSameRubyPackageRuleSpecBuilder is a rule spec builder.
+	LintPackageSameRubyPackageRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_RUBY_PACKAGE",
+		Purpose: "Checks that all files with a given package have the same value for the ruby_package option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameRubyPackage,
+	}
+	// LintPackageSameSwiftPrefixRuleSpecBuilder is a rule spec builder.
+	LintPackageSameSwiftPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_SAME_SWIFT_PREFIX",
+		Purpose: "Checks that all files with a given package have the same value for the swift_prefix option.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageSameSwiftPrefix,
+	}
+	// LintPackageVersionSuffixRuleSpecBuilder is a rule spec builder.
+	LintPackageVersionSuffixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PACKAGE_VERSION_SUFFIX",
+		Purpose: `Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.`,
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintPackageVersionSuffix,
+	}
+	// LintProtovalidateRuleSpecBuilder is a rule spec builder.
+	LintProtovalidateRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "PROTOVALIDATE",
+		Purpose: "Checks that protovalidate rules are valid and all CEL expressions compile.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintProtovalidate,
+	}
+	// LintRPCNoClientStreamingRuleSpecBuilder is a rule spec builder.
+	LintRPCNoClientStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_NO_CLIENT_STREAMING",
+		Purpose: "Checks that RPCs are not client streaming.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintRPCNoClientStreaming,
+	}
+	// LintRPCNoServerStreamingRuleSpecBuilder is a rule spec builder.
+	LintRPCNoServerStreamingRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_NO_SERVER_STREAMING",
+		Purpose: "Checks that RPCs are not server streaming.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintRPCNoServerStreaming,
+	}
+	// LintRPCPascalCaseRuleSpecBuilder is a rule spec builder.
+	LintRPCPascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_PASCAL_CASE",
+		Purpose: "Checks that RPCs are PascalCase.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintRPCPascalCase,
+	}
+	// LintRPCRequestResponseUniqueRuleSpecBuilder is a rule spec builder.
+	LintRPCRequestResponseUniqueRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_REQUEST_RESPONSE_UNIQUE",
+		Purpose: "Checks that RPC request and response types are only used in one RPC (configurable).",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintRPCRequestResponseUnique,
+	}
+	// LintRPCRequestStandardNameRuleSpecBuilder is a rule spec builder.
+	LintRPCRequestStandardNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_REQUEST_STANDARD_NAME",
+		Purpose: "Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintRPCRequestStandardName,
+	}
+	// LintRPCResponseStandardNameRuleSpecBuilder is a rule spec builder.
+	LintRPCResponseStandardNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "RPC_RESPONSE_STANDARD_NAME",
+		Purpose: "Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintRPCResponseStandardName,
+	}
 	// LintServicePascalCaseRuleSpecBuilder is a rule spec builder.
 	LintServicePascalCaseRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "SERVICE_PASCAL_CASE",
@@ -615,5 +860,19 @@ var (
 		Purpose: `Checks that services have a consistent suffix (configurable, default suffix is "Service").`,
 		Type:    check.RuleTypeLint,
 		Handler: bufcheckserverhandle.HandleLintServiceSuffix,
+	}
+	// LintStablePackageNoImportUnstableRuleSpecBuilder is a rule spec builder.
+	LintStablePackageNoImportUnstableRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "STABLE_PACKAGE_NO_IMPORT_UNSTABLE",
+		Purpose: "Checks that all files that have stable versioned packages do not import packages with unstable version packages.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintStablePackageNoImportUnstable,
+	}
+	// LintSyntaxSpecifiedRuleSpecBuilder is a rule spec builder.
+	LintSyntaxSpecifiedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "SYNTAX_SPECIFIED",
+		Purpose: "Checks that all files have a syntax specified.",
+		Type:    check.RuleTypeLint,
+		Handler: bufcheckserverhandle.HandleLintSyntaxSpecified,
 	}
 )
