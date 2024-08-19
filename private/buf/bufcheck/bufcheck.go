@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
+	"go.uber.org/zap"
 )
 
 // Rules are returned sorted by ID, but PrintRules does our sort by category.
@@ -95,8 +96,8 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) PluginOption {
 	}
 }
 
-func NewClient(runner command.Runner, options ...ClientOption) (Client, error) {
-	return newClient(runner, options...)
+func NewClient(logger *zap.Logger, runner command.Runner, options ...ClientOption) (Client, error) {
+	return newClient(logger, runner, options...)
 }
 
 type ClientOption func(*clientOptions)

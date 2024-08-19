@@ -34,15 +34,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/pluginrpc-go"
+	"go.uber.org/zap"
 )
 
 type client struct {
+	logger                          *zap.Logger
 	runner                          command.Runner
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(runner command.Runner, options ...ClientOption) (*client, error) {
+func newClient(logger *zap.Logger, runner command.Runner, options ...ClientOption) (*client, error) {
 	clientOptions := newClientOptions()
 	for _, option := range options {
 		option(clientOptions)
@@ -62,6 +64,7 @@ func newClient(runner command.Runner, options ...ClientOption) (*client, error) 
 	}
 
 	return &client{
+		logger: logger,
 		runner: runner,
 		stderr: clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
@@ -268,7 +271,7 @@ func (c *client) getMultiClient(
 			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
 		)
 	}
-	return newMultiClient(checkClientSpecs), nil
+	return newMultiClient(c.logger, checkClientSpecs), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(

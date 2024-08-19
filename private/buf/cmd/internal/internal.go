@@ -21,6 +21,11 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/protoplugin"
 )
 
 // GetModuleConfigForProtocPlugin gets ModuleConfigs for the protoc plugin implementations.
@@ -60,4 +65,58 @@ func GetModuleConfigForProtocPlugin(
 	}
 	// TODO: point to a webpage that explains this.
 	return nil, errors.New(`could not determine which module to pull configuration from. See the docs for more details.`)
+}
+
+// NewAppextContainerForPluginEnv creates a new appext.Container for the PluginEnv.
+//
+// This isu sed bt the protoc plugins.
+func NewAppextContainerForPluginEnv(
+	pluginEnv protoplugin.PluginEnv,
+	appName string,
+	logLevel string,
+	logFormat string,
+) (appext.Container, error) {
+	logger, err := zaputil.NewLoggerForFlagValues(
+		pluginEnv.Stderr,
+		logLevel,
+		logFormat,
+	)
+	if err != nil {
+		return nil, err
+	}
+	appContainer, err := newAppContainerForPluginEnv(pluginEnv)
+	if err != nil {
+		return nil, err
+	}
+	return appext.NewContainer(
+		appContainer,
+		appName,
+		logger,
+		verbose.NopPrinter,
+	)
+}
+
+type appContainer struct {
+	app.EnvContainer
+	app.StderrContainer
+	app.StdinContainer
+	app.StdoutContainer
+	app.ArgContainer
+}
+
+func newAppContainerForPluginEnv(pluginEnv protoplugin.PluginEnv) (*appContainer, error) {
+	envContainer, err := app.NewEnvContainerForEnviron(pluginEnv.Environ)
+	if err != nil {
+		return nil, err
+	}
+	return &appContainer{
+		EnvContainer:    envContainer,
+		StderrContainer: app.NewStderrContainer(pluginEnv.Stderr),
+		// cannot read against input from stdin, this is for the CodeGeneratorRequest
+		StdinContainer: app.NewStdinContainer(nil),
+		// cannot write output to stdout, this is for the CodeGeneratorResponse
+		StdoutContainer: app.NewStdoutContainer(nil),
+		// no args
+		ArgContainer: app.NewArgContainer(),
+	}, nil
 }

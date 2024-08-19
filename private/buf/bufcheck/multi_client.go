@@ -23,14 +23,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/bufplugin-go/check"
+	"go.uber.org/zap"
 )
 
 type multiClient struct {
+	logger           *zap.Logger
 	checkClientSpecs []*checkClientSpec
 }
 
-func newMultiClient(checkClientSpecs []*checkClientSpec) *multiClient {
+func newMultiClient(logger *zap.Logger, checkClientSpecs []*checkClientSpec) *multiClient {
 	return &multiClient{
+		logger:           logger,
 		checkClientSpecs: checkClientSpecs,
 	}
 }

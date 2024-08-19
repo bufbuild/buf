@@ -183,7 +183,7 @@ func lsRun(
 			return err
 		}
 	}
-	client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+	client, err := bufcheck.NewClient(container.Logger(), command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}

@@ -642,9 +642,15 @@ func resolvedDeclaredAndLockedDependencies(
 	return resolvedDeclaredDependencies, resolvedDepModuleKeys, nil
 }
 
-func equivalentLintConfigInV2(ctx context.Context, runner command.Runner, lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
+func equivalentLintConfigInV2(
+	ctx context.Context,
+	logger *zap.Logger,
+	runner command.Runner,
+	lintConfig bufconfig.LintConfig,
+) (bufconfig.LintConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		ctx,
+		logger,
 		runner,
 		check.RuleTypeLint,
 		lintConfig,
@@ -663,9 +669,15 @@ func equivalentLintConfigInV2(ctx context.Context, runner command.Runner, lintCo
 	), nil
 }
 
-func equivalentBreakingConfigInV2(ctx context.Context, runner command.Runner, breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
+func equivalentBreakingConfigInV2(
+	ctx context.Context,
+	logger *zap.Logger,
+	runner command.Runner,
+	breakingConfig bufconfig.BreakingConfig,
+) (bufconfig.BreakingConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		ctx,
+		logger,
 		runner,
 		check.RuleTypeBreaking,
 		breakingConfig,
@@ -683,13 +695,14 @@ func equivalentBreakingConfigInV2(ctx context.Context, runner command.Runner, br
 // list of rules and categories specified.
 func equivalentCheckConfigInV2(
 	ctx context.Context,
+	logger *zap.Logger,
 	runner command.Runner,
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
 	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(runner)
+	client, err := bufcheck.NewClient(logger, runner)
 	if err != nil {
 		return nil, err
 	}

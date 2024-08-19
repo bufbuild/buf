@@ -1338,7 +1338,7 @@ func testBreaking(
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
 	require.NotNil(t, breakingConfig)
 	// TODO: Add in a custom plugin for this integration testing.
-	client, err := bufcheck.NewClient(command.NewRunner())
+	client, err := bufcheck.NewClient(zap.NewNop(), command.NewRunner())
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,

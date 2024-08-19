@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 	"github.com/bufbuild/bufplugin-go/check/checkutil"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -100,6 +101,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	emptyOptions, err := check.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
+		zap.NewNop(),
 		[]*checkClientSpec{
 			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
 			newCheckClientSpec("buf-plugin-timestamp-suffix", timestampSuffixClient, emptyOptions),
