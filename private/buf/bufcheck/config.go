@@ -185,7 +185,7 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 		b.Use = slicesext.Map(rulesForType(slicesext.Filter(allRules, Rule.IsDefault), ruleType), Rule.ID)
 	}
 	b.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Except)
-	if len(b.Use) == 0 || len(b.Except) == 0 {
+	if len(b.Use) == 0 && len(b.Except) == 0 {
 		return nil, syserror.New("b.Use or b.Except should always be non-empty at this point")
 	}
 
