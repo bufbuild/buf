@@ -194,6 +194,11 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
 	_, _ = buffer.WriteString(typeString)
 	_, _ = buffer.WriteString(" : ")
 	_, _ = buffer.WriteString(message)
+	if pluginName := f.PluginName(); pluginName != "" {
+		_, _ = buffer.WriteString(" (")
+		_, _ = buffer.WriteString(pluginName)
+		_, _ = buffer.WriteRune(')')
+	}
 	return nil
 }
 
@@ -246,6 +251,11 @@ func printFileAnnotationAsGithubActions(buffer *bytes.Buffer, f FileAnnotation) 
 
 	_, _ = buffer.WriteString("::")
 	_, _ = buffer.WriteString(f.Message())
+	if pluginName := f.PluginName(); pluginName != "" {
+		_, _ = buffer.WriteString(" (")
+		_, _ = buffer.WriteString(pluginName)
+		_, _ = buffer.WriteRune(')')
+	}
 	return nil
 }
 
@@ -257,6 +267,7 @@ type externalFileAnnotation struct {
 	EndColumn   int    `json:"end_column,omitempty" yaml:"end_column,omitempty"`
 	Type        string `json:"type,omitempty" yaml:"type,omitempty"`
 	Message     string `json:"message,omitempty" yaml:"message,omitempty"`
+	Plugin      string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
 }
 
 func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
@@ -272,6 +283,7 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 		EndColumn:   atLeast1(f.EndColumn()),
 		Type:        f.Type(),
 		Message:     f.Message(),
+		Plugin:      f.PluginName(),
 	}
 }
 

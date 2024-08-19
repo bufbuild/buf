@@ -72,6 +72,7 @@ func NewFileAnnotation(
 		endColumn,
 		typeString,
 		"",
+		"",
 	)
 }
 
@@ -84,6 +85,7 @@ func newFileAnnotation(
 	endColumn int,
 	typeString string,
 	message string,
+	pluginName string,
 ) bufanalysis.FileAnnotation {
 	var fileInfo bufanalysis.FileInfo
 	if path != "" {
@@ -97,6 +99,7 @@ func newFileAnnotation(
 		endColumn,
 		typeString,
 		message,
+		pluginName,
 	)
 }
 
@@ -165,6 +168,7 @@ func normalizeFileAnnotations(
 			a.EndLine(),
 			a.EndColumn(),
 			a.Type(),
+			"",
 			"",
 		)
 	}

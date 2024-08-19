@@ -35,7 +35,7 @@ func newMultiClient(checkClientSpecs []*checkClientSpec) *multiClient {
 	}
 }
 
-func (c *multiClient) Check(ctx context.Context, request check.Request) ([]check.Annotation, error) {
+func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*annotation, error) {
 	allRules, chunkedRuleIDs, err := c.getRulesAndChunkedRuleIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]check
 		requestRuleIDMap[requestRuleID] = struct{}{}
 	}
 
-	var allAnnotations []check.Annotation
+	var allAnnotations []*annotation
 	var jobs []func(context.Context) error
 	var lock sync.Mutex
 	for i, delegate := range c.checkClientSpecs {
@@ -87,7 +87,13 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]check
 					return err
 				}
 				lock.Lock()
-				allAnnotations = append(allAnnotations, delegateResponse.Annotations()...)
+				annotations := slicesext.Map(
+					delegateResponse.Annotations(),
+					func(checkAnnotation check.Annotation) *annotation {
+						return newAnnotation(checkAnnotation, delegate.PluginName)
+					},
+				)
+				allAnnotations = append(allAnnotations, annotations...)
 				lock.Unlock()
 				return nil
 			},

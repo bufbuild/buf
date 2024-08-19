@@ -274,7 +274,7 @@ func (c *client) getMultiClient(
 func annotationsToFilteredFileAnnotationSetOrError(
 	config *config,
 	image bufimage.Image,
-	annotations []check.Annotation,
+	annotations []*annotation,
 ) error {
 	if len(annotations) == 0 {
 		return nil
@@ -301,11 +301,11 @@ func annotationsToFilteredFileAnnotationSetOrError(
 
 func filterAnnotations(
 	config *config,
-	annotations []check.Annotation,
-) ([]check.Annotation, error) {
+	annotations []*annotation,
+) ([]*annotation, error) {
 	return slicesext.FilterError(
 		annotations,
-		func(annotation check.Annotation) (bool, error) {
+		func(annotation *annotation) (bool, error) {
 			ignore, err := ignoreAnnotation(config, annotation)
 			if err != nil {
 				return false, err
@@ -317,7 +317,7 @@ func filterAnnotations(
 
 func ignoreAnnotation(
 	config *config,
-	annotation check.Annotation,
+	annotation *annotation,
 ) (bool, error) {
 	if location := annotation.Location(); location != nil {
 		ignore, err := ignoreLocation(config, annotation.RuleID(), location)

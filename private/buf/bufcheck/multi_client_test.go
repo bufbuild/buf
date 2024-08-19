@@ -101,8 +101,8 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	require.NoError(t, err)
 	multiClient := newMultiClient(
 		[]*checkClientSpec{
-			newCheckClientSpec(fieldLowerSnakeCaseClient, emptyOptions),
-			newCheckClientSpec(timestampSuffixClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-timestamp-suffix", timestampSuffixClient, emptyOptions),
 		},
 	)
 
@@ -114,7 +114,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 			fieldLowerSnakeCaseRuleID,
 			timestampSuffixRuleID,
 		},
-		slicesext.Map(rules, check.Rule.ID),
+		slicesext.Map(rules, Rule.ID),
 	)
 	annotations, err := multiClient.Check(ctx, request)
 	require.NoError(t, err)
@@ -142,7 +142,12 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 				},
 			},
 		},
-		annotations,
+		slicesext.Map(
+			annotations,
+			func(annotation *annotation) check.Annotation {
+				return annotation
+			},
+		),
 	)
 }
 
