@@ -236,6 +236,7 @@ func (c *client) getMultiClient(
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
 	checkClientSpecs := []*checkClientSpec{
+		// We do not set PluginName for default check.Clients.
 		newCheckClientSpec("", defaultCheckClient, defaultOptions),
 	}
 	for _, pluginConfig := range pluginConfigs {
