@@ -13,7 +13,7 @@ require (
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
 	github.com/bufbuild/protovalidate-go v0.6.3
-	github.com/bufbuild/protoyaml-go v0.1.10
+	github.com/bufbuild/protoyaml-go v0.1.11
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
