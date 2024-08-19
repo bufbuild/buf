@@ -45,7 +45,7 @@ func printRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOptio
 			return err
 		}
 	}
-	for _, rule := range cloneAndSortRules(rules) {
+	for _, rule := range cloneAndSortRulesForPrint(rules) {
 		if !printRulesOptions.includeDeprecated && rule.Deprecated() {
 			continue
 		}
@@ -77,15 +77,28 @@ func printRule(writer io.Writer, rule check.Rule, asJSON bool) error {
 	return nil
 }
 
-func cloneAndSortRules(rules []check.Rule) []check.Rule {
+// cloneAndSortRulesForPrint sorts the rules just for printing.
+//
+// This has different sorting than the result of check.CompareRules.
+func cloneAndSortRulesForPrint(rules []check.Rule) []check.Rule {
 	rules = slices.Clone(rules)
-	sort.Slice(
+	// Apply the default sorting to start.
+	sort.Slice(rules, func(i int, j int) bool { return check.CompareRules(rules[i], rules[j]) < 0 })
+	// Then, apply our own sorting.
+	sort.SliceStable(
 		rules,
 		func(i int, j int) bool {
 			// categories are sorted at this point
 			// so we know the first category is a top-level category if present
 			one := rules[i]
 			two := rules[j]
+			// Sort default rules before non-default.
+			if one.IsDefault() && !two.IsDefault() {
+				return true
+			}
+			if !one.IsDefault() && two.IsDefault() {
+				return false
+			}
 			oneCategories := one.Categories()
 			sort.Slice(oneCategories, func(i int, j int) bool { return categoryLess(oneCategories[i], oneCategories[j]) })
 			twoCategories := two.Categories()
