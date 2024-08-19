@@ -2,7 +2,7 @@ module github.com/bufbuild/buf
 
 go 1.21.0
 
-toolchain go1.21.13
+toolchain go1.23.0
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2
@@ -12,8 +12,8 @@ require (
 	connectrpc.com/otelconnect v0.7.1
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
-	github.com/bufbuild/protovalidate-go v0.6.4
-	github.com/bufbuild/protoyaml-go v0.1.11
+	github.com/bufbuild/protovalidate-go v0.6.3
+	github.com/bufbuild/protoyaml-go v0.1.10
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
@@ -106,7 +106,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240812133136-8ffd90a71988 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240812133136-8ffd90a71988 // indirect
 	google.golang.org/grpc v1.65.0 // indirect
 )
