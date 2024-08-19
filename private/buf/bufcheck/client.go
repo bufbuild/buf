@@ -255,6 +255,10 @@ func (c *client) getMultiClient(
 					pluginrpcutil.RunnerWithArgs(pluginPath[1:]...),
 				),
 				pluginrpc.ClientWithStderr(c.stderr),
+				// We have to set binary as some things cannot be encoded as JSON.
+				// Example: google.protobuf.Timestamps with positive seconds and negative nanos.
+				// We still want to send this over the wire to lint.
+				pluginrpc.ClientWithContentType(pluginrpc.ContentTypeBinary),
 			),
 			check.ClientWithCacheRules(),
 		)
