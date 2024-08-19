@@ -74,7 +74,7 @@ postlonglint:: bandeps
 
 .PHONY: installbufplugintimestampsuffix
 installbufplugintimestampsuffix:
-	go install github.com/bufbuild/bufplugin-go/check/internal/examples/timestampsuffix/cmd/buf-plugin-timestamp-suffix
+	go install github.com/bufbuild/bufplugin-go/check/internal/examples/timestampsuffix/cmd/buf-plugin-timestamp-suffix@latest
 
 buflintdeps:: installbufplugintimestampsuffix
 
