@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
@@ -204,23 +205,23 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
-	var breakingOptions []bufcheck.BreakingOption
-	if flags.ExcludeImports {
-		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
-	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(
-			bufcheck.ClientWithPluginConfigs(imageWithConfig.PluginConfigs()...),
-		)
+		client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 		if err != nil {
 			return err
+		}
+		breakingOptions := []bufcheck.BreakingOption{
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+		}
+		if flags.ExcludeImports {
+			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 		}
 		if err := client.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
-			againstImageWithConfigs[i],
 			imageWithConfig,
+			againstImageWithConfigs[i],
 			breakingOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet

@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -173,7 +174,7 @@ func lsRun(
 		return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
 	}
 	// BufYAMLFiles <=v1 never had plugins.
-	client, err := bufcheck.NewClient()
+	client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}

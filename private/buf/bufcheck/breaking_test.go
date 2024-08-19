@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -1341,13 +1342,13 @@ func testBreaking(
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
 	require.NotNil(t, breakingConfig)
 	// TODO: Add in a custom plugin for this integration testing.
-	client, err := bufcheck.NewClient()
+	client, err := bufcheck.NewClient(command.NewRunner())
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,
 		breakingConfig,
-		previousImage,
 		image,
+		previousImage,
 		bufcheck.BreakingWithExcludeImports(),
 	)
 	if len(expectedFileAnnotations) == 0 {

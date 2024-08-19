@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/pluginrpc-go"
@@ -26,23 +27,34 @@ import (
 type runner struct {
 	delegate    command.Runner
 	programName string
+	args        []string
 }
 
 func newRunner(
 	delegate command.Runner,
 	programName string,
+	options ...RunnerOption,
 ) *runner {
+	runnerOptions := newRunnerOptions()
+	for _, option := range options {
+		option(runnerOptions)
+	}
 	return &runner{
 		delegate:    delegate,
 		programName: programName,
+		args:        runnerOptions.args,
 	}
 }
 
 func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
+	args := env.Args
+	if len(r.args) > 0 {
+		args = append(slices.Clone(env.Args), r.args...)
+	}
 	if err := r.delegate.Run(
 		ctx,
 		r.programName,
-		command.RunWithArgs(env.Args...),
+		command.RunWithArgs(args...),
 		command.RunWithStdin(env.Stdin),
 		command.RunWithStdout(env.Stdout),
 		command.RunWithStderr(env.Stderr),
@@ -54,4 +66,12 @@ func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 		return err
 	}
 	return nil
+}
+
+type runnerOptions struct {
+	args []string
+}
+
+func newRunnerOptions() *runnerOptions {
+	return &runnerOptions{}
 }

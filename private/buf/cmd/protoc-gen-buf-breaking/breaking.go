@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/verbose"
@@ -117,15 +118,15 @@ func handle(
 		return err
 	}
 	// The protoc plugins do not support custom lint/breaking change plugins for now.
-	client, err := bufcheck.NewClient()
+	client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(pluginEnv.Stderr))
 	if err != nil {
 		return err
 	}
 	if err := client.Breaking(
 		ctx,
 		moduleConfig.BreakingConfig(),
-		againstImage,
 		image,
+		againstImage,
 		breakingOptions...,
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet

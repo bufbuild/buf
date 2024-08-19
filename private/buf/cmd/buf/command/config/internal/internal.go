@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -182,9 +183,7 @@ func lsRun(
 			return err
 		}
 	}
-	client, err := bufcheck.NewClient(
-		bufcheck.ClientWithPluginConfigs(bufYAMLFile.PluginConfigs()...),
-	)
+	client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}
@@ -226,12 +225,22 @@ func lsRun(
 		default:
 			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
 		}
-		rules, err = client.ConfiguredRules(ctx, ruleType, checkConfig)
+		rules, err = client.ConfiguredRules(
+			ctx,
+			ruleType,
+			checkConfig,
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		)
 		if err != nil {
 			return err
 		}
 	} else {
-		rules, err = client.AllRules(ctx, ruleType, bufYAMLFile.FileVersion())
+		rules, err = client.AllRules(
+			ctx,
+			ruleType,
+			bufYAMLFile.FileVersion(),
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		)
 		if err != nil {
 			return err
 		}

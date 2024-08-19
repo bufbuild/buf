@@ -20,6 +20,17 @@ import (
 )
 
 // NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
-func NewRunner(delegate command.Runner, programName string) pluginrpc.Runner {
-	return newRunner(delegate, programName)
+func NewRunner(delegate command.Runner, programName string, options ...RunnerOption) pluginrpc.Runner {
+	return newRunner(delegate, programName, options...)
+}
+
+// RunnerOption is an option for a new Runner.
+type RunnerOption func(*runnerOptions)
+
+// RunnerWithArgs returns a new RunnerOption that specifies a sub-command to invoke
+// on the program.
+func RunnerWithArgs(args ...string) RunnerOption {
+	return func(runnerOptions *runnerOptions) {
+		runnerOptions.args = args
+	}
 }

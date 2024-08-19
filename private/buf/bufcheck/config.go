@@ -41,8 +41,11 @@ type config struct {
 	// themselves will only return RuleIDs in this list TODO make sure bufplugin-go
 	// validates this and that this is documented.
 	RuleIDs []string
+	// DefaultOptions are the options that should be passed to the default check.Client.
+	//
+	// Do not pass these to plugin check.Clients. Use options from checkClientSpecs instead.
 	// Will never be nil.
-	Options check.Options
+	DefaultOptions check.Options
 
 	IgnoreRootPaths     map[string]struct{}
 	IgnoreIDToRootPaths map[string]map[string]struct{}
@@ -287,7 +290,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 
 	return &config{
 		RuleIDs:                slicesext.Map(resultRules, check.Rule.ID),
-		Options:                options,
+		DefaultOptions:         options,
 		IgnoreIDToRootPaths:    ignoreIDToRootPaths,
 		IgnoreRootPaths:        ignoreRootPaths,
 		AllowCommentIgnores:    b.AllowCommentIgnores,

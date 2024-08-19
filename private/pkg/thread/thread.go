@@ -68,6 +68,11 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 	if multiplier < 1 {
 		multiplier = 1
 	}
+	var cancel context.CancelFunc
+	if parallelizeOptions.cancelOnFailure {
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
+	}
 	semaphoreC := make(chan struct{}, Parallelism()*multiplier)
 	var retErr error
 	var wg sync.WaitGroup
@@ -100,8 +105,8 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 						lock.Lock()
 						retErr = multierr.Append(retErr, err)
 						lock.Unlock()
-						if parallelizeOptions.cancel != nil {
-							parallelizeOptions.cancel()
+						if cancel != nil {
+							cancel()
 						}
 					}
 					// This will never block.
@@ -129,17 +134,17 @@ func ParallelizeWithMultiplier(multiplier int) ParallelizeOption {
 	}
 }
 
-// ParallelizeWithCancel returns a new ParallelizeOption that will call the
-// given context.CancelFunc if any job fails.
-func ParallelizeWithCancel(cancel context.CancelFunc) ParallelizeOption {
+// ParallelizeWithCancelOnFailure returns a new ParallelizeOption that will attempt
+// to cancel all other jobs via context cancellation if any job fails.
+func ParallelizeWithCancelOnFailure() ParallelizeOption {
 	return func(parallelizeOptions *parallelizeOptions) {
-		parallelizeOptions.cancel = cancel
+		parallelizeOptions.cancelOnFailure = true
 	}
 }
 
 type parallelizeOptions struct {
-	multiplier int
-	cancel     context.CancelFunc
+	multiplier      int
+	cancelOnFailure bool
 }
 
 func newParallelizeOptions() *parallelizeOptions {

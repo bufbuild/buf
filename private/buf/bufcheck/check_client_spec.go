@@ -12,7 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
+package bufcheck
 
-// Version is the CLI version of buf.
-const Version = "1.37.1-dev"
+import (
+	"github.com/bufbuild/bufplugin-go/check"
+)
+
+// checkClientSpec contains a check.Client and details on what to do about
+// options it should pass when calling check.
+//
+// This allows us to take a bufconfig.PluginConfig and turn it into a client/options pair.
+type checkClientSpec struct {
+	Client  check.Client
+	Options check.Options
+}
+
+func newCheckClientSpec(client check.Client, options check.Options) *checkClientSpec {
+	return &checkClientSpec{
+		Client:  client,
+		Options: options,
+	}
+}

@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
@@ -44,29 +45,52 @@ type Client interface {
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
-	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig) ([]check.Rule, error)
-	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion) ([]check.Rule, error)
+	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig, options ...ConfiguredRulesOption) ([]check.Rule, error)
+	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion, options ...AllRulesOption) ([]check.Rule, error)
 }
 
-type LintOption func(*lintOptions)
+type LintOption interface {
+	applyToLint(*lintOptions)
+}
 
-type BreakingOption func(*breakingOptions)
+type BreakingOption interface {
+	applyToBreaking(*breakingOptions)
+}
 
 func BreakingWithExcludeImports() BreakingOption {
-	return func(breakingOptions *breakingOptions) {
-		breakingOptions.excludeImports = true
+	return &excludeImportsOption{}
+}
+
+type ConfiguredRulesOption interface {
+	applyToConfiguredRules(*configuredRulesOptions)
+}
+
+type AllRulesOption interface {
+	applyToAllRules(*allRulesOptions)
+}
+
+type PluginOption interface {
+	LintOption
+	BreakingOption
+	ConfiguredRulesOption
+	AllRulesOption
+}
+
+func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) PluginOption {
+	return &pluginConfigsOption{
+		pluginConfigs: pluginConfigs,
 	}
 }
 
-func NewClient(options ...ClientOption) (Client, error) {
-	return newClient(options...)
+func NewClient(runner command.Runner, options ...ClientOption) (Client, error) {
+	return newClient(runner, options...)
 }
 
 type ClientOption func(*clientOptions)
 
-func ClientWithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientOption {
+func ClientWithStderr(stderr io.Writer) ClientOption {
 	return func(clientOptions *clientOptions) {
-		clientOptions.pluginConfigs = append(clientOptions.pluginConfigs, pluginConfigs...)
+		clientOptions.stderr = stderr
 	}
 }
 

@@ -16,35 +16,38 @@ package bufcheck
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
+	"github.com/bufbuild/pluginrpc-go"
 )
 
 type client struct {
-	fileVersionToCheckClient map[bufconfig.FileVersion]check.Client
+	runner                          command.Runner
+	stderr                          io.Writer
+	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(options ...ClientOption) (*client, error) {
+func newClient(runner command.Runner, options ...ClientOption) (*client, error) {
 	clientOptions := newClientOptions()
 	for _, option := range options {
 		option(clientOptions)
 	}
-
-	// The MultiClient may do caching of its own, so we want to keep our check.Clients static instead of creating
-	// them on every lint and breaking call.
+	// We want to keep our check.Clients static for caching instead of creating them on every lint and breaking call.
 	v1beta1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
 	if err != nil {
 		return nil, syserror.Wrap(err)
@@ -58,25 +61,28 @@ func newClient(options ...ClientOption) (*client, error) {
 		return nil, syserror.Wrap(err)
 	}
 
-	v1beta1CheckClient := v1beta1DefaultCheckClient
-	v1CheckClient := v1DefaultCheckClient
-	v2CheckClient := v2DefaultCheckClient
-
-	if pluginConfigs := clientOptions.pluginConfigs; len(pluginConfigs) > 0 {
-		return nil, errors.New("TODO")
-	}
-
 	return &client{
-		fileVersionToCheckClient: map[bufconfig.FileVersion]check.Client{
-			bufconfig.FileVersionV1Beta1: v1beta1CheckClient,
-			bufconfig.FileVersionV1:      v1CheckClient,
-			bufconfig.FileVersionV2:      v2CheckClient,
+		runner: runner,
+		stderr: clientOptions.stderr,
+		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
+			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
+			bufconfig.FileVersionV1:      v1DefaultCheckClient,
+			bufconfig.FileVersionV2:      v2DefaultCheckClient,
 		},
 	}, nil
 }
 
-func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, image bufimage.Image, _ ...LintOption) error {
-	allRules, err := c.AllRules(ctx, check.RuleTypeLint, lintConfig.FileVersion())
+func (c *client) Lint(
+	ctx context.Context,
+	lintConfig bufconfig.LintConfig,
+	image bufimage.Image,
+	options ...LintOption,
+) error {
+	lintOptions := newLintOptions()
+	for _, option := range options {
+		option.applyToLint(lintOptions)
+	}
+	allRules, err := c.allRules(ctx, check.RuleTypeLint, lintConfig.FileVersion(), lintOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
@@ -92,28 +98,34 @@ func (c *client) Lint(ctx context.Context, lintConfig bufconfig.LintConfig, imag
 	request, err := check.NewRequest(
 		files,
 		check.WithRuleIDs(config.RuleIDs...),
-		check.WithOptions(config.Options),
+		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
 		return err
 	}
-	checkClient, ok := c.fileVersionToCheckClient[lintConfig.FileVersion()]
-	if !ok {
-		return fmt.Errorf("unknown FileVersion: %v", lintConfig.FileVersion())
-	}
-	response, err := checkClient.Check(ctx, request)
+	multiClient, err := c.getMultiClient(lintConfig.FileVersion(), lintOptions.pluginConfigs, config.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
+	annotations, err := multiClient.Check(ctx, request)
+	if err != nil {
+		return err
+	}
+	return annotationsToFilteredFileAnnotationSetOrError(config, image, annotations)
 }
 
-func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error {
+func (c *client) Breaking(
+	ctx context.Context,
+	breakingConfig bufconfig.BreakingConfig,
+	image bufimage.Image,
+	againstImage bufimage.Image,
+	options ...BreakingOption,
+) error {
 	breakingOptions := newBreakingOptions()
 	for _, option := range options {
-		option(breakingOptions)
+		option.applyToBreaking(breakingOptions)
 	}
-	allRules, err := c.AllRules(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion())
+	allRules, err := c.allRules(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
@@ -135,24 +147,33 @@ func (c *client) Breaking(ctx context.Context, breakingConfig bufconfig.Breaking
 		files,
 		check.WithRuleIDs(config.RuleIDs...),
 		check.WithAgainstFiles(againstFiles),
-		check.WithOptions(config.Options),
+		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
 		return err
 	}
-	checkClient, ok := c.fileVersionToCheckClient[breakingConfig.FileVersion()]
-	if !ok {
-		return fmt.Errorf("unknown FileVersion: %v", breakingConfig.FileVersion())
-	}
-	response, err := checkClient.Check(ctx, request)
+	multiClient, err := c.getMultiClient(breakingConfig.FileVersion(), breakingOptions.pluginConfigs, config.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	return annotationsToFilteredFileAnnotationSetOrError(config, image, response.Annotations())
+	annotations, err := multiClient.Check(ctx, request)
+	if err != nil {
+		return err
+	}
+	return annotationsToFilteredFileAnnotationSetOrError(config, image, annotations)
 }
 
-func (c *client) ConfiguredRules(ctx context.Context, ruleType check.RuleType, checkConfig bufconfig.CheckConfig) ([]check.Rule, error) {
-	allRules, err := c.AllRules(ctx, ruleType, checkConfig.FileVersion())
+func (c *client) ConfiguredRules(
+	ctx context.Context,
+	ruleType check.RuleType,
+	checkConfig bufconfig.CheckConfig,
+	options ...ConfiguredRulesOption,
+) ([]check.Rule, error) {
+	configuredRulesOptions := newConfiguredRulesOptions()
+	for _, option := range options {
+		option.applyToConfiguredRules(configuredRulesOptions)
+	}
+	allRules, err := c.allRules(ctx, ruleType, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -166,29 +187,85 @@ func (c *client) ConfiguredRules(ctx context.Context, ruleType check.RuleType, c
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }
 
-func (c *client) AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion) ([]check.Rule, error) {
-	checkClient, ok := c.fileVersionToCheckClient[fileVersion]
-	if !ok {
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+func (c *client) AllRules(
+	ctx context.Context,
+	ruleType check.RuleType,
+	fileVersion bufconfig.FileVersion,
+	options ...AllRulesOption,
+) ([]check.Rule, error) {
+	allRulesOptions := newAllRulesOptions()
+	for _, option := range options {
+		option.applyToAllRules(allRulesOptions)
 	}
-	allRules, err := checkClient.ListRules(ctx)
+	return c.allRules(ctx, ruleType, fileVersion, allRulesOptions.pluginConfigs)
+}
+
+func (c *client) allRules(
+	ctx context.Context,
+	ruleType check.RuleType,
+	fileVersion bufconfig.FileVersion,
+	pluginConfigs []bufconfig.PluginConfig,
+) ([]check.Rule, error) {
+	// Just passing through to fufill all contracts, ie checkClientSpec has non-nil Options.
+	// Options are not used here.
+	// config struct really just needs refactoring.
+	emptyOptions, err := check.NewOptions(nil)
+	if err != nil {
+		return nil, err
+	}
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, emptyOptions)
+	if err != nil {
+		return nil, err
+	}
+	allRules, err := multiClient.ListRules(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForType(allRules, ruleType), nil
 }
 
-func newBuiltinCheckClientForFileVersion(fileVersion bufconfig.FileVersion) (check.Client, error) {
-	switch fileVersion {
-	case bufconfig.FileVersionV1Beta1:
-		return check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRules())
-	case bufconfig.FileVersionV1:
-		return check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRules())
-	case bufconfig.FileVersionV2:
-		return check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRules())
-	default:
+func (c *client) getMultiClient(
+	fileVersion bufconfig.FileVersion,
+	pluginConfigs []bufconfig.PluginConfig,
+	defaultOptions check.Options,
+) (*multiClient, error) {
+	defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
+	if !ok {
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
+	checkClientSpecs := []*checkClientSpec{
+		newCheckClientSpec(defaultCheckClient, defaultOptions),
+	}
+	for _, pluginConfig := range pluginConfigs {
+		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
+			return nil, syserror.New("we only handle local plugins for now with lint and breaking")
+		}
+		options, err := check.NewOptions(pluginConfig.Options())
+		if err != nil {
+			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
+		}
+		pluginPath := pluginConfig.Path()
+		checkClient := check.NewClient(
+			pluginrpc.NewClient(
+				pluginrpcutil.NewRunner(
+					c.runner,
+					// We know that Path is of at least length 1.
+					pluginPath[0],
+					pluginrpcutil.RunnerWithArgs(pluginPath[1:]...),
+				),
+				pluginrpc.ClientWithStderr(c.stderr),
+			),
+			check.ClientWithCacheRules(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		checkClientSpecs = append(
+			checkClientSpecs,
+			newCheckClientSpec(checkClient, options),
+		)
+	}
+	return newMultiClient(checkClientSpecs), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
@@ -315,9 +392,16 @@ func ignoreLocation(
 	return false, nil
 }
 
-type lintOptions struct{}
+type lintOptions struct {
+	pluginConfigs []bufconfig.PluginConfig
+}
+
+func newLintOptions() *lintOptions {
+	return &lintOptions{}
+}
 
 type breakingOptions struct {
+	pluginConfigs  []bufconfig.PluginConfig
 	excludeImports bool
 }
 
@@ -325,10 +409,52 @@ func newBreakingOptions() *breakingOptions {
 	return &breakingOptions{}
 }
 
-type clientOptions struct {
+type configuredRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+}
+
+func newConfiguredRulesOptions() *configuredRulesOptions {
+	return &configuredRulesOptions{}
+}
+
+type allRulesOptions struct {
+	pluginConfigs []bufconfig.PluginConfig
+}
+
+func newAllRulesOptions() *allRulesOptions {
+	return &allRulesOptions{}
+}
+
+type clientOptions struct {
+	stderr io.Writer
 }
 
 func newClientOptions() *clientOptions {
 	return &clientOptions{}
+}
+
+type excludeImportsOption struct{}
+
+func (e *excludeImportsOption) applyToBreaking(breakingOptions *breakingOptions) {
+	breakingOptions.excludeImports = true
+}
+
+type pluginConfigsOption struct {
+	pluginConfigs []bufconfig.PluginConfig
+}
+
+func (p *pluginConfigsOption) applyToLint(lintOptions *lintOptions) {
+	lintOptions.pluginConfigs = append(lintOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+func (p *pluginConfigsOption) applyToBreaking(breakingOptions *breakingOptions) {
+	breakingOptions.pluginConfigs = append(breakingOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+func (p *pluginConfigsOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
+	configuredRulesOptions.pluginConfigs = append(configuredRulesOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) {
+	allRulesOptions.pluginConfigs = append(allRulesOptions.pluginConfigs, p.pluginConfigs...)
 }

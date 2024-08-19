@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
@@ -131,9 +132,7 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(
-			bufcheck.ClientWithPluginConfigs(imageWithConfig.PluginConfigs()...),
-		)
+		client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 		if err != nil {
 			return err
 		}
@@ -141,6 +140,7 @@ func run(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {
