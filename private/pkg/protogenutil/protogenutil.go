@@ -231,7 +231,7 @@ func (g *GoPackageFileSet) Services() []*protogen.Service {
 // NamedHelper is a helper to deal with named golang plugins.
 //
 // Named plugins should be named in the form protoc-gen-go-foobar, where the plugin
-// name is consiered to be "foobar". The plugin name must be lowercase.
+// name is considered to be "foobar". The plugin name must be lowercase.
 type NamedHelper interface {
 	// NewGoPackageName gets the helper GoPackageName for the pluginName.
 	NewGoPackageName(

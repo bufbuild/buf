@@ -170,7 +170,7 @@ func NewCommand(
       # The accepted field options are:
       #  - jstype
       #
-      # If multple overrides for the same option apply to a file or field,
+      # If multiple overrides for the same option apply to a file or field,
       # the last rule takes effect.
       # Optional.
       override:

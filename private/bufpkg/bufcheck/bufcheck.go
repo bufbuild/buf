@@ -104,7 +104,7 @@ func PrintRulesWithJSON() PrintRulesOption {
 	}
 }
 
-// PrintRulesWithDeprecated returns a new PrintRulesOption that resullts in deprecated rules  being printed.
+// PrintRulesWithDeprecated returns a new PrintRulesOption that results in deprecated rules  being printed.
 func PrintRulesWithDeprecated() PrintRulesOption {
 	return func(printRulesOptions *printRulesOptions) {
 		printRulesOptions.includeDeprecated = true

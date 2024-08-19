@@ -837,7 +837,7 @@ func (x *GetPackageDocumentationRequest) GetPackageName() string {
 	return ""
 }
 
-// GetPackageDocumentationReponse returns the documentation for the requested package.
+// GetPackageDocumentationResponse returns the documentation for the requested package.
 type GetPackageDocumentationResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2292,7 +2292,7 @@ type Field struct {
 	// It contains all the metadata for the import.
 	ImportModuleRef *ImportModuleRef `protobuf:"bytes,8,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
 	// Extendee is the name of the type that is being ext if the field is an extension.
-	// This is an empty string for fields that are not extenions.
+	// This is an empty string for fields that are not extensions.
 	Extendee string `protobuf:"bytes,9,opt,name=extendee,proto3" json:"extendee,omitempty"`
 	// All options that are present on the field. This is a super-set of
 	// field_options and uses a dynamic representation so it can also

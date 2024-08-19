@@ -138,7 +138,7 @@ message StringTest {
     (buf.validate.field).string.not_contains = "bar"
   ];
   // this is valid: for example, "foo_" contains "foo" without containing "bar_foo".
-  string not_contains_conatins_prefix = 31 [
+  string not_contains_contains_prefix = 31 [
     (buf.validate.field).string.not_contains = "bar_foo",
     (buf.validate.field).string.prefix = "foo"
   ];

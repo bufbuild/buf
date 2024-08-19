@@ -1042,7 +1042,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 					appext.BuilderWithInterceptor(
 						// TODO FUTURE: use the real interceptor. Currently in buf.go, NewBuilder receives appflag.BuilderWithInterceptor(newErrorInterceptor()).
 						// However we cannot depend on newErrorInterceptor because it would create an import cycle, not to mention it needs to be exported first.
-						// This can depend on newErroInterceptor when it's moved to a separate package and made public.
+						// This can depend on newErrorInterceptor when it's moved to a separate package and made public.
 						func(next func(context.Context, appext.Container) error) func(context.Context, appext.Container) error {
 							return func(ctx context.Context, container appext.Container) error {
 								err := next(ctx, container)

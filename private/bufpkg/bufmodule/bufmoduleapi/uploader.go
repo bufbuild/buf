@@ -255,7 +255,7 @@ func (a *uploader) Upload(
 
 	// A sorted slice of unique registries for the RemoteDeps.
 	remoteDepRegistries := slicesext.MapKeysToSortedSlice(
-		// A map from registry to RemoteDeps for that reigsry.
+		// A map from registry to RemoteDeps for that registry.
 		slicesext.ToValuesMap(
 			remoteDeps,
 			func(remoteDep bufmodule.RemoteDep) string {

@@ -41,7 +41,7 @@ const (
 	StrategyAll Strategy = 2
 )
 
-// Strategy is a generation stategy.
+// Strategy is a generation strategy.
 type Strategy int
 
 // ParseStrategy parses the Strategy.

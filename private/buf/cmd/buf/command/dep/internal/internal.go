@@ -108,7 +108,7 @@ func Prune(
 	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys)
 }
 
-// LogUnusedConfiugredDepsForWorkspace takes a workspace and logs the unused configured
+// LogUnusedConfiguredDepsForWorkspace takes a workspace and logs the unused configured
 // dependencies as warnings to the user.
 func LogUnusedConfiguredDepsForWorkspace(
 	workspace bufworkspace.Workspace,

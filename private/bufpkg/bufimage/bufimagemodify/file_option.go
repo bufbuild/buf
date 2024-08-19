@@ -449,7 +449,7 @@ func modifyJavaStringCheckUtf8(
 	)
 }
 
-func modifyOptmizeFor(
+func modifyOptimizeFor(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,

@@ -491,7 +491,7 @@ type JSONOutputOptions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Enum fields will be emitted as numeric values. If false (the dafault), enum
+	// Enum fields will be emitted as numeric values. If false (the default), enum
 	// fields are emitted as strings that are the enum values' names.
 	UseEnumNumbers bool `protobuf:"varint,3,opt,name=use_enum_numbers,json=useEnumNumbers,proto3" json:"use_enum_numbers,omitempty"`
 	// Includes fields that have their default values. This applies only to fields

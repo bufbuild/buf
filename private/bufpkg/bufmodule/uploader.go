@@ -100,7 +100,7 @@ type UploadOptions interface {
 	// Will always be present if CreateIfNotExist() is true.
 	CreateModuleVisibility() ModuleVisibility
 	// CreateDefaultLabel returns the default label to create Modules with. If this is an
-	// emptry string, then the Modules will be created with default label "main".
+	// empty string, then the Modules will be created with default label "main".
 	CreateDefaultLabel() string
 	// Tags returns unique and sorted set of tags to be added as labels.
 	// Tags are set using the `--tag` flag when calling `buf push`, and represent labels

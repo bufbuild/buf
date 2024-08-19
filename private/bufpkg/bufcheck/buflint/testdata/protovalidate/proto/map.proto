@@ -33,7 +33,7 @@ message MapTest {
     // key has type int64
     (buf.validate.field).map.keys.string.min_len = 1
   ];
-  map<int64, google.protobuf.Duration> value_type_mistmatch = 7 [
+  map<int64, google.protobuf.Duration> value_type_mismatch = 7 [
     (buf.validate.field).map.min_pairs = 1,
     // value has type Duration
     (buf.validate.field).map.values.string.min_len = 1

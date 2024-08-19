@@ -58,7 +58,7 @@ type Workspace interface {
 	//
 	// However, this would mean that Workspace would not inherit ModuleSet, as we'd
 	// want to create GetWorkspaceModule.* functions instead of GetModule.* functions,
-	// and then provide a WorkpaceToModuleSet global function. This seems messier in
+	// and then provide a WorkspaceToModuleSet global function. This seems messier in
 	// practice than having users call GetLintConfigForOpaqueID(module.OpaqueID())
 	// in the situations where they need configuration.
 	GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig

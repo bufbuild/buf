@@ -33,7 +33,7 @@ import (
 //
 // descriptor, location, and extraIgnoreLocations can be nil.
 type addFunc func(
-	descriptior bufprotosource.Descriptor,
+	descriptor bufprotosource.Descriptor,
 	location bufprotosource.Location,
 	extraIgnoreLocations []bufprotosource.Location,
 	format string,

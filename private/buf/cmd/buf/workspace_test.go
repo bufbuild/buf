@@ -1104,7 +1104,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 
 func TestWorkspaceDirOverlapFail(t *testing.T) {
 	t.Parallel()
-	// The buf.work.yaml file cannot specify overlapping diretories.
+	// The buf.work.yaml file cannot specify overlapping directories.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1384,7 +1384,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		// TODO FUTURE: failing test, fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed
 		t.Skip()
 	}
-	// The --path flag did not reference an absolute file patfound in the archive.
+	// The --path flag did not reference an absolute file path found in the archive.
 	zipDir := createZipFromDir(
 		t,
 		filepath.Join("testdata", "workspace", "success", "dir"),

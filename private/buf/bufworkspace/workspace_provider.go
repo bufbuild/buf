@@ -122,7 +122,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	// By default, the assocated configuration for a Module gotten by ModuleKey is just
+	// By default, the associated configuration for a Module gotten by ModuleKey is just
 	// the default config. However, if we have a config override, we may have different
 	// lint or breaking config. We will only apply this different config for the specific
 	// module we are targeting, while the rest will retain the default config - generally,
@@ -148,7 +148,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		case 1:
 			// If we have a single ModuleConfig, we assume that regardless of whether or not
 			// This ModuleConfig has a name, that this is what the user intends to associate
-			// with the tqrget module. This also handles the v1 case - v1 buf.yamls will always
+			// with the target module. This also handles the v1 case - v1 buf.yamls will always
 			// only have a single ModuleConfig, and it was expected pre-refactor that regardless
 			// of if the ModuleConfig had a name associated with it or not, the lint and breaking
 			// config that came from it would be associated.

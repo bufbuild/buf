@@ -193,7 +193,7 @@ func v2WorkspaceTargeting(
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.SubDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
-		// In the future, it would be nice to handle this more elegently.
+		// In the future, it would be nice to handle this more elegantly.
 		if config.protoFileTargetPath != "" {
 			isTentativelyTargetModule = true
 		}
@@ -296,7 +296,7 @@ func v1WorkspaceTargeting(
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.SubDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
-		// In the future, it would be nice to handle this more elegently.
+		// In the future, it would be nice to handle this more elegantly.
 		if config.protoFileTargetPath != "" {
 			isTentativelyTargetModule = true
 		}

@@ -90,7 +90,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 				func(formattedFile storage.ReadObject) error {
 					expectedPath := formattedFile.Path()
 					t.Run(expectedPath, func(t *testing.T) {
-						// The expecetd format result is the golden file. If
+						// The expected format result is the golden file. If
 						// this file IS a golden file, it is expected to not
 						// change.
 						if !strings.HasSuffix(expectedPath, ".golden.proto") {

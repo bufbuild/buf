@@ -38,7 +38,7 @@ type ModuleRef interface {
 	isModuleRef()
 }
 
-// NewModuleRef returns a new ModuleRef for the given compoonents.
+// NewModuleRef returns a new ModuleRef for the given components.
 func NewModuleRef(
 	registry string,
 	owner string,

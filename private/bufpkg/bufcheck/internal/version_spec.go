@@ -53,7 +53,7 @@ func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
 
 // AllIDsForVersionSpec returns all ids for the VersionSpec.
 //
-// Sorted lexographically.
+// Sorted lexicographically.
 func AllIDsForVersionSpec(versionSpec *VersionSpec, includeDeprecated bool) ([]string, error) {
 	idToRuleBuilder, err := getIDToRuleBuilder(versionSpec.RuleBuilders)
 	if err != nil {

@@ -81,7 +81,7 @@ func ModuleFullNameEqual(one ModuleFullName, two ModuleFullName) bool {
 
 // HasModuleFullName is any type that has a ModuleFullName() function.
 type HasModuleFullName interface {
-	// ModuleFullName returns the ModuleullName.
+	// ModuleFullName returns the ModuleFullName.
 	//
 	// May be empty.
 	ModuleFullName() ModuleFullName

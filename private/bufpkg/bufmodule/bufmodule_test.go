@@ -88,7 +88,7 @@ func TestBasic(t *testing.T) {
 	// local sources.
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bsrProvider, bsrProvider)
 
-	// First, we add the remote dependences (adding order doesn't matter).
+	// First, we add the remote dependencies (adding order doesn't matter).
 	//
 	// Remember, the bsrProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.

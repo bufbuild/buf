@@ -36,7 +36,7 @@ const (
 	gitCommand      = "git"
 	tagsPrefix      = "refs/tags/"
 	headsPrefix     = "refs/heads/"
-	psuedoRefSuffix = "^{}"
+	pseudoRefSuffix = "^{}"
 )
 
 var (
@@ -342,7 +342,7 @@ func GetRefsForGitCommitAndRemote(
 			ref = strings.TrimSpace(ref)
 			if tag, isTag := strings.CutPrefix(ref, tagsPrefix); isTag {
 				// Remove the ^{} suffix for pseudo-ref tags
-				tag, _ = strings.CutSuffix(tag, psuedoRefSuffix)
+				tag, _ = strings.CutSuffix(tag, pseudoRefSuffix)
 				refs = append(refs, tag)
 				continue
 			}

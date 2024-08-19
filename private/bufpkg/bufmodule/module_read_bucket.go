@@ -364,7 +364,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	if !walkFileInfosOptions.onlyTargetFiles {
 		// We only want to call trackModule if we are walking all the files, not just
 		// the target files. By not calling trackModule outside of this if statement,
-		// we will not produce NoProtoFilesErrors, per the documention on trackModule.
+		// we will not produce NoProtoFilesErrors, per the documentation on trackModule.
 		protoFileTracker.trackModule(b.module)
 		if err := bucket.Walk(
 			ctx,

@@ -106,7 +106,7 @@ func newMultipleTokenProvider(tokens []string, isFromEnvVar bool) (*multipleToke
 			return nil, fmt.Errorf("invalid token: %s, token cannot contain special character `,`", token)
 		}
 		if _, ok := addressToToken[split[1]]; ok {
-			return nil, fmt.Errorf("invalid token: %s, repeated remote adddress: %s", token, split[1])
+			return nil, fmt.Errorf("invalid token: %s, repeated remote address: %s", token, split[1])
 		}
 		addressToToken[split[1]] = split[0]
 	}

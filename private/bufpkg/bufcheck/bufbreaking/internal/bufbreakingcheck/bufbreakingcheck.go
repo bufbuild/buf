@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufbreakingcheck impelements the check functions.
+// Package bufbreakingcheck implements the check functions.
 //
 // These are used by bufbreakingbuild to create RuleBuilders.
 package bufbreakingcheck
@@ -747,7 +747,7 @@ func checkFieldWireCompatibleCardinality(
 
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
-	if cardinalityToWireCompatiblityGroup[previousCardinality] != cardinalityToWireCompatiblityGroup[currentCardinality] {
+	if cardinalityToWireCompatibilityGroup[previousCardinality] != cardinalityToWireCompatibilityGroup[currentCardinality] {
 		add(field, nil, field.Location(),
 			`%s changed cardinality from %q to %q.`,
 			fieldDescription(field),
@@ -779,11 +779,11 @@ func checkFieldWireCompatibleType(
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
 	// are not compatible.
-	previousWireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[previousDescriptor.Kind()]
+	previousWireCompatibilityGroup, ok := fieldKindToWireCompatibilityGroup[previousDescriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[descriptor.Kind()]
+	wireCompatibilityGroup, ok := fieldKindToWireCompatibilityGroup[descriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
@@ -848,7 +848,7 @@ func checkFieldWireJSONCompatibleCardinality(
 
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
-	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
+	if cardinalityToWireJSONCompatibilityGroup[previousCardinality] != cardinalityToWireJSONCompatibilityGroup[currentCardinality] {
 		add(field, nil, field.Location(),
 			`%s changed cardinality from %q to %q.`,
 			fieldDescription(field),
@@ -880,11 +880,11 @@ func checkFieldWireJSONCompatibleType(
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
 	// are not compatible.
-	previousWireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[previousDescriptor.Kind()]
+	previousWireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatibilityGroup[previousDescriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[descriptor.Kind()]
+	wireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatibilityGroup[descriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}

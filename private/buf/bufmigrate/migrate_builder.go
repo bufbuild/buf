@@ -224,7 +224,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 	}
 	bufYAMLFilePath := normalpath.Join(moduleDirPath, objectData.Name())
 	// If this module is already visited, we don't add it for a second time. It's
-	// possbile to visit the same module directory twice when the user specifies both
+	// possible to visit the same module directory twice when the user specifies both
 	// a workspace and a module in this workspace.
 	if _, ok := m.pathsToDelete[bufYAMLFilePath]; ok {
 		return nil

@@ -330,7 +330,7 @@ func newGeneratePluginConfigFromExternalV1(
 			externalConfig.Revision,
 		)
 	}
-	// At this point the plugin must be local, regardless whehter it's specified
+	// At this point the plugin must be local, regardless whether it's specified
 	// by key 'plugin' or 'name'.
 	if len(path) > 0 {
 		return newLocalGeneratePluginConfig(

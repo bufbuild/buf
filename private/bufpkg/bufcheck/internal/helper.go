@@ -58,7 +58,7 @@ func (h *Helper) AddFileAnnotationf(
 
 // AddFileAnnotationWithExtraIgnoreDescriptorsf adds a FileAnnotation with the id as the Type.
 //
-// extraIgnoreDescriptors are extra desciptors to check for ignores.
+// extraIgnoreDescriptors are extra descriptors to check for ignores.
 //
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.

@@ -36,7 +36,7 @@ type Printer interface {
 	In()
 	// Out unindents by one.
 	Out()
-	// String gets the resulting string represntation.
+	// String gets the resulting string representation.
 	//
 	// Returns error if there was an error during printing.
 	String() (string, error)

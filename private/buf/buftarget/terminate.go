@@ -45,7 +45,7 @@ func TerminateAtControllingWorkspace(
 }
 
 // TerminateAtV1Module is a special terminate func that returns a controlling workspace with
-// a v1 module confiugration if found at the given prefix.
+// a v1 module configuration if found at the given prefix.
 func TerminateAtV1Module(
 	ctx context.Context,
 	bucket storage.ReadBucket,

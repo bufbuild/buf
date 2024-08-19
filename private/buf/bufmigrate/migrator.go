@@ -339,7 +339,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
 		//
 		// We are only removing lock entries that are in the workspace. A lock entry
-		// could be for an indirect dependenceny not listed in deps in any buf.yaml.
+		// could be for an indirect dependency not listed in deps in any buf.yaml.
 		if _, ok := migrateBuilder.moduleFullNameStringToParentPath[moduleFullName]; ok {
 			continue
 		}

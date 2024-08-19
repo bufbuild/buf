@@ -34,7 +34,7 @@ type ModuleDep interface {
 
 	// Parent returns the Module that this ModuleDep is a dependency of.
 	//
-	// Note this is not recursive - this points ot the top-level Module that dependencies
+	// Note this is not recursive - this points to the top-level Module that dependencies
 	// were created for. That is, if a -> b -> c, then a will have ModuleDeps b and c, both
 	// of which have a as a parent.
 	Parent() Module

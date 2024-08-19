@@ -42,12 +42,12 @@ var (
 // Modules are also either local or remote.
 //
 // A local Module is one which was built from sources from the "local context", such
-// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest. Local
+// a Workspace containing Modules, or a ModuleNode in a CreateCommitRequest. Local
 // Modules are important for understanding what Modules to push, and what modules to
 // check declared dependencies for unused dependencies.
 //
 // A remote Module is one which was not contained in the local context, such as
-// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
+// dependencies specified in a buf.lock (with no corresponding Module in the Workspace),
 // or a DepNode in a CreateCommitRequest with no corresponding ModuleNode. A module
 // retrieved from a ModuleDataProvider via a ModuleKey is always remote.
 type ModuleSetBuilder interface {

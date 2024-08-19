@@ -46,7 +46,7 @@ func WithRootCertFilePaths(rootCertFilePaths ...string) TLSOption {
 	}
 }
 
-// NewClientTLScreates a new tls.Config from a root certificate files.
+// NewClientTLS creates a new tls.Config from a root certificate files.
 func NewClientTLS(options ...TLSOption) (*tls.Config, error) {
 	opts := &tlsOptions{}
 	for _, opt := range options {

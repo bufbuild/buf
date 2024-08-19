@@ -341,7 +341,7 @@ type UserPluginPreference struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The language that the user has indicidated as their preferred language for plugins.
+	// The language that the user has indicated as their preferred language for plugins.
 	SelectedLanguage PluginLanguage `protobuf:"varint,2,opt,name=selected_language,json=selectedLanguage,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"selected_language,omitempty"`
 	// A list of plugin names selected by the user.
 	SelectedPlugins []string `protobuf:"bytes,3,rep,name=selected_plugins,json=selectedPlugins,proto3" json:"selected_plugins,omitempty"`

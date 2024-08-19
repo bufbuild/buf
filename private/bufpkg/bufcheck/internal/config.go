@@ -37,7 +37,7 @@ type Config struct {
 	// Rules are the rules to run.
 	//
 	// Rules will be sorted by first categories, then id when Configs are
-	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
+	// created from this package, i.e. created with ConfigBuilder.NewConfig.
 	Rules []*Rule
 
 	IgnoreRootPaths     map[string]struct{}

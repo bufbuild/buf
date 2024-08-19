@@ -57,7 +57,7 @@ type Module interface {
 	//
 	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
 	//
-	// While this should not be relied upion, this ID is currently equal to the ModuleFullName,
+	// While this should not be relied upon, this ID is currently equal to the ModuleFullName,
 	// and if the ModuleFullName is not present, then the BucketID.
 	OpaqueID() string
 	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
@@ -137,12 +137,12 @@ type Module interface {
 	// Modules are either local or remote.
 	//
 	// A local Module is one which was built from sources from the "local context", such
-	// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest. Local
+	// a Workspace containing Modules, or a ModuleNode in a CreateCommitRequest. Local
 	// Modules are important for understanding what Modules to push, and what modules to
 	// check declared dependencies for unused dependencies.
 	//
 	// A remote Module is one which was not contained in the local context, such as
-	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
+	// dependencies specified in a buf.lock (with no corresponding Module in the Workspace),
 	// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
 	//
 	// Remote Modules will always have ModuleFullNames.
