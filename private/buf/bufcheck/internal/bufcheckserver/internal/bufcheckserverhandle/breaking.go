@@ -1580,10 +1580,14 @@ func handleBreakingEnumValueSameName(
 		if len(previousNames) > 1 && len(names) > 1 {
 			nameSuffix = "s"
 		}
-		for _, enumValue := range nameToEnumValue {
+		for enumName, enumValue := range nameToEnumValue {
+			var previousEnumValueNumberLocation bufprotosource.Location
+			if previousEnumValue, ok := previousNameToEnumValue[enumName]; ok {
+				previousEnumValueNumberLocation = previousEnumValue.NumberLocation()
+			}
 			responseWriter.AddProtosourceAnnotation(
 				enumValue.NumberLocation(),
-				nil, // TODO: figure out how to determine the previous location for this
+				previousEnumValueNumberLocation,
 				`Enum value "%d" on enum %q changed name%s from %s to %s.`,
 				enumValue.Number(),
 				enumValue.Enum().Name(),
