@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 	"github.com/bufbuild/bufplugin-go/check/checkutil"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -100,9 +101,10 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	emptyOptions, err := check.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
+		zap.NewNop(),
 		[]*checkClientSpec{
-			newCheckClientSpec(fieldLowerSnakeCaseClient, emptyOptions),
-			newCheckClientSpec(timestampSuffixClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-timestamp-suffix", timestampSuffixClient, emptyOptions),
 		},
 	)
 
@@ -114,7 +116,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 			fieldLowerSnakeCaseRuleID,
 			timestampSuffixRuleID,
 		},
-		slicesext.Map(rules, check.Rule.ID),
+		slicesext.Map(rules, Rule.ID),
 	)
 	annotations, err := multiClient.Check(ctx, request)
 	require.NoError(t, err)
@@ -142,7 +144,12 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 				},
 			},
 		},
-		annotations,
+		slicesext.Map(
+			annotations,
+			func(annotation *annotation) check.Annotation {
+				return annotation
+			},
+		),
 	)
 }
 

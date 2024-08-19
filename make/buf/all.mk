@@ -36,7 +36,7 @@ LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 PROTOVALIDATE_VERSION := v0.6.0
 # Comment out to use released buf
-#BUF_GO_INSTALL_PATH := ./cmd/buf
+BUF_GO_INSTALL_PATH := ./cmd/buf
 
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
@@ -71,6 +71,12 @@ bandeps: installbandeps
 	bandeps -f data/bandeps/bandeps.yaml
 
 postlonglint:: bandeps
+
+.PHONY: installbufplugintimestampsuffix
+installbufplugintimestampsuffix:
+	go install github.com/bufbuild/bufplugin-go/check/internal/examples/timestampsuffix/cmd/buf-plugin-timestamp-suffix
+
+buflintdeps:: installbufplugintimestampsuffix
 
 .PHONY: godata
 godata: installspdx-go-data installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)

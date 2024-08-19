@@ -34,15 +34,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/pluginrpc-go"
+	"go.uber.org/zap"
 )
 
 type client struct {
+	logger                          *zap.Logger
 	runner                          command.Runner
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(runner command.Runner, options ...ClientOption) (*client, error) {
+func newClient(logger *zap.Logger, runner command.Runner, options ...ClientOption) (*client, error) {
 	clientOptions := newClientOptions()
 	for _, option := range options {
 		option(clientOptions)
@@ -62,6 +64,7 @@ func newClient(runner command.Runner, options ...ClientOption) (*client, error) 
 	}
 
 	return &client{
+		logger: logger,
 		runner: runner,
 		stderr: clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
@@ -170,7 +173,7 @@ func (c *client) ConfiguredRules(
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
-) ([]check.Rule, error) {
+) ([]Rule, error) {
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
@@ -184,7 +187,7 @@ func (c *client) ConfiguredRules(
 		return nil, err
 	}
 	if len(config.RuleIDs) == 0 {
-		return slicesext.Filter(allRules, check.Rule.IsDefault), nil
+		return slicesext.Filter(allRules, Rule.IsDefault), nil
 	}
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }
@@ -194,7 +197,7 @@ func (c *client) AllRules(
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
-) ([]check.Rule, error) {
+) ([]Rule, error) {
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
@@ -207,7 +210,7 @@ func (c *client) allRules(
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
-) ([]check.Rule, error) {
+) ([]Rule, error) {
 	// Just passing through to fufill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
@@ -236,7 +239,8 @@ func (c *client) getMultiClient(
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
 	checkClientSpecs := []*checkClientSpec{
-		newCheckClientSpec(defaultCheckClient, defaultOptions),
+		// We do not set PluginName for default check.Clients.
+		newCheckClientSpec("", defaultCheckClient, defaultOptions),
 	}
 	for _, pluginConfig := range pluginConfigs {
 		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
@@ -264,16 +268,16 @@ func (c *client) getMultiClient(
 		}
 		checkClientSpecs = append(
 			checkClientSpecs,
-			newCheckClientSpec(checkClient, options),
+			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
 		)
 	}
-	return newMultiClient(checkClientSpecs), nil
+	return newMultiClient(c.logger, checkClientSpecs), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
 	config *config,
 	image bufimage.Image,
-	annotations []check.Annotation,
+	annotations []*annotation,
 ) error {
 	if len(annotations) == 0 {
 		return nil
@@ -300,11 +304,11 @@ func annotationsToFilteredFileAnnotationSetOrError(
 
 func filterAnnotations(
 	config *config,
-	annotations []check.Annotation,
-) ([]check.Annotation, error) {
+	annotations []*annotation,
+) ([]*annotation, error) {
 	return slicesext.FilterError(
 		annotations,
-		func(annotation check.Annotation) (bool, error) {
+		func(annotation *annotation) (bool, error) {
 			ignore, err := ignoreAnnotation(config, annotation)
 			if err != nil {
 				return false, err
@@ -316,7 +320,7 @@ func filterAnnotations(
 
 func ignoreAnnotation(
 	config *config,
-	annotation check.Annotation,
+	annotation *annotation,
 ) (bool, error) {
 	if location := annotation.Location(); location != nil {
 		ignore, err := ignoreLocation(config, annotation.RuleID(), location)

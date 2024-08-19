@@ -180,5 +180,6 @@ func newFileAnnotationf(
 		endColumn,
 		id,
 		fmt.Sprintf(format, args...),
+		"",
 	)
 }

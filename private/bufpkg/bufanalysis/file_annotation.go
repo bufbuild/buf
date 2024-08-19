@@ -27,6 +27,7 @@ type fileAnnotation struct {
 	endColumn   int
 	typeString  string
 	message     string
+	pluginName  string
 }
 
 func newFileAnnotation(
@@ -37,6 +38,7 @@ func newFileAnnotation(
 	endColumn int,
 	typeString string,
 	message string,
+	pluginName string,
 ) *fileAnnotation {
 	return &fileAnnotation{
 		fileInfo:    fileInfo,
@@ -46,6 +48,7 @@ func newFileAnnotation(
 		endColumn:   endColumn,
 		typeString:  typeString,
 		message:     message,
+		pluginName:  pluginName,
 	}
 }
 
@@ -77,6 +80,10 @@ func (f *fileAnnotation) Message() string {
 	return f.message
 }
 
+func (f *fileAnnotation) PluginName() string {
+	return f.pluginName
+}
+
 func (f *fileAnnotation) String() string {
 	if f == nil {
 		return ""
@@ -103,6 +110,11 @@ func (f *fileAnnotation) String() string {
 	_, _ = buffer.WriteString(strconv.Itoa(column))
 	_, _ = buffer.WriteRune(':')
 	_, _ = buffer.WriteString(message)
+	if f.pluginName != "" {
+		_, _ = buffer.WriteString(" (")
+		_, _ = buffer.WriteString(f.pluginName)
+		_, _ = buffer.WriteRune(')')
+	}
 	return buffer.String()
 }
 

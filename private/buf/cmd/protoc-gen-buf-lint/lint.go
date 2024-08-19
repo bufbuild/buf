@@ -33,7 +33,10 @@ import (
 	"github.com/bufbuild/protoplugin"
 )
 
-const defaultTimeout = 10 * time.Second
+const (
+	appName        = "protoc-gen-buf-lint"
+	defaultTimeout = 10 * time.Second
+)
 
 // Main is the main.
 func Main() {
@@ -53,6 +56,15 @@ func handle(
 		[]byte(request.Parameter()),
 		externalConfig,
 	); err != nil {
+		return err
+	}
+	container, err := internal.NewAppextContainerForPluginEnv(
+		pluginEnv,
+		appName,
+		externalConfig.LogLevel,
+		externalConfig.LogFormat,
+	)
+	if err != nil {
 		return err
 	}
 	timeout := externalConfig.Timeout
@@ -78,7 +90,7 @@ func handle(
 		return err
 	}
 	// The protoc plugins do not support custom lint/breaking change plugins for now.
-	client, err := bufcheck.NewClient(command.NewRunner(), bufcheck.ClientWithStderr(pluginEnv.Stderr))
+	client, err := bufcheck.NewClient(container.Logger(), command.NewRunner(), bufcheck.ClientWithStderr(pluginEnv.Stderr))
 	if err != nil {
 		return err
 	}
