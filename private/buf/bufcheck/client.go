@@ -97,6 +97,8 @@ func (c *client) Lint(
 	}
 	request, err := check.NewRequest(
 		files,
+		// Note that if we did not set Use or Except in the buf.yaml config, this will be empty,
+		// which is correct - this will result in the default Rules being used per the bufplugin-go API.
 		check.WithRuleIDs(config.RuleIDs...),
 		check.WithOptions(config.DefaultOptions),
 	)

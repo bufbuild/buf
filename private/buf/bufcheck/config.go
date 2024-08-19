@@ -173,15 +173,20 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 	}
 	categoryToIDs := getCategoryToIDs(idToCategories)
 
-	var resultRules []check.Rule
 	// These may both be empty, and that's OK.
 	b.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Use)
 	b.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Except)
-	// If Use is empty but except is not, we need to populate Use with the default Rule IDs
+	// If Use is empty but Except is not, we need to populate Use with the default Rule IDs
 	// so that we can then remove the exceptions.
-	if len(b.Use) == 0 {
+	//
+	// If both Use and Except are empty, we want Use to remain empty, so that RuleIDs
+	// is empty, which results in default rules being used for the builtin CheckClient.
+	if len(b.Use) == 0 && len(b.Except) > 0 {
 		b.Use = slicesext.Map(slicesext.Filter(allRules, check.Rule.IsDefault), check.Rule.ID)
 	}
+
+	// Will be empty if Use and Except are both empty.
+	var resultRules []check.Rule
 	if len(b.Use) > 0 || len(b.Except) > 0 {
 		useIDMap, err := transformToIDMap(b.Use, idToCategories, categoryToIDs)
 		if err != nil {
