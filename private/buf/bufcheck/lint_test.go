@@ -1201,9 +1201,6 @@ func testLintWithOptions(
 	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	// TODO
-	t.Skip("TODO")
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
