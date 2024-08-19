@@ -45,8 +45,21 @@ type Client interface {
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
-	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig, options ...ConfiguredRulesOption) ([]check.Rule, error)
-	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion, options ...AllRulesOption) ([]check.Rule, error)
+	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig, options ...ConfiguredRulesOption) ([]Rule, error)
+	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion, options ...AllRulesOption) ([]Rule, error)
+}
+
+type Rule interface {
+	check.Rule
+
+	// Plugin returns the name of the plugin that created this Rule.
+	//
+	// Names are freeform.
+	//
+	// Will be empty for Rules based on builtin plugins.
+	PluginName() string
+
+	isRule()
 }
 
 type LintOption interface {
@@ -95,7 +108,7 @@ func ClientWithStderr(stderr io.Writer) ClientOption {
 }
 
 // PrintRules prints the rules to the Writer.
-func PrintRules(writer io.Writer, rules []check.Rule, options ...PrintRulesOption) (retErr error) {
+func PrintRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (retErr error) {
 	return printRules(writer, rules, options...)
 }
 
@@ -119,8 +132,8 @@ func PrintRulesWithDeprecated() PrintRulesOption {
 }
 
 // GetDeprecatedIDToReplacementIDs gets a map from deprecated ID to replacement IDs.
-func GetDeprecatedIDToReplacementIDs(rules []check.Rule) (map[string][]string, error) {
-	idToRule, err := slicesext.ToUniqueValuesMap(rules, check.Rule.ID)
+func GetDeprecatedIDToReplacementIDs(rules []Rule) (map[string][]string, error) {
+	idToRule, err := slicesext.ToUniqueValuesMap(rules, Rule.ID)
 	if err != nil {
 		return nil, err
 	}

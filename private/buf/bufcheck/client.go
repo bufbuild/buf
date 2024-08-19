@@ -170,7 +170,7 @@ func (c *client) ConfiguredRules(
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
-) ([]check.Rule, error) {
+) ([]Rule, error) {
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
@@ -184,7 +184,7 @@ func (c *client) ConfiguredRules(
 		return nil, err
 	}
 	if len(config.RuleIDs) == 0 {
-		return slicesext.Filter(allRules, check.Rule.IsDefault), nil
+		return slicesext.Filter(allRules, Rule.IsDefault), nil
 	}
 	return rulesForRuleIDs(allRules, config.RuleIDs), nil
 }
@@ -194,7 +194,7 @@ func (c *client) AllRules(
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
-) ([]check.Rule, error) {
+) ([]Rule, error) {
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
@@ -207,7 +207,7 @@ func (c *client) allRules(
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
-) ([]check.Rule, error) {
+) ([]Rule, error) {
 	// Just passing through to fufill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
@@ -236,7 +236,7 @@ func (c *client) getMultiClient(
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
 	checkClientSpecs := []*checkClientSpec{
-		newCheckClientSpec(defaultCheckClient, defaultOptions),
+		newCheckClientSpec("", defaultCheckClient, defaultOptions),
 	}
 	for _, pluginConfig := range pluginConfigs {
 		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
@@ -264,7 +264,7 @@ func (c *client) getMultiClient(
 		}
 		checkClientSpecs = append(
 			checkClientSpecs,
-			newCheckClientSpec(checkClient, options),
+			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
 		)
 	}
 	return newMultiClient(checkClientSpecs), nil

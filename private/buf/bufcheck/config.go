@@ -58,15 +58,15 @@ type config struct {
 }
 
 // Only RuleIDs, IgnoreRootPaths,  IgnoreIDToRootPaths will be set. Options has no meaning.
-func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []check.Rule) (*config, error) {
+func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []Rule) (*config, error) {
 	return configSpecForCheckConfig(checkConfig).newConfig(allRules)
 }
 
-func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []check.Rule) (*config, error) {
+func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []Rule) (*config, error) {
 	return configSpecForLintConfig(lintConfig).newConfig(allRules)
 }
 
-func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []check.Rule, excludeImports bool) (*config, error) {
+func configForBreakingConfig(breakingConfig bufconfig.BreakingConfig, allRules []Rule, excludeImports bool) (*config, error) {
 	return configSpecForBreakingConfig(breakingConfig, excludeImports).newConfig(allRules)
 }
 
@@ -151,7 +151,7 @@ func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig, exclud
 }
 
 // newConfig returns a new Config.
-func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
+func (b *configSpec) newConfig(allRules []Rule) (*config, error) {
 	// transformDeprecated should always be true if building a Config for a Runner.
 	// TODO: Evaluate whether we still need this after the refactor. Keeping logic
 	// around for now
@@ -182,11 +182,11 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 	// If both Use and Except are empty, we want Use to remain empty, so that RuleIDs
 	// is empty, which results in default rules being used for the builtin CheckClient.
 	if len(b.Use) == 0 && len(b.Except) > 0 {
-		b.Use = slicesext.Map(slicesext.Filter(allRules, check.Rule.IsDefault), check.Rule.ID)
+		b.Use = slicesext.Map(slicesext.Filter(allRules, Rule.IsDefault), Rule.ID)
 	}
 
 	// Will be empty if Use and Except are both empty.
-	var resultRules []check.Rule
+	var resultRules []Rule
 	if len(b.Use) > 0 || len(b.Except) > 0 {
 		useIDMap, err := transformToIDMap(b.Use, idToCategories, categoryToIDs)
 		if err != nil {
@@ -205,7 +205,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 
 		// this removes duplicates
 		// we already know that a given rule with the same ID is equivalent
-		resultIDToRule := make(map[string]check.Rule)
+		resultIDToRule := make(map[string]Rule)
 
 		for id := range useIDMap {
 			rule, ok := idToRule[id]
@@ -221,7 +221,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 			delete(resultIDToRule, id)
 		}
 
-		resultRules = make([]check.Rule, 0, len(resultIDToRule))
+		resultRules = make([]Rule, 0, len(resultIDToRule))
 		for _, rule := range resultIDToRule {
 			resultRules = append(resultRules, rule)
 		}
@@ -294,7 +294,7 @@ func (b *configSpec) newConfig(allRules []check.Rule) (*config, error) {
 	}
 
 	return &config{
-		RuleIDs:                slicesext.Map(resultRules, check.Rule.ID),
+		RuleIDs:                slicesext.Map(resultRules, Rule.ID),
 		DefaultOptions:         options,
 		IgnoreIDToRootPaths:    ignoreIDToRootPaths,
 		IgnoreRootPaths:        ignoreRootPaths,
@@ -389,7 +389,7 @@ func getCategoryToIDs(idToCategories map[string][]string) map[string][]string {
 }
 
 // []string{} as a value represents that the ID is deprecated but has no replacements.
-func getDeprecatedIDToReplacementIDs(idToRule map[string]check.Rule) (map[string][]string, error) {
+func getDeprecatedIDToReplacementIDs(idToRule map[string]Rule) (map[string][]string, error) {
 	m := make(map[string][]string)
 	for _, rule := range idToRule {
 		if rule.Deprecated() {
@@ -408,8 +408,8 @@ func getDeprecatedIDToReplacementIDs(idToRule map[string]check.Rule) (map[string
 	return m, nil
 }
 
-func getIDToRule(rules []check.Rule) (map[string]check.Rule, error) {
-	m := make(map[string]check.Rule)
+func getIDToRule(rules []Rule) (map[string]Rule, error) {
+	m := make(map[string]Rule)
 	for _, rule := range rules {
 		if _, ok := m[rule.ID()]; ok {
 			return nil, syserror.Newf("duplicate rule ID: %q", rule.ID())
@@ -419,7 +419,7 @@ func getIDToRule(rules []check.Rule) (map[string]check.Rule, error) {
 	return m, nil
 }
 
-func getIDToCategories(rules []check.Rule) (map[string][]string, error) {
+func getIDToCategories(rules []Rule) (map[string][]string, error) {
 	m := make(map[string][]string)
 	for _, rule := range rules {
 		if _, ok := m[rule.ID()]; ok {

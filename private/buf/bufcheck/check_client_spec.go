@@ -23,13 +23,15 @@ import (
 //
 // This allows us to take a bufconfig.PluginConfig and turn it into a client/options pair.
 type checkClientSpec struct {
-	Client  check.Client
-	Options check.Options
+	PluginName string
+	Client     check.Client
+	Options    check.Options
 }
 
-func newCheckClientSpec(client check.Client, options check.Options) *checkClientSpec {
+func newCheckClientSpec(pluginName string, client check.Client, options check.Options) *checkClientSpec {
 	return &checkClientSpec{
-		Client:  client,
-		Options: options,
+		PluginName: pluginName,
+		Client:     client,
+		Options:    options,
 	}
 }

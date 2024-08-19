@@ -100,20 +100,3 @@ func annotationToFileAnnotation(
 		annotation.Message(),
 	)
 }
-
-// Returns Rules in same order as in allRules.
-func rulesForType(allRules []check.Rule, ruleType check.RuleType) []check.Rule {
-	return slicesext.Filter(allRules, func(rule check.Rule) bool { return rule.Type() == ruleType })
-}
-
-// Returns Rules in same order as in allRules.
-func rulesForRuleIDs(allRules []check.Rule, ruleIDs []string) []check.Rule {
-	rules := make([]check.Rule, 0, len(allRules))
-	ruleIDMap := slicesext.ToStructMap(ruleIDs)
-	for _, rule := range allRules {
-		if _, ok := ruleIDMap[rule.ID()]; ok {
-			rules = append(rules, rule)
-		}
-	}
-	return rules
-}

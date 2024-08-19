@@ -44,7 +44,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]check
 	requestRuleIDs := request.RuleIDs()
 	if len(requestRuleIDs) == 0 {
 		// If we didn't have specific ruleIDs, the requested ruleIDs are all default ruleIDs.
-		requestRuleIDs = slicesext.Map(slicesext.Filter(allRules, check.Rule.IsDefault), check.Rule.ID)
+		requestRuleIDs = slicesext.Map(slicesext.Filter(allRules, Rule.IsDefault), Rule.ID)
 	}
 	// This is a map of the requested ruleIDs.
 	requestRuleIDMap := make(map[string]struct{})
@@ -105,7 +105,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]check
 	return allAnnotations, nil
 }
 
-func (c *multiClient) ListRules(ctx context.Context) ([]check.Rule, error) {
+func (c *multiClient) ListRules(ctx context.Context) ([]Rule, error) {
 	rules, _, err := c.getRulesAndChunkedRuleIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -117,16 +117,17 @@ func (c *multiClient) ListRules(ctx context.Context) ([]check.Rule, error) {
 // to the client at the same index.
 //
 // For example, chunkedRuleIDs[1] corresponds to the ruleIDs for c.clients[1].
-func (c *multiClient) getRulesAndChunkedRuleIDs(ctx context.Context) ([]check.Rule, [][]string, error) {
-	var rules []check.Rule
+func (c *multiClient) getRulesAndChunkedRuleIDs(ctx context.Context) ([]Rule, [][]string, error) {
+	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {
-		delegateRules, err := delegate.Client.ListRules(ctx)
+		delegateCheckRules, err := delegate.Client.ListRules(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
+		delegateRules := slicesext.Map(delegateCheckRules, func(checkRule check.Rule) Rule { return newRule(checkRule, delegate.PluginName) })
 		rules = append(rules, delegateRules...)
-		chunkedRuleIDs[i] = slicesext.Map(delegateRules, check.Rule.ID)
+		chunkedRuleIDs[i] = slicesext.Map(delegateRules, Rule.ID)
 	}
 	if err := validateNoDuplicateRules(rules); err != nil {
 		return nil, nil, err
@@ -140,8 +141,8 @@ func (c *multiClient) getRulesAndChunkedRuleIDs(ctx context.Context) ([]check.Ru
 	return rules, chunkedRuleIDs, nil
 }
 
-func validateNoDuplicateRules(rules []check.Rule) error {
-	return validateNoDuplicateRuleIDs(slicesext.Map(rules, check.Rule.ID))
+func validateNoDuplicateRules[R check.Rule](rules []R) error {
+	return validateNoDuplicateRuleIDs(slicesext.Map(rules, func(rule R) string { return rule.ID() }))
 }
 
 func validateNoDuplicateRuleIDs(ruleIDs []string) error {

@@ -188,7 +188,7 @@ func lsRun(
 		return err
 	}
 
-	var rules []check.Rule
+	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
 		var moduleConfig bufconfig.ModuleConfig

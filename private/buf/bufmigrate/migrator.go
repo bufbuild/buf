@@ -701,10 +701,10 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	expectedRules = slicesext.Filter(expectedRules, func(rule check.Rule) bool { return !rule.Deprecated() })
+	expectedRules = slicesext.Filter(expectedRules, func(rule bufcheck.Rule) bool { return !rule.Deprecated() })
 	expectedIDs := slicesext.Map(
 		expectedRules,
-		func(rule check.Rule) string {
+		func(rule bufcheck.Rule) string {
 			return rule.ID()
 		},
 	)
@@ -727,7 +727,7 @@ func equivalentCheckConfigInV2(
 	}
 	simplyTranslatedIDs := slicesext.Map(
 		simplyTranslatedRules,
-		func(rule check.Rule) string {
+		func(rule bufcheck.Rule) string {
 			return rule.ID()
 		},
 	)

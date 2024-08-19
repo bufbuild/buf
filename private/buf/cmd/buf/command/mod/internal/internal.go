@@ -178,7 +178,7 @@ func lsRun(
 	if err != nil {
 		return err
 	}
-	var rules []check.Rule
+	var rules []bufcheck.Rule
 	if flags.All {
 		rules, err = client.AllRules(ctx, ruleType, bufYAMLFile.FileVersion())
 		if err != nil {
