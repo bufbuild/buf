@@ -8,7 +8,8 @@ $(call _assert_var,CACHE_BIN)
 
 # Settable
 # https://github.com/protocolbuffers/protobuf-go/releases 20240611 checked 20240612
-PROTOC_GEN_GO_VERSION ?= v1.34.2
+# TODO: Change back to released version once bug is fixed
+PROTOC_GEN_GO_VERSION ?= 94ecbc26168965a670a0f7cf86f658131c790a9c
 
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	google.golang.org/protobuf/proto@$(PROTOC_GEN_GO_VERSION)
