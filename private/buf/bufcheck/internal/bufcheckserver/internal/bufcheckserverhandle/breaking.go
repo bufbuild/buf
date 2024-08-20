@@ -1777,29 +1777,6 @@ func handleBreakingFieldSameOneof(
 	return nil
 }
 
-// HandleBreakingMessageSameMessageSetWireFormat is a check function.
-var HandleBreakingMessageSameMessageSetWireFormat = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingMessageSameMessageSetWireFormat)
-
-func handleBreakingMessageSameMessageSetWireFormat(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	request bufcheckserverutil.Request,
-	message bufprotosource.Message,
-	previousMessage bufprotosource.Message,
-) error {
-	previous := strconv.FormatBool(previousMessage.MessageSetWireFormat())
-	current := strconv.FormatBool(message.MessageSetWireFormat())
-	if previous != current {
-		responseWriter.AddProtosourceAnnotation(
-			message.MessageSetWireFormatLocation(),
-			previousMessage.MessageSetWireFormatLocation(),
-			`Message option "message_set_wire_format" changed from %q to %q.`,
-			previous,
-			current,
-		)
-	}
-	return nil
-}
-
 // HandleBreakingMessageSameRequiredFields is a check function.
 var HandleBreakingMessageSameRequiredFields = bufcheckserverutil.NewBreakingMessagePairRuleHandler(handleBreakingMessageSameRequiredFields)
 

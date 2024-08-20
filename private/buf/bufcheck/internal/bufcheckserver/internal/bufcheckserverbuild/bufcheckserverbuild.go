@@ -428,11 +428,19 @@ var (
 		Handler: bufcheckserverhandle.HandleBreakingMessageSameJSONFormat,
 	}
 	// BreakingMessageSameMessageSetWireFormatRuleSpecBuilder is a rule spec builder.
+	//
+	// This is deprecated. This rule is now a no-op. We can't do this rule anymore because protobuf-go
+	// locked out handling of MessageSets. Because reasons. Grep "ProtoLegacy" in protobuf-go for more details.
 	BreakingMessageSameMessageSetWireFormatRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT",
-		Purpose: "Checks messages have the same value for the message_set_wire_format option.",
-		Type:    check.RuleTypeBreaking,
-		Handler: bufcheckserverhandle.HandleBreakingMessageSameMessageSetWireFormat,
+		ID:         "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT",
+		Purpose:    "Checks messages have the same value for the message_set_wire_format option.",
+		Type:       check.RuleTypeBreaking,
+		Deprecated: true,
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
 	}
 	// BreakingMessageSameRequiredFieldsRuleSpecBuilder is a rule spec builder.
 	BreakingMessageSameRequiredFieldsRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
