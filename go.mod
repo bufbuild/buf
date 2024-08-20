@@ -9,8 +9,8 @@ require (
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240801134127-09fbc17f7c9e.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1
-	github.com/bufbuild/bufplugin-go v0.0.0-20240820000059-8e170798b737
-	github.com/bufbuild/pluginrpc-go v0.0.0-20240820000016-1463b4d2b3e6
+	github.com/bufbuild/bufplugin-go v0.0.0-20240820183822-2bdafc547d06
+	github.com/bufbuild/pluginrpc-go v0.0.0-20240820183735-b2975500a80e
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
 	github.com/bufbuild/protovalidate-go v0.6.4
@@ -50,7 +50,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240819235812-34e4e0b526fa.2 // indirect
+	buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240820183300-ccff5e844a25.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.12.6 // indirect
