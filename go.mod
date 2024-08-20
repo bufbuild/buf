@@ -13,8 +13,8 @@ require (
 	github.com/bufbuild/pluginrpc-go v0.0.0-20240820000016-1463b4d2b3e6
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
-	github.com/bufbuild/protovalidate-go v0.6.3
-	github.com/bufbuild/protoyaml-go v0.1.10
+	github.com/bufbuild/protovalidate-go v0.6.4
+	github.com/bufbuild/protoyaml-go v0.1.11
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
@@ -45,7 +45,7 @@ require (
 	golang.org/x/sync v0.8.0
 	golang.org/x/term v0.23.0
 	golang.org/x/tools v0.24.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.34.3-0.20240816073751-94ecbc261689
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -53,7 +53,7 @@ require (
 	buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240819235812-34e4e0b526fa.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/Microsoft/hcsshim v0.12.5 // indirect
+	github.com/Microsoft/hcsshim v0.12.6 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/containerd/cgroups/v3 v3.0.3 // indirect
 	github.com/containerd/containerd v1.7.20 // indirect
@@ -109,7 +109,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240812133136-8ffd90a71988 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240812133136-8ffd90a71988 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/grpc v1.65.0 // indirect
 )
