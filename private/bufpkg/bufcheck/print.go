@@ -99,13 +99,9 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 	}()
 	writer = tabWriter
 
-	if _, err := fmt.Fprintln(writer, textHeader); err != nil {
-		return err
-	}
-
 	havePrintedSection := false
 	if len(defaultRules) > 0 {
-		if err := printRulesTextSection(writer, defaultRules, "", longestRuleID, longestRuleCategories); err != nil {
+		if err := printRulesTextSection(writer, defaultRules, "", havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
 			return err
 		}
 		havePrintedSection = true
@@ -121,7 +117,7 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 			// This should never happen.
 			return syserror.Newf("no rules for plugin name %q", pluginName)
 		}
-		if err := printRulesTextSection(writer, rules, pluginName, longestRuleID, longestRuleCategories); err != nil {
+		if err := printRulesTextSection(writer, rules, pluginName, havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
 			return err
 		}
 		havePrintedSection = true
@@ -129,11 +125,16 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 	return nil
 }
 
-func printRulesTextSection(writer io.Writer, rules []Rule, pluginName string, globallyLongestRuleID string, globallyLongestRuleCategories string) error {
+func printRulesTextSection(writer io.Writer, rules []Rule, pluginName string, havePrintedSection bool, globallyLongestRuleID string, globallyLongestRuleCategories string) error {
 	subLongestRuleID := getLongestRuleID(rules)
 	subLongestRuleCategories := getLongestRuleCategories(rules)
 	if pluginName != "" {
 		if _, err := fmt.Fprintf(writer, "%s\n\n", pluginName); err != nil {
+			return err
+		}
+	}
+	if !havePrintedSection {
+		if _, err := fmt.Fprintln(writer, textHeader); err != nil {
 			return err
 		}
 	}

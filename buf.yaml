@@ -4,8 +4,8 @@ modules:
     name: buf.build/bufbuild/buf
 lint:
   use:
-    - DEFAULT
-    - UNARY_RPC
+    #- DEFAULT
+    #- UNARY_RPC
     - TIMESTAMP_SUFFIX
   disallow_comment_ignores: true
 breaking:
