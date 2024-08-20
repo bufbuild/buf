@@ -791,6 +791,10 @@ func handleLintPackageSameJavaMultipleFiles(
 		pkg,
 		pkgFiles,
 		func(file bufprotosource.File) string {
+			// Return empty string when the option is not present, instead of returning a "true" or "false" value.
+			if fileOptions := file.FileDescriptor().GetOptions(); fileOptions == nil || fileOptions.JavaMultipleFiles == nil {
+				return ""
+			}
 			return strconv.FormatBool(file.JavaMultipleFiles())
 		},
 		bufprotosource.File.JavaMultipleFilesLocation,
@@ -895,7 +899,6 @@ func handleLintPackageSameOptionValue(
 					name,
 				)
 			}
-			// TODO: investigate the case where noOptionValue is false but fileOptionLocation is nil.
 			var sourcePath protoreflect.SourcePath
 			if fileOptionLocation := getFileOptionLocation(file); fileOptionLocation != nil {
 				sourcePath = fileOptionLocation.SourcePath()

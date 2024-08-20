@@ -81,6 +81,9 @@ func (c *client) Lint(
 	image bufimage.Image,
 	options ...LintOption,
 ) error {
+	if lintConfig.Disabled() {
+		return nil
+	}
 	lintOptions := newLintOptions()
 	for _, option := range options {
 		option.applyToLint(lintOptions)
@@ -124,6 +127,9 @@ func (c *client) Breaking(
 	againstImage bufimage.Image,
 	options ...BreakingOption,
 ) error {
+	if breakingConfig.Disabled() {
+		return nil
+	}
 	breakingOptions := newBreakingOptions()
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
