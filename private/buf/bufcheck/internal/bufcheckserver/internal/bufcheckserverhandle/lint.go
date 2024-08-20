@@ -186,24 +186,19 @@ func handleLintDirectorySamePackage(
 			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range dirFiles {
+			var sourcePath protoreflect.SourcePath
 			if packageLocation := file.PackageLocation(); packageLocation != nil {
-				responseWriter.AddProtosourceAnnotation(
-					packageLocation,
-					nil,
+				sourcePath = packageLocation.SourcePath()
+			}
+			responseWriter.AddAnnotation(
+				check.WithFileName(file.Path()),
+				check.WithSourcePath(sourcePath),
+				check.WithMessagef(
 					"%s detected within directory %q.",
 					messagePrefix,
 					dirPath,
-				)
-			} else {
-				responseWriter.AddAnnotation(
-					check.WithFileName(file.Path()),
-					check.WithMessagef(
-						"%s detected within directory %q.",
-						messagePrefix,
-						dirPath,
-					),
-				)
-			}
+				),
+			)
 		}
 	}
 	return nil
@@ -718,24 +713,19 @@ func handleLintPackageSameDirectory(
 	if len(dirMap) > 1 {
 		dirs := slicesext.MapKeysToSortedSlice(dirMap)
 		for _, file := range pkgFiles {
+			var sourcePath protoreflect.SourcePath
 			if packageLocation := file.PackageLocation(); packageLocation != nil {
-				responseWriter.AddProtosourceAnnotation(
-					packageLocation,
-					nil,
+				sourcePath = packageLocation.SourcePath()
+			}
+			responseWriter.AddAnnotation(
+				check.WithFileName(file.Path()),
+				check.WithSourcePath(sourcePath),
+				check.WithMessagef(
 					"Multiple directories %q contain files with package %q.",
 					strings.Join(dirs, ","),
 					pkg,
-				)
-			} else {
-				responseWriter.AddAnnotation(
-					check.WithFileName(file.Path()),
-					check.WithMessagef(
-						"Multiple directories %q contain files with package %q.",
-						strings.Join(dirs, ","),
-						pkg,
-					),
-				)
-			}
+				),
+			)
 		}
 	}
 	return nil
@@ -906,18 +896,15 @@ func handleLintPackageSameOptionValue(
 				)
 			}
 			// TODO: investigate the case where noOptionValue is false but fileOptionLocation is nil.
+			var sourcePath protoreflect.SourcePath
 			if fileOptionLocation := getFileOptionLocation(file); fileOptionLocation != nil {
-				responseWriter.AddProtosourceAnnotation(
-					fileOptionLocation,
-					nil,
-					message,
-				)
-			} else {
-				responseWriter.AddAnnotation(
-					check.WithFileName(file.Path()),
-					check.WithMessage(message),
-				)
+				sourcePath = fileOptionLocation.SourcePath()
 			}
+			responseWriter.AddAnnotation(
+				check.WithFileName(file.Path()),
+				check.WithSourcePath(sourcePath),
+				check.WithMessage(message),
+			)
 		}
 	}
 	return nil
