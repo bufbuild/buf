@@ -353,11 +353,8 @@ func ignoreLocation(
 	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
 		return true, nil
 	}
-	ignoreRootPaths, ok := config.IgnoreIDToRootPaths[ruleID]
-	if !ok {
-		return false, nil
-	}
-	if normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative) {
+	// If the config says to ignore this specific rule for this path, ignore this location, otherwise we look for other forms of ignores.
+	if ignoreRootPaths, ok := config.IgnoreIDToRootPaths[ruleID]; ok && normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative) {
 		return true, nil
 	}
 
@@ -371,8 +368,8 @@ func ignoreLocation(
 	}
 
 	// Not a great design, but will never be triggered by breaking since this is never set.
-	// Therefore, never called for an againstLocation  (since lint neve has againstLocations).
-	if config.CommentIgnorePrefix != "" {
+	// Therefore, never called for an againstLocation  (since lint never has againstLocations).
+	if config.AllowCommentIgnores && config.CommentIgnorePrefix != "" {
 		sourcePath := location.SourcePath()
 		if len(sourcePath) == 0 {
 			return false, nil
