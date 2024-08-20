@@ -40,7 +40,9 @@ type TLSSettings struct {
 	HTTP2PriorKnowledge bool
 	// If true, the server is known to support HTTP/3. When set, the
 	// ALPN protocols sent during the TLS handshake will include
-	// only "h3", and exclude the other versions.
+	// only "h3", and exclude the other versions. Since HTTP/3 is
+	// based on UDP, it is the only version to expect using the UDP
+	// port right now.
 	HTTP3 bool
 }
 
