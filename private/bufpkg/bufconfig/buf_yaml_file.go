@@ -1310,17 +1310,8 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 
 // externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.gyaml file.
 type externalBufYAMLFilePluginV2 struct {
-	// Local is the local path (either relative or absolute) to a binary or other runnable program which
-	// implements the plugin interface. This can be one string (the program) or multiple (remaining
-	// strings are arguments to the program).
-	Local any `json:"local,omitempty" yaml:"local,omitempty"`
-	// Options can be one string or multiple strings.
-	Options []externalBufYAMLFilePluginOptionV2 `json:"options,omitempty" yaml:"options,omitempty"`
-}
-
-type externalBufYAMLFilePluginOptionV2 struct {
-	Key   string `json:"key,omitempty" yaml:"key,omitempty"`
-	Value any    `json:"value,omitempty" yaml:"value,omitempty"`
+	Plugin  any            `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Options map[string]any `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {

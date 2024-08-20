@@ -6,10 +6,13 @@ lint:
   use:
     - DEFAULT
     - UNARY_RPC
+    - TIMESTAMP_SUFFIX
   disallow_comment_ignores: true
 breaking:
   use:
     - WIRE_JSON
   ignore_unstable_packages: true
 plugins:
-  - local: buf-plugin-timestamp-suffix
+  - plugin: buf-plugin-timestamp-suffix
+    options:
+      timestamp_suffix: _time

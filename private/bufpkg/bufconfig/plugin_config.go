@@ -74,41 +74,28 @@ type pluginConfig struct {
 func newPluginConfigForExternalV2(
 	externalConfig externalBufYAMLFilePluginV2,
 ) (PluginConfig, error) {
-	var pluginTypeCount int
-	if externalConfig.Local != nil {
-		pluginTypeCount++
-	}
-	if pluginTypeCount == 0 {
-		return nil, errors.New("must specify local")
-	}
-	if pluginTypeCount > 1 {
-		return nil, errors.New("must specify local")
-	}
 	options := make(map[string]any)
-	for _, option := range externalConfig.Options {
-		if len(option.Key) == 0 {
+	for key, value := range externalConfig.Options {
+		if len(key) == 0 {
 			return nil, errors.New("must specify option key")
 		}
 		// TODO: Validation here, how to expose from bufplugin?
-		if option.Value == nil {
+		if value == nil {
 			return nil, errors.New("must specify option value")
 		}
-		options[option.Key] = option.Value
+		options[key] = value
 	}
-	switch {
-	case externalConfig.Local != nil:
-		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Local)
-		if err != nil {
-			return nil, err
-		}
-		return newLocalPluginConfig(
-			strings.Join(path, " "),
-			options,
-			path,
-		)
-	default:
-		return nil, syserror.Newf("must specify local")
+	// TODO: differentiate between local and remote in the future
+	// Use the same heuristic that we do for dir vs module in buffetch
+	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Plugin)
+	if err != nil {
+		return nil, err
 	}
+	return newLocalPluginConfig(
+		strings.Join(path, " "),
+		options,
+		path,
+	)
 }
 
 func newLocalPluginConfig(
@@ -152,24 +139,17 @@ func newExternalV2ForPluginConfig(
 	if !ok {
 		return externalBufYAMLFilePluginV2{}, syserror.Newf("unknown implementation of PluginConfig: %T", pluginConfig)
 	}
-	externalBufYAMLFilePluginV2 := externalBufYAMLFilePluginV2{}
-	for key, value := range pluginConfig.Options() {
-		externalBufYAMLFilePluginV2.Options = append(
-			externalBufYAMLFilePluginV2.Options,
-			externalBufYAMLFilePluginOptionV2{
-				Key:   key,
-				Value: value,
-			},
-		)
+	externalBufYAMLFilePluginV2 := externalBufYAMLFilePluginV2{
+		Options: pluginConfig.Options(),
 	}
 	switch pluginConfig.Type() {
 	case PluginConfigTypeLocal:
 		path := pluginConfig.Path()
 		switch {
 		case len(path) == 1:
-			externalBufYAMLFilePluginV2.Local = path[0]
+			externalBufYAMLFilePluginV2.Plugin = path[0]
 		case len(path) > 1:
-			externalBufYAMLFilePluginV2.Local = path
+			externalBufYAMLFilePluginV2.Plugin = path
 		}
 	}
 	return externalBufYAMLFilePluginV2, nil
