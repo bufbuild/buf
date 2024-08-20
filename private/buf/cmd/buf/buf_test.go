@@ -2471,7 +2471,6 @@ func TestLintWithPaths(t *testing.T) {
 }
 
 func TestBreakingWithPaths(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 	tempDir := t.TempDir()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.binpb"))
