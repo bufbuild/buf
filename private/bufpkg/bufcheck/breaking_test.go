@@ -969,15 +969,9 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_message_same_values",
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 42, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 7, 13, 53, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 16, 7, 16, 45, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 5, 21, 44, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 5, 24, 43, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 3, 27, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 7, 12, 53, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 3, 23, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 	)
