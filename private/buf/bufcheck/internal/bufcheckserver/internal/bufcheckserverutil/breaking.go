@@ -282,8 +282,8 @@ func NewBreakingMethodPairRuleHandler(
 		func(
 			responseWriter ResponseWriter,
 			request Request,
-			previousService bufprotosource.Service,
 			service bufprotosource.Service,
+			previousService bufprotosource.Service,
 		) error {
 			nameToMethod, err := bufprotosource.NameToMethod(service)
 			if err != nil {

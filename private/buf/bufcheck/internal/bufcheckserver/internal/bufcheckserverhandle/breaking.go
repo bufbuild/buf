@@ -1961,14 +1961,26 @@ func handleBreakingRPCSameIdempotencyLevel(
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
 	if previous != current {
-		responseWriter.AddProtosourceAnnotation(
-			method.IdempotencyLevelLocation(),
-			previousMethod.IdempotencyLevelLocation(),
-			`RPC %q on service %q changed option "idempotency_level" from %q to %q.`,
-			method.Name(),
-			method.Service().Name(),
-			previous.String(),
-			current.String(),
+		var currentLocationSourcePath protoreflect.SourcePath
+		var previousLocationSourcePath protoreflect.SourcePath
+		if method.IdempotencyLevelLocation() != nil {
+			currentLocationSourcePath = method.IdempotencyLevelLocation().SourcePath()
+		}
+		if previousMethod.IdempotencyLevelLocation() != nil {
+			previousLocationSourcePath = previousMethod.IdempotencyLevelLocation().SourcePath()
+		}
+		responseWriter.AddAnnotation(
+			check.WithFileName(method.File().Path()),
+			check.WithSourcePath(currentLocationSourcePath),
+			check.WithAgainstFileName(previousMethod.File().Path()),
+			check.WithAgainstSourcePath(previousLocationSourcePath),
+			check.WithMessagef(
+				`RPC %q on service %q changed option "idempotency_level" from %q to %q.`,
+				method.Name(),
+				method.Service().Name(),
+				previous.String(),
+				current.String(),
+			),
 		)
 	}
 	return nil
@@ -2082,17 +2094,30 @@ func handleBreakingPackageEnumNoDelete(
 					file, ok := filePathToFile[previousEnum.File().Path()]
 					if ok {
 						// File exists, try to get a location to attach the error to.
-						_, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 						if err != nil {
 							return err
 						}
-						responseWriter.AddProtosourceAnnotation(
-							location,
-							previousEnum.Location(),
-							`Previously present enum %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
+						if location != nil {
+							responseWriter.AddProtosourceAnnotation(
+								location,
+								previousEnum.Location(),
+								`Previously present enum %q was deleted from package %q.`,
+								previousNestedName,
+								previousPackage,
+							)
+						} else {
+							responseWriter.AddAnnotation(
+								check.WithFileName(descriptor.File().Path()),
+								check.WithAgainstFileName(previousEnum.Location().FilePath()),
+								check.WithAgainstSourcePath(previousEnum.Location().SourcePath()),
+								check.WithMessagef(
+									`Previously present enum %q was deleted from package %q.`,
+									previousNestedName,
+									previousPackage,
+								),
+							)
+						}
 					} else {
 						// File does not exist, we don't know where the enum was deleted from.
 						// Add the previous enum to check for ignores. This means that if
@@ -2223,14 +2248,27 @@ func handleBreakingPackageMessageNoDelete(
 					file, ok := filePathToFile[previousMessage.File().Path()]
 					if ok {
 						// File exists, try to get a location to attach the error to.
-						_, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-						responseWriter.AddProtosourceAnnotation(
-							location,
-							previousMessage.Location(),
-							`Previously present message %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
+						descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
+						if location != nil {
+							responseWriter.AddProtosourceAnnotation(
+								location,
+								previousMessage.Location(),
+								`Previously present message %q was deleted from package %q.`,
+								previousNestedName,
+								previousPackage,
+							)
+						} else {
+							responseWriter.AddAnnotation(
+								check.WithFileName(descriptor.File().Path()),
+								check.WithAgainstFileName(previousMessage.Location().FilePath()),
+								check.WithAgainstSourcePath(previousMessage.Location().SourcePath()),
+								check.WithMessagef(
+									`Previously present message %q was deleted from package %q.`,
+									previousNestedName,
+									previousPackage,
+								),
+							)
+						}
 					} else {
 						// File does not exist, we don't know where the message was deleted from.
 						// Add the previous message to check for ignores. This means that if
