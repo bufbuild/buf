@@ -23,8 +23,19 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/multierr"
+)
+
+const (
+	idHeader         = "ID"
+	categoriesHeader = "CATEGORIES"
+	defaultHeader    = "DEFAULT"
+	purposeHeader    = "PURPOSE"
+
+	textHeader = idHeader + "\t" + categoriesHeader + "\t" + defaultHeader + "\t" + purposeHeader
 )
 
 func printRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (retErr error) {
@@ -35,29 +46,20 @@ func printRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (re
 	if len(rules) == 0 {
 		return nil
 	}
-	if !printRulesOptions.asJSON {
-		tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
-		defer func() {
-			retErr = multierr.Append(retErr, tabWriter.Flush())
-		}()
-		writer = tabWriter
-		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tDEFAULT\tPLUGIN\tPURPOSE"); err != nil {
-			return err
-		}
+	rules = cloneAndSortRulesForPrint(rules)
+	if !printRulesOptions.includeDeprecated {
+		rules = slicesext.Filter(rules, func(rule Rule) bool { return !rule.Deprecated() })
 	}
-	for _, rule := range cloneAndSortRulesForPrint(rules) {
-		if !printRulesOptions.includeDeprecated && rule.Deprecated() {
-			continue
-		}
-		if err := printRule(writer, rule, printRulesOptions.asJSON); err != nil {
-			return err
-		}
+	if printRulesOptions.asJSON {
+		return printRulesJSON(writer, rules)
 	}
-	return nil
+	return printRulesText(writer, rules)
 }
 
-func printRule(writer io.Writer, rule Rule, asJSON bool) error {
-	if asJSON {
+// Rules already sorted in correct order.
+// Rules already filtered for deprecated.
+func printRulesJSON(writer io.Writer, rules []Rule) error {
+	for _, rule := range rules {
 		data, err := json.Marshal(newExternalRule(rule))
 		if err != nil {
 			return err
@@ -65,16 +67,127 @@ func printRule(writer io.Writer, rule Rule, asJSON bool) error {
 		if _, err := fmt.Fprintln(writer, string(data)); err != nil {
 			return err
 		}
-		return nil
-	}
-	var defaultString string
-	if rule.IsDefault() {
-		defaultString = "*"
-	}
-	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), defaultString, rule.PluginName(), rule.Purpose()); err != nil {
-		return err
 	}
 	return nil
+}
+
+// Rules already sorted in correct order.
+// Rules already filtered for deprecated.
+func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
+	var defaultRules []Rule
+	pluginNameToRules := make(map[string][]Rule)
+	var pluginNames []string
+
+	for _, rule := range rules {
+		pluginName := rule.PluginName()
+		if pluginName == "" {
+			defaultRules = append(defaultRules, rule)
+		} else {
+			if _, ok := pluginNameToRules[pluginName]; !ok {
+				pluginNames = append(pluginNames, pluginName)
+			}
+			pluginNameToRules[pluginName] = append(pluginNameToRules[pluginName], rule)
+		}
+	}
+	sort.Strings(pluginNames)
+	longestRuleID := getLongestRuleID(rules)
+	longestRuleCategories := getLongestRuleCategories(rules)
+
+	tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
+	defer func() {
+		retErr = multierr.Append(retErr, tabWriter.Flush())
+	}()
+	writer = tabWriter
+
+	if _, err := fmt.Fprintln(writer, textHeader); err != nil {
+		return err
+	}
+
+	havePrintedSection := false
+	if len(defaultRules) > 0 {
+		if err := printRulesTextSection(writer, defaultRules, "", longestRuleID, longestRuleCategories); err != nil {
+			return err
+		}
+		havePrintedSection = true
+	}
+	for _, pluginName := range pluginNames {
+		if havePrintedSection {
+			if _, err := fmt.Fprintln(writer); err != nil {
+				return err
+			}
+		}
+		rules := pluginNameToRules[pluginName]
+		if len(rules) == 0 {
+			// This should never happen.
+			return syserror.Newf("no rules for plugin name %q", pluginName)
+		}
+		if err := printRulesTextSection(writer, rules, pluginName, longestRuleID, longestRuleCategories); err != nil {
+			return err
+		}
+		havePrintedSection = true
+	}
+	return nil
+}
+
+func printRulesTextSection(writer io.Writer, rules []Rule, pluginName string, globallyLongestRuleID string, globallyLongestRuleCategories string) error {
+	subLongestRuleID := getLongestRuleID(rules)
+	subLongestRuleCategories := getLongestRuleCategories(rules)
+	if pluginName != "" {
+		if _, err := fmt.Fprintf(writer, "%s\n\n", pluginName); err != nil {
+			return err
+		}
+	}
+	for _, rule := range rules {
+		var defaultString string
+		if rule.IsDefault() {
+			defaultString = "*" + strings.Repeat(" ", len(defaultHeader)-1)
+		} else {
+			defaultString = strings.Repeat(" ", len(defaultHeader))
+		}
+		id := rule.ID()
+		// If our globally-longest ID is longer than any ID we have in this section, AND this current ID
+		// is the longest, pad it with spaces so that all the sections have their columns aligned.
+		if len(globallyLongestRuleID) > len(subLongestRuleID) && id == subLongestRuleID {
+			id = id + strings.Repeat(" ", len(globallyLongestRuleID)-len(subLongestRuleID))
+		}
+		categories := strings.Join(rule.Categories(), ", ")
+		if len(globallyLongestRuleCategories) > len(subLongestRuleCategories) && categories == subLongestRuleCategories {
+			categories = categories + strings.Repeat(" ", len(globallyLongestRuleCategories)-len(subLongestRuleCategories))
+		}
+		// Same logic for category strings.
+		if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", id, categories, defaultString, rule.Purpose()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getLongestRuleID(rules []Rule) string {
+	return slicesext.Reduce(
+		rules,
+		func(accumulator string, rule Rule) string {
+			id := rule.ID()
+			if len(accumulator) > len(id) {
+				return accumulator
+			}
+			return id
+		},
+		"",
+	)
+}
+
+func getLongestRuleCategories(rules []Rule) string {
+	return slicesext.Reduce(
+		rules,
+		func(accumulator string, rule Rule) string {
+			categories := strings.Join(rule.Categories(), ", ")
+			if len(accumulator) > len(categories) {
+				return accumulator
+			}
+			return categories
+		},
+		"",
+	)
 }
 
 // cloneAndSortRulesForPrint sorts the rules just for printing.
