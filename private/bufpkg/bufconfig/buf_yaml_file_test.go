@@ -217,10 +217,9 @@ modules:
   - path: foo
   - path: bar
 plugins:
-  - local: buf-plugin-foo
+  - plugin: buf-plugin-foo
     options:
-      - key: key1
-        value: value1
+      key1: value1
 `,
 		// expected output
 		`version: v2
@@ -228,10 +227,9 @@ modules:
   - path: bar
   - path: foo
 plugins:
-  - local: buf-plugin-foo
+  - plugin: buf-plugin-foo
     options:
-      - key: key1
-        value: value1
+      key1: value1
 `,
 	)
 

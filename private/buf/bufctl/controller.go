@@ -382,6 +382,7 @@ func (c *controller) GetTargetImageWithConfigs(
 		}
 		lintConfig := bufconfig.DefaultLintConfigV1
 		breakingConfig := bufconfig.DefaultBreakingConfigV1
+		var pluginConfigs []bufconfig.PluginConfig
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
 			bucket,
@@ -395,6 +396,7 @@ func (c *controller) GetTargetImageWithConfigs(
 			// We did not find a buf.yaml in our current directory, and there was no config override.
 			// Use the defaults.
 		} else {
+			pluginConfigs = bufYAMLFile.PluginConfigs()
 			if topLevelLintConfig := bufYAMLFile.TopLevelLintConfig(); topLevelLintConfig == nil {
 				// Ensure that this is a v2 config
 				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
@@ -420,7 +422,7 @@ func (c *controller) GetTargetImageWithConfigs(
 				image,
 				lintConfig,
 				breakingConfig,
-				bufYAMLFile.PluginConfigs(),
+				pluginConfigs,
 			),
 		}, nil
 	default:
