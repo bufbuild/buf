@@ -38,7 +38,9 @@ type TLSSettings struct {
 	// "h2", and exclude "http/1.1". If the server does not pick a
 	// protocol, "h2" is assumed as the default.
 	HTTP2PriorKnowledge bool
-
+	// If true, the server is known to support HTTP/3. When set, the
+	// ALPN protocols sent during the TLS handshake will include
+	// only "h3", and exclude the other versions.
 	HTTP3 bool
 }
 

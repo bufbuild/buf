@@ -955,10 +955,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			// This shouldn't be possible since we check in flags.validate, but just in case
 			return nil, errors.New("URL positional argument is missing")
 		}
-		if f.HTTP3 {
-			return makeHTTP3Client(f, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		roundTripper, err := makeHTTPRoundTripper(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		if err != nil {
+			return nil, err
 		}
-		return makeHTTPClient(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		return bufcurl.NewVerboseHTTPClient(roundTripper, container.VerbosePrinter()), nil
 	})
 
 	output := container.Stdout()
@@ -1067,7 +1068,10 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 }
 
-func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.Printer) (connect.HTTPClient, error) {
+func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer verbose.Printer) (http.RoundTripper, error) {
+	if f.HTTP3 {
+		return makeHTTP3RoundTripper(f, authority, printer)
+	}
 	var dialer net.Dialer
 	if f.ConnectTimeoutSeconds != 0 {
 		dialer.Timeout = secondsToDuration(f.ConnectTimeoutSeconds)
@@ -1140,10 +1144,10 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 			MaxIdleConns:      1,
 		}
 	}
-	return bufcurl.NewVerboseHTTPClient(transport, printer), nil
+	return transport, nil
 }
 
-func makeHTTP3Client(f *flags, authority string, printer verbose.Printer) (connect.HTTPClient, error) {
+func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) (http.RoundTripper, error) {
 	quicCfg := &quic.Config{
 		KeepAlivePeriod: -1,
 	}
@@ -1186,7 +1190,7 @@ func makeHTTP3Client(f *flags, authority string, printer verbose.Printer) (conne
 		MaxResponseHeaderBytes: 0,
 		DisableCompression:     false,
 	}
-	return bufcurl.NewVerboseHTTPClient(roundTripper, printer), nil
+	return roundTripper, nil
 }
 
 func secondsToDuration(secs float64) time.Duration {
