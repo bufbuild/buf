@@ -105,8 +105,8 @@ func NewBreakingEnumValuePairRuleHandler(
 		func(
 			responseWriter ResponseWriter,
 			request Request,
-			previousEnum bufprotosource.Enum,
 			enum bufprotosource.Enum,
+			previousEnum bufprotosource.Enum,
 		) error {
 			numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
 			if err != nil {
