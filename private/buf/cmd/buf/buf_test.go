@@ -2471,7 +2471,6 @@ func TestLintWithPaths(t *testing.T) {
 }
 
 func TestBreakingWithPaths(t *testing.T) {
-	// TODO: unskip
 	t.Skip()
 	t.Parallel()
 	tempDir := t.TempDir()
