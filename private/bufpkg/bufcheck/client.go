@@ -20,8 +20,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/command"

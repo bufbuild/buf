@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil/customfeatures/customfeatures"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil/customfeatures/customfeatures"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/protocompile/protoutil"

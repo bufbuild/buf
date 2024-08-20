@@ -17,7 +17,7 @@ package bufcheck
 import (
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/internal/bufcheckopt"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
