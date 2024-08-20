@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/docker/docker/api/types"
 	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	imagev1 "github.com/docker/docker/image/v1"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	"go.uber.org/multierr"
@@ -45,6 +47,13 @@ const (
 	// Example: User-Agent = [docker/20.10.21 go/go1.18.7 git-commit/3056208 kernel/5.15.49-linuxkit os/linux arch/arm64 UpstreamClient(buf-cli-1.11.0)]
 	BufUpstreamClientUserAgentPrefix = "buf-cli-"
 )
+
+// imageDigestRe is a regular expression for extracting the image digest from the output of a docker
+// push command. It is tightly coupled to the string representation because the stream response
+// itself is not very well defined.
+//
+// https://github.com/moby/moby/blob/1c282d1f1b90ff188a1b46f48548ac3151ca2ddf/daemon/containerd/image_push.go#L130
+var imageDigestRe = regexp.MustCompile(`digest:\s*(\S+)`)
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
 // It ensures that we pass the appropriate parameters to build images (i.e. platform 'linux/amd64').
@@ -128,7 +137,7 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 				d.logger.Warn("Unsupported image digest", zap.String("imageID", loadedImageID))
 				continue
 			}
-			if err := stringid.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
+			if err := imagev1.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
 				d.logger.Warn("Invalid image id", zap.String("imageID", loadedImageID))
 				continue
 			}
@@ -182,12 +191,7 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 			if message.Error != nil {
 				return nil, message.Error
 			}
-			if message.Aux != nil {
-				var pushResult types.PushResult
-				if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
-					imageDigest = pushResult.Digest
-				}
-			}
+			imageDigest = getImageDigestFromMessage(message)
 		}
 	}
 	if err := pushScanner.Err(); err != nil {
@@ -196,7 +200,24 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	if len(imageDigest) == 0 {
 		return nil, fmt.Errorf("failed to determine image digest after push")
 	}
+	d.logger.Debug("docker image digest", zap.String("imageDigest", imageDigest))
 	return &PushResponse{Digest: imageDigest}, nil
+}
+
+func getImageDigestFromMessage(message jsonmessage.JSONMessage) string {
+	if message.Aux != nil {
+		var pushResult types.PushResult
+		if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
+			return pushResult.Digest
+		}
+	}
+	// If the message has no aux field, we fall back to parsing the status field.
+	if message.Status != "" {
+		if match := imageDigestRe.FindStringSubmatch(message.Status); len(match) > 1 {
+			return match[1]
+		}
+	}
+	return ""
 }
 
 func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResponse, error) {

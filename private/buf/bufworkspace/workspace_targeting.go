@@ -562,10 +562,18 @@ func getMappedModuleBucketAndModuleTargeting(
 			),
 		)
 	}
+	docStorageReadBucket, err := bufmodule.GetDocStorageReadBucket(ctx, moduleBucket)
+	if err != nil {
+		return nil, nil, err
+	}
+	licenseStorageReadBucket, err := bufmodule.GetLicenseStorageReadBucket(ctx, moduleBucket)
+	if err != nil {
+		return nil, nil, err
+	}
 	rootBuckets = append(
 		rootBuckets,
-		bufmodule.GetDocStorageReadBucket(ctx, moduleBucket),
-		bufmodule.GetLicenseStorageReadBucket(moduleBucket),
+		docStorageReadBucket,
+		licenseStorageReadBucket,
 	)
 	mappedModuleBucket := storage.MultiReadBucket(rootBuckets...)
 	moduleTargeting, err := newModuleTargeting(

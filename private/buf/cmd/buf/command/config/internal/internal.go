@@ -118,7 +118,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format to print rules as. Must be one of %s",
-			stringutil.SliceToString(bufcheck.AllRuleFormatStrings),
+			stringutil.SliceToString(bufcli.AllRuleFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -249,7 +249,7 @@ func lsRun(
 			return syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
 	}
-	return bufcheck.PrintRules(
+	return bufcli.PrintRules(
 		container.Stdout(),
 		rules,
 		flags.Format,
