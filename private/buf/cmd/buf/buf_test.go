@@ -450,18 +450,18 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
-		"../../bufcheck/testdata/breaking/current/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete",
 		"--against",
-		"../../bufcheck/testdata/breaking/previous/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/testdata/breaking/previous/breaking_field_no_delete",
 	)
 }
 
