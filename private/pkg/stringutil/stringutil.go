@@ -76,20 +76,16 @@ func WordWrap(text string, charLimit int) []string {
 	for _, char := range text {
 		if char == '\n' {
 			if wordBuf.Len() == 0 {
-				if current+spaceBufLen > charLimit {
-					current = 0
-				} else {
-					current += spaceBufLen
-					spaceBuf.WriteTo(buf)
+				if current+spaceBufLen <= charLimit {
+					_, _ = spaceBuf.WriteTo(buf)
 				}
 				spaceBuf.Reset()
 				spaceBufLen = 0
 			} else {
-				current += spaceBufLen + wordBufLen
-				spaceBuf.WriteTo(buf)
+				_, _ = spaceBuf.WriteTo(buf)
 				spaceBuf.Reset()
 				spaceBufLen = 0
-				wordBuf.WriteTo(buf)
+				_, _ = wordBuf.WriteTo(buf)
 				wordBuf.Reset()
 				wordBufLen = 0
 			}
@@ -98,10 +94,10 @@ func WordWrap(text string, charLimit int) []string {
 		} else if unicode.IsSpace(char) && char != nbsp {
 			if spaceBuf.Len() == 0 || wordBuf.Len() > 0 {
 				current += spaceBufLen + wordBufLen
-				spaceBuf.WriteTo(buf)
+				_, _ = spaceBuf.WriteTo(buf)
 				spaceBuf.Reset()
 				spaceBufLen = 0
-				wordBuf.WriteTo(buf)
+				_, _ = wordBuf.WriteTo(buf)
 				wordBuf.Reset()
 				wordBufLen = 0
 			}
@@ -124,11 +120,11 @@ func WordWrap(text string, charLimit int) []string {
 
 	if wordBuf.Len() == 0 {
 		if current+spaceBufLen <= charLimit {
-			spaceBuf.WriteTo(buf)
+			_, _ = spaceBuf.WriteTo(buf)
 		}
 	} else {
-		spaceBuf.WriteTo(buf)
-		wordBuf.WriteTo(buf)
+		_, _ = spaceBuf.WriteTo(buf)
+		_, _ = wordBuf.WriteTo(buf)
 	}
 	lines = append(lines, buf.String())
 

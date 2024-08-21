@@ -227,10 +227,7 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 				return false
 			}
 			if compare := strings.Compare(onePluginName, twoPluginName); compare != 0 {
-				if compare < 0 {
-					return true
-				}
-				return false
+				return compare < 0
 			}
 			oneCategories := one.Categories()
 			sort.Slice(oneCategories, func(i int, j int) bool { return categoryIDLess(oneCategories[i].ID(), oneCategories[j].ID()) })

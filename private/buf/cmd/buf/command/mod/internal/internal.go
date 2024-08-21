@@ -140,7 +140,6 @@ func lsRun(
 	commandName string,
 	ruleType check.RuleType,
 ) error {
-
 	if flags.All {
 		// We explicitly document that if all is set, config is ignored.
 		// If a user wants to override the version while using all, they should use version.

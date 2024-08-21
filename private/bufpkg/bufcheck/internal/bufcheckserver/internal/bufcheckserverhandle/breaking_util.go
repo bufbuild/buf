@@ -301,29 +301,6 @@ func fieldDescriptionWithName(field bufprotosource.Field, name string) string {
 	return fmt.Sprintf("%s %q%s on message %q", kind, numberString, name, message)
 }
 
-func addToTypeToNumberToExtension(container bufprotosource.ContainerDescriptor, typeToNumberToExt map[string]map[int]bufprotosource.Field) error {
-	for _, extension := range container.Extensions() {
-		numberToExt := typeToNumberToExt[extension.Extendee()]
-		if numberToExt == nil {
-			numberToExt = make(map[int]bufprotosource.Field)
-			typeToNumberToExt[extension.Extendee()] = numberToExt
-		}
-		if existing, ok := numberToExt[extension.Number()]; ok {
-			return fmt.Errorf("duplicate extension %d of %s: %s in %q and %s in %q",
-				extension.Number(), extension.Extendee(),
-				existing.FullName(), existing.File().Path(),
-				extension.FullName(), extension.File().Path())
-		}
-		numberToExt[extension.Number()] = extension
-	}
-	for _, message := range container.Messages() {
-		if err := addToTypeToNumberToExtension(message, typeToNumberToExt); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func is64bitInteger(fieldType descriptorpb.FieldDescriptorProto_Type) bool {
 	switch fieldType {
 	case descriptorpb.FieldDescriptorProto_TYPE_INT64,

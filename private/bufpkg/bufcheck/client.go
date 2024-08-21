@@ -212,7 +212,7 @@ func (c *client) allRules(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 ) ([]Rule, error) {
-	// Just passing through to fufill all contracts, ie checkClientSpec has non-nil Options.
+	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
 	emptyOptions, err := check.NewOptions(nil)
@@ -270,9 +270,6 @@ func (c *client) getMultiClient(
 			),
 			check.ClientWithCacheRulesAndCategories(),
 		)
-		if err != nil {
-			return nil, err
-		}
 		checkClientSpecs = append(
 			checkClientSpecs,
 			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
@@ -341,7 +338,6 @@ func ignoreAnnotation(
 	// TODO: Is this right? Does this properly encapsulate old extraIgnoreDescriptors logic?
 	if againstLocation := annotation.AgainstLocation(); againstLocation != nil {
 		return ignoreLocation(config, annotation.RuleID(), againstLocation)
-
 	}
 	return false, nil
 }
