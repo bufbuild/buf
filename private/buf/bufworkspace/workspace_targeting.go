@@ -459,6 +459,9 @@ func fallbackWorkspaceTargeting(
 				bucket,
 				bucketTargeting,
 				v2BufYAMLFile,
+				// Since the v2 buf.yaml is found at the workspace root we allow falling back
+				// to the doc/license at the workspace root, even though this function (fallbackWorkspaceTargeting)
+				// is the logic for handling the situation where the a controlling workspace not found.
 				true,
 			)
 		}
