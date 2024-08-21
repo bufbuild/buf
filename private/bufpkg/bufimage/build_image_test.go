@@ -318,6 +318,57 @@ func TestCompareSemicolons(t *testing.T) {
 	testCompare(t, runner, "semicolons")
 }
 
+func TestTargetFiles(t *testing.T) {
+	t.Parallel()
+	moduleSet, err := bufmoduletesting.NewModuleSet(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = "proto3"; package a; import "b.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(
+					`syntax = "proto3"; package b; import "c.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/c",
+			PathToData: map[string][]byte{
+				"c.proto": []byte(
+					`syntax = "proto3"; package c;`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+	testTagetImageFiles := func(t *testing.T, want []string, opaqueID ...string) {
+		targetModuleSet := moduleSet
+		if len(opaqueID) > 0 {
+			var err error
+			targetModuleSet, err = moduleSet.WithTargetOpaqueIDs(opaqueID...)
+			require.NoError(t, err)
+		}
+		image, err := bufimage.BuildImage(
+			context.Background(),
+			tracing.NopTracer,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(targetModuleSet),
+		)
+		require.NoError(t, err)
+		assert.Equal(t, want, testGetImageFilePaths(image))
+	}
+	testTagetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"})
+	testTagetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"}, "buf.build/foo/a")
+	testTagetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b")
+	testTagetImageFiles(t, []string{"c.proto"}, "buf.build/foo/c")
+	testTagetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b", "buf.build/foo/c")
+}
+
 func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath, false)

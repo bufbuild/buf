@@ -1029,6 +1029,11 @@ func (c *controller) buildTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
+		// The moduleReadBucket may include more modules than the target module
+		// and its dependencies. This is because the moduleSet is constructed from
+		// the workspace. Targeting the module does not remove non-related modules.
+		// Build image will use the target info to build the image for the specific
+		// module. Non-targeted modules will not be included in the image.
 		moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 		targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 		if err != nil {
