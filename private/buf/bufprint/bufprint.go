@@ -78,13 +78,13 @@ func (f Format) String() string {
 	}
 }
 
-// OutputEntity is an entity printed structurally by functions in bufprint package.
+// Entity is an entity printed structurally by functions in bufprint package.
 // It's used in "buf registry" commands where the CLI prints a page of entities, such as
 // commits, an entity's info or simply an entity's full name.
 //
-// An implementation of OutputEntity must also be a struct. If a field should be printed
+// An implementation of Entity must also be a struct. If a field should be printed
 // in table form, add a field tag with bufprint:"<field name>[,omitempty]".
-type OutputEntity interface {
+type Entity interface {
 	fullName() string
 }
 
@@ -92,7 +92,7 @@ type OutputEntity interface {
 //
 // If format is FormatJSON, this also prints information about each entity, the
 // same as calling PrintInfo on each entity.
-func PrintNames(writer io.Writer, format Format, entities ...OutputEntity) error {
+func PrintNames(writer io.Writer, format Format, entities ...Entity) error {
 	switch format {
 	case FormatJSON:
 		for _, entity := range entities {
@@ -119,7 +119,7 @@ func PrintPage(
 	format Format,
 	nextPageToken string,
 	nextPageCommand string,
-	entities []OutputEntity,
+	entities []Entity,
 ) error {
 	if len(entities) == 0 {
 		return nil
@@ -137,7 +137,7 @@ func PrintPage(
 		case outputOrganization:
 			currentEntitiesName = "organizations"
 		default:
-			return syserror.Newf("unknown implementation of OutputEntity: %T", entity)
+			return syserror.Newf("unknown implementation of Entity: %T", entity)
 		}
 		if currentEntitiesName != entitiesName && entitiesName != "" {
 			return syserror.Newf("the page has both %s and %s", currentEntitiesName, entitiesName)
@@ -175,7 +175,7 @@ func PrintPage(
 //
 // If format is FormatText, this prints the information in a table.
 // If format is FormatJSON, this prints the information as a JSON object.
-func PrintInfo(writer io.Writer, format Format, entity OutputEntity) error {
+func PrintInfo(writer io.Writer, format Format, entity Entity) error {
 	switch format {
 	case FormatJSON:
 		return json.NewEncoder(writer).Encode(entity)
@@ -197,7 +197,7 @@ func PrintInfo(writer io.Writer, format Format, entity OutputEntity) error {
 }
 
 // NewLabel returns a new label to print.
-func NewLabel(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) OutputEntity {
+func NewLabel(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) Entity {
 	var archiveTime *time.Time
 	if label.ArchiveTime != nil {
 		timeValue := label.ArchiveTime.AsTime()
@@ -213,7 +213,7 @@ func NewLabel(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) Ou
 }
 
 // NewCommit returns a new commit to print.
-func NewCommit(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName) OutputEntity {
+func NewCommit(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName) Entity {
 	return outputCommit{
 		Commit:         commit.Id,
 		CreateTime:     commit.CreateTime.AsTime(),
@@ -222,7 +222,7 @@ func NewCommit(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName)
 }
 
 // NewModule returns a new module to print.
-func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) OutputEntity {
+func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) Entity {
 	return outputModule{
 		ID:         module.Id,
 		Remote:     moduleFullName.Registry(),
@@ -235,7 +235,7 @@ func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName)
 }
 
 // NewOrganization returns a new organization to print.
-func NewOrganization(organization *ownerv1.Organization, remote string) OutputEntity {
+func NewOrganization(organization *ownerv1.Organization, remote string) Entity {
 	return outputOrganization{
 		ID:         organization.Id,
 		Remote:     remote,
@@ -382,8 +382,8 @@ func getFieldNamesAndValuesForInfo(entity any) ([]string, []string, error) {
 }
 
 type entityPage struct {
-	NextPage string         `json:"next_page,omitempty"`
-	Entities []OutputEntity `json:"entities"`
+	NextPage string   `json:"next_page,omitempty"`
+	Entities []Entity `json:"entities"`
 
 	pluralEntityName string
 }
