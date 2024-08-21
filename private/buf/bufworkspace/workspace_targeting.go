@@ -606,7 +606,7 @@ func getMappedModuleBucketAndModuleTargeting(
 		// at the workspace root if it exists.
 		if isModuleDocBucketEmpty {
 			// We do not need to check if a doc file exists at the workspace root by
-			// checking whether the doc bucket for the workspace if empty, because
+			// checking whether the doc bucket for the workspace is empty, because
 			// this bucket will just be empty there isn't one, which is what we want.
 			docStorageReadBucket, err = bufmodule.GetDocStorageReadBucket(ctx, workspaceBucket)
 			if err != nil {
@@ -621,7 +621,7 @@ func getMappedModuleBucketAndModuleTargeting(
 		// at the workspace root if it exists.
 		if isModuleLicenseBucketEmpty {
 			// We do not need to check if a license exists at the workspace root by
-			// checking whether the license bucket for the workspace if empty, because
+			// checking whether the license bucket for the workspace is empty, because
 			// this bucket will just be empty there isn't one, which is what we want.
 			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, workspaceBucket)
 			if err != nil {
