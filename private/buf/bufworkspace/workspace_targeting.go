@@ -334,7 +334,8 @@ func v1WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
-			// v1 workspace modules should not default to top-level license/doc.
+			// In a v1 workspace, if a module does not have its own doc/license next to its v1 buf.yaml,
+			// we do NOT want to fall back to the doc/license next to it's buf.work.yaml.
 			false,
 		)
 		if err != nil {
