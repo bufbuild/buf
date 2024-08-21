@@ -184,6 +184,8 @@ func v2WorkspaceTargeting(
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	bufYAMLFile bufconfig.BufYAMLFile,
+	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
+	// use the license/doc respectively at the workspace root.
 	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
 ) (*workspaceTargeting, error) {
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
@@ -541,6 +543,8 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
+	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
+	// use the license/doc respectively at the workspace root.
 	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
