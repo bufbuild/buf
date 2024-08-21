@@ -7,6 +7,9 @@
   a path to a module, but contained directories with modules, and the modules would not build.
 - Stop creating empty `buf.lock` files when `buf dep update` does not find new dependencies
   to update and there is no existing `buf.lock`.
+- Update `buf push` to push the license file or doc file (e.g. `README.md`, `LICENSE`) in the
+  same directory as `buf.yaml` if a module does not have a license file or doc file in the
+  module's directory.
 
 ## [v1.37.0] - 2024-08-16
 
