@@ -10,8 +10,6 @@
 - Update `buf push` to push the license file or doc file (e.g. `README.md`, `LICENSE`) in the
   same directory as `buf.yaml` if a module does not have a license file or doc file in the
   module's directory.
-  - Fix incorrect builds for directory input when it is a subdirectory in a v2 workspace and contains
-  module directories without being a module directory itself.
 - Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
   * If `includes` is specified, a proto file is considered in the module only if it is in one of the
     directories specified.
