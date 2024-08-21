@@ -750,7 +750,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
 			joinDirPath := func(importPath string) string {
-				return filepath.Join(moduleDirPath, importPath)
+				return normalpath.Join(moduleDirPath, importPath)
 			}
 			externalModule := externalBufYAMLFileModuleV2{
 				Path: moduleDirPath,
