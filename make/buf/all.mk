@@ -73,12 +73,6 @@ bandeps: installbandeps
 
 postlonglint:: bandeps
 
-.PHONY: installbufplugintimestampsuffix
-installbufplugintimestampsuffix:
-	go install github.com/bufbuild/bufplugin-go/check/internal/examples/timestampsuffix/cmd/buf-plugin-timestamp-suffix@latest
-
-buflintdeps:: installbufplugintimestampsuffix
-
 .PHONY: godata
 godata: installspdx-go-data installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
 	rm -rf private/gen/data/datawkt

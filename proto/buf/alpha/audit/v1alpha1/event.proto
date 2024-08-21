@@ -36,7 +36,6 @@ message Actor {
   string id = 2;
   // Name of the actor who caused the audited event.
   string name = 3;
-  string Foo = 4;
 }
 
 // ResourceType is the type of the resource that was affected by the audited
