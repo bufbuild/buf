@@ -29,7 +29,8 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
-	private/pkg/storage/storageos/tmp/
+	private/pkg/storage/storageos/tmp/ \
+	private/buf/cmd/buf/testdata/imports/*/v3/modulelocks/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024
