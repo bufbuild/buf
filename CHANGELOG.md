@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
 
 ## [v1.37.0] - 2024-08-16
 
