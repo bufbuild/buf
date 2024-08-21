@@ -2,8 +2,23 @@
 
 ## [Unreleased]
 
+- Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
+- Fix issue with directory inputs for v2 workspaces where the specified directory was not itself
+  a path to a module, but contained directories with modules, and the modules would not build.
+- Stop creating empty `buf.lock` files when `buf dep update` does not find new dependencies
+  to update and there is no existing `buf.lock`.
+- Update `buf push` to push the license file or doc file (e.g. `README.md`, `LICENSE`) in the
+  same directory as `buf.yaml` if a module does not have a license file or doc file in the
+  module's directory.
 - Fix constraints of `--path` flag for lint and breaking rules to avoid resolving all files
   within a module. This change can result in a performance improvement for large workspaces.
+
+## [v1.37.0] - 2024-08-16
+
+- Add `STABLE_PACKAGE_NO_IMPORT_UNSTABLE` lint rule which disallows files from stable packages
+  to import files from unstable packages.
+- Fix plugin push failures when pushing an image built with containerd image store.
+>>>>>>> main
 
 ## [v1.36.0] - 2024-08-06
 
@@ -1203,7 +1218,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.36.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.37.0...HEAD
+[v1.37.0]: https://github.com/bufbuild/buf/compare/v1.36.0...v1.37.0
 [v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0

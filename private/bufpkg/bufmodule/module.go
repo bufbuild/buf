@@ -16,11 +16,11 @@ package bufmodule
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
 )
@@ -235,7 +235,7 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
-	// This function must already be filtered to include only module files and must be syncext.OnceValues wrapped!
+	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
@@ -294,9 +294,9 @@ func newModule(
 		commitID:                   commitID,
 		isTarget:                   isTarget,
 		isLocal:                    isLocal,
-		getV1BufYAMLObjectData:     syncext.OnceValues(getV1BufYAMLObjectData),
-		getV1BufLockObjectData:     syncext.OnceValues(getV1BufLockObjectData),
-		getDeclaredDepModuleKeysB5: syncext.OnceValues(getDeclaredDepModuleKeysB5),
+		getV1BufYAMLObjectData:     sync.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData:     sync.OnceValues(getV1BufLockObjectData),
+		getDeclaredDepModuleKeysB5: sync.OnceValues(getDeclaredDepModuleKeysB5),
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -312,7 +312,7 @@ func newModule(
 	}
 	module.ModuleReadBucket = moduleReadBucket
 	module.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForModule(module)
-	module.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(module))
+	module.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
 
@@ -371,7 +371,7 @@ func (m *module) ModuleSet() ModuleSet {
 }
 
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
-	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
+	// We don't just call newModule directly as we don't want to double sync.OnceValues stuff.
 	newModule := &module{
 		ctx:                        m.ctx,
 		getBucket:                  m.getBucket,
@@ -390,7 +390,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
 	newModule.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForModule(newModule)
-	newModule.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(newModule))
+	newModule.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
 
@@ -403,7 +403,7 @@ func (*module) isModule() {}
 func newSyncOnceValueDigestTypeToGetDigestFuncForModule(module *module) map[DigestType]func() (Digest, error) {
 	m := make(map[DigestType]func() (Digest, error))
 	for digestType := range digestTypeToString {
-		m[digestType] = syncext.OnceValues(newGetDigestFuncForModuleAndDigestType(module, digestType))
+		m[digestType] = sync.OnceValues(newGetDigestFuncForModuleAndDigestType(module, digestType))
 	}
 	return m
 }

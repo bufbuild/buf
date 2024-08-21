@@ -1,0 +1,7 @@
+package baz;
+
+import "bar.proto";
+
+message Baz {
+  optional bar.Bar bar = 1;
+}

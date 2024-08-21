@@ -43,7 +43,7 @@ func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ stor
 // FormatBucket formats the .proto files in the bucket and returns a new bucket with the formatted files.
 func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.ReadBucket, retErr error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	paths, err := storage.AllPaths(ctx, storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")), "")
+	paths, err := storage.AllPaths(ctx, storage.FilterReadBucket(bucket, storage.MatchPathExt(".proto")), "")
 	if err != nil {
 		return nil, err
 	}

@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -50,6 +51,7 @@ var (
 		v3CacheModuleRelDirPath,
 		v3CacheCommitsRelDirPath,
 		v3CacheWKTRelDirPath,
+		v3CacheModuleLockRelDirPath,
 	}
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
@@ -96,6 +98,11 @@ var (
 	//
 	// Normalized.
 	v3CacheWKTRelDirPath = normalpath.Join("v3", "wellknowntypes")
+	// v3CacheModuleLockRelDirPath is the relative path to the lock files directory for module data.
+	// This directory is used to store lock files for synchronizing reading and writing module data from the cache.
+	//
+	// Normalized.
+	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "modulelocks")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -166,12 +173,20 @@ func newModuleDataProvider(
 	if err != nil {
 		return nil, err
 	}
+	if err := createCacheDir(container.CacheDirPath(), v3CacheModuleLockRelDirPath); err != nil {
+		return nil, err
+	}
+	filelocker, err := filelock.NewLocker(normalpath.Join(container.CacheDirPath(), v3CacheModuleLockRelDirPath))
+	if err != nil {
+		return nil, err
+	}
 	return bufmodulecache.NewModuleDataProvider(
 		container.Logger(),
 		delegateModuleDataProvider,
 		bufmodulestore.NewModuleDataStore(
 			container.Logger(),
 			cacheBucket,
+			filelocker,
 		),
 	), nil
 }

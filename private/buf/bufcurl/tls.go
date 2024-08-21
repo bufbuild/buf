@@ -38,6 +38,12 @@ type TLSSettings struct {
 	// "h2", and exclude "http/1.1". If the server does not pick a
 	// protocol, "h2" is assumed as the default.
 	HTTP2PriorKnowledge bool
+	// If true, the server is known to support HTTP/3. When set, the
+	// ALPN protocols sent during the TLS handshake will include
+	// only "h3", and exclude the other versions. Since HTTP/3 is
+	// based on UDP, it is the only version to expect using the UDP
+	// port right now.
+	HTTP3 bool
 }
 
 // MakeVerboseTLSConfig constructs a *tls.Config that logs information to the
@@ -46,19 +52,23 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 	var conf tls.Config
 	if settings.HTTP2PriorKnowledge {
 		conf.NextProtos = []string{"h2"}
+	} else if settings.HTTP3 {
+		conf.NextProtos = []string{"h3"}
 	} else {
 		conf.NextProtos = []string{"h2", "http/1.1"}
 	}
 	// we verify manually so that we can emit verbose output while doing so
 	conf.InsecureSkipVerify = true
 	conf.VerifyConnection = func(state tls.ConnectionState) error {
-		printer.Printf("* TLS connection using %s / %s", tlsVersionName(state.Version), tls.CipherSuiteName(state.CipherSuite))
+		printer.Printf("* TLS connection using %s / %s", tls.VersionName(state.Version), tls.CipherSuiteName(state.CipherSuite))
 		if state.DidResume {
 			printer.Printf("* (TLS session resumed)")
 		}
 		if state.NegotiatedProtocol == "" {
 			if settings.HTTP2PriorKnowledge {
 				printer.Printf("* ALPN: server did not agree on a protocol. Using default h2")
+			} else if settings.HTTP3 {
+				printer.Printf("* ALPN: server did not agree on a protocol. Still attempting h3")
 			} else {
 				printer.Printf("* ALPN: server did not agree on a protocol. Using default http/1.1.")
 			}

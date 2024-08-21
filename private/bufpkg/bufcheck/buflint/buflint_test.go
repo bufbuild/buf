@@ -929,6 +929,15 @@ func TestRunSyntaxSpecified(t *testing.T) {
 	)
 }
 
+func TestRunStablePackageNoImportUnstable(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"lint_stable_package_import",
+		bufanalysistesting.NewFileAnnotation(t, "api/v1/foo.proto", 5, 1, 5, 32, "STABLE_PACKAGE_NO_IMPORT_UNSTABLE"),
+	)
+}
+
 func TestRunIgnores1(t *testing.T) {
 	t.Parallel()
 	testLint(
