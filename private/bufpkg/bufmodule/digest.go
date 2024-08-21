@@ -233,7 +233,7 @@ func getB4Digest(
 		ctx,
 		// This is extreme defensive programming. We've gone out of our way to make sure
 		// that the bucket is already filtered, but it's just too important to mess up here.
-		storage.MapReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
+		storage.FilterReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
 		"",
 		func(readObject storage.ReadObject) error {
 			digest, err := bufcas.NewDigestForContent(readObject)
@@ -373,7 +373,7 @@ func getFilesDigestForB5Digest(
 		ctx,
 		// This is extreme defensive programming. We've gone out of our way to make sure
 		// that the bucket is already filtered, but it's just too important to mess up here.
-		storage.MapReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
+		storage.FilterReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
 		"",
 		func(readObject storage.ReadObject) error {
 			digest, err := bufcas.NewDigestForContent(readObject)

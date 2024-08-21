@@ -41,6 +41,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
@@ -60,6 +62,7 @@ const (
 	protocolFlagName            = "protocol"
 	unixSocketFlagName          = "unix-socket"
 	http2PriorKnowledgeFlagName = "http2-prior-knowledge"
+	http3FlagName               = "http3"
 
 	// TLS flags
 	keyFlagName           = "key"
@@ -207,6 +210,7 @@ type flags struct {
 	Protocol            string
 	UnixSocket          string
 	HTTP2PriorKnowledge bool
+	HTTP3               bool
 
 	// TLS
 	Key, Cert, CACert, ServerName string
@@ -322,6 +326,16 @@ and port indicated in the URL`,
 will be used with URLs with an http scheme, and protocol negotiation will be used to
 choose either HTTP 1.1 or HTTP/2 for URLs with an https scheme. With this flag set,
 HTTP/2 is always used, even over plain-text.`,
+	)
+
+	flagSet.BoolVar(
+		&f.HTTP3,
+		http3FlagName,
+		false,
+		`This flag can be used to indicate that HTTP/3 should be used. Without this, HTTP 1.1
+will be used with URLs with an http scheme, and protocol negotiation will be used to
+choose either HTTP 1.1 or HTTP/2 for URLs with an https scheme. With this flag set,
+HTTP/3 is always used.`,
 	)
 
 	flagSet.BoolVar(
@@ -544,6 +558,19 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
 
+	if !isSecure && f.HTTP3 {
+		return fmt.Errorf("--%s cannot be used with plain-text URLs (http)", http3FlagName)
+	}
+
+	if f.UnixSocket != "" && f.HTTP3 {
+		return fmt.Errorf("--%s cannot be used with --%s", unixSocketFlagName, http3FlagName)
+	}
+
+	// NOTE: This can be removed once trailer support lands for quic-go: https://github.com/quic-go/quic-go/issues/2266
+	if f.Protocol == connect.ProtocolGRPC && f.HTTP3 {
+		return fmt.Errorf("--%s cannot be used with --%s=%s", http3FlagName, protocolFlagName, connect.ProtocolGRPC)
+	}
+
 	if f.Netrc && f.NetrcFile != "" {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
@@ -689,6 +716,18 @@ func (f *flags) determineCredentials(
 	}
 	password := machine.Password()
 	return basicAuth(username, password), nil
+}
+
+func (f *flags) getTLSConfig(authority string, printer verbose.Printer) (*tls.Config, error) {
+	return bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
+		KeyFile:             f.Key,
+		CertFile:            f.Cert,
+		CACertFile:          f.CACert,
+		ServerName:          f.ServerName,
+		Insecure:            f.Insecure,
+		HTTP2PriorKnowledge: f.HTTP2PriorKnowledge,
+		HTTP3:               f.HTTP3,
+	}, authority, printer)
 }
 
 func promptForPassword(ctx context.Context, container app.Container, prompt string) (string, error) {
@@ -916,7 +955,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			// This shouldn't be possible since we check in flags.validate, but just in case
 			return nil, errors.New("URL positional argument is missing")
 		}
-		return makeHTTPClient(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		roundTripper, err := makeHTTPRoundTripper(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		if err != nil {
+			return nil, err
+		}
+		return bufcurl.NewVerboseHTTPClient(roundTripper, container.VerbosePrinter()), nil
 	})
 
 	output := container.Stdout()
@@ -1025,7 +1068,10 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 }
 
-func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.Printer) (connect.HTTPClient, error) {
+func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer verbose.Printer) (http.RoundTripper, error) {
+	if f.HTTP3 {
+		return makeHTTP3RoundTripper(f, authority, printer)
+	}
 	var dialer net.Dialer
 	if f.ConnectTimeoutSeconds != 0 {
 		dialer.Timeout = secondsToDuration(f.ConnectTimeoutSeconds)
@@ -1035,6 +1081,7 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 	} else {
 		dialer.KeepAlive = secondsToDuration(f.KeepAliveTimeSeconds)
 	}
+
 	var dialFunc func(ctx context.Context, network, address string) (net.Conn, error)
 	if f.UnixSocket != "" {
 		dialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -1055,14 +1102,7 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 
 	var dialTLSFunc func(ctx context.Context, network, address string) (net.Conn, error)
 	if isSecure {
-		tlsConfig, err := bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
-			KeyFile:             f.Key,
-			CertFile:            f.Cert,
-			CACertFile:          f.CACert,
-			ServerName:          f.ServerName,
-			Insecure:            f.Insecure,
-			HTTP2PriorKnowledge: f.HTTP2PriorKnowledge,
-		}, authority, printer)
+		tlsConfig, err := f.getTLSConfig(authority, printer)
 		if err != nil {
 			return nil, err
 		}
@@ -1104,7 +1144,53 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 			MaxIdleConns:      1,
 		}
 	}
-	return bufcurl.NewVerboseHTTPClient(transport, printer), nil
+	return transport, nil
+}
+
+func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) (http.RoundTripper, error) {
+	quicCfg := &quic.Config{
+		KeepAlivePeriod: -1,
+	}
+	if f.ConnectTimeoutSeconds != 0 {
+		quicCfg.HandshakeIdleTimeout = secondsToDuration(f.ConnectTimeoutSeconds)
+	}
+	if !f.NoKeepAlive {
+		quicCfg.KeepAlivePeriod = secondsToDuration(f.KeepAliveTimeSeconds)
+	}
+
+	tlsConfig, err := f.getTLSConfig(authority, printer)
+	if err != nil {
+		return nil, err
+	}
+
+	udpConn, err := net.ListenUDP("udp", nil)
+	if err != nil {
+		return nil, err
+	}
+	transport := &quic.Transport{Conn: udpConn}
+	roundTripper := &http3.RoundTripper{
+		TLSClientConfig: tlsConfig,
+		QUICConfig:      quicCfg,
+		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+			printer.Printf("* Dialing (udp) %s...", addr)
+			udpAddr, err := net.ResolveUDPAddr("udp", addr)
+			if err != nil {
+				return nil, err
+			}
+			printer.Printf("* ALPN: offering %s", strings.Join(tlsCfg.NextProtos, ","))
+			conn, err := transport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
+			if err != nil {
+				return nil, err
+			}
+			printer.Printf("* Connected to %s", conn.RemoteAddr().String())
+			return conn, err
+		},
+		EnableDatagrams:        false,
+		AdditionalSettings:     map[uint64]uint64{},
+		MaxResponseHeaderBytes: 0,
+		DisableCompression:     false,
+	}
+	return roundTripper, nil
 }
 
 func secondsToDuration(secs float64) time.Duration {
