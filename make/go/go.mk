@@ -20,6 +20,8 @@ GO_GET_PKGS ?=
 # Settable
 GO_MOD_VERSION ?= 1.21
 # Settable
+GO_MOD_TOOLCHAIN ?= 1.23.0
+# Settable
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
 SKIP_GOLANGCI_LINT ?=
@@ -70,6 +72,7 @@ upgradegodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
 	go mod edit -go=$(GO_MOD_VERSION)
+	go mod edit -toolchain=go$(GO_MOD_TOOLCHAIN)
 ifneq ($(GO_GET_PKGS),)
 	go get $(GO_GET_PKGS)
 endif
