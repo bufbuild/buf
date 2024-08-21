@@ -310,6 +310,33 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	)
 }
 
+func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expectedFileNames ...string) {
+	fileNamesToBeSeen := slicesext.ToStructMap(expectedFileNames)
+	require.NoError(t, module.WalkFileInfos(context.Background(), func(fi bufmodule.FileInfo) error {
+		path := fi.Path()
+		if _, ok := fileNamesToBeSeen[path]; !ok {
+			return fmt.Errorf("module has unexpected file: %s", path)
+		}
+		delete(fileNamesToBeSeen, path)
+		return nil
+	}))
+	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", stringutil.JoinSliceQuoted(slicesext.MapKeysToSlice(fileNamesToBeSeen), ","))
+}
+
+func requireModuleFileContent(
+	t *testing.T,
+	ctx context.Context,
+	module bufmodule.Module,
+	path string,
+	expectedContent string,
+) {
+	file, err := module.GetFile(ctx, path)
+	require.NoError(t, err)
+	content, err := ioext.ReadAllAndClose(file)
+	require.NoError(t, err)
+	require.Equal(t, expectedContent, string(content))
+}
+
 func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, expectTopLevelLicenseDocFallback bool) {
 	// bond has its own license and doc
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
@@ -358,31 +385,4 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 		_, err = module.StatFileInfo(ctx, "README.md")
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	}
-}
-
-func requireModuleFileContent(
-	t *testing.T,
-	ctx context.Context,
-	module bufmodule.Module,
-	path string,
-	expectedContent string,
-) {
-	file, err := module.GetFile(ctx, path)
-	require.NoError(t, err)
-	content, err := ioext.ReadAllAndClose(file)
-	require.NoError(t, err)
-	require.Equal(t, expectedContent, string(content))
-}
-
-func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expectedFileNames ...string) {
-	fileNamesToBeSeen := slicesext.ToStructMap(expectedFileNames)
-	require.NoError(t, module.WalkFileInfos(context.Background(), func(fi bufmodule.FileInfo) error {
-		path := fi.Path()
-		if _, ok := fileNamesToBeSeen[path]; !ok {
-			return fmt.Errorf("module has unexpected file: %s", path)
-		}
-		delete(fileNamesToBeSeen, path)
-		return nil
-	}))
-	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", stringutil.JoinSliceQuoted(slicesext.MapKeysToSlice(fileNamesToBeSeen), ","))
 }

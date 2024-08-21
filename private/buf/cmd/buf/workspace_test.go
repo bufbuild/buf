@@ -17,12 +17,10 @@ package buf
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -1022,28 +1020,28 @@ func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
 	workspaceDir := filepath.Join("testdata", "workspace", "success", "duplicate_dir_path")
 	requireBuildOutputFilePaths(
 		t,
-		[]string{
-			"prefix/bar/v1/bar.proto",
-			"prefix/foo/v1/foo.proto",
-			"prefix/x/x.proto",
-			"prefix/y/y.proto",
-			"v1/separate.proto",
+		map[string]expectedFileInfo{
+			"prefix/bar/v1/bar.proto": {},
+			"prefix/foo/v1/foo.proto": {},
+			"prefix/x/x.proto":        {},
+			"prefix/y/y.proto":        {},
+			"v1/separate.proto":       {},
 		},
 		workspaceDir,
 	)
 	requireBuildOutputFilePaths(
 		t,
-		[]string{
-			"prefix/bar/v1/bar.proto",
-			"prefix/foo/v1/foo.proto",
+		map[string]expectedFileInfo{
+			"prefix/bar/v1/bar.proto": {},
+			"prefix/foo/v1/foo.proto": {},
 		},
 		filepath.Join(workspaceDir, "proto", "shared"),
 	)
 	requireBuildOutputFilePaths(
 		t,
-		[]string{
-			"prefix/x/x.proto",
-			"prefix/y/y.proto",
+		map[string]expectedFileInfo{
+			"prefix/x/x.proto": {},
+			"prefix/y/y.proto": {},
 		},
 		filepath.Join(workspaceDir, "proto", "shared1"),
 	)
@@ -1057,41 +1055,6 @@ func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
 		},
 		filepath.Join(workspaceDir, "proto"),
 	)
-}
-
-func requireBuildOutputFilePaths(t *testing.T, expectedFilePaths []string, buildArgs ...string) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	appcmdtesting.RunCommandExitCode(
-		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		0,
-		internaltesting.NewEnvFunc(t),
-		nil,
-		stdout,
-		stderr,
-		append(
-			[]string{
-				"build",
-				"-o=-#format=json",
-			},
-			buildArgs...,
-		)...,
-	)
-	type outputFile struct {
-		Name string
-	}
-	type outputImage struct {
-		File []outputFile
-	}
-	var image outputImage
-	require.NoError(t, json.Unmarshal(stdout.Bytes(), &image))
-	slices.Sort(expectedFilePaths)
-	builtPaths := slicesext.Map(image.File, func(file outputFile) string {
-		return file.Name
-	})
-	slices.Sort(builtPaths)
-	require.Equal(t, expectedFilePaths, builtPaths)
 }
 
 func TestWorkspaceDuplicateFail(t *testing.T) {
