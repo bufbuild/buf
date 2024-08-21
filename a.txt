@@ -3,8 +3,6 @@
 ## [Unreleased]
 
 - Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
-- Update `buf push` to push the license file and doc file (e.g. `README.md`) next to the `buf.yaml`
-  if a module does not have a license file or doc file.
 
 ## [v1.37.0] - 2024-08-16
 
