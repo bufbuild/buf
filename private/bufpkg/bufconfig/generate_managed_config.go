@@ -88,7 +88,7 @@ func NewManagedDisableRule(
 	fileOption FileOption,
 	fieldOption FieldOption,
 ) (ManagedDisableRule, error) {
-	return newDisableRule(
+	return newManagedDisableRule(
 		path,
 		moduleFullName,
 		fieldName,
@@ -132,7 +132,7 @@ func NewManagedOverrideRuleForFileOption(
 	fileOption FileOption,
 	value interface{},
 ) (*managedOverrideRule, error) {
-	return newFileOptionOverrideRule(
+	return newFileOptionManagedOverrideRule(
 		path,
 		moduleFullName,
 		fileOption,
@@ -148,7 +148,7 @@ func NewManagedOverrideRuleForFieldOption(
 	fieldOption FieldOption,
 	value interface{},
 ) (ManagedOverrideRule, error) {
-	return newFieldOptionOverrideRule(
+	return newFieldOptionManagedOverrideRule(
 		path,
 		moduleFullName,
 		fieldName,
@@ -165,7 +165,7 @@ type generateManagedConfig struct {
 	overrides []ManagedOverrideRule
 }
 
-func newManagedConfigFromExternalV1Beta1(
+func newGenerateManagedConfigFromExternalV1Beta1(
 	enabled bool,
 	externalConfig externalGenerateManagedConfigV1Beta1,
 ) (GenerateManagedConfig, error) {
@@ -214,7 +214,7 @@ func newManagedConfigFromExternalV1Beta1(
 	}, nil
 }
 
-func newManagedConfigFromExternalV1(
+func newGenerateManagedConfigFromExternalV1(
 	externalConfig externalGenerateManagedConfigV1,
 ) (GenerateManagedConfig, error) {
 	var (
@@ -399,7 +399,7 @@ func newManagedConfigFromExternalV1(
 	}, nil
 }
 
-func newManagedConfigFromExternalV2(
+func newGenerateManagedConfigFromExternalV2(
 	externalConfig externalGenerateManagedConfigV2,
 ) (GenerateManagedConfig, error) {
 	var disables []ManagedDisableRule
@@ -422,7 +422,7 @@ func newManagedConfigFromExternalV2(
 				return nil, err
 			}
 		}
-		disable, err := newDisableRule(
+		disable, err := newManagedDisableRule(
 			externalDisableConfig.Path,
 			externalDisableConfig.Module,
 			externalDisableConfig.Field,
@@ -509,7 +509,7 @@ type managedDisableRule struct {
 	fieldOption    FieldOption
 }
 
-func newDisableRule(
+func newManagedDisableRule(
 	path string,
 	moduleFullName string,
 	fieldName string,
@@ -575,7 +575,7 @@ type managedOverrideRule struct {
 	value          interface{}
 }
 
-func newFileOptionOverrideRule(
+func newFileOptionManagedOverrideRule(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
@@ -611,7 +611,7 @@ func newFileOptionOverrideRule(
 	}, nil
 }
 
-func newFieldOptionOverrideRule(
+func newFieldOptionManagedOverrideRule(
 	path string,
 	moduleFullName string,
 	fieldName string,
@@ -694,7 +694,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 			return nil, nil, fmt.Errorf("%q is defined multiple times in except", exceptModuleFullName)
 		}
 		seenExceptModuleFullNames[exceptModuleFullName] = struct{}{}
-		disable, err := newDisableRule(
+		disable, err := newManagedDisableRule(
 			"",
 			exceptModuleFullName,
 			"",

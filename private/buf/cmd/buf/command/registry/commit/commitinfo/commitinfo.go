@@ -76,7 +76,7 @@ func run(
 ) error {
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	if moduleRef.Ref() == "" {
 		return appcmd.NewInvalidArgumentErrorf("%q does not have a commit specified", moduleRef.String())
@@ -87,7 +87,7 @@ func run(
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 
 	clientConfig, err := bufcli.NewConnectClientConfig(container)

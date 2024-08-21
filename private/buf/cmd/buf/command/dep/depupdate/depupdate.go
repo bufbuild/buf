@@ -128,6 +128,16 @@ func run(
 	if err != nil {
 		return err
 	}
+	if configuredDepModuleKeys == nil && existingDepModuleKeys == nil {
+		// No new configured deps were found, and no existing buf.lock deps were found, so there
+		// is nothing to update, we can return here.
+		// This ensures we do not create an empty buf.lock when one did not exist in the first
+		// place and we do not need to go through the entire operation of updating non-existent
+		// deps and building the image for tamper-proofing.
+		logger.Sugar().Warnf("No configured dependencies were found to update in %q.", dirPath)
+		return nil
+	}
+
 	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
 	// attempt to revert the buf.lock file.
 	//

@@ -75,11 +75,11 @@ func run(
 ) error {
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
