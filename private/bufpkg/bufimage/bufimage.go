@@ -265,7 +265,7 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // ModuleSetToModuleReadBucketWithOnlyProtoFiles. This is likely the only way you
 // should have a ModuleReadBucket that you pass to BuildImage.
 //
-// The image will contain only files targeted by the input ModuleReadBucket,
+// The image will contain only files targeted by the input moduleReadBucket,
 // those returned by [bufmodule.GetTargetFileInfos].
 func BuildImage(
 	ctx context.Context,
