@@ -13,7 +13,9 @@
 - Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
   * If `includes` is specified, a proto file is considered in the module only if it is in one of the
     directories specified.
-  * Within a module configuration, only one of `includes` or `excludes` is allowed.
+  * If both `includes` and `excludes` keys are specified for a module, a proto file is considered
+    part of this module if it is contained in any of the include path and not in any of the exclude
+    path.
   * This key does not affect license files or documentation files, e.g. `README.md`.
 - Allow multiple module configurations in the same v2 `buf.yaml` to have the same directory path.
 
