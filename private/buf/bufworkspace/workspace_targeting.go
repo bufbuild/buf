@@ -521,7 +521,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
-	useTopLevelLicenseDoc bool,
+	defaultToTopLevelLicenseDoc bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
 		bucket,
@@ -569,6 +569,25 @@ func getMappedModuleBucketAndModuleTargeting(
 	licenseStorageReadBucket, err := bufmodule.GetLicenseStorageReadBucket(ctx, moduleBucket)
 	if err != nil {
 		return nil, nil, err
+	}
+	if defaultToTopLevelLicenseDoc {
+		isModuleDocBucketEmpty, err := storage.IsEmpty(ctx, docStorageReadBucket, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		if isModuleDocBucketEmpty {
+			docStorageReadBucket, err = bufmodule.GetDocStorageReadBucket(ctx, bucket)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		isModuleLicenseBucketEmpty, err := storage.IsEmpty(ctx, licenseStorageReadBucket, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		if isModuleLicenseBucketEmpty {
+			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, bucket)
+		}
 	}
 	rootBuckets = append(
 		rootBuckets,
