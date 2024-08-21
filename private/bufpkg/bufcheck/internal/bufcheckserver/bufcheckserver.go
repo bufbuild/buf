@@ -32,7 +32,7 @@ var (
 			bufcheckserverbuild.BreakingEnumValueNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingExtensionMessageNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFieldNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
-			bufcheckserverbuild.BreakingFieldSameCardinalityRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
+			bufcheckserverbuild.BreakingFieldSameCardinalityRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}),
 			bufcheckserverbuild.BreakingFieldSameCppStringTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFieldSameJavaUTF8ValidationRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingFieldSameJSTypeRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
