@@ -866,8 +866,10 @@ PACKAGE_NO_DELETE                               PACKAGE                         
 PACKAGE_SERVICE_NO_DELETE                       PACKAGE                                  Checks that services are not deleted from a given package.
 ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                                Checks that enum values are not deleted from a given enum unless the name is reserved.
 FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                                Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                                Checks that fields have wire and JSON compatible cardinalities in a given message.
 ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                          Checks that enum values are not deleted from a given enum unless the number is reserved.
 FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                          Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                                     Checks that fields have wire-compatible cardinalities in a given message.
 		`
 	testRunStdout(
 		t,
