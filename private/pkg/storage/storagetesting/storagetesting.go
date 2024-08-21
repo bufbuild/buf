@@ -313,7 +313,7 @@ func RunTestSuite(
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "ab", "1.proto")),
 			externalPathsShouldEqualLocalPaths,
 		)
-		readBucket = storage.MapReadBucket(
+		readBucket = storage.FilterReadBucket(
 			readBucket,
 			storage.MatchOr(
 				storage.MatchPathExt(".txt"),
@@ -488,6 +488,7 @@ func RunTestSuite(
 		stripComponentCount   uint32
 		newReadBucketFunc     func(*testing.T) storage.ReadBucket
 		mappers               []storage.Mapper
+		matchers              []storage.Matcher
 		expectedPathToContent map[string]string
 	}{
 		{
@@ -496,7 +497,7 @@ func RunTestSuite(
 				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
-			mappers: []storage.Mapper{
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathEqual("root/foo.yaml"),
@@ -520,7 +521,7 @@ func RunTestSuite(
 				return readBucket
 			},
 			prefix: "root/a",
-			mappers: []storage.Mapper{
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathEqual("foo.yaml"),
@@ -539,7 +540,7 @@ func RunTestSuite(
 				return readBucket
 			},
 			prefix: "./root/a",
-			mappers: []storage.Mapper{
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathEqual("foo.yaml"),
@@ -558,7 +559,7 @@ func RunTestSuite(
 				return readBucket
 			},
 			stripComponentCount: 1,
-			mappers: []storage.Mapper{
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathEqual("a/bar.yaml"),
@@ -583,6 +584,8 @@ func RunTestSuite(
 			},
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("root/a"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathEqual("bar.yaml"),
@@ -604,6 +607,8 @@ func RunTestSuite(
 			stripComponentCount: 1,
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("a"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathEqual("bar.yaml"),
@@ -622,7 +627,7 @@ func RunTestSuite(
 				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
-			mappers: []storage.Mapper{
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathExt(".txt"),
@@ -652,6 +657,8 @@ func RunTestSuite(
 			},
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("root"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchNot(
 					storage.MatchPathContained("a"),
 				),
@@ -676,6 +683,8 @@ func RunTestSuite(
 			},
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("root"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchAnd(
 					storage.MatchOr(
 						storage.MatchPathExt(".proto"),
@@ -702,6 +711,8 @@ func RunTestSuite(
 			},
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("root"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchAnd(
 					storage.MatchOr(
 						storage.MatchPathExt(".proto"),
@@ -730,6 +741,8 @@ func RunTestSuite(
 			},
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("root"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchAnd(
 					storage.MatchOr(
 						storage.MatchPathExt(".proto"),
@@ -759,6 +772,8 @@ func RunTestSuite(
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("root"),
 				storage.MapOnPrefix("ab"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchPathExt(".proto"),
 			},
 			expectedPathToContent: map[string]string{
@@ -781,7 +796,7 @@ func RunTestSuite(
 					),
 				)
 			},
-			mappers: []storage.Mapper{
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathExt(".txt"),
@@ -869,6 +884,8 @@ func RunTestSuite(
 			},
 			mappers: []storage.Mapper{
 				storage.MapOnPrefix("a"),
+			},
+			matchers: []storage.Matcher{
 				storage.MatchOr(
 					storage.MatchPathExt(".proto"),
 					storage.MatchPathExt(".txt"),
@@ -896,6 +913,7 @@ func RunTestSuite(
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
 				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+				readBucket = storage.FilterReadBucket(readBucket, testCase.matchers...)
 				writeBucket := newWriteBucket(t, defaultProvider)
 				_, err := storage.Copy(
 					context.Background(),
@@ -910,6 +928,7 @@ func RunTestSuite(
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
 				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+				readBucket = storage.FilterReadBucket(readBucket, testCase.matchers...)
 				writeBucket := newWriteBucket(t, defaultProvider)
 				buffer := bytes.NewBuffer(nil)
 				require.NoError(t, storagearchive.Tar(
@@ -932,6 +951,7 @@ func RunTestSuite(
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
 				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+				readBucket = storage.FilterReadBucket(readBucket, testCase.matchers...)
 				writeBucket := newWriteBucket(t, defaultProvider)
 				buffer := bytes.NewBuffer(nil)
 				require.NoError(t, storagearchive.Zip(
@@ -974,6 +994,7 @@ func RunTestSuite(
 			))
 			readBucket = writeBucketToReadBucket(t, writeBucket)
 			readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+			readBucket = storage.FilterReadBucket(readBucket, testCase.matchers...)
 			AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
 		})
 		t.Run(fmt.Sprintf("zip-mapper-write%s", testCase.name), func(t *testing.T) {
@@ -999,6 +1020,7 @@ func RunTestSuite(
 			))
 			readBucket = writeBucketToReadBucket(t, writeBucket)
 			readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+			readBucket = storage.FilterReadBucket(readBucket, testCase.matchers...)
 			AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
 		})
 	}
@@ -1073,7 +1095,7 @@ func RunTestSuite(
 	t.Run("overlap-success", func(t *testing.T) {
 		t.Parallel()
 		readBucket, _ := newReadBucket(t, threeDirPath, defaultProvider)
-		readBucket = storage.MapReadBucket(readBucket, storage.MatchPathExt(".proto"))
+		readBucket = storage.FilterReadBucket(readBucket, storage.MatchPathExt(".proto"))
 		readBucket = storage.MultiReadBucket(
 			storage.MapReadBucket(
 				readBucket,
@@ -1114,6 +1136,9 @@ func RunTestSuite(
 					storage.MapOnPrefix("b"),
 				),
 			),
+		)
+		readBucket = storage.FilterReadBucket(
+			readBucket,
 			storage.MatchPathExt(".proto"),
 		)
 		_, err := storage.AllPaths(
@@ -1437,7 +1462,7 @@ func RunTestSuite(
 		require.False(t, isEmpty)
 		isEmpty, err = storage.IsEmpty(
 			ctx,
-			storage.MapReadBucket(readBucket, storage.MatchPathExt(".proto")),
+			storage.FilterReadBucket(readBucket, storage.MatchPathExt(".proto")),
 			"",
 		)
 		require.NoError(t, err)
