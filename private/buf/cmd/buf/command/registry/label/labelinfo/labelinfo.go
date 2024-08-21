@@ -75,7 +75,11 @@ func run(
 ) error {
 	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
+	}
+	labelName := moduleRef.Ref()
+	if labelName == "" {
+		return appcmd.NewInvalidArgumentError("label is required")
 	}
 	labelName := moduleRef.Ref()
 	if labelName == "" {
@@ -83,7 +87,7 @@ func run(
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {

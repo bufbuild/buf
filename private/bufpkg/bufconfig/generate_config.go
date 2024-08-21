@@ -22,6 +22,9 @@ import (
 
 // GenerateConfig is a generation configuration.
 type GenerateConfig interface {
+	// CleanPluginOuts is whether to delete the output directories, zip files, or jar files before
+	// generation is run.
+	CleanPluginOuts() bool
 	// GeneratePluginConfigs returns the plugin configurations. This will always be
 	// non-empty. Zero plugin configs will cause an error at construction time.
 	GeneratePluginConfigs() []GeneratePluginConfig
@@ -38,83 +41,86 @@ type GenerateConfig interface {
 
 // NewGenerateConfig returns a validated GenerateConfig.
 func NewGenerateConfig(
-	pluginConfigs []GeneratePluginConfig,
-	managedConfig GenerateManagedConfig,
-	typeConfig GenerateTypeConfig,
+	cleanPluginOuts bool,
+	generatePluginConfigs []GeneratePluginConfig,
+	generateManagedConfig GenerateManagedConfig,
+	generateTypeConfig GenerateTypeConfig,
 ) (GenerateConfig, error) {
-	if len(pluginConfigs) == 0 {
+	if len(generatePluginConfigs) == 0 {
 		return nil, newNoPluginsError()
 	}
 	return &generateConfig{
-		pluginConfigs: pluginConfigs,
-		managedConfig: managedConfig,
-		typeConfig:    typeConfig,
+		cleanPluginOuts:       cleanPluginOuts,
+		generatePluginConfigs: generatePluginConfigs,
+		generateManagedConfig: generateManagedConfig,
+		generateTypeConfig:    generateTypeConfig,
 	}, nil
 }
 
 // *** PRIVATE ***
 
 type generateConfig struct {
-	pluginConfigs []GeneratePluginConfig
-	managedConfig GenerateManagedConfig
-	typeConfig    GenerateTypeConfig
+	cleanPluginOuts       bool
+	generatePluginConfigs []GeneratePluginConfig
+	generateManagedConfig GenerateManagedConfig
+	generateTypeConfig    GenerateTypeConfig
 }
 
 func newGenerateConfigFromExternalFileV1Beta1(
 	externalFile externalBufGenYAMLFileV1Beta1,
 ) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Managed, externalFile.Options)
+	generateManagedConfig, err := newGenerateManagedConfigFromExternalV1Beta1(externalFile.Managed, externalFile.Options)
 	if err != nil {
 		return nil, err
 	}
 	if len(externalFile.Plugins) == 0 {
 		return nil, newNoPluginsError()
 	}
-	pluginConfigs, err := slicesext.MapError(
+	generatePluginConfigs, err := slicesext.MapError(
 		externalFile.Plugins,
-		newPluginConfigFromExternalV1Beta1,
+		newGeneratePluginConfigFromExternalV1Beta1,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return &generateConfig{
-		pluginConfigs: pluginConfigs,
-		managedConfig: managedConfig,
+		generatePluginConfigs: generatePluginConfigs,
+		generateManagedConfig: generateManagedConfig,
 	}, nil
 }
 
 func newGenerateConfigFromExternalFileV1(
 	externalFile externalBufGenYAMLFileV1,
 ) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV1(externalFile.Managed)
+	generateManagedConfig, err := newGenerateManagedConfigFromExternalV1(externalFile.Managed)
 	if err != nil {
 		return nil, err
 	}
 	if len(externalFile.Plugins) == 0 {
 		return nil, newNoPluginsError()
 	}
-	pluginConfigs, err := slicesext.MapError(
+	generatePluginConfigs, err := slicesext.MapError(
 		externalFile.Plugins,
-		newPluginConfigFromExternalV1,
+		newGeneratePluginConfigFromExternalV1,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return &generateConfig{
-		pluginConfigs: pluginConfigs,
-		managedConfig: managedConfig,
-		typeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
+		generatePluginConfigs: generatePluginConfigs,
+		generateManagedConfig: generateManagedConfig,
+		generateTypeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
 	}, nil
 }
 
 func newGenerateConfigFromExternalFileV2(
 	externalFile externalBufGenYAMLFileV2,
 ) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV2(externalFile.Managed)
+	generateManagedConfig, err := newGenerateManagedConfigFromExternalV2(externalFile.Managed)
 	if err != nil {
 		return nil, err
 	}
-	pluginConfigs, err := slicesext.MapError(
+	generatePluginConfigs, err := slicesext.MapError(
 		externalFile.Plugins,
 		newPluginConfigFromExternalV2,
 	)
@@ -122,21 +128,26 @@ func newGenerateConfigFromExternalFileV2(
 		return nil, err
 	}
 	return &generateConfig{
-		managedConfig: managedConfig,
-		pluginConfigs: pluginConfigs,
+		cleanPluginOuts:       externalFile.Clean,
+		generateManagedConfig: generateManagedConfig,
+		generatePluginConfigs: generatePluginConfigs,
 	}, nil
 }
 
+func (g *generateConfig) CleanPluginOuts() bool {
+	return g.cleanPluginOuts
+}
+
 func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
-	return g.pluginConfigs
+	return g.generatePluginConfigs
 }
 
 func (g *generateConfig) GenerateManagedConfig() GenerateManagedConfig {
-	return g.managedConfig
+	return g.generateManagedConfig
 }
 
 func (g *generateConfig) GenerateTypeConfig() GenerateTypeConfig {
-	return g.typeConfig
+	return g.generateTypeConfig
 }
 
 func (*generateConfig) isGenerateConfig() {}

@@ -2,17 +2,32 @@
 
 ## [Unreleased]
 
+- Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
+
+## [v1.37.0] - 2024-08-16
+
+- Add `STABLE_PACKAGE_NO_IMPORT_UNSTABLE` lint rule which disallows files from stable packages
+  to import files from unstable packages.
+- Fix plugin push failures when pushing an image built with containerd image store.
+
+## [v1.36.0] - 2024-08-06
+
+- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
+  known services or methods in the RPC schema, instead of invoking an RPC method.
+- Add `clean` as a top-level option in `buf.gen.yaml`, matching the `buf generate --clean` flag. If
+  set to true, this will delete the directories, jar files, or zip files set to `out` for each
+  plugin.
+- Fix git input handling of annotated tags.
+- Update `buf registry login` to complete the login flow in the browser by default. This allows
+  users to login with their browser and have the token automatically provided to the CLI.
 - Add `buf registry organization {create, delete, info, update}` commands to manage BSR
   organizations. Remove `buf beta registry organization` commands.
 - Add `buf registry module {create, delete, deprecate, info, undeprecate, update}` commands to
   manage BSR modules. Remove `buf beta registry repository` commands.
 - Add `buf registry label {archive, info, list, unarchive}` commands to manage BSR module labels.
-  Remove `buf beta registry label` commands and `buf beta registy {archive, unarchive}`.
+  Remove `buf beta registry label` commands and `buf beta registry {archive, unarchive}`.
 - Add `buf registry commit {add-label, info, list, resolve}` to manage BSR module commits. Remove
   `buf beta registry commit` commands.
-- Fix git input handling of annotated tags.
-- Update `buf registry login` to complete the login flow in the browser by default. This allows
-  users to login with their browser and have the token automatically provided to the CLI.
 
 ## [v1.35.1] - 2024-07-24
 
@@ -28,8 +43,6 @@
   to call `rm -rf`.
 - Deprecate `--username` flag on and username prompt on `buf registry login`. A username is no longer
   required to log in.
-- Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
-  known services or methods in the RPC schema, instead of invoking an RPC method.
 
 ## [v1.34.0] - 2024-06-21
 
@@ -122,19 +135,19 @@
 - Update `buf breaking` rules to work with Protobuf Editions. To support Editions, some rules have
   been deprecated and replaced with Editions-aware rules. All deprecated rules continue to work
   for existing users.
-  * `FIELD_SAME_CTYPE` has been replaced with `FIELD_SAME_CPP_STRING_TYPE`, which considers both
+  - `FIELD_SAME_CTYPE` has been replaced with `FIELD_SAME_CPP_STRING_TYPE`, which considers both
     `ctype` field options and new `(pb.cpp).string_type` features when deciding on backwards
     compatibility.
-  * `FIELD_SAME_LABEL` has been replaced with three rules that all check "cardinality". The new
+  - `FIELD_SAME_LABEL` has been replaced with three rules that all check "cardinality". The new
     rules can distinguish between maps and other repeated fields and between implicit and explicit
     field presence. The new rules are:
     1. `FIELD_SAME_CARDINALITY` in the `FILE` and `PACKAGE` categories.
     2. `FIELD_WIRE_COMPATIBLE_CARDINALITY` in the `WIRE` category.
     3. `FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY` in the `WIRE_JSON` category.
-  * `FILE_SAME_JAVA_STRING_CHECK_UTF8` has been replaced with `FIELD_SAME_JAVA_UTF8_VALIDATION`,
+  - `FILE_SAME_JAVA_STRING_CHECK_UTF8` has been replaced with `FIELD_SAME_JAVA_UTF8_VALIDATION`,
     which considers both the `java_string_check_utf8` file option and `(pb.java).utf8_validation`
     features when deciding on backwards compatibility.
-  * Add to the existing `FILE_SAME_SYNTAX` rule with a few related rules that can catch the same
+  - Add to the existing `FILE_SAME_SYNTAX` rule with a few related rules that can catch the same
     sort of compatibility issues, but in an Editions source file that changes feature values:
     1. `MESSAGE_SAME_JSON_FORMAT` and `ENUM_SAME_JSON_FORMAT` catch changes to the `json_format`
        feature, which controls whether support for the JSON format is best-effort or properly
@@ -372,7 +385,7 @@
 
 - Update built-in Well-Known Types to Protobuf v22.0.
 - Fix bug in `buf format` where C-style block comments in which every
-  line includes a prefix (usually "*") would be incorrectly indented.
+  line includes a prefix (usually "\*") would be incorrectly indented.
 - Add `--private-network` flag to `buf beta studio-agent` to support handling CORS requests
   from Studio on private networks that set the `Access-Control-Request-Private-Network` header.
 
@@ -403,6 +416,7 @@
 - Remove `buf beta convert` in favor of the now-stable `buf convert`.
 
 ## [v1.12.0] - 2023-01-12
+
 - Add `buf curl` command to invoke RPCs via [Connect](https://connect-build),
   [gRPC](https://grpc.io/), or [gRPC-Web](https://github.com/grpc/grpc-web.)
 - Introduce `objc_class_prefix` option in managed mode, allowing a `default` value
@@ -414,6 +428,7 @@
   the same effect as having mananged mode enabled in previous versions.
 
 ## [v1.11.0] - 2022-12-19
+
 - `buf generate` now batches remote plugin generation calls for improved performance.
 - Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`
   for all files, `except` and `override`, which both behave similarly to other `except`
@@ -436,6 +451,7 @@
 ## [v1.9.0] - 2022-10-19
 
 - New compiler that is faster and uses less memory than the outgoing one.
+
   - When generating source code info, the new compiler is 20% faster, and allocates
     13% less memory.
   - If _not_ generating source code info, the new compiler is 50% faster and
@@ -448,6 +464,7 @@
 
   The new compiler also addresses a few bugs where Buf would accept proto sources
   that protoc would reject:
+
   - In proto3 files, field and enum names undergo a validation that they are
     sufficiently different so that there will be no conflicts in JSON names.
   - Fully-qualified names of elements (like a message, enum, or service) may not
@@ -457,6 +474,7 @@
   - Nesting depth of messages may not be > 32.
   - Field types and method input/output types may not refer to synthetic
     map entry messages.
+
 - Push lint and breaking configuration to the registry.
 - Include `LICENSE` file in the module on `buf push`.
 - Formatter better edits/preserves whitespace around inline comments.
@@ -539,6 +557,7 @@
 - Remove check for proper usage of private packages due to a breaking change made in the Golang standard library in 1.18.
 
 ## [v1.1.0] - 2022-03-01
+
 - Add `--type` flag to the `build` command to create filtered images containing
   only the specified types and their required dependencies.
 - Trim spaces and new lines from user-supplied token for `buf registry login`.
@@ -864,15 +883,15 @@ There is no change in functionality.
 
 ## [v0.41.0] - 2021-04-01
 
-* Add `MESSAGE_SAME_REQUIRED_FIELDS` breaking change rule. This checks to make sure no `required` fields are added or deleted from existing messages.
-* Support multi-architecture Docker image.
-* Exit with code 100 for `FileAnnotation` errors.
+- Add `MESSAGE_SAME_REQUIRED_FIELDS` breaking change rule. This checks to make sure no `required` fields are added or deleted from existing messages.
+- Support multi-architecture Docker image.
+- Exit with code 100 for `FileAnnotation` errors.
 
 ## [v0.40.0] - 2021-03-15
 
-* Add `buf beta registry tag {create,list}` commands.
-* Add support for creating tags in `push` via `buf beta push -t`.
-* Fix an issue where errors were unnecessarily written in `buf lint` and `buf breaking`.
+- Add `buf beta registry tag {create,list}` commands.
+- Add support for creating tags in `push` via `buf beta push -t`.
+- Fix an issue where errors were unnecessarily written in `buf lint` and `buf breaking`.
 
 ## [v0.39.1] - 2021-03-04
 
@@ -880,9 +899,9 @@ There is no change in functionality.
 
 ## [v0.39.0] - 2021-03-04
 
-* `buf beta push` doesn't create a new commit if the content of the push is the same as the latest commit on the branch.
-* Fix an issue where no error was shown when authentication failed.
-* Fix an issue where `buf protoc` would error if a plugin returned an empty error string.
+- `buf beta push` doesn't create a new commit if the content of the push is the same as the latest commit on the branch.
+- Fix an issue where no error was shown when authentication failed.
+- Fix an issue where `buf protoc` would error if a plugin returned an empty error string.
 
 ## [v0.38.0] - 2021-02-25
 
@@ -903,7 +922,7 @@ There is no change in functionality.
 
 Allows comment ignores of the form `// buf:lint:ignore ID` to be cascaded upwards for specific rules.
 
-- For  `ENUM_VALUE_PREFIX, ENUM_VALUE_UPPER_SNAKE_CASE`, both the enum value and the enum are checked.
+- For `ENUM_VALUE_PREFIX, ENUM_VALUE_UPPER_SNAKE_CASE`, both the enum value and the enum are checked.
 - For `FIELD_LOWER_SNAKE_CASE, FIELD_NO_DESCRIPTOR`, both the field and message are checked.
 - For `ONEOF_LOWER_SNAKE_CASE`, both the oneof and message are checked.
 - For `RPC_NO_CLIENT_STREAMING, RPC_NO_SERVER_STREAMING, RPC_PASCAL_CASE, RPC_REQUEST_RESPONSE_UNIQUE`, both the method and service are checked.
@@ -1195,7 +1214,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.35.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.37.0...HEAD
+[v1.37.0]: https://github.com/bufbuild/buf/compare/v1.36.0...v1.37.0
+[v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0
 [v1.34.0]: https://github.com/bufbuild/buf/compare/v1.33.0...v1.34.0

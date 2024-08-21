@@ -56,7 +56,7 @@ func (h *handler) Check(
 	if config.Disabled() {
 		return nil
 	}
-	files, err := bufprotosource.NewFiles(ctx, image)
+	files, err := bufprotosource.NewFiles(ctx, image.Files(), image.Resolver())
 	if err != nil {
 		return err
 	}

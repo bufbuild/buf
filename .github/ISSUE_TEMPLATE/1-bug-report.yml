@@ -5,14 +5,16 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Thanks for helping us improve Buf by filing bugs, we really appreciate it! For us to investigate your issue, we need a minimal reproducible example. We find that the easiest way to do this is by linking to a GitHub repository with the setup of the example, as well as a set of commands for us to run on this GitHub repository to reproduce the issue. You can use an existing GitHub repository, or a temporary GitHub repository you create.**
+        **Thanks for helping us improve Buf by filing bugs, we really appreciate it! For us to investigate your issue efficiently, we need a minimal reproducible example. We get lots of support requests, so please help us help you. We find that the easiest way to do this is by linking to a GitHub repository with the setup of the example, as well as a set of commands for us to run on this GitHub repository to reproduce the issue. You can use an existing GitHub repository, or a temporary GitHub repository you create.**
 
         **[This article](https://stackoverflow.com/help/minimal-reproducible-example) on minimal reproducible examples may be of use!**
+
+        **If you do not provide a minimal reproducible example in a GitHub repository, we may have to close your issue. We apologize, but we have to be efficient with our support requests, and we appreciate your help.**
   - type: input
     id: github-repository
     attributes:
-      label: GitHub Repository
-      description: Provide us with a link to the GitHub repository that contains the setup needed to reproduce the issue.
+      label: GitHub repository with your minimal reproducible example
+      description: Provide us with a link to the GitHub repository that contains the setup needed to reproduce the issue. This is a repository you create, and is required for us to investigate your issue.
       placeholder: https://github.com/foo/bar
     validations:
       required: true

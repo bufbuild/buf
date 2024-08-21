@@ -21,21 +21,22 @@ import (
 )
 
 type locationStore struct {
+	filePath                string
 	sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location
-
-	initLocations  sync.Once
-	pathToLocation map[string]Location
+	getPathToLocation       func() map[string]Location
 }
 
-func newLocationStore(sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location) *locationStore {
-	return &locationStore{
-		sourceCodeInfoLocations: sourceCodeInfoLocations,
-		pathToLocation:          make(map[string]Location),
+func newLocationStore(fileDescriptorProto *descriptorpb.FileDescriptorProto) *locationStore {
+	locationStore := &locationStore{
+		filePath:                fileDescriptorProto.GetName(),
+		sourceCodeInfoLocations: fileDescriptorProto.GetSourceCodeInfo().GetLocation(),
 	}
+	locationStore.getPathToLocation = sync.OnceValue(locationStore.getPathToLocationUncached)
+	return locationStore
 }
 
 func (l *locationStore) isEmpty() bool {
-	return len(l.sourceCodeInfoLocations) == 0
+	return len(l.getPathToLocation()) == 0
 }
 
 func (l *locationStore) getLocation(path []int32) Location {
@@ -43,22 +44,49 @@ func (l *locationStore) getLocation(path []int32) Location {
 }
 
 func (l *locationStore) getLocationByPathKey(pathKey string) Location {
-	l.initLocations.Do(func() {
-		pathToLocation := make(map[string]Location)
-		for _, sourceCodeInfoLocation := range l.sourceCodeInfoLocations {
-			pathKey := getPathKey(sourceCodeInfoLocation.Path)
-			// - Multiple locations may have the same path.  This happens when a single
-			//   logical declaration is spread out across multiple places.  The most
-			//   obvious example is the "extend" block again -- there may be multiple
-			//   extend blocks in the same scope, each of which will have the same path.
-			if _, ok := pathToLocation[pathKey]; !ok {
-				pathToLocation[pathKey] = newLocation(sourceCodeInfoLocation)
-			}
-		}
-		l.pathToLocation = pathToLocation
-	})
+	return l.getPathToLocation()[pathKey]
+}
 
-	return l.pathToLocation[pathKey]
+// Expensive - not cached.
+//
+// This is specific to optionExtensionDescriptor.OptionLocation.
+func (l *locationStore) getBestMatchOptionExtensionLocation(path []int32, extensionPathLen int) Location {
+	// "Fuzzy" search: find a location whose path is at least extensionPathLen long,
+	// preferring the longest matching ancestor path (i.e. as many extraPath elements
+	// as can be found). If we find a *sub*path (a descendant path, that points INTO
+	// the path we are trying to find), use the first such one encountered.
+	var bestMatch *descriptorpb.SourceCodeInfo_Location
+	var bestMatchPathLen int
+	for _, loc := range l.sourceCodeInfoLocations {
+		if len(loc.Path) >= extensionPathLen &&
+			isDescendantPath(path, loc.Path) &&
+			len(loc.Path) > bestMatchPathLen {
+			bestMatch = loc
+			bestMatchPathLen = len(loc.Path)
+		} else if isDescendantPath(loc.Path, path) {
+			return newLocation(l.filePath, loc)
+		}
+	}
+	if bestMatch != nil {
+		return newLocation(l.filePath, bestMatch)
+	}
+	return nil
+}
+
+// Do not use outside of locationStore!
+func (l *locationStore) getPathToLocationUncached() map[string]Location {
+	pathToLocation := make(map[string]Location, len(l.sourceCodeInfoLocations))
+	for _, sourceCodeInfoLocation := range l.sourceCodeInfoLocations {
+		pathKey := getPathKey(sourceCodeInfoLocation.Path)
+		// - Multiple locations may have the same path.  This happens when a single
+		//   logical declaration is spread out across multiple places.  The most
+		//   obvious example is the "extend" block again -- there may be multiple
+		//   extend blocks in the same scope, each of which will have the same path.
+		if _, ok := pathToLocation[pathKey]; !ok {
+			pathToLocation[pathKey] = newLocation(l.filePath, sourceCodeInfoLocation)
+		}
+	}
+	return pathToLocation
 }
 
 func getPathKey(path []int32) string {
@@ -72,4 +100,16 @@ func getPathKey(path []int32) string {
 		j += 4
 	}
 	return string(key)
+}
+
+func isDescendantPath(descendant, ancestor []int32) bool {
+	if len(descendant) < len(ancestor) {
+		return false
+	}
+	for i := range ancestor {
+		if descendant[i] != ancestor[i] {
+			return false
+		}
+	}
+	return true
 }

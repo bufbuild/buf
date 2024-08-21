@@ -105,7 +105,11 @@ func (g *generator) Generate(
 			return err
 		}
 	}
-	if generateOptions.deleteOuts {
+	shouldDeleteOuts := config.CleanPluginOuts()
+	if generateOptions.deleteOuts != nil {
+		shouldDeleteOuts = *generateOptions.deleteOuts
+	}
+	if shouldDeleteOuts {
 		if err := g.deleteOuts(
 			ctx,
 			generateOptions.baseOutDirPath,
@@ -291,12 +295,10 @@ func (g *generator) execPlugins(
 	//      out: gen/proto
 	//    - name: insertion-point-writer
 	//      out: gen/proto
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	if err := thread.Parallelize(
 		ctx,
 		jobs,
-		thread.ParallelizeWithCancel(cancel),
+		thread.ParallelizeWithCancelOnFailure(),
 	); err != nil {
 		if errs := multierr.Errors(err); len(errs) > 0 {
 			return nil, errs[0]
@@ -484,7 +486,7 @@ func validateResponses(
 
 type generateOptions struct {
 	baseOutDirPath                string
-	deleteOuts                    bool
+	deleteOuts                    *bool
 	includeImportsOverride        *bool
 	includeWellKnownTypesOverride *bool
 }

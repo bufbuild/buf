@@ -333,7 +333,7 @@ func validateCreateFlags(flags *flags) error {
 			)
 		}
 		if _, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility); err != nil {
-			return appcmd.NewInvalidArgumentError(err.Error())
+			return appcmd.WrapInvalidArgumentError(err)
 		}
 	} else {
 		if flags.CreateDefaultLabel != "" {
