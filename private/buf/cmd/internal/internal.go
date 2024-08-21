@@ -46,7 +46,7 @@ func GetModuleConfigForProtocPlugin(
 	if module == "" {
 		module = "."
 	}
-	// Mulitple modules in a v2 workspace may have the same moduleDirPath.
+	// Multiple modules in a v2 workspace may have the same moduleDirPath.
 	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		// If we have a v1beta1 or v1 buf.yaml, dirPath will be ".". Using the ModuleConfig from
