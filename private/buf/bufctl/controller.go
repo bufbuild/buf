@@ -1015,6 +1015,8 @@ func (c *controller) buildImage(
 	return filterImage(image, functionOptions, true)
 }
 
+// buildTargetImageWithConfigs builds an image for each module in the workspace.
+// This is used to associate LintConfig and BreakingConfig on a per-module basis.
 func (c *controller) buildTargetImageWithConfigs(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
@@ -1034,14 +1036,12 @@ func (c *controller) buildTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		module := moduleSet.GetModuleForOpaqueID(opaqueID)
-		if module == nil {
-			return nil, syserror.Newf("new ModuleSet from WithTargetOpaqueIDs did not have opaqueID %q", opaqueID)
-		}
-		moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
-		if err != nil {
-			return nil, err
-		}
+		// The moduleReadBucket may include more modules than the target module
+		// and its dependencies. This is because the moduleSet is constructed from
+		// the workspace. Targeting the module does not remove non-related modules.
+		// Build image will use the target info to build the image for the specific
+		// module. Non-targeted modules will not be included in the image.
+		moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 		targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 		if err != nil {
 			return nil, err

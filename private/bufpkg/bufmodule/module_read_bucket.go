@@ -73,8 +73,7 @@ type ModuleReadBucket interface {
 	// being self-contained.
 	//
 	// A ModuleReadBucket is self-contained if it was constructed from
-	// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
-	// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles.
+	// ModuleSetToModuleReadBucketWithOnlyProtoFiles.
 	//
 	// A ModuleReadBucket as inherited from a Module is not self-contained.
 	//
