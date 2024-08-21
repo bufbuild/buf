@@ -177,6 +177,12 @@ func (p *moduleDataStore) PutModuleDatas(
 //     then no module data is read from the cache.
 //  6. Once all files have been read from the cache, release the shared lock on the module
 //     data lock file.
+//
+// It is important to note that when we read from the cache, we use the presence and contents
+// of module.yaml to determine if module data exists in the cache. If there is manual intervention
+// that corrupts the contents of the cache, but leaves module.yaml in-tact, then we read
+// the files as valid module data at this layer, and it fails tamper-proofing digest checks
+// when the module data is accessed.
 func (p *moduleDataStore) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
