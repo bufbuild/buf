@@ -95,7 +95,17 @@ func newWorkspaceTargeting(
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, overrideBufYAMLFile, false) // with config override, do not fall back to top level license/doc
+			return v2WorkspaceTargeting(
+				ctx,
+				config,
+				bucket,
+				bucketTargeting,
+				overrideBufYAMLFile,
+				// If the user specifies a `--config path/to/configs/buf.yaml` and the input workspace
+				// modules do not have their own doc/license files, we do not want to use "path/to/configs/LICENSE"
+				// or "path/to/configs/REAME.md" as these modules' docs/licenses.
+				false,
+			)
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
@@ -107,7 +117,16 @@ func newWorkspaceTargeting(
 				"targeting workspace based on v2 buf.yaml",
 				zap.String("subDirPath", bucketTargeting.SubDirPath()),
 			)
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, controllingWorkspace.BufYAMLFile(), true)
+			return v2WorkspaceTargeting(
+				ctx,
+				config,
+				bucket,
+				bucketTargeting,
+				controllingWorkspace.BufYAMLFile(),
+				// For a v2 controlling workspace, if a module inside does not have its own doc/license,
+				// we want to the doc/license at the root of the workspace if they exist.
+				true,
+			)
 		}
 		// This is a v1 workspace.
 		if bufWorkYAMLFile := controllingWorkspace.BufWorkYAMLFile(); bufWorkYAMLFile != nil {
@@ -313,7 +332,8 @@ func v1WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
-			false, // v1 workspace modules should not default to top-level license/doc
+			// v1 workspace modules should not default to top-level license/doc.
+			false,
 		)
 		if err != nil {
 			return nil, err
@@ -516,15 +536,15 @@ func validateBucketTargeting(
 func getMappedModuleBucketAndModuleTargeting(
 	ctx context.Context,
 	config *workspaceBucketConfig,
-	bucket storage.ReadBucket,
+	workspaceBucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
-	defaultToTopLevelLicenseDoc bool,
+	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
-		bucket,
+		workspaceBucket,
 		storage.MapOnPrefix(moduleDirPath),
 	)
 	rootToExcludes := moduleConfig.RootToExcludes()
@@ -570,13 +590,18 @@ func getMappedModuleBucketAndModuleTargeting(
 	if err != nil {
 		return nil, nil, err
 	}
-	if defaultToTopLevelLicenseDoc {
+	if useWorkspaceLicenseDocIfNotFoundAtMoudle {
 		isModuleDocBucketEmpty, err := storage.IsEmpty(ctx, docStorageReadBucket, "")
 		if err != nil {
 			return nil, nil, err
 		}
+		// If at moduleDirPath there isn't a doc file, we fall back to use the doc file
+		// at the workspace root if it exists.
 		if isModuleDocBucketEmpty {
-			docStorageReadBucket, err = bufmodule.GetDocStorageReadBucket(ctx, bucket)
+			// We do not need to check if a doc file exists at the workspace root by
+			// checking whether the doc bucket for the workspace if empty, because
+			// this bucket will just be empty there isn't one, which is what we want.
+			docStorageReadBucket, err = bufmodule.GetDocStorageReadBucket(ctx, workspaceBucket)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -585,8 +610,16 @@ func getMappedModuleBucketAndModuleTargeting(
 		if err != nil {
 			return nil, nil, err
 		}
+		// If at moduleDirPath there isn't a license, we fall back to use the license
+		// at the workspace root if it exists.
 		if isModuleLicenseBucketEmpty {
-			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, bucket)
+			// We do not need to check if a license exists at the workspace root by
+			// checking whether the license bucket for the workspace if empty, because
+			// this bucket will just be empty there isn't one, which is what we want.
+			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, workspaceBucket)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 	rootBuckets = append(
