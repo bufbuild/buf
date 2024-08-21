@@ -101,9 +101,9 @@ func newWorkspaceTargeting(
 				bucket,
 				bucketTargeting,
 				overrideBufYAMLFile,
-				// If the user specifies a `--config path/to/configs/buf.yaml` and the input workspace
-				// modules do not have their own doc/license files, we do not want to use "path/to/configs/LICENSE"
-				// or "path/to/configs/REAME.md" as these modules' docs/licenses.
+				// If the user specifies a `--config path/to/config/buf.yaml` and the input workspace
+				// modules do not have their own doc/license files, we do not want to use "path/to/config/README(or LICENSE)"
+				// or "moduleDir/README(or LICENSE)" as the module's doc/license.
 				false,
 			)
 		default:
