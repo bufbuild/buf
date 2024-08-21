@@ -648,20 +648,6 @@ func getMappedModuleBucketAndModuleTargeting(
 	return mappedModuleBucket, moduleTargeting, nil
 }
 
-func isBucketEmpty(ctx context.Context, bucket storage.ReadBucket) (bool, error) {
-	foundError := errors.New("found a file")
-	err := bucket.Walk(ctx, "", func(_ storage.ObjectInfo) error {
-		return foundError
-	})
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, foundError) {
-		return false, nil
-	}
-	return false, err
-}
-
 func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 	ctx context.Context,
 	bucket storage.ReadBucket,
