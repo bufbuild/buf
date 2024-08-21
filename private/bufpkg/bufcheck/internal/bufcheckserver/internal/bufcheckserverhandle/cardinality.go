@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	cardinalityToWireCompatiblityGroup = map[cardinality]int{
+	cardinalityToWireCompatibilityGroup = map[cardinality]int{
 		cardinalityOptionalExplicitPresence: 1,
 		cardinalityOptionalImplicitPresence: 1,
 		cardinalityRequired:                 2,
@@ -37,7 +37,7 @@ var (
 		cardinalityMap:                      3,
 	}
 
-	cardinalityToWireJSONCompatiblityGroup = map[cardinality]int{
+	cardinalityToWireJSONCompatibilityGroup = map[cardinality]int{
 		cardinalityOptionalExplicitPresence: 1,
 		cardinalityOptionalImplicitPresence: 1,
 		cardinalityRequired:                 2,
