@@ -102,7 +102,7 @@ var (
 	// This directory is used to store lock files for synchronizing reading and writing module data from the cache.
 	//
 	// Normalized.
-	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "module_locks")
+	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "modulelocks")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the

@@ -135,7 +135,9 @@ func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	for _, moduleKey := range moduleKeys {
 		moduleData, err := p.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
-			// Treat any error returned as a cache miss
+			// Any error returned from getModuleDataForModuleKey means that no module data is read
+			// from the cache, and is treated as a cache miss so we can fetch new module data and
+			// repopulate the cache.
 			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
 		} else {
 			foundModuleDatas = append(foundModuleDatas, moduleData)
@@ -156,6 +158,25 @@ func (p *moduleDataStore) PutModuleDatas(
 	return nil
 }
 
+// getModuleDataForModuleKey reads the module data for the module key from the cache.
+//
+// If moduleDataStore is configured to store the module data as tarballs, then we read a
+// single tar for all module data stored under the module key.
+//
+// If moduleDataStore is configured to store module data as individual files, then it
+// takes the following steps to read the module data:
+//
+//  1. Acquire a shared lock on the module data lock file for the module key.
+//  2. Attempt to read the module.yaml file for the module key.
+//  3. If no valid module.yaml is present, then return an error and no data is read from
+//     the cache. The module.yaml is always written to the cache last, so we consider valid
+//     module data to be present if module.yaml is present.
+//  4. If a valid module.yaml is found, then attempt to read the module data files from the
+//     cache.
+//  5. If an error occurs while reading the files and/or an invalid config file is found,
+//     then no module data is read from the cache.
+//  6. Once all files have been read from the cache, release the shared lock on the module
+//     data lock file.
 func (p *moduleDataStore) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
@@ -195,7 +216,8 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		if err != nil {
 			return nil, err
 		}
-		// Only attempt to get a file lock when storing individual files
+		// Only attempt to get a file lock when storing individual files for module data
+		// (as opposed to a tarball for module data).
 		unlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
 		if err != nil {
 			return nil, err
@@ -291,6 +313,26 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	), nil
 }
 
+// putModuleData puts the module data into the module cache.
+//
+// If moduleDataStore is configured to store the module data as tarballs, then a single tar
+// for all module data is stored under the module key.
+//
+// If moduleDataStore is configured to store individual files, then it takes the following steps:
+//
+//  1. Acquire a shared lock on the module lock file for the module key.
+//  2. Attempt to read the module.yaml file to ensure that there is no valid module already
+//     stored in the cache. The module.yaml file is always written last in the cache, so if
+//     it is present, then valid module data is present, and no new module data is written.
+//  3. If no module.yaml is present, then we release the shared lock and acquire an exclusive
+//     lock on the module lock file for writing module data.
+//  4. Once the exclusive lock is acquired, we do another check to ensure that there is no
+//     module.yaml present. This is because the shared lock is not upgraded to an exclusive
+//     lock, we released the shared lock before acquiring the exclusive lock, so to ensure
+//     there are absolutely no race conditions, we do another check.
+//  5. Once we determine there is no module.yaml present, we proceed to writing the module
+//     data to the cache.
+//  6. We write the module.yaml after we've written all other module data files.
 func (p *moduleDataStore) putModuleData(
 	ctx context.Context,
 	moduleData bufmodule.ModuleData,
