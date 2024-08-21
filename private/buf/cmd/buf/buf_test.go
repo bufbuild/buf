@@ -294,10 +294,15 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		"", // stdout is empty
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		// This is new behavior we introduced. When setting a config override, we no longer do
 		// a search for the controlling workspace. See bufctl/option.go for additional details.
-		filepath.FromSlash(`Failure: testdata/export/other/proto/unimported.proto: import "another.proto": file does not exist`),
+		// Only the paths specified by "--path" in the command are considered. This avoids build
+		// failures from other proto files under testdata. Command "build" succeeds with this path
+		// restriction, "lint" should be able to build the image and only fail on lint issue for
+		// the specified file.
+		"",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),

@@ -10,6 +10,8 @@
 - Update `buf push` to push the license file or doc file (e.g. `README.md`, `LICENSE`) in the
   same directory as `buf.yaml` if a module does not have a license file or doc file in the
   module's directory.
+- Fix constraints of `--path` flag for lint and breaking rules to avoid resolving all files
+  within a module. This change can result in a performance improvement for large workspaces.
 - Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
   * If `includes` is specified, a proto file is considered in the module only if it is in one of the
     directories specified.

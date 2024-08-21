@@ -262,9 +262,11 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // The given ModuleReadBucket must be self-contained.
 //
 // A ModuleReadBucket is self-contained if it was constructed from
-// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
-// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles. These are likely
-// the only two ways you should have a ModuleReadBucket that you pass to BuildImage.
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles. This is likely the only way you
+// should have a ModuleReadBucket that you pass to BuildImage.
+//
+// The image will contain only files targeted by the input moduleReadBucket,
+// those returned by [bufmodule.GetTargetFileInfos].
 func BuildImage(
 	ctx context.Context,
 	tracer tracing.Tracer,
