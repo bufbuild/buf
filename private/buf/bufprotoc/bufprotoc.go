@@ -62,7 +62,7 @@ func NewModuleSetForProtoc(
 		}
 		// need to do match extension here
 		// https://github.com/bufbuild/buf/issues/113
-		rootBuckets = append(rootBuckets, storage.MapReadBucket(rootBucket, storage.MatchPathExt(".proto")))
+		rootBuckets = append(rootBuckets, storage.FilterReadBucket(rootBucket, storage.MatchPathExt(".proto")))
 	}
 	targetPaths, err := slicesext.MapError(
 		absFilePaths,

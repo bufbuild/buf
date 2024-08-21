@@ -1,0 +1,3 @@
+package standalone;
+
+message Imported {}

@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 - Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
+- Fix issue with directory inputs for v2 workspaces where the specified directory was not itself
+  a path to a module, but contained directories with modules, and the modules would not build.
+- Stop creating empty `buf.lock` files when `buf dep update` does not find new dependencies
+  to update and there is no existing `buf.lock`.
 - Update `buf push` to push the license file and doc file (e.g. `README.md`) next to the `buf.yaml`
   if a module does not have a license file or doc file.
 

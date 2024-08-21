@@ -95,7 +95,7 @@ type Cloner interface {
 
 // CloneToBucketOptions are options for Clone.
 type CloneToBucketOptions struct {
-	Mapper            storage.Mapper
+	Matcher           storage.Matcher
 	Name              Name
 	RecurseSubmodules bool
 }
