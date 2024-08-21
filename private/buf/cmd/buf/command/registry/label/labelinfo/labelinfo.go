@@ -81,10 +81,6 @@ func run(
 	if labelName == "" {
 		return appcmd.NewInvalidArgumentError("label is required")
 	}
-	labelName := moduleRef.Ref()
-	if labelName == "" {
-		return appcmd.NewInvalidArgumentError("label is required")
-	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
