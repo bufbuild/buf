@@ -28,6 +28,12 @@ import (
 
 const lintCommentIgnorePrefix = "buf:lint:ignore"
 
+type ruleOrCategory interface {
+	ID() string
+	Deprecated() bool
+	ReplacementIDs() []string
+}
+
 // config is the check config.
 //
 // This should only be built via a configSpec. If we were exposing this API publicly, we would
@@ -165,19 +171,19 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 
 	// this checks that there are not duplicate IDs for a given revision
 	// which would be a system error
-	idToRule, err := getIDToRule(allRules)
+	ruleIDToRule, err := getIDToRuleOrCategory(allRules)
 	if err != nil {
 		return nil, err
 	}
-	deprecatedIDToReplacementIDs, err := getDeprecatedIDToReplacementIDs(idToRule)
+	deprecatedRuleIDToReplacementRuleIDs, err := getDeprecatedIDToReplacementIDs(ruleIDToRule)
 	if err != nil {
 		return nil, err
 	}
-	idToCategories, err := getIDToCategoryIDs(allRules)
+	ruleIDToCategoryIDs, err := getRuleIDToCategoryIDs(allRules)
 	if err != nil {
 		return nil, err
 	}
-	categoryToIDs := getCategoryIDToIDs(idToCategories)
+	categoryIDToRuleIDs := getCategoryIDToRuleIDs(ruleIDToCategoryIDs)
 
 	// These may both be empty, and that's OK.
 	b.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Use)
@@ -189,19 +195,19 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 		return nil, syserror.New("b.Use or b.Except should always be non-empty at this point")
 	}
 
-	useIDMap, err := transformToIDMap(b.Use, idToCategories, categoryToIDs)
+	useIDMap, err := transformToRuleIDMap(b.Use, ruleIDToCategoryIDs, categoryIDToRuleIDs)
 	if err != nil {
 		return nil, err
 	}
 	if transformDeprecated {
-		useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
+		useIDMap = transformRuleIDsToUndeprecatedRuleIDs(useIDMap, deprecatedRuleIDToReplacementRuleIDs)
 	}
-	exceptIDMap, err := transformToIDMap(b.Except, idToCategories, categoryToIDs)
+	exceptIDMap, err := transformToRuleIDMap(b.Except, ruleIDToCategoryIDs, categoryIDToRuleIDs)
 	if err != nil {
 		return nil, err
 	}
 	if transformDeprecated {
-		exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
+		exceptIDMap = transformRuleIDsToUndeprecatedRuleIDs(exceptIDMap, deprecatedRuleIDToReplacementRuleIDs)
 	}
 
 	// this removes duplicates
@@ -209,14 +215,14 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 	resultIDToRule := make(map[string]Rule)
 
 	for id := range useIDMap {
-		rule, ok := idToRule[id]
+		rule, ok := ruleIDToRule[id]
 		if !ok {
 			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
 		resultIDToRule[rule.ID()] = rule
 	}
 	for id := range exceptIDMap {
-		if _, ok := idToRule[id]; !ok {
+		if _, ok := ruleIDToRule[id]; !ok {
 			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
 		delete(resultIDToRule, id)
@@ -235,16 +241,16 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 
 	ignoreIDToRootPathsUnnormalized, err := transformToIDToListMap(
 		b.IgnoreIDOrCategoryToRootPaths,
-		idToCategories,
-		categoryToIDs,
+		ruleIDToCategoryIDs,
+		categoryIDToRuleIDs,
 	)
 	if err != nil {
 		return nil, err
 	}
 	if transformDeprecated {
-		ignoreIDToRootPathsUnnormalized = transformIDsToUndeprecated(
+		ignoreIDToRootPathsUnnormalized = transformRuleIDsToUndeprecatedRuleIDs(
 			ignoreIDToRootPathsUnnormalized,
-			deprecatedIDToReplacementIDs,
+			deprecatedRuleIDToReplacementRuleIDs,
 		)
 	}
 	ignoreIDToRootPaths := make(map[string]map[string]struct{})
@@ -311,7 +317,7 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 	}, nil
 }
 
-func transformIDsToUndeprecated[T any](idToValue map[string]T, deprecatedIDToReplacementIDs map[string][]string) map[string]T {
+func transformRuleIDsToUndeprecatedRuleIDs[T any](idToValue map[string]T, deprecatedIDToReplacementIDs map[string][]string) map[string]T {
 	undeprecatedIDToValue := make(map[string]T, len(idToValue))
 	for id, value := range idToValue {
 		replacementIDs, ok := deprecatedIDToReplacementIDs[id]
@@ -327,24 +333,24 @@ func transformIDsToUndeprecated[T any](idToValue map[string]T, deprecatedIDToRep
 	return undeprecatedIDToValue
 }
 
-func transformToIDMap(idsOrCategories []string, idToCategories map[string][]string, categoryToIDs map[string][]string) (map[string]struct{}, error) {
-	if len(idsOrCategories) == 0 {
+func transformToRuleIDMap(ruleOrCategoryIDs []string, ruleIDToCategoryIDs map[string][]string, categoryIDToRuleIDs map[string][]string) (map[string]struct{}, error) {
+	if len(ruleOrCategoryIDs) == 0 {
 		return nil, nil
 	}
-	idMap := make(map[string]struct{}, len(idsOrCategories))
-	for _, idOrCategory := range idsOrCategories {
-		if idOrCategory == "" {
+	idMap := make(map[string]struct{}, len(ruleOrCategoryIDs))
+	for _, ruleOrCategoryID := range ruleOrCategoryIDs {
+		if ruleOrCategoryID == "" {
 			continue
 		}
-		if _, ok := idToCategories[idOrCategory]; ok {
-			id := idOrCategory
+		if _, ok := ruleIDToCategoryIDs[ruleOrCategoryID]; ok {
+			id := ruleOrCategoryID
 			idMap[id] = struct{}{}
-		} else if ids, ok := categoryToIDs[idOrCategory]; ok {
+		} else if ids, ok := categoryIDToRuleIDs[ruleOrCategoryID]; ok {
 			for _, id := range ids {
 				idMap[id] = struct{}{}
 			}
 		} else {
-			return nil, fmt.Errorf("%q is not a known id or category", idOrCategory)
+			return nil, fmt.Errorf("%q is not a known rule or category", ruleOrCategoryID)
 		}
 	}
 	return idMap, nil
@@ -383,49 +389,49 @@ func transformToIDToListMap(idOrCategoryToList map[string][]string, idToCategori
 	return idToListMap, nil
 }
 
-func getCategoryIDToIDs(idToCategoryIDs map[string][]string) map[string][]string {
-	categoryIDToIDs := make(map[string][]string)
-	for id, categoryIDs := range idToCategoryIDs {
+func getCategoryIDToRuleIDs(ruleIDToCategoryIDs map[string][]string) map[string][]string {
+	categoryIDToRuleIDs := make(map[string][]string)
+	for id, categoryIDs := range ruleIDToCategoryIDs {
 		for _, categoryID := range categoryIDs {
 			// handles empty category as well
-			categoryIDToIDs[categoryID] = append(categoryIDToIDs[categoryID], id)
+			categoryIDToRuleIDs[categoryID] = append(categoryIDToRuleIDs[categoryID], id)
 		}
 	}
-	return categoryIDToIDs
+	return categoryIDToRuleIDs
 }
 
 // []string{} as a value represents that the ID is deprecated but has no replacements.
-func getDeprecatedIDToReplacementIDs(idToRule map[string]Rule) (map[string][]string, error) {
+func getDeprecatedIDToReplacementIDs[R ruleOrCategory](idToRuleOrCategory map[string]R) (map[string][]string, error) {
 	m := make(map[string][]string)
-	for _, rule := range idToRule {
-		if rule.Deprecated() {
-			replacementIDs := rule.ReplacementIDs()
+	for _, ruleOrCategory := range idToRuleOrCategory {
+		if ruleOrCategory.Deprecated() {
+			replacementIDs := ruleOrCategory.ReplacementIDs()
 			if replacementIDs == nil {
 				replacementIDs = []string{}
 			}
 			for _, replacementID := range replacementIDs {
-				if _, ok := idToRule[replacementID]; !ok {
-					return nil, syserror.Newf("unknown rule given as a replacement ID: %q", replacementID)
+				if _, ok := idToRuleOrCategory[replacementID]; !ok {
+					return nil, syserror.Newf("unknown rule or category given as a replacement ID: %q", replacementID)
 				}
 			}
-			m[rule.ID()] = replacementIDs
+			m[ruleOrCategory.ID()] = replacementIDs
 		}
 	}
 	return m, nil
 }
 
-func getIDToRule(rules []Rule) (map[string]Rule, error) {
-	m := make(map[string]Rule)
-	for _, rule := range rules {
-		if _, ok := m[rule.ID()]; ok {
-			return nil, syserror.Newf("duplicate rule ID: %q", rule.ID())
+func getIDToRuleOrCategory[R ruleOrCategory](ruleOrCategories []R) (map[string]R, error) {
+	m := make(map[string]R)
+	for _, ruleOrCategory := range ruleOrCategories {
+		if _, ok := m[ruleOrCategory.ID()]; ok {
+			return nil, syserror.Newf("duplicate rule or category ID: %q", ruleOrCategory.ID())
 		}
-		m[rule.ID()] = rule
+		m[ruleOrCategory.ID()] = ruleOrCategory
 	}
 	return m, nil
 }
 
-func getIDToCategoryIDs(rules []Rule) (map[string][]string, error) {
+func getRuleIDToCategoryIDs(rules []Rule) (map[string][]string, error) {
 	m := make(map[string][]string)
 	for _, rule := range rules {
 		if _, ok := m[rule.ID()]; ok {
