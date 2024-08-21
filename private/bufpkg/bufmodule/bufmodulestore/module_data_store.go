@@ -216,18 +216,21 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		if err != nil {
 			return nil, err
 		}
-		// Only attempt to get a file lock when storing individual files for module data
-		// (as opposed to a tarball for module data).
+		// Acquire a shared lock for module data lock file for reading module data from the cache.
 		unlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
 		if err != nil {
 			return nil, err
 		}
 		defer func() {
+			// Release lock on the module data lock file.
 			if err := unlocker.Unlock(); err != nil {
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
 	}
+	// Attempt to read module.yaml from cache. The module.yaml file is always written last,
+	// so if a valid module.yaml file is present, then we proceed to read the rest of the
+	// the module data.
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
 		moduleKey,
@@ -245,6 +248,8 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if !externalModuleData.isValid() {
 		return nil, fmt.Errorf("invalid %s from cache for %s: %+v", externalModuleDataFileName, moduleKey.String(), externalModuleData)
 	}
+	// A valid module.yaml was found, we proceed to reading module data.
+
 	// We don't want to do this lazily (or anything else in this function) as we want to
 	// make sure everything we have is valid before returning so we can auto-correct
 	// the cache if necessary.
@@ -364,8 +369,7 @@ func (p *moduleDataStore) putModuleData(
 		if err != nil {
 			return err
 		}
-		// Only attempt to get a file locks when storing individual files.
-		// Before writing to the module directory, first get a shared lock and check module.yaml
+		// Acquire shared lock to check for a valid module.yaml before writing to the module cache.
 		readUnlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
 		if err != nil {
 			return err
@@ -392,12 +396,16 @@ func (p *moduleDataStore) putModuleData(
 			if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
 				return err
 			}
-			// If module.yaml contains valid data, then no data needs to be written.
+			// If a valid module.yaml is present, since module.yaml is always written last, we
+			// assume that there is valid module data, and we do not attempt to write new data here.
 			if externalModuleData.isValid() {
 				return nil
 			}
 		}
-		// Otherwise, release shared lock and upgrade to an exclusive lock for writes.
+		// Otherwise, release shared lock and set readUnlocker to nil in order to acquire an
+		// exclusive lock for writing module data to the cache. filelock does not allow us to
+		// upgrade the shared lock to an exclusive lock, so we need to release the shared lock
+		// before acquiring an exclusive lock.
 		if readUnlocker != nil {
 			err := readUnlocker.Unlock()
 			readUnlocker = nil // unset the readUnlocker since we are upgrading the lock
@@ -405,6 +413,7 @@ func (p *moduleDataStore) putModuleData(
 				return err
 			}
 		}
+		// Acquire exclusive lock on module lock file for writing module data to the cache.
 		unlocker, err := p.locker.Lock(ctx, moduleDataStoreDirLockPath)
 		if err != nil {
 			return err
@@ -414,7 +423,10 @@ func (p *moduleDataStore) putModuleData(
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
-		// Before we write, we check module.yaml with the exclusive lock.
+		// Before we start writing module data to the cache, we first check to see if module.yaml
+		// is present again after acquiring the exclusive lock.
+		// This is because the shared lock was released before acquiring the exclusive lock,
+		// and we need to make sure no valid module data was written in the interim.
 		data, err = storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 		p.logDebugModuleKey(
 			moduleKey,
@@ -430,13 +442,13 @@ func (p *moduleDataStore) putModuleData(
 			if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
 				return err
 			}
-			// If module.yaml contains valid data, then no data needs to be written.
+			// If a valid module.yaml is present, then we do not overwrite with new data.
 			if externalModuleData.isValid() {
 				return nil
 			}
 		}
 	}
-
+	// Proceed to writing module data.
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
 		return err
