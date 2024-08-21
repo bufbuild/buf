@@ -44,8 +44,8 @@ func ExactArgs(n int) PositionalArgs {
 }
 
 // RangeArgs matches cobra.RangeArgs.
-func RangeArgs(min int, max int) PositionalArgs {
-	return newPositionalArgs(cobra.RangeArgs(min, max))
+func RangeArgs(minimum int, maximum int) PositionalArgs {
+	return newPositionalArgs(cobra.RangeArgs(minimum, maximum))
 }
 
 // PostionalArgs matches cobra.PositionalArgs so that importers of appcmd do
