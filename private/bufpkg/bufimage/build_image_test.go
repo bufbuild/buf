@@ -318,7 +318,7 @@ func TestCompareSemicolons(t *testing.T) {
 	testCompare(t, runner, "semicolons")
 }
 
-func TestTargetFiles(t *testing.T) {
+func TestModuleTargetFiles(t *testing.T) {
 	t.Parallel()
 	moduleSet, err := bufmoduletesting.NewModuleSet(
 		bufmoduletesting.ModuleData{
