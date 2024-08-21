@@ -171,11 +171,11 @@ func PrintPage(
 	}
 }
 
-// Print prints an entity's information.
+// PrintEntity prints an entity.
 //
 // If format is FormatText, this prints the information in a table.
 // If format is FormatJSON, this prints the information as a JSON object.
-func PrintInfo(writer io.Writer, format Format, entity Entity) error {
+func PrintEntity(writer io.Writer, format Format, entity Entity) error {
 	switch format {
 	case FormatJSON:
 		return json.NewEncoder(writer).Encode(entity)

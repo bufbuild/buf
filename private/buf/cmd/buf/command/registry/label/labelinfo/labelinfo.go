@@ -120,7 +120,7 @@ func run(
 	if len(labels) != 1 {
 		return syserror.Newf("expect 1 label from response, got %d", len(labels))
 	}
-	return bufprint.PrintInfo(
+	return bufprint.PrintEntity(
 		container.Stdout(),
 		format,
 		bufprint.NewLabel(labels[0], moduleFullName),

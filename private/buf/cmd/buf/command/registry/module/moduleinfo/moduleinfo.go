@@ -114,7 +114,7 @@ func run(
 	if len(modules) != 1 {
 		return syserror.Newf("unexpected number of modules returned from server: %d", len(modules))
 	}
-	return bufprint.PrintInfo(
+	return bufprint.PrintEntity(
 		container.Stdout(),
 		format,
 		bufprint.NewModule(modules[0], moduleFullName),
