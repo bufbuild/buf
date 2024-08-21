@@ -620,9 +620,7 @@ func getMappedModuleBucketAndModuleTargeting(
 		// If at moduleDirPath there isn't a license, we fall back to use the license
 		// at the workspace root if it exists.
 		if isModuleLicenseBucketEmpty {
-			// We do not need to check if a license exists at the workspace root by
-			// checking whether the license bucket for the workspace is empty, because
-			// this bucket will just be empty there isn't one, which is what we want.
+			// We do not need to check if this bucket is empty for the same reason, see comment for doc bucket.
 			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, workspaceBucket)
 			if err != nil {
 				return nil, nil, err
