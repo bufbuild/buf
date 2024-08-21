@@ -196,8 +196,8 @@ func PrintEntity(writer io.Writer, format Format, entity Entity) error {
 	}
 }
 
-// NewLabel returns a new label to print.
-func NewLabel(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) Entity {
+// NewLabelEntity returns a new label entity to print.
+func NewLabelEntity(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) Entity {
 	var archiveTime *time.Time
 	if label.ArchiveTime != nil {
 		timeValue := label.ArchiveTime.AsTime()
@@ -212,8 +212,8 @@ func NewLabel(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) En
 	}
 }
 
-// NewCommit returns a new commit to print.
-func NewCommit(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName) Entity {
+// NewCommitEntity returns a new commit entity to print.
+func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName) Entity {
 	return outputCommit{
 		Commit:         commit.Id,
 		CreateTime:     commit.CreateTime.AsTime(),
@@ -221,8 +221,8 @@ func NewCommit(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName)
 	}
 }
 
-// NewModule returns a new module to print.
-func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) Entity {
+// NewModuleEntity returns a new module entity to print.
+func NewModuleEntity(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) Entity {
 	return outputModule{
 		ID:         module.Id,
 		Remote:     moduleFullName.Registry(),
@@ -234,8 +234,8 @@ func NewModule(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName)
 	}
 }
 
-// NewOrganization returns a new organization to print.
-func NewOrganization(organization *ownerv1.Organization, remote string) Entity {
+// NewOrganizationEntity returns a new organization entity to print.
+func NewOrganizationEntity(organization *ownerv1.Organization, remote string) Entity {
 	return outputOrganization{
 		ID:         organization.Id,
 		Remote:     remote,

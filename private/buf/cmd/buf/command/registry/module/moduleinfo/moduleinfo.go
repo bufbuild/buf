@@ -117,6 +117,6 @@ func run(
 	return bufprint.PrintEntity(
 		container.Stdout(),
 		format,
-		bufprint.NewModule(modules[0], moduleFullName),
+		bufprint.NewModuleEntity(modules[0], moduleFullName),
 	)
 }

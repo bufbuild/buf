@@ -117,6 +117,6 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		bufprint.NewOrganization(organizations[0], moduleOwner.Registry()),
+		bufprint.NewOrganizationEntity(organizations[0], moduleOwner.Registry()),
 	)
 }

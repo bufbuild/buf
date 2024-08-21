@@ -146,7 +146,7 @@ func run(
 		container.Stdout(),
 		format,
 		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
-			return bufprint.NewLabel(label, moduleRef.ModuleFullName())
+			return bufprint.NewLabelEntity(label, moduleRef.ModuleFullName())
 		})...,
 	)
 }
