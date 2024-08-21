@@ -179,7 +179,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		emptyModuleConfig, err := bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			nil,
-			nil,
+			nil, // Include is a new key in v2 buf.yaml, no values to migrate
 			map[string][]string{
 				".": {},
 			},
