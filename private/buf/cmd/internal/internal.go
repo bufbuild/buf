@@ -46,7 +46,8 @@ func GetModuleConfigForProtocPlugin(
 	if module == "" {
 		module = "."
 	}
-	moduleConfigsMatchingDirPath := []bufconfig.ModuleConfig{}
+	// Mulitple modules in a v2 workspace may have the same moduleDirPath.
+	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		// If we have a v1beta1 or v1 buf.yaml, dirPath will be ".". Using the ModuleConfig from
 		// a v1beta1 or v1 buf.yaml file matches the pre-refactor behavior.
@@ -54,19 +55,19 @@ func GetModuleConfigForProtocPlugin(
 		// If we have a v2 buf.yaml, users have to provide a module path or full name, otherwise
 		// we can't deduce what ModuleConfig to use.
 		if fullName := moduleConfig.ModuleFullName(); fullName != nil && fullName.String() == module {
+			// Can return here because BufYAMLFile guarantees that module full names are unique across
+			// its module configs.
 			return moduleConfig, nil
 		}
 		if dirPath := moduleConfig.DirPath(); dirPath == module {
-			moduleConfigsMatchingDirPath = append(moduleConfigsMatchingDirPath, moduleConfig)
+			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
 		}
 	}
-	switch len(moduleConfigsMatchingDirPath) {
+	switch len(moduleConfigsFound) {
 	case 0:
-		// TODO: this error messsage seems easy to update.
-		// TODO: point to a webpage that explains this.
-		return nil, errors.New(`could not determine which module to pull configuration from. See the docs for more details`)
+		return nil, fmt.Errorf("no module found for %q", module)
 	case 1:
-		return moduleConfigsMatchingDirPath[0], nil
+		return moduleConfigsFound[0], nil
 	default:
 		return nil, fmt.Errorf("multiple modules found at %q, specify its full name as <remote/owner/module> instead", module)
 	}

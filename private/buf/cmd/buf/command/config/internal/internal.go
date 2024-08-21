@@ -259,6 +259,7 @@ func lsRun(
 
 func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, modulePath string) (bufconfig.ModuleConfig, error) {
 	modulePath = normalpath.Normalize(modulePath)
+	// Mulitple modules in a v2 workspace may have the same moduleDirPath.
 	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range moduleConfigs {
 		if moduleConfig.DirPath() == modulePath {
