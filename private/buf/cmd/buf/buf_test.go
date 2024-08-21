@@ -1024,7 +1024,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 				}
 				var found bool
 				for _, category := range rule.Categories() {
-					if category == "PACKAGE" {
+					if category.ID() == "PACKAGE" {
 						found = true
 						break
 					}

@@ -38,10 +38,10 @@ type RuleSpecBuilder struct {
 // Build builds the RuleSpec for the categories.
 //
 // Not making categories variadic in case we want to add extra parameters later easily.
-func (b *RuleSpecBuilder) Build(isDefault bool, categories []string) *check.RuleSpec {
+func (b *RuleSpecBuilder) Build(isDefault bool, categoryIDs []string) *check.RuleSpec {
 	return &check.RuleSpec{
 		ID:             b.ID,
-		Categories:     categories,
+		CategoryIDs:    categoryIDs,
 		IsDefault:      isDefault,
 		Purpose:        b.Purpose,
 		Type:           b.Type,

@@ -15,7 +15,7 @@
 package bufcheck
 
 // priority 1 is higher than priority two
-var topLevelCategoryToPriority = map[string]int{
+var topLevelCategoryIDToPriority = map[string]int{
 	"MINIMAL":   1,
 	"BASIC":     2,
 	"DEFAULT":   3,
@@ -28,13 +28,13 @@ var topLevelCategoryToPriority = map[string]int{
 	"WIRE":      4,
 }
 
-func categoryLess(one string, two string) bool {
-	return categoryCompare(one, two) < 0
+func categoryIDLess(one string, two string) bool {
+	return categoryIDCompare(one, two) < 0
 }
 
-func categoryCompare(one string, two string) int {
-	onePriority, oneIsTopLevel := topLevelCategoryToPriority[one]
-	twoPriority, twoIsTopLevel := topLevelCategoryToPriority[two]
+func categoryIDCompare(one string, two string) int {
+	onePriority, oneIsTopLevel := topLevelCategoryIDToPriority[one]
+	twoPriority, twoIsTopLevel := topLevelCategoryIDToPriority[two]
 	if oneIsTopLevel && !twoIsTopLevel {
 		return -1
 	}

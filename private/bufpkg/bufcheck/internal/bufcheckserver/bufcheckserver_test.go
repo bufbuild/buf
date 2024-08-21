@@ -34,7 +34,7 @@ func TestServicePascalCase(t *testing.T) {
 	for _, spec := range []*check.Spec{
 		bufcheckserver.V2Spec,
 	} {
-		checktest.TestCase{
+		checktest.CheckTest{
 			Request: &checktest.RequestSpec{
 				Files: &checktest.ProtoFileSpec{
 					DirPaths:  []string{"testdata/lint/service_pascal_case"},

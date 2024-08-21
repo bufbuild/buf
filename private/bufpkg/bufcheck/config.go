@@ -173,11 +173,11 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 	if err != nil {
 		return nil, err
 	}
-	idToCategories, err := getIDToCategories(allRules)
+	idToCategories, err := getIDToCategoryIDs(allRules)
 	if err != nil {
 		return nil, err
 	}
-	categoryToIDs := getCategoryToIDs(idToCategories)
+	categoryToIDs := getCategoryIDToIDs(idToCategories)
 
 	// These may both be empty, and that's OK.
 	b.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Use)
@@ -383,15 +383,15 @@ func transformToIDToListMap(idOrCategoryToList map[string][]string, idToCategori
 	return idToListMap, nil
 }
 
-func getCategoryToIDs(idToCategories map[string][]string) map[string][]string {
-	categoryToIDs := make(map[string][]string)
-	for id, categories := range idToCategories {
-		for _, category := range categories {
+func getCategoryIDToIDs(idToCategoryIDs map[string][]string) map[string][]string {
+	categoryIDToIDs := make(map[string][]string)
+	for id, categoryIDs := range idToCategoryIDs {
+		for _, categoryID := range categoryIDs {
 			// handles empty category as well
-			categoryToIDs[category] = append(categoryToIDs[category], id)
+			categoryIDToIDs[categoryID] = append(categoryIDToIDs[categoryID], id)
 		}
 	}
-	return categoryToIDs
+	return categoryIDToIDs
 }
 
 // []string{} as a value represents that the ID is deprecated but has no replacements.
@@ -425,13 +425,13 @@ func getIDToRule(rules []Rule) (map[string]Rule, error) {
 	return m, nil
 }
 
-func getIDToCategories(rules []Rule) (map[string][]string, error) {
+func getIDToCategoryIDs(rules []Rule) (map[string][]string, error) {
 	m := make(map[string][]string)
 	for _, rule := range rules {
 		if _, ok := m[rule.ID()]; ok {
 			return nil, syserror.Newf("duplicate rule ID: %q", rule.ID())
 		}
-		m[rule.ID()] = rule.Categories()
+		m[rule.ID()] = slicesext.Map(rule.Categories(), check.Category.ID)
 	}
 	return m, nil
 }

@@ -883,4 +883,83 @@ var (
 		Type:    check.RuleTypeLint,
 		Handler: bufcheckserverhandle.HandleLintSyntaxSpecified,
 	}
+
+	// TODO: Improve purposes. These are in buf.build/docs. Perhaps we can abandon the "checks that" prefix.
+
+	// FileCategorySpec is a category spec.
+	FileCategorySpec = &check.CategorySpec{
+		ID:      "FILE",
+		Purpose: "Checks that there are no source-code breaking changes at the per-file level.",
+	}
+	// PackageCategorySpec is a category spec.
+	PackageCategorySpec = &check.CategorySpec{
+		ID:      "PACKAGE",
+		Purpose: "Checks that there are no source-code breaking changes at the per-package level.",
+	}
+	// WireCategorySpec is a category spec.
+	WireCategorySpec = &check.CategorySpec{
+		ID:      "WIRE",
+		Purpose: "Checks that there are no wire breaking changes for the binary encoding.",
+	}
+	// WireJSONCategorySpec is a category spec.
+	WireJSONCategorySpec = &check.CategorySpec{
+		ID:      "WIRE_JSON",
+		Purpose: "Checks that there are no wire breaking changes for the binary or JSON encodings.",
+	}
+
+	// BasicCategorySpec is a category spec.
+	BasicCategorySpec = &check.CategorySpec{
+		ID:      "BASIC",
+		Purpose: "Checks that basic lint rules are followed.",
+	}
+	// CommentsCategorySpec is a category spec.
+	CommentsCategorySpec = &check.CategorySpec{
+		ID:      "COMMENTS",
+		Purpose: "Checks that all types have comments.",
+	}
+	// DefaultCategorySpec is a category spec.
+	DefaultCategorySpec = &check.CategorySpec{
+		ID:      "DEFAULT",
+		Purpose: "Checks that default lint rules are followed.",
+	}
+	// FileLayoutCategorySpec is a category spec.
+	FileLayoutCategorySpec = &check.CategorySpec{
+		ID:      "FILE_LAYOUT",
+		Purpose: "Checks the file layout.",
+	}
+	// MinimalCategorySpec is a category spec.
+	MinimalCategorySpec = &check.CategorySpec{
+		ID:      "MINIMAL",
+		Purpose: "Checks that bare-minimum lint rules are followed.",
+	}
+	// OtherCategorySpec is a category spec.
+	OtherCategorySpec = &check.CategorySpec{
+		ID:      "OTHER",
+		Purpose: "Checks other lint rules.",
+	}
+	// PackageAffinityCategorySpec is a category spec.
+	PackageAffinityCategorySpec = &check.CategorySpec{
+		ID:      "PACKAGE_AFFINITY",
+		Purpose: "Checks package affinity.",
+	}
+	// SensibleCategorySpec is a category spec.
+	SensibleCategorySpec = &check.CategorySpec{
+		ID:      "SENSIBLE",
+		Purpose: "Checks sensible lint rules.",
+	}
+	// StyleBasicCategorySpec is a category spec.
+	StyleBasicCategorySpec = &check.CategorySpec{
+		ID:      "STYLE_BASIC",
+		Purpose: "Checks that basic style lint rules are followed.",
+	}
+	// StyleDefaultCategorySpec is a category spec.
+	StyleDefaultCategorySpec = &check.CategorySpec{
+		ID:      "STYLE_DEFAULT",
+		Purpose: "Checks that default style lint rules are followed.",
+	}
+	// UnaryRPCCategorySpec is a category spec.
+	UnaryRPCCategorySpec = &check.CategorySpec{
+		ID:      "UNARY_RPC",
+		Purpose: "Checks that all RPCs are unary.",
+	}
 )

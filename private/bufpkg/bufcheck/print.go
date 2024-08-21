@@ -151,7 +151,7 @@ func printRulesTextSection(writer io.Writer, rules []Rule, pluginName string, ha
 		if len(globallyLongestRuleID) > len(subLongestRuleID) && id == subLongestRuleID {
 			id = id + strings.Repeat(" ", len(globallyLongestRuleID)-len(subLongestRuleID))
 		}
-		categories := strings.Join(rule.Categories(), ", ")
+		categories := getCategoriesString(rule.Categories())
 		if len(globallyLongestRuleCategories) > len(subLongestRuleCategories) && categories == subLongestRuleCategories {
 			categories = categories + strings.Repeat(" ", len(globallyLongestRuleCategories)-len(subLongestRuleCategories))
 		}
@@ -181,7 +181,7 @@ func getLongestRuleCategories(rules []Rule) string {
 	return slicesext.Reduce(
 		rules,
 		func(accumulator string, rule Rule) string {
-			categories := strings.Join(rule.Categories(), ", ")
+			categories := getCategoriesString(rule.Categories())
 			if len(accumulator) > len(categories) {
 				return accumulator
 			}
@@ -189,6 +189,10 @@ func getLongestRuleCategories(rules []Rule) string {
 		},
 		"",
 	)
+}
+
+func getCategoriesString(categories []check.Category) string {
+	return strings.Join(slicesext.Map(categories, check.Category.ID), ", ")
 }
 
 // cloneAndSortRulesForPrint sorts the rules just for printing.
@@ -229,9 +233,9 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 				return false
 			}
 			oneCategories := one.Categories()
-			sort.Slice(oneCategories, func(i int, j int) bool { return categoryLess(oneCategories[i], oneCategories[j]) })
+			sort.Slice(oneCategories, func(i int, j int) bool { return categoryIDLess(oneCategories[i].ID(), oneCategories[j].ID()) })
 			twoCategories := two.Categories()
-			sort.Slice(twoCategories, func(i int, j int) bool { return categoryLess(twoCategories[i], twoCategories[j]) })
+			sort.Slice(twoCategories, func(i int, j int) bool { return categoryIDLess(twoCategories[i].ID(), twoCategories[j].ID()) })
 			if len(oneCategories) == 0 && len(twoCategories) > 0 {
 				return false
 			}
@@ -239,7 +243,7 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 				return true
 			}
 			if len(oneCategories) > 0 && len(twoCategories) > 0 {
-				compare := categoryCompare(oneCategories[0], twoCategories[0])
+				compare := categoryIDCompare(oneCategories[0].ID(), twoCategories[0].ID())
 				if compare < 0 {
 					return true
 				}
@@ -247,8 +251,8 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 					return false
 				}
 			}
-			oneCategoriesString := strings.Join(oneCategories, ",")
-			twoCategoriesString := strings.Join(twoCategories, ",")
+			oneCategoriesString := getCategoriesString(oneCategories)
+			twoCategoriesString := getCategoriesString(twoCategories)
 			if oneCategoriesString < twoCategoriesString {
 				return true
 			}
@@ -274,7 +278,7 @@ type externalRule struct {
 func newExternalRule(rule Rule) *externalRule {
 	return &externalRule{
 		ID:           rule.ID(),
-		Categories:   rule.Categories(),
+		Categories:   slicesext.Map(rule.Categories(), check.Category.ID),
 		Default:      rule.IsDefault(),
 		Purpose:      rule.Purpose(),
 		Plugin:       rule.PluginName(),

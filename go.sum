@@ -1,5 +1,7 @@
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240816190836-4b7606133d85.2 h1:XRT7G03OwWfu57HaZQxVgOfJrVrqaz33HUKyBPkGMj8=
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240816190836-4b7606133d85.2/go.mod h1:aJVaPevAavNh6YqOiwzXynBPrpgQPyxWjIZSkmPBcbU=
+buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240820233107-614b0e1ba23d.2 h1:V2nIJtg/OgbD4BigJsPKU5UfN97qRu+EXiW33RAhgiA=
+buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240820233107-614b0e1ba23d.2/go.mod h1:aJVaPevAavNh6YqOiwzXynBPrpgQPyxWjIZSkmPBcbU=
 buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240819235812-34e4e0b526fa.2 h1:Lku2V24Yxd6XAntwGH1NRQkOw73ol5IwRe+YrqH6z24=
 buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240819235812-34e4e0b526fa.2/go.mod h1:nxutvSY3xC8YHLZByE3Z91Is7lUYhAnLLe8aI/gBBYA=
 buf.build/gen/go/bufbuild/pluginrpc/protocolbuffers/go v1.34.2-20240820183300-ccff5e844a25.2 h1:cjLXy1QM5RrG7INrxkz1OXQxTF+aPEzB5ZtQo/ERr/A=
@@ -30,6 +32,8 @@ github.com/bufbuild/bufplugin-go v0.0.0-20240820000059-8e170798b737 h1:06fJ/KoDT
 github.com/bufbuild/bufplugin-go v0.0.0-20240820000059-8e170798b737/go.mod h1:Yijl44RFrQ0ucxI2Cnp7ksAPwP+I/qoMMpHr6Y1RYqQ=
 github.com/bufbuild/bufplugin-go v0.0.0-20240820183822-2bdafc547d06 h1:0kju02PvtS68+utCedVALs1IgT1s9ziNprvk39D1bd4=
 github.com/bufbuild/bufplugin-go v0.0.0-20240820183822-2bdafc547d06/go.mod h1:1bH/lD0Hvr0CpbYhYqOWYa/wpMJ1b9N3wtzXjN2yJXc=
+github.com/bufbuild/bufplugin-go v0.0.0-20240821003913-27b1ba5917f3 h1:6/L/zRHWxq9rR1AJccRgLJUsz1JXNlyLjiyjwhTms74=
+github.com/bufbuild/bufplugin-go v0.0.0-20240821003913-27b1ba5917f3/go.mod h1:vf+WdB7oUSWoM56hUFQdDuxBGDAOB4FmsNRjF0ivch0=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240820000016-1463b4d2b3e6 h1:k4amrJHyhiUqcVLQD9Me6OLGZOrLxEyNKusSuY98oEQ=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240820000016-1463b4d2b3e6/go.mod h1:qsyjBJpLHfQ6pMtW5eWdgp5A+7FPKJ8Rk6dFV6xmT8k=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240820183735-b2975500a80e h1:VjV4Ofkaoo9QiitMYK9bJ82IG+26DLqlI19/NydHqbU=

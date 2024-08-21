@@ -92,7 +92,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 
 	var clientOptions []check.ClientOption
 	if cacheRules {
-		clientOptions = append(clientOptions, check.ClientWithCacheRules())
+		clientOptions = append(clientOptions, check.ClientWithCacheRulesAndCategories())
 	}
 	fieldLowerSnakeCaseClient, err := check.NewClientForSpec(fieldLowerSnakeCaseSpec, clientOptions...)
 	require.NoError(t, err)
