@@ -40,21 +40,21 @@ const (
 	GenerateStrategyAll GenerateStrategy = 2
 )
 
-// PluginConfigType is a plugin configuration type.
-type PluginConfigType int
+// GeneratePluginConfigType is a generate plugin configuration type.
+type GeneratePluginConfigType int
 
 const (
-	// PluginConfigTypeRemote is the remote plugin config type.
-	PluginConfigTypeRemote PluginConfigType = iota + 1
-	// PluginConfigTypeLocal is the local plugin config type.
-	PluginConfigTypeLocal
-	// PluginConfigTypeProtocBuiltin is the protoc built-in plugin config type.
-	PluginConfigTypeProtocBuiltin
-	// PluginConfigTypeLocalOrProtocBuiltin is a special plugin config type. This type indicates
+	// GeneratePluginConfigTypeRemote is the remote plugin config type.
+	GeneratePluginConfigTypeRemote GeneratePluginConfigType = iota + 1
+	// GeneratePluginConfigTypeLocal is the local plugin config type.
+	GeneratePluginConfigTypeLocal
+	// GeneratePluginConfigTypeProtocBuiltin is the protoc built-in plugin config type.
+	GeneratePluginConfigTypeProtocBuiltin
+	// GeneratePluginConfigTypeLocalOrProtocBuiltin is a special plugin config type. This type indicates
 	// it is to be determined whether the plugin is local or protoc built-in.
 	// We defer further classification to the plugin executor. In v2 the exact
 	// plugin config type is always specified and it will never be just local.
-	PluginConfigTypeLocalOrProtocBuiltin
+	GeneratePluginConfigTypeLocalOrProtocBuiltin
 )
 
 var (
@@ -78,7 +78,7 @@ var (
 // GeneratePluginConfig is a configuration for a plugin.
 type GeneratePluginConfig interface {
 	// Type returns the plugin type. This is never the zero value.
-	Type() PluginConfigType
+	Type() GeneratePluginConfigType
 	// Name returns the plugin name. This is never empty.
 	Name() string
 	// Out returns the output directory for generation. This is never empty.
@@ -116,8 +116,8 @@ type GeneratePluginConfig interface {
 	isGeneratePluginConfig()
 }
 
-// NewRemotePluginConfig returns a new GeneratePluginConfig for a remote plugin.
-func NewRemotePluginConfig(
+// NewRemoteGeneratePluginConfig returns a new GeneratePluginConfig for a remote plugin.
+func NewRemoteGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -125,7 +125,7 @@ func NewRemotePluginConfig(
 	includeWKT bool,
 	revision int,
 ) (GeneratePluginConfig, error) {
-	return newRemotePluginConfig(
+	return newRemoteGeneratePluginConfig(
 		name,
 		out,
 		opt,
@@ -135,8 +135,8 @@ func NewRemotePluginConfig(
 	)
 }
 
-// NewLocalOrProtocBuiltinPluginConfig returns a new GeneratePluginConfig for a local or protoc builtin plugin.
-func NewLocalOrProtocBuiltinPluginConfig(
+// NewLocalOrProtocBuiltinGeneratePluginConfig returns a new GeneratePluginConfig for a local or protoc builtin plugin.
+func NewLocalOrProtocBuiltinGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -144,7 +144,7 @@ func NewLocalOrProtocBuiltinPluginConfig(
 	includeWKT bool,
 	strategy *GenerateStrategy,
 ) (GeneratePluginConfig, error) {
-	return newLocalOrProtocBuiltinPluginConfig(
+	return newLocalOrProtocBuiltinGeneratePluginConfig(
 		name,
 		out,
 		opt,
@@ -154,8 +154,8 @@ func NewLocalOrProtocBuiltinPluginConfig(
 	)
 }
 
-// NewLocalPluginConfig returns a new GeneratePluginConfig for a local plugin.
-func NewLocalPluginConfig(
+// NewLocalGeneratePluginConfig returns a new GeneratePluginConfig for a local plugin.
+func NewLocalGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -164,7 +164,7 @@ func NewLocalPluginConfig(
 	strategy *GenerateStrategy,
 	path []string,
 ) (GeneratePluginConfig, error) {
-	return newLocalPluginConfig(
+	return newLocalGeneratePluginConfig(
 		name,
 		out,
 		opt,
@@ -175,9 +175,9 @@ func NewLocalPluginConfig(
 	)
 }
 
-// NewProtocBuiltinPluginConfig returns a new GeneratePluginConfig for a protoc
+// NewProtocBuiltinGeneratePluginConfig returns a new GeneratePluginConfig for a protoc
 // builtin plugin.
-func NewProtocBuiltinPluginConfig(
+func NewProtocBuiltinGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -186,7 +186,7 @@ func NewProtocBuiltinPluginConfig(
 	strategy *GenerateStrategy,
 	protocPath []string,
 ) (GeneratePluginConfig, error) {
-	return newProtocBuiltinPluginConfig(
+	return newProtocBuiltinGeneratePluginConfig(
 		name,
 		out,
 		opt,
@@ -197,44 +197,44 @@ func NewProtocBuiltinPluginConfig(
 	)
 }
 
-// NewGeneratePluginWithIncludeImportsAndWKT returns a GeneratePluginConfig the
+// NewGeneratePluginConfigWithIncludeImportsAndWKT returns a GeneratePluginConfig the
 // same as the input, with include imports and include wkt overridden.
-func NewGeneratePluginWithIncludeImportsAndWKT(
+func NewGeneratePluginConfigWithIncludeImportsAndWKT(
 	config GeneratePluginConfig,
 	includeImports bool,
 	includeWKT bool,
 ) (GeneratePluginConfig, error) {
-	originalConfig, ok := config.(*pluginConfig)
+	originalConfig, ok := config.(*generatePluginConfig)
 	if !ok {
 		return nil, syserror.Newf("unknown implementation of GeneratePluginConfig: %T", config)
 	}
-	pluginConfig := *originalConfig
+	generatePluginConfig := *originalConfig
 	if includeImports {
-		pluginConfig.includeImports = true
+		generatePluginConfig.includeImports = true
 	}
 	if includeWKT {
-		pluginConfig.includeWKT = true
+		generatePluginConfig.includeWKT = true
 	}
-	return &pluginConfig, nil
+	return &generatePluginConfig, nil
 }
 
 // *** PRIVATE ***
 
-type pluginConfig struct {
-	pluginConfigType PluginConfigType
-	name             string
-	out              string
-	opts             []string
-	includeImports   bool
-	includeWKT       bool
-	strategy         *GenerateStrategy
-	path             []string
-	protocPath       []string
-	remoteHost       string
-	revision         int
+type generatePluginConfig struct {
+	generatePluginConfigType GeneratePluginConfigType
+	name                     string
+	out                      string
+	opts                     []string
+	includeImports           bool
+	includeWKT               bool
+	strategy                 *GenerateStrategy
+	path                     []string
+	protocPath               []string
+	remoteHost               string
+	revision                 int
 }
 
-func newPluginConfigFromExternalV1Beta1(
+func newGeneratePluginConfigFromExternalV1Beta1(
 	externalConfig externalGeneratePluginConfigV1Beta1,
 ) (GeneratePluginConfig, error) {
 	if externalConfig.Name == "" {
@@ -252,7 +252,7 @@ func newPluginConfigFromExternalV1Beta1(
 		return nil, err
 	}
 	if externalConfig.Path != "" {
-		return newLocalPluginConfig(
+		return newLocalGeneratePluginConfig(
 			externalConfig.Name,
 			externalConfig.Out,
 			opt,
@@ -262,7 +262,7 @@ func newPluginConfigFromExternalV1Beta1(
 			[]string{externalConfig.Path},
 		)
 	}
-	return newLocalOrProtocBuiltinPluginConfig(
+	return newLocalOrProtocBuiltinGeneratePluginConfig(
 		externalConfig.Name,
 		externalConfig.Out,
 		opt,
@@ -272,7 +272,7 @@ func newPluginConfigFromExternalV1Beta1(
 	)
 }
 
-func newPluginConfigFromExternalV1(
+func newGeneratePluginConfigFromExternalV1(
 	externalConfig externalGeneratePluginConfigV1,
 ) (GeneratePluginConfig, error) {
 	if externalConfig.Plugin == "" && externalConfig.Name == "" {
@@ -321,7 +321,7 @@ func newPluginConfigFromExternalV1(
 		if externalConfig.ProtocPath != nil {
 			return nil, fmt.Errorf("cannot specify protoc_path for remote plugin %s", externalConfig.Plugin)
 		}
-		return newRemotePluginConfig(
+		return newRemoteGeneratePluginConfig(
 			externalConfig.Plugin,
 			externalConfig.Out,
 			opt,
@@ -333,7 +333,7 @@ func newPluginConfigFromExternalV1(
 	// At this point the plugin must be local, regardless whehter it's specified
 	// by key 'plugin' or 'name'.
 	if len(path) > 0 {
-		return newLocalPluginConfig(
+		return newLocalGeneratePluginConfig(
 			pluginIdentifier,
 			externalConfig.Out,
 			opt,
@@ -344,7 +344,7 @@ func newPluginConfigFromExternalV1(
 		)
 	}
 	if externalConfig.ProtocPath != nil {
-		return newProtocBuiltinPluginConfig(
+		return newProtocBuiltinGeneratePluginConfig(
 			pluginIdentifier,
 			externalConfig.Out,
 			opt,
@@ -356,7 +356,7 @@ func newPluginConfigFromExternalV1(
 	}
 	// It could be either local or protoc built-in. We defer to the plugin executor
 	// to decide whether the plugin is protoc-builtin or local.
-	return newLocalOrProtocBuiltinPluginConfig(
+	return newLocalOrProtocBuiltinGeneratePluginConfig(
 		pluginIdentifier,
 		externalConfig.Out,
 		opt,
@@ -412,7 +412,7 @@ func newPluginConfigFromExternalV2(
 		if externalConfig.ProtocPath != nil {
 			return nil, fmt.Errorf("cannot specify protoc_path for remote plugin %s", *externalConfig.Remote)
 		}
-		return newRemotePluginConfig(
+		return newRemoteGeneratePluginConfig(
 			*externalConfig.Remote,
 			externalConfig.Out,
 			opt,
@@ -432,7 +432,7 @@ func newPluginConfigFromExternalV2(
 		if externalConfig.ProtocPath != nil {
 			return nil, fmt.Errorf("cannot specify protoc_path for local plugin %s", localPluginName)
 		}
-		return newLocalPluginConfig(
+		return newLocalGeneratePluginConfig(
 			strings.Join(path, " "),
 			externalConfig.Out,
 			opt,
@@ -449,7 +449,7 @@ func newPluginConfigFromExternalV2(
 		if externalConfig.Revision != nil {
 			return nil, fmt.Errorf("cannot specify revision for protoc built-in plugin %s", *externalConfig.ProtocBuiltin)
 		}
-		return newProtocBuiltinPluginConfig(
+		return newProtocBuiltinGeneratePluginConfig(
 			*externalConfig.ProtocBuiltin,
 			externalConfig.Out,
 			opt,
@@ -463,14 +463,14 @@ func newPluginConfigFromExternalV2(
 	}
 }
 
-func newRemotePluginConfig(
+func newRemoteGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
 	revision int,
-) (*pluginConfig, error) {
+) (*generatePluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
@@ -481,41 +481,41 @@ func newRemotePluginConfig(
 	if revision < 0 || revision > math.MaxInt32 {
 		return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
 	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeRemote,
-		name:             name,
-		remoteHost:       remoteHost,
-		revision:         revision,
-		out:              out,
-		opts:             opt,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
+	return &generatePluginConfig{
+		generatePluginConfigType: GeneratePluginConfigTypeRemote,
+		name:                     name,
+		remoteHost:               remoteHost,
+		revision:                 revision,
+		out:                      out,
+		opts:                     opt,
+		includeImports:           includeImports,
+		includeWKT:               includeWKT,
 	}, nil
 }
 
-func newLocalOrProtocBuiltinPluginConfig(
+func newLocalOrProtocBuiltinGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
 	strategy *GenerateStrategy,
-) (*pluginConfig, error) {
+) (*generatePluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
-		name:             name,
-		strategy:         strategy,
-		out:              out,
-		opts:             opt,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
+	return &generatePluginConfig{
+		generatePluginConfigType: GeneratePluginConfigTypeLocalOrProtocBuiltin,
+		name:                     name,
+		strategy:                 strategy,
+		out:                      out,
+		opts:                     opt,
+		includeImports:           includeImports,
+		includeWKT:               includeWKT,
 	}, nil
 }
 
-func newLocalPluginConfig(
+func newLocalGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -523,26 +523,26 @@ func newLocalPluginConfig(
 	includeWKT bool,
 	strategy *GenerateStrategy,
 	path []string,
-) (*pluginConfig, error) {
+) (*generatePluginConfig, error) {
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeLocal,
-		name:             name,
-		path:             path,
-		strategy:         strategy,
-		out:              out,
-		opts:             opt,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
+	return &generatePluginConfig{
+		generatePluginConfigType: GeneratePluginConfigTypeLocal,
+		name:                     name,
+		path:                     path,
+		strategy:                 strategy,
+		out:                      out,
+		opts:                     opt,
+		includeImports:           includeImports,
+		includeWKT:               includeWKT,
 	}, nil
 }
 
-func newProtocBuiltinPluginConfig(
+func newProtocBuiltinGeneratePluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -550,75 +550,75 @@ func newProtocBuiltinPluginConfig(
 	includeWKT bool,
 	strategy *GenerateStrategy,
 	protocPath []string,
-) (*pluginConfig, error) {
+) (*generatePluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeProtocBuiltin,
-		name:             name,
-		protocPath:       protocPath,
-		out:              out,
-		opts:             opt,
-		strategy:         strategy,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
+	return &generatePluginConfig{
+		generatePluginConfigType: GeneratePluginConfigTypeProtocBuiltin,
+		name:                     name,
+		protocPath:               protocPath,
+		out:                      out,
+		opts:                     opt,
+		strategy:                 strategy,
+		includeImports:           includeImports,
+		includeWKT:               includeWKT,
 	}, nil
 }
 
-func (p *pluginConfig) Type() PluginConfigType {
-	return p.pluginConfigType
+func (p *generatePluginConfig) Type() GeneratePluginConfigType {
+	return p.generatePluginConfigType
 }
 
-func (p *pluginConfig) Name() string {
+func (p *generatePluginConfig) Name() string {
 	return p.name
 }
 
-func (p *pluginConfig) Out() string {
+func (p *generatePluginConfig) Out() string {
 	return p.out
 }
 
-func (p *pluginConfig) Opt() string {
+func (p *generatePluginConfig) Opt() string {
 	return strings.Join(p.opts, ",")
 }
 
-func (p *pluginConfig) IncludeImports() bool {
+func (p *generatePluginConfig) IncludeImports() bool {
 	return p.includeImports
 }
 
-func (p *pluginConfig) IncludeWKT() bool {
+func (p *generatePluginConfig) IncludeWKT() bool {
 	return p.includeWKT
 }
 
-func (p *pluginConfig) Strategy() GenerateStrategy {
+func (p *generatePluginConfig) Strategy() GenerateStrategy {
 	if p.strategy == nil {
 		return GenerateStrategyDirectory
 	}
 	return *p.strategy
 }
 
-func (p *pluginConfig) Path() []string {
+func (p *generatePluginConfig) Path() []string {
 	return p.path
 }
 
-func (p *pluginConfig) ProtocPath() []string {
+func (p *generatePluginConfig) ProtocPath() []string {
 	return p.protocPath
 }
 
-func (p *pluginConfig) RemoteHost() string {
+func (p *generatePluginConfig) RemoteHost() string {
 	return p.remoteHost
 }
 
-func (p *pluginConfig) Revision() int {
+func (p *generatePluginConfig) Revision() int {
 	return p.revision
 }
 
-func (p *pluginConfig) isGeneratePluginConfig() {}
+func (p *generatePluginConfig) isGeneratePluginConfig() {}
 
 func newExternalGeneratePluginConfigV2FromPluginConfig(
-	generatePluginConfig GeneratePluginConfig,
+	pluginConfig GeneratePluginConfig,
 ) (externalGeneratePluginConfigV2, error) {
-	pluginConfig, ok := generatePluginConfig.(*pluginConfig)
+	generatePluginConfig, ok := pluginConfig.(*generatePluginConfig)
 	if !ok {
 		return externalGeneratePluginConfigV2{}, syserror.Newf("unknown implementation of GeneratePluginConfig: %T", generatePluginConfig)
 	}
@@ -627,14 +627,14 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		IncludeImports: generatePluginConfig.IncludeImports(),
 		IncludeWKT:     generatePluginConfig.IncludeWKT(),
 	}
-	opts := pluginConfig.opts
+	opts := generatePluginConfig.opts
 	switch {
 	case len(opts) == 1:
 		externalPluginConfigV2.Opt = opts[0]
 	case len(opts) > 1:
 		externalPluginConfigV2.Opt = opts
 	}
-	strategy := pluginConfig.strategy
+	strategy := generatePluginConfig.strategy
 	switch {
 	case strategy != nil && *strategy == GenerateStrategyDirectory:
 		externalPluginConfigV2.Strategy = toPointer("directory")
@@ -642,12 +642,12 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		externalPluginConfigV2.Strategy = toPointer("all")
 	}
 	switch generatePluginConfig.Type() {
-	case PluginConfigTypeRemote:
+	case GeneratePluginConfigTypeRemote:
 		externalPluginConfigV2.Remote = toPointer(generatePluginConfig.Name())
 		if revision := generatePluginConfig.Revision(); revision != 0 {
 			externalPluginConfigV2.Revision = &revision
 		}
-	case PluginConfigTypeLocal:
+	case GeneratePluginConfigTypeLocal:
 		path := generatePluginConfig.Path()
 		switch {
 		case len(path) == 1:
@@ -655,7 +655,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		case len(path) > 1:
 			externalPluginConfigV2.Local = path
 		}
-	case PluginConfigTypeProtocBuiltin:
+	case GeneratePluginConfigTypeProtocBuiltin:
 		externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
 		if protocPath := generatePluginConfig.ProtocPath(); len(protocPath) > 0 {
 			if len(protocPath) == 1 {
@@ -664,7 +664,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 				externalPluginConfigV2.ProtocPath = protocPath
 			}
 		}
-	case PluginConfigTypeLocalOrProtocBuiltin:
+	case GeneratePluginConfigTypeLocalOrProtocBuiltin:
 		binaryName := "protoc-gen-" + generatePluginConfig.Name()
 		// First, check if this is a binary.
 		_, err := exec.LookPath(binaryName)

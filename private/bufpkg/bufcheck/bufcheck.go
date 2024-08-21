@@ -29,16 +29,8 @@ import (
 	"go.uber.org/multierr"
 )
 
-// AllRuleFormatStrings is all rule format strings.
-var AllRuleFormatStrings = []string{
-	"text",
-	"json",
-}
-
 // Rule is a rule.
 type Rule interface {
-	json.Marshaler
-
 	// ID returns the ID of the Rule.
 	//
 	// UPPER_SNAKE_CASE.
@@ -71,22 +63,15 @@ type Rule interface {
 }
 
 // PrintRules prints the rules to the writer.
-//
-// The empty string defaults to text.
-func PrintRules(writer io.Writer, rules []Rule, formatString string, includeDeprecated bool) (retErr error) {
+func PrintRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (retErr error) {
+	printRulesOptions := newPrintRulesOptions()
+	for _, option := range options {
+		option(printRulesOptions)
+	}
 	if len(rules) == 0 {
 		return nil
 	}
-	var asJSON bool
-	switch s := strings.ToLower(strings.TrimSpace(formatString)); s {
-	case "", "text":
-		asJSON = false
-	case "json":
-		asJSON = true
-	default:
-		return fmt.Errorf("unknown format: %q", s)
-	}
-	if !asJSON {
+	if !printRulesOptions.asJSON {
 		tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
 		defer func() {
 			retErr = multierr.Append(retErr, tabWriter.Flush())
@@ -97,19 +82,38 @@ func PrintRules(writer io.Writer, rules []Rule, formatString string, includeDepr
 		}
 	}
 	for _, rule := range rules {
-		if !includeDeprecated && rule.Deprecated() {
+		if !printRulesOptions.includeDeprecated && rule.Deprecated() {
 			continue
 		}
-		if err := printRule(writer, rule, asJSON); err != nil {
+		if err := printRule(writer, rule, printRulesOptions.asJSON); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+// PrintRulesOption is an option for PrintRules.
+type PrintRulesOption func(*printRulesOptions)
+
+// PrintRulesWithJSON returns a new PrintRulesOption that says to print the rules as JSON.
+//
+// The default is to print as text.
+func PrintRulesWithJSON() PrintRulesOption {
+	return func(printRulesOptions *printRulesOptions) {
+		printRulesOptions.asJSON = true
+	}
+}
+
+// PrintRulesWithDeprecated returns a new PrintRulesOption that resullts in deprecated rules  being printed.
+func PrintRulesWithDeprecated() PrintRulesOption {
+	return func(printRulesOptions *printRulesOptions) {
+		printRulesOptions.includeDeprecated = true
+	}
+}
+
 func printRule(writer io.Writer, rule Rule, asJSON bool) error {
 	if asJSON {
-		data, err := json.Marshal(rule)
+		data, err := json.Marshal(newExternalRule(rule))
 		if err != nil {
 			return err
 		}
@@ -122,4 +126,31 @@ func printRule(writer io.Writer, rule Rule, asJSON bool) error {
 		return err
 	}
 	return nil
+}
+
+type externalRule struct {
+	ID           string   `json:"id" yaml:"id"`
+	Categories   []string `json:"categories" yaml:"categories"`
+	Purpose      string   `json:"purpose" yaml:"purpose"`
+	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
+	Replacements []string `json:"replacements" yaml:"replacements"`
+}
+
+func newExternalRule(rule Rule) *externalRule {
+	return &externalRule{
+		ID:           rule.ID(),
+		Categories:   rule.Categories(),
+		Purpose:      rule.Purpose(),
+		Deprecated:   rule.Deprecated(),
+		Replacements: rule.ReplacementIDs(),
+	}
+}
+
+type printRulesOptions struct {
+	asJSON            bool
+	includeDeprecated bool
+}
+
+func newPrintRulesOptions() *printRulesOptions {
+	return &printRulesOptions{}
 }
