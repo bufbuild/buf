@@ -1,0 +1,7 @@
+package foo;
+
+import "imported.proto";
+
+message Foo {
+  optional standalone.Imported i = 1;
+}
