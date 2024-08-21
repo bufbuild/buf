@@ -757,11 +757,11 @@ func handleBreakingFieldWireCompatibleType(
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
 	// are not compatible.
-	previousWireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[previousDescriptor.Kind()]
+	previousWireCompatibilityGroup, ok := fieldKindToWireCompatibilityGroup[previousDescriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[descriptor.Kind()]
+	wireCompatibilityGroup, ok := fieldKindToWireCompatibilityGroup[descriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
@@ -818,11 +818,11 @@ func handleBreakingFieldWireJSONCompatibleType(
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
 	// are not compatible.
-	previousWireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[previousDescriptor.Kind()]
+	previousWireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatibilityGroup[previousDescriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[descriptor.Kind()]
+	wireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatibilityGroup[descriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
@@ -2398,7 +2398,7 @@ func handleBreakingFieldWireJSONCompatibleCardinality(
 
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
-	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
+	if cardinalityToWireJSONCompatibilityGroup[previousCardinality] != cardinalityToWireJSONCompatibilityGroup[currentCardinality] {
 		responseWriter.AddProtosourceAnnotation(
 			field.Location(),
 			previousField.Location(),
@@ -2440,7 +2440,7 @@ func handleBreakingFieldWireCompatibleCardinality(
 
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
-	if cardinalityToWireCompatiblityGroup[previousCardinality] != cardinalityToWireCompatiblityGroup[currentCardinality] {
+	if cardinalityToWireCompatibilityGroup[previousCardinality] != cardinalityToWireCompatibilityGroup[currentCardinality] {
 		responseWriter.AddProtosourceAnnotation(
 			field.Location(),
 			previousField.Location(),
