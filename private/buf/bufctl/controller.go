@@ -1010,6 +1010,8 @@ func (c *controller) buildImage(
 	return filterImage(image, functionOptions, true)
 }
 
+// buildTargetImageWithConfigs builds an image for each module in the workspace.
+// This is used to associate LintConfig and BreakingConfig on a per-module basis.
 func (c *controller) buildTargetImageWithConfigs(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
