@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
+- Stop creating empty `buf.lock` files when `buf dep update` does not find new dependencies
+  to update and there is no existing `buf.lock`.
 
 ## [v1.37.0] - 2024-08-16
 
