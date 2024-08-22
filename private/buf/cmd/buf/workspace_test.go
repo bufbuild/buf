@@ -1135,6 +1135,42 @@ func TestWorkspaceDuplicateDirPathOverlappingIncludeSuccess(t *testing.T) {
 	)
 }
 
+func TestWorkspaceOverlappingModuleDirPaths(t *testing.T) {
+	t.Parallel()
+	workspaceDir := filepath.Join("testdata", "workspace", "success", "overlapping_dir_path")
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/foo.proto":      {moduleFullName: "buf.test/acme/foobar"},
+			"bar/bar.proto":      {moduleFullName: "buf.test/acme/foobar"},
+			"foo_internal.proto": {},
+			"bar_internal.proto": {},
+		},
+		workspaceDir,
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo_internal.proto": {},
+		},
+		workspaceDir,
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "internal", "foo_internal.proto"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/foo.proto": {moduleFullName: "buf.test/acme/foobar"},
+			"bar/bar.proto": {moduleFullName: "buf.test/acme/foobar"},
+		},
+		workspaceDir,
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "foo", "internal", "foo_internal.proto"),
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "bar", "internal", "bar_internal.proto"),
+	)
+}
+
 func TestWorkspaceDuplicateFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes multiple images that define the same file.
@@ -1646,7 +1682,8 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 }
 
 type expectedFileInfo struct {
-	isImport bool
+	isImport       bool
+	moduleFullName string
 }
 
 func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string]expectedFileInfo, buildArgs ...string) {
@@ -1678,6 +1715,13 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		expectedFileInfo, ok := expectedFilePathToInfo[filePath]
 		require.Truef(t, ok, "unexpected file in the image built: %s", filePath)
 		require.Equal(t, expectedFileInfo.isImport, imageFile.BufExtension.GetIsImport())
+		if expectedFileInfo.moduleFullName != "" {
+			moduleName := imageFile.GetBufExtension().GetModuleInfo().GetName()
+			require.NotNil(t, moduleName)
+			require.Equal(t, expectedFileInfo.moduleFullName, fmt.Sprintf("%s/%s/%s", moduleName.GetRemote(), moduleName.GetOwner(), moduleName.GetRepository()))
+		} else {
+			require.Nil(t, imageFile.GetBufExtension().GetModuleInfo().GetName())
+		}
 		delete(filesToCheck, filePath)
 	}
 	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
