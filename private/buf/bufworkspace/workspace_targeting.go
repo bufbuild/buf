@@ -597,7 +597,7 @@ func getMappedModuleBucketAndModuleTargeting(
 		includes, ok := rootToIncludes[root]
 		if !ok {
 			// This should never happen because ModuleConfig guarantees that they have the same keys.
-			return nil, nil, syserror.Newf("expected root %q to be also in rooToIncludes but not found", root)
+			return nil, nil, syserror.Newf("expected root %q to be also in rootToIncludes but not found", root)
 		}
 		// Roots only applies to .proto files.
 		mappers := []storage.Mapper{
