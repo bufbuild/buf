@@ -625,7 +625,7 @@ func getMappedModuleBucketAndModuleTargeting(
 				),
 			)
 		}
-		// Filter the proto files based on includes only when it's specified.
+		// An includes with length 0 adds no filter to the proto files.
 		if len(includes) > 0 {
 			var orMatchers []storage.Matcher
 			for _, include := range includes {
