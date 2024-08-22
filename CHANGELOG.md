@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.38.0] - 2024-08-22
 
 - Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
@@ -1217,6 +1221,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.38.0...HEAD
 [v1.38.0]: https://github.com/bufbuild/buf/compare/v1.37.0...v1.38.0
 [v1.37.0]: https://github.com/bufbuild/buf/compare/v1.36.0...v1.37.0
 [v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
