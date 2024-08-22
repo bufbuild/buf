@@ -242,7 +242,7 @@ func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner,
 		depth,
 		readWriteBucket,
 		CloneToBucketOptions{
-			Mapper:            storage.MatchPathExt(".proto"),
+			Matcher:           storage.MatchPathExt(".proto"),
 			Name:              name,
 			RecurseSubmodules: recurseSubmodules,
 		},

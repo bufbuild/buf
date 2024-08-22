@@ -95,7 +95,17 @@ func newWorkspaceTargeting(
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, overrideBufYAMLFile)
+			return v2WorkspaceTargeting(
+				ctx,
+				config,
+				bucket,
+				bucketTargeting,
+				overrideBufYAMLFile,
+				// If the user specifies a `--config path/to/config/buf.yaml` and the input workspace
+				// modules do not have their own doc/license files, we do not want to use "path/to/config/README(or LICENSE)"
+				// or "moduleDir/README(or LICENSE)" as the module's doc/license.
+				false,
+			)
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
@@ -107,7 +117,16 @@ func newWorkspaceTargeting(
 				"targeting workspace based on v2 buf.yaml",
 				zap.String("subDirPath", bucketTargeting.SubDirPath()),
 			)
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, controllingWorkspace.BufYAMLFile())
+			return v2WorkspaceTargeting(
+				ctx,
+				config,
+				bucket,
+				bucketTargeting,
+				controllingWorkspace.BufYAMLFile(),
+				// For a v2 controlling workspace, if a module inside does not have its own doc/license,
+				// we want to the doc/license at the root of the workspace if they exist.
+				true,
+			)
 		}
 		// This is a v1 workspace.
 		if bufWorkYAMLFile := controllingWorkspace.BufWorkYAMLFile(); bufWorkYAMLFile != nil {
@@ -165,6 +184,9 @@ func v2WorkspaceTargeting(
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	bufYAMLFile bufconfig.BufYAMLFile,
+	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
+	// use the license/doc respectively at the workspace root for this module.
+	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
 ) (*workspaceTargeting, error) {
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -208,6 +230,7 @@ func v2WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			useWorkspaceLicenseDocIfNotFoundAtMoudle,
 		)
 		if err != nil {
 			return nil, err
@@ -311,6 +334,9 @@ func v1WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			// In a v1 workspace, if a module does not have its own doc/license next to its v1 buf.yaml,
+			// we do NOT want to fall back to the doc/license next to it's buf.work.yaml.
+			false,
 		)
 		if err != nil {
 			return nil, err
@@ -434,6 +460,10 @@ func fallbackWorkspaceTargeting(
 				bucket,
 				bucketTargeting,
 				v2BufYAMLFile,
+				// Since the v2 buf.yaml is found at the workspace root we allow falling back
+				// to the doc/license at the workspace root, even though this function (fallbackWorkspaceTargeting)
+				// is the logic for handling the situation where the a controlling workspace not found.
+				true,
 			)
 		}
 		if v1BufWorkYAML != nil {
@@ -512,14 +542,17 @@ func validateBucketTargeting(
 func getMappedModuleBucketAndModuleTargeting(
 	ctx context.Context,
 	config *workspaceBucketConfig,
-	bucket storage.ReadBucket,
+	workspaceBucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
+	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
+	// use the license/doc respectively at the workspace root for this module.
+	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
-		bucket,
+		workspaceBucket,
 		storage.MapOnPrefix(moduleDirPath),
 	)
 	rootToExcludes := moduleConfig.RootToExcludes()
@@ -527,10 +560,12 @@ func getMappedModuleBucketAndModuleTargeting(
 	for root, excludes := range rootToExcludes {
 		// Roots only applies to .proto files.
 		mappers := []storage.Mapper{
+			storage.MapOnPrefix(root),
+		}
+		matchers := []storage.Matcher{
 			// need to do match extension here
 			// https://github.com/bufbuild/buf/issues/113
 			storage.MatchPathExt(".proto"),
-			storage.MapOnPrefix(root),
 		}
 		if len(excludes) != 0 {
 			var notOrMatchers []storage.Matcher
@@ -540,8 +575,8 @@ func getMappedModuleBucketAndModuleTargeting(
 					storage.MatchPathContained(exclude),
 				)
 			}
-			mappers = append(
-				mappers,
+			matchers = append(
+				matchers,
 				storage.MatchNot(
 					storage.MatchOr(
 						notOrMatchers...,
@@ -551,9 +586,12 @@ func getMappedModuleBucketAndModuleTargeting(
 		}
 		rootBuckets = append(
 			rootBuckets,
-			storage.MapReadBucket(
-				moduleBucket,
-				mappers...,
+			storage.FilterReadBucket(
+				storage.MapReadBucket(
+					moduleBucket,
+					mappers...,
+				),
+				matchers...,
 			),
 		)
 	}
@@ -564,6 +602,36 @@ func getMappedModuleBucketAndModuleTargeting(
 	licenseStorageReadBucket, err := bufmodule.GetLicenseStorageReadBucket(ctx, moduleBucket)
 	if err != nil {
 		return nil, nil, err
+	}
+	if useWorkspaceLicenseDocIfNotFoundAtMoudle {
+		isModuleDocBucketEmpty, err := storage.IsEmpty(ctx, docStorageReadBucket, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		// If at moduleDirPath there isn't a doc file, we fall back to use the doc file
+		// at the workspace root if it exists.
+		if isModuleDocBucketEmpty {
+			// We do not need to check if a doc file exists at the workspace root by
+			// checking whether the doc bucket for the workspace is empty, because
+			// this bucket will just be empty there isn't one, which is what we want.
+			docStorageReadBucket, err = bufmodule.GetDocStorageReadBucket(ctx, workspaceBucket)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		isModuleLicenseBucketEmpty, err := storage.IsEmpty(ctx, licenseStorageReadBucket, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		// If at moduleDirPath there isn't a license, we fall back to use the license
+		// at the workspace root if it exists.
+		if isModuleLicenseBucketEmpty {
+			// We do not need to check if this bucket is empty for the same reason, see comment for doc bucket.
+			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, workspaceBucket)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
 	}
 	rootBuckets = append(
 		rootBuckets,

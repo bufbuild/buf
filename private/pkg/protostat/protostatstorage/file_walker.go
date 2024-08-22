@@ -28,7 +28,7 @@ type fileWalker struct {
 
 func newFileWalker(readBucket storage.ReadBucket) *fileWalker {
 	return &fileWalker{
-		readBucket: storage.MapReadBucket(
+		readBucket: storage.FilterReadBucket(
 			readBucket,
 			storage.MatchPathExt(".proto"),
 		),
