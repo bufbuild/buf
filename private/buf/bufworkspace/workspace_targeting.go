@@ -591,8 +591,14 @@ func getMappedModuleBucketAndModuleTargeting(
 		storage.MapOnPrefix(moduleDirPath),
 	)
 	rootToExcludes := moduleConfig.RootToExcludes()
+	rootToIncludes := moduleConfig.RootToIncludes()
 	var rootBuckets []storage.ReadBucket
 	for root, excludes := range rootToExcludes {
+		includes, ok := rootToIncludes[root]
+		if !ok {
+			// This should never happen because ModuleConfig guarantees that they have the same keys.
+			return nil, nil, syserror.Newf("expected root %q to be also in rooToIncludes but not found", root)
+		}
 		// Roots only applies to .proto files.
 		mappers := []storage.Mapper{
 			storage.MapOnPrefix(root),
@@ -620,11 +626,7 @@ func getMappedModuleBucketAndModuleTargeting(
 			)
 		}
 		// Filter the proto files based on includes only when it's specified.
-		if includes := moduleConfig.Includes(); len(includes) > 0 {
-			if root != "." {
-				// This is impossible. Having non-empty Includes means it's v2, which means root must be ".".
-				return nil, nil, syserror.Newf(`module config has includes but also a root that is not ".": %q`, root)
-			}
+		if len(includes) > 0 {
 			var orMatchers []storage.Matcher
 			for _, include := range includes {
 				orMatchers = append(

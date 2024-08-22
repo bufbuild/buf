@@ -392,6 +392,13 @@ func readBufYAMLFile(
 		if err != nil {
 			return nil, err
 		}
+		// Keys in rootToExcludes are already normalized, validated and made relative to the module DirPath.
+		// These are exactly the keys that rootToIncludes should have.
+		rootToIncludes := make(map[string][]string)
+		for root := range rootToExcludes {
+			// In v1beta1 and v1, includes is not an option and is always empty.
+			rootToIncludes[root] = []string{}
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -417,7 +424,7 @@ func readBufYAMLFile(
 		moduleConfig, err := newModuleConfig(
 			"",
 			moduleFullName,
-			nil,
+			rootToIncludes,
 			rootToExcludes,
 			lintConfig,
 			breakingConfig,
@@ -502,6 +509,8 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, err
 			}
+			// The only root for v2 buf.yamls must be "." and relIncludes are already relative to the moduleDirPath.
+			rootToIncludes := map[string][]string{".": relIncludes}
 			relExcludes, err := slicesext.MapError(
 				externalModule.Excludes,
 				func(normalExclude string) (string, error) {
@@ -585,7 +594,7 @@ func readBufYAMLFile(
 			moduleConfig, err := newModuleConfig(
 				dirPath,
 				moduleFullName,
-				relIncludes,
+				rootToIncludes,
 				rootToExcludes,
 				lintConfig,
 				breakingConfig,
@@ -758,7 +767,15 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 				externalModule.Name = moduleFullName.String()
 			}
-			externalModule.Includes = slicesext.Map(moduleConfig.Includes(), joinDirPath)
+			rootToIncludes := moduleConfig.RootToIncludes()
+			if len(rootToIncludes) != 1 {
+				return syserror.Newf("had rootToIncludes length %d for NewModuleConfig with FileVersion %v", len(rootToIncludes), fileVersion)
+			}
+			includes, ok := rootToIncludes["."]
+			if !ok {
+				return syserror.Newf("had rootToIncludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
+			}
+			externalModule.Includes = slicesext.Map(includes, joinDirPath)
 			rootToExcludes := moduleConfig.RootToExcludes()
 			if len(rootToExcludes) != 1 {
 				return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
