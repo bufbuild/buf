@@ -1,0 +1,13 @@
+version: v2
+modules:
+  - path: proto
+    excludes:
+      - proto/foo/bar
+  - path: proto
+    includes:
+      - proto/foo/bar
+    excludes:
+      - proto/foo/bar/baz
+  - path: proto
+    includes:
+      - proto/foo/bar/baz

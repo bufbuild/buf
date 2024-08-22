@@ -18,9 +18,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -1057,6 +1059,84 @@ func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
 	)
 }
 
+func TestWorkspaceDuplicateDirPathOverlappingIncludeSuccess(t *testing.T) {
+	t.Parallel()
+	workspaceDir := filepath.Join("testdata", "workspace", "success", "duplicate_dir_path_overlapping_include")
+	requireTargetFilesWithGenerate(
+		t,
+		[]string{
+			"foo/v1/foo.proto",
+			"foo/v2/foo.proto",
+			"foo/bar/v1/bar.proto",
+			"foo/bar/v2/bar.proto",
+			"foo/bar/baz/v1/baz.proto",
+			"foo/bar/baz/v2/baz.proto",
+		},
+		workspaceDir,
+	)
+	requireTargetFilesWithGenerate(
+		t,
+		[]string{
+			"foo/v1/foo.proto",
+			"foo/v2/foo.proto",
+		},
+		workspaceDir,
+		// exclude a module contained within
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar"),
+	)
+	requireTargetFilesWithGenerate(
+		t,
+		[]string{
+			"foo/v1/foo.proto",
+		},
+		workspaceDir,
+		// filter within a module
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "v1", "foo.proto"),
+	)
+	requireTargetFilesWithGenerate(
+		t,
+		[]string{
+			"foo/bar/v2/bar.proto",
+		},
+		workspaceDir,
+		// filter within another module
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "v2"),
+	)
+	requireTargetFilesWithGenerate(
+		t,
+		[]string{
+			"foo/bar/v1/bar.proto",
+			"foo/bar/v2/bar.proto",
+			"foo/bar/baz/v2/baz.proto",
+		},
+		workspaceDir,
+		// filter and exclude
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar"),
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "baz", "v1"),
+	)
+	requireTargetFilesWithGenerate(
+		t,
+		[]string{
+			"foo/v1/foo.proto",
+			"foo/bar/v1/bar.proto",
+			"foo/bar/baz/v1/baz.proto",
+		},
+		workspaceDir,
+		// filter within each module
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "v1"),
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "v1"),
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "baz", "v1"),
+	)
+}
+
 func TestWorkspaceDuplicateFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes multiple images that define the same file.
@@ -1603,4 +1683,48 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		delete(filesToCheck, filePath)
 	}
 	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
+}
+
+func requireTargetFilesWithGenerate(t *testing.T, expectedTargetFiles []string, generateArgs ...string) {
+	tempOutDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		append(
+			[]string{
+				// Without `--include-imports`, it only generates for target files.
+				"generate",
+				"--output",
+				tempOutDir,
+				"--template",
+				`{"version":"v2","plugins": [{"local":"protoc-gen-top-level-type-names-yaml","out":"gen"}]}`,
+			},
+			generateArgs...,
+		)...,
+	)
+	expectedImportPaths := slicesext.ToStructMap(expectedTargetFiles)
+	require.NoError(
+		t,
+		filepath.Walk(tempOutDir, func(path string, info fs.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			generatedPath, err := filepath.Rel(filepath.Join(tempOutDir, "gen"), path)
+			if err != nil {
+				return err
+			}
+			actualTargetPath := strings.TrimSuffix(generatedPath, ".top-level-type-names.yaml") + ".proto"
+			_, ok := expectedImportPaths[actualTargetPath]
+			if !ok {
+				return fmt.Errorf("unexpected target path: %s, expecting one of %v", actualTargetPath, expectedTargetFiles)
+			}
+			delete(expectedImportPaths, actualTargetPath)
+			return nil
+		}),
+	)
+	if len(expectedImportPaths) > 0 {
+		t.Errorf("the following files are expected to be target files but not found: %v", slicesext.MapKeysToSlice(expectedImportPaths))
+	}
 }
