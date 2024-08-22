@@ -82,8 +82,10 @@ func (f Format) String() string {
 // It's used in "buf registry" commands where the CLI prints a page of entities, such as
 // commits, an entity's info or simply an entity's full name.
 //
-// An implementation of Entity must also be a struct. If a field should be printed
-// in table form, add a field tag with bufprint:"<field name>[,omitempty]".
+// When printed by PrintEntity in text format, any field with a field tag in the form
+// of `bufprint:"<field name>[,omitempty]"` is printed.
+//
+// This means that an implementation of Entity must also be a struct.
 type Entity interface {
 	fullName() string
 }
