@@ -85,6 +85,7 @@ type ModuleConfig interface {
 	// This may be nil.
 	ModuleFullName() bufmodule.ModuleFullName
 	// RootToIncludes contains a map from root to the directories to include for that root.
+	// The keys in RootToIncludes are always the same as those in RooToExcludes.
 	//
 	// Roots are the root directories within a bucket to search for Protobuf files.
 	//
@@ -117,6 +118,7 @@ type ModuleConfig interface {
 	// For v2, this will contain a single key ".", with potentially some includes.
 	RootToIncludes() map[string][]string
 	// RootToExcludes contains a map from root to the excludes for that root.
+	// The keys in RootToExcludes are always the same as those in RooToIncludes.
 	//
 	// Excludes are the directories within a bucket to exclude.
 	// There should be no overlap between the excludes, ie foo/bar and foo are not allowed.
