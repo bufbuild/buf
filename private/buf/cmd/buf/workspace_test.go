@@ -1133,6 +1133,18 @@ func TestWorkspaceDuplicateDirPathOverlappingIncludeSuccess(t *testing.T) {
 		"--path",
 		filepath.Join(workspaceDir, "proto", "foo", "bar", "baz", "v1"),
 	)
+	// Test each module is linted with the correct config.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(
+			`testdata/workspace/success/duplicate_dir_path_overlapping_include/proto/foo/bar/baz/v2/baz.proto:1:1:Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".
+testdata/workspace/success/duplicate_dir_path_overlapping_include/proto/foo/bar/v2/bar.proto:1:1:Files must have a package defined.`,
+		),
+		"lint",
+		workspaceDir,
+	)
 }
 
 func TestWorkspaceOverlappingModuleDirPaths(t *testing.T) {
