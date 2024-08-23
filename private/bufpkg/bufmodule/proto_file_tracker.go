@@ -30,12 +30,14 @@ import (
 type protoFileTracker struct {
 	opaqueIDToProtoFileExists map[string]bool
 	protoPathToOpaqueIDMap    map[string]map[string]struct{}
+	opaqueIDToDisplayName     map[string]string
 }
 
 func newProtoFileTracker() *protoFileTracker {
 	return &protoFileTracker{
 		opaqueIDToProtoFileExists: make(map[string]bool),
 		protoPathToOpaqueIDMap:    make(map[string]map[string]struct{}),
+		opaqueIDToDisplayName:     make(map[string]string),
 	}
 }
 
@@ -56,7 +58,8 @@ func (t *protoFileTracker) trackFileInfo(fileInfo FileInfo) {
 	if fileInfo.FileType() != FileTypeProto {
 		return
 	}
-	opaqueID := fileInfo.Module().OpaqueID()
+	module := fileInfo.Module()
+	opaqueID := module.OpaqueID()
 	t.opaqueIDToProtoFileExists[opaqueID] = true
 	protoPathOpaqueIDMap, ok := t.protoPathToOpaqueIDMap[fileInfo.Path()]
 	if !ok {
@@ -64,6 +67,7 @@ func (t *protoFileTracker) trackFileInfo(fileInfo FileInfo) {
 		t.protoPathToOpaqueIDMap[fileInfo.Path()] = protoPathOpaqueIDMap
 	}
 	protoPathOpaqueIDMap[opaqueID] = struct{}{}
+	t.opaqueIDToDisplayName[opaqueID] = module.ModuleSet().getDisplayNameForOpaqueID(opaqueID)
 }
 
 // validate validates. This should be called when all tracking is complete.
@@ -86,7 +90,12 @@ func (t *protoFileTracker) validate() error {
 				duplicateProtoPathErrors,
 				&DuplicateProtoPathError{
 					ProtoPath: protoPath,
-					OpaqueIDs: slicesext.MapKeysToSortedSlice(opaqueIDMap),
+					ModuleDisplayNames: slicesext.Map(
+						slicesext.MapKeysToSortedSlice(opaqueIDMap),
+						func(opaqueID string) string {
+							return t.opaqueIDToDisplayName[opaqueID]
+						},
+					),
 				},
 			)
 		}

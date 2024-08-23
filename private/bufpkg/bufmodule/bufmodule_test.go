@@ -461,7 +461,7 @@ func TestDuplicateProtoPathError(t *testing.T) {
 				"buf.build/foo/a",
 				"buf.build/foo/b",
 			},
-			duplicateProtoPathError.OpaqueIDs,
+			duplicateProtoPathError.ModuleDisplayNames,
 		)
 	}
 	_, err = moduleA.ModuleDeps()

@@ -175,6 +175,20 @@ func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, com
 	}
 }
 
+// LocalModuleWithPrettyPrintName returns a new LocalModuleOption that adds the given pretty-print name to the
+// result module.
+//
+// The pretty-print name is useful in error messages. Instead of getting an error of:
+//
+//	`Failure: foo.proto is contained in multiple modules: path/foo, path/foo(1)`
+//
+// pass a pretty-print name more descriptive than "path/foo(1)".
+func LocalModuleWithPrettyPrintName(prettyPrintName string) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.prettyPrintName = prettyPrintName
+	}
+}
+
 // LocalModuleWithTargetPaths returns a new LocalModuleOption that specifically targets the given paths, and
 // specifically excludes the given paths.
 //
@@ -352,6 +366,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 		b.addedModules,
 		newLocalAddedModule(
 			module,
+			localModuleOptions.prettyPrintName,
 			isTarget,
 		),
 	)
@@ -398,7 +413,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	}
 	if len(b.addedModules) == 0 {
 		// Allow an empty ModuleSet.
-		return newModuleSet(b.tracer, nil)
+		return newModuleSet(b.tracer, nil, nil)
 	}
 	// If not empty, we need at least one target Module.
 	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
@@ -410,6 +425,12 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	if err != nil {
 		return nil, err
 	}
+	opaqueIDToPrettyPrintName := make(map[string]string)
+	for _, addedModule := range addedModules {
+		if addedModule.prettyPrintName != "" {
+			opaqueIDToPrettyPrintName[addedModule.OpaqueID()] = addedModule.prettyPrintName
+		}
+	}
 	modules, err := slicesext.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
@@ -419,7 +440,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	if err != nil {
 		return nil, err
 	}
-	return newModuleSet(b.tracer, modules)
+	return newModuleSet(b.tracer, modules, opaqueIDToPrettyPrintName)
 }
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
@@ -432,6 +453,7 @@ func (*moduleSetBuilder) isModuleSetBuilder() {}
 type localModuleOptions struct {
 	moduleFullName      ModuleFullName
 	commitID            uuid.UUID
+	prettyPrintName     string
 	targetPaths         []string
 	targetExcludePaths  []string
 	protoFileTargetPath string

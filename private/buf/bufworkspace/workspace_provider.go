@@ -23,7 +23,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
@@ -405,6 +408,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
 			),
+			bufmodule.LocalModuleWithPrettyPrintName(formatPrettyPrintNameForModule(moduleConfig)),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
@@ -450,4 +454,34 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		configuredDepModuleRefs,
 		isV2,
 	), nil
+}
+
+// This formats a module name based on its module config entry in the v2 buf.yaml:
+// `path: foo, includes: ["foo/v1, "foo/v2"], excludes: "foo/v1/internal"`.
+func formatPrettyPrintNameForModule(moduleConfig bufconfig.ModuleConfig) string {
+	moduleDirPath := moduleConfig.DirPath()
+	prettyPrintName := fmt.Sprintf("path: %s", moduleDirPath)
+	relIncludePaths := moduleConfig.RootToIncludes()["."]
+	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
+		return normalpath.Join(moduleDirPath, relInclude)
+	})
+	switch len(includePaths) {
+	case 0:
+	case 1:
+		prettyPrintName = fmt.Sprintf("%s, includes: %q", prettyPrintName, includePaths[0])
+	default:
+		prettyPrintName = fmt.Sprintf("%s, includes: [%s]", prettyPrintName, stringutil.JoinSliceQuoted(includePaths, ", "))
+	}
+	relExcludePaths := moduleConfig.RootToExcludes()["."]
+	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
+		return normalpath.Join(moduleDirPath, relInclude)
+	})
+	switch len(excludePaths) {
+	case 0:
+	case 1:
+		prettyPrintName = fmt.Sprintf("%s, excludes: %q", prettyPrintName, excludePaths[0])
+	default:
+		prettyPrintName = fmt.Sprintf("%s, excludes: [%s]", prettyPrintName, stringutil.JoinSliceQuoted(excludePaths, ", "))
+	}
+	return prettyPrintName
 }

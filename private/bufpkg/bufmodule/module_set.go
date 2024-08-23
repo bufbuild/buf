@@ -78,6 +78,12 @@ type ModuleSet interface {
 	// returns an error with fs.ErrNotExist if the file is not found.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
 
+	// getDisplayNameForOpaqueID gets the display name for the module with the given opaqueID.
+	// This name should only be used for constructing error messages while building the module.
+	//
+	// The return is non-empty if GetModuleForOpaqueID(opaqueID) returns a non-nil result.
+	getDisplayNameForOpaqueID(opaqueID string) string
+
 	isModuleSet()
 }
 
@@ -237,6 +243,7 @@ type moduleSet struct {
 	opaqueIDToModule             map[string]Module
 	bucketIDToModule             map[string]Module
 	commitIDToModule             map[uuid.UUID]Module
+	opaqueIDToPrettyPrintName    map[string]string
 
 	// filePathToModule is a cache of filePath -> module.
 	//
@@ -248,6 +255,8 @@ type moduleSet struct {
 func newModuleSet(
 	tracer tracing.Tracer,
 	modules []Module,
+	// opaqueIDToPrettyPrintName is used to print better error messages.
+	opaqueIDToPrettyPrintName map[string]string,
 ) (*moduleSet, error) {
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
 	opaqueIDToModule := make(map[string]Module, len(modules))
@@ -292,6 +301,7 @@ func newModuleSet(
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
 		commitIDToModule:             commitIDToModule,
+		opaqueIDToPrettyPrintName:    opaqueIDToPrettyPrintName,
 	}
 	for _, module := range modules {
 		module.setModuleSet(moduleSet)
@@ -336,7 +346,7 @@ func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) 
 		}
 		modules[i] = module
 	}
-	return newModuleSet(m.tracer, modules)
+	return newModuleSet(m.tracer, modules, m.opaqueIDToPrettyPrintName)
 }
 
 // This should only be used by Modules and FileInfos.
@@ -347,6 +357,20 @@ func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (
 			return m.getModuleForFilePathUncached(ctx, filePath)
 		},
 	)
+}
+
+func (m *moduleSet) getDisplayNameForOpaqueID(opaqueID string) string {
+	module := m.opaqueIDToModule[opaqueID]
+	if module == nil {
+		return ""
+	}
+	// Display name is the module's opaque ID by default.
+	displayName := module.OpaqueID()
+	if prettyPrintName, ok := m.opaqueIDToPrettyPrintName[opaqueID]; ok {
+		// If a pretty print name is specified, use that as the display name.
+		displayName = prettyPrintName
+	}
+	return displayName
 }
 
 func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (_ Module, retErr error) {
@@ -381,8 +405,8 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 		// This actually could happen, and we will want to make this error message as clear as possible.
 		// The addition of opaqueID should give us clearer error messages than we have today.
 		return nil, &DuplicateProtoPathError{
-			ProtoPath: filePath,
-			OpaqueIDs: slicesext.MapKeysToSortedSlice(matchingOpaqueIDs),
+			ProtoPath:          filePath,
+			ModuleDisplayNames: slicesext.MapKeysToSortedSlice(matchingOpaqueIDs),
 		}
 	}
 }
