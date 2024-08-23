@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/spf13/pflag"
 )
 
@@ -154,12 +155,14 @@ func run(
 		}
 		return err
 	}
-	return bufprint.NewLabelPrinter(container.Stdout(), moduleFullName).PrintLabelPage(
-		ctx,
+	return bufprint.PrintPage(
+		container.Stdout(),
 		format,
-		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		resp.Msg.NextPageToken,
-		resp.Msg.Labels,
+		nextPageCommand(container, flags, resp.Msg.NextPageToken),
+		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
+			return bufprint.NewLabelEntity(label, moduleFullName)
+		}),
 	)
 }
 
