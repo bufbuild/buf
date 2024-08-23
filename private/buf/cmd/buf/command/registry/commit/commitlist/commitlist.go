@@ -152,15 +152,14 @@ func run(
 		return syserror.Newf("expect 1 resource from response, got %d", len(resources))
 	}
 	resource := resources[0]
-	commitPrinter := bufprint.NewCommitPrinter(container.Stdout(), moduleRef.ModuleFullName())
 	if commit := resource.GetCommit(); commit != nil {
 		// If the ref is a commit, the commit is the only result and there is no next page.
-		return commitPrinter.PrintCommitPage(
-			ctx,
+		return bufprint.PrintPage(
+			container.Stdout(),
 			format,
 			"",
 			"",
-			[]*modulev1.Commit{commit},
+			[]bufprint.Entity{bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName())},
 		)
 	}
 	if resource.GetModule() != nil {
@@ -193,12 +192,14 @@ func run(
 			}
 			return err
 		}
-		return commitPrinter.PrintCommitPage(
-			ctx,
+		return bufprint.PrintPage(
+			container.Stdout(),
 			format,
-			nextPageCommand(container, flags, resp.Msg.NextPageToken),
 			resp.Msg.NextPageToken,
-			resp.Msg.Commits,
+			nextPageCommand(container, flags, resp.Msg.NextPageToken),
+			slicesext.Map(resp.Msg.Commits, func(commit *modulev1.Commit) bufprint.Entity {
+				return bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName())
+			}),
 		)
 	}
 	label := resource.GetLabel()
@@ -243,12 +244,14 @@ func run(
 			return value.Commit
 		},
 	)
-	return commitPrinter.PrintCommitPage(
-		ctx,
+	return bufprint.PrintPage(
+		container.Stdout(),
 		format,
-		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		resp.Msg.NextPageToken,
-		commits,
+		nextPageCommand(container, flags, resp.Msg.NextPageToken),
+		slicesext.Map(commits, func(commit *modulev1.Commit) bufprint.Entity {
+			return bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName())
+		}),
 	)
 }
 

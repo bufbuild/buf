@@ -111,8 +111,9 @@ func run(
 	if len(organizations) != 1 {
 		return syserror.Newf("unexpected number of organizations returned from server: %d", len(organizations))
 	}
-	return bufprint.NewOrganizationPrinter(
-		moduleOwner.Registry(),
+	return bufprint.PrintEntity(
 		container.Stdout(),
-	).PrintOrganizationInfo(ctx, format, organizations[0])
+		format,
+		bufprint.NewOrganizationEntity(organizations[0], moduleOwner.Registry()),
+	)
 }
