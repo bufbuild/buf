@@ -186,11 +186,11 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	config, err := configForCheckConfig(checkConfig, allRules, ruleType)
+	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, ruleType)
 	if err != nil {
 		return nil, err
 	}
-	return rulesForRuleIDs(allRules, config.RuleIDs), nil
+	return rulesForRuleIDs(allRules, rulesConfig.RuleIDs), nil
 }
 
 func (c *client) AllRules(
@@ -358,7 +358,7 @@ func ignoreLocation(
 		return true, nil
 	}
 	// If the config says to ignore this specific rule for this path, ignore this location, otherwise we look for other forms of ignores.
-	if ignoreRootPaths, ok := config.IgnoreIDToRootPaths[ruleID]; ok && normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative) {
+	if ignoreRootPaths, ok := config.IgnoreRuleIDToRootPaths[ruleID]; ok && normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative) {
 		return true, nil
 	}
 

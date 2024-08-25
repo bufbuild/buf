@@ -30,7 +30,9 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/ \
-	private/buf/cmd/buf/testdata/imports/*/v3/modulelocks/
+	private/buf/cmd/buf/testdata/imports/cache/v3/modulelocks/ \
+	private/buf/cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/ \
+	private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024

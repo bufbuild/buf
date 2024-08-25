@@ -15,60 +15,29 @@
 package bufcheck
 
 import (
-	"fmt"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
 )
 
 const lintCommentIgnorePrefix = "buf:lint:ignore"
-
-type ruleOrCategory interface {
-	ID() string
-	Deprecated() bool
-	ReplacementIDs() []string
-}
 
 // config is the check config.
 //
 // This should only be built via a configSpec. If we were exposing this API publicly, we would
 // enforce this.
 type config struct {
-	// RuleIDs contains the specific RuleIDs to use.
-	//
-	// Will always be non-empty.
-	//
-	// If no specific RuleIDs were configured, this will return all default RuleIDs that were of
-	// the specified RuleType.
-	//
-	// Note that ignoreAnnotation does not need to take this field into account as the plugins
-	// themselves will only return RuleIDs in this list TODO make sure bufplugin-go
-	// validates this and that this is documented.
-	RuleIDs []string
+	*rulesConfig
+
 	// DefaultOptions are the options that should be passed to the default check.Client.
 	//
 	// Do not pass these to plugin check.Clients. Use options from checkClientSpecs instead.
 	// Will never be nil.
-	DefaultOptions check.Options
-
-	IgnoreRootPaths     map[string]struct{}
-	IgnoreIDToRootPaths map[string]map[string]struct{}
-
+	DefaultOptions         check.Options
 	AllowCommentIgnores    bool
 	IgnoreUnstablePackages bool
-
-	CommentIgnorePrefix string
-	ExcludeImports      bool
-}
-
-// Only RuleIDs, IgnoreRootPaths,  IgnoreIDToRootPaths will be set. Options has no meaning.
-func configForCheckConfig(checkConfig bufconfig.CheckConfig, allRules []Rule, ruleType check.RuleType) (*config, error) {
-	return configSpecForCheckConfig(checkConfig).newConfig(allRules, ruleType)
+	CommentIgnorePrefix    string
+	ExcludeImports         bool
 }
 
 func configForLintConfig(lintConfig bufconfig.LintConfig, allRules []Rule) (*config, error) {
@@ -103,24 +72,6 @@ type configSpec struct {
 
 	CommentIgnorePrefix string
 	ExcludeImports      bool
-}
-
-func configSpecForCheckConfig(checkConfig bufconfig.CheckConfig) *configSpec {
-	return &configSpec{
-		Use:                                  checkConfig.UseIDsAndCategories(),
-		Except:                               checkConfig.ExceptIDsAndCategories(),
-		IgnoreRootPaths:                      checkConfig.IgnorePaths(),
-		IgnoreIDOrCategoryToRootPaths:        checkConfig.IgnoreIDOrCategoryToPaths(),
-		AllowCommentIgnores:                  false,
-		IgnoreUnstablePackages:               false,
-		EnumZeroValueSuffix:                  "",
-		RPCAllowSameRequestResponse:          false,
-		RPCAllowGoogleProtobufEmptyRequests:  false,
-		RPCAllowGoogleProtobufEmptyResponses: false,
-		ServiceSuffix:                        "",
-		CommentIgnorePrefix:                  "",
-		ExcludeImports:                       false,
-	}
 }
 
 func configSpecForLintConfig(lintConfig bufconfig.LintConfig) *configSpec {
@@ -161,133 +112,16 @@ func configSpecForBreakingConfig(breakingConfig bufconfig.BreakingConfig, exclud
 
 // newConfig returns a new Config.
 func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*config, error) {
-	if len(allRules) == 0 {
-		return nil, syserror.New("no rules configured")
-	}
-	// transformDeprecated should always be true if building a Config for a Runner.
-	// TODO: Evaluate whether we still need this after the refactor. Keeping logic
-	// around for now
-	transformDeprecated := true
-
-	// this checks that there are not duplicate IDs for a given revision
-	// which would be a system error
-	ruleIDToRule, err := getIDToRuleOrCategory(allRules)
-	if err != nil {
-		return nil, err
-	}
-	deprecatedRuleIDToReplacementRuleIDs, err := getDeprecatedIDToReplacementIDs(ruleIDToRule)
-	if err != nil {
-		return nil, err
-	}
-	ruleIDToCategoryIDs, err := getRuleIDToCategoryIDs(allRules)
-	if err != nil {
-		return nil, err
-	}
-	categoryIDToRuleIDs := getCategoryIDToRuleIDs(ruleIDToCategoryIDs)
-
-	// These may both be empty, and that's OK.
-	b.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Use)
-	if len(b.Use) == 0 {
-		b.Use = slicesext.Map(rulesForType(slicesext.Filter(allRules, Rule.IsDefault), ruleType), Rule.ID)
-	}
-	b.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(b.Except)
-	if len(b.Use) == 0 && len(b.Except) == 0 {
-		return nil, syserror.New("b.Use or b.Except should always be non-empty at this point")
-	}
-
-	useIDMap, err := transformToRuleIDMap(b.Use, ruleIDToCategoryIDs, categoryIDToRuleIDs)
-	if err != nil {
-		return nil, err
-	}
-	if transformDeprecated {
-		useIDMap = transformRuleIDsToUndeprecatedRuleIDs(useIDMap, deprecatedRuleIDToReplacementRuleIDs)
-	}
-	exceptIDMap, err := transformToRuleIDMap(b.Except, ruleIDToCategoryIDs, categoryIDToRuleIDs)
-	if err != nil {
-		return nil, err
-	}
-	if transformDeprecated {
-		exceptIDMap = transformRuleIDsToUndeprecatedRuleIDs(exceptIDMap, deprecatedRuleIDToReplacementRuleIDs)
-	}
-
-	// this removes duplicates
-	// we already know that a given rule with the same ID is equivalent
-	resultIDToRule := make(map[string]Rule)
-
-	for id := range useIDMap {
-		rule, ok := ruleIDToRule[id]
-		if !ok {
-			return nil, fmt.Errorf("%q is not a known id after verification", id)
-		}
-		resultIDToRule[rule.ID()] = rule
-	}
-	for id := range exceptIDMap {
-		if _, ok := ruleIDToRule[id]; !ok {
-			return nil, fmt.Errorf("%q is not a known id after verification", id)
-		}
-		delete(resultIDToRule, id)
-	}
-
-	resultRules := make([]Rule, 0, len(resultIDToRule))
-	for _, rule := range resultIDToRule {
-		if rule.Type() != ruleType {
-			return nil, fmt.Errorf("%q was configured in a non-%s configuration section but is of type %s", rule.ID(), ruleType.String(), ruleType.String())
-		}
-		resultRules = append(resultRules, rule)
-	}
-	if len(resultRules) == 0 {
-		return nil, syserror.New("resultRules was empty")
-	}
-
-	ignoreIDToRootPathsUnnormalized, err := transformToIDToListMap(
+	rulesConfig, err := newRulesConfig(
+		b.Use,
+		b.Except,
+		b.IgnoreRootPaths,
 		b.IgnoreIDOrCategoryToRootPaths,
-		ruleIDToCategoryIDs,
-		categoryIDToRuleIDs,
+		allRules,
+		ruleType,
 	)
 	if err != nil {
 		return nil, err
-	}
-	if transformDeprecated {
-		ignoreIDToRootPathsUnnormalized = transformRuleIDsToUndeprecatedRuleIDs(
-			ignoreIDToRootPathsUnnormalized,
-			deprecatedRuleIDToReplacementRuleIDs,
-		)
-	}
-	ignoreIDToRootPaths := make(map[string]map[string]struct{})
-	for id, rootPaths := range ignoreIDToRootPathsUnnormalized {
-		for rootPath := range rootPaths {
-			if rootPath == "" {
-				continue
-			}
-			rootPath, err := normalpath.NormalizeAndValidate(rootPath)
-			if err != nil {
-				return nil, err
-			}
-			if rootPath == "." {
-				return nil, fmt.Errorf("cannot specify %q as an ignore path", rootPath)
-			}
-			resultRootPathMap, ok := ignoreIDToRootPaths[id]
-			if !ok {
-				resultRootPathMap = make(map[string]struct{})
-				ignoreIDToRootPaths[id] = resultRootPathMap
-			}
-			resultRootPathMap[rootPath] = struct{}{}
-		}
-	}
-
-	ignoreRootPaths := make(map[string]struct{}, len(b.IgnoreRootPaths))
-	for _, rootPath := range b.IgnoreRootPaths {
-		if rootPath == "" {
-			continue
-		}
-		rootPath, err := normalpath.NormalizeAndValidate(rootPath)
-		if err != nil {
-			return nil, err
-		}
-		if rootPath == "." {
-			return nil, fmt.Errorf("cannot specify %q as an ignore path", rootPath)
-		}
-		ignoreRootPaths[rootPath] = struct{}{}
 	}
 
 	optionsSpec := &bufcheckopt.OptionsSpec{
@@ -306,138 +140,11 @@ func (b *configSpec) newConfig(allRules []Rule, ruleType check.RuleType) (*confi
 	}
 
 	return &config{
-		RuleIDs:                slicesext.Map(resultRules, Rule.ID),
+		rulesConfig:            rulesConfig,
 		DefaultOptions:         options,
-		IgnoreIDToRootPaths:    ignoreIDToRootPaths,
-		IgnoreRootPaths:        ignoreRootPaths,
 		AllowCommentIgnores:    b.AllowCommentIgnores,
 		IgnoreUnstablePackages: b.IgnoreUnstablePackages,
 		CommentIgnorePrefix:    b.CommentIgnorePrefix,
 		ExcludeImports:         b.ExcludeImports,
 	}, nil
-}
-
-func transformRuleIDsToUndeprecatedRuleIDs[T any](idToValue map[string]T, deprecatedIDToReplacementIDs map[string][]string) map[string]T {
-	undeprecatedIDToValue := make(map[string]T, len(idToValue))
-	for id, value := range idToValue {
-		replacementIDs, ok := deprecatedIDToReplacementIDs[id]
-		if ok {
-			// May iterate over empty.
-			for _, replacementID := range replacementIDs {
-				undeprecatedIDToValue[replacementID] = value
-			}
-		} else {
-			undeprecatedIDToValue[id] = value
-		}
-	}
-	return undeprecatedIDToValue
-}
-
-func transformToRuleIDMap(ruleOrCategoryIDs []string, ruleIDToCategoryIDs map[string][]string, categoryIDToRuleIDs map[string][]string) (map[string]struct{}, error) {
-	if len(ruleOrCategoryIDs) == 0 {
-		return nil, nil
-	}
-	idMap := make(map[string]struct{}, len(ruleOrCategoryIDs))
-	for _, ruleOrCategoryID := range ruleOrCategoryIDs {
-		if ruleOrCategoryID == "" {
-			continue
-		}
-		if _, ok := ruleIDToCategoryIDs[ruleOrCategoryID]; ok {
-			id := ruleOrCategoryID
-			idMap[id] = struct{}{}
-		} else if ids, ok := categoryIDToRuleIDs[ruleOrCategoryID]; ok {
-			for _, id := range ids {
-				idMap[id] = struct{}{}
-			}
-		} else {
-			return nil, fmt.Errorf("%q is not a known rule or category", ruleOrCategoryID)
-		}
-	}
-	return idMap, nil
-}
-
-func transformToIDToListMap(idOrCategoryToList map[string][]string, idToCategories map[string][]string, categoryToIDs map[string][]string) (map[string]map[string]struct{}, error) {
-	if len(idOrCategoryToList) == 0 {
-		return nil, nil
-	}
-	idToListMap := make(map[string]map[string]struct{}, len(idOrCategoryToList))
-	for idOrCategory, list := range idOrCategoryToList {
-		if idOrCategory == "" {
-			continue
-		}
-		if _, ok := idToCategories[idOrCategory]; ok {
-			id := idOrCategory
-			if _, ok := idToListMap[id]; !ok {
-				idToListMap[id] = make(map[string]struct{})
-			}
-			for _, elem := range list {
-				idToListMap[id][elem] = struct{}{}
-			}
-		} else if ids, ok := categoryToIDs[idOrCategory]; ok {
-			for _, id := range ids {
-				if _, ok := idToListMap[id]; !ok {
-					idToListMap[id] = make(map[string]struct{})
-				}
-				for _, elem := range list {
-					idToListMap[id][elem] = struct{}{}
-				}
-			}
-		} else {
-			return nil, fmt.Errorf("%q is not a known id or category", idOrCategory)
-		}
-	}
-	return idToListMap, nil
-}
-
-func getCategoryIDToRuleIDs(ruleIDToCategoryIDs map[string][]string) map[string][]string {
-	categoryIDToRuleIDs := make(map[string][]string)
-	for id, categoryIDs := range ruleIDToCategoryIDs {
-		for _, categoryID := range categoryIDs {
-			// handles empty category as well
-			categoryIDToRuleIDs[categoryID] = append(categoryIDToRuleIDs[categoryID], id)
-		}
-	}
-	return categoryIDToRuleIDs
-}
-
-// []string{} as a value represents that the ID is deprecated but has no replacements.
-func getDeprecatedIDToReplacementIDs[R ruleOrCategory](idToRuleOrCategory map[string]R) (map[string][]string, error) {
-	m := make(map[string][]string)
-	for _, ruleOrCategory := range idToRuleOrCategory {
-		if ruleOrCategory.Deprecated() {
-			replacementIDs := ruleOrCategory.ReplacementIDs()
-			if replacementIDs == nil {
-				replacementIDs = []string{}
-			}
-			for _, replacementID := range replacementIDs {
-				if _, ok := idToRuleOrCategory[replacementID]; !ok {
-					return nil, syserror.Newf("unknown rule or category given as a replacement ID: %q", replacementID)
-				}
-			}
-			m[ruleOrCategory.ID()] = replacementIDs
-		}
-	}
-	return m, nil
-}
-
-func getIDToRuleOrCategory[R ruleOrCategory](ruleOrCategories []R) (map[string]R, error) {
-	m := make(map[string]R)
-	for _, ruleOrCategory := range ruleOrCategories {
-		if _, ok := m[ruleOrCategory.ID()]; ok {
-			return nil, syserror.Newf("duplicate rule or category ID: %q", ruleOrCategory.ID())
-		}
-		m[ruleOrCategory.ID()] = ruleOrCategory
-	}
-	return m, nil
-}
-
-func getRuleIDToCategoryIDs(rules []Rule) (map[string][]string, error) {
-	m := make(map[string][]string)
-	for _, rule := range rules {
-		if _, ok := m[rule.ID()]; ok {
-			return nil, syserror.Newf("duplicate rule ID: %q", rule.ID())
-		}
-		m[rule.ID()] = slicesext.Map(rule.Categories(), check.Category.ID)
-	}
-	return m, nil
 }
