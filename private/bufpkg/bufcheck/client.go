@@ -109,7 +109,11 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	multiClient, err := c.getMultiClient(lintConfig.FileVersion(), lintOptions.pluginConfigs, config.DefaultOptions)
+	multiClient, err := c.getMultiClient(
+		lintConfig.FileVersion(),
+		lintOptions.pluginConfigs,
+		config.DefaultOptions,
+	)
 	if err != nil {
 		return err
 	}
@@ -138,7 +142,11 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	config, err := configForBreakingConfig(breakingConfig, allRules, breakingOptions.excludeImports)
+	config, err := configForBreakingConfig(
+		breakingConfig,
+		allRules,
+		breakingOptions.excludeImports,
+	)
 	if err != nil {
 		return err
 	}
@@ -161,7 +169,11 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	multiClient, err := c.getMultiClient(breakingConfig.FileVersion(), breakingOptions.pluginConfigs, config.DefaultOptions)
+	multiClient, err := c.getMultiClient(
+		breakingConfig.FileVersion(),
+		breakingOptions.pluginConfigs,
+		config.DefaultOptions,
+	)
 	if err != nil {
 		return err
 	}
