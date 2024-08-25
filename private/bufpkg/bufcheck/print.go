@@ -38,6 +38,25 @@ const (
 	textHeader = idHeader + "\t" + categoriesHeader + "\t" + defaultHeader + "\t" + purposeHeader
 )
 
+// topLevelCategoryIDToPriority is a map from builtin Category ID to the
+// order in which it should be printed by the ls-.*-rules commands.
+//
+// This has been a crude way to do ordering from early on.
+//
+// priority 1 should be printed before priority 2.
+var topLevelCategoryIDToPriority = map[string]int{
+	"MINIMAL":   1,
+	"BASIC":     2,
+	"DEFAULT":   3,
+	"COMMENTS":  4,
+	"UNARY_RPC": 5,
+	"OTHER":     6,
+	"FILE":      1,
+	"PACKAGE":   2,
+	"WIRE_JSON": 3,
+	"WIRE":      4,
+}
+
 func printRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (retErr error) {
 	printRulesOptions := newPrintRulesOptions()
 	for _, option := range options {
@@ -230,9 +249,9 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 				return compare < 0
 			}
 			oneCategories := one.Categories()
-			sort.Slice(oneCategories, func(i int, j int) bool { return categoryIDLess(oneCategories[i].ID(), oneCategories[j].ID()) })
+			sort.Slice(oneCategories, func(i int, j int) bool { return printCategoryIDLess(oneCategories[i].ID(), oneCategories[j].ID()) })
 			twoCategories := two.Categories()
-			sort.Slice(twoCategories, func(i int, j int) bool { return categoryIDLess(twoCategories[i].ID(), twoCategories[j].ID()) })
+			sort.Slice(twoCategories, func(i int, j int) bool { return printCategoryIDLess(twoCategories[i].ID(), twoCategories[j].ID()) })
 			if len(oneCategories) == 0 && len(twoCategories) > 0 {
 				return false
 			}
@@ -240,7 +259,7 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 				return true
 			}
 			if len(oneCategories) > 0 && len(twoCategories) > 0 {
-				compare := categoryIDCompare(oneCategories[0].ID(), twoCategories[0].ID())
+				compare := printCategoryIDCompare(oneCategories[0].ID(), twoCategories[0].ID())
 				if compare < 0 {
 					return true
 				}
@@ -260,6 +279,36 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 		},
 	)
 	return rules
+}
+
+func printCategoryIDLess(one string, two string) bool {
+	return printCategoryIDCompare(one, two) < 0
+}
+
+func printCategoryIDCompare(one string, two string) int {
+	onePriority, oneIsTopLevel := topLevelCategoryIDToPriority[one]
+	twoPriority, twoIsTopLevel := topLevelCategoryIDToPriority[two]
+	if oneIsTopLevel && !twoIsTopLevel {
+		return -1
+	}
+	if !oneIsTopLevel && twoIsTopLevel {
+		return 1
+	}
+	if oneIsTopLevel && twoIsTopLevel {
+		if onePriority < twoPriority {
+			return -1
+		}
+		if onePriority > twoPriority {
+			return 1
+		}
+	}
+	if one < two {
+		return -1
+	}
+	if one > two {
+		return 1
+	}
+	return 0
 }
 
 type externalRule struct {

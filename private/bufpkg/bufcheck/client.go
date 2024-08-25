@@ -88,14 +88,15 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	allRules, err := c.allRules(ctx, check.RuleTypeLint, lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(ctx, check.RuleTypeLint, lintConfig.FileVersion(), lintOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
-	config, err := configForLintConfig(lintConfig, allRules)
+	config, err := configForLintConfig(lintConfig, allRules, allCategories)
 	if err != nil {
 		return err
 	}
+	warnReferencedDeprecatedIDs(c.logger, config.rulesConfig)
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
@@ -138,18 +139,20 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	allRules, err := c.allRules(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
 	config, err := configForBreakingConfig(
 		breakingConfig,
 		allRules,
+		allCategories,
 		breakingOptions.excludeImports,
 	)
 	if err != nil {
 		return err
 	}
+	warnReferencedDeprecatedIDs(c.logger, config.rulesConfig)
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
@@ -194,14 +197,15 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, err := c.allRules(ctx, ruleType, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(ctx, ruleType, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
 	if err != nil {
 		return nil, err
 	}
-	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, ruleType)
+	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, allCategories, ruleType)
 	if err != nil {
 		return nil, err
 	}
+	warnReferencedDeprecatedIDs(c.logger, rulesConfig)
 	return rulesForRuleIDs(allRules, rulesConfig.RuleIDs), nil
 }
 
@@ -215,31 +219,46 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	return c.allRules(ctx, ruleType, fileVersion, allRulesOptions.pluginConfigs)
+	rules, _, err := c.allRulesAndCategories(ctx, ruleType, fileVersion, allRulesOptions.pluginConfigs)
+	return rules, err
 }
 
-func (c *client) allRules(
+func (c *client) AllCategories(
 	ctx context.Context,
+	fileVersion bufconfig.FileVersion,
+	options ...AllCategoriesOption,
+) ([]Category, error) {
+	allCategoriesOptions := newAllCategoriesOptions()
+	for _, option := range options {
+		option.applyToAllCategories(allCategoriesOptions)
+	}
+	_, categories, err := c.allRulesAndCategories(ctx, check.RuleTypeLint, fileVersion, allCategoriesOptions.pluginConfigs)
+	return categories, err
+}
+
+func (c *client) allRulesAndCategories(
+	ctx context.Context,
+	// Ignored if just getting categories.
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
-) ([]Rule, error) {
+) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
 	emptyOptions, err := check.NewOptions(nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, emptyOptions)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	allRules, err := multiClient.ListRules(ctx)
+	allRules, allCategories, err := multiClient.ListRulesAndCategories(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return rulesForType(allRules, ruleType), nil
+	return rulesForType(allRules, ruleType), allCategories, nil
 }
 
 func (c *client) getMultiClient(
@@ -443,6 +462,14 @@ func newAllRulesOptions() *allRulesOptions {
 	return &allRulesOptions{}
 }
 
+type allCategoriesOptions struct {
+	pluginConfigs []bufconfig.PluginConfig
+}
+
+func newAllCategoriesOptions() *allCategoriesOptions {
+	return &allCategoriesOptions{}
+}
+
 type clientOptions struct {
 	stderr io.Writer
 }
@@ -475,4 +502,8 @@ func (p *pluginConfigsOption) applyToConfiguredRules(configuredRulesOptions *con
 
 func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) {
 	allRulesOptions.pluginConfigs = append(allRulesOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+func (p *pluginConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
+	allCategoriesOptions.pluginConfigs = append(allCategoriesOptions.pluginConfigs, p.pluginConfigs...)
 }

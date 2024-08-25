@@ -48,6 +48,7 @@ type Client interface {
 	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
 	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig, options ...ConfiguredRulesOption) ([]Rule, error)
 	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion, options ...AllRulesOption) ([]Rule, error)
+	AllCategories(ctx context.Context, fileVersion bufconfig.FileVersion, options ...AllCategoriesOption) ([]Category, error)
 }
 
 type Rule interface {
@@ -61,6 +62,19 @@ type Rule interface {
 	PluginName() string
 
 	isRule()
+}
+
+type Category interface {
+	check.Category
+
+	// Plugin returns the name of the plugin that created this Category.
+	//
+	// Names are freeform.
+	//
+	// Will be empty for Categorys based on builtin plugins.
+	PluginName() string
+
+	isCategory()
 }
 
 type LintOption interface {
@@ -83,11 +97,16 @@ type AllRulesOption interface {
 	applyToAllRules(*allRulesOptions)
 }
 
+type AllCategoriesOption interface {
+	applyToAllCategories(*allCategoriesOptions)
+}
+
 type PluginOption interface {
 	LintOption
 	BreakingOption
 	ConfiguredRulesOption
 	AllRulesOption
+	AllCategoriesOption
 }
 
 func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) PluginOption {

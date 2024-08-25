@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -23,17 +24,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/bufplugin-go/check"
+	"go.uber.org/zap"
 )
-
-type ruleOrCategory interface {
-	ID() string
-	Deprecated() bool
-	ReplacementIDs() []string
-}
 
 func rulesConfigForCheckConfig(
 	checkConfig bufconfig.CheckConfig,
 	allRules []Rule,
+	allCategories []Category,
 	ruleType check.RuleType,
 ) (*rulesConfig, error) {
 	return newRulesConfig(
@@ -42,7 +39,23 @@ func rulesConfigForCheckConfig(
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 		allRules,
+		allCategories,
 		ruleType,
+	)
+}
+
+func warnReferencedDeprecatedIDs(logger *zap.Logger, rulesConfig *rulesConfig) {
+	warnReferencedDeprecatedIDsForIDType(
+		logger,
+		rulesConfig.ReferencedDeprecatedRuleIDToReplacementIDs,
+		"Rule",
+		"rules",
+	)
+	warnReferencedDeprecatedIDsForIDType(
+		logger,
+		rulesConfig.ReferencedDeprecatedCategoryIDToReplacementIDs,
+		"Category",
+		"categories",
 	)
 }
 
@@ -59,6 +72,18 @@ type rulesConfig struct {
 	IgnoreRootPaths map[string]struct{}
 	// Will only contain non-deprecated RuleIDs.
 	IgnoreRuleIDToRootPaths map[string]map[string]struct{}
+	// ReferencedDeprecatedRuleIDToReplacementIDs contains a map from a Rule ID
+	// that was used in the configuration, to a map of the IDs that
+	// replace this Rule ID.
+	//
+	// This can be used for warning messages.
+	ReferencedDeprecatedRuleIDToReplacementIDs map[string]map[string]struct{}
+	// ReferencedDeprecatedCategoryIDToReplacementIDs contains a map from a Category ID
+	// that was used in the configuration, to a map of the IDs that
+	// replace this Category ID.
+	//
+	// This can be used for warning messages.
+	ReferencedDeprecatedCategoryIDToReplacementIDs map[string]map[string]struct{}
 }
 
 func newRulesConfig(
@@ -69,7 +94,10 @@ func newRulesConfig(
 	ignoreRootPaths []string,
 	// May contain deprecated IDs.
 	ignoreRuleIDOrCategoryIDToRootPaths map[string][]string,
+	// Rules and Categories are guaranteed to be unique by ID at this point,
+	// including across each other.
 	allRules []Rule,
+	allCategories []Category,
 	ruleType check.RuleType,
 ) (*rulesConfig, error) {
 	if len(allRules) == 0 {
@@ -88,6 +116,54 @@ func newRulesConfig(
 	ruleIDToRule, err := getIDToRuleOrCategory(allRules)
 	if err != nil {
 		return nil, err
+	}
+	// Contains all rules, not referenced rules.
+	deprecatedRuleIDToReplacementRuleIDs, err := getDeprecatedIDToReplacementIDs(ruleIDToRule)
+	if err != nil {
+		return nil, err
+	}
+	categoryIDToCategory, err := getIDToRuleOrCategory(allCategories)
+	if err != nil {
+		return nil, err
+	}
+	// Contains all categories, not referenced categories.
+	deprecatedCategoryIDToReplacementCategoryIDs, err := getDeprecatedIDToReplacementIDs(categoryIDToCategory)
+	if err != nil {
+		return nil, err
+	}
+
+	// Gather all the referenced deprecated IDs into maps for the rulesConfig.
+	referencedDeprecatedRuleIDToReplacementIDs := make(map[string]map[string]struct{})
+	referencedDeprecatedCategoryIDToReplacementIDs := make(map[string]map[string]struct{})
+	for _, ids := range [][]string{
+		useRuleIDsAndCategoryIDs,
+		exceptRuleIDsAndCategoryIDs,
+		slicesext.MapKeysToSlice(ignoreRuleIDOrCategoryIDToRootPathMap),
+	} {
+		for _, id := range ids {
+			replacementRuleIDs, ok := deprecatedRuleIDToReplacementRuleIDs[id]
+			if ok {
+				referencedIDMap, ok2 := referencedDeprecatedRuleIDToReplacementIDs[id]
+				if !ok2 {
+					referencedIDMap = make(map[string]struct{})
+					referencedDeprecatedRuleIDToReplacementIDs[id] = referencedIDMap
+				}
+				for _, replacementRuleID := range replacementRuleIDs {
+					referencedIDMap[replacementRuleID] = struct{}{}
+				}
+			}
+			replacementCategoryIDs, ok := deprecatedCategoryIDToReplacementCategoryIDs[id]
+			if ok {
+				referencedIDMap, ok2 := referencedDeprecatedCategoryIDToReplacementIDs[id]
+				if !ok2 {
+					referencedIDMap = make(map[string]struct{})
+					referencedDeprecatedCategoryIDToReplacementIDs[id] = referencedIDMap
+				}
+				for _, replacementCategoryID := range replacementCategoryIDs {
+					referencedIDMap[replacementCategoryID] = struct{}{}
+				}
+			}
+		}
 	}
 
 	// Sort and filter empty.
@@ -132,10 +208,6 @@ func newRulesConfig(
 	}
 
 	// Replace deprecated rules.
-	deprecatedRuleIDToReplacementRuleIDs, err := getDeprecatedIDToReplacementIDs(ruleIDToRule)
-	if err != nil {
-		return nil, err
-	}
 	useRuleIDs = transformRuleIDsToUndeprecated(
 		useRuleIDs,
 		deprecatedRuleIDToReplacementRuleIDs,
@@ -190,7 +262,23 @@ func newRulesConfig(
 		RuleIDs:                 resultRuleIDs,
 		IgnoreRootPaths:         slicesext.ToStructMap(ignoreRootPaths),
 		IgnoreRuleIDToRootPaths: ignoreRuleIDToRootPathMap,
+		ReferencedDeprecatedRuleIDToReplacementIDs:     referencedDeprecatedRuleIDToReplacementIDs,
+		ReferencedDeprecatedCategoryIDToReplacementIDs: referencedDeprecatedCategoryIDToReplacementIDs,
 	}, nil
+}
+
+// *** JUST USED WITHIN THIS FILE ***
+
+func warnReferencedDeprecatedIDsForIDType(
+	logger *zap.Logger,
+	referencedDeprecatedIDToReplacementIDs map[string]map[string]struct{},
+	capitalizedIDType string,
+	pluralIDType string,
+) {
+	for _, deprecatedID := range slicesext.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs) {
+		replacementIDs := slicesext.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs[deprecatedID])
+		logger.Warn(fmt.Sprintf("%s is deprecated. It has been replaced by %s %s.", capitalizedIDType, pluralIDType, strings.Join(replacementIDs, ", ")))
+	}
 }
 
 func getIDToRuleOrCategory[R ruleOrCategory](ruleOrCategories []R) (map[string]R, error) {

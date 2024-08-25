@@ -27,8 +27,9 @@ type config struct {
 func configForLintConfig(
 	lintConfig bufconfig.LintConfig,
 	allRules []Rule,
+	allCategories []Category,
 ) (*config, error) {
-	rulesConfig, err := rulesConfigForCheckConfig(lintConfig, allRules, check.RuleTypeLint)
+	rulesConfig, err := rulesConfigForCheckConfig(lintConfig, allRules, allCategories, check.RuleTypeLint)
 	if err != nil {
 		return nil, err
 	}
@@ -45,9 +46,10 @@ func configForLintConfig(
 func configForBreakingConfig(
 	breakingConfig bufconfig.BreakingConfig,
 	allRules []Rule,
+	allCategories []Category,
 	excludeImports bool,
 ) (*config, error) {
-	rulesConfig, err := rulesConfigForCheckConfig(breakingConfig, allRules, check.RuleTypeBreaking)
+	rulesConfig, err := rulesConfigForCheckConfig(breakingConfig, allRules, allCategories, check.RuleTypeBreaking)
 	if err != nil {
 		return nil, err
 	}

@@ -108,7 +108,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 		},
 	)
 
-	rules, err := multiClient.ListRules(ctx)
+	rules, _, err := multiClient.ListRulesAndCategories(ctx)
 	require.NoError(t, err)
 	require.Equal(
 		t,

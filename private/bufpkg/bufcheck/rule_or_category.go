@@ -14,26 +14,11 @@
 
 package bufcheck
 
-import "github.com/bufbuild/bufplugin-go/check"
-
-var _ check.Category = &category{}
-var _ Category = &category{}
-
-type category struct {
-	check.Category
-
-	pluginName string
+// ruleOrCategory is the shared interface between Rules and Categories that
+// we care about within this package.
+type ruleOrCategory interface {
+	ID() string
+	Deprecated() bool
+	ReplacementIDs() []string
+	PluginName() string
 }
-
-func newCategory(checkCategory check.Category, pluginName string) *category {
-	return &category{
-		Category:   checkCategory,
-		pluginName: pluginName,
-	}
-}
-
-func (r *category) PluginName() string {
-	return r.pluginName
-}
-
-func (*category) isCategory() {}

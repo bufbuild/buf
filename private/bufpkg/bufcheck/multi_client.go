@@ -26,6 +26,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// TODO: Test plugins with duplicate rules and categories across builtin + plugins, and just plugins
+
 type multiClient struct {
 	logger           *zap.Logger
 	checkClientSpecs []*checkClientSpec
@@ -39,7 +41,7 @@ func newMultiClient(logger *zap.Logger, checkClientSpecs []*checkClientSpec) *mu
 }
 
 func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*annotation, error) {
-	allRules, chunkedRuleIDs, err := c.getRulesAndChunkedRuleIDs(ctx)
+	allRules, chunkedRuleIDs, _, _, err := c.getRulesCategoriesAndChunkedIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -114,83 +116,155 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 	return allAnnotations, nil
 }
 
-func (c *multiClient) ListRules(ctx context.Context) ([]Rule, error) {
-	rules, _, err := c.getRulesAndChunkedRuleIDs(ctx)
+func (c *multiClient) ListRulesAndCategories(ctx context.Context) ([]Rule, []Category, error) {
+	rules, _, categories, _, err := c.getRulesCategoriesAndChunkedIDs(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return rules, nil
+	return rules, categories, nil
 }
 
 // Each []string within the returned [][]string is a slice of ruleIDs that corresponds
 // to the client at the same index.
 //
 // For example, chunkedRuleIDs[1] corresponds to the ruleIDs for c.clients[1].
-func (c *multiClient) getRulesAndChunkedRuleIDs(ctx context.Context) ([]Rule, [][]string, error) {
+//
+// This function does duplicate checking across all the Rules and Categories
+// across the plugins.
+func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
+	retRules []Rule,
+	retChunkedRuleIDs [][]string,
+	retCategories []Category,
+	retChunkedCategoryIDs [][]string,
+	retErr error,
+) {
 	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {
 		delegateCheckRules, err := delegate.Client.ListRules(ctx)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
-		delegateRules := slicesext.Map(delegateCheckRules, func(checkRule check.Rule) Rule { return newRule(checkRule, delegate.PluginName) })
+		delegateRules := slicesext.Map(
+			delegateCheckRules,
+			func(checkRule check.Rule) Rule { return newRule(checkRule, delegate.PluginName) },
+		)
 		rules = append(rules, delegateRules...)
+		// Already sorted.
 		chunkedRuleIDs[i] = slicesext.Map(delegateRules, Rule.ID)
 	}
-	if err := validateNoDuplicateRules(rules); err != nil {
-		return nil, nil, err
+
+	var categories []Category
+	chunkedCategoryIDs := make([][]string, len(c.checkClientSpecs))
+	for i, delegate := range c.checkClientSpecs {
+		delegateCheckCategories, err := delegate.Client.ListCategories(ctx)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+		delegateCategories := slicesext.Map(
+			delegateCheckCategories,
+			func(checkCategory check.Category) Category { return newCategory(checkCategory, delegate.PluginName) },
+		)
+		categories = append(categories, delegateCategories...)
+		// Already sorted.
+		chunkedCategoryIDs[i] = slicesext.Map(delegateCategories, Category.ID)
 	}
+
+	if err := validateNoDuplicateRulesOrCategories(rules, categories); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
 	sort.Slice(
 		rules,
 		func(i int, j int) bool {
 			return check.CompareRules(rules[i], rules[j]) < 0
 		},
 	)
-	return rules, chunkedRuleIDs, nil
+	sort.Slice(
+		categories,
+		func(i int, j int) bool {
+			return check.CompareCategories(categories[i], categories[j]) < 0
+		},
+	)
+
+	return rules, chunkedRuleIDs, categories, chunkedCategoryIDs, nil
 }
 
-func validateNoDuplicateRules[R check.Rule](rules []R) error {
-	return validateNoDuplicateRuleIDs(slicesext.Map(rules, func(rule R) string { return rule.ID() }))
-}
-
-func validateNoDuplicateRuleIDs(ruleIDs []string) error {
-	ruleIDToCount := make(map[string]int, len(ruleIDs))
-	for _, ruleID := range ruleIDs {
-		ruleIDToCount[ruleID]++
+func validateNoDuplicateRulesOrCategories(rules []Rule, categories []Category) error {
+	idToRuleOrCategories := make(map[string][]ruleOrCategory)
+	for _, rule := range rules {
+		idToRuleOrCategories[rule.ID()] = append(
+			idToRuleOrCategories[rule.ID()],
+			rule,
+		)
 	}
-	var duplicateRuleIDs []string
-	for ruleID, count := range ruleIDToCount {
-		if count > 1 {
-			duplicateRuleIDs = append(duplicateRuleIDs, ruleID)
+	for _, category := range categories {
+		idToRuleOrCategories[category.ID()] = append(
+			idToRuleOrCategories[category.ID()],
+			category,
+		)
+	}
+	for id, ruleOrCategories := range idToRuleOrCategories {
+		if len(ruleOrCategories) <= 1 {
+			delete(idToRuleOrCategories, id)
 		}
 	}
-	if len(duplicateRuleIDs) > 0 {
-		sort.Strings(duplicateRuleIDs)
-		return newDuplicateRuleError(duplicateRuleIDs)
+	if len(idToRuleOrCategories) > 0 {
+		return newDuplicateRuleOrCategoryError(idToRuleOrCategories)
 	}
 	return nil
 }
 
-type duplicateRuleError struct {
-	duplicateRuleIDs []string
+type duplicateRuleOrCategoryError struct {
+	duplicateIDToRuleOrCategories map[string][]ruleOrCategory
 }
 
-func newDuplicateRuleError(duplicateRuleIDs []string) *duplicateRuleError {
-	return &duplicateRuleError{
-		duplicateRuleIDs: duplicateRuleIDs,
+func newDuplicateRuleOrCategoryError(
+	duplicateIDToRuleOrCategories map[string][]ruleOrCategory,
+) *duplicateRuleOrCategoryError {
+	return &duplicateRuleOrCategoryError{
+		duplicateIDToRuleOrCategories: duplicateIDToRuleOrCategories,
 	}
 }
 
-func (d *duplicateRuleError) Error() string {
+func (d *duplicateRuleOrCategoryError) Error() string {
 	if d == nil {
 		return ""
 	}
-	if len(d.duplicateRuleIDs) == 0 {
+	if len(d.duplicateIDToRuleOrCategories) == 0 {
 		return ""
 	}
+
 	var sb strings.Builder
-	_, _ = sb.WriteString("duplicate rule IDs detected from plugins: ")
-	_, _ = sb.WriteString(strings.Join(d.duplicateRuleIDs, ", "))
+	_, _ = sb.WriteString("duplicate rule IDs detected from plugins:\n")
+	for _, duplicateID := range slicesext.MapKeysToSortedSlice(d.duplicateIDToRuleOrCategories) {
+		// Example of this loop:
+		//
+		// RULE_FOO: builtin, buf-plugin-foo, buf-plugin-bar
+		// CATEGORY_BAR: buf-plugin-foo, buf-plugin-baz
+		_, _ = sb.WriteString(duplicateID)
+		_, _ = sb.WriteString(": ")
+		ruleOrCategories := d.duplicateIDToRuleOrCategories[duplicateID]
+		sort.Slice(
+			ruleOrCategories,
+			func(i int, j int) bool {
+				return ruleOrCategories[i].ID() < ruleOrCategories[j].ID()
+			},
+		)
+		_, _ = sb.WriteString(
+			strings.Join(
+				slicesext.Map(
+					ruleOrCategories,
+					func(ruleOrCategory ruleOrCategory) string {
+						if pluginName := ruleOrCategory.PluginName(); pluginName != "" {
+							return pluginName
+						}
+						return "builtin"
+					},
+				),
+				", ",
+			),
+		)
+	}
 	return sb.String()
 }
