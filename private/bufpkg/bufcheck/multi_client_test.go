@@ -153,6 +153,87 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	)
 }
 
+func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
+	t.Parallel()
+
+	fieldLowerSnakeCaseClient, err := check.NewClientForSpec(fieldLowerSnakeCaseSpec)
+	require.NoError(t, err)
+	emptyOptions, err := check.NewOptions(nil)
+	require.NoError(t, err)
+	multiClient := newMultiClient(
+		zap.NewNop(),
+		[]*checkClientSpec{
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
+		},
+	)
+
+	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
+	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
+	require.Equal(t, []string{fieldLowerSnakeCaseRuleID}, duplicateRuleOrCategoryError.duplicateIDs())
+}
+
+func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
+	t.Parallel()
+
+	client1Spec := &check.Spec{
+		Rules: []*check.RuleSpec{
+			{
+				ID:          timestampSuffixRuleID,
+				IsDefault:   true,
+				CategoryIDs: []string{"FOO"},
+				Purpose:     `Checks that all google.protobuf.Timestamps end in a specific suffix (default is "_time").`,
+				Type:        check.RuleTypeLint,
+				Handler:     checkutil.NewFieldRuleHandler(checkTimestampSuffix),
+			},
+		},
+		Categories: []*check.CategorySpec{
+			{
+				ID:      "FOO",
+				Purpose: "Checks foo.",
+			},
+		},
+	}
+	client2Spec := &check.Spec{
+		Rules: []*check.RuleSpec{
+			{
+				ID:          fieldLowerSnakeCaseRuleID,
+				IsDefault:   true,
+				CategoryIDs: []string{"FOO"},
+				Purpose:     "Checks that all field names are lower_snake_case.",
+				Type:        check.RuleTypeLint,
+				Handler:     checkutil.NewFieldRuleHandler(checkFieldLowerSnakeCase),
+			},
+		},
+		Categories: []*check.CategorySpec{
+			{
+				ID:      "FOO",
+				Purpose: "Checks foo.",
+			},
+		},
+	}
+
+	client1, err := check.NewClientForSpec(client1Spec)
+	require.NoError(t, err)
+	client2, err := check.NewClientForSpec(client2Spec)
+	require.NoError(t, err)
+	emptyOptions, err := check.NewOptions(nil)
+	require.NoError(t, err)
+	multiClient := newMultiClient(
+		zap.NewNop(),
+		[]*checkClientSpec{
+			newCheckClientSpec("buf-plugin-1", client1, emptyOptions),
+			newCheckClientSpec("buf-plugin-2", client2, emptyOptions),
+		},
+	)
+
+	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
+	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
+	require.Equal(t, []string{"FOO"}, duplicateRuleOrCategoryError.duplicateIDs())
+}
+
 func checkFieldLowerSnakeCase(
 	_ context.Context,
 	responseWriter check.ResponseWriter,

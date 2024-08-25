@@ -237,7 +237,7 @@ func (d *duplicateRuleOrCategoryError) Error() string {
 
 	var sb strings.Builder
 	_, _ = sb.WriteString("duplicate rule IDs detected from plugins:\n")
-	for _, duplicateID := range slicesext.MapKeysToSortedSlice(d.duplicateIDToRuleOrCategories) {
+	for _, duplicateID := range d.duplicateIDs() {
 		// Example of this loop:
 		//
 		// RULE_FOO: builtin, buf-plugin-foo, buf-plugin-bar
@@ -267,4 +267,14 @@ func (d *duplicateRuleOrCategoryError) Error() string {
 		)
 	}
 	return sb.String()
+}
+
+func (d *duplicateRuleOrCategoryError) duplicateIDs() []string {
+	if d == nil {
+		return nil
+	}
+	if len(d.duplicateIDToRuleOrCategories) == 0 {
+		return nil
+	}
+	return slicesext.MapKeysToSortedSlice(d.duplicateIDToRuleOrCategories)
 }
