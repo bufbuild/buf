@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 )
@@ -53,6 +54,9 @@ type Client interface {
 
 type Rule interface {
 	check.Rule
+
+	// BufcheckCategories returns the Rule's Categories.
+	BufcheckCategories() []Category
 
 	// Plugin returns the name of the plugin that created this Rule.
 	//
@@ -115,8 +119,13 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) PluginOption {
 	}
 }
 
-func NewClient(logger *zap.Logger, runner command.Runner, options ...ClientOption) (Client, error) {
-	return newClient(logger, runner, options...)
+func NewClient(
+	logger *zap.Logger,
+	tracer tracing.Tracer,
+	runner command.Runner,
+	options ...ClientOption,
+) (Client, error) {
+	return newClient(logger, tracer, runner, options...)
 }
 
 type ClientOption func(*clientOptions)

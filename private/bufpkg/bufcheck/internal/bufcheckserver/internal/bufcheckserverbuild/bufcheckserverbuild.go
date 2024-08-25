@@ -919,8 +919,10 @@ var (
 	}
 	// DefaultCategorySpec is a category spec.
 	DefaultCategorySpec = &check.CategorySpec{
-		ID:      "DEFAULT",
-		Purpose: "Checks that default lint rules are followed.",
+		ID:             "DEFAULT",
+		Purpose:        "Checks that default lint rules are followed.",
+		Deprecated:     true,
+		ReplacementIDs: []string{"STANDARD"},
 	}
 	// FileLayoutCategorySpec is a category spec.
 	FileLayoutCategorySpec = &check.CategorySpec{
@@ -954,8 +956,20 @@ var (
 	}
 	// StyleDefaultCategorySpec is a category spec.
 	StyleDefaultCategorySpec = &check.CategorySpec{
-		ID:      "STYLE_DEFAULT",
-		Purpose: "Checks that default style lint rules are followed.",
+		ID:             "STYLE_DEFAULT",
+		Purpose:        "Checks that default style lint rules are followed.",
+		Deprecated:     true,
+		ReplacementIDs: []string{"STYLE_STANDARD"},
+	}
+	// StyleStandardCategorySpec is a category spec.
+	StyleStandardCategorySpec = &check.CategorySpec{
+		ID:      "STYLE_STANDARD",
+		Purpose: "Checks that standard style lint rules are followed.",
+	}
+	// StandardCategorySpec is a category spec.
+	StandardCategorySpec = &check.CategorySpec{
+		ID:      "STANDARD",
+		Purpose: "Checks that standard lint rules are followed.",
 	}
 	// UnaryRPCCategorySpec is a category spec.
 	UnaryRPCCategorySpec = &check.CategorySpec{

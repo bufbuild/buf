@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/pluginrpc-go"
 	"go.uber.org/zap"
@@ -39,12 +40,18 @@ import (
 
 type client struct {
 	logger                          *zap.Logger
+	tracer                          tracing.Tracer
 	runner                          command.Runner
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
-func newClient(logger *zap.Logger, runner command.Runner, options ...ClientOption) (*client, error) {
+func newClient(
+	logger *zap.Logger,
+	tracer tracing.Tracer,
+	runner command.Runner,
+	options ...ClientOption,
+) (*client, error) {
 	clientOptions := newClientOptions()
 	for _, option := range options {
 		option(clientOptions)
@@ -65,6 +72,7 @@ func newClient(logger *zap.Logger, runner command.Runner, options ...ClientOptio
 
 	return &client{
 		logger: logger,
+		tracer: tracer,
 		runner: runner,
 		stderr: clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
@@ -80,7 +88,10 @@ func (c *client) Lint(
 	lintConfig bufconfig.LintConfig,
 	image bufimage.Image,
 	options ...LintOption,
-) error {
+) (retErr error) {
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	if lintConfig.Disabled() {
 		return nil
 	}
@@ -131,7 +142,10 @@ func (c *client) Breaking(
 	image bufimage.Image,
 	againstImage bufimage.Image,
 	options ...BreakingOption,
-) error {
+) (retErr error) {
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	if breakingConfig.Disabled() {
 		return nil
 	}
@@ -192,7 +206,10 @@ func (c *client) ConfiguredRules(
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
-) ([]Rule, error) {
+) (_ []Rule, retErr error) {
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
@@ -214,7 +231,10 @@ func (c *client) AllRules(
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
-) ([]Rule, error) {
+) (_ []Rule, retErr error) {
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
@@ -227,7 +247,10 @@ func (c *client) AllCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
-) ([]Category, error) {
+) (_ []Category, retErr error) {
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)

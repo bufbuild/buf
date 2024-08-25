@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/spf13/pflag"
 )
@@ -173,7 +174,8 @@ func lsRun(
 		return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
 	}
 	// BufYAMLFiles <=v1 never had plugins.
-	client, err := bufcheck.NewClient(container.Logger(), command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+	tracer := tracing.NewTracer(container.Tracer())
+	client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}

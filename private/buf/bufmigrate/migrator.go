@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
@@ -38,6 +39,7 @@ import (
 
 type migrator struct {
 	logger            *zap.Logger
+	tracer            tracing.Tracer
 	runner            command.Runner
 	moduleKeyProvider bufmodule.ModuleKeyProvider
 	commitProvider    bufmodule.CommitProvider
@@ -45,12 +47,14 @@ type migrator struct {
 
 func newMigrator(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	runner command.Runner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) *migrator {
 	return &migrator{
 		logger:            logger,
+		tracer:            tracer,
 		runner:            runner,
 		moduleKeyProvider: moduleKeyProvider,
 		commitProvider:    commitProvider,
@@ -138,6 +142,7 @@ func (m *migrator) getMigrateBuilder(
 	}
 	migrateBuilder := newMigrateBuilder(
 		m.logger,
+		m.tracer,
 		m.runner,
 		m.commitProvider,
 		bucket,
@@ -645,12 +650,14 @@ func resolvedDeclaredAndLockedDependencies(
 func equivalentLintConfigInV2(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	runner command.Runner,
 	lintConfig bufconfig.LintConfig,
 ) (bufconfig.LintConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		ctx,
 		logger,
+		tracer,
 		runner,
 		check.RuleTypeLint,
 		lintConfig,
@@ -672,12 +679,14 @@ func equivalentLintConfigInV2(
 func equivalentBreakingConfigInV2(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	runner command.Runner,
 	breakingConfig bufconfig.BreakingConfig,
 ) (bufconfig.BreakingConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		ctx,
 		logger,
+		tracer,
 		runner,
 		check.RuleTypeBreaking,
 		breakingConfig,
@@ -696,13 +705,14 @@ func equivalentBreakingConfigInV2(
 func equivalentCheckConfigInV2(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	runner command.Runner,
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
 	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(logger, runner)
+	client, err := bufcheck.NewClient(logger, tracer, runner)
 	if err != nil {
 		return nil, err
 	}

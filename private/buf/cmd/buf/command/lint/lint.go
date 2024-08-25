@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -130,9 +131,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	tracer := tracing.NewTracer(container.Tracer())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(container.Logger(), command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+		client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
 		if err != nil {
 			return err
 		}

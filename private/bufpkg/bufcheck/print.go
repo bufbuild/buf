@@ -47,10 +47,11 @@ const (
 var topLevelCategoryIDToPriority = map[string]int{
 	"MINIMAL":   1,
 	"BASIC":     2,
-	"DEFAULT":   3,
-	"COMMENTS":  4,
-	"UNARY_RPC": 5,
-	"OTHER":     6,
+	"STANDARD":  3,
+	"DEFAULT":   4,
+	"COMMENTS":  5,
+	"UNARY_RPC": 6,
+	"OTHER":     7,
 	"FILE":      1,
 	"PACKAGE":   2,
 	"WIRE_JSON": 3,
@@ -66,20 +67,24 @@ func printRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (re
 		return nil
 	}
 	rules = cloneAndSortRulesForPrint(rules)
+	categoriesFunc := Rule.Categories
 	if !printRulesOptions.includeDeprecated {
 		rules = slicesext.Filter(rules, func(rule Rule) bool { return !rule.Deprecated() })
+		categoriesFunc = func(rule Rule) []check.Category {
+			return slicesext.Filter(rule.Categories(), func(category check.Category) bool { return !category.Deprecated() })
+		}
 	}
 	if printRulesOptions.asJSON {
-		return printRulesJSON(writer, rules)
+		return printRulesJSON(writer, rules, categoriesFunc)
 	}
-	return printRulesText(writer, rules)
+	return printRulesText(writer, rules, categoriesFunc)
 }
 
 // Rules already sorted in correct order.
 // Rules already filtered for deprecated.
-func printRulesJSON(writer io.Writer, rules []Rule) error {
+func printRulesJSON(writer io.Writer, rules []Rule, categoriesFunc func(Rule) []check.Category) error {
 	for _, rule := range rules {
-		data, err := json.Marshal(newExternalRule(rule))
+		data, err := json.Marshal(newExternalRule(rule, categoriesFunc))
 		if err != nil {
 			return err
 		}
@@ -92,7 +97,7 @@ func printRulesJSON(writer io.Writer, rules []Rule) error {
 
 // Rules already sorted in correct order.
 // Rules already filtered for deprecated.
-func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
+func printRulesText(writer io.Writer, rules []Rule, categoriesFunc func(Rule) []check.Category) (retErr error) {
 	var defaultRules []Rule
 	pluginNameToRules := make(map[string][]Rule)
 	var pluginNames []string
@@ -110,7 +115,7 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 	}
 	sort.Strings(pluginNames)
 	longestRuleID := getLongestRuleID(rules)
-	longestRuleCategories := getLongestRuleCategories(rules)
+	longestRuleCategories := getLongestRuleCategories(rules, categoriesFunc)
 
 	tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
 	defer func() {
@@ -120,7 +125,7 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 
 	havePrintedSection := false
 	if len(defaultRules) > 0 {
-		if err := printRulesTextSection(writer, defaultRules, "", havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
+		if err := printRulesTextSection(writer, defaultRules, categoriesFunc, "", havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
 			return err
 		}
 		havePrintedSection = true
@@ -136,7 +141,7 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 			// This should never happen.
 			return syserror.Newf("no rules for plugin name %q", pluginName)
 		}
-		if err := printRulesTextSection(writer, rules, pluginName, havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
+		if err := printRulesTextSection(writer, rules, categoriesFunc, pluginName, havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
 			return err
 		}
 		havePrintedSection = true
@@ -144,9 +149,17 @@ func printRulesText(writer io.Writer, rules []Rule) (retErr error) {
 	return nil
 }
 
-func printRulesTextSection(writer io.Writer, rules []Rule, pluginName string, havePrintedSection bool, globallyLongestRuleID string, globallyLongestRuleCategories string) error {
+func printRulesTextSection(
+	writer io.Writer,
+	rules []Rule,
+	categoriesFunc func(Rule) []check.Category,
+	pluginName string,
+	havePrintedSection bool,
+	globallyLongestRuleID string,
+	globallyLongestRuleCategories string,
+) error {
 	subLongestRuleID := getLongestRuleID(rules)
-	subLongestRuleCategories := getLongestRuleCategories(rules)
+	subLongestRuleCategories := getLongestRuleCategories(rules, categoriesFunc)
 	if pluginName != "" {
 		if _, err := fmt.Fprintf(writer, "%s\n\n", pluginName); err != nil {
 			return err
@@ -170,7 +183,7 @@ func printRulesTextSection(writer io.Writer, rules []Rule, pluginName string, ha
 		if len(globallyLongestRuleID) > len(subLongestRuleID) && id == subLongestRuleID {
 			id = id + strings.Repeat(" ", len(globallyLongestRuleID)-len(subLongestRuleID))
 		}
-		categories := getCategoriesString(rule.Categories())
+		categories := getCategoriesString(categoriesFunc(rule))
 		if len(globallyLongestRuleCategories) > len(subLongestRuleCategories) && categories == subLongestRuleCategories {
 			categories = categories + strings.Repeat(" ", len(globallyLongestRuleCategories)-len(subLongestRuleCategories))
 		}
@@ -196,11 +209,14 @@ func getLongestRuleID(rules []Rule) string {
 	)
 }
 
-func getLongestRuleCategories(rules []Rule) string {
+func getLongestRuleCategories(
+	rules []Rule,
+	categoriesFunc func(Rule) []check.Category,
+) string {
 	return slicesext.Reduce(
 		rules,
 		func(accumulator string, rule Rule) string {
-			categories := getCategoriesString(rule.Categories())
+			categories := getCategoriesString(categoriesFunc(rule))
 			if len(accumulator) > len(categories) {
 				return accumulator
 			}
@@ -321,10 +337,13 @@ type externalRule struct {
 	Replacements []string `json:"replacements" yaml:"replacements"`
 }
 
-func newExternalRule(rule Rule) *externalRule {
+func newExternalRule(
+	rule Rule,
+	categoriesFunc func(Rule) []check.Category,
+) *externalRule {
 	return &externalRule{
 		ID:           rule.ID(),
-		Categories:   slicesext.Map(rule.Categories(), check.Category.ID),
+		Categories:   slicesext.Map(categoriesFunc(rule), check.Category.ID),
 		Default:      rule.IsDefault(),
 		Purpose:      rule.Purpose(),
 		Plugin:       rule.PluginName(),

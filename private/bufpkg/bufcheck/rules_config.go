@@ -277,7 +277,24 @@ func warnReferencedDeprecatedIDsForIDType(
 ) {
 	for _, deprecatedID := range slicesext.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs) {
 		replacementIDs := slicesext.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs[deprecatedID])
-		logger.Warn(fmt.Sprintf("%s is deprecated. It has been replaced by %s %s.", capitalizedIDType, pluralIDType, strings.Join(replacementIDs, ", ")))
+		var replaceString string
+		switch len(replacementIDs) {
+		case 0:
+		case 1:
+			replaceString = fmt.Sprintf(" It has been replaced by %s %s.", strings.ToLower(capitalizedIDType), replacementIDs[0])
+		default:
+			replaceString = fmt.Sprintf(" It has been replaced by %s %s.", pluralIDType, strings.Join(replacementIDs, ", "))
+		}
+		logger.Warn(
+			fmt.Sprintf(
+				"%s %s referenced in your buf.yaml is deprecated.%s\n\t%s will continue to work. We recommend replacing %s in your buf.yaml, but no action is immediately necessary.",
+				capitalizedIDType,
+				deprecatedID,
+				replaceString,
+				deprecatedID,
+				deprecatedID,
+			),
+		)
 	}
 }
 
