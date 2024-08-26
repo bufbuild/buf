@@ -202,21 +202,20 @@ func v2WorkspaceTargeting(
 	moduleDirPaths := make([]string, 0, len(bufYAMLFile.ModuleConfigs()))
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
-	// With in a v2 bufYAMLFile, multiple module configs may have the same DirPath. To make sure each module
-	// has a unique BucketID, we cannot use their DirPaths as BucketIDs directly, but instead we append
-	// an index (1-indexed) to the path as the bucketID to distinguish modules at the same DirPath. More
-	// specifically, if multiple modules share the same path, the first one's bucketID is just the path,
-	// but starting at the second module, bucketID is "<path>//(the nth duplicate)".
+	// In a v2 bufYAMLFile, multiple module configs may have the same DirPath, but we still want to
+	// make sure each local module has a unique BucketID, which means we cannot use their DirPaths as
+	// BucketIDs directly. Instead, we append an index (0-indexed) to each DirPath to deduplicate, and
+	// each module's bucketID becomes "<path>[index]".
 	// As an example, bucketIDs are shown for modules in the buf.yaml below:
 	// ...
 	// modules:
-	//   - path: foo # bucketID: foo
-	//   - path: bar # bucketID: bar
-	//   - path: foo # bucketID: foo//(the 2nd duplicate)
-	//   - path: bar # bucketID: bar//(the 2nd duplicate)
-	//   - path: bar # bucketID: bar//(the 3rd duplicate)
-	//   - path: new # bucketID: new
-	//   - path: foo # bucketID: foo//(the 3rd duplicate)
+	//   - path: foo # bucketID: foo[0]
+	//   - path: bar # bucketID: bar[0]
+	//   - path: foo # bucketID: foo[1]
+	//   - path: bar # bucketID: bar[1]
+	//   - path: bar # bucketID: bar[2]
+	//   - path: new # bucketID: new[0]
+	//   - path: foo # bucketID: foo[2]
 	// ...
 	// Note: The BufYAMLFile interface guarantees that the relative order among module configs with
 	// the same path is the same order among these modules in the external buf.yaml v2, e.g. the 2nd
@@ -229,11 +228,9 @@ func v2WorkspaceTargeting(
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		bucketID := moduleDirPath
-		if numOfModulesBeforeWithSamePath := dirPathToCount[moduleDirPath]; numOfModulesBeforeWithSamePath != 0 {
-			// If n modules before this have DirPath, this is the (n+1)th duplicate at DirPath.
-			bucketID = formatBucketIDForDuplicateModulePath(moduleDirPath, numOfModulesBeforeWithSamePath+1)
-		}
+		numOfPrecedentModulesWithSamePath := dirPathToCount[moduleDirPath]
+		// If n modules before this have DirPath, they would have indices [0, ..., n-1] and this module has index n.
+		bucketID := fmt.Sprintf("%s//%d", moduleDirPath, numOfPrecedentModulesWithSamePath)
 		dirPathToCount[moduleDirPath]++
 		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
@@ -839,32 +836,4 @@ func checkForOverlap(
 		}
 	}
 	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
-}
-
-func formatBucketIDForDuplicateModulePath(moduleDirPath string, nthDuplicate int) string {
-	ordinalSuffix := "th"
-	switch nthDuplicate % 100 {
-	case 11, 12, 13:
-		// the 11th, 12th, 13th duplicate
-	default:
-		switch nthDuplicate % 10 {
-		case 1:
-			// the 1st, 21st, ... duplicate
-			ordinalSuffix = "st"
-		case 2:
-			// the 2nd, 22nd, ... duplicate
-			ordinalSuffix = "nd"
-		case 3:
-			// the 3rd, 23rd, ... duplicate
-			ordinalSuffix = "rd"
-		}
-	}
-	// We are appending the 1-based index (i.e. nth) to the moduleDirPath, but we also want to avoid
-	// the case where another module's DirPath is equal to formatBucketIDForDuplicateModulePath(modulePath, n).
-	// In other words, to avoid collision, the return of this function should not be a valid module DirPath.
-	// We use "//" as a separator to make collision impossible: No module's DirPath contains "//"
-	// because it must already have been normalized and must be a relative path, i.e. "foo//bar//" is
-	// normalized to "foo/bar" before being stored as a ModuleConfig's DirPath. For this reason we
-	// choose it over "foo/bar(the 2nd duplicate)", even though it does not look as nice.
-	return fmt.Sprintf("%s//(the %d%s duplicate)", moduleDirPath, nthDuplicate, ordinalSuffix)
 }
