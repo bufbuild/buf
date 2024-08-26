@@ -232,7 +232,7 @@ func v2WorkspaceTargeting(
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
 		numOfPrecedentModulesWithSamePath := dirPathToCount[moduleDirPath]
 		// If n modules before this have DirPath, they would have indices [0, ..., n-1] and this module has index n.
-		bucketID := fmt.Sprintf("%s//%d", moduleDirPath, numOfPrecedentModulesWithSamePath)
+		bucketID := fmt.Sprintf("%s[%d]", moduleDirPath, numOfPrecedentModulesWithSamePath)
 		dirPathToCount[moduleDirPath]++
 		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
