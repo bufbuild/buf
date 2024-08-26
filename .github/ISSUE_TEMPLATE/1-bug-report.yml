@@ -15,7 +15,7 @@ body:
     attributes:
       label: GitHub repository with your minimal reproducible example (do not fill out this field with "github.com/bufbuild/buf" or we will automatically close your issue, see the instructions above!)
       description: Provide us with a link to the GitHub repository that contains the setup needed to reproduce the issue. This is a repository you create, and is required for us to investigate your issue.
-      placeholder: https://github.com/you/temp-repo-with-repro, NOT https://github.com/bufbuild/buf
+      placeholder: https://github.com/you/temp-repo-with-repro
     validations:
       required: true
   - type: textarea
