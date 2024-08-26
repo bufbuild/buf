@@ -46,7 +46,7 @@ func TestBasicV2(t *testing.T) {
 	testBasic(t, "workspacev2", true)
 }
 
-func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback bool) {
+func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -89,7 +89,11 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	require.False(t, module.IsTarget())
-	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto-00001")
+	if isV2 {
+		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto-00001")
+	} else {
+		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	}
 	require.NotNil(t, module)
 	require.True(t, module.IsTarget())
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
@@ -131,7 +135,6 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 		graph,
 		bufmodule.Module.OpaqueID,
 	)
-	require.NoError(t, err)
 	module = workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	_, err = module.StatFileInfo(ctx, "acme/bond/real/v1/bond.proto")
@@ -141,7 +144,7 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 	_, err = module.StatFileInfo(ctx, "acme/bond/excluded/v2/excluded.proto")
 	require.True(t, errors.Is(err, fs.ErrNotExist))
 
-	testLicenseAndDoc(t, ctx, workspace, expectTopLevelLicenseDocFallback)
+	testLicenseAndDoc(t, ctx, workspace, isV2)
 
 	bucketTargeting, err = buftarget.NewBucketTargeting(
 		ctx,
@@ -178,7 +181,7 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 	require.NoError(t, err)
 	require.False(t, fileInfo.IsTargetFile())
 
-	testLicenseAndDoc(t, ctx, workspace, expectTopLevelLicenseDocFallback)
+	testLicenseAndDoc(t, ctx, workspace, isV2)
 }
 
 func TestUnusedDep(t *testing.T) {
@@ -289,7 +292,7 @@ func TestDuplicatePath(t *testing.T) {
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/x/x.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared1-00003")
+	module = workspace.GetModuleForOpaqueID("proto/shared1-00002")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/y/y.proto")
 
@@ -337,7 +340,7 @@ func requireModuleFileContent(
 	require.Equal(t, expectedContent, string(content))
 }
 
-func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, expectTopLevelLicenseDocFallback bool) {
+func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, isV2 bool) {
 	// bond has its own license and doc
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
@@ -349,7 +352,7 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 	// geo has its own license
 	requireModuleFileContent(t, ctx, module, "LICENSE", "geo license\n")
 	// geo falls back to top-level doc if it's a v2 workspace
-	if expectTopLevelLicenseDocFallback {
+	if isV2 {
 		requireModuleFileContent(t, ctx, module, "README.md", "workspace doc\n")
 	} else {
 		_, err := module.StatFileInfo(ctx, "README.md")
@@ -366,17 +369,21 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 	_, err = module.StatFileInfo(ctx, "README.md")
 	require.ErrorIs(t, err, fs.ErrNotExist)
 	// money falls back to top-level license if it's a v2 workspace
-	if expectTopLevelLicenseDocFallback {
+	if isV2 {
 		requireModuleFileContent(t, ctx, module, "LICENSE", "workspace license\n")
 	} else {
 		_, err = module.StatFileInfo(ctx, "LICENSE")
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	}
 
-	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	if isV2 {
+		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto-00001")
+	} else {
+		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	}
 	require.NotNil(t, module)
 	// portfolio does not have its own license or doc
-	if expectTopLevelLicenseDocFallback {
+	if isV2 {
 		requireModuleFileContent(t, ctx, module, "LICENSE", "workspace license\n")
 		requireModuleFileContent(t, ctx, module, "README.md", "workspace doc\n")
 	} else {

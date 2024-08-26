@@ -206,18 +206,18 @@ func v2WorkspaceTargeting(
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
 	// In a v2 bufYAMLFile, multiple module configs may have the same DirPath, but we still want to
 	// make sure each local module has a unique BucketID, which means we cannot use their DirPaths as
-	// BucketIDs directly. Instead, we append an index (0-indexed) to each DirPath to deduplicate, and
+	// BucketIDs directly. Instead, we append an index (1-indexed) to each DirPath to deduplicate, and
 	// each module's bucketID becomes "<path>[index]".
 	// As an example, bucketIDs are shown for modules in the buf.yaml below:
 	// ...
 	// modules:
-	//   - path: foo # bucketID: foo[0]
-	//   - path: bar # bucketID: bar[0]
-	//   - path: foo # bucketID: foo[1]
-	//   - path: bar # bucketID: bar[1]
-	//   - path: bar # bucketID: bar[2]
-	//   - path: new # bucketID: new[0]
-	//   - path: foo # bucketID: foo[2]
+	//   - path: foo # bucketID: foo-00001
+	//   - path: bar # bucketID: bar-00001
+	//   - path: foo # bucketID: foo-00002
+	//   - path: bar # bucketID: bar-00002
+	//   - path: bar # bucketID: bar-00003
+	//   - path: new # bucketID: new-00001
+	//   - path: foo # bucketID: foo-00003
 	// ...
 	// Note: The BufYAMLFile interface guarantees that the relative order among module configs with
 	// the same path is the same order among these modules in the external buf.yaml v2, e.g. the 2nd
@@ -231,12 +231,12 @@ func v2WorkspaceTargeting(
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
 		runningCount := dirPathToRunningCount[moduleDirPath]
-		// If n modules before this have DirPath, they would have indices [0, ..., n-1] and this module has index n.
+		// If n modules are before this have DirPath, this module has index n+1.
 		//
 		// Allowing up to 10000 buckets to share the same directory path while maintaining the property that bucketIDs
 		// can be sorted in the same order as in ModuleConfigs. Note that nothing actually relies on this property and
 		// it isn't documented, but it's nice for testing.
-		bucketID := fmt.Sprintf("%s-%05d", moduleDirPath, runningCount)
+		bucketID := fmt.Sprintf("%s-%05d", moduleDirPath, runningCount+1)
 		dirPathToRunningCount[moduleDirPath]++
 		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside

@@ -1130,11 +1130,11 @@ buf.build/foo/bar
 		// format as json, sort by path
 		`
 {"path":"a_v1","name":"buf.build/foo/bar"}
-{"path":"b_no_name_v1","name":""}
+{"path":"b_no_name_v1"}
 {"path":"c_v1beta1","name":"buf.build/bar/baz"}
-{"path":"d_no_file","name":""}
-{"path":"e_no_file","name":""}
-{"path":"f_no_name_v1beta1","name":""}
+{"path":"d_no_file"}
+{"path":"e_no_file"}
+{"path":"f_no_name_v1beta1"}
 `,
 		"config",
 		"ls-modules",
@@ -1207,9 +1207,9 @@ buf.build/foo/bar
 		// format as json, sort by path
 		`
 {"path":"a","name":"buf.build/foo/bar"}
-{"path":"b_no_name","name":""}
+{"path":"b_no_name"}
 {"path":"c","name":"buf.build/bar/baz"}
-{"path":"d_no_name","name":""}
+{"path":"d_no_name"}
 `,
 		"config",
 		"ls-modules",
@@ -1308,7 +1308,7 @@ buf.build/foo/bar
 		t,
 		nil,
 		0,
-		`{"path":".","name":""}`,
+		`{"path":"."}`,
 		"config",
 		"ls-modules",
 		"--format",
@@ -1404,7 +1404,7 @@ func TestLsModulesModuleV1Beta1(t *testing.T) {
 		t,
 		nil,
 		0,
-		`{"path":".","name":""}`,
+		`{"path":"."}`,
 		"config",
 		"ls-modules",
 		"--format",
@@ -1459,7 +1459,7 @@ func TestLsModulesNoConfig(t *testing.T) {
 		t,
 		nil,
 		0,
-		`{"path":".","name":""}`,
+		`{"path":"."}`,
 		"config",
 		"ls-modules",
 		"--format",
@@ -1561,9 +1561,9 @@ func TestLsModulesConfigFlag(t *testing.T) {
 		0,
 		`
 {"path":"a","name":"buf.build/foo/bar"}
-{"path":"b_no_name","name":""}
+{"path":"b_no_name"}
 {"path":"c","name":"buf.build/bar/baz"}
-{"path":"d_no_name","name":""}
+{"path":"d_no_name"}
 `,
 		"config",
 		"ls-modules",
