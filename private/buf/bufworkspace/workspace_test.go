@@ -98,6 +98,10 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 	require.True(t, module.IsTarget())
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
 	require.NoError(t, err)
+	expectedPortfoliKey := "finance/portfolio/proto"
+	if isV2 {
+		expectedPortfoliKey = "finance/portfolio/proto-00001"
+	}
 	dagtest.RequireGraphEqual(
 		t,
 		[]dagtest.ExpectedNode[string]{
@@ -125,7 +129,7 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 				},
 			},
 			{
-				Key: "finance/portfolio/proto",
+				Key: expectedPortfoliKey,
 				Outbound: []string{
 					"buf.testing/acme/bond",
 					"buf.testing/acme/extension",
