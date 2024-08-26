@@ -177,6 +177,16 @@ func TestGitCloner(t *testing.T) {
 		_, err = readBucket.Stat(ctx, "nonexistent")
 		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
+	t.Run("branch=main,ref=main~1", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 2, NewRefNameWithBranch("main~", "main"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 0", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
 
 	t.Run("branch_and_ref", func(t *testing.T) {
 		t.Parallel()
@@ -240,7 +250,7 @@ func TestGitCloner(t *testing.T) {
 		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
-	t.Run("commit-local", func(t *testing.T) {
+	t.Run("ref=<commit>", func(t *testing.T) {
 		t.Parallel()
 		revParseBytes, err := command.RunStdout(ctx, container, runner, "git", "-C", workDir, "rev-parse", "HEAD~")
 		require.NoError(t, err)
@@ -252,8 +262,21 @@ func TestGitCloner(t *testing.T) {
 		_, err = readBucket.Stat(ctx, "nonexistent")
 		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
+	t.Run("ref=<partial-commit>", func(t *testing.T) {
+		t.Parallel()
+		revParseBytes, err := command.RunStdout(ctx, container, runner, "git", "-C", workDir, "rev-parse", "HEAD~")
+		require.NoError(t, err)
+		partialRef := NewRefName(strings.TrimSpace(string(revParseBytes))[:8])
+		readBucket := readBucketForName(ctx, t, runner, workDir, 8, partialRef, false)
 
-	t.Run("commit-remote", func(t *testing.T) {
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 1", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
+
+	t.Run("ref=<commit>,branch=origin/remote-branch", func(t *testing.T) {
 		t.Parallel()
 		revParseBytes, err := command.RunStdout(ctx, container, runner, "git", "-C", originDir, "rev-parse", "remote-branch~")
 		require.NoError(t, err)
