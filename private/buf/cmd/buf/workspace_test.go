@@ -1022,8 +1022,8 @@ func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
 		t,
 		map[string]expectedFileInfo{
 			"prefix/bar/v1/bar.proto": {},
-			"prefix/foo/v1/foo.proto": {},
-			"prefix/x/x.proto":        {},
+			"prefix/foo/v1/foo.proto": {moduleFullName: "buf.build/shared/zero"},
+			"prefix/x/x.proto":        {moduleFullName: "buf.build/shared/one"},
 			"prefix/y/y.proto":        {},
 			"v1/separate.proto":       {},
 		},
@@ -1033,14 +1033,14 @@ func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
 		t,
 		map[string]expectedFileInfo{
 			"prefix/bar/v1/bar.proto": {},
-			"prefix/foo/v1/foo.proto": {},
+			"prefix/foo/v1/foo.proto": {moduleFullName: "buf.build/shared/zero"},
 		},
 		filepath.Join(workspaceDir, "proto", "shared"),
 	)
 	requireBuildOutputFilePaths(
 		t,
 		map[string]expectedFileInfo{
-			"prefix/x/x.proto": {},
+			"prefix/x/x.proto": {moduleFullName: "buf.build/shared/one"},
 			"prefix/y/y.proto": {},
 		},
 		filepath.Join(workspaceDir, "proto", "shared1"),
@@ -1048,10 +1048,10 @@ func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
 	requireBuildOutputFilePaths(
 		t,
 		map[string]expectedFileInfo{
-			"prefix/x/x.proto":        {},
+			"prefix/x/x.proto":        {moduleFullName: "buf.build/shared/one"},
 			"prefix/y/y.proto":        {},
 			"prefix/bar/v1/bar.proto": {},
-			"prefix/foo/v1/foo.proto": {},
+			"prefix/foo/v1/foo.proto": {moduleFullName: "buf.build/shared/zero"},
 		},
 		filepath.Join(workspaceDir, "proto"),
 	)

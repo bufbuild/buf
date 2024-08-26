@@ -162,6 +162,7 @@ func getExternalModules(
 	return getExternalModulesForBufWorkYAMLFile(ctx, bufWorkYAMLFile)
 }
 
+// This preserves directory order from the bufWorkYAMLFile.
 func getExternalModulesForBufWorkYAMLFile(
 	ctx context.Context,
 	bufWorkYAMLFile bufconfig.BufWorkYAMLFile,
@@ -211,6 +212,7 @@ func getExternalModulesForBufWorkYAMLFile(
 	return externalModules, nil
 }
 
+// This preserves module config order from the bufYAMLFile.
 func getExternalModulesForBufYAMLFile(
 	ctx context.Context,
 	bufYAMLFile bufconfig.BufYAMLFile,
@@ -238,7 +240,8 @@ func printExternalModules(
 ) error {
 	switch format {
 	case formatPath:
-		sort.Slice(
+		// Two modules may have the same path, SliceStable breaks the tie with the original ordering.
+		sort.SliceStable(
 			externalModules,
 			func(i int, j int) bool {
 				return externalModules[i].Path < externalModules[j].Path
@@ -267,7 +270,8 @@ func printExternalModules(
 		}
 		return nil
 	case formatJSON:
-		sort.Slice(
+		// Two modules may have the same path, SliceStable breaks the tie with the original ordering.
+		sort.SliceStable(
 			externalModules,
 			func(i int, j int) bool {
 				return externalModules[i].Path < externalModules[j].Path

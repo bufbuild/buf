@@ -1574,7 +1574,7 @@ func TestLsModulesConfigFlag(t *testing.T) {
 	)
 }
 
-func TestLsModulesConfigPrecedence(t *testing.T) {
+func TestLsModulesConfigFlagTakesPrecedence(t *testing.T) {
 	// Cannot be parallel since we chdir.
 	pwd, err := osext.Getwd()
 	require.NoError(t, err)
@@ -1602,6 +1602,88 @@ d_no_name
 		"ls-modules",
 		"--config",
 		filepath.Join(pwd, "testdata", "lsmodules", "workspacev2", "buf.yaml"),
+	)
+}
+
+func TestLsModulesWorkspaceV2DuplicateDirPath(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "workspace", "success", "duplicate_dir_path")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		`
+proto/shared
+proto/shared
+proto/shared1
+proto/shared1
+separate
+`,
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as path
+		`
+proto/shared
+proto/shared
+proto/shared1
+proto/shared1
+separate	
+	`,
+
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as name
+		`
+buf.build/shared/one
+buf.build/shared/zero
+	`,
+
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as json, sort by path
+		`
+	
+	{"path":"proto/shared","excludes":["proto/shared/prefix/foo"]}
+	{"path":"proto/shared","excludes":["proto/shared/prefix/bar"],"name":"buf.build/shared/zero"}
+	{"path":"proto/shared1","includes":["proto/shared1/prefix/x"],"name":"buf.build/shared/one"}
+	{"path":"proto/shared1","excludes":["proto/shared1/prefix/x"]}
+	{"path":"separate"}
+	`,
+
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
 	)
 }
 
