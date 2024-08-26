@@ -10,6 +10,8 @@ body:
         **[This article](https://stackoverflow.com/help/minimal-reproducible-example) on minimal reproducible examples may be of use!**
 
         **If you do not provide a minimal reproducible example in a GitHub repository, we may have to close your issue. We apologize, but we have to be efficient with our support requests, and we appreciate your help.**
+
+        Thanks for helping us make Buf even better.
   - type: input
     id: github-repository
     attributes:
