@@ -118,10 +118,9 @@ func run(
 		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
 	}
 	commit := commits[0]
-	if format == bufprint.FormatText {
-		fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.ModuleFullName(), commit.Id)
-		return nil
-	}
-	commitPrinter := bufprint.NewCommitPrinter(container.Stdout(), moduleRef.ModuleFullName())
-	return commitPrinter.PrintCommits(ctx, format, commit)
+	return bufprint.PrintNames(
+		container.Stdout(),
+		format,
+		bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName()),
+	)
 }
