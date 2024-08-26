@@ -14,7 +14,7 @@ body:
   - type: input
     id: github-repository
     attributes:
-      label: GitHub repository with your minimal reproducible example
+      label: GitHub repository with your minimal reproducible example (do not fill out this field with "github.com/bufbuild/buf" or we will automatically close your issue, see the instructions above!)
       description: If this is a question about some behavior you are witnessing, provide us with a link to the GitHub repository that contains the setup needed to reproduce the issue. This is a repository you create, and is required for us to investigate your issue.
       placeholder: https://github.com/foo/bar
   - type: textarea
