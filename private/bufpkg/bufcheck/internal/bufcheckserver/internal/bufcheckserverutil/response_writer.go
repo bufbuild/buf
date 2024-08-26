@@ -54,15 +54,13 @@ func (w *responseWriter) AddProtosourceAnnotation(
 	if location != nil {
 		addAnnotationOptions = append(
 			addAnnotationOptions,
-			check.WithFileName(location.FilePath()),
-			check.WithSourcePath(location.SourcePath()),
+			check.WithFileNameAndSourcePath(location.FilePath(), location.SourcePath()),
 		)
 	}
 	if againstLocation != nil {
 		addAnnotationOptions = append(
 			addAnnotationOptions,
-			check.WithAgainstFileName(againstLocation.FilePath()),
-			check.WithAgainstSourcePath(againstLocation.SourcePath()),
+			check.WithAgainstFileNameAndSourcePath(againstLocation.FilePath(), againstLocation.SourcePath()),
 		)
 	}
 	w.ResponseWriter.AddAnnotation(addAnnotationOptions...)

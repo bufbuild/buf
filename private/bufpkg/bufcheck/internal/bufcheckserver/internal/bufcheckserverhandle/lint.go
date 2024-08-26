@@ -191,8 +191,7 @@ func handleLintDirectorySamePackage(
 				sourcePath = packageLocation.SourcePath()
 			}
 			responseWriter.AddAnnotation(
-				check.WithFileName(file.Path()),
-				check.WithSourcePath(sourcePath),
+				check.WithFileNameAndSourcePath(file.Path(), sourcePath),
 				check.WithMessagef(
 					"%s detected within directory %q.",
 					messagePrefix,
@@ -718,8 +717,7 @@ func handleLintPackageSameDirectory(
 				sourcePath = packageLocation.SourcePath()
 			}
 			responseWriter.AddAnnotation(
-				check.WithFileName(file.Path()),
-				check.WithSourcePath(sourcePath),
+				check.WithFileNameAndSourcePath(file.Path(), sourcePath),
 				check.WithMessagef(
 					"Multiple directories %q contain files with package %q.",
 					strings.Join(dirs, ","),
@@ -904,8 +902,7 @@ func handleLintPackageSameOptionValue(
 				sourcePath = fileOptionLocation.SourcePath()
 			}
 			responseWriter.AddAnnotation(
-				check.WithFileName(file.Path()),
-				check.WithSourcePath(sourcePath),
+				check.WithFileNameAndSourcePath(file.Path(), sourcePath),
 				check.WithMessage(message),
 			)
 		}

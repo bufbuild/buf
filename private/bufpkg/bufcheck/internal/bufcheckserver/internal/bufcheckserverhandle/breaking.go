@@ -66,8 +66,10 @@ func handleBreakingEnumNoDelete(
 			} else {
 				responseWriter.AddAnnotation(
 					check.WithFileName(descriptor.File().Path()),
-					check.WithAgainstFileName(previousEnum.Location().FilePath()),
-					check.WithAgainstSourcePath(previousEnum.Location().SourcePath()),
+					check.WithAgainstFileNameAndSourcePath(
+						previousEnum.Location().FilePath(),
+						previousEnum.Location().SourcePath(),
+					),
 					check.WithMessagef(
 						`Previously present enum %q was deleted from file.`,
 						previousNestedName,
@@ -112,8 +114,10 @@ func handleBreakingExtensionNoDelete(
 			} else {
 				responseWriter.AddAnnotation(
 					check.WithFileName(descriptor.File().Path()),
-					check.WithAgainstFileName(previousExtension.File().Path()),
-					check.WithAgainstSourcePath(previousExtension.Location().SourcePath()),
+					check.WithAgainstFileNameAndSourcePath(
+						previousExtension.File().Path(),
+						previousExtension.Location().SourcePath(),
+					),
 					check.WithMessagef(
 						`Previously present extension %q was deleted from file.`,
 						previousNestedName,
@@ -185,8 +189,10 @@ func handleBreakingMessageNoDelete(
 			} else {
 				responseWriter.AddAnnotation(
 					check.WithFileName(descriptor.File().Path()),
-					check.WithAgainstFileName(previousMessage.Location().FilePath()),
-					check.WithAgainstSourcePath(previousMessage.Location().SourcePath()),
+					check.WithAgainstFileNameAndSourcePath(
+						previousMessage.Location().FilePath(),
+						previousMessage.Location().SourcePath(),
+					),
 					check.WithMessagef(
 						`Previously present message %q was deleted from file.`,
 						previousNestedName,
@@ -217,16 +223,20 @@ func handleBreakingServiceNoDelete(
 	}
 	for previousName, previousService := range previousNameToService {
 		if _, ok := nameToService[previousName]; !ok {
+			var previousSourcePath protoreflect.SourcePath
+			if previousService.Location() != nil {
+				previousSourcePath = previousService.Location().SourcePath()
+			}
 			addAnnotationOptions := []check.AddAnnotationOption{
 				check.WithMessagef(
 					`Previously present service %q was deleted from file.`,
 					previousName,
 				),
 				check.WithFileName(file.Path()),
-				check.WithAgainstFileName(previousFile.Path()),
-			}
-			if previousService.Location() != nil {
-				addAnnotationOptions = append(addAnnotationOptions, check.WithAgainstSourcePath(previousService.Location().SourcePath()))
+				check.WithAgainstFileNameAndSourcePath(
+					previousFile.Path(),
+					previousSourcePath,
+				),
 			}
 			responseWriter.AddAnnotation(addAnnotationOptions...)
 		}
@@ -1947,10 +1957,14 @@ func handleBreakingRPCSameIdempotencyLevel(
 			previousLocationSourcePath = previousMethod.IdempotencyLevelLocation().SourcePath()
 		}
 		responseWriter.AddAnnotation(
-			check.WithFileName(method.File().Path()),
-			check.WithSourcePath(currentLocationSourcePath),
-			check.WithAgainstFileName(previousMethod.File().Path()),
-			check.WithAgainstSourcePath(previousLocationSourcePath),
+			check.WithFileNameAndSourcePath(
+				method.File().Path(),
+				currentLocationSourcePath,
+			),
+			check.WithAgainstFileNameAndSourcePath(
+				previousMethod.File().Path(),
+				previousLocationSourcePath,
+			),
 			check.WithMessagef(
 				`RPC %q on service %q changed option "idempotency_level" from %q to %q.`,
 				method.Name(),
@@ -2086,8 +2100,10 @@ func handleBreakingPackageEnumNoDelete(
 						} else {
 							responseWriter.AddAnnotation(
 								check.WithFileName(descriptor.File().Path()),
-								check.WithAgainstFileName(previousEnum.Location().FilePath()),
-								check.WithAgainstSourcePath(previousEnum.Location().SourcePath()),
+								check.WithAgainstFileNameAndSourcePath(
+									previousEnum.Location().FilePath(),
+									previousEnum.Location().SourcePath(),
+								),
 								check.WithMessagef(
 									`Previously present enum %q was deleted from package %q.`,
 									previousNestedName,
@@ -2163,8 +2179,10 @@ func handleBreakingPackageExtensionNoDelete(
 						} else {
 							responseWriter.AddAnnotation(
 								check.WithFileName(descriptor.File().Path()),
-								check.WithAgainstFileName(previousExtension.Location().FilePath()),
-								check.WithAgainstSourcePath(previousExtension.Location().SourcePath()),
+								check.WithAgainstFileNameAndSourcePath(
+									previousExtension.Location().FilePath(),
+									previousExtension.Location().SourcePath(),
+								),
 								check.WithMessagef(
 									`Previously present extension %q was deleted from package %q.`,
 									previousNestedName,
@@ -2237,8 +2255,10 @@ func handleBreakingPackageMessageNoDelete(
 						} else {
 							responseWriter.AddAnnotation(
 								check.WithFileName(descriptor.File().Path()),
-								check.WithAgainstFileName(previousMessage.Location().FilePath()),
-								check.WithAgainstSourcePath(previousMessage.Location().SourcePath()),
+								check.WithAgainstFileNameAndSourcePath(
+									previousMessage.Location().FilePath(),
+									previousMessage.Location().SourcePath(),
+								),
 								check.WithMessagef(
 									`Previously present message %q was deleted from package %q.`,
 									previousNestedName,
@@ -2340,8 +2360,10 @@ func handleBreakingPackageServiceNoDelete(
 						// File exists.
 						responseWriter.AddAnnotation(
 							check.WithFileName(file.Path()),
-							check.WithAgainstFileName(previousService.Location().FilePath()),
-							check.WithAgainstSourcePath(previousService.Location().SourcePath()),
+							check.WithAgainstFileNameAndSourcePath(
+								previousService.Location().FilePath(),
+								previousService.Location().SourcePath(),
+							),
 							check.WithMessagef(
 								`Previously present service %q was deleted from package %q.`,
 								previousName,
