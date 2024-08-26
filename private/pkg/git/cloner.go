@@ -164,8 +164,8 @@ func (c *cloner) CloneToBucket(
 		if fallbackRef == "" {
 			return newGitCommandError(err, buffer)
 		}
-		usedFallback = true
 		// Failed to fetch the ref directly, try to fetch the fallback ref.
+		usedFallback = true
 		buffer.Reset()
 		if err := c.runner.Run(
 			ctx,
