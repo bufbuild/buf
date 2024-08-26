@@ -1192,8 +1192,8 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		1,
 		``,
 		`Failure: foo.proto is contained in multiple modules:
-  other/proto
-  proto`,
+  path: "other/proto"
+  path: "proto"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate"),
 	)
@@ -1203,8 +1203,8 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		1,
 		``,
 		`Failure: v1/foo.proto is contained in multiple modules:
-  path: other/proto, includes: "other/proto/v1", excludes: "other/proto/v1/inner"
-  path: proto, includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
+  path: "other/proto", includes: "other/proto/v1", excludes: "other/proto/v1/inner"
+  path: "proto", includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "duplicate"),
 	)
@@ -1218,8 +1218,8 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 		1,
 		``,
 		`Failure: foo.proto is contained in multiple modules:
-  other/proto
-  proto`,
+  path: "other/proto"
+  path: "proto"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate", "proto"),
 	)
@@ -1229,8 +1229,8 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 		1,
 		``,
 		`Failure: v1/foo.proto is contained in multiple modules:
-  path: other/proto, includes: "other/proto/v1", excludes: "other/proto/v1/inner"
-  path: proto, includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
+  path: "other/proto", includes: "other/proto/v1", excludes: "other/proto/v1/inner"
+  path: "proto", includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
 
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "duplicate", "proto"),

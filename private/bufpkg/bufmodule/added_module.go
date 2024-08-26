@@ -46,7 +46,6 @@ import (
 // buf.lock-added Modules filtered out, and no BSR call will be made.
 type addedModule struct {
 	localModule              Module
-	prettyPrintName          string
 	remoteModuleKey          ModuleKey
 	remoteTargetPaths        []string
 	remoteTargetExcludePaths []string
@@ -55,13 +54,11 @@ type addedModule struct {
 
 func newLocalAddedModule(
 	localModule Module,
-	prettyPrintName string,
 	isTarget bool,
 ) *addedModule {
 	return &addedModule{
-		localModule:     localModule,
-		prettyPrintName: prettyPrintName,
-		isTarget:        isTarget,
+		localModule: localModule,
+		isTarget:    isTarget,
 	}
 }
 
@@ -317,6 +314,7 @@ func (a *addedModule) ToModule(
 	return newModule(
 		ctx,
 		getBucket,
+		"",
 		"",
 		a.remoteModuleKey.ModuleFullName(),
 		a.remoteModuleKey.CommitID(),

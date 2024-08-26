@@ -337,6 +337,12 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			),
 			bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(v1BufYAMLObjectData),
 			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData),
+			bufmodule.LocalModuleWithDescription(
+				getLocalModuleDescription(
+					moduleBucketAndTargeting.bucketID,
+					moduleConfig,
+				),
+			),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
@@ -408,7 +414,12 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
 			),
-			bufmodule.LocalModuleWithPrettyPrintName(formatPrettyPrintNameForModule(moduleConfig)),
+			bufmodule.LocalModuleWithDescription(
+				getLocalModuleDescription(
+					moduleBucketAndTargeting.bucketID,
+					moduleConfig,
+				),
+			),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
@@ -458,9 +469,14 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 
 // This formats a module name based on its module config entry in the v2 buf.yaml:
 // `path: foo, includes: ["foo/v1, "foo/v2"], excludes: "foo/v1/internal"`.
-func formatPrettyPrintNameForModule(moduleConfig bufconfig.ModuleConfig) string {
+func getLocalModuleDescription(bucketID string, moduleConfig bufconfig.ModuleConfig) string {
+	// We use bucketID instead of moduleConfig.DirPath() as the latter will always
+	// be "." for v1 Modules.
+	//
+	// Specifying this as "path" is somewhat breaking the API contract here, however
+	// we know we're only doing this for local modules.
+	description := fmt.Sprintf("path: %q", bucketID)
 	moduleDirPath := moduleConfig.DirPath()
-	prettyPrintName := fmt.Sprintf("path: %s", moduleDirPath)
 	relIncludePaths := moduleConfig.RootToIncludes()["."]
 	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
@@ -468,9 +484,9 @@ func formatPrettyPrintNameForModule(moduleConfig bufconfig.ModuleConfig) string 
 	switch len(includePaths) {
 	case 0:
 	case 1:
-		prettyPrintName = fmt.Sprintf("%s, includes: %q", prettyPrintName, includePaths[0])
+		description = fmt.Sprintf("%s, includes: %q", description, includePaths[0])
 	default:
-		prettyPrintName = fmt.Sprintf("%s, includes: [%s]", prettyPrintName, stringutil.JoinSliceQuoted(includePaths, ", "))
+		description = fmt.Sprintf("%s, includes: [%s]", description, stringutil.JoinSliceQuoted(includePaths, ", "))
 	}
 	relExcludePaths := moduleConfig.RootToExcludes()["."]
 	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
@@ -479,9 +495,9 @@ func formatPrettyPrintNameForModule(moduleConfig bufconfig.ModuleConfig) string 
 	switch len(excludePaths) {
 	case 0:
 	case 1:
-		prettyPrintName = fmt.Sprintf("%s, excludes: %q", prettyPrintName, excludePaths[0])
+		description = fmt.Sprintf("%s, excludes: %q", description, excludePaths[0])
 	default:
-		prettyPrintName = fmt.Sprintf("%s, excludes: [%s]", prettyPrintName, stringutil.JoinSliceQuoted(excludePaths, ", "))
+		description = fmt.Sprintf("%s, excludes: [%s]", description, stringutil.JoinSliceQuoted(excludePaths, ", "))
 	}
-	return prettyPrintName
+	return description
 }

@@ -166,10 +166,10 @@ type DuplicateProtoPathError struct {
 	//
 	// A well-formed DuplicateProtoPathError will have a normalized and non-empty ProtoPath.
 	ProtoPath string
-	// ModuleDisplayNames are the module display names of the Module that contain the ProtoPath.
+	// ModuleDescriptions are the Module descriptions that contain the ProtoPath.
 	//
-	// A well-formed DuplicateProtoPathError will have two or more module display names.
-	ModuleDisplayNames []string
+	// A well-formed DuplicateProtoPathError will have two or more Module descriptions.
+	ModuleDescriptions []string
 }
 
 // Error implements the error interface.
@@ -181,10 +181,10 @@ func (d *DuplicateProtoPathError) Error() string {
 	// Writing even if the error is malformed via d.Path being empty.
 	_, _ = builder.WriteString(d.ProtoPath)
 	_, _ = builder.WriteString(" is contained in multiple modules:\n")
-	for i, moduleDisplayName := range d.ModuleDisplayNames {
+	for i, moduleDescription := range d.ModuleDescriptions {
 		_, _ = builder.WriteString("  ")
-		_, _ = builder.WriteString(moduleDisplayName)
-		if i != len(d.ModuleDisplayNames)-1 {
+		_, _ = builder.WriteString(moduleDescription)
+		if i != len(d.ModuleDescriptions)-1 {
 			_, _ = builder.WriteString("\n")
 		}
 	}

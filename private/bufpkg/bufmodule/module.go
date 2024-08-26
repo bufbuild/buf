@@ -173,6 +173,26 @@ type Module interface {
 	// Called in newModuleSet.
 	setModuleSet(ModuleSet)
 
+	// getDescription returns a human-readable description of the Module.
+	//
+	// This can be manually set by a constructor of a Module. In practice, the only current way
+	// to specifically set this string is by calling LocalModuleWithDescription when constructing
+	// a ModuleSet.
+	//
+	// This is used to construct descriptive error messages pointing to configured modules.
+	// For example, this may return something along the lines of:
+	//
+	//   path: proto/foo, includes; ["a", "b"], excludes: "c"
+	//
+	// The shape of this field should not be relied upon.
+	// This field will be unique within a given ModuleSet.
+	//
+	// This will never be empty. If a description was not explicitly set, this falls back to
+	// OpaqueID.
+	//
+	// Keeping this private for now. Change to Description if we ever want to make this public.
+	getDescription() string
+
 	// withIsTarget returns a copy of the Module with the specified target value.
 	//
 	// Do not expose publicly! This should only be called by ModuleSet.WithTargetOpaqueIDs.
@@ -218,6 +238,7 @@ type module struct {
 	ctx                        context.Context
 	getBucket                  func() (storage.ReadBucket, error)
 	bucketID                   string
+	description                string
 	moduleFullName             ModuleFullName
 	commitID                   uuid.UUID
 	isTarget                   bool
@@ -238,6 +259,7 @@ func newModule(
 	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
+	description string,
 	moduleFullName ModuleFullName,
 	commitID uuid.UUID,
 	isTarget bool,
@@ -290,6 +312,7 @@ func newModule(
 		ctx:                        ctx,
 		getBucket:                  syncOnceValuesGetBucketWithStorageMatcherApplied,
 		bucketID:                   bucketID,
+		description:                description,
 		moduleFullName:             moduleFullName,
 		commitID:                   commitID,
 		isTarget:                   isTarget,
@@ -376,6 +399,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		ctx:                        m.ctx,
 		getBucket:                  m.getBucket,
 		bucketID:                   m.bucketID,
+		description:                m.description,
 		moduleFullName:             m.moduleFullName,
 		commitID:                   m.commitID,
 		isTarget:                   isTarget,
@@ -396,6 +420,13 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 
 func (m *module) setModuleSet(moduleSet ModuleSet) {
 	m.moduleSet = moduleSet
+}
+
+func (m *module) getDescription() string {
+	if m.description != "" {
+		return m.description
+	}
+	return m.OpaqueID()
 }
 
 func (*module) isModule() {}
