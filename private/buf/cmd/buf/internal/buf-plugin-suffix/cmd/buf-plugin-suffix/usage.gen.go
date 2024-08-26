@@ -12,13 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Generated. DO NOT EDIT.
+
 package main
 
-import (
-	suffixesplugin "github.com/bufbuild/buf/private/buf/cmd/buf/internal/buf-plugin-suffix"
-	"github.com/bufbuild/bufplugin-go/check"
-)
-
-func main() {
-	check.Main(suffixesplugin.Spec)
-}
+import _ "github.com/bufbuild/buf/private/usage"
