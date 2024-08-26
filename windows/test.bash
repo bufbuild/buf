@@ -34,5 +34,7 @@ go install ./cmd/buf \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
   ./private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
-  ./private/buf/cmd/buf/internal/buf-plugin-suffix/cmd/buf-plugin-suffix
+  ./private/buf/cmd/buf/internal/buf-plugin-suffix/cmd/buf-plugin-suffix \
+  ./private/buf/cmd/buf/internal/buf-plugin-protovalidate-ext/cmd/protovalidate-ext \
+	./private/buf/cmd/buf/internal/buf-plugin-rpc-ext/cmd/rpc-ext
 go test ./...
