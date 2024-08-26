@@ -224,16 +224,20 @@ func v2WorkspaceTargeting(
 	// "foo" in the external buf.yaml above is also the 2nd "foo" in module configs, even though sorted:
 	// [bar, bar, bar, foo, foo, foo, new].
 	//                       ^
-	// Use dirPathToCount to keep track of how many modules of this path has been seen (before the
+	// Use dirPathToRunningCount to keep track of how many modules of this path has been seen (before the
 	// current module) in this BufYAMLFile.
-	dirPathToCount := make(map[string]int)
+	dirPathToRunningCount := make(map[string]int)
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		numOfPrecedentModulesWithSamePath := dirPathToCount[moduleDirPath]
+		runningCount := dirPathToRunningCount[moduleDirPath]
 		// If n modules before this have DirPath, they would have indices [0, ..., n-1] and this module has index n.
-		bucketID := fmt.Sprintf("%s[%d]", moduleDirPath, numOfPrecedentModulesWithSamePath)
-		dirPathToCount[moduleDirPath]++
+		//
+		// Allowing up to 10000 buckets to share the same directory path while maintaining the property that bucketIDs
+		// can be sorted in the same order as in ModuleConfigs. Note that nothing actually relies on this property and
+		// it isn't documented, but it's nice for testing.
+		bucketID := fmt.Sprintf("%s-%05d", moduleDirPath, runningCount)
+		dirPathToRunningCount[moduleDirPath]++
 		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",

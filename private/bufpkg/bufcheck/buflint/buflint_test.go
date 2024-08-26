@@ -17,7 +17,9 @@ package buflint_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -1235,9 +1237,10 @@ func testLintWithOptions(
 	require.NoError(t, err)
 
 	// the module full name string represents the opaque ID of the module
-	opaqueID := moduleFullNameString
-	if opaqueID == "" {
-		opaqueID = "."
+	opaqueID, err := testGetRootOpaqueID(workspace, moduleFullNameString)
+	if err != nil {
+		opaqueID, err = testGetRootOpaqueID(workspace, ".")
+		require.NoError(t, err)
 	}
 
 	// build the image for the specified module string (opaqueID)
@@ -1272,5 +1275,22 @@ func testLintWithOptions(
 			expectedFileAnnotations,
 			fileAnnotationSet.FileAnnotations(),
 		)
+	}
+}
+
+func testGetRootOpaqueID(workspace bufworkspace.Workspace, prefix string) (string, error) {
+	var rootModules []bufmodule.Module
+	for _, module := range workspace.Modules() {
+		if strings.HasPrefix(module.OpaqueID(), prefix) {
+			rootModules = append(rootModules, module)
+		}
+	}
+	switch len(rootModules) {
+	case 0:
+		return "", fmt.Errorf("no module with opaque ID starting with %q", prefix)
+	case 1:
+		return rootModules[0].OpaqueID(), nil
+	default:
+		return "", fmt.Errorf("got %d modules with opaque ID starting with %q", len(rootModules), prefix)
 	}
 }

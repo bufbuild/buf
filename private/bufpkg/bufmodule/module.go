@@ -56,9 +56,6 @@ type Module interface {
 	// Modules commonly built from a ModuleSetBuilder.
 	//
 	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
-	//
-	// While this should not be relied upion, this ID is currently equal to the ModuleFullName,
-	// and if the ModuleFullName is not present, then the BucketID.
 	OpaqueID() string
 	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
 	// with via ModuleSetProvider.
