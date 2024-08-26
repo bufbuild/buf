@@ -89,7 +89,7 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	require.False(t, module.IsTarget())
-	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto-00001")
 	require.NotNil(t, module)
 	require.True(t, module.IsTarget())
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
@@ -277,23 +277,23 @@ func TestDuplicatePath(t *testing.T) {
 	require.NotNil(t, workspace.GetModuleForOpaqueID("buf.testing/acme/date"))
 	require.NotNil(t, workspace.GetModuleForOpaqueID("buf.testing/acme/extension"))
 
-	module := workspace.GetModuleForOpaqueID("proto/shared")
+	module := workspace.GetModuleForOpaqueID("proto/shared-00001")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/bar/v1/bar.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared//(the 2nd duplicate)")
+	module = workspace.GetModuleForOpaqueID("proto/shared-00002")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/foo/v1/foo.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared1")
+	module = workspace.GetModuleForOpaqueID("proto/shared1-00001")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/x/x.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared1//(the 2nd duplicate)")
+	module = workspace.GetModuleForOpaqueID("proto/shared1-00003")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/y/y.proto")
 
-	module = workspace.GetModuleForOpaqueID("separate")
+	module = workspace.GetModuleForOpaqueID("separate-00001")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "v1/separate.proto")
 }

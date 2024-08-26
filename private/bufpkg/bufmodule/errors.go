@@ -207,7 +207,7 @@ func (n *NoProtoFilesError) Error() string {
 		return ""
 	}
 	var builder strings.Builder
-	_, _ = builder.WriteString(`"`)
+	_, _ = builder.WriteString(`Module "`)
 	// Writing even if the error is malformed via d.ModuleDescription being empty.
 	_, _ = builder.WriteString(n.ModuleDescription)
 	_, _ = builder.WriteString(`" had no .proto files`)

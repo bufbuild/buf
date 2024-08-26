@@ -50,6 +50,7 @@ func (t *protoFileTracker) trackModule(module Module) {
 	if _, ok := t.opaqueIDToProtoFileExists[opaqueID]; !ok {
 		t.opaqueIDToProtoFileExists[opaqueID] = false
 	}
+	t.opaqueIDToDescription[opaqueID] = module.getDescription()
 }
 
 // trackFileInfo says to track the FileInfo to mark its associated Module as having .proto files

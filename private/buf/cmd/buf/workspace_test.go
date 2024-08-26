@@ -1245,7 +1245,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: "notexist" had no .proto files`),
+		filepath.FromSlash(`Failure: Module "path: "notexist"" had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "notexist"),
 	)
@@ -1254,7 +1254,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: "notexist" had no .proto files`),
+		filepath.FromSlash(`Failure: Module "path: "notexist"" had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "notexist"),
 	)
