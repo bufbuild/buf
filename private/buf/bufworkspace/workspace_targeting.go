@@ -63,7 +63,9 @@ type v2Targeting struct {
 }
 
 type moduleBucketAndModuleTargeting struct {
-	bucket          storage.ReadBucket
+	bucket storage.ReadBucket
+	// A bucketID, which uniquely identifies a moduleBucketAndModuleTargeting, is needed
+	// because in a v2 workspace multiple local modules may have the same DirPath.
 	bucketID        string
 	moduleTargeting *moduleTargeting
 }

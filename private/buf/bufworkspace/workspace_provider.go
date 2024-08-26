@@ -313,6 +313,9 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				return nil, err
 			}
 		}
+		// Each moduleBucketAndTargeting represents a local module that we want to add to the moduleSet,
+		// and we look up its moduleConfig by its bucketID, because that is guaranteed to be unique (technically,
+		// moduleDirPath is also unique in v1/v1beta1, but just to be extra safe).
 		moduleConfig, ok := v1WorkspaceTargeting.bucketIDToModuleConfig[moduleBucketAndTargeting.bucketID]
 		if !ok {
 			// This should not happen since moduleBucketAndTargeting is derived from the module
@@ -386,6 +389,9 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	for _, moduleBucketAndTargeting := range v2Targeting.moduleBucketsAndTargeting {
 		mappedModuleBucket := moduleBucketAndTargeting.bucket
 		moduleTargeting := moduleBucketAndTargeting.moduleTargeting
+		// Each moduleBucketAndTargeting represents a local module that we want to add to the moduleSet,
+		// and we look up its moduleConfig by its bucketID, because that is guaranteed to be unique (moduleDirPaths
+		// are not in a v2 workspace).
 		moduleConfig, ok := v2Targeting.bucketIDToModuleConfig[moduleBucketAndTargeting.bucketID]
 		if !ok {
 			// This should not happen since moduleBucketAndTargeting is derived from the module
