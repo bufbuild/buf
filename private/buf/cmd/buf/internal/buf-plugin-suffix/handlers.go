@@ -411,7 +411,7 @@ func mapEnumNameToEnumDescriptorForFilesAndNoChangeSuffixes(
 	files []check.File,
 	enumNoChangeSuffixes []string,
 ) map[string]protoreflect.EnumDescriptor {
-	var result map[string]protoreflect.EnumDescriptor
+	result := map[string]protoreflect.EnumDescriptor{}
 	for _, file := range files {
 		descriptor := file.FileDescriptor()
 		for i := 0; i < descriptor.Enums().Len(); i++ {
