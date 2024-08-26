@@ -23,7 +23,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
@@ -337,6 +340,13 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			),
 			bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(v1BufYAMLObjectData),
 			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData),
+			bufmodule.LocalModuleWithDescription(
+				getLocalModuleDescription(
+					// See comments on getLocalModuleDescription.
+					moduleBucketAndTargeting.bucketID,
+					moduleConfig,
+				),
+			),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
@@ -411,6 +421,13 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
 			),
+			bufmodule.LocalModuleWithDescription(
+				getLocalModuleDescription(
+					// See comments on getLocalModuleDescription.
+					moduleConfig.DirPath(),
+					moduleConfig,
+				),
+			),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
@@ -456,4 +473,41 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		configuredDepModuleRefs,
 		isV2,
 	), nil
+}
+
+// This formats a module name based on its module config entry in the v2 buf.yaml:
+// `path: foo, includes: ["foo/v1, "foo/v2"], excludes: "foo/v1/internal"`.
+//
+// For v1/v1beta1 modules, pathDescription should be bucketID.
+// For v2 modules, pathDescription should be moduleConfig.DirPath().
+//
+// We edit bucketIDs in v2 to include an index since directories can be overlapping.
+// We would want to use moduleConfig.DirPath() everywhere, but it is always "." in
+// v1/v1beta1, and it's not a good description.
+func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.ModuleConfig) string {
+	description := fmt.Sprintf("path: %q", pathDescription)
+	moduleDirPath := moduleConfig.DirPath()
+	relIncludePaths := moduleConfig.RootToIncludes()["."]
+	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
+		return normalpath.Join(moduleDirPath, relInclude)
+	})
+	switch len(includePaths) {
+	case 0:
+	case 1:
+		description = fmt.Sprintf("%s, includes: %q", description, includePaths[0])
+	default:
+		description = fmt.Sprintf("%s, includes: [%s]", description, stringutil.JoinSliceQuoted(includePaths, ", "))
+	}
+	relExcludePaths := moduleConfig.RootToExcludes()["."]
+	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
+		return normalpath.Join(moduleDirPath, relInclude)
+	})
+	switch len(excludePaths) {
+	case 0:
+	case 1:
+		description = fmt.Sprintf("%s, excludes: %q", description, excludePaths[0])
+	default:
+		description = fmt.Sprintf("%s, excludes: [%s]", description, stringutil.JoinSliceQuoted(excludePaths, ", "))
+	}
+	return description
 }

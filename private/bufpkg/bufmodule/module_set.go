@@ -251,6 +251,7 @@ func newModuleSet(
 ) (*moduleSet, error) {
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
 	opaqueIDToModule := make(map[string]Module, len(modules))
+	descriptionToModule := make(map[string]Module, len(modules))
 	bucketIDToModule := make(map[string]Module, len(modules))
 	commitIDToModule := make(map[uuid.UUID]Module, len(modules))
 	for _, module := range modules {
@@ -268,6 +269,12 @@ func newModuleSet(
 			return nil, syserror.Newf("duplicate OpaqueID %q when constructing ModuleSet", opaqueID)
 		}
 		opaqueIDToModule[opaqueID] = module
+		description := module.getDescription()
+		if _, ok := descriptionToModule[description]; ok {
+			// This should never happen if we construct descriptions appropriately.
+			return nil, syserror.Newf("duplicate Description %q when constructing ModuleSet", description)
+		}
+		descriptionToModule[description] = module
 		bucketID := module.BucketID()
 		if bucketID != "" {
 			if _, ok := bucketIDToModule[bucketID]; ok {
@@ -350,12 +357,12 @@ func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (
 }
 
 func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (_ Module, retErr error) {
-	matchingOpaqueIDs := make(map[string]struct{})
+	matchingOpaqueIDToModule := make(map[string]Module)
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
 	for _, module := range m.Modules() {
 		_, err := module.StatFileInfo(ctx, filePath)
 		if err == nil {
-			matchingOpaqueIDs[module.OpaqueID()] = struct{}{}
+			matchingOpaqueIDToModule[module.OpaqueID()] = module
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			// This is important! If we have any error other than fs.ErrNotExist, make sure we return that error.
 			// Not doing so results in important errors not being propagated. In the case where this was found,
@@ -364,7 +371,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 			return nil, err
 		}
 	}
-	switch len(matchingOpaqueIDs) {
+	switch len(matchingOpaqueIDToModule) {
 	case 0:
 		// This will happen if there is a file path we cannot find in our modules, which will result
 		// in an error on ModuleDeps() or Digest().
@@ -374,7 +381,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 		return nil, &fs.PathError{Op: "stat", Path: filePath, Err: fs.ErrNotExist}
 	case 1:
 		var matchingOpaqueID string
-		for matchingOpaqueID = range matchingOpaqueIDs {
+		for matchingOpaqueID = range matchingOpaqueIDToModule {
 		}
 		return m.GetModuleForOpaqueID(matchingOpaqueID), nil
 	default:
@@ -382,7 +389,12 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 		// The addition of opaqueID should give us clearer error messages than we have today.
 		return nil, &DuplicateProtoPathError{
 			ProtoPath: filePath,
-			OpaqueIDs: slicesext.MapKeysToSortedSlice(matchingOpaqueIDs),
+			ModuleDescriptions: slicesext.ToUniqueSorted(
+				slicesext.Map(
+					slicesext.MapValuesToSlice(matchingOpaqueIDToModule),
+					Module.getDescription,
+				),
+			),
 		}
 	}
 }

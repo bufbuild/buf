@@ -1,4 +1,14 @@
 version: v2
 modules:
   - path: other/proto
+    includes:
+      - other/proto/v1
+    excludes:
+      - other/proto/v1/inner
   - path: proto
+    includes:
+      - proto/v1
+      - proto/v2
+    excludes:
+      - proto/v1/inner
+      - proto/v2/inner
