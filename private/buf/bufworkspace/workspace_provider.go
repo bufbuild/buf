@@ -339,6 +339,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData),
 			bufmodule.LocalModuleWithDescription(
 				getLocalModuleDescription(
+					// See comments on getLocalModuleDescription.
 					moduleBucketAndTargeting.bucketID,
 					moduleConfig,
 				),
@@ -416,7 +417,8 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			),
 			bufmodule.LocalModuleWithDescription(
 				getLocalModuleDescription(
-					moduleBucketAndTargeting.bucketID,
+					// See comments on getLocalModuleDescription.
+					moduleConfig.DirPath(),
 					moduleConfig,
 				),
 			),
@@ -469,13 +471,15 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 
 // This formats a module name based on its module config entry in the v2 buf.yaml:
 // `path: foo, includes: ["foo/v1, "foo/v2"], excludes: "foo/v1/internal"`.
-func getLocalModuleDescription(bucketID string, moduleConfig bufconfig.ModuleConfig) string {
-	// We use bucketID instead of moduleConfig.DirPath() as the latter will always
-	// be "." for v1 Modules.
-	//
-	// Specifying this as "path" is somewhat breaking the API contract here, however
-	// we know we're only doing this for local modules.
-	description := fmt.Sprintf("path: %q", bucketID)
+//
+// For v1/v1beta1 modules, pathDescription should be bucketID.
+// For v2 modules, pathDescription should be moduleConfig.DirPath().
+//
+// We edit bucketIDs in v2 to include an index since directories can be overlapping.
+// We would want to use moduleConfig.DirPath() everywhere, but it is always "." in
+// v1/v1beta1, and it's not a good description.
+func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.ModuleConfig) string {
+	description := fmt.Sprintf("path: %q", pathDescription)
 	moduleDirPath := moduleConfig.DirPath()
 	relIncludePaths := moduleConfig.RootToIncludes()["."]
 	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
