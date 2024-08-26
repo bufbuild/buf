@@ -142,6 +142,7 @@ func (c *cloner) CloneToBucket(
 	// First, try to fetch the fetchRef directly. If the ref is not found, we
 	// will try to fetch the fallback ref with a depth to allow resolving partial
 	// refs locally. If the fetch fails, we will return an error.
+	var usedFallback bool
 	fetchRef, fallbackRef, checkoutRef := getRefspecsForName(options.Name)
 	buffer.Reset()
 	if err := c.runner.Run(
@@ -160,9 +161,10 @@ func (c *cloner) CloneToBucket(
 		command.RunWithDir(baseDir.AbsPath()),
 	); err != nil {
 		// If the ref fetch failed, without a fallback, return the error.
-		if fallbackRef == "" || !strings.Contains(buffer.String(), "couldn't find remote ref") {
+		if fallbackRef == "" {
 			return newGitCommandError(err, buffer)
 		}
+		usedFallback = true
 		// Failed to fetch the ref directly, try to fetch the fallback ref.
 		buffer.Reset()
 		if err := c.runner.Run(
@@ -197,7 +199,9 @@ func (c *cloner) CloneToBucket(
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
-	if checkoutRef != "" {
+	// Should checkout if the fallback was used or if the checkout ref is different
+	// from the fetch ref.
+	if checkoutRef != "" && (usedFallback || checkoutRef != fetchRef) {
 		buffer.Reset()
 		if err := c.runner.Run(
 			ctx,
@@ -354,7 +358,7 @@ func getRefspecsForName(gitName Name) (fetchRef string, fallbackRef string, chec
 	} else if checkout != "" && checkout != "HEAD" {
 		// If a checkout ref is specified, we fetch the ref directly.
 		// We fallback to fetching the HEAD to resolve partial refs.
-		return checkout, "HEAD", ""
+		return checkout, "HEAD", checkout
 	}
 	return "HEAD", "", ""
 }

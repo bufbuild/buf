@@ -199,6 +199,26 @@ func TestGitCloner(t *testing.T) {
 		_, err = readBucket.Stat(ctx, "nonexistent")
 		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
+	t.Run("HEAD~", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 2, NewRefName("HEAD~"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 1", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
+	t.Run("HEAD~1", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, runner, workDir, 2, NewRefName("HEAD~1"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 1", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
 
 	t.Run("commit-local", func(t *testing.T) {
 		t.Parallel()
