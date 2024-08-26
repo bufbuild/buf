@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -89,7 +90,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 			func(ctx context.Context) error {
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
-					return err
+					return fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 				}
 				lock.Lock()
 				annotations := slicesext.Map(
@@ -143,7 +144,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	for i, delegate := range c.checkClientSpecs {
 		delegateCheckRules, err := delegate.Client.ListRules(ctx)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 		}
 		delegateRules := slicesext.Map(
 			delegateCheckRules,
@@ -159,7 +160,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	for i, delegate := range c.checkClientSpecs {
 		delegateCheckCategories, err := delegate.Client.ListCategories(ctx)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 		}
 		delegateCategories := slicesext.Map(
 			delegateCheckCategories,
