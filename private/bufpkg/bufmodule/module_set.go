@@ -56,10 +56,6 @@ type ModuleSet interface {
 	// as the OpaqueID came from a Module contained within Modules(), this will always
 	// return a non-nil value.
 	GetModuleForOpaqueID(opaqueID string) Module
-	// GetModuleForBucketID gets the Module for the BucketID, if it exists.
-	//
-	// Returns nil if there is no Module with the given BucketID.
-	GetModuleForBucketID(bucketID string) Module
 	// GetModuleForCommitID gets the Module for the CommitID, if it exists.
 	//
 	// Returns nil if there is no Module with the given CommitID.
@@ -235,7 +231,6 @@ type moduleSet struct {
 	modules                      []Module
 	moduleFullNameStringToModule map[string]Module
 	opaqueIDToModule             map[string]Module
-	bucketIDToModule             map[string]Module
 	commitIDToModule             map[uuid.UUID]Module
 
 	// filePathToModule is a cache of filePath -> module.
@@ -252,7 +247,6 @@ func newModuleSet(
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
 	opaqueIDToModule := make(map[string]Module, len(modules))
 	descriptionToModule := make(map[string]Module, len(modules))
-	bucketIDToModule := make(map[string]Module, len(modules))
 	commitIDToModule := make(map[uuid.UUID]Module, len(modules))
 	for _, module := range modules {
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
@@ -275,14 +269,6 @@ func newModuleSet(
 			return nil, syserror.Newf("duplicate Description %q when constructing ModuleSet", description)
 		}
 		descriptionToModule[description] = module
-		bucketID := module.BucketID()
-		if bucketID != "" {
-			if _, ok := bucketIDToModule[bucketID]; ok {
-				// This should never happen.
-				return nil, syserror.Newf("duplicate BucketID %q when constructing ModuleSet", bucketID)
-			}
-			bucketIDToModule[bucketID] = module
-		}
 		commitID := module.CommitID()
 		if !commitID.IsNil() {
 			if _, ok := commitIDToModule[commitID]; ok {
@@ -297,7 +283,6 @@ func newModuleSet(
 		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
-		bucketIDToModule:             bucketIDToModule,
 		commitIDToModule:             commitIDToModule,
 	}
 	for _, module := range modules {
@@ -318,10 +303,6 @@ func (m *moduleSet) GetModuleForModuleFullName(moduleFullName ModuleFullName) Mo
 
 func (m *moduleSet) GetModuleForOpaqueID(opaqueID string) Module {
 	return m.opaqueIDToModule[opaqueID]
-}
-
-func (m *moduleSet) GetModuleForBucketID(bucketID string) Module {
-	return m.bucketIDToModule[bucketID]
 }
 
 func (m *moduleSet) GetModuleForCommitID(commitID uuid.UUID) Module {

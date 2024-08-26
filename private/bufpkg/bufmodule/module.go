@@ -57,27 +57,10 @@ type Module interface {
 	//
 	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
 	OpaqueID() string
-	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
-	// with via ModuleSetProvider.
-	//
-	// A BucketID will be unique within a given ModuleSet.
-	//
-	// A BucketID's structure should not be relied upon, and is not a globally-unique identifier.
-	// It's uniqueness property only applies to the lifetime of the Module, and only within
-	// Modules commonly built from a ModuleSetBuilder.
-	//
-	// A BucketID may contain information on local directory structure, so do not log or print it
-	// in contexts where such information may be sensitive.
-	//
-	// May be empty if a Module was not constructed with a Bucket via a ModuleSetProvider.
-	BucketID() string
 	// ModuleFullName returns the full name of the Module.
 	//
 	// May be nil. Callers should not rely on this value being present.
 	// However, this is always present for remote Modules.
-	//
-	// At least one of ModuleFullName and BucketID will always be present. Use OpaqueID
-	// as an always-present identifier.
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
@@ -170,6 +153,20 @@ type Module interface {
 	// Called in newModuleSet.
 	setModuleSet(ModuleSet)
 
+	// getBucketID is an unstructured ID that represents the Bucket that this Module was constructed
+	// with via ModuleSetProvider.
+	//
+	// A BucketID will be unique within a given ModuleSet.
+	//
+	// A BucketID's structure should not be relied upon, and is not a globally-unique identifier.
+	// It's uniqueness property only applies to the lifetime of the Module, and only within
+	// Modules commonly built from a ModuleSetBuilder.
+	//
+	// A BucketID may contain information on local directory structure, so do not log or print it
+	// in contexts where such information may be sensitive.
+	//
+	// May be empty if a Module was not constructed with a Bucket via a ModuleSetProvider.
+	getBucketID() string
 	// getDescription returns a human-readable description of the Module.
 	//
 	// This can be manually set by a constructor of a Module. In practice, the only current way
@@ -346,7 +343,7 @@ func (m *module) OpaqueID() string {
 	return m.bucketID
 }
 
-func (m *module) BucketID() string {
+func (m *module) getBucketID() string {
 	return m.bucketID
 }
 
