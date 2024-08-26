@@ -76,10 +76,15 @@ func (t *protoFileTracker) validate() error {
 	var noProtoFilesErrors []*NoProtoFilesError
 	for opaqueID, protoFileExists := range t.opaqueIDToProtoFileExists {
 		if !protoFileExists {
+			description, ok := t.opaqueIDToDescription[opaqueID]
+			if !ok {
+				// This should never happen, but we want to make sure we return an error.
+				description = opaqueID
+			}
 			noProtoFilesErrors = append(
 				noProtoFilesErrors,
 				&NoProtoFilesError{
-					OpaqueID: opaqueID,
+					ModuleDescription: description,
 				},
 			)
 		}
@@ -109,7 +114,7 @@ func (t *protoFileTracker) validate() error {
 		sort.Slice(
 			noProtoFilesErrors,
 			func(i int, j int) bool {
-				return noProtoFilesErrors[i].OpaqueID < noProtoFilesErrors[j].OpaqueID
+				return noProtoFilesErrors[i].ModuleDescription < noProtoFilesErrors[j].ModuleDescription
 			},
 		)
 		sort.Slice(

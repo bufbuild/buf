@@ -195,10 +195,10 @@ func (d *DuplicateProtoPathError) Error() string {
 //
 // This check is done as part of ModuleReadBucket.Walks.
 type NoProtoFilesError struct {
-	// OpaqueID is the OpaqueID of the Module that has no .proto files.
+	// ModuleDescription is the description of the Module that has no .proto files.
 	//
-	// A well-formed NoProtoFilesError will have a non-empty OpaqueID.
-	OpaqueID string
+	// A well-formed NoProtoFilesError will have a non-empty ModuleDescription.
+	ModuleDescription string
 }
 
 // Error implements the error interface.
@@ -208,8 +208,8 @@ func (n *NoProtoFilesError) Error() string {
 	}
 	var builder strings.Builder
 	_, _ = builder.WriteString(`"`)
-	// Writing even if the error is malformed via d.OpaqueID being empty.
-	_, _ = builder.WriteString(n.OpaqueID)
+	// Writing even if the error is malformed via d.ModuleDescription being empty.
+	_, _ = builder.WriteString(n.ModuleDescription)
 	_, _ = builder.WriteString(`" had no .proto files`)
 	return builder.String()
 }
