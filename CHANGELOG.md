@@ -22,7 +22,6 @@
   * If both `includes` and `excludes` keys are specified for a module, a proto file is considered
     part of this module if it is contained in any of the include paths and not in any of the exclude
     paths.
-  * This key does not affect license files or documentation files, e.g. `README.md`.
 - Allow multiple module configurations in the same v2 `buf.yaml` to have the same directory path.
 
 ## [v1.37.0] - 2024-08-16
