@@ -47,11 +47,17 @@ type Client interface {
 	//
 	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
 	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
+	// ConfiguredRules returns all of the Configured Rules for the given RuleType.
 	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig, options ...ConfiguredRulesOption) ([]Rule, error)
+	// AllRules returns all Rules (configured or not) for the given RuleType.
 	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion, options ...AllRulesOption) ([]Rule, error)
+	// AllCategories returns all Categories.
 	AllCategories(ctx context.Context, fileVersion bufconfig.FileVersion, options ...AllCategoriesOption) ([]Category, error)
 }
 
+// Rule is an individual line or breaking Rule.
+//
+// It wraps check.Rule and adds the name of the plugin that implements the Rule.
 type Rule interface {
 	check.Rule
 
@@ -66,8 +72,12 @@ type Rule interface {
 	PluginName() string
 
 	isRule()
+	isRuleOrCategory()
 }
 
+// Category is an individual line or breaking Category.
+//
+// It wraps check.Category and adds the name of the plugin that implements the Category.
 type Category interface {
 	check.Category
 
@@ -79,33 +89,55 @@ type Category interface {
 	PluginName() string
 
 	isCategory()
+	isRuleOrCategory()
 }
 
+// RuleOrCategory is a union interface with the common types in both Rule and Category.
+type RuleOrCategory interface {
+	ID() string
+	Purpose() string
+	Deprecated() bool
+	ReplacementIDs() []string
+	PluginName() string
+
+	isRuleOrCategory()
+}
+
+// LintOption is an option for Lint.
 type LintOption interface {
 	applyToLint(*lintOptions)
 }
 
+// BreakingOption is an option for Breaking.
 type BreakingOption interface {
 	applyToBreaking(*breakingOptions)
 }
 
+// BreakingWithExcludeImports returns a new BreakingOption that says to exclude imports from
+// breaking change detection.
+//
+// The default is to check imports for breaking changes.
 func BreakingWithExcludeImports() BreakingOption {
 	return &excludeImportsOption{}
 }
 
+// ConfiguredRulesOption is an option for ConfiguredRules.
 type ConfiguredRulesOption interface {
 	applyToConfiguredRules(*configuredRulesOptions)
 }
 
+// AllRulesOption is an option for AllRules.
 type AllRulesOption interface {
 	applyToAllRules(*allRulesOptions)
 }
 
+// AllCategoriesOption is an option for AllCategories.
 type AllCategoriesOption interface {
 	applyToAllCategories(*allCategoriesOptions)
 }
 
-type PluginOption interface {
+// ClientFunctionOption is an option that applies to any Client function.
+type ClientFunctionOption interface {
 	LintOption
 	BreakingOption
 	ConfiguredRulesOption
@@ -113,12 +145,16 @@ type PluginOption interface {
 	AllCategoriesOption
 }
 
-func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) PluginOption {
+// WithPluginConfigs returns a new ClientFunctionOption that says to also use the given plugins.
+//
+// The default is to only use the builtin Rules and Categories.
+func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOption {
 	return &pluginConfigsOption{
 		pluginConfigs: pluginConfigs,
 	}
 }
 
+// NewClient returns a new Client.
 func NewClient(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
@@ -128,8 +164,12 @@ func NewClient(
 	return newClient(logger, tracer, runner, options...)
 }
 
+// ClientOption is an option for a new Client.
 type ClientOption func(*clientOptions)
 
+// ClientWithStderr returns a new ClientOption that specifies a stderr to proxy plugin stderrs to.
+//
+// The default is the equivalent of /dev/null.
 func ClientWithStderr(stderr io.Writer) ClientOption {
 	return func(clientOptions *clientOptions) {
 		clientOptions.stderr = stderr
@@ -161,24 +201,24 @@ func PrintRulesWithDeprecated() PrintRulesOption {
 }
 
 // GetDeprecatedIDToReplacementIDs gets a map from deprecated ID to replacement IDs.
-func GetDeprecatedIDToReplacementIDs(rules []Rule) (map[string][]string, error) {
-	idToRule, err := slicesext.ToUniqueValuesMap(rules, Rule.ID)
+func GetDeprecatedIDToReplacementIDs[R RuleOrCategory](rulesOrCategories []R) (map[string][]string, error) {
+	idToRuleOrCategory, err := slicesext.ToUniqueValuesMap(rulesOrCategories, func(ruleOrCategory R) string { return ruleOrCategory.ID() })
 	if err != nil {
 		return nil, err
 	}
 	idToReplacementIDs := make(map[string][]string)
-	for _, rule := range rules {
-		if rule.Deprecated() {
-			replacementIDs := rule.ReplacementIDs()
+	for _, ruleOrCategory := range rulesOrCategories {
+		if ruleOrCategory.Deprecated() {
+			replacementIDs := ruleOrCategory.ReplacementIDs()
 			if replacementIDs == nil {
 				replacementIDs = []string{}
 			}
 			for _, replacementID := range replacementIDs {
-				if _, ok := idToRule[replacementID]; !ok {
-					return nil, syserror.Newf("unknown rule ID given as a replacement ID: %q", replacementID)
+				if _, ok := idToRuleOrCategory[replacementID]; !ok {
+					return nil, syserror.Newf("unknown rule or category ID given as a replacement ID: %q", replacementID)
 				}
 			}
-			idToReplacementIDs[rule.ID()] = replacementIDs
+			idToReplacementIDs[ruleOrCategory.ID()] = replacementIDs
 		}
 	}
 	return idToReplacementIDs, nil

@@ -192,7 +192,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 }
 
 func validateNoDuplicateRulesOrCategories(rules []Rule, categories []Category) error {
-	idToRuleOrCategories := make(map[string][]ruleOrCategory)
+	idToRuleOrCategories := make(map[string][]RuleOrCategory)
 	for _, rule := range rules {
 		idToRuleOrCategories[rule.ID()] = append(
 			idToRuleOrCategories[rule.ID()],
@@ -217,11 +217,11 @@ func validateNoDuplicateRulesOrCategories(rules []Rule, categories []Category) e
 }
 
 type duplicateRuleOrCategoryError struct {
-	duplicateIDToRuleOrCategories map[string][]ruleOrCategory
+	duplicateIDToRuleOrCategories map[string][]RuleOrCategory
 }
 
 func newDuplicateRuleOrCategoryError(
-	duplicateIDToRuleOrCategories map[string][]ruleOrCategory,
+	duplicateIDToRuleOrCategories map[string][]RuleOrCategory,
 ) *duplicateRuleOrCategoryError {
 	return &duplicateRuleOrCategoryError{
 		duplicateIDToRuleOrCategories: duplicateIDToRuleOrCategories,
@@ -256,7 +256,7 @@ func (d *duplicateRuleOrCategoryError) Error() string {
 			strings.Join(
 				slicesext.Map(
 					ruleOrCategories,
-					func(ruleOrCategory ruleOrCategory) string {
+					func(ruleOrCategory RuleOrCategory) string {
 						if pluginName := ruleOrCategory.PluginName(); pluginName != "" {
 							return pluginName
 						}

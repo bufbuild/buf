@@ -24,14 +24,8 @@ github.com/Microsoft/hcsshim v0.12.6 h1:qEnZjoHXv+4/s0LmKZWE0/AiZmMWEIkFfWBSf1a0
 github.com/Microsoft/hcsshim v0.12.6/go.mod h1:ZABCLVcvLMjIkzr9rUGcQ1QA0p0P3Ps+d3N1g2DsFfk=
 github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYWrPrQ=
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
-github.com/bufbuild/bufplugin-go v0.0.0-20240826155037-ce67b27adc46 h1:QsZuzLBJGEd/D/EpUOP83jSnmM3bblJRNyD2UWMdTOo=
-github.com/bufbuild/bufplugin-go v0.0.0-20240826155037-ce67b27adc46/go.mod h1:cNxFK9jSlPQXgJ7fa85oA41ZCC7Q9X5lvvqNK4rbt4k=
-github.com/bufbuild/bufplugin-go v0.0.0-20240826162417-7af8e7cb1a1e h1:R7ZLKToGaZ1ZQ7/Ax7qsgPF8go1ho7bijnVPAY/ovhY=
-github.com/bufbuild/bufplugin-go v0.0.0-20240826162417-7af8e7cb1a1e/go.mod h1:O5/1OqxjEwZ8YZtlGSkiTzmlXQiNm2JHa1gL2rhPYNo=
 github.com/bufbuild/bufplugin-go v0.0.0-20240826162905-8f83b46df45f h1:b130DGE4gn8c6/QVJumVbc6Q4Vkwqm8hlEZDvvPduFc=
 github.com/bufbuild/bufplugin-go v0.0.0-20240826162905-8f83b46df45f/go.mod h1:O5/1OqxjEwZ8YZtlGSkiTzmlXQiNm2JHa1gL2rhPYNo=
-github.com/bufbuild/pluginrpc-go v0.0.0-20240826152401-93490256bebb h1:eqrmEwEdokvwTGura/2oaOXK6ppDJ/vykhykVq3I7J0=
-github.com/bufbuild/pluginrpc-go v0.0.0-20240826152401-93490256bebb/go.mod h1:s4M/f4p++3+SKNVNtApV/scAFfD5b+C5QHTmA3jthp0=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240826160113-f2c17c00e78e h1:RBZwQWada+rEG4mIpUVvGXWmUP4wiSWsHYjtYMzo0/4=
 github.com/bufbuild/pluginrpc-go v0.0.0-20240826160113-f2c17c00e78e/go.mod h1:s4M/f4p++3+SKNVNtApV/scAFfD5b+C5QHTmA3jthp0=
 github.com/bufbuild/protocompile v0.14.0 h1:z3DW4IvXE5G/uTOnSQn+qwQQxvhckkTWLS/0No/o7KU=

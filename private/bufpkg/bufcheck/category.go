@@ -18,6 +18,7 @@ import "github.com/bufbuild/bufplugin-go/check"
 
 var _ check.Category = &category{}
 var _ Category = &category{}
+var _ RuleOrCategory = &category{}
 
 type category struct {
 	check.Category
@@ -36,4 +37,5 @@ func (r *category) PluginName() string {
 	return r.pluginName
 }
 
-func (*category) isCategory() {}
+func (*category) isCategory()       {}
+func (*category) isRuleOrCategory() {}

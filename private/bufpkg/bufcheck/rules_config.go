@@ -118,16 +118,12 @@ func newRulesConfig(
 		return nil, err
 	}
 	// Contains all rules, not referenced rules.
-	deprecatedRuleIDToReplacementRuleIDs, err := getDeprecatedIDToReplacementIDs(ruleIDToRule)
-	if err != nil {
-		return nil, err
-	}
-	categoryIDToCategory, err := getIDToRuleOrCategory(allCategories)
+	deprecatedRuleIDToReplacementRuleIDs, err := GetDeprecatedIDToReplacementIDs(allRules)
 	if err != nil {
 		return nil, err
 	}
 	// Contains all categories, not referenced categories.
-	deprecatedCategoryIDToReplacementCategoryIDs, err := getDeprecatedIDToReplacementIDs(categoryIDToCategory)
+	deprecatedCategoryIDToReplacementCategoryIDs, err := GetDeprecatedIDToReplacementIDs(allCategories)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +294,7 @@ func warnReferencedDeprecatedIDsForIDType(
 	}
 }
 
-func getIDToRuleOrCategory[R ruleOrCategory](ruleOrCategories []R) (map[string]R, error) {
+func getIDToRuleOrCategory[R RuleOrCategory](ruleOrCategories []R) (map[string]R, error) {
 	m := make(map[string]R)
 	for _, ruleOrCategory := range ruleOrCategories {
 		if _, ok := m[ruleOrCategory.ID()]; ok {
@@ -394,28 +390,6 @@ func transformRuleOrCategoryIDToIgnoreRootPathsToRuleIDs(
 		}
 	}
 	return ruleIDToIgnoreRootPaths, nil
-}
-
-// []string{} as a value represents that the ID is deprecated but has no replacements.
-func getDeprecatedIDToReplacementIDs[R ruleOrCategory](
-	idToRuleOrCategory map[string]R,
-) (map[string][]string, error) {
-	m := make(map[string][]string)
-	for _, ruleOrCategory := range idToRuleOrCategory {
-		if ruleOrCategory.Deprecated() {
-			replacementIDs := ruleOrCategory.ReplacementIDs()
-			if replacementIDs == nil {
-				replacementIDs = []string{}
-			}
-			for _, replacementID := range replacementIDs {
-				if _, ok := idToRuleOrCategory[replacementID]; !ok {
-					return nil, syserror.Newf("unknown rule or category given as a replacement ID: %q", replacementID)
-				}
-			}
-			m[ruleOrCategory.ID()] = replacementIDs
-		}
-	}
-	return m, nil
 }
 
 func transformRuleIDsToUndeprecated(

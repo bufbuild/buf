@@ -21,6 +21,7 @@ import (
 
 var _ check.Rule = &rule{}
 var _ Rule = &rule{}
+var _ RuleOrCategory = &rule{}
 
 type rule struct {
 	check.Rule
@@ -48,7 +49,8 @@ func (r *rule) PluginName() string {
 	return r.pluginName
 }
 
-func (*rule) isRule() {}
+func (*rule) isRule()           {}
+func (*rule) isRuleOrCategory() {}
 
 // Returns Rules in same order as in allRules.
 func rulesForType[R check.Rule](allRules []R, ruleType check.RuleType) []R {
