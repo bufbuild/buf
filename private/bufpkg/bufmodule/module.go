@@ -88,6 +88,23 @@ type Module interface {
 	//
 	// If ModuleFullName is nil, this will always be empty.
 	CommitID() uuid.UUID
+	// Description returns a human-readable description of the Module.
+	//
+	// This can be manually set by a constructor of a Module. In practice, the only current way
+	// to specifically set this string is by calling LocalModuleWithDescription when constructing
+	// a ModuleSet.
+	//
+	// This is used to construct descriptive error messages pointing to configured modules.
+	// For example, this may return something along the lines of:
+	//
+	//   path: proto/foo, includes; ["a", "b"], excludes: "c"
+	//
+	// The shape of this field should not be relied upon.
+	// This field will be unique within a given ModuleSet.
+	//
+	// This will never be empty. If a description was not explicitly set, this falls back to
+	// OpaqueID.
+	Description() string
 
 	// Digest returns the Module digest for the given DigestType.
 	//
@@ -169,24 +186,6 @@ type Module interface {
 
 	// Called in newModuleSet.
 	setModuleSet(ModuleSet)
-
-	// Description returns a human-readable description of the Module.
-	//
-	// This can be manually set by a constructor of a Module. In practice, the only current way
-	// to specifically set this string is by calling LocalModuleWithDescription when constructing
-	// a ModuleSet.
-	//
-	// This is used to construct descriptive error messages pointing to configured modules.
-	// For example, this may return something along the lines of:
-	//
-	//   path: proto/foo, includes; ["a", "b"], excludes: "c"
-	//
-	// The shape of this field should not be relied upon.
-	// This field will be unique within a given ModuleSet.
-	//
-	// This will never be empty. If a description was not explicitly set, this falls back to
-	// OpaqueID.
-	Description() string
 
 	// withIsTarget returns a copy of the Module with the specified target value.
 	//
