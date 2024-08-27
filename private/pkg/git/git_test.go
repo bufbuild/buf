@@ -288,6 +288,19 @@ func TestGitCloner(t *testing.T) {
 		_, err = readBucket.Stat(ctx, "nonexistent")
 		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
+	t.Run("ref=<partial-commit>,branch=origin/remote-branch", func(t *testing.T) {
+		t.Parallel()
+		revParseBytes, err := command.RunStdout(ctx, container, runner, "git", "-C", originDir, "rev-parse", "remote-branch~")
+		require.NoError(t, err)
+		partialRef := strings.TrimSpace(string(revParseBytes))[:8]
+		readBucket := readBucketForName(ctx, t, runner, workDir, 2, NewRefNameWithBranch(partialRef, "origin/remote-branch"), false)
+
+		content, err := storage.ReadPath(ctx, readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 3", string(content))
+		_, err = readBucket.Stat(ctx, "nonexistent")
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
+	})
 }
 
 func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner, path string, depth uint32, name Name, recurseSubmodules bool) storage.ReadBucket {
