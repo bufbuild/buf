@@ -89,19 +89,11 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	require.False(t, module.IsTarget())
-	if isV2 {
-		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto-00001")
-	} else {
-		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
-	}
+	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
 	require.NotNil(t, module)
 	require.True(t, module.IsTarget())
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
 	require.NoError(t, err)
-	expectedPortfoliKey := "finance/portfolio/proto"
-	if isV2 {
-		expectedPortfoliKey = "finance/portfolio/proto-00001"
-	}
 	dagtest.RequireGraphEqual(
 		t,
 		[]dagtest.ExpectedNode[string]{
@@ -129,7 +121,7 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 				},
 			},
 			{
-				Key: expectedPortfoliKey,
+				Key: "finance/portfolio/proto",
 				Outbound: []string{
 					"buf.testing/acme/bond",
 					"buf.testing/acme/extension",
@@ -284,23 +276,23 @@ func TestDuplicatePath(t *testing.T) {
 	require.NotNil(t, workspace.GetModuleForOpaqueID("buf.testing/acme/date"))
 	require.NotNil(t, workspace.GetModuleForOpaqueID("buf.testing/acme/extension"))
 
-	module := workspace.GetModuleForOpaqueID("proto/shared-00001")
+	module := workspace.GetModuleForOpaqueID("proto/shared")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/bar/v1/bar.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared-00002")
+	module = workspace.GetModuleForOpaqueID("proto/shared-2")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/foo/v1/foo.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared1-00001")
+	module = workspace.GetModuleForOpaqueID("proto/shared1")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/x/x.proto")
 
-	module = workspace.GetModuleForOpaqueID("proto/shared1-00002")
+	module = workspace.GetModuleForOpaqueID("proto/shared1-2")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "prefix/y/y.proto")
 
-	module = workspace.GetModuleForOpaqueID("separate-00001")
+	module = workspace.GetModuleForOpaqueID("separate")
 	require.NotNil(t, module)
 	requireModuleContainFileNames(t, module, "v1/separate.proto")
 }
@@ -380,11 +372,7 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, i
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	}
 
-	if isV2 {
-		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto-00001")
-	} else {
-		module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
-	}
+	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
 	require.NotNil(t, module)
 	// portfolio does not have its own license or doc
 	if isV2 {
