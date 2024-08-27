@@ -377,7 +377,7 @@ func TestModuleCycleError(t *testing.T) {
 			"buf.build/foo/c",
 			"buf.build/foo/a",
 		},
-		moduleCycleError.OpaqueIDs,
+		moduleCycleError.Descriptions,
 	)
 
 	moduleB := moduleSet.GetModuleForOpaqueID("buf.build/foo/b")
@@ -394,7 +394,7 @@ func TestModuleCycleError(t *testing.T) {
 			"buf.build/foo/a",
 			"buf.build/foo/b",
 		},
-		moduleCycleError.OpaqueIDs,
+		moduleCycleError.Descriptions,
 	)
 
 	moduleC := moduleSet.GetModuleForOpaqueID("buf.build/foo/c")
@@ -411,7 +411,7 @@ func TestModuleCycleError(t *testing.T) {
 			"buf.build/foo/b",
 			"buf.build/foo/c",
 		},
-		moduleCycleError.OpaqueIDs,
+		moduleCycleError.Descriptions,
 	)
 }
 

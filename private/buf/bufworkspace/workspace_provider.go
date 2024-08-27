@@ -396,6 +396,17 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			)
 		}
 	}
+	// Only check for duplicate module description in v2, which would be an user error, i.e.
+	// This is not a system error:
+	// modules:
+	//   - path: proto
+	//     excludes:
+	//       - proot/foo
+	//   - path: proto
+	//     excludes:
+	//       - proot/foo
+	// but duplicate module description in v1 is a system error, which the ModuleSetBuilder catches.
+	seenModuleDescriptions := make(map[string]struct{})
 	for _, moduleBucketAndTargeting := range v2Targeting.moduleBucketsAndTargeting {
 		mappedModuleBucket := moduleBucketAndTargeting.bucket
 		moduleTargeting := moduleBucketAndTargeting.moduleTargeting
@@ -408,6 +419,15 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			// configs, however, we return this error as a safety check
 			return nil, fmt.Errorf("no module config found for module at: %q", moduleTargeting.moduleDirPath)
 		}
+		moduleDescription := getLocalModuleDescription(
+			// See comments on getLocalModuleDescription.
+			moduleConfig.DirPath(),
+			moduleConfig,
+		)
+		if _, ok := seenModuleDescriptions[moduleDescription]; ok {
+			return nil, fmt.Errorf("multiple module configs found with the same description: %s", moduleDescription)
+		}
+		seenModuleDescriptions[moduleDescription] = struct{}{}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleBucketAndTargeting.bucketID,
@@ -421,13 +441,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
 			),
-			bufmodule.LocalModuleWithDescription(
-				getLocalModuleDescription(
-					// See comments on getLocalModuleDescription.
-					moduleConfig.DirPath(),
-					moduleConfig,
-				),
-			),
+			bufmodule.LocalModuleWithDescription(moduleDescription),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()

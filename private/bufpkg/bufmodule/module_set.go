@@ -269,7 +269,7 @@ func newModuleSet(
 			return nil, syserror.Newf("duplicate OpaqueID %q when constructing ModuleSet", opaqueID)
 		}
 		opaqueIDToModule[opaqueID] = module
-		description := module.getDescription()
+		description := module.Description()
 		if _, ok := descriptionToModule[description]; ok {
 			// This should never happen if we construct descriptions appropriately.
 			return nil, syserror.Newf("duplicate Description %q when constructing ModuleSet", description)
@@ -392,7 +392,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 			ModuleDescriptions: slicesext.ToUniqueSorted(
 				slicesext.Map(
 					slicesext.MapValuesToSlice(matchingOpaqueIDToModule),
-					Module.getDescription,
+					Module.Description,
 				),
 			),
 		}

@@ -112,23 +112,31 @@ func (a *uploader) Upload(
 	contentModules, err = slicesext.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
 		moduleName := module.ModuleFullName()
 		if moduleName == nil {
+			moduleDescription := module.Description()
 			if uploadOptions.ExcludeUnnamed() {
-				a.logger.Warn("Excluding unnamed module", zap.String("module", module.OpaqueID()))
+				a.logger.Warn("Excluding unnamed module", zap.String("module", moduleDescription))
 				return false, nil
 			}
-			return false, fmt.Errorf("A name must be specified in buf.yaml to push module %q.", module.OpaqueID())
+			return false, fmt.Errorf("a name must be specified in buf.yaml to push module: %s", moduleDescription)
 		}
 		deps, err := module.ModuleDeps()
 		if err != nil {
 			return false, err
 		}
-		if allDepModuleOpaqueIDs := slicesext.Reduce(deps, func(allDepModuleOpaqueIDs []string, dep bufmodule.ModuleDep) []string {
+		if allDepModuleDescriptions := slicesext.Reduce(deps, func(allDepModuleDescriptions []string, dep bufmodule.ModuleDep) []string {
 			if moduleName := dep.ModuleFullName(); moduleName == nil {
-				return append(allDepModuleOpaqueIDs, dep.OpaqueID())
+				return append(allDepModuleDescriptions, dep.Description())
 			}
-			return allDepModuleOpaqueIDs
-		}, nil); len(allDepModuleOpaqueIDs) > 0 {
-			return false, fmt.Errorf("All dependencies for module %q must be named but modules %s had no name.", moduleName.String(), strings.Join(allDepModuleOpaqueIDs, ", "))
+			return allDepModuleDescriptions
+		}, nil); len(allDepModuleDescriptions) > 0 {
+			return false, fmt.Errorf(
+				"all dependencies for module %q must be named but these modules are not:\n%s",
+				moduleName.String(),
+				strings.Join(
+					slicesext.Map(allDepModuleDescriptions, func(moduleDescription string) string { return "  " + moduleDescription }),
+					"\n",
+				),
+			)
 		}
 		return true, nil
 	})
@@ -449,7 +457,7 @@ func getV1Beta1ProtoUploadRequestContent(
 		return nil, syserror.New("expected local Module in getProtoLegacyFederationUploadRequestContent")
 	}
 	if module.ModuleFullName() == nil {
-		return nil, syserror.Newf("expected module name for local module %q", module.OpaqueID())
+		return nil, syserror.Newf("expected module name for local module: %s", module.Description())
 	}
 	if module.ModuleFullName().Registry() != primaryRegistry {
 		// This should never happen - the upload Modules should already be verified above to come from one registry.

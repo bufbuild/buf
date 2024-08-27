@@ -50,7 +50,7 @@ func (t *protoFileTracker) trackModule(module Module) {
 	if _, ok := t.opaqueIDToProtoFileExists[opaqueID]; !ok {
 		t.opaqueIDToProtoFileExists[opaqueID] = false
 	}
-	t.opaqueIDToDescription[opaqueID] = module.getDescription()
+	t.opaqueIDToDescription[opaqueID] = module.Description()
 }
 
 // trackFileInfo says to track the FileInfo to mark its associated Module as having .proto files
@@ -69,7 +69,7 @@ func (t *protoFileTracker) trackFileInfo(fileInfo FileInfo) {
 		t.protoPathToOpaqueIDMap[fileInfo.Path()] = protoPathOpaqueIDMap
 	}
 	protoPathOpaqueIDMap[opaqueID] = struct{}{}
-	t.opaqueIDToDescription[opaqueID] = module.getDescription()
+	t.opaqueIDToDescription[opaqueID] = module.Description()
 }
 
 // validate validates. This should be called when all tracking is complete.
