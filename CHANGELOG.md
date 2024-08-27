@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.39.0] - 2024-08-27
 
 - Fix git input handling of relative HEAD refs without branch names.
 - Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
@@ -1228,7 +1228,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.38.0...HEAD
+[v1.39.0]: https://github.com/bufbuild/buf/compare/v1.38.0...v1.39.0
 [v1.38.0]: https://github.com/bufbuild/buf/compare/v1.37.0...v1.38.0
 [v1.37.0]: https://github.com/bufbuild/buf/compare/v1.36.0...v1.37.0
 [v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
