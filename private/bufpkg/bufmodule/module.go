@@ -170,7 +170,7 @@ type Module interface {
 	// Called in newModuleSet.
 	setModuleSet(ModuleSet)
 
-	// getDescription returns a human-readable description of the Module.
+	// Description returns a human-readable description of the Module.
 	//
 	// This can be manually set by a constructor of a Module. In practice, the only current way
 	// to specifically set this string is by calling LocalModuleWithDescription when constructing
@@ -186,9 +186,7 @@ type Module interface {
 	//
 	// This will never be empty. If a description was not explicitly set, this falls back to
 	// OpaqueID.
-	//
-	// Keeping this private for now. Change to Description if we ever want to make this public.
-	getDescription() string
+	Description() string
 
 	// withIsTarget returns a copy of the Module with the specified target value.
 	//
@@ -419,7 +417,7 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 	m.moduleSet = moduleSet
 }
 
-func (m *module) getDescription() string {
+func (m *module) Description() string {
 	if m.description != "" {
 		return m.description
 	}

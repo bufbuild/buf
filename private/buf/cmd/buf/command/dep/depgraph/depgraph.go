@@ -143,5 +143,5 @@ func moduleToString(module bufmodule.Module) string {
 		}
 		return moduleFullName.String()
 	}
-	return module.OpaqueID()
+	return module.Description()
 }

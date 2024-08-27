@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -85,7 +86,7 @@ func getModuleDeps(
 	if err := getModuleDepsRec(
 		ctx,
 		module,
-		make(map[string]struct{}),
+		make(map[string]string),
 		make(map[string]struct{}),
 		nil,
 		depOpaqueIDToModuleDep,
@@ -114,10 +115,10 @@ func getModuleDeps(
 func getModuleDepsRec(
 	ctx context.Context,
 	module Module,
-	visitedOpaqueIDs map[string]struct{},
+	visitedOpaqueIDToDescription map[string]string,
 	// Changes as we go down the stack.
 	parentOpaqueIDs map[string]struct{},
-	// Ordered version of parentOpaqueIDs so we can print a cycle error.
+	// Ordered (by dependency relationship) version of parentOpaqueIDs so we can print a cycle error.
 	orderedParentOpaqueIDs []string,
 	// Already discovered deps.
 	depOpaqueIDToModuleDep map[string]ModuleDep,
@@ -126,12 +127,19 @@ func getModuleDepsRec(
 ) error {
 	opaqueID := module.OpaqueID()
 	if _, ok := parentOpaqueIDs[opaqueID]; ok {
-		return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+		return &ModuleCycleError{
+			Descriptions: append(
+				slicesext.Map(orderedParentOpaqueIDs, func(parentOpaqueID string) string {
+					return visitedOpaqueIDToDescription[parentOpaqueID]
+				}),
+				module.Description(),
+			),
+		}
 	}
-	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
+	if _, ok := visitedOpaqueIDToDescription[opaqueID]; ok {
 		return nil
 	}
-	visitedOpaqueIDs[opaqueID] = struct{}{}
+	visitedOpaqueIDToDescription[opaqueID] = module.Description()
 	moduleSet := module.ModuleSet()
 	if moduleSet == nil {
 		// This should never happen.
@@ -229,7 +237,7 @@ func getModuleDepsRec(
 		if err := getModuleDepsRec(
 			ctx,
 			newModuleDep,
-			visitedOpaqueIDs,
+			visitedOpaqueIDToDescription,
 			parentOpaqueIDs,
 			newOrderedParentOpaqueIDs,
 			depOpaqueIDToModuleDep,
