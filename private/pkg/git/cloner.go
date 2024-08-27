@@ -358,6 +358,7 @@ func getRefspecsForName(gitName Name) (fetchRef string, fallbackRef string, chec
 	} else if checkout != "" && checkout != "HEAD" {
 		// If a checkout ref is specified, we fetch the ref directly.
 		// We fallback to fetching the HEAD to resolve partial refs.
+		// We checkout the ref after the fetch if the fallback was used.
 		return checkout, "HEAD", checkout
 	}
 	return "HEAD", "", ""
