@@ -1179,6 +1179,15 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 	)
 }
 
+func TestCommentIgnoresOnlyRule(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"comment_ignores_multiple_fails",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 4, 1, 4, 11, "PACKAGE_VERSION_SUFFIX"),
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,
