@@ -67,14 +67,18 @@ func checkValidateIDDashless(
 		return nil
 	}
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
-	if stringConstraints := constraints.GetString_(); stringConstraints != nil || !stringConstraints.GetTuuid() {
+	if stringConstraints := constraints.GetString_(); stringConstraints == nil || !stringConstraints.GetTuuid() {
 		missingRuleName := "(buf.validate.field).string.tuuid"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
 			missingRuleName = "(buf.validate.field).repeated.items.string.tuuid"
 		}
 		responseWriter.AddAnnotation(
 			check.WithDescriptor(fieldDescriptor),
-			check.WithMessagef("field %q does not have rule %s set", fieldDescriptor.FullName(), missingRuleName),
+			check.WithMessagef(
+				"field %q does not have rule %s set",
+				fieldDescriptor.FullName(),
+				missingRuleName,
+			),
 		)
 	}
 	return nil

@@ -16,8 +16,6 @@ package suffixesplugin
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -34,11 +32,6 @@ const (
 	serviceNoChangeSuffixesOptionKey = "service_no_change_suffixes"
 	messageNoChangeSuffixesOptionKey = "message_no_change_suffixes"
 	enumNoChangeSuffixesOptionKey    = "enum_no_change_suffixes"
-)
-
-var (
-	errOptionKeyNotFound         = errors.New("option key not found")
-	errOptionValueNotStringSlice = errors.New("option value not string slice")
 )
 
 func handleLintServiceBannedSuffixes(
@@ -476,21 +469,5 @@ func getSuffixes(
 	request check.Request,
 	optionKey string,
 ) ([]string, error) {
-	option, ok := request.Options().Get(optionKey)
-	if !ok {
-		return nil, newErrOptionKeyNotFound(optionKey)
-	}
-	bannedSuffixes, ok := option.([]string)
-	if !ok {
-		return nil, newErrOptionValueNotStringSlice(optionKey)
-	}
-	return bannedSuffixes, nil
-}
-
-func newErrOptionKeyNotFound(optionKey string) error {
-	return fmt.Errorf("%w: %s", errOptionKeyNotFound, optionKey)
-}
-
-func newErrOptionValueNotStringSlice(optionKey string) error {
-	return fmt.Errorf("%w: %s", errOptionValueNotStringSlice, optionKey)
+	return check.GetStringSliceValue(request.Options(), optionKey)
 }

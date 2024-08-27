@@ -93,7 +93,7 @@ var (
 		Purpose:     "Ensure that there are no messages with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryResourceSuffixesID},
-		IsDefault:   false, // TODO(doria): what happens if a default rule is deprecated
+		IsDefault:   false,
 		Deprecated:  true,
 		ReplacementIDs: []string{
 			// Mesasges encapsulate too many use-cases, we only lint fields instead.
