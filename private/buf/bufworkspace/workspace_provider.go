@@ -425,7 +425,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			moduleConfig,
 		)
 		if _, ok := seenModuleDescriptions[moduleDescription]; ok {
-			return nil, fmt.Errorf("multiple module configs found with the same description: %q", moduleDescription)
+			return nil, fmt.Errorf("multiple module configs found with the same description: %s", moduleDescription)
 		}
 		seenModuleDescriptions[moduleDescription] = struct{}{}
 		moduleSetBuilder.AddLocalModule(

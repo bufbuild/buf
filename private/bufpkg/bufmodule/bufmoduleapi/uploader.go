@@ -117,7 +117,7 @@ func (a *uploader) Upload(
 				a.logger.Warn("Excluding unnamed module", zap.String("module", moduleDescription))
 				return false, nil
 			}
-			return false, fmt.Errorf("a name must be specified in buf.yaml to push module %q", moduleDescription)
+			return false, fmt.Errorf("a name must be specified in buf.yaml to push module: %s", moduleDescription)
 		}
 		deps, err := module.ModuleDeps()
 		if err != nil {
@@ -457,7 +457,7 @@ func getV1Beta1ProtoUploadRequestContent(
 		return nil, syserror.New("expected local Module in getProtoLegacyFederationUploadRequestContent")
 	}
 	if module.ModuleFullName() == nil {
-		return nil, syserror.Newf("expected module name for local module %q", module.Description())
+		return nil, syserror.Newf("expected module name for local module: %s", module.Description())
 	}
 	if module.ModuleFullName().Registry() != primaryRegistry {
 		// This should never happen - the upload Modules should already be verified above to come from one registry.
