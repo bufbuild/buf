@@ -23,20 +23,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const (
-	// ValidateIDDashless is the Rule ID of the valdiating ID fields dashless rule.
-	ValidateIDDashless = "VALIDATE_ID_DASHLESS"
-
-	// IDFieldNameOptionKey is the option key to override the default id field name.
-	IDFieldNameOptionKey = "id_field_name"
-
-	defaultIDFieldName = "id"
-)
-
 var (
 	// IDFieldValidationRuleSpec is the RuleSpec for the ID field validation rule.
 	IDFieldValidatedAsUUIDRuleSpec = &check.RuleSpec{
-		ID:             ValidateIDDashless,
+		ID:             validateIDDashless,
 		CategoryIDs:    nil,
 		IsDefault:      true,
 		Purpose:        `Checks that all fields named with a certain name (default is "id") are validated as dashless UUIDs in protovalidate.`,
@@ -46,6 +36,16 @@ var (
 	}
 )
 
+const (
+	// validateIDDashless is the Rule ID of the valdiating ID fields dashless rule.
+	validateIDDashless = "VALIDATE_ID_DASHLESS"
+
+	// idFieldNameOptionKey is the option key to override the default id field name.
+	idFieldNameOptionKey = "id_field_name"
+
+	defaultIDFieldName = "id"
+)
+
 func checkValidateIDDashless(
 	_ context.Context,
 	responseWriter check.ResponseWriter,
@@ -53,7 +53,7 @@ func checkValidateIDDashless(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	idFieldName := defaultIDFieldName
-	idFieldNameOptionValue, err := check.GetStringValue(request.Options(), IDFieldNameOptionKey)
+	idFieldNameOptionValue, err := check.GetStringValue(request.Options(), idFieldNameOptionKey)
 	if err != nil {
 		return err
 	}

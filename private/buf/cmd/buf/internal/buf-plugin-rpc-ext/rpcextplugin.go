@@ -15,11 +15,11 @@
 package rpcextplugin
 
 const (
-	// PageTokenFieldNameOptionKey is the option key to override the default page token field name.
-	PageTokenFieldNameOptionKey = "page_token_field_name"
+	// pageTokenFieldNameOptionKey is the option key to override the default page token field name.
+	pageTokenFieldNameOptionKey = "page_token_field_name"
 
-	// PageRPCPrefixOptionKey is the option key to override the default prefix for pagination RPCs.
-	PageRPCPrefixOptionKey = "page_rpc_prefix"
+	// pageRPCPrefixOptionKey is the option key to override the default prefix for pagination RPCs.
+	pageRPCPrefixOptionKey = "page_rpc_prefix"
 
 	defaultPageTokenFieldName = "page_token"
 )

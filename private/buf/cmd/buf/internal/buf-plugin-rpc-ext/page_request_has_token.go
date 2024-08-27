@@ -23,15 +23,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const (
-	// PageRPCRequestToken is the Rule ID of page RPC requests having a page token field.
-	PageRPCRequestToken = "PAGE_REQUEST_HAS_TOKEN"
-)
-
 var (
 	// PageRPCRequestTokenRuleSpec is the RuleSpec for the page request token rule.
 	PageRPCRequestTokenRuleSpec = &check.RuleSpec{
-		ID:             PageRPCRequestToken,
+		ID:             pageRPCRequestToken,
 		CategoryIDs:    nil,
 		IsDefault:      true,
 		Purpose:        `Checks that all pagination RPC requests has a page token set.`,
@@ -39,6 +34,11 @@ var (
 		ReplacementIDs: nil,
 		Handler:        checkutil.NewMessageRuleHandler(checkPageRequestHasToken),
 	}
+)
+
+const (
+	// pageRPCRequestToken is the Rule ID of page RPC requests having a page token field.
+	pageRPCRequestToken = "PAGE_REQUEST_HAS_TOKEN"
 )
 
 func checkPageRequestHasToken(
@@ -52,7 +52,7 @@ func checkPageRequestHasToken(
 		return nil
 	}
 	pageRPCPrefixes := defaultPageRPCPrefixes
-	pageRPCPrefixesOptionValue, err := check.GetStringSliceValue(request.Options(), PageRPCPrefixOptionKey)
+	pageRPCPrefixesOptionValue, err := check.GetStringSliceValue(request.Options(), pageRPCPrefixOptionKey)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func checkPageRequestHasToken(
 		return nil
 	}
 	pageTokenFieldName := defaultPageTokenFieldName
-	pageTokenFieldNameOptionValue, err := check.GetStringValue(request.Options(), PageTokenFieldNameOptionKey)
+	pageTokenFieldNameOptionValue, err := check.GetStringValue(request.Options(), pageTokenFieldNameOptionKey)
 	if err != nil {
 		return err
 	}

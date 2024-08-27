@@ -23,15 +23,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const (
-	// MessageNotDisabled is the Rule ID of message not disabled rule.
-	MessageNotDisabled = "MESSAGE_NOT_DISABLED"
-)
-
 var (
 	// MessageNotDisabledRuleSpec is the RuleSpec for the ID field validation rule.
 	MessageNotDisabledRuleSpec = &check.RuleSpec{
-		ID:             MessageNotDisabled,
+		ID:             messageNotDisabled,
 		CategoryIDs:    nil,
 		IsDefault:      true,
 		Purpose:        `Checks that no message has (buf.validate.message).disabled set`,
@@ -39,6 +34,11 @@ var (
 		ReplacementIDs: nil,
 		Handler:        checkutil.NewMessageRuleHandler(checkMessageNotDisabled),
 	}
+)
+
+const (
+	// messageNotDisabled is the Rule ID of message not disabled rule.
+	messageNotDisabled = "MESSAGE_NOT_DISABLED"
 )
 
 func checkMessageNotDisabled(
