@@ -84,13 +84,15 @@ type CheckConfig interface {
 	UseIDsAndCategories() []string
 	// Sorted
 	ExceptIDsAndCategories() []string
-	// Paths are specific to the Module.
+	// Paths are specific to the Module. Users cannot ignore paths outside of their modules for check
+	// configs, which includes any imports from outside of the module.
 	// Paths are relative to roots.
-	// Sorted
+	// Paths are sorted.
 	IgnorePaths() []string
-	// Paths are specific to the Module.
+	// Paths are specific to the Module. Users cannot ignore paths outside of their modules for
+	// check configs, which includes any imports from outside of the module.
 	// Paths are relative to roots.
-	// Paths sorted.
+	// Paths are sorted.
 	IgnoreIDOrCategoryToPaths() map[string][]string
 
 	isCheckConfig()

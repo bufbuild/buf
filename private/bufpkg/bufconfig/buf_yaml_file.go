@@ -1082,6 +1082,11 @@ func isLintOrBreakingDisabledBasedOnIgnores(
 //     If requirePathsToBeContainedWithinModuleDirPath is true, return error.
 //   - Otherwise, adds the path relative to the given module directory path to the returned slice.
 //
+// It is important to note that because we are only taking paths that are contained in the module
+// directory and check configurations can only respect paths that are a part of the module. This means
+// that import paths from outside of the module cannot be configured as a part of the check configuration
+// for a module.
+//
 // isLintOrBreakingDisabledBasedOnIgnores should be called before this function.
 func getRelPathsForLintOrBreakingExternalPaths(
 	fieldName string,

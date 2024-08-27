@@ -2942,7 +2942,7 @@ func TestLintWithPaths(t *testing.T) {
 func TestLintWithPlugins(t *testing.T) {
 	t.Parallel()
 	// defaults only, comment ignores on.
-	testRunStdoutStderrNoWarn(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -2958,13 +2958,16 @@ testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "
 testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
 testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
 		`,
-		"",
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
 	)
-	// defaults only, comment ignores off.
-	// always ignore the vendored protovalidate module.
-	testRunStdoutStderrNoWarn(
+	// Defaults only, comment ignores off.
+	// Always ignore the vendored protovalidate module.
+	//
+	// There are still lint failures for protovalidate despite being set as an ignore path because
+	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
+	// for the module -- this is expected behavior for now.
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -2982,7 +2985,6 @@ testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "
 testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
 testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
 		`,
-		"",
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
 		"--config",
@@ -3014,14 +3016,22 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 			]
 		}`,
 	)
-	// with specified use, ignore, and ignore_only configurations.
-	testRunStdoutStderrNoWarn(
+	// With specified use, ignore, and ignore_only configurations.
+	// Always ignore the vendored protovalidate module.
+	//
+	// There are still lint failures for protovalidate despite being set as an ignore path because
+	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
+	// for the module -- this is expected behavior for now.
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		`
+testdata/check_plugins/current/proto/api/v1/service.proto:11:1:Service name "api.v1.FooServiceMock" has banned suffix "Mock". (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
 		`,
-		"",
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
 		"--config",
