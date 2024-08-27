@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fix git input handling of relative HEAD refs without branch names.
 - Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
   * If `includes` is specified, a proto file is considered in the module only if it is in one of the
     directories specified.
