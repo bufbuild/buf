@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
-
 package bufmigrate
 
 import (
@@ -179,6 +177,10 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		emptyModuleConfig, err := bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			nil,
+			// The default (empty) value for rootToIncludes and rootToExcludes only has key ".".
+			map[string][]string{
+				".": {},
+			},
 			map[string][]string{
 				".": {},
 			},
@@ -271,8 +273,9 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			moduleConfigForRoot, err := bufconfig.NewModuleConfig(
 				moduleRootRelativeToDestination,
 				moduleFullName,
-				// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
+				// We do not need to handle paths in rootToIncludes, rootToExcludes, lint or breaking config specially,
 				// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
+				map[string][]string{".": moduleConfig.RootToIncludes()[root]},
 				map[string][]string{".": moduleConfig.RootToExcludes()[root]},
 				lintConfigForRoot,
 				breakingConfigForRoot,
@@ -306,8 +309,9 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		moduleConfig, err = bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			moduleConfig.ModuleFullName(),
-			// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
+			// We do not need to handle paths in rootToIncludes, rootToExcludes, lint or breaking config specially,
 			// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
+			moduleConfig.RootToIncludes(),
 			moduleConfig.RootToExcludes(),
 			lintConfig,
 			breakingConfig,

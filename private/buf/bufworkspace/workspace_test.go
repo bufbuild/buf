@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"testing"
 
@@ -26,7 +27,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -43,7 +46,7 @@ func TestBasicV2(t *testing.T) {
 	testBasic(t, "workspacev2", true)
 }
 
-func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback bool) {
+func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -128,7 +131,6 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 		graph,
 		bufmodule.Module.OpaqueID,
 	)
-	require.NoError(t, err)
 	module = workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	_, err = module.StatFileInfo(ctx, "acme/bond/real/v1/bond.proto")
@@ -138,7 +140,7 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 	_, err = module.StatFileInfo(ctx, "acme/bond/excluded/v2/excluded.proto")
 	require.True(t, errors.Is(err, fs.ErrNotExist))
 
-	testLicenseAndDoc(t, ctx, workspace, expectTopLevelLicenseDocFallback)
+	testLicenseAndDoc(t, ctx, workspace, isV2)
 
 	bucketTargeting, err = buftarget.NewBucketTargeting(
 		ctx,
@@ -175,7 +177,7 @@ func testBasic(t *testing.T, subDirPath string, expectTopLevelLicenseDocFallback
 	require.NoError(t, err)
 	require.False(t, fileInfo.IsTargetFile())
 
-	testLicenseAndDoc(t, ctx, workspace, expectTopLevelLicenseDocFallback)
+	testLicenseAndDoc(t, ctx, workspace, isV2)
 }
 
 func TestUnusedDep(t *testing.T) {
@@ -228,6 +230,73 @@ func TestUnusedDep(t *testing.T) {
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[1].Type())
 }
 
+func TestDuplicatePath(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// This represents some external dependencies from the BSR.
+	workspaceProvider := testNewWorkspaceProvider(
+		t,
+		bufmoduletesting.ModuleData{
+			Name:    "buf.testing/acme/date",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
+		},
+		bufmoduletesting.ModuleData{
+			Name:    "buf.testing/acme/extension",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
+		},
+	)
+
+	storageosProvider := storageos.NewProvider()
+	bucket, err := storageosProvider.NewReadWriteBucket("testdata/basic/workspacev2_duplicate_path")
+	require.NoError(t, err)
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		zaptest.NewLogger(t),
+		bucket,
+		".",
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, bucketTargeting.ControllingWorkspace())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, ".", bucketTargeting.SubDirPath())
+
+	workspace, err := workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		bucket,
+		bucketTargeting,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, workspace)
+
+	require.Len(t, workspace.Modules(), 7) // 5 local + 2 remote
+	require.NotNil(t, workspace.GetModuleForOpaqueID("buf.testing/acme/date"))
+	require.NotNil(t, workspace.GetModuleForOpaqueID("buf.testing/acme/extension"))
+
+	module := workspace.GetModuleForOpaqueID("proto/shared")
+	require.NotNil(t, module)
+	requireModuleContainFileNames(t, module, "prefix/bar/v1/bar.proto")
+
+	module = workspace.GetModuleForOpaqueID("proto/shared-2")
+	require.NotNil(t, module)
+	requireModuleContainFileNames(t, module, "prefix/foo/v1/foo.proto")
+
+	module = workspace.GetModuleForOpaqueID("proto/shared1")
+	require.NotNil(t, module)
+	requireModuleContainFileNames(t, module, "prefix/x/x.proto")
+
+	module = workspace.GetModuleForOpaqueID("proto/shared1-2")
+	require.NotNil(t, module)
+	requireModuleContainFileNames(t, module, "prefix/y/y.proto")
+
+	module = workspace.GetModuleForOpaqueID("separate")
+	require.NotNil(t, module)
+	requireModuleContainFileNames(t, module, "v1/separate.proto")
+}
+
 func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.ModuleData) WorkspaceProvider {
 	bsrProvider, err := bufmoduletesting.NewOmniProvider(testModuleDatas...)
 	require.NoError(t, err)
@@ -240,7 +309,34 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	)
 }
 
-func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, expectTopLevelLicenseDocFallback bool) {
+func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expectedFileNames ...string) {
+	fileNamesToBeSeen := slicesext.ToStructMap(expectedFileNames)
+	require.NoError(t, module.WalkFileInfos(context.Background(), func(fi bufmodule.FileInfo) error {
+		path := fi.Path()
+		if _, ok := fileNamesToBeSeen[path]; !ok {
+			return fmt.Errorf("module has unexpected file: %s", path)
+		}
+		delete(fileNamesToBeSeen, path)
+		return nil
+	}))
+	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", stringutil.JoinSliceQuoted(slicesext.MapKeysToSlice(fileNamesToBeSeen), ","))
+}
+
+func requireModuleFileContent(
+	t *testing.T,
+	ctx context.Context,
+	module bufmodule.Module,
+	path string,
+	expectedContent string,
+) {
+	file, err := module.GetFile(ctx, path)
+	require.NoError(t, err)
+	content, err := ioext.ReadAllAndClose(file)
+	require.NoError(t, err)
+	require.Equal(t, expectedContent, string(content))
+}
+
+func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, isV2 bool) {
 	// bond has its own license and doc
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
@@ -252,7 +348,7 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 	// geo has its own license
 	requireModuleFileContent(t, ctx, module, "LICENSE", "geo license\n")
 	// geo falls back to top-level doc if it's a v2 workspace
-	if expectTopLevelLicenseDocFallback {
+	if isV2 {
 		requireModuleFileContent(t, ctx, module, "README.md", "workspace doc\n")
 	} else {
 		_, err := module.StatFileInfo(ctx, "README.md")
@@ -269,7 +365,7 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 	_, err = module.StatFileInfo(ctx, "README.md")
 	require.ErrorIs(t, err, fs.ErrNotExist)
 	// money falls back to top-level license if it's a v2 workspace
-	if expectTopLevelLicenseDocFallback {
+	if isV2 {
 		requireModuleFileContent(t, ctx, module, "LICENSE", "workspace license\n")
 	} else {
 		_, err = module.StatFileInfo(ctx, "LICENSE")
@@ -279,7 +375,7 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
 	require.NotNil(t, module)
 	// portfolio does not have its own license or doc
-	if expectTopLevelLicenseDocFallback {
+	if isV2 {
 		requireModuleFileContent(t, ctx, module, "LICENSE", "workspace license\n")
 		requireModuleFileContent(t, ctx, module, "README.md", "workspace doc\n")
 	} else {
@@ -288,18 +384,4 @@ func testLicenseAndDoc(t *testing.T, ctx context.Context, workspace Workspace, e
 		_, err = module.StatFileInfo(ctx, "README.md")
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	}
-}
-
-func requireModuleFileContent(
-	t *testing.T,
-	ctx context.Context,
-	module bufmodule.Module,
-	path string,
-	expectedContent string,
-) {
-	file, err := module.GetFile(ctx, path)
-	require.NoError(t, err)
-	content, err := ioext.ReadAllAndClose(file)
-	require.NoError(t, err)
-	require.Equal(t, expectedContent, string(content))
 }

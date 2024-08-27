@@ -461,7 +461,7 @@ func TestDuplicateProtoPathError(t *testing.T) {
 				"buf.build/foo/a",
 				"buf.build/foo/b",
 			},
-			duplicateProtoPathError.OpaqueIDs,
+			duplicateProtoPathError.ModuleDescriptions,
 		)
 	}
 	_, err = moduleA.ModuleDeps()
@@ -505,10 +505,10 @@ func TestNoProtoFilesError(t *testing.T) {
 		require.Error(t, err)
 		noProtoFilesError := &bufmodule.NoProtoFilesError{}
 		require.True(t, errors.As(err, &noProtoFilesError), err.Error())
-		require.Equal(
+		require.Contains(
 			t,
 			"buf.build/foo/b",
-			noProtoFilesError.OpaqueID,
+			noProtoFilesError.ModuleDescription,
 		)
 	}
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)

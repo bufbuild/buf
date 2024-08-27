@@ -166,10 +166,10 @@ type DuplicateProtoPathError struct {
 	//
 	// A well-formed DuplicateProtoPathError will have a normalized and non-empty ProtoPath.
 	ProtoPath string
-	// OpaqueIDs are the OpaqueIDs of the Module that contain the ProtoPath.
+	// ModuleDescriptions are the Module descriptions that contain the ProtoPath.
 	//
-	// A well-formed DuplicateProtoPathError will have two or more OpaqueIDs.
-	OpaqueIDs []string
+	// A well-formed DuplicateProtoPathError will have two or more Module descriptions.
+	ModuleDescriptions []string
 }
 
 // Error implements the error interface.
@@ -180,11 +180,12 @@ func (d *DuplicateProtoPathError) Error() string {
 	var builder strings.Builder
 	// Writing even if the error is malformed via d.Path being empty.
 	_, _ = builder.WriteString(d.ProtoPath)
-	_, _ = builder.WriteString(` is contained in multiple modules: `)
-	for i, opaqueID := range d.OpaqueIDs {
-		_, _ = builder.WriteString(opaqueID)
-		if i != len(d.OpaqueIDs)-1 {
-			_, _ = builder.WriteString(`, `)
+	_, _ = builder.WriteString(" is contained in multiple modules:\n")
+	for i, moduleDescription := range d.ModuleDescriptions {
+		_, _ = builder.WriteString("  ")
+		_, _ = builder.WriteString(moduleDescription)
+		if i != len(d.ModuleDescriptions)-1 {
+			_, _ = builder.WriteString("\n")
 		}
 	}
 	return builder.String()
@@ -194,10 +195,10 @@ func (d *DuplicateProtoPathError) Error() string {
 //
 // This check is done as part of ModuleReadBucket.Walks.
 type NoProtoFilesError struct {
-	// OpaqueID is the OpaqueID of the Module that has no .proto files.
+	// ModuleDescription is the description of the Module that has no .proto files.
 	//
-	// A well-formed NoProtoFilesError will have a non-empty OpaqueID.
-	OpaqueID string
+	// A well-formed NoProtoFilesError will have a non-empty ModuleDescription.
+	ModuleDescription string
 }
 
 // Error implements the error interface.
@@ -206,9 +207,9 @@ func (n *NoProtoFilesError) Error() string {
 		return ""
 	}
 	var builder strings.Builder
-	_, _ = builder.WriteString(`"`)
-	// Writing even if the error is malformed via d.OpaqueID being empty.
-	_, _ = builder.WriteString(n.OpaqueID)
+	_, _ = builder.WriteString(`Module "`)
+	// Writing even if the error is malformed via d.ModuleDescription being empty.
+	_, _ = builder.WriteString(n.ModuleDescription)
 	_, _ = builder.WriteString(`" had no .proto files`)
 	return builder.String()
 }

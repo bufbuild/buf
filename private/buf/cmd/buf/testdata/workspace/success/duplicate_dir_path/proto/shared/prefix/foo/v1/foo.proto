@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package prefix.foo.v1;
+
+import "prefix/bar/v1/bar.proto";
+
+message Foo {
+  prefix.bar.v1.Bar bar = 2;
+}

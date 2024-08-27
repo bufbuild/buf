@@ -27,6 +27,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
@@ -160,6 +162,7 @@ func getExternalModules(
 	return getExternalModulesForBufWorkYAMLFile(ctx, bufWorkYAMLFile)
 }
 
+// This preserves directory order from the bufWorkYAMLFile.
 func getExternalModulesForBufWorkYAMLFile(
 	ctx context.Context,
 	bufWorkYAMLFile bufconfig.BufWorkYAMLFile,
@@ -173,7 +176,7 @@ func getExternalModulesForBufWorkYAMLFile(
 			}
 			externalModules = append(
 				externalModules,
-				newExternalModule(dirPath, ""),
+				newExternalModule(dirPath, nil, nil, ""),
 			)
 			continue
 		}
@@ -192,11 +195,13 @@ func getExternalModulesForBufWorkYAMLFile(
 			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 				name = moduleFullName.String()
 			}
+			includes := slicesext.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
+			excludes := slicesext.Map(moduleConfig.RootToExcludes()["."], func(exclude string) string { return normalpath.Join(dirPath, exclude) })
 			externalModules = append(
 				externalModules,
 				// The dirPath is the path specified in the buf.work.yaml.
 				// The DirPath for v1/v1beta1 ModuleConfigs is always ".".
-				newExternalModule(dirPath, name),
+				newExternalModule(dirPath, includes, excludes, name),
 			)
 		case bufconfig.FileVersionV2:
 			return nil, fmt.Errorf("buf.work.yaml pointed to directory %q which has a v2 buf.yaml file", dirPath)
@@ -207,6 +212,7 @@ func getExternalModulesForBufWorkYAMLFile(
 	return externalModules, nil
 }
 
+// This preserves module config order from the bufYAMLFile.
 func getExternalModulesForBufYAMLFile(
 	ctx context.Context,
 	bufYAMLFile bufconfig.BufYAMLFile,
@@ -218,7 +224,10 @@ func getExternalModulesForBufYAMLFile(
 		if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 			name = moduleFullName.String()
 		}
-		externalModules[i] = newExternalModule(moduleConfig.DirPath(), name)
+		dirPath := moduleConfig.DirPath()
+		includes := slicesext.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
+		excludes := slicesext.Map(moduleConfig.RootToExcludes()["."], func(exclude string) string { return normalpath.Join(dirPath, exclude) })
+		externalModules[i] = newExternalModule(dirPath, includes, excludes, name)
 	}
 	return externalModules, nil
 }
@@ -231,7 +240,8 @@ func printExternalModules(
 ) error {
 	switch format {
 	case formatPath:
-		sort.Slice(
+		// Two modules may have the same path, SliceStable breaks the tie with the original ordering.
+		sort.SliceStable(
 			externalModules,
 			func(i int, j int) bool {
 				return externalModules[i].Path < externalModules[j].Path
@@ -260,7 +270,8 @@ func printExternalModules(
 		}
 		return nil
 	case formatJSON:
-		sort.Slice(
+		// Two modules may have the same path, SliceStable breaks the tie with the original ordering.
+		sort.SliceStable(
 			externalModules,
 			func(i int, j int) bool {
 				return externalModules[i].Path < externalModules[j].Path
@@ -282,13 +293,17 @@ func printExternalModules(
 }
 
 type externalModule struct {
-	Path string `json:"path" yaml:"path"`
-	Name string `json:"name" yaml:"name"`
+	Path     string   `json:"path,omitempty" yaml:"path,omitempty"`
+	Includes []string `json:"includes,omitempty" yaml:"includes,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+	Name     string   `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
-func newExternalModule(path string, name string) *externalModule {
+func newExternalModule(path string, includes []string, excludes []string, name string) *externalModule {
 	return &externalModule{
-		Path: path,
-		Name: name,
+		Path:     path,
+		Includes: includes,
+		Excludes: excludes,
+		Name:     name,
 	}
 }

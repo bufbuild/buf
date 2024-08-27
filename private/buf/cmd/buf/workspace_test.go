@@ -1015,6 +1015,174 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 	)
 }
 
+func TestWorkspaceDuplicateDirPathSuccess(t *testing.T) {
+	t.Parallel()
+	workspaceDir := filepath.Join("testdata", "workspace", "success", "duplicate_dir_path")
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"prefix/bar/v1/bar.proto": {},
+			"prefix/foo/v1/foo.proto": {moduleFullName: "buf.build/shared/zero"},
+			"prefix/x/x.proto":        {moduleFullName: "buf.build/shared/one"},
+			"prefix/y/y.proto":        {},
+			"v1/separate.proto":       {},
+		},
+		workspaceDir,
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"prefix/bar/v1/bar.proto": {},
+			"prefix/foo/v1/foo.proto": {moduleFullName: "buf.build/shared/zero"},
+		},
+		filepath.Join(workspaceDir, "proto", "shared"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"prefix/x/x.proto": {moduleFullName: "buf.build/shared/one"},
+			"prefix/y/y.proto": {},
+		},
+		filepath.Join(workspaceDir, "proto", "shared1"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"prefix/x/x.proto":        {moduleFullName: "buf.build/shared/one"},
+			"prefix/y/y.proto":        {},
+			"prefix/bar/v1/bar.proto": {},
+			"prefix/foo/v1/foo.proto": {moduleFullName: "buf.build/shared/zero"},
+		},
+		filepath.Join(workspaceDir, "proto"),
+	)
+}
+
+func TestWorkspaceDuplicateDirPathOverlappingIncludeSuccess(t *testing.T) {
+	t.Parallel()
+	workspaceDir := filepath.Join("testdata", "workspace", "success", "duplicate_dir_path_overlapping_include")
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/v1/foo.proto":         {},
+			"foo/v2/foo.proto":         {},
+			"foo/bar/v1/bar.proto":     {},
+			"foo/bar/v2/bar.proto":     {},
+			"foo/bar/baz/v1/baz.proto": {},
+			"foo/bar/baz/v2/baz.proto": {},
+		},
+		workspaceDir,
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/v1/foo.proto": {},
+			"foo/v2/foo.proto": {},
+		},
+		workspaceDir,
+		// exclude a module contained within
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/v1/foo.proto": {},
+		},
+		workspaceDir,
+		// filter within a module
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "v1", "foo.proto"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/bar/v2/bar.proto": {},
+		},
+		workspaceDir,
+		// filter within another module
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "v2"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/bar/v1/bar.proto":     {},
+			"foo/bar/v2/bar.proto":     {},
+			"foo/bar/baz/v2/baz.proto": {},
+		},
+		workspaceDir,
+		// filter and exclude
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar"),
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "baz", "v1"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/v1/foo.proto":         {},
+			"foo/bar/v1/bar.proto":     {},
+			"foo/bar/baz/v1/baz.proto": {},
+		},
+		workspaceDir,
+		// filter within each module
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "v1"),
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "v1"),
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "bar", "baz", "v1"),
+	)
+	// Test each module is linted with the correct config.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(
+			`testdata/workspace/success/duplicate_dir_path_overlapping_include/proto/foo/bar/baz/v2/baz.proto:1:1:Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".
+testdata/workspace/success/duplicate_dir_path_overlapping_include/proto/foo/bar/v2/bar.proto:1:1:Files must have a package defined.`,
+		),
+		"lint",
+		workspaceDir,
+	)
+}
+
+func TestWorkspaceOverlappingModuleDirPaths(t *testing.T) {
+	t.Parallel()
+	workspaceDir := filepath.Join("testdata", "workspace", "success", "overlapping_dir_path")
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/foo.proto":      {moduleFullName: "buf.test/acme/foobar"},
+			"bar/bar.proto":      {moduleFullName: "buf.test/acme/foobar"},
+			"foo_internal.proto": {},
+			"bar_internal.proto": {},
+		},
+		workspaceDir,
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo_internal.proto": {},
+		},
+		workspaceDir,
+		"--path",
+		filepath.Join(workspaceDir, "proto", "foo", "internal", "foo_internal.proto"),
+	)
+	requireBuildOutputFilePaths(
+		t,
+		map[string]expectedFileInfo{
+			"foo/foo.proto": {moduleFullName: "buf.test/acme/foobar"},
+			"bar/bar.proto": {moduleFullName: "buf.test/acme/foobar"},
+		},
+		workspaceDir,
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "foo", "internal", "foo_internal.proto"),
+		"--exclude-path",
+		filepath.Join(workspaceDir, "proto", "bar", "internal", "bar_internal.proto"),
+	)
+}
+
 func TestWorkspaceDuplicateFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes multiple images that define the same file.
@@ -1023,7 +1191,9 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
+		`Failure: foo.proto is contained in multiple modules:
+  path: "other/proto"
+  path: "proto"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate"),
 	)
@@ -1032,7 +1202,9 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
+		`Failure: v1/foo.proto is contained in multiple modules:
+  path: "other/proto", includes: "other/proto/v1", excludes: "other/proto/v1/inner"
+  path: "proto", includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "duplicate"),
 	)
@@ -1045,7 +1217,9 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
+		`Failure: foo.proto is contained in multiple modules:
+  path: "other/proto"
+  path: "proto"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate", "proto"),
 	)
@@ -1054,7 +1228,10 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
+		`Failure: v1/foo.proto is contained in multiple modules:
+  path: "other/proto", includes: "other/proto/v1", excludes: "other/proto/v1/inner"
+  path: "proto", includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
+
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "duplicate", "proto"),
 	)
@@ -1068,7 +1245,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: "notexist" had no .proto files`),
+		filepath.FromSlash(`Failure: Module "path: "notexist"" had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "notexist"),
 	)
@@ -1077,7 +1254,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: "notexist" had no .proto files`),
+		filepath.FromSlash(`Failure: Module "path: "notexist"" had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "notexist"),
 	)
@@ -1526,7 +1703,8 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 }
 
 type expectedFileInfo struct {
-	isImport bool
+	isImport       bool
+	moduleFullName string
 }
 
 func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string]expectedFileInfo, buildArgs ...string) {
@@ -1558,6 +1736,13 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		expectedFileInfo, ok := expectedFilePathToInfo[filePath]
 		require.Truef(t, ok, "unexpected file in the image built: %s", filePath)
 		require.Equal(t, expectedFileInfo.isImport, imageFile.BufExtension.GetIsImport())
+		if expectedFileInfo.moduleFullName != "" {
+			moduleName := imageFile.GetBufExtension().GetModuleInfo().GetName()
+			require.NotNil(t, moduleName)
+			require.Equal(t, expectedFileInfo.moduleFullName, fmt.Sprintf("%s/%s/%s", moduleName.GetRemote(), moduleName.GetOwner(), moduleName.GetRepository()))
+		} else {
+			require.Nil(t, imageFile.GetBufExtension().GetModuleInfo().GetName())
+		}
 		delete(filesToCheck, filePath)
 	}
 	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
