@@ -862,7 +862,7 @@ func bucketIDsForModuleConfigsV2(moduleConfigs []bufconfig.ModuleConfig) []strin
 	//   - path: foo   # bucketID: foo
 	//   - path: foo   # bucketID: foo-2
 	// Notice that both the module at "foo-2" and the second module at "foo" have bucketID "foo-2".
-	// In this case, we append an index to every DirPath, including the first occurence of each DirPath.
+	// In this case, we append an index to every DirPath, including the first occurrence of each DirPath.
 	return bucketIDsForDirPaths(moduleDirPaths, true)
 }
 
