@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix git input handling of relative HEAD refs without branch names.
 
 ## [v1.38.0] - 2024-08-22
 
