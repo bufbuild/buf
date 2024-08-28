@@ -9,7 +9,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240821192916-45ba72cdd479.2
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1
-	github.com/bufbuild/bufplugin-go v0.0.0-20240828030815-bc305bf406b5
+	github.com/bufbuild/bufplugin-go v0.0.0-20240828033217-54a62684f613
 	github.com/bufbuild/pluginrpc-go v0.0.0-20240827154850-09f6dd201662
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
