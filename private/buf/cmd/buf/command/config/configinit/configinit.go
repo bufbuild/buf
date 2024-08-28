@@ -145,7 +145,7 @@ func run(
 		bufconfig.NewLintConfig(
 			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
-				[]string{"DEFAULT"},
+				[]string{"STANDARD"},
 			),
 			"",
 			false,
