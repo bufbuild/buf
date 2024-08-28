@@ -135,6 +135,10 @@ func run(
 	moduleConfig, err := bufconfig.NewModuleConfig(
 		".",
 		moduleFullName,
+		// The default (empty) value for rootToIncludes and rootToExcludes only has key ".".
+		map[string][]string{
+			".": {},
+		},
 		map[string][]string{
 			".": {},
 		},

@@ -1,0 +1,26 @@
+version: v2
+modules:
+  - path: proto
+    excludes:
+      - proto/foo/bar
+    lint:
+      use:
+        - DIRECTORY_SAME_PACKAGE # this effectively disables lint
+  - path: proto
+    includes:
+      - proto/foo/bar
+    excludes:
+      - proto/foo/bar/baz
+    lint:
+      use:
+        - PACKAGE_DEFINED
+      ignore:
+        - proto/foo/bar/v1
+  - path: proto
+    includes:
+      - proto/foo/bar/baz
+    lint:
+      use:
+        - SYNTAX_SPECIFIED
+      ignore:
+        - proto/foo/bar/baz/v1

@@ -396,7 +396,10 @@ func addModuleDataToModuleSetBuilder(
 		if err != nil {
 			return err
 		}
-		bucketID = moduleData.DirPath
+		// Since it's possible to that there are multiple modules at the same DirPath, we append the
+		// index to make sure the bucketID is unique. This does not need to have to same format as
+		// bucketIDs of modules built in non-test code paths.
+		bucketID = fmt.Sprintf("%s-%d", moduleData.DirPath, index)
 	case moduleData.PathToData != nil:
 		bucket, err = storagemem.NewReadBucket(moduleData.PathToData)
 		if err != nil {

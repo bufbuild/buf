@@ -16,7 +16,10 @@ package bufcheck_test
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -1329,7 +1332,9 @@ func testBreaking(
 	)
 	require.NoError(t, err)
 
-	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
+	opaqueID, err := testGetRootOpaqueID(workspace, ".")
+	require.NoError(t, err)
+	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
 	// TODO: Add in a custom plugin for this integration testing.
 	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, command.NewRunner())
@@ -1351,5 +1356,22 @@ func testBreaking(
 			expectedFileAnnotations,
 			fileAnnotationSet.FileAnnotations(),
 		)
+	}
+}
+
+func testGetRootOpaqueID(workspace bufworkspace.Workspace, prefix string) (string, error) {
+	var rootModules []bufmodule.Module
+	for _, module := range workspace.Modules() {
+		if strings.HasPrefix(module.OpaqueID(), prefix) {
+			rootModules = append(rootModules, module)
+		}
+	}
+	switch len(rootModules) {
+	case 0:
+		return "", errors.New("no module with opaque ID starting with \".\"")
+	case 1:
+		return rootModules[0].OpaqueID(), nil
+	default:
+		return "", fmt.Errorf("got %d modules with opaque ID starting with \".\"", len(rootModules))
 	}
 }

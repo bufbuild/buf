@@ -1236,9 +1236,10 @@ func testLintWithOptions(
 	require.NoError(t, err)
 
 	// the module full name string represents the opaque ID of the module
-	opaqueID := moduleFullNameString
-	if opaqueID == "" {
-		opaqueID = "."
+	opaqueID, err := testGetRootOpaqueID(workspace, moduleFullNameString)
+	if err != nil {
+		opaqueID, err = testGetRootOpaqueID(workspace, ".")
+		require.NoError(t, err)
 	}
 
 	// build the image for the specified module string (opaqueID)

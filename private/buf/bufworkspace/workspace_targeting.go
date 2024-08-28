@@ -63,7 +63,10 @@ type v2Targeting struct {
 }
 
 type moduleBucketAndModuleTargeting struct {
-	bucket          storage.ReadBucket
+	bucket storage.ReadBucket
+	// A bucketID, which uniquely identifies a moduleBucketAndModuleTargeting, is needed
+	// because in a v2 workspace multiple local modules may have the same DirPath.
+	bucketID        string
 	moduleTargeting *moduleTargeting
 }
 
@@ -201,10 +204,18 @@ func v2WorkspaceTargeting(
 	moduleDirPaths := make([]string, 0, len(bufYAMLFile.ModuleConfigs()))
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
-	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+	moduleConfigs := bufYAMLFile.ModuleConfigs()
+	bucketIDsForModuleConfigs := bucketIDsForModuleConfigsV2(moduleConfigs)
+	if len(bucketIDsForModuleConfigs) != len(moduleConfigs) {
+		// This is impossible, as the length is guaranteed by bucketIDsForModuleConfigsV2.
+		return nil, syserror.Newf("expected %d bucketIDs computed but got %d", len(moduleConfigs), len(bucketIDsForModuleConfigs))
+	}
+	for i, moduleConfig := range moduleConfigs {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		// bucketIDs have the same order as moduleConfigs
+		bucketID := bucketIDsForModuleConfigs[i]
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -240,6 +251,7 @@ func v2WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -308,7 +320,9 @@ func v1WorkspaceTargeting(
 				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
 			}
 		}
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		// DirPaths are unique within a v1 workspace, and so it's safe to use them as bucketIDs.
+		bucketID := moduleDirPath
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// We only want to target modules that are inside the bucketTargeting.SubDirPath().
 		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.SubDirPath() is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -346,6 +360,7 @@ func v1WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -556,8 +571,14 @@ func getMappedModuleBucketAndModuleTargeting(
 		storage.MapOnPrefix(moduleDirPath),
 	)
 	rootToExcludes := moduleConfig.RootToExcludes()
+	rootToIncludes := moduleConfig.RootToIncludes()
 	var rootBuckets []storage.ReadBucket
 	for root, excludes := range rootToExcludes {
+		includes, ok := rootToIncludes[root]
+		if !ok {
+			// This should never happen because ModuleConfig guarantees that they have the same keys.
+			return nil, nil, syserror.Newf("expected root %q to be also in rootToIncludes but not found", root)
+		}
 		// Roots only applies to .proto files.
 		mappers := []storage.Mapper{
 			storage.MapOnPrefix(root),
@@ -581,6 +602,22 @@ func getMappedModuleBucketAndModuleTargeting(
 					storage.MatchOr(
 						notOrMatchers...,
 					),
+				),
+			)
+		}
+		// An includes with length 0 adds no filter to the proto files.
+		if len(includes) > 0 {
+			var orMatchers []storage.Matcher
+			for _, include := range includes {
+				orMatchers = append(
+					orMatchers,
+					storage.MatchPathContained(include),
+				)
+			}
+			matchers = append(
+				matchers,
+				storage.MatchOr(
+					orMatchers...,
 				),
 			)
 		}
@@ -782,4 +819,67 @@ func checkForOverlap(
 		}
 	}
 	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
+}
+
+// bucketIDsForModuleConfigsV2 returns the bucket IDs for the given moduleDirPaths in the same order.
+// moduleDirPaths must already be normalized.
+//
+// v1 does not need to call a function like this because bucketIDs are just their module roots relative to the workspace root, which are unique.
+func bucketIDsForModuleConfigsV2(moduleConfigs []bufconfig.ModuleConfig) []string {
+	moduleDirPaths := slicesext.Map(moduleConfigs, bufconfig.ModuleConfig.DirPath)
+	// In a v2 bufYAMLFile, multiple module configs may have the same DirPath, but we still want to
+	// make sure each local module has a unique BucketID, which means we cannot use their DirPaths as
+	// BucketIDs directly. Instead, we append an index (1-indexed) to each DirPath to deduplicate, and
+	// each module's bucketID becomes "<path>[index]", except for the first one does not need the index
+	// and its bucketID is stil "<path>".
+	// As an example, bucketIDs are shown for modules in the buf.yaml below:
+	// ...
+	// modules:
+	//   - path: foo # bucketID: foo
+	//   - path: bar # bucketID: bar
+	//   - path: foo # bucketID: foo-2
+	//   - path: bar # bucketID: bar-2
+	//   - path: bar # bucketID: bar-3
+	//   - path: new # bucketID: new
+	//   - path: foo # bucketID: foo-3
+	// ...
+	// Note: The BufYAMLFile interface guarantees that the relative order among module configs with
+	// the same path is the same order among these modules in the external buf.yaml v2, e.g. the 2nd
+	// "foo" in the external buf.yaml above is also the 2nd "foo" in module configs, even though sorted:
+	// [bar, bar, bar, foo, foo, foo, new].
+	//                       ^
+	bucketIDs := bucketIDsForDirPaths(moduleDirPaths, false)
+	if len(slicesext.Duplicates(bucketIDs)) == 0 {
+		// This approach does not produce duplicate bucketIDs in the result most of the time, we return
+		// the bucketIDs if we don't detect any duplicates and it gives us the nice property that for
+		// 99% of the v2 workspaces, each module's bucketID is its DirPath.
+		return bucketIDs
+	}
+	// However, the approach above may create duplicates in the result bucketIDs, for example:
+	// ...
+	// modules:
+	//   - path: foo-2 # bucketID: foo-2
+	//   - path: foo   # bucketID: foo
+	//   - path: foo   # bucketID: foo-2
+	// Notice that both the module at "foo-2" and the second module at "foo" have bucketID "foo-2".
+	// In this case, we append an index to every DirPath, including the first occurrence of each DirPath.
+	return bucketIDsForDirPaths(moduleDirPaths, true)
+}
+
+func bucketIDsForDirPaths(moduleDirPaths []string, firstIDHasSuffix bool) []string {
+	bucketIDs := make([]string, 0, len(moduleDirPaths))
+	// Use dirPathToRunningCount to keep track of how many modules of this path has been seen (before the
+	// current module) in this BufYAMLFile.
+	dirPathToRunningCount := make(map[string]int)
+	for _, moduleDirPath := range moduleDirPaths {
+		// If n modules before this one has the same DirPath, then this module has index n+1 (1-indexed).
+		currentModuleDirPathIndex := dirPathToRunningCount[moduleDirPath] + 1
+		bucketID := fmt.Sprintf("%s-%d", moduleDirPath, currentModuleDirPathIndex)
+		if currentModuleDirPathIndex == 1 && !firstIDHasSuffix {
+			bucketID = moduleDirPath
+		}
+		bucketIDs = append(bucketIDs, bucketID)
+		dirPathToRunningCount[moduleDirPath]++
+	}
+	return bucketIDs
 }

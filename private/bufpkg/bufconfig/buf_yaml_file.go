@@ -24,7 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -72,8 +71,20 @@ type BufYAMLFile interface {
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
 	//
 	// This will always be non-empty.
-	// All ModuleConfigs will have unique ModuleFullNames.
-	// Sorted by DirPath.
+	// All ModuleConfigs will have unique ModuleFullNames, but not necessarily
+	// unique DirPaths.
+	//
+	// The module configs are sorted by DirPath. If two module configs have the
+	// same DirPath, the order defined in the external file is used to break the tie.
+	// For example, if in the buf.yaml there are:
+	// - path: foo
+	//   module: buf.build/acme/foobaz
+	//   ...
+	// - path: foo
+	//   module: buf.build/acme/foobar
+	//   ...
+	// Then in ModuleConfigs, the config with buf.build/acme/foobaz still comes before buf.build/acme/foobar,
+	// because it comes earlier in the buf.yaml. This also gives a deterministic order of ModuleConfigs.
 	ModuleConfigs() []ModuleConfig
 	// TopLevelLintConfig returns the top-level LintConfig for the File.
 	//
@@ -259,6 +270,8 @@ func newBufYAMLFile(
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
 		return nil, fmt.Errorf("had %d ModuleConfigs passed to NewBufYAMLFile for FileVersion %v", len(moduleConfigs), fileVersion)
 	}
+	// At this point, if there are multiple moduleConfigs, we know the version must be v2 and we do not
+	// need to check for duplicate DirPaths because they are allowed in v2.
 	if len(moduleConfigs) == 0 {
 		return nil, errors.New("had 0 ModuleConfigs passed to NewBufYAMLFile")
 	}
@@ -277,25 +290,16 @@ func newBufYAMLFile(
 		}
 	}
 	// Zero values are not added to duplicates.
-	duplicateModuleConfigDirPaths := slicesext.Duplicates(
-		slicesext.Map(
-			moduleConfigs,
-			func(moduleConfig ModuleConfig) string {
-				return moduleConfig.DirPath()
-			},
-		),
-	)
-	if len(duplicateModuleConfigDirPaths) > 0 {
-		return nil, fmt.Errorf("module directory %q seen more than once", strings.Join(duplicateModuleConfigDirPaths, ", "))
-	}
-	// Zero values are not added to duplicates.
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleConfigs); err != nil {
 		return nil, err
 	}
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(configuredDepModuleRefs); err != nil {
 		return nil, err
 	}
-	sort.Slice(
+	// Since multiple module configs with the same DirPath are allowed in v2, we need a stable sort
+	// so that the relative order among module configs with the same DirPath is preserved from the
+	// external buf.yaml, as specified in BufYAMLFile.ModuleConfigs' doc.
+	sort.SliceStable(
 		moduleConfigs,
 		func(i int, j int) bool {
 			return moduleConfigs[i].DirPath() < moduleConfigs[j].DirPath()
@@ -401,6 +405,13 @@ func readBufYAMLFile(
 		if err != nil {
 			return nil, err
 		}
+		// Keys in rootToExcludes are already normalized, validated and made relative to the module DirPath.
+		// These are exactly the keys that rootToIncludes should have.
+		rootToIncludes := make(map[string][]string)
+		for root := range rootToExcludes {
+			// In v1beta1 and v1, includes is not an option and is always empty.
+			rootToIncludes[root] = []string{}
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -426,6 +437,7 @@ func readBufYAMLFile(
 		moduleConfig, err := newModuleConfig(
 			"",
 			moduleFullName,
+			rootToIncludes,
 			rootToExcludes,
 			lintConfig,
 			breakingConfig,
@@ -481,28 +493,77 @@ func readBufYAMLFile(
 					return nil, err
 				}
 			}
-			// Makes sure that the given path is normalized, validated, and contained within dirPath.
+			// Makes sure that the given paths are normalized, validated, and contained within dirPath.
 			//
-			// Used on excludes, and lint and breaking change paths.
+			// Run this check for includes, excludes, and lint and breaking change paths.
 			//
 			// We first check that a given path is within a module before passing it to this function
 			// if the path came from defaultExternalLintConfig or defaultExternalBreakingConfig.
-			// The only root for v2 buf.yamls must be ".", so we have to make the excludes relative first.
+			normalIncludes, err := normalizeAndCheckPaths(externalModule.Includes, "include")
+			if err != nil {
+				// user error
+				return nil, err
+			}
+			relIncludes, err := slicesext.MapError(
+				normalIncludes,
+				func(normalInclude string) (string, error) {
+					if normalInclude == dirPath {
+						return "", fmt.Errorf("include path %q is equal to module directory %q", normalInclude, dirPath)
+					}
+					if !normalpath.EqualsOrContainsPath(dirPath, normalInclude, normalpath.Relative) {
+						return "", fmt.Errorf("include path %q does not reside within module directory %q", normalInclude, dirPath)
+					}
+					if normalpath.Ext(normalInclude) == ".proto" {
+						return "", fmt.Errorf("includes can only be directories but file %q discovered", normalInclude)
+					}
+					// An include path must be made relative to its moduleDirPath.
+					return normalpath.Rel(dirPath, normalInclude)
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			// The only root for v2 buf.yamls must be "." and relIncludes are already relative to the moduleDirPath.
+			rootToIncludes := map[string][]string{".": relIncludes}
 			relExcludes, err := slicesext.MapError(
 				externalModule.Excludes,
-				func(path string) (string, error) {
-					path, err := normalpath.NormalizeAndValidate(path)
+				func(normalExclude string) (string, error) {
+					normalExclude, err := normalpath.NormalizeAndValidate(normalExclude)
 					if err != nil {
 						// user error
 						return "", fmt.Errorf("invalid exclude path: %w", err)
 					}
-					if path == dirPath {
-						return "", fmt.Errorf("exclude path %q is equal to module directory %q", path, dirPath)
+					if normalExclude == dirPath {
+						return "", fmt.Errorf("exclude path %q is equal to module directory %q", normalExclude, dirPath)
 					}
-					if !normalpath.EqualsOrContainsPath(dirPath, path, normalpath.Relative) {
-						return "", fmt.Errorf("exclude path %q does not reside within module directory %q", path, dirPath)
+					if !normalpath.EqualsOrContainsPath(dirPath, normalExclude, normalpath.Relative) {
+						return "", fmt.Errorf("exclude path %q does not reside within module directory %q", normalExclude, dirPath)
 					}
-					return normalpath.Rel(dirPath, path)
+					if len(normalIncludes) > 0 {
+						// Each exclude path must be contained in some include path. It is invalid to say include "proto/foo/v1"
+						// and also exclude "proto/foo/v2", because the exclude path is redundant.
+						var foundContainingInclude bool
+						// We iterate through normalIncludes instead of relIncludes so that when we compare an exclude
+						// path to an include path, they are both relative to the workspace root.
+						for _, normalInclude := range normalIncludes {
+							if normalInclude == normalExclude {
+								return "", fmt.Errorf("%q is both an include path and an exclude path", normalExclude)
+							}
+							if normalpath.ContainsPath(normalExclude, normalInclude, normalpath.Relative) {
+								return "", fmt.Errorf("%q (an include path) is a subdirectory of %q (an exclude path)", normalInclude, normalExclude)
+							}
+							if normalpath.ContainsPath(normalInclude, normalExclude, normalpath.Relative) {
+								foundContainingInclude = true
+								// Do not exit early here, continue to validate the exclude path against the rest of include paths,
+								// to make sure the exclude path does not equal to or contains any of the include path.
+							}
+						}
+						if !foundContainingInclude {
+							return "", fmt.Errorf("include paths are specified but %q is not contained within any of them", normalExclude)
+						}
+					}
+					// The only root for v2 buf.yamls must be ".", so we have to make the excludes relative first.
+					return normalpath.Rel(dirPath, normalExclude)
 				},
 			)
 			if err != nil {
@@ -547,6 +608,7 @@ func readBufYAMLFile(
 			moduleConfig, err := newModuleConfig(
 				dirPath,
 				moduleFullName,
+				rootToIncludes,
 				rootToExcludes,
 				lintConfig,
 				breakingConfig,
@@ -724,7 +786,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
 			joinDirPath := func(importPath string) string {
-				return filepath.Join(moduleDirPath, importPath)
+				return normalpath.Join(moduleDirPath, importPath)
 			}
 			externalModule := externalBufYAMLFileModuleV2{
 				Path: moduleDirPath,
@@ -732,6 +794,15 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 				externalModule.Name = moduleFullName.String()
 			}
+			rootToIncludes := moduleConfig.RootToIncludes()
+			if len(rootToIncludes) != 1 {
+				return syserror.Newf("had rootToIncludes length %d for NewModuleConfig with FileVersion %v", len(rootToIncludes), fileVersion)
+			}
+			includes, ok := rootToIncludes["."]
+			if !ok {
+				return syserror.Newf("had rootToIncludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
+			}
+			externalModule.Includes = slicesext.Map(includes, joinDirPath)
 			rootToExcludes := moduleConfig.RootToExcludes()
 			if len(rootToExcludes) != 1 {
 				return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
@@ -848,10 +919,10 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	// Verify that no exclude equals a root directly and only directories are specified.
 	for _, fullExclude := range fullExcludes {
 		if normalpath.Ext(fullExclude) == ".proto" {
-			return nil, fmt.Errorf("excludes can only be directories but file %s discovered", fullExclude)
+			return nil, fmt.Errorf("excludes can only be directories but file %q discovered", fullExclude)
 		}
 		if _, ok := rootToExcludes[fullExclude]; ok {
-			return nil, fmt.Errorf("%s is both a root and exclude, which means the entire root is excluded, which is not valid", fullExclude)
+			return nil, fmt.Errorf("%q is both a root and exclude, which means the entire root is excluded, which is not valid", fullExclude)
 		}
 	}
 
@@ -860,7 +931,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:
-			return nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", fullExclude)
+			return nil, fmt.Errorf("exclude %q is not contained in any root, which is not valid", fullExclude)
 		case 1:
 			root := matchingRoots[0]
 			exclude, err := normalpath.Rel(root, fullExclude)
@@ -1204,6 +1275,7 @@ type externalBufYAMLFileV2 struct {
 type externalBufYAMLFileModuleV2 struct {
 	Path     string                                 `json:"path,omitempty" yaml:"path,omitempty"`
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Includes []string                               `json:"includes,omitempty" yaml:"includes,omitempty"`
 	Excludes []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`

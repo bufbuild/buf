@@ -56,9 +56,6 @@ type Module interface {
 	// Modules commonly built from a ModuleSetBuilder.
 	//
 	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
-	//
-	// While this should not be relied upion, this ID is currently equal to the ModuleFullName,
-	// and if the ModuleFullName is not present, then the BucketID.
 	OpaqueID() string
 	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
 	// with via ModuleSetProvider.
@@ -91,6 +88,23 @@ type Module interface {
 	//
 	// If ModuleFullName is nil, this will always be empty.
 	CommitID() uuid.UUID
+	// Description returns a human-readable description of the Module.
+	//
+	// This can be manually set by a constructor of a Module. In practice, the only current way
+	// to specifically set this string is by calling LocalModuleWithDescription when constructing
+	// a ModuleSet.
+	//
+	// This is used to construct descriptive error messages pointing to configured modules.
+	// For example, this may return something along the lines of:
+	//
+	//   path: proto/foo, includes; ["a", "b"], excludes: "c"
+	//
+	// The shape of this field should not be relied upon.
+	// This field will be unique within a given ModuleSet.
+	//
+	// This will never be empty. If a description was not explicitly set, this falls back to
+	// OpaqueID.
+	Description() string
 
 	// Digest returns the Module digest for the given DigestType.
 	//
@@ -218,6 +232,7 @@ type module struct {
 	ctx                        context.Context
 	getBucket                  func() (storage.ReadBucket, error)
 	bucketID                   string
+	description                string
 	moduleFullName             ModuleFullName
 	commitID                   uuid.UUID
 	isTarget                   bool
@@ -238,6 +253,7 @@ func newModule(
 	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
+	description string,
 	moduleFullName ModuleFullName,
 	commitID uuid.UUID,
 	isTarget bool,
@@ -290,6 +306,7 @@ func newModule(
 		ctx:                        ctx,
 		getBucket:                  syncOnceValuesGetBucketWithStorageMatcherApplied,
 		bucketID:                   bucketID,
+		description:                description,
 		moduleFullName:             moduleFullName,
 		commitID:                   commitID,
 		isTarget:                   isTarget,
@@ -338,6 +355,13 @@ func (m *module) CommitID() uuid.UUID {
 	return m.commitID
 }
 
+func (m *module) Description() string {
+	if m.description != "" {
+		return m.description
+	}
+	return m.OpaqueID()
+}
+
 func (m *module) Digest(digestType DigestType) (Digest, error) {
 	getDigest, ok := m.digestTypeToGetDigest[digestType]
 	if !ok {
@@ -376,6 +400,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		ctx:                        m.ctx,
 		getBucket:                  m.getBucket,
 		bucketID:                   m.bucketID,
+		description:                m.description,
 		moduleFullName:             m.moduleFullName,
 		commitID:                   m.commitID,
 		isTarget:                   isTarget,

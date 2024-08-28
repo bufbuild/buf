@@ -39,6 +39,9 @@ func init() {
 		map[string][]string{
 			".": {},
 		},
+		map[string][]string{
+			".": {},
+		},
 		DefaultLintConfigV1,
 		DefaultBreakingConfigV1,
 	)
@@ -48,6 +51,9 @@ func init() {
 	DefaultModuleConfigV2, err = newModuleConfig(
 		".",
 		nil,
+		map[string][]string{
+			".": {},
+		},
 		map[string][]string{
 			".": {},
 		},
@@ -78,7 +84,8 @@ type ModuleConfig interface {
 	//
 	// This may be nil.
 	ModuleFullName() bufmodule.ModuleFullName
-	// RootToExcludes contains a map from root to the excludes for that root.
+	// RootToIncludes contains a map from root to the directories to include for that root.
+	// The keys in RootToIncludes are always the same as those in RooToExcludes.
 	//
 	// Roots are the root directories within a bucket to search for Protobuf files.
 	//
@@ -86,6 +93,32 @@ type ModuleConfig interface {
 	// All Protobuf files must be unique relative to the roots, ie if foo and bar
 	// are roots, then foo/baz.proto and bar/baz.proto are not allowed.
 	// All roots will be normalized and validated.
+	//
+	// A proto file within a root is considered part of the module when it satisfies both:
+	//
+	// - being inside ONE of the include paths for this root (unless includes is empty, which
+	//   does not filter the proto files)
+	// - being inside NONE of the exclude paths for this root
+	//
+	// There should be no overlap between the includes, ie foo/bar and foo are not allowed.
+	// All includes must reside within a root, but none will be equal to a root.
+	// All includes will be normalized and validated.
+	//
+	// *** The includes in this map will be relative to the root they map to! ***
+	// *** Note that root is relative to DirPath! ***
+	// That is, the actual path to a root within a is DirPath()/root, and the
+	// actual path to an exclude is DirPath()/root/include (in v1beta1 and v1, this
+	// is just root and root/exclude).
+	//
+	// This will never return a nil or empty value.
+	// If RootToIncludes is empty in the buf.yaml, this will return "." -> []string{}.
+	//
+	// For v1beta1, this may contain multiple keys but the values for these keys are empty slices.
+	// For v1, this will contain a single key "." with an empty slice as its value.
+	// For v2, this will contain a single key ".", with potentially some includes.
+	RootToIncludes() map[string][]string
+	// RootToExcludes contains a map from root to the excludes for that root.
+	// The keys in RootToExcludes are always the same as those in RootToIncludes.
 	//
 	// Excludes are the directories within a bucket to exclude.
 	// There should be no overlap between the excludes, ie foo/bar and foo are not allowed.
@@ -120,6 +153,7 @@ type ModuleConfig interface {
 func NewModuleConfig(
 	dirPath string,
 	moduleFullName bufmodule.ModuleFullName,
+	rootToIncludes map[string][]string,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
@@ -127,6 +161,7 @@ func NewModuleConfig(
 	return newModuleConfig(
 		dirPath,
 		moduleFullName,
+		rootToIncludes,
 		rootToExcludes,
 		lintConfig,
 		breakingConfig,
@@ -138,6 +173,7 @@ func NewModuleConfig(
 type moduleConfig struct {
 	dirPath        string
 	moduleFullName bufmodule.ModuleFullName
+	rootToIncludes map[string][]string
 	rootToExcludes map[string][]string
 	lintConfig     LintConfig
 	breakingConfig BreakingConfig
@@ -147,6 +183,7 @@ type moduleConfig struct {
 func newModuleConfig(
 	dirPath string,
 	moduleFullName bufmodule.ModuleFullName,
+	rootToIncludes map[string][]string,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
@@ -185,6 +222,14 @@ func newModuleConfig(
 			return nil, fmt.Errorf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 		}
 	}
+	newRootToIncludes := make(map[string][]string)
+	for root, includes := range rootToIncludes {
+		includes, err := slicesext.MapError(includes, normalpath.NormalizeAndValidate)
+		if err != nil {
+			return nil, err
+		}
+		newRootToIncludes[root] = slicesext.ToUniqueSorted(includes)
+	}
 	newRootToExcludes := make(map[string][]string)
 	for root, excludes := range rootToExcludes {
 		excludes, err := slicesext.MapError(excludes, normalpath.NormalizeAndValidate)
@@ -196,6 +241,7 @@ func newModuleConfig(
 	return &moduleConfig{
 		dirPath:        dirPath,
 		moduleFullName: moduleFullName,
+		rootToIncludes: newRootToIncludes,
 		rootToExcludes: newRootToExcludes,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
@@ -208,6 +254,10 @@ func (m *moduleConfig) DirPath() string {
 
 func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
 	return m.moduleFullName
+}
+
+func (m *moduleConfig) RootToIncludes() map[string][]string {
+	return copyStringToStringSliceMap(m.rootToIncludes)
 }
 
 func (m *moduleConfig) RootToExcludes() map[string][]string {
