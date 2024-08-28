@@ -2176,7 +2176,7 @@ func TestModInitBasic(t *testing.T) {
 version: v2
 lint:
   use:
-    - DEFAULT
+    - STANDARD
 breaking:
   use:
     - FILE

@@ -946,7 +946,7 @@ func handleLintMessageProtovalidate(
 	_ bufcheckserverutil.Request,
 	message bufprotosource.Message,
 ) error {
-	add := func(
+	addAnnotationFunc := func(
 		_ bufprotosource.Descriptor,
 		location bufprotosource.Location,
 		_ []bufprotosource.Location,
@@ -960,9 +960,7 @@ func handleLintMessageProtovalidate(
 			args...,
 		)
 	}
-	// TODO: make buflintvalidate.CheckMessage's signature the same as this function,
-	// instead of accepting a legacy addFunc as an argument. Same comment for CheckField.
-	return buflintvalidate.CheckMessage(add, message)
+	return buflintvalidate.CheckMessage(addAnnotationFunc, message)
 }
 
 func handleLintFieldProtovalidate(
@@ -970,7 +968,7 @@ func handleLintFieldProtovalidate(
 	_ bufcheckserverutil.Request,
 	field bufprotosource.Field,
 ) error {
-	add := func(
+	addAnnotationFunc := func(
 		_ bufprotosource.Descriptor,
 		location bufprotosource.Location,
 		_ []bufprotosource.Location,
@@ -984,7 +982,7 @@ func handleLintFieldProtovalidate(
 			args...,
 		)
 	}
-	return buflintvalidate.CheckField(add, field)
+	return buflintvalidate.CheckField(addAnnotationFunc, field)
 }
 
 // HandleLintRPCNoClientStreaming is a handle function.
