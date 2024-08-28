@@ -1028,6 +1028,7 @@ func (c *controller) buildTargetImageWithConfigs(
 		c.logger.Debug(
 			"building image for target module",
 			zap.String("moduleOpaqueID", module.OpaqueID()),
+			zap.String("moduleDescription", module.Description()),
 		)
 		opaqueID := module.OpaqueID()
 		// We need to make sure that all dependencies are non-targets, so that they

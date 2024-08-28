@@ -28,6 +28,14 @@ import (
 // buflint_test.go, and adapt everything to those tests, once we complete the client-side
 // work. This test was just to make sure everything was working end-to-end.
 
+func TestSpecs(t *testing.T) {
+	t.Parallel()
+
+	checktest.SpecTest(t, bufcheckserver.V1Beta1Spec)
+	checktest.SpecTest(t, bufcheckserver.V1Spec)
+	checktest.SpecTest(t, bufcheckserver.V2Spec)
+}
+
 func TestServicePascalCase(t *testing.T) {
 	t.Parallel()
 

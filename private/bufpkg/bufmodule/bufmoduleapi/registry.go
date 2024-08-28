@@ -125,7 +125,7 @@ func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (stri
 	for _, module := range contentModules {
 		moduleFullName := module.ModuleFullName()
 		if moduleFullName == nil {
-			return "", syserror.Newf("expected module name for %q", module.OpaqueID())
+			return "", syserror.Newf("expected module name for %s", module.Description())
 		}
 		moduleRegistry := moduleFullName.Registry()
 		if registry != "" && moduleRegistry != registry {

@@ -175,6 +175,22 @@ func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, com
 	}
 }
 
+// LocalModuleWithDescription returns a new LocalModuleOption that adds the given description to the Module.
+//
+// This is used to construct descriptive error messages pointing to configured modules.
+// For example, this may return something along the lines of:
+//
+//	path: "proto/foo", includes; ["a", "b"], excludes: "c"
+//
+// This field must be unique within a given ModuleSet.
+//
+// This value must be unique for all Modules constructed in a ModuleSet.
+func LocalModuleWithDescription(description string) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.description = description
+	}
+}
+
 // LocalModuleWithTargetPaths returns a new LocalModuleOption that specifically targets the given paths, and
 // specifically excludes the given paths.
 //
@@ -329,6 +345,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 			},
 		),
 		bucketID,
+		localModuleOptions.description,
 		localModuleOptions.moduleFullName,
 		localModuleOptions.commitID,
 		isTarget,
@@ -432,6 +449,7 @@ func (*moduleSetBuilder) isModuleSetBuilder() {}
 type localModuleOptions struct {
 	moduleFullName      ModuleFullName
 	commitID            uuid.UUID
+	description         string
 	targetPaths         []string
 	targetExcludePaths  []string
 	protoFileTargetPath string

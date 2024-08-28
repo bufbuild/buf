@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -50,21 +51,31 @@ func GetModuleConfigForProtocPlugin(
 	if module == "" {
 		module = "."
 	}
+	// Multiple modules in a v2 workspace may have the same moduleDirPath.
+	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		// If we have a v1beta1 or v1 buf.yaml, dirPath will be ".". Using the ModuleConfig from
 		// a v1beta1 or v1 buf.yaml file matches the pre-refactor behavior.
 		//
 		// If we have a v2 buf.yaml, users have to provide a module path or full name, otherwise
 		// we can't deduce what ModuleConfig to use.
-		if dirPath := moduleConfig.DirPath(); dirPath == module {
+		if fullName := moduleConfig.ModuleFullName(); fullName != nil && fullName.String() == module {
+			// Can return here because BufYAMLFile guarantees that module full names are unique across
+			// its module configs.
 			return moduleConfig, nil
 		}
-		if fullName := moduleConfig.ModuleFullName(); fullName != nil && fullName.String() == module {
-			return moduleConfig, nil
+		if dirPath := moduleConfig.DirPath(); dirPath == module {
+			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
 		}
 	}
-	// TODO: point to a webpage that explains this.
-	return nil, errors.New(`could not determine which module to pull configuration from. See the docs for more details.`)
+	switch len(moduleConfigsFound) {
+	case 0:
+		return nil, fmt.Errorf("no module found for %q", module)
+	case 1:
+		return moduleConfigsFound[0], nil
+	default:
+		return nil, fmt.Errorf("multiple modules found at %q, specify its full name as <remote/owner/module> instead", module)
+	}
 }
 
 // NewAppextContainerForPluginEnv creates a new appext.Container for the PluginEnv.

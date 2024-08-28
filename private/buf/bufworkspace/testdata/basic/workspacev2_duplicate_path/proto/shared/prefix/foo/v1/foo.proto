@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package prefix.foo.v1;
+
+import "acme/date/v1/date.proto";
+import "prefix/bar/v1/bar.proto";
+
+message Foo {
+  acme.date.v1.Date date = 1;
+  prefix.bar.v1.Bar bar = 2;
+}

@@ -1,0 +1,12 @@
+version: v2
+modules:
+  - path: proto
+    name: buf.test/acme/foobar
+    includes:
+      - proto/foo
+      - proto/bar
+    excludes:
+      - proto/foo/internal
+      - proto/bar/internal
+  - path: proto/foo/internal
+  - path: proto/bar/internal

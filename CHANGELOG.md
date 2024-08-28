@@ -4,6 +4,17 @@
 
 - No changes yet.
 
+## [v1.39.0] - 2024-08-27
+
+- Fix git input handling of relative HEAD refs without branch names.
+- Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
+  * If `includes` is specified, a proto file is considered in the module only if it is in one of the
+    directories specified.
+  * If both `includes` and `excludes` keys are specified for a module, a proto file is considered
+    part of this module if it is contained in any of the include paths and not in any of the exclude
+    paths.
+- Allow multiple module configurations in the same v2 `buf.yaml` to have the same directory path.
+
 ## [v1.38.0] - 2024-08-22
 
 - Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
@@ -1221,7 +1232,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.38.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.39.0...HEAD
+[v1.39.0]: https://github.com/bufbuild/buf/compare/v1.38.0...v1.39.0
 [v1.38.0]: https://github.com/bufbuild/buf/compare/v1.37.0...v1.38.0
 [v1.37.0]: https://github.com/bufbuild/buf/compare/v1.36.0...v1.37.0
 [v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0

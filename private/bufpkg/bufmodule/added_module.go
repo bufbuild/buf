@@ -315,6 +315,7 @@ func (a *addedModule) ToModule(
 		ctx,
 		getBucket,
 		"",
+		"",
 		a.remoteModuleKey.ModuleFullName(),
 		a.remoteModuleKey.CommitID(),
 		a.isTarget,

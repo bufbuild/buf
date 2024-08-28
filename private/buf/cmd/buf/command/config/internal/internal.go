@@ -257,10 +257,20 @@ func lsRun(
 
 func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, modulePath string) (bufconfig.ModuleConfig, error) {
 	modulePath = normalpath.Normalize(modulePath)
+	// Multiple modules in a v2 workspace may have the same moduleDirPath.
+	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range moduleConfigs {
 		if moduleConfig.DirPath() == modulePath {
-			return moduleConfig, nil
+			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
 		}
 	}
-	return nil, fmt.Errorf("no module found for path %q", modulePath)
+	switch len(moduleConfigsFound) {
+	case 0:
+		return nil, fmt.Errorf("no module found for path %q", modulePath)
+	case 1:
+		return moduleConfigsFound[0], nil
+	default:
+		// TODO: add --module-name flag to allow differentiation
+		return nil, fmt.Errorf("multiple modules found for %q", modulePath)
+	}
 }
