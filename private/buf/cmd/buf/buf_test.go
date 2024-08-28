@@ -2114,7 +2114,7 @@ proto/shared
 proto/shared
 proto/shared1
 proto/shared1
-separate	
+separate
 	`,
 
 		"config",
@@ -2143,7 +2143,7 @@ buf.build/shared/zero
 		0,
 		// format as json, sort by path
 		`
-	
+
 	{"path":"proto/shared","excludes":["proto/shared/prefix/foo"]}
 	{"path":"proto/shared","excludes":["proto/shared/prefix/bar"],"name":"buf.build/shared/zero"}
 	{"path":"proto/shared1","includes":["proto/shared1/prefix/x"],"name":"buf.build/shared/one"}
