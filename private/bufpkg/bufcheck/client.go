@@ -34,8 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/bufplugin-go/check"
-	"github.com/bufbuild/pluginrpc-go"
 	"go.uber.org/zap"
+	"pluginrpc.com/pluginrpc"
 )
 
 type client struct {

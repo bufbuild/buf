@@ -16,7 +16,7 @@ package pluginrpcutil
 
 import (
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/pluginrpc-go"
+	"pluginrpc.com/pluginrpc"
 )
 
 // NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.

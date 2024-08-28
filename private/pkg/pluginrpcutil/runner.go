@@ -21,7 +21,7 @@ import (
 	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/pluginrpc-go"
+	"pluginrpc.com/pluginrpc"
 )
 
 type runner struct {
