@@ -28,7 +28,7 @@ var (
 	IDFieldValidatedAsUUIDRuleSpec = &check.RuleSpec{
 		ID:             validateIDDashless,
 		CategoryIDs:    nil,
-		IsDefault:      true,
+		Default:        true,
 		Purpose:        `Checks that all fields named with a certain name (default is "id") are validated as dashless UUIDs in protovalidate.`,
 		Type:           check.RuleTypeLint,
 		ReplacementIDs: nil,

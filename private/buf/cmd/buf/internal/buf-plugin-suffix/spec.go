@@ -77,7 +77,7 @@ var (
 		Purpose:     "Ensure that there are no services with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryOperationSuffixesID},
-		IsDefault:   true,
+		Default:     true,
 		Handler:     check.RuleHandlerFunc(handleLintServiceBannedSuffixes),
 	}
 	lintRPCBannedSuffixesRuleSpec = &check.RuleSpec{
@@ -85,7 +85,7 @@ var (
 		Purpose:     "Ensure that there are no RPCs with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryOperationSuffixesID},
-		IsDefault:   true,
+		Default:     true,
 		Handler:     check.RuleHandlerFunc(handleLintRPCBannedSuffixes),
 	}
 	lintMessageBannedSuffixesRuleSpec = &check.RuleSpec{
@@ -93,7 +93,7 @@ var (
 		Purpose:     "Ensure that there are no messages with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryResourceSuffixesID},
-		IsDefault:   false,
+		Default:     false,
 		Deprecated:  true,
 		ReplacementIDs: []string{
 			// Mesasges encapsulate too many use-cases, we only lint fields instead.
@@ -106,7 +106,7 @@ var (
 		Purpose:     "Ensure that there are no fields with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryAttributesSuffixesID},
-		IsDefault:   false,
+		Default:     false,
 		Handler:     check.RuleHandlerFunc(handleLintFieldBannedSuffixes),
 	}
 	lintEnumBannedSuffixesRuleSpec = &check.RuleSpec{
@@ -114,7 +114,7 @@ var (
 		Purpose:     "Ensure that there are no enums with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryResourceSuffixesID},
-		IsDefault:   false,
+		Default:     false,
 		Deprecated:  true,
 		ReplacementIDs: []string{
 			// Enums encapsulate too many use-cases, we only lint enum values instead.
@@ -127,7 +127,7 @@ var (
 		Purpose:     "Ensure that there are no enum values of top-level enums with the list of configured banned suffixes.",
 		Type:        check.RuleTypeLint,
 		CategoryIDs: []string{categoryAttributesSuffixesID},
-		IsDefault:   false,
+		Default:     false,
 		Handler:     check.RuleHandlerFunc(handleLintEnumValueBannedSuffixes),
 	}
 	breakingServiceSuffixesRPCsNoChangeRuleSpec = &check.RuleSpec{
@@ -135,7 +135,7 @@ var (
 		Purpose:     "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.",
 		Type:        check.RuleTypeBreaking,
 		CategoryIDs: []string{categoryOperationSuffixesID},
-		IsDefault:   true,
+		Default:     true,
 		Handler:     check.RuleHandlerFunc(handleBreakingServiceSuffixesNoChange),
 	}
 	breakingMessageSuffixesFieldsNoChangeRuleSpec = &check.RuleSpec{
@@ -143,7 +143,7 @@ var (
 		Purpose:     "Ensure that messages with configured suffixes are not deleted and do not have new fields or delete fields.",
 		Type:        check.RuleTypeBreaking,
 		CategoryIDs: []string{categoryResourceSuffixesID, categoryAttributesSuffixesID},
-		IsDefault:   false,
+		Default:     false,
 		Handler:     check.RuleHandlerFunc(handleBreakingMessageSuffixesNoChange),
 	}
 	breakingEnumSuffixesEnumValuesNoChangeRuleSpec = &check.RuleSpec{
@@ -151,7 +151,7 @@ var (
 		Purpose:     "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.",
 		Type:        check.RuleTypeBreaking,
 		CategoryIDs: []string{categoryResourceSuffixesID, categoryAttributesSuffixesID},
-		IsDefault:   false,
+		Default:     false,
 		Handler:     check.RuleHandlerFunc(handleBreakingEnumSuffixesNoChange),
 	}
 )

@@ -28,8 +28,8 @@ var (
 	MessageNotDisabledRuleSpec = &check.RuleSpec{
 		ID:             messageNotDisabled,
 		CategoryIDs:    nil,
-		IsDefault:      true,
-		Purpose:        `Checks that no message has (buf.validate.message).disabled set`,
+		Default:        true,
+		Purpose:        `Checks that no message has (buf.validate.message).disabled set.`,
 		Type:           check.RuleTypeLint,
 		ReplacementIDs: nil,
 		Handler:        checkutil.NewMessageRuleHandler(checkMessageNotDisabled),

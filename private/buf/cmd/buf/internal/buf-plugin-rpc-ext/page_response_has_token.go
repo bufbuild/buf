@@ -28,7 +28,7 @@ var (
 	PageRPCResponseTokenRuleSpec = &check.RuleSpec{
 		ID:             pageRPCResponseToken,
 		CategoryIDs:    nil,
-		IsDefault:      true,
+		Default:        true,
 		Purpose:        `Checks that all pagination RPC responses has a page token set.`,
 		Type:           check.RuleTypeLint,
 		ReplacementIDs: nil,
