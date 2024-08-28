@@ -42,7 +42,7 @@ func (b *RuleSpecBuilder) Build(isDefault bool, categoryIDs []string) *check.Rul
 	return &check.RuleSpec{
 		ID:             b.ID,
 		CategoryIDs:    categoryIDs,
-		IsDefault:      isDefault,
+		Default:        isDefault,
 		Purpose:        b.Purpose,
 		Type:           b.Type,
 		Deprecated:     b.Deprecated,

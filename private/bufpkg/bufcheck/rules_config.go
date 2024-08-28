@@ -165,7 +165,7 @@ func newRulesConfig(
 	// Sort and filter empty.
 	useRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(useRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 {
-		useRuleIDsAndCategoryIDs = slicesext.Map(slicesext.Filter(allRules, func(rule Rule) bool { return rule.IsDefault() }), Rule.ID)
+		useRuleIDsAndCategoryIDs = slicesext.Map(slicesext.Filter(allRules, func(rule Rule) bool { return rule.Default() }), Rule.ID)
 	}
 	exceptRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(exceptRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 && len(exceptRuleIDsAndCategoryIDs) == 0 {

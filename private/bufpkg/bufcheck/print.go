@@ -172,7 +172,7 @@ func printRulesTextSection(
 	}
 	for _, rule := range rules {
 		var defaultString string
-		if rule.IsDefault() {
+		if rule.Default() {
 			defaultString = "*" + strings.Repeat(" ", len(defaultHeader)-1)
 		} else {
 			defaultString = strings.Repeat(" ", len(defaultHeader))
@@ -246,10 +246,10 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 			one := rules[i]
 			two := rules[j]
 			// Sort default rules before non-default.
-			if one.IsDefault() && !two.IsDefault() {
+			if one.Default() && !two.Default() {
 				return true
 			}
-			if !one.IsDefault() && two.IsDefault() {
+			if !one.Default() && two.Default() {
 				return false
 			}
 			// Next, sort builtin rules before plugin rules, then plugin rules by plugin name.
@@ -344,7 +344,7 @@ func newExternalRule(
 	return &externalRule{
 		ID:           rule.ID(),
 		Categories:   slicesext.Map(categoriesFunc(rule), check.Category.ID),
-		Default:      rule.IsDefault(),
+		Default:      rule.Default(),
 		Purpose:      rule.Purpose(),
 		Plugin:       rule.PluginName(),
 		Deprecated:   rule.Deprecated(),

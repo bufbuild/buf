@@ -38,11 +38,11 @@ const (
 
 var (
 	fieldLowerSnakeCaseRuleSpec = &check.RuleSpec{
-		ID:        fieldLowerSnakeCaseRuleID,
-		IsDefault: true,
-		Purpose:   "Checks that all field names are lower_snake_case.",
-		Type:      check.RuleTypeLint,
-		Handler:   checkutil.NewFieldRuleHandler(checkFieldLowerSnakeCase),
+		ID:      fieldLowerSnakeCaseRuleID,
+		Default: true,
+		Purpose: "Checks that all field names are lower_snake_case.",
+		Type:    check.RuleTypeLint,
+		Handler: checkutil.NewFieldRuleHandler(checkFieldLowerSnakeCase),
 	}
 
 	fieldLowerSnakeCaseSpec = &check.Spec{
@@ -52,11 +52,11 @@ var (
 	}
 
 	timestampSuffixRuleSpec = &check.RuleSpec{
-		ID:        timestampSuffixRuleID,
-		IsDefault: true,
-		Purpose:   `Checks that all google.protobuf.Timestamps end in a specific suffix (default is "_time").`,
-		Type:      check.RuleTypeLint,
-		Handler:   checkutil.NewFieldRuleHandler(checkTimestampSuffix),
+		ID:      timestampSuffixRuleID,
+		Default: true,
+		Purpose: `Checks that all google.protobuf.Timestamps end in a specific suffix (default is "_time").`,
+		Type:    check.RuleTypeLint,
+		Handler: checkutil.NewFieldRuleHandler(checkTimestampSuffix),
 	}
 
 	timestampSuffixSpec = &check.Spec{
@@ -181,7 +181,7 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 		Rules: []*check.RuleSpec{
 			{
 				ID:          timestampSuffixRuleID,
-				IsDefault:   true,
+				Default:     true,
 				CategoryIDs: []string{"FOO"},
 				Purpose:     `Checks that all google.protobuf.Timestamps end in a specific suffix (default is "_time").`,
 				Type:        check.RuleTypeLint,
@@ -199,7 +199,7 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 		Rules: []*check.RuleSpec{
 			{
 				ID:          fieldLowerSnakeCaseRuleID,
-				IsDefault:   true,
+				Default:     true,
 				CategoryIDs: []string{"FOO"},
 				Purpose:     "Checks that all field names are lower_snake_case.",
 				Type:        check.RuleTypeLint,
