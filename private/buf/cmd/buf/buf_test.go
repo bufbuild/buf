@@ -3184,6 +3184,40 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 			]
 		}`,
 	)
+
+	// tests that if a plugin panics, the buf CLI does not panic
+	require.NotPanics(
+		t,
+		func() {
+			appcmdtesting.RunCommandExitCodeStderrContains(
+				t,
+				func(use string) *appcmd.Command { return NewRootCommand(use) },
+				1,
+				[]string{
+					`panic: this panic is intentional`,
+					`Failure: plugin "buf-plugin-panic" failed: Exited with code 2: exit status 2`,
+				},
+				internaltesting.NewEnvFunc(t),
+				nil,
+				"lint",
+				filepath.Join("testdata", "check_plugins", "current"),
+				"--config",
+				`{
+					"version":"v2",
+					"modules": [
+						{"path": "testdata/check_plugins/current/proto"},
+						{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+					],
+					"lint": {
+						"use": ["LINT_PANIC"]
+					},
+					"plugins":[
+						{"plugin": "buf-plugin-panic"}
+					]
+				}`,
+			)
+		},
+	)
 }
 
 func TestBreakingWithPaths(t *testing.T) {
