@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "buf/validate/validate.proto";
+
+message Three {
+  message Four {
+    string was_two = 1 [(buf.validate.field).string.max_len = 5];
+    string was_ten = 2 [(buf.validate.field).string.max_len = 5]; // breaking change, max len 10 -> 5
+  }
+}
+
+message MSG_DONT_CHANGE {
+  string new_field = 1;
+}
+
+enum E_DO_NOT_CHANGE {
+  ZERO = 0;
+  ONE = 1;
+}

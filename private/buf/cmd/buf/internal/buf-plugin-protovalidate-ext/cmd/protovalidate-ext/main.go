@@ -23,7 +23,10 @@ func main() {
 	check.Main(&check.Spec{
 		Rules: []*check.RuleSpec{
 			protovalidateextplugin.IDFieldValidatedAsUUIDRuleSpec,
+			protovalidateextplugin.FieldValidationNotSkippedRuleSpec,
+			protovalidateextplugin.FieldValidationNotSkippedNoImportRuleSpec,
 			protovalidateextplugin.MessageNotDisabledRuleSpec,
+			protovalidateextplugin.StringLenRangeNoShrinkRuleSpec,
 		},
 	})
 }

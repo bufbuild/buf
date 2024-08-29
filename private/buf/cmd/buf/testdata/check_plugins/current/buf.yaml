@@ -1,10 +1,13 @@
 version: v2
 modules:
   - path: proto
+    name: buf.test/test/module
   - path: vendor/protovalidate
 lint:
   ignore:
     - vendor/protovalidate
+    - proto/common/v1/breaking.proto
+    - proto/common/v1alpha1/breaking.proto
 plugins:
   - plugin: buf-plugin-suffix
     options:

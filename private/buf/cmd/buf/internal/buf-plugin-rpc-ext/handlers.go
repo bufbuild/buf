@@ -19,26 +19,17 @@ import (
 	"strings"
 
 	"github.com/bufbuild/bufplugin-go/check"
-	"github.com/bufbuild/bufplugin-go/check/checkutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-var (
-	// PageRPCRequestTokenRuleSpec is the RuleSpec for the page request token rule.
-	PageRPCRequestTokenRuleSpec = &check.RuleSpec{
-		ID:             pageRPCRequestToken,
-		CategoryIDs:    nil,
-		Default:        true,
-		Purpose:        `Checks that all pagination RPC requests has a page token set.`,
-		Type:           check.RuleTypeLint,
-		ReplacementIDs: nil,
-		Handler:        checkutil.NewMessageRuleHandler(checkPageRequestHasToken),
-	}
+const (
+	pageTokenFieldNameOptionKey = "page_token_field_name"
+	pageRPCPrefixOptionKey      = "page_rpc_prefix"
+	defaultPageTokenFieldName   = "page_token"
 )
 
-const (
-	// pageRPCRequestToken is the Rule ID of page RPC requests having a page token field.
-	pageRPCRequestToken = "PAGE_REQUEST_HAS_TOKEN"
+var (
+	defaultPageRPCPrefixes = []string{"List"}
 )
 
 func checkPageRequestHasToken(
@@ -87,6 +78,56 @@ func checkPageRequestHasToken(
 	responseWriter.AddAnnotation(
 		check.WithDescriptor(messageDescriptor),
 		check.WithMessagef("%q is a pagination request without a page token field named %q", requestName, pageTokenFieldName),
+	)
+	return nil
+}
+
+func checkPageResponseHasToken(
+	_ context.Context,
+	responseWriter check.ResponseWriter,
+	request check.Request,
+	messageDescriptor protoreflect.MessageDescriptor,
+) error {
+	responseName := string(messageDescriptor.Name())
+	if !strings.HasSuffix(responseName, "Response") {
+		return nil
+	}
+	pageRPCPrefixes := defaultPageRPCPrefixes
+	pageRPCPrefixesOptionValue, err := check.GetStringSliceValue(request.Options(), pageRPCPrefixOptionKey)
+	if err != nil {
+		return err
+	}
+	if len(pageRPCPrefixesOptionValue) > 0 {
+		pageRPCPrefixes = pageRPCPrefixesOptionValue
+	}
+	var isPaginationPRC bool
+	for _, prefx := range pageRPCPrefixes {
+		if strings.HasPrefix(responseName, prefx) {
+			isPaginationPRC = true
+			break
+		}
+	}
+	if !isPaginationPRC {
+		return nil
+	}
+	pageTokenFieldName := defaultPageTokenFieldName
+	pageTokenFieldNameOptionValue, err := check.GetStringValue(request.Options(), pageTokenFieldNameOptionKey)
+	if err != nil {
+		return err
+	}
+	if pageTokenFieldNameOptionValue != "" {
+		pageTokenFieldName = pageTokenFieldNameOptionValue
+	}
+	fields := messageDescriptor.Fields()
+	for i := 0; i < fields.Len(); i++ {
+		fieldName := string(fields.Get(i).Name())
+		if fieldName == pageTokenFieldName {
+			return nil
+		}
+	}
+	responseWriter.AddAnnotation(
+		check.WithDescriptor(messageDescriptor),
+		check.WithMessagef("%q is a pagination response without a page token field named %q", responseName, pageTokenFieldName),
 	)
 	return nil
 }

@@ -727,6 +727,34 @@ FIELD_BANNED_SUFFIXES       ATTRIBUTES_SUFFIXES           Ensure that there are 
 			"plugins":[{"plugin": "buf-plugin-suffix"}]
 		}`,
 	)
+	// configure a deprecated category and a non-deprecated category, no built-ins.
+	// note: ATTRIBUTES_SUFFIXES is not in USE, but is the replacement category for
+	// RESOURCE_SUFFIXES.
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+buf-plugin-suffix
+
+ID                          CATEGORIES           DEFAULT  PURPOSE
+RPC_BANNED_SUFFIXES         OPERATION_SUFFIXES   *        Ensure that there are no RPCs with the list of configured banned suffixes.
+SERVICE_BANNED_SUFFIXES     OPERATION_SUFFIXES   *        Ensure that there are no services with the list of configured banned suffixes.
+ENUM_VALUE_BANNED_SUFFIXES  ATTRIBUTES_SUFFIXES           Ensure that there are no enum values of top-level enums with the list of configured banned suffixes.
+FIELD_BANNED_SUFFIXES       ATTRIBUTES_SUFFIXES           Ensure that there are no fields with the list of configured banned suffixes.
+		`,
+		"config",
+		"ls-lint-rules",
+		"--configured-only",
+		"--config",
+		`{
+			"version":"v2",
+			"lint": {
+				"use": ["OPERATION_SUFFIXES", "RESOURCE_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+	)
 	// configure a mix of rules from built-ins and plugins. MESSAGE_BANNED_SUFFIXES is a deprecated
 	// rule, expect to print its replacement, FIELD_BANNED_SUFFIXES.
 	testRunStdout(
@@ -3078,7 +3106,11 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 			],
 			"lint": {
 				"disallow_comment_ignores": true,
-				"ignore": ["testdata/check_plugins/current/vendor/protovalidate"]
+				"ignore": [
+					"testdata/check_plugins/current/vendor/protovalidate",
+    				"testdata/check_plugins/current/proto/common/v1/breaking.proto",
+    				"testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto"
+				]
 			},
 			"plugins":[
 				{
@@ -3125,7 +3157,11 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 			],
 			"lint": {
 				"use": ["PAGE_REQUEST_HAS_TOKEN", "SERVICE_BANNED_SUFFIXES", "VALIDATE_ID_DASHLESS"],
-				"ignore": ["testdata/check_plugins/current/vendor/protovalidate"],
+				"ignore": [
+					"testdata/check_plugins/current/vendor/protovalidate",
+    				"testdata/check_plugins/current/proto/common/v1/breaking.proto",
+    				"testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto"
+				],
 				"ignore_only": {
 					"VALIDATE_ID_DASHLESS": ["testdata/check_plugins/current/vendor/protovalidate/buf/validate"],
 				}
@@ -3201,8 +3237,360 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 }
 
 func TestBreakingWithPlugins(t *testing.T) {
-	t.Skip("TODO")
 	t.Parallel()
+	currentConfig := `{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"breaking": {
+				"use": ["STRING_LEN_RANGE_NO_SHRINK"]
+			},
+			"plugins":[
+				{
+					"plugin": "buf-plugin-suffix",
+					"options": {
+						"service_banned_suffixes": ["Mock", "Test"],
+						"rpc_banned_suffixes": ["Element"],
+						"field_banned_suffixes": ["_uuid"],
+						"enum_value_banned_suffixes": ["_invalid"],
+						"service_no_change_suffixes": ["Service"],
+						"message_no_change_suffixes": ["Request", "Response"],
+						"enum_no_change_suffixes": ["State"]
+					}
+				},
+				{"plugin": "protovalidate-ext"},
+				{"plugin": "rpc-ext"}
+			]
+		}`
+	previousConfig := strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (protovalidate-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (protovalidate-ext)
+		`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// ignore unstable package
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["STRING_LEN_RANGE_NO_SHRINK"],
+			"ignore_unstable_packages": true
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"service_banned_suffixes": ["Mock", "Test"],
+					"rpc_banned_suffixes": ["Element"],
+					"field_banned_suffixes": ["_uuid"],
+					"enum_value_banned_suffixes": ["_invalid"],
+					"service_no_change_suffixes": ["Service"],
+					"message_no_change_suffixes": ["Request", "Response"],
+					"enum_no_change_suffixes": ["State"]
+				}
+			},
+			{"plugin": "protovalidate-ext"},
+			{"plugin": "rpc-ext"}
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (protovalidate-ext)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// use category
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["ATTRIBUTES_SUFFIXES"],
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// use deprecated category
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// use except
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"except": ["ENUM_SUFFIXES_NO_CHANGE"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// ignore module
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"ignore": ["testdata/check_plugins/current/proto"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+	// ignore path inside module
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"ignore": ["testdata/check_plugins/current/proto/common/v1"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// ignore only
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"ignore_only": {
+				"MESSAGE_SUFFIXES_NO_CHANGE": ["testdata/check_plugins/current/proto/common"],
+			},
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
 }
 
 func TestVersion(t *testing.T) {
