@@ -1188,6 +1188,24 @@ func TestCommentIgnoresOnlyRule(t *testing.T) {
 	)
 }
 
+func TestRunCustomPlugins(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"custom_plugins",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 1, 1, 1, 1, "PACKAGE_DEFINED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 1, 17, 2, "PAGE_REQUEST_HAS_TOKEN"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 1, 25, 2, "PAGE_RESPONSE_HAS_TOKEN"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 5, 21, 19, "VALIDATE_ID_DASHLESS"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 1, 27, 26, "PAGE_REQUEST_HAS_TOKEN"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 1, 28, 27, "PAGE_RESPONSE_HAS_TOKEN"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES"),
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,
@@ -1267,13 +1285,13 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	// TODO: Add in a custom plugin for this integration testing.
 	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, command.NewRunner())
 	require.NoError(t, err)
 	err = client.Lint(
 		ctx,
 		lintConfig,
 		image,
+		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)
