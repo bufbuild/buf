@@ -389,7 +389,6 @@ func ignoreAnnotation(
 			return true, nil
 		}
 	}
-	// TODO: Is this right? Does this properly encapsulate old extraIgnoreDescriptors logic?
 	if againstLocation := annotation.AgainstLocation(); againstLocation != nil {
 		return ignoreLocation(config, annotation.RuleID(), againstLocation)
 	}

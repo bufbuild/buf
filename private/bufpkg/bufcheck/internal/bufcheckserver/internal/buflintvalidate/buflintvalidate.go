@@ -24,8 +24,10 @@ import (
 const disabledFieldNumberInMesageConstraints = 1
 
 // CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.
+//
+// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 func CheckMessage(
-	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	message bufprotosource.Message,
 ) error {
 	messageDescriptor, err := message.AsDescriptor()
@@ -34,7 +36,7 @@ func CheckMessage(
 	}
 	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageDescriptor)
 	if messageConstraints.GetDisabled() && len(messageConstraints.GetCel()) > 0 {
-		add(
+		addAnnotationFunc(
 			message,
 			message.OptionExtensionLocation(validate.E_Message, disabledFieldNumberInMesageConstraints),
 			nil,
@@ -43,7 +45,7 @@ func CheckMessage(
 		)
 	}
 	return checkCELForMessage(
-		add,
+		addAnnotationFunc,
 		messageConstraints,
 		messageDescriptor,
 		message,
@@ -55,9 +57,11 @@ func CheckMessage(
 // For a set of rules to be valid, it must
 //  1. permit _some_ value
 //  2. have a type compatible with the field it validates.
+//
+// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 func CheckField(
-	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
 ) error {
-	return checkField(add, field)
+	return checkField(addAnnotationFunc, field)
 }
