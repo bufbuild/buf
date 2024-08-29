@@ -1188,7 +1188,7 @@ func TestCommentIgnoresOnlyRule(t *testing.T) {
 	)
 }
 
-func TestRunCustomPlugins(t *testing.T) {
+func TestRunLintCustomPlugins(t *testing.T) {
 	t.Parallel()
 	testLint(
 		t,

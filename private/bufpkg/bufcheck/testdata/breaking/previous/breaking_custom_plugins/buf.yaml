@@ -1,0 +1,17 @@
+version: v2
+breaking:
+  use:
+    - ENUM_NO_DELETE
+    - SERVICE_SUFFIXES_NO_CHANGE
+    - MESSAGE_SUFFIXES_NO_CHANGE
+    - ENUM_SUFFIXES_NO_CHANGE
+plugins:
+  - plugin: buf-plugin-suffix
+    options:
+      service_no_change_suffixes:
+        - Legacy
+        - Bridge
+      message_no_change_suffixes:
+        - Stable
+      enum_no_change_suffixes:
+        - Status
