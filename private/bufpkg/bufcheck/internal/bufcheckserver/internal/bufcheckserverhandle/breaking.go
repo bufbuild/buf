@@ -1827,7 +1827,7 @@ func handleBreakingMessageSameRequiredFields(
 			// we attach the error to the added required field
 			responseWriter.AddProtosourceAnnotation(
 				requiredField.Location(),
-				nil, // TODO:figure out the correct against location for this
+				nil,
 				`Message %q had required field "%d" added. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`,
 				message.Name(),
 				number,
@@ -2313,8 +2313,16 @@ func handleBreakingPackageNoDelete(
 			for i, previousFile := range previousFiles {
 				previousDescriptors[i] = previousFile
 			}
+			// ResponseWriter only expects a single against file name, so we grab the first one
+			// from the previous descriptors. As noted, this is to provide a path for check ignoring
+			// unstable packages.
+			// TODO: Do we need some way to check all files in previousDescriptors?
+			var fileName string
+			if len(previousDescriptors) > 0 {
+				fileName = previousDescriptors[0].File().Path()
+			}
 			responseWriter.AddAnnotation(
-				// TODO: figure out which descriptor for this check
+				check.WithAgainstFileName(fileName),
 				check.WithMessagef(
 					`Previously present package %q was deleted.`,
 					previousPackage,

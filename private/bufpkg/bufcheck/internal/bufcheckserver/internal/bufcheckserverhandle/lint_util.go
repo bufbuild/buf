@@ -21,11 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
-// TODO: Remove when these are used
-var _ = fieldToLowerSnakeCase
-var _ = fieldToUpperSnakeCase
-var _ = getImportCycleIfExists
-
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
