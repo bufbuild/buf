@@ -1257,6 +1257,9 @@ func TestRunBreakingWithCustomPlugins(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_custom_plugins",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 3, 1, 6, 2, "SERVICE_SUFFIXES_NO_CHANGE"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 11, 3, 14, 4, "ENUM_SUFFIXES_NO_CHANGE"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 15, 3, 19, 4, "MESSAGE_SUFFIXES_NO_CHANGE"),
 	)
 }
 
@@ -1352,7 +1355,7 @@ func testBreaking(
 		image,
 		previousImage,
 		bufcheck.BreakingWithExcludeImports(),
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()),
+		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)
