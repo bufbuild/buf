@@ -3184,6 +3184,47 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 			]
 		}`,
 	)
+	// Set the same category for lint and breaking, but ensure that only the lint rules run.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "common.v1.One.Two.foo_uuid" has banned suffix "_uuid". (buf-plugin-suffix)
+		`),
+		"lint",
+		filepath.Join("testdata", "check_plugins", "current"),
+		"--config",
+		`{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"lint": {
+				"use": ["ATTRIBUTES_SUFFIXES"]
+			},
+			"breaking": {
+				"use": ["ATTRIBUTES_SUFFIXES"]
+			},
+			"plugins":[
+				{
+					"plugin": "buf-plugin-suffix",
+					"options": {
+						"service_banned_suffixes": ["Mock", "Test"],
+						"rpc_banned_suffixes": ["Element"],
+						"field_banned_suffixes": ["_uuid"],
+						"enum_value_banned_suffixes": ["_invalid"],
+						"service_no_change_suffixes": ["Service"],
+						"message_no_change_suffixes": ["DONT_CHANGE"],
+						"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+					}
+				},
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
+			]
+		}`,
+	)
 
 	// tests that if a plugin panics, the buf CLI does not panic
 	require.NotPanics(
@@ -3580,7 +3621,6 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"--against-config",
 		previousConfig,
 	)
-
 	// ignore only
 	currentConfig = `{
 		"version":"v2",
@@ -3614,6 +3654,56 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+	// Set the same category for lint and breaking but ensure only breaking is run.
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"lint": {
+			"use": ["ATTRIBUTES_SUFFIXES"]
+		},
+		"breaking": {
+			"use": ["ATTRIBUTES_SUFFIXES"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"service_banned_suffixes": ["Mock", "Test"],
+					"rpc_banned_suffixes": ["Element"],
+					"field_banned_suffixes": ["_uuid"],
+					"enum_value_banned_suffixes": ["_invalid"],
+					"service_no_change_suffixes": ["Service"],
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
 testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
 	`),
 		"breaking",
