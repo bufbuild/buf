@@ -22,8 +22,8 @@ plugins:
         - _uuid
       enum_value_banned_suffixes:
         - _INVALID
-  - plugin: protovalidate-ext
-  - plugin: rpc-ext
+  - plugin: buf-plugin-protovalidate-ext
+  - plugin: buf-plugin-rpc-ext
     options:
       page_rpc_prefix:
         - List

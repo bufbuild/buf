@@ -25,5 +25,5 @@ plugins:
         - Response
       enum_no_change_suffixes:
         - State
-  - plugin: protovalidate-ext
-  - plugin: rpc-ext
+  - plugin: buf-plugin-protovalidate-ext
+  - plugin: buf-plugin-rpc-ext

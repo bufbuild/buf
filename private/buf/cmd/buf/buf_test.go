@@ -3063,10 +3063,10 @@ testdata/check_plugins/current/proto/api/v1/service.proto:12:42:RPC response typ
 testdata/check_plugins/current/proto/api/v1/service.proto:16:9:Service name "FooServiceTest" should be suffixed with "Service".
 testdata/check_plugins/current/proto/api/v1/service.proto:17:14:RPC request type "GetFooTestRequest" should be named "GetFooRequest" or "FooServiceTestGetFooRequest".
 testdata/check_plugins/current/proto/api/v1/service.proto:17:42:RPC response type "GetFooTestResponse" should be named "GetFooResponse" or "FooServiceTestGetFooResponse".
-testdata/check_plugins/current/proto/api/v1/service.proto:26:1:"ListFooResponse" is a pagination response without a page token field named "page_token" (rpc-ext)
-testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
-testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
-testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
+testdata/check_plugins/current/proto/api/v1/service.proto:26:1:"ListFooResponse" is a pagination response without a page token field named "page_token" (buf-plugin-rpc-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
 		`),
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
@@ -3090,10 +3090,10 @@ testdata/check_plugins/current/proto/api/v1/service.proto:16:1:Service name "api
 testdata/check_plugins/current/proto/api/v1/service.proto:16:9:Service name "FooServiceTest" should be suffixed with "Service".
 testdata/check_plugins/current/proto/api/v1/service.proto:17:14:RPC request type "GetFooTestRequest" should be named "GetFooRequest" or "FooServiceTestGetFooRequest".
 testdata/check_plugins/current/proto/api/v1/service.proto:17:42:RPC response type "GetFooTestResponse" should be named "GetFooResponse" or "FooServiceTestGetFooResponse".
-testdata/check_plugins/current/proto/api/v1/service.proto:26:1:"ListFooResponse" is a pagination response without a page token field named "page_token" (rpc-ext)
-testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
-testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
-testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
+testdata/check_plugins/current/proto/api/v1/service.proto:26:1:"ListFooResponse" is a pagination response without a page token field named "page_token" (buf-plugin-rpc-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
 		`),
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
@@ -3125,8 +3125,8 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 						"enum_no_change_suffixes": ["State"]
 					}
 				},
-				{"plugin": "protovalidate-ext"},
-				{"plugin": "rpc-ext"}
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
 			]
 		}`,
 	)
@@ -3142,9 +3142,9 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 testdata/check_plugins/current/proto/api/v1/service.proto:11:1:Service name "api.v1.FooServiceMock" has banned suffix "Mock". (buf-plugin-suffix)
-testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
-testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
-testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (protovalidate-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/expression.proto:42:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.proto:38:3:field "buf.validate.priv.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
 		`),
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
@@ -3179,8 +3179,8 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 						"enum_no_change_suffixes": ["State"]
 					}
 				},
-				{"plugin": "protovalidate-ext"},
-				{"plugin": "rpc-ext"}
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
 			]
 		}`,
 	)
@@ -3294,8 +3294,8 @@ func TestBreakingWithPlugins(t *testing.T) {
 						"enum_no_change_suffixes": ["State"]
 					}
 				},
-				{"plugin": "protovalidate-ext"},
-				{"plugin": "rpc-ext"}
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
 			]
 		}`
 	previousConfig := strings.ReplaceAll(
@@ -3308,8 +3308,8 @@ func TestBreakingWithPlugins(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (protovalidate-ext)
-testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (protovalidate-ext)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (buf-plugin-protovalidate-ext)
 		`),
 		"breaking",
 		filepath.Join("testdata", "check_plugins", "current", "proto"),
@@ -3345,8 +3345,8 @@ testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len
 					"enum_no_change_suffixes": ["State"]
 				}
 			},
-			{"plugin": "protovalidate-ext"},
-			{"plugin": "rpc-ext"}
+			{"plugin": "buf-plugin-protovalidate-ext"},
+			{"plugin": "buf-plugin-rpc-ext"}
 		]
 	}`
 	previousConfig = strings.ReplaceAll(
@@ -3359,7 +3359,7 @@ testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (protovalidate-ext)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (buf-plugin-protovalidate-ext)
 	`),
 		"breaking",
 		filepath.Join("testdata", "check_plugins", "current", "proto"),
