@@ -22,7 +22,9 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/internal/buf-plugin-panic/cmd/buf-plugin-panic \
 	private/buf/cmd/buf/internal/buf-plugin-suffix/cmd/buf-plugin-suffix \
 	private/buf/cmd/buf/internal/buf-plugin-protovalidate-ext/cmd/protovalidate-ext \
-	private/buf/cmd/buf/internal/buf-plugin-rpc-ext/cmd/rpc-ext
+	private/buf/cmd/buf/internal/buf-plugin-rpc-ext/cmd/rpc-ext \
+	private/buf/cmd/buf/internal/duplicate-plugins/cmd/buf-plugin-duplicate-category \
+	private/buf/cmd/buf/internal/duplicate-plugins/cmd/buf-plugin-duplicate-rule
 GO_MOD_VERSION := 1.22
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \

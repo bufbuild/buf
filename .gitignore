@@ -18,6 +18,8 @@
 /private/buf/cmd/buf/internal/buf-plugin-protovalidate-ext/cmd/protovalidate-ext/protovalidate-ext
 /private/buf/cmd/buf/internal/buf-plugin-rpc-ext/cmd/rpc-ext/rpc-ext
 /private/buf/cmd/buf/internal/buf-plugin-suffix/cmd/buf-plugin-suffix/buf-plugin-suffix
+/private/buf/cmd/buf/internal/duplicate-plugins/cmd/buf-plugin-duplicate-category/buf-plugin-duplicate-category
+/private/buf/cmd/buf/internal/duplicate-plugins/cmd/buf-plugin-duplicate-rule/buf-plugin-duplicate-rule
 /private/buf/cmd/buf/testdata/imports/cache/v3/modulelocks/
 /private/buf/cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/
 /private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/

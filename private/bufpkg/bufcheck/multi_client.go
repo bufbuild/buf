@@ -27,8 +27,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: Test plugins with duplicate rules and categories across builtin + plugins, and just plugins
-
 type multiClient struct {
 	logger           *zap.Logger
 	checkClientSpecs []*checkClientSpec

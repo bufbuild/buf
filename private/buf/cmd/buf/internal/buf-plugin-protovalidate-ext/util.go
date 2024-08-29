@@ -47,7 +47,7 @@ func breakingRuleHandlerForFile(
 				}
 				if file, ok := filePathToFile[againstFile.FileDescriptor().Path()]; ok {
 					if err := f(ctx, responseWriter, request, file.FileDescriptor(), againstFile.FileDescriptor()); err != nil {
-						return nil
+						return err
 					}
 				}
 			}
