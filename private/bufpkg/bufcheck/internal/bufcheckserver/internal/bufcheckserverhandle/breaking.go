@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -2313,13 +2314,19 @@ func handleBreakingPackageNoDelete(
 			for i, previousFile := range previousFiles {
 				previousDescriptors[i] = previousFile
 			}
-			// ResponseWriter only expects a single against file name, so we grab the first one
-			// from the previous descriptors. As noted, this is to provide a path for check ignoring
-			// unstable packages.
-			// TODO: Do we need some way to check all files in previousDescriptors?
+			// ResponseWriter only expects a single against file name, so we grab the first one in
+			// alphabetical order from the previous descriptors, so this is deterministic. As noted,
+			// this is to provide a path for check ignoring unstable packages.
+			previousDescriptorsFileNames := slicesext.Map(
+				previousDescriptors,
+				func(previousDescriptor bufprotosource.Descriptor) string {
+					return previousDescriptor.File().Path()
+				},
+			)
+			slices.Sort(previousDescriptorsFileNames)
 			var fileName string
-			if len(previousDescriptors) > 0 {
-				fileName = previousDescriptors[0].File().Path()
+			if len(previousDescriptorsFileNames) > 0 {
+				fileName = previousDescriptorsFileNames[0]
 			}
 			responseWriter.AddAnnotation(
 				check.WithAgainstFileName(fileName),
