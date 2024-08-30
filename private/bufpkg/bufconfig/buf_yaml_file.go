@@ -1009,6 +1009,7 @@ func getLintConfigForExternalLintV1Beta1V1(
 			externalLint.Except,
 			ignore,
 			ignoreOnly,
+			externalLint.DisableBuiltinRules,
 		)
 		if err != nil {
 			return nil, err
@@ -1059,6 +1060,7 @@ func getLintConfigForExternalLintV2(
 			externalLint.Except,
 			ignore,
 			ignoreOnly,
+			externalLint.DisableBuiltinRules,
 		)
 		if err != nil {
 			return nil, err
@@ -1109,6 +1111,7 @@ func getBreakingConfigForExternalBreaking(
 			externalBreaking.Except,
 			ignore,
 			ignoreOnly,
+			externalBreaking.DisableBuiltinRules,
 		)
 		if err != nil {
 			return nil, err
@@ -1201,6 +1204,7 @@ func getExternalLintV1Beta1V1ForLintConfig(lintConfig LintConfig, moduleDirPath 
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+	externalLint.DisableBuiltinRules = lintConfig.DisableBuiltinRules()
 	return externalLint
 }
 
@@ -1223,6 +1227,7 @@ func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string)
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.DisallowCommentIgnores = !lintConfig.AllowCommentIgnores()
+	externalLint.DisableBuiltinRules = lintConfig.DisableBuiltinRules()
 	return externalLint
 }
 
@@ -1240,6 +1245,7 @@ func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleD
 		externalBreaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
 	}
 	externalBreaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+	externalBreaking.DisableBuiltinRules = breakingConfig.DisableBuiltinRules()
 	return externalBreaking
 }
 
@@ -1307,6 +1313,7 @@ type externalBufYAMLFileLintV1Beta1V1 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+	DisableBuiltinRules                  bool                `json:"disable_builtin_rules,omitempty" yaml:"disable_builtin_rules,omitempty"`
 }
 
 // Suppressing unused warning. Keeping this function around for now.
@@ -1322,7 +1329,8 @@ func (el externalBufYAMLFileLintV1Beta1V1) isEmpty() bool {
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
 		el.ServiceSuffix == "" &&
-		!el.AllowCommentIgnores
+		!el.AllowCommentIgnores &&
+		!el.DisableBuiltinRules
 }
 
 // externalBufYAMLFileLintV2 represents lint configuation within a  v2 buf.yaml file.
@@ -1342,6 +1350,7 @@ type externalBufYAMLFileLintV2 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	DisallowCommentIgnores               bool                `json:"disallow_comment_ignores,omitempty" yaml:"disallow_comment_ignores,omitempty"`
+	DisableBuiltinRules                  bool                `json:"disable_builtin_rules,omitempty" yaml:"disable_builtin_rules,omitempty"`
 }
 
 func (el externalBufYAMLFileLintV2) isEmpty() bool {
@@ -1354,7 +1363,8 @@ func (el externalBufYAMLFileLintV2) isEmpty() bool {
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
 		el.ServiceSuffix == "" &&
-		!el.DisallowCommentIgnores
+		!el.DisallowCommentIgnores &&
+		!el.DisableBuiltinRules
 }
 
 // externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
@@ -1370,6 +1380,7 @@ type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
 	/// IgnoreOnly are the ID/category to paths to ignore.
 	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+	DisableBuiltinRules    bool                `json:"disable_builtin_rules,omitempty" yaml:"disable_builtin_rules,omitempty"`
 }
 
 func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
@@ -1377,7 +1388,8 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 		len(eb.Except) == 0 &&
 		len(eb.Ignore) == 0 &&
 		len(eb.IgnoreOnly) == 0 &&
-		!eb.IgnoreUnstablePackages
+		!eb.IgnoreUnstablePackages &&
+		!eb.DisableBuiltinRules
 }
 
 // externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.gyaml file.

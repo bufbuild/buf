@@ -25,6 +25,7 @@ var (
 		nil,
 		nil,
 		nil,
+		false,
 	)
 	defaultCheckConfigV2 = newEnabledCheckConfigNoValidate(
 		FileVersionV2,
@@ -32,6 +33,7 @@ var (
 		nil,
 		nil,
 		nil,
+		false,
 	)
 )
 
@@ -92,6 +94,11 @@ type CheckConfig interface {
 	// Paths are relative to roots.
 	// Paths sorted.
 	IgnoreIDOrCategoryToPaths() map[string][]string
+	// DisableBuiltinRools says to disable the Rules builtin to the Buf CLI and only
+	// use plugins.
+	//
+	// This will make it as if these rules did not exist.
+	DisableBuiltinRules() bool
 
 	isCheckConfig()
 }
@@ -103,6 +110,7 @@ func NewEnabledCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	disableBuiltinRules bool,
 ) (CheckConfig, error) {
 	return newEnabledCheckConfig(
 		fileVersion,
@@ -110,6 +118,7 @@ func NewEnabledCheckConfig(
 		except,
 		ignore,
 		ignoreOnly,
+		disableBuiltinRules,
 	)
 }
 
@@ -117,6 +126,7 @@ func NewEnabledCheckConfig(
 func NewEnabledCheckConfigForUseIDsAndCategories(
 	fileVersion FileVersion,
 	use []string,
+	disableBuiltinRules bool,
 ) CheckConfig {
 	return newEnabledCheckConfigNoValidate(
 		fileVersion,
@@ -124,18 +134,20 @@ func NewEnabledCheckConfigForUseIDsAndCategories(
 		nil,
 		nil,
 		nil,
+		disableBuiltinRules,
 	)
 }
 
 // *** PRIVATE ***
 
 type checkConfig struct {
-	fileVersion FileVersion
-	disabled    bool
-	use         []string
-	except      []string
-	ignore      []string
-	ignoreOnly  map[string][]string
+	fileVersion         FileVersion
+	disabled            bool
+	use                 []string
+	except              []string
+	ignore              []string
+	ignoreOnly          map[string][]string
+	disableBuiltinRules bool
 }
 
 func newEnabledCheckConfig(
@@ -144,6 +156,7 @@ func newEnabledCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	disableBuiltinRules bool,
 ) (*checkConfig, error) {
 	use = slicesext.ToUniqueSorted(use)
 	except = slicesext.ToUniqueSorted(except)
@@ -163,7 +176,7 @@ func newEnabledCheckConfig(
 	}
 	ignoreOnly = newIgnoreOnly
 
-	return newEnabledCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly), nil
+	return newEnabledCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly, disableBuiltinRules), nil
 }
 
 func newEnabledCheckConfigNoValidate(
@@ -172,14 +185,16 @@ func newEnabledCheckConfigNoValidate(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	disableBuiltinRules bool,
 ) *checkConfig {
 	return &checkConfig{
-		fileVersion: fileVersion,
-		disabled:    false,
-		use:         use,
-		except:      except,
-		ignore:      ignore,
-		ignoreOnly:  ignoreOnly,
+		fileVersion:         fileVersion,
+		disabled:            false,
+		use:                 use,
+		except:              except,
+		ignore:              ignore,
+		ignoreOnly:          ignoreOnly,
+		disableBuiltinRules: disableBuiltinRules,
 	}
 }
 
@@ -212,6 +227,10 @@ func (c *checkConfig) IgnorePaths() []string {
 
 func (c *checkConfig) IgnoreIDOrCategoryToPaths() map[string][]string {
 	return copyStringToStringSliceMap(c.ignoreOnly)
+}
+
+func (c *checkConfig) DisableBuiltinRules() bool {
+	return c.disableBuiltinRules
 }
 
 func (*checkConfig) isCheckConfig() {}

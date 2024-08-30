@@ -99,7 +99,12 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		lintConfig.FileVersion(),
+		lintOptions.pluginConfigs,
+		lintConfig.DisableBuiltinRules(),
+	)
 	if err != nil {
 		return err
 	}
@@ -124,6 +129,7 @@ func (c *client) Lint(
 	multiClient, err := c.getMultiClient(
 		lintConfig.FileVersion(),
 		lintOptions.pluginConfigs,
+		lintConfig.DisableBuiltinRules(),
 		config.DefaultOptions,
 	)
 	if err != nil {
@@ -153,7 +159,12 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		breakingConfig.FileVersion(),
+		breakingOptions.pluginConfigs,
+		breakingConfig.DisableBuiltinRules(),
+	)
 	if err != nil {
 		return err
 	}
@@ -189,6 +200,7 @@ func (c *client) Breaking(
 	multiClient, err := c.getMultiClient(
 		breakingConfig.FileVersion(),
 		breakingOptions.pluginConfigs,
+		breakingConfig.DisableBuiltinRules(),
 		config.DefaultOptions,
 	)
 	if err != nil {
@@ -214,7 +226,12 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		checkConfig.FileVersion(),
+		configuredRulesOptions.pluginConfigs,
+		checkConfig.DisableBuiltinRules(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +256,7 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs)
+	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +275,7 @@ func (c *client) AllCategories(
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs)
+	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
 	return categories, err
 }
 
@@ -266,6 +283,7 @@ func (c *client) allRulesAndCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	disableBuiltinRules bool,
 ) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
@@ -274,7 +292,7 @@ func (c *client) allRulesAndCategories(
 	if err != nil {
 		return nil, nil, err
 	}
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltinRules, emptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -284,15 +302,20 @@ func (c *client) allRulesAndCategories(
 func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	disableBuiltinRules bool,
 	defaultOptions check.Options,
 ) (*multiClient, error) {
-	defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
-	if !ok {
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
-	}
-	checkClientSpecs := []*checkClientSpec{
-		// We do not set PluginName for default check.Clients.
-		newCheckClientSpec("", defaultCheckClient, defaultOptions),
+	var checkClientSpecs []*checkClientSpec
+	if !disableBuiltinRules {
+		defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
+		if !ok {
+			return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		}
+		checkClientSpecs = append(
+			checkClientSpecs,
+			// We do not set PluginName for default check.Clients.
+			newCheckClientSpec("", defaultCheckClient, defaultOptions),
+		)
 	}
 	for _, pluginConfig := range pluginConfigs {
 		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {

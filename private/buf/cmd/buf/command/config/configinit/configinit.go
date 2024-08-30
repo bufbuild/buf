@@ -146,6 +146,7 @@ func run(
 			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
 				[]string{"STANDARD"},
+				false,
 			),
 			"",
 			false,
@@ -159,6 +160,7 @@ func run(
 			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
 				[]string{"FILE"},
+				false,
 			),
 			false,
 		),

@@ -287,9 +287,7 @@ func newRulesConfig(
 		// If the rule is not from a builtin rule (i.e. PluginName() is not empty),
 		// delete the plugin name from the map.
 		if pluginName := rule.PluginName(); pluginName != "" {
-			if _, ok := unusedPluginNameToRuleIDs[pluginName]; ok {
-				delete(unusedPluginNameToRuleIDs, pluginName)
-			}
+			delete(unusedPluginNameToRuleIDs, pluginName)
 		}
 	}
 	for pluginName := range unusedPluginNameToRuleIDs {
@@ -404,9 +402,10 @@ func getPluginNameToOtherRuleTypes(allRules []Rule, ruleType check.RuleType) map
 			if rule.Type() != ruleType {
 				otherRuleTypes, ok := m[pluginName]
 				if !ok {
-					otherRuleTypes = map[check.RuleType]struct{}{rule.Type(): {}}
+					otherRuleTypes = make(map[check.RuleType]struct{})
 					m[pluginName] = otherRuleTypes
 				}
+				otherRuleTypes[rule.Type()] = struct{}{}
 			}
 		}
 	}
