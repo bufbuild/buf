@@ -245,14 +245,7 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 			// so we know the first category is a top-level category if present
 			one := rules[i]
 			two := rules[j]
-			// Sort default rules before non-default.
-			if one.Default() && !two.Default() {
-				return true
-			}
-			if !one.Default() && two.Default() {
-				return false
-			}
-			// Next, sort builtin rules before plugin rules, then plugin rules by plugin name.
+			// Sort builtin rules before plugin rules, then plugin rules by plugin name.
 			onePluginName := one.PluginName()
 			twoPluginName := two.PluginName()
 			if onePluginName == "" && twoPluginName != "" {
@@ -263,6 +256,13 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 			}
 			if compare := strings.Compare(onePluginName, twoPluginName); compare != 0 {
 				return compare < 0
+			}
+			// Sort default rules before non-default.
+			if one.Default() && !two.Default() {
+				return true
+			}
+			if !one.Default() && two.Default() {
+				return false
 			}
 			oneCategories := one.Categories()
 			sort.Slice(oneCategories, func(i int, j int) bool { return printCategoryIDLess(oneCategories[i].ID(), oneCategories[j].ID()) })

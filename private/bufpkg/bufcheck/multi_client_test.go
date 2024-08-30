@@ -19,13 +19,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 	"github.com/bufbuild/bufplugin-go/check/checkutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -174,6 +178,40 @@ func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
 	require.Equal(t, []string{fieldLowerSnakeCaseRuleID}, duplicateRuleOrCategoryError.duplicateIDs())
 }
 
+func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
+	t.Parallel()
+
+	client, err := newClient(
+		zaptest.NewLogger(t),
+		tracing.NopTracer,
+		command.NewRunner(),
+	)
+	require.NoError(t, err)
+	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
+		"buf-plugin-duplicate-rule",
+		nil,
+		[]string{"buf-plugin-duplicate-rule"},
+	)
+	require.NoError(t, err)
+	emptyOptions, err := check.NewOptions(nil)
+	require.NoError(t, err)
+
+	multiClient, err := client.getMultiClient(
+		bufconfig.FileVersionV2,
+		[]bufconfig.PluginConfig{
+			duplicateBuiltInRulePluginConfig,
+		},
+		false,
+		emptyOptions,
+	)
+	require.NoError(t, err)
+
+	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
+	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
+	require.Equal(t, []string{"ENUM_NO_DELETE", "PACKAGE_DIRECTORY_MATCH"}, duplicateRuleOrCategoryError.duplicateIDs())
+}
+
 func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 	t.Parallel()
 
@@ -232,6 +270,40 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
 	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
 	require.Equal(t, []string{"FOO"}, duplicateRuleOrCategoryError.duplicateIDs())
+}
+
+func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
+	t.Parallel()
+
+	client, err := newClient(
+		zaptest.NewLogger(t),
+		tracing.NopTracer,
+		command.NewRunner(),
+	)
+	require.NoError(t, err)
+	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
+		"buf-plugin-duplicate-category",
+		nil,
+		[]string{"buf-plugin-duplicate-category"},
+	)
+	require.NoError(t, err)
+	emptyOptions, err := check.NewOptions(nil)
+	require.NoError(t, err)
+
+	multiClient, err := client.getMultiClient(
+		bufconfig.FileVersionV2,
+		[]bufconfig.PluginConfig{
+			duplicateBuiltInRulePluginConfig,
+		},
+		false,
+		emptyOptions,
+	)
+	require.NoError(t, err)
+
+	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
+	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
+	require.Equal(t, []string{"STANDARD"}, duplicateRuleOrCategoryError.duplicateIDs())
 }
 
 func checkFieldLowerSnakeCase(

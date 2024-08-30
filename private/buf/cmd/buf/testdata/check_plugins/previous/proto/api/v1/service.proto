@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package api.v1;
+
+service FooService {
+  rpc GetFoo(GetFooRequest) returns (GetFooResponse);
+  rpc ListFoo(ListFooRequest) returns (ListFooResponse);
+}
+
+// buf:lint:ignore SERVICE_SUFFIX
+service FooServiceMock {
+  rpc GetFoo(GetFooMockRequest) returns (GetFooMockResponse);
+}
+
+// buf:lint:ignore SERVICE_BANNED_SUFFIXES
+service FooServiceTest {
+  rpc GetFoo(GetFooTestRequest) returns (GetFooTestResponse);
+}
+
+message GetFooRequest {}
+message GetFooResponse {}
+message ListFooRequest{
+  uint32 page_size = 1;
+  string page_token = 2;
+}
+message ListFooResponse{}
+
+message GetFooMockRequest {}
+message GetFooMockResponse {}
+
+message GetFooTestRequest {}
+message GetFooTestResponse {}

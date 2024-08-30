@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package common.v1;
+
+message One {
+  message Two {
+    string id_foo = 1;
+    string foo_uuid = 2;
+  }
+}

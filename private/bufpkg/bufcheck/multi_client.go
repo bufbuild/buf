@@ -27,8 +27,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: Test plugins with duplicate rules and categories across builtin + plugins, and just plugins
-
 type multiClient struct {
 	logger           *zap.Logger
 	checkClientSpecs []*checkClientSpec
@@ -74,7 +72,10 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 				requestDelegateRuleIDs = append(requestDelegateRuleIDs, delegateRuleID)
 			}
 		}
-		// If no ruleIDs apply to this client, do not call it.
+		// When there are no rule IDs requested, we already set all default rules above, so
+		// if there are no rule IDs set for the delegate, we skip this delegate. Otherwise, a
+		// request with no rule IDs will be made to the delegate client, and default rules will
+		// be called.
 		if len(requestDelegateRuleIDs) == 0 {
 			c.logger.Debug("skipping delegate client", zap.String("pluginName", delegate.PluginName))
 			continue

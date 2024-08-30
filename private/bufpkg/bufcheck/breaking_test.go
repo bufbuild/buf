@@ -1252,6 +1252,17 @@ func TestRunBreakingMessageMessage(t *testing.T) {
 	)
 }
 
+func TestRunBreakingWithCustomPlugins(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_custom_plugins",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 3, 1, 6, 2, "SERVICE_SUFFIXES_NO_CHANGE"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 11, 3, 14, 4, "ENUM_SUFFIXES_NO_CHANGE"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 15, 3, 19, 4, "MESSAGE_SUFFIXES_NO_CHANGE"),
+	)
+}
+
 func testBreaking(
 	t *testing.T,
 	relDirPath string,
@@ -1336,7 +1347,6 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	// TODO: Add in a custom plugin for this integration testing.
 	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, command.NewRunner())
 	require.NoError(t, err)
 	err = client.Breaking(
@@ -1345,6 +1355,7 @@ func testBreaking(
 		image,
 		previousImage,
 		bufcheck.BreakingWithExcludeImports(),
+		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)

@@ -460,15 +460,38 @@ func ignoreLocation(
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
 			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
 				for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
-					if strings.HasPrefix(line, config.CommentIgnorePrefix) {
+					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
 						return true, nil
 					}
 				}
 			}
 		}
 	}
-
 	return false, nil
+}
+
+// checkCommentLineForCheckIgnore checks that the comment line starts with the configured
+// comment ignore prefix, and the rest of the string is the ruleID of the check.
+//
+// We currently do not support multiple rules per comment ignore:
+//
+//	Invalid:
+//		// buf:lint:ignore SERVICE_SUFFIX, SERVICE_PASCAL_CASE
+//
+//	Valid:
+//		// buf:lint:ignore SERVICE_SUFFIX
+//		// buf:lint:ignore SERVICE_PASCAL_CASE
+func checkCommentLineForCheckIgnore(
+	commentLine string,
+	commentIgnorePrefix string,
+	ruleID string,
+) bool {
+	if after, ok := strings.CutPrefix(commentLine, commentIgnorePrefix); ok {
+		if strings.TrimSpace(after) == ruleID {
+			return true
+		}
+	}
+	return false
 }
 
 type lintOptions struct {

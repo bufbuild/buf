@@ -18,7 +18,13 @@ GO_BINS := $(GO_BINS) \
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
-	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
+	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
 GO_MOD_VERSION := 1.22
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
@@ -37,7 +43,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
-PROTOVALIDATE_VERSION := v0.6.0
+PROTOVALIDATE_VERSION := v0.7.1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
