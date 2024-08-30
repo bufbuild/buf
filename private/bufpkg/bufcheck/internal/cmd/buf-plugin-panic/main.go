@@ -15,18 +15,29 @@
 package main
 
 import (
-	protovalidateextplugin "github.com/bufbuild/buf/private/buf/cmd/buf/internal/buf-plugin-protovalidate-ext"
+	"context"
+
 	"github.com/bufbuild/bufplugin-go/check"
+	"github.com/bufbuild/bufplugin-go/check/checkutil"
 )
 
 func main() {
-	check.Main(&check.Spec{
-		Rules: []*check.RuleSpec{
-			protovalidateextplugin.IDFieldValidatedAsUUIDRuleSpec,
-			protovalidateextplugin.FieldValidationNotSkippedRuleSpec,
-			protovalidateextplugin.FieldValidationNotSkippedNoImportRuleSpec,
-			protovalidateextplugin.MessageNotDisabledRuleSpec,
-			protovalidateextplugin.StringLenRangeNoShrinkRuleSpec,
+	check.Main(
+		&check.Spec{
+			Rules: []*check.RuleSpec{
+				{
+					ID:             "LINT_PANIC",
+					Default:        true,
+					Purpose:        `This rule panics.`,
+					Type:           check.RuleTypeLint,
+					ReplacementIDs: nil,
+					Handler:        checkutil.NewFileRuleHandler(checkPanic),
+				},
+			},
 		},
-	})
+	)
+}
+
+func checkPanic(context.Context, check.ResponseWriter, check.Request, check.File) error {
+	panic("this panic is intentional")
 }

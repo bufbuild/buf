@@ -34,10 +34,10 @@ go install ./cmd/buf \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
   ./private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
-  ./private/buf/cmd/buf/internal/buf-plugin-panic/cmd/buf-plugin-panic \
-  ./private/buf/cmd/buf/internal/buf-plugin-suffix/cmd/buf-plugin-suffix \
-  ./private/buf/cmd/buf/internal/buf-plugin-protovalidate-ext/cmd/buf-plugin-protovalidate-ext \
-  ./private/buf/cmd/buf/internal/buf-plugin-rpc-ext/cmd/buf-plugin-rpc-ext \
-  ./private/buf/cmd/buf/internal/duplicate-plugins/cmd/buf-plugin-duplicate-category \
-  ./private/buf/cmd/buf/internal/duplicate-plugins/cmd/buf-plugin-duplicate-rule
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
 go test ./...

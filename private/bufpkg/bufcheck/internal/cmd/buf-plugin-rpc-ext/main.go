@@ -12,17 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpcextplugin
+package main
 
 import (
 	"context"
 	"strings"
 
 	"github.com/bufbuild/bufplugin-go/check"
+	"github.com/bufbuild/bufplugin-go/check/checkutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
+	pageRPCRequestToken         = "PAGE_REQUEST_HAS_TOKEN"
+	pageRPCResponseToken        = "PAGE_RESPONSE_HAS_TOKEN"
 	pageTokenFieldNameOptionKey = "page_token_field_name"
 	pageRPCPrefixOptionKey      = "page_rpc_prefix"
 	defaultPageTokenFieldName   = "page_token"
@@ -31,6 +34,31 @@ const (
 var (
 	defaultPageRPCPrefixes = []string{"List"}
 )
+
+func main() {
+	check.Main(&check.Spec{
+		Rules: []*check.RuleSpec{
+			{
+				ID:             pageRPCRequestToken,
+				CategoryIDs:    nil,
+				Default:        true,
+				Purpose:        `Checks that all pagination RPC requests has a page token set.`,
+				Type:           check.RuleTypeLint,
+				ReplacementIDs: nil,
+				Handler:        checkutil.NewMessageRuleHandler(checkPageRequestHasToken),
+			},
+			{
+				ID:             pageRPCResponseToken,
+				CategoryIDs:    nil,
+				Default:        true,
+				Purpose:        `Checks that all pagination RPC responses has a page token set.`,
+				Type:           check.RuleTypeLint,
+				ReplacementIDs: nil,
+				Handler:        checkutil.NewMessageRuleHandler(checkPageResponseHasToken),
+			},
+		},
+	})
+}
 
 func checkPageRequestHasToken(
 	_ context.Context,
