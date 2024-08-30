@@ -252,7 +252,8 @@ func (d *duplicateRuleOrCategoryError) Error() string {
 
 	var sb strings.Builder
 	_, _ = sb.WriteString("duplicate rule IDs detected from plugins:\n")
-	for _, duplicateID := range d.duplicateIDs() {
+	duplicateIDs := d.duplicateIDs()
+	for i, duplicateID := range duplicateIDs {
 		// Example of this loop:
 		//
 		// RULE_FOO: builtin, buf-plugin-foo, buf-plugin-bar
@@ -280,6 +281,9 @@ func (d *duplicateRuleOrCategoryError) Error() string {
 				", ",
 			),
 		)
+		if i != len(duplicateIDs)-1 {
+			_, _ = sb.WriteString("\n")
+		}
 	}
 	return sb.String()
 }
