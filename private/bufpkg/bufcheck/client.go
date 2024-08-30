@@ -103,7 +103,7 @@ func (c *client) Lint(
 		ctx,
 		lintConfig.FileVersion(),
 		lintOptions.pluginConfigs,
-		lintConfig.DisableBuiltinRules(),
+		lintConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (c *client) Lint(
 	multiClient, err := c.getMultiClient(
 		lintConfig.FileVersion(),
 		lintOptions.pluginConfigs,
-		lintConfig.DisableBuiltinRules(),
+		lintConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
 	if err != nil {
@@ -163,7 +163,7 @@ func (c *client) Breaking(
 		ctx,
 		breakingConfig.FileVersion(),
 		breakingOptions.pluginConfigs,
-		breakingConfig.DisableBuiltinRules(),
+		breakingConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return err
@@ -200,7 +200,7 @@ func (c *client) Breaking(
 	multiClient, err := c.getMultiClient(
 		breakingConfig.FileVersion(),
 		breakingOptions.pluginConfigs,
-		breakingConfig.DisableBuiltinRules(),
+		breakingConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
 	if err != nil {
@@ -230,7 +230,7 @@ func (c *client) ConfiguredRules(
 		ctx,
 		checkConfig.FileVersion(),
 		configuredRulesOptions.pluginConfigs,
-		checkConfig.DisableBuiltinRules(),
+		checkConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err
@@ -283,7 +283,7 @@ func (c *client) allRulesAndCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
-	disableBuiltinRules bool,
+	disableBuiltin bool,
 ) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
@@ -292,7 +292,7 @@ func (c *client) allRulesAndCategories(
 	if err != nil {
 		return nil, nil, err
 	}
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltinRules, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, emptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -302,11 +302,11 @@ func (c *client) allRulesAndCategories(
 func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
-	disableBuiltinRules bool,
+	disableBuiltin bool,
 	defaultOptions check.Options,
 ) (*multiClient, error) {
 	var checkClientSpecs []*checkClientSpec
-	if !disableBuiltinRules {
+	if !disableBuiltin {
 		defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
 		if !ok {
 			return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)

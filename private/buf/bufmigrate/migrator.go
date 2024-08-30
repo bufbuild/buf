@@ -740,7 +740,7 @@ func equivalentCheckConfigInV2(
 		undeprecateSlice(checkConfig.ExceptIDsAndCategories(), deprecations),
 		checkConfig.IgnorePaths(),
 		undeprecateMap(checkConfig.IgnoreIDOrCategoryToPaths(), deprecations),
-		checkConfig.DisableBuiltinRules(),
+		checkConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err
@@ -782,7 +782,7 @@ func equivalentCheckConfigInV2(
 		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
 		simplyTranslatedCheckConfig.IgnorePaths(),
 		simplyTranslatedCheckConfig.IgnoreIDOrCategoryToPaths(),
-		simplyTranslatedCheckConfig.DisableBuiltinRules(),
+		simplyTranslatedCheckConfig.DisableBuiltin(),
 	)
 }
 
