@@ -99,7 +99,7 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, check.RuleTypeLint, lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(ctx, lintConfig.FileVersion(), lintOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	warnReferencedDeprecatedIDs(c.logger, config.rulesConfig)
+	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
@@ -153,7 +153,7 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(ctx, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	warnReferencedDeprecatedIDs(c.logger, config.rulesConfig)
+	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
@@ -214,7 +214,7 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, ruleType, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(ctx, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	warnReferencedDeprecatedIDs(c.logger, rulesConfig)
+	logRulesConfig(c.logger, rulesConfig)
 	return rulesForRuleIDs(allRules, rulesConfig.RuleIDs), nil
 }
 
@@ -239,8 +239,11 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	rules, _, err := c.allRulesAndCategories(ctx, ruleType, fileVersion, allRulesOptions.pluginConfigs)
-	return rules, err
+	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs)
+	if err != nil {
+		return nil, err
+	}
+	return rulesForType(rules, ruleType), nil
 }
 
 func (c *client) AllCategories(
@@ -255,14 +258,12 @@ func (c *client) AllCategories(
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	_, categories, err := c.allRulesAndCategories(ctx, check.RuleTypeLint, fileVersion, allCategoriesOptions.pluginConfigs)
+	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs)
 	return categories, err
 }
 
 func (c *client) allRulesAndCategories(
 	ctx context.Context,
-	// Ignored if just getting categories.
-	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 ) ([]Rule, []Category, error) {
@@ -277,11 +278,7 @@ func (c *client) allRulesAndCategories(
 	if err != nil {
 		return nil, nil, err
 	}
-	allRules, allCategories, err := multiClient.ListRulesAndCategories(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return rulesForType(allRules, ruleType), allCategories, nil
+	return multiClient.ListRulesAndCategories(ctx)
 }
 
 func (c *client) getMultiClient(

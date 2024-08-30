@@ -74,6 +74,11 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 				requestDelegateRuleIDs = append(requestDelegateRuleIDs, delegateRuleID)
 			}
 		}
+		// If no ruleIDs apply to this client, do not call it.
+		if len(requestDelegateRuleIDs) == 0 {
+			c.logger.Debug("skipping delegate client", zap.String("pluginName", delegate.PluginName))
+			continue
+		}
 		delegateRequest, err := check.NewRequest(
 			request.Files(),
 			check.WithAgainstFiles(request.AgainstFiles()),
