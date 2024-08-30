@@ -17,7 +17,7 @@ package bufcheckserver_test
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckserver"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/bufplugin-go/check/checktest"
 )

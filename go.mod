@@ -47,7 +47,7 @@ require (
 	golang.org/x/tools v0.24.0
 	google.golang.org/protobuf v1.34.3-0.20240816073751-94ecbc261689
 	gopkg.in/yaml.v3 v3.0.1
-	pluginrpc.com/pluginrpc v0.0.0-20240828203109-db8102d83648
+	pluginrpc.com/pluginrpc v0.1.1-0.20240830202149-02747f468d57
 )
 
 require (
