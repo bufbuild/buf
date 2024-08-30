@@ -30,9 +30,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+<<<<<<< HEAD
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv2"
+=======
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
+>>>>>>> 77701c179 (add an LSP)
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
@@ -229,6 +233,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
+					lsp.NewCommand("lsp", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),

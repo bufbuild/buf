@@ -12,11 +12,20 @@ require (
 	buf.build/go/bufplugin v0.2.0
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1
+<<<<<<< HEAD
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20240910161437-27b7a335254b
 	github.com/bufbuild/protovalidate-go v0.6.5
 	github.com/bufbuild/protoyaml-go v0.1.12
 	github.com/docker/docker v27.2.1+incompatible
+=======
+	github.com/bufbuild/protocompile v0.14.0
+	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
+	github.com/bufbuild/protovalidate-go v0.6.4
+	github.com/bufbuild/protoyaml-go v0.1.11
+	github.com/docker/docker v27.1.2+incompatible
+	github.com/fsnotify/fsnotify v1.6.0
+>>>>>>> 77701c179 (add an LSP)
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
 	github.com/gofrs/uuid/v5 v5.3.0
@@ -34,6 +43,8 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
+	go.lsp.dev/jsonrpc2 v0.10.0
+	go.lsp.dev/protocol v0.12.0
 	go.opentelemetry.io/otel v1.29.0
 	go.opentelemetry.io/otel/sdk v1.29.0
 	go.opentelemetry.io/otel/trace v1.29.0
@@ -107,9 +118,13 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/segmentio/asm v1.1.3 // indirect
+	github.com/segmentio/encoding v0.3.4 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
+	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
+	go.lsp.dev/uri v0.3.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
