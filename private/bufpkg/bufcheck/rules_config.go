@@ -47,6 +47,9 @@ func rulesConfigForCheckConfig(
 
 func logRulesConfig(logger *zap.Logger, rulesConfig *rulesConfig) {
 	logger.Debug("rulesConfig", zap.Strings("ruleIDs", rulesConfig.RuleIDs))
+	if len(rulesConfig.RuleIDs) == 0 {
+		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured.")
+	}
 	warnReferencedDeprecatedIDs(logger, rulesConfig)
 	warnUnusedPlugins(logger, rulesConfig)
 }
@@ -124,7 +127,19 @@ func newRulesConfig(
 ) (*rulesConfig, error) {
 	allRulesForType := rulesForType(allRules, ruleType)
 	if len(allRulesForType) == 0 {
-		return nil, syserror.New("no rules configured")
+		// This can happen with i.e. disable_builtin pretty easily.
+		//
+		// We return here so that we can do some syserror checking below for expecations
+		// that certain variables are non-empty at certain points.
+		return &rulesConfig{
+			RuleType:                ruleType,
+			RuleIDs:                 make([]string, 0),
+			IgnoreRootPaths:         make(map[string]struct{}),
+			IgnoreRuleIDToRootPaths: make(map[string]map[string]struct{}),
+			ReferencedDeprecatedRuleIDToReplacementIDs:     make(map[string]map[string]struct{}),
+			ReferencedDeprecatedCategoryIDToReplacementIDs: make(map[string]map[string]struct{}),
+			UnusedPluginNameToRuleIDs:                      make(map[string][]string),
+		}, nil
 	}
 
 	// Transform to struct map values. We'll want to use this later
