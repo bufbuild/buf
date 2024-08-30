@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -44,25 +45,24 @@ func rulesConfigForCheckConfig(
 	)
 }
 
-func warnReferencedDeprecatedIDs(logger *zap.Logger, rulesConfig *rulesConfig) {
-	warnReferencedDeprecatedIDsForIDType(
-		logger,
-		rulesConfig.ReferencedDeprecatedRuleIDToReplacementIDs,
-		"Rule",
-		"rules",
-	)
-	warnReferencedDeprecatedIDsForIDType(
-		logger,
-		rulesConfig.ReferencedDeprecatedCategoryIDToReplacementIDs,
-		"Category",
-		"categories",
-	)
+func logRulesConfig(logger *zap.Logger, rulesConfig *rulesConfig) {
+	logger.Debug("rulesConfig", zap.Strings("ruleIDs", rulesConfig.RuleIDs))
+	if len(rulesConfig.RuleIDs) == 0 {
+		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured.")
+	}
+	warnReferencedDeprecatedIDs(logger, rulesConfig)
+	warnUnusedPlugins(logger, rulesConfig)
 }
 
 type rulesConfig struct {
+	// RuleType is the RuleType that was passed when creating this rulesConfig.
+	//
+	// All of the Rule IDs will be for Rules of this type.
+	RuleType check.RuleType
 	// RuleIDs contains the specific RuleIDs to use.
 	//
 	// Will only contain non-deprecated RuleIDs.
+	// This will only contain RuleIDs of the given RuleType.
 	//
 	// Will always be non-empty.
 	//
@@ -71,10 +71,13 @@ type rulesConfig struct {
 	RuleIDs         []string
 	IgnoreRootPaths map[string]struct{}
 	// Will only contain non-deprecated RuleIDs.
+	// This will only contain RuleIDs of the given RuleType.
 	IgnoreRuleIDToRootPaths map[string]map[string]struct{}
 	// ReferencedDeprecatedRuleIDToReplacementIDs contains a map from a Rule ID
 	// that was used in the configuration, to a map of the IDs that
 	// replace this Rule ID.
+	//
+	// This will only contain RuleIDs of the given RuleType.
 	//
 	// This can be used for warning messages.
 	ReferencedDeprecatedRuleIDToReplacementIDs map[string]map[string]struct{}
@@ -82,8 +85,30 @@ type rulesConfig struct {
 	// that was used in the configuration, to a map of the IDs that
 	// replace this Category ID.
 	//
+	// This will only contain RuleIDs of the given RuleType.
+	//
 	// This can be used for warning messages.
 	ReferencedDeprecatedCategoryIDToReplacementIDs map[string]map[string]struct{}
+	// UnusedPluginNameToRuleIDs contains a map from unused plugin name to the Rule IDs that
+	// that plugin has.
+	//
+	// A plugin is unused if no rules from the plugin are configured.
+	//
+	// This map will *not* contain plugins that have Rules with RuleTypes other than the given
+	// RuleType. We need to account for this to properly print warnings. It is possible that
+	// a plugin is not used in the lint section, for example, but does have breaking rules configured.
+	// In client.Lint and client.Breaking, we only have the Lint or Breaking config, and we don't know
+	// the state of the other config. If a plugin is unused for lint, but has both lint and breaking
+	// Rules, we don't warn for this plugin, as it may have had rules configured in breaking that
+	// we haven't accounted for.
+	//
+	// The Rule IDs will be sorted.
+	// This will only contain RuleIDs of the given RuleType.
+	// There will be no empty key for plugin name (which means the Rule is builtin), that is
+	// builtin rules are not accounted for as unusued.
+	//
+	// This can be used for warning messages.
+	UnusedPluginNameToRuleIDs map[string][]string
 }
 
 func newRulesConfig(
@@ -100,9 +125,23 @@ func newRulesConfig(
 	allCategories []Category,
 	ruleType check.RuleType,
 ) (*rulesConfig, error) {
-	if len(allRules) == 0 {
-		return nil, syserror.New("no rules configured")
+	allRulesForType := rulesForType(allRules, ruleType)
+	if len(allRulesForType) == 0 {
+		// This can happen with i.e. disable_builtin pretty easily.
+		//
+		// We return here so that we can do some syserror checking below for expecations
+		// that certain variables are non-empty at certain points.
+		return &rulesConfig{
+			RuleType:                ruleType,
+			RuleIDs:                 make([]string, 0),
+			IgnoreRootPaths:         make(map[string]struct{}),
+			IgnoreRuleIDToRootPaths: make(map[string]map[string]struct{}),
+			ReferencedDeprecatedRuleIDToReplacementIDs:     make(map[string]map[string]struct{}),
+			ReferencedDeprecatedCategoryIDToReplacementIDs: make(map[string]map[string]struct{}),
+			UnusedPluginNameToRuleIDs:                      make(map[string][]string),
+		}, nil
 	}
+
 	// Transform to struct map values. We'll want to use this later
 	// in the function instead of slices.
 	ignoreRuleIDOrCategoryIDToRootPathMap := make(
@@ -113,12 +152,12 @@ func newRulesConfig(
 		ignoreRuleIDOrCategoryIDToRootPathMap[ruleIDOrCategoryID] = slicesext.ToStructMap(rootPaths)
 	}
 
-	ruleIDToRule, err := getIDToRuleOrCategory(allRules)
+	ruleIDToRule, err := getIDToRuleOrCategory(allRulesForType)
 	if err != nil {
 		return nil, err
 	}
 	// Contains all rules, not referenced rules.
-	deprecatedRuleIDToReplacementRuleIDs, err := GetDeprecatedIDToReplacementIDs(allRules)
+	deprecatedRuleIDToReplacementRuleIDs, err := GetDeprecatedIDToReplacementIDs(allRulesForType)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +204,7 @@ func newRulesConfig(
 	// Sort and filter empty.
 	useRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(useRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 {
-		useRuleIDsAndCategoryIDs = slicesext.Map(slicesext.Filter(allRules, func(rule Rule) bool { return rule.Default() }), Rule.ID)
+		useRuleIDsAndCategoryIDs = slicesext.Map(slicesext.Filter(allRulesForType, func(rule Rule) bool { return rule.Default() }), Rule.ID)
 	}
 	exceptRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(exceptRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 && len(exceptRuleIDsAndCategoryIDs) == 0 {
@@ -173,7 +212,7 @@ func newRulesConfig(
 	}
 
 	// Transform from rules/categories to rules.
-	ruleIDToCategoryIDs, err := getRuleIDToCategoryIDs(allRules)
+	ruleIDToCategoryIDs, err := getRuleIDToCategoryIDs(allRulesForType)
 	if err != nil {
 		return nil, err
 	}
@@ -232,17 +271,16 @@ func newRulesConfig(
 		}
 		delete(resultRuleIDToRule, ruleID)
 	}
-	resultRuleIDs := slicesext.MapKeysToSortedSlice(resultRuleIDToRule)
-	if len(resultRuleIDs) == 0 {
-		return nil, syserror.New("resultRuleIDs was empty")
+	resultRules := slicesext.MapValuesToSlice(resultRuleIDToRule)
+	if len(resultRules) == 0 {
+		return nil, syserror.New("resultRules was empty")
 	}
-
-	// Validate that no Rules are not of the given RuleType.
-	for _, rule := range resultRuleIDToRule {
-		if rule.Type() != ruleType {
-			return nil, fmt.Errorf("%q was configured in a non-%s configuration section but is of type %s", rule.ID(), ruleType.String(), ruleType.String())
-		}
-	}
+	sort.Slice(
+		resultRules,
+		func(i int, j int) bool {
+			return resultRules[i].ID() < resultRules[j].ID()
+		},
+	)
 
 	// Normalize ignore paths.
 	ignoreRootPaths, err = normalizeIgnoreRootPaths(ignoreRootPaths)
@@ -254,16 +292,83 @@ func newRulesConfig(
 		return nil, err
 	}
 
+	pluginNameToOtherRuleTypes := getPluginNameToOtherRuleTypes(allRules, ruleType)
+	// This map initially contains a map from plugin name to ALL Rule IDs, but we will
+	// then delete the used plugin names, and then delete the plugins with other rule types.
+	//
+	// Note this will only contain RuleIDs for the given RuleType.
+	unusedPluginNameToRuleIDs := getPluginNameToRuleOrCategoryIDs(allRulesForType)
+	for _, rule := range resultRules {
+		// If the rule is not from a builtin rule (i.e. PluginName() is not empty),
+		// delete the plugin name from the map.
+		if pluginName := rule.PluginName(); pluginName != "" {
+			delete(unusedPluginNameToRuleIDs, pluginName)
+		}
+	}
+	for pluginName := range unusedPluginNameToRuleIDs {
+		// If the rule had other plugin types (see the comment on UnusedPluginNameToRuleIDs),
+		// delete the plugin name from the map
+		if _, ok := pluginNameToOtherRuleTypes[pluginName]; ok {
+			delete(unusedPluginNameToRuleIDs, pluginName)
+		}
+	}
+
 	return &rulesConfig{
-		RuleIDs:                 resultRuleIDs,
+		RuleType:                ruleType,
+		RuleIDs:                 slicesext.Map(resultRules, Rule.ID),
 		IgnoreRootPaths:         slicesext.ToStructMap(ignoreRootPaths),
 		IgnoreRuleIDToRootPaths: ignoreRuleIDToRootPathMap,
 		ReferencedDeprecatedRuleIDToReplacementIDs:     referencedDeprecatedRuleIDToReplacementIDs,
 		ReferencedDeprecatedCategoryIDToReplacementIDs: referencedDeprecatedCategoryIDToReplacementIDs,
+		UnusedPluginNameToRuleIDs:                      unusedPluginNameToRuleIDs,
 	}, nil
 }
 
 // *** JUST USED WITHIN THIS FILE ***
+
+func warnReferencedDeprecatedIDs(logger *zap.Logger, rulesConfig *rulesConfig) {
+	warnReferencedDeprecatedIDsForIDType(
+		logger,
+		rulesConfig.ReferencedDeprecatedRuleIDToReplacementIDs,
+		"Rule",
+		"rules",
+	)
+	warnReferencedDeprecatedIDsForIDType(
+		logger,
+		rulesConfig.ReferencedDeprecatedCategoryIDToReplacementIDs,
+		"Category",
+		"categories",
+	)
+}
+
+func warnUnusedPlugins(logger *zap.Logger, rulesConfig *rulesConfig) {
+	if len(rulesConfig.UnusedPluginNameToRuleIDs) == 0 {
+		return
+	}
+	unusedPluginNames := slicesext.MapKeysToSortedSlice(rulesConfig.UnusedPluginNameToRuleIDs)
+	var sb strings.Builder
+	_, _ = sb.WriteString("Your buf.yaml has plugins added which have no rules configured:\n\n")
+	for _, unusedPluginName := range unusedPluginNames {
+		_, _ = sb.WriteString("\t  - ")
+		_, _ = sb.WriteString(unusedPluginName)
+		_, _ = sb.WriteString(" (available rules: ")
+		_, _ = sb.WriteString(strings.Join(rulesConfig.UnusedPluginNameToRuleIDs[unusedPluginName], ","))
+		_, _ = sb.WriteString(")\n")
+	}
+	_, _ = sb.WriteString("\n\tThis is usually a configuration error. You must specify the rules or categories you want to use from this plugin.\n")
+	_, _ = sb.WriteString("\tFor example (selecting one rule from each plugin):\n\n\t")
+	_, _ = sb.WriteString(rulesConfig.RuleType.String())
+	_, _ = sb.WriteString("\n\t  use:\n")
+	for _, unusedPluginName := range unusedPluginNames {
+		_, _ = sb.WriteString("\t    - ")
+		// We assume that all values have at least one element given how we constructed this.
+		// We know that the rule IDs are sorted, so this is deterministic.
+		_, _ = sb.WriteString(rulesConfig.UnusedPluginNameToRuleIDs[unusedPluginName][0])
+		_, _ = sb.WriteString("\n")
+	}
+	_, _ = sb.WriteString("\n\tIf you do not want to use these plugins, we recommend removing them from your configuration.")
+	logger.Warn(sb.String())
+}
 
 func warnReferencedDeprecatedIDsForIDType(
 	logger *zap.Logger,
@@ -303,6 +408,36 @@ func getIDToRuleOrCategory[R RuleOrCategory](ruleOrCategories []R) (map[string]R
 		m[ruleOrCategory.ID()] = ruleOrCategory
 	}
 	return m, nil
+}
+
+func getPluginNameToOtherRuleTypes(allRules []Rule, ruleType check.RuleType) map[string]map[check.RuleType]struct{} {
+	m := make(map[string]map[check.RuleType]struct{})
+	for _, rule := range allRules {
+		if pluginName := rule.PluginName(); pluginName != "" {
+			if rule.Type() != ruleType {
+				otherRuleTypes, ok := m[pluginName]
+				if !ok {
+					otherRuleTypes = make(map[check.RuleType]struct{})
+					m[pluginName] = otherRuleTypes
+				}
+				otherRuleTypes[rule.Type()] = struct{}{}
+			}
+		}
+	}
+	return m
+}
+
+func getPluginNameToRuleOrCategoryIDs[R RuleOrCategory](ruleOrCategories []R) map[string][]string {
+	m := make(map[string][]string)
+	for _, ruleOrCategory := range ruleOrCategories {
+		if pluginName := ruleOrCategory.PluginName(); pluginName != "" {
+			m[pluginName] = append(m[pluginName], ruleOrCategory.ID())
+		}
+	}
+	for _, ruleOrCategoryIDs := range m {
+		sort.Strings(ruleOrCategoryIDs)
+	}
+	return m
 }
 
 func getRuleIDToCategoryIDs(rules []Rule) (map[string][]string, error) {

@@ -99,7 +99,12 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, check.RuleTypeLint, lintConfig.FileVersion(), lintOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		lintConfig.FileVersion(),
+		lintOptions.pluginConfigs,
+		lintConfig.DisableBuiltin(),
+	)
 	if err != nil {
 		return err
 	}
@@ -107,7 +112,7 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	warnReferencedDeprecatedIDs(c.logger, config.rulesConfig)
+	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
@@ -124,6 +129,7 @@ func (c *client) Lint(
 	multiClient, err := c.getMultiClient(
 		lintConfig.FileVersion(),
 		lintOptions.pluginConfigs,
+		lintConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
 	if err != nil {
@@ -153,7 +159,12 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, check.RuleTypeBreaking, breakingConfig.FileVersion(), breakingOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		breakingConfig.FileVersion(),
+		breakingOptions.pluginConfigs,
+		breakingConfig.DisableBuiltin(),
+	)
 	if err != nil {
 		return err
 	}
@@ -166,7 +177,7 @@ func (c *client) Breaking(
 	if err != nil {
 		return err
 	}
-	warnReferencedDeprecatedIDs(c.logger, config.rulesConfig)
+	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
@@ -189,6 +200,7 @@ func (c *client) Breaking(
 	multiClient, err := c.getMultiClient(
 		breakingConfig.FileVersion(),
 		breakingOptions.pluginConfigs,
+		breakingConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
 	if err != nil {
@@ -214,7 +226,12 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(ctx, ruleType, checkConfig.FileVersion(), configuredRulesOptions.pluginConfigs)
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		checkConfig.FileVersion(),
+		configuredRulesOptions.pluginConfigs,
+		checkConfig.DisableBuiltin(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +239,7 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	warnReferencedDeprecatedIDs(c.logger, rulesConfig)
+	logRulesConfig(c.logger, rulesConfig)
 	return rulesForRuleIDs(allRules, rulesConfig.RuleIDs), nil
 }
 
@@ -239,8 +256,11 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	rules, _, err := c.allRulesAndCategories(ctx, ruleType, fileVersion, allRulesOptions.pluginConfigs)
-	return rules, err
+	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
+	if err != nil {
+		return nil, err
+	}
+	return rulesForType(rules, ruleType), nil
 }
 
 func (c *client) AllCategories(
@@ -255,16 +275,15 @@ func (c *client) AllCategories(
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	_, categories, err := c.allRulesAndCategories(ctx, check.RuleTypeLint, fileVersion, allCategoriesOptions.pluginConfigs)
+	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
 	return categories, err
 }
 
 func (c *client) allRulesAndCategories(
 	ctx context.Context,
-	// Ignored if just getting categories.
-	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	disableBuiltin bool,
 ) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
@@ -273,29 +292,30 @@ func (c *client) allRulesAndCategories(
 	if err != nil {
 		return nil, nil, err
 	}
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, emptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
-	allRules, allCategories, err := multiClient.ListRulesAndCategories(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return rulesForType(allRules, ruleType), allCategories, nil
+	return multiClient.ListRulesAndCategories(ctx)
 }
 
 func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	disableBuiltin bool,
 	defaultOptions check.Options,
 ) (*multiClient, error) {
-	defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
-	if !ok {
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
-	}
-	checkClientSpecs := []*checkClientSpec{
-		// We do not set PluginName for default check.Clients.
-		newCheckClientSpec("", defaultCheckClient, defaultOptions),
+	var checkClientSpecs []*checkClientSpec
+	if !disableBuiltin {
+		defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
+		if !ok {
+			return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		}
+		checkClientSpecs = append(
+			checkClientSpecs,
+			// We do not set PluginName for default check.Clients.
+			newCheckClientSpec("", defaultCheckClient, defaultOptions),
+		)
 	}
 	for _, pluginConfig := range pluginConfigs {
 		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {

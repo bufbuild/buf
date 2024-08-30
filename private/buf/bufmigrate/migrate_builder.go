@@ -196,6 +196,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
+					false,
 				),
 				"",
 				false,
@@ -208,6 +209,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
+					false,
 				),
 				false,
 			),

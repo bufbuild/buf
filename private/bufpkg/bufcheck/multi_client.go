@@ -77,6 +77,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		// request with no rule IDs will be made to the delegate client, and default rules will
 		// be called.
 		if len(requestDelegateRuleIDs) == 0 {
+			c.logger.Debug("skipping delegate client", zap.String("pluginName", delegate.PluginName))
 			continue
 		}
 		delegateRequest, err := check.NewRequest(
