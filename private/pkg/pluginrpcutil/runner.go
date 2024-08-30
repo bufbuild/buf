@@ -49,7 +49,7 @@ func newRunner(
 func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 	args := env.Args
 	if len(r.args) > 0 {
-		args = append(slices.Clone(env.Args), r.args...)
+		args = append(slices.Clone(r.args), env.Args...)
 	}
 	if err := r.delegate.Run(
 		ctx,

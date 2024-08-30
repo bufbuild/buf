@@ -390,3 +390,7 @@ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 pluginrpc.com/pluginrpc v0.0.0-20240828203109-db8102d83648 h1:vjKJ2QReoFSMzLrwdh/TZgNmwcEKSPT2LzbCYawN4iI=
 pluginrpc.com/pluginrpc v0.0.0-20240828203109-db8102d83648/go.mod h1:rX3qwV56YEwfayfyfEovbQ+KMVDjgJ8icHy0WTaUXRY=
+pluginrpc.com/pluginrpc v0.1.0 h1:H+phLS9KURvQB7En8xnEGuTUP0FRYIOpE/uZVk1nl5I=
+pluginrpc.com/pluginrpc v0.1.0/go.mod h1:rX3qwV56YEwfayfyfEovbQ+KMVDjgJ8icHy0WTaUXRY=
+pluginrpc.com/pluginrpc v0.1.1-0.20240830202149-02747f468d57 h1:+nkfdYlfr4Hv4bW7cI6ptj5SJdwqUNVl4l4wnYHq39w=
+pluginrpc.com/pluginrpc v0.1.1-0.20240830202149-02747f468d57/go.mod h1:rX3qwV56YEwfayfyfEovbQ+KMVDjgJ8icHy0WTaUXRY=

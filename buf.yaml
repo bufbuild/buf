@@ -7,7 +7,11 @@ lint:
     - DEFAULT
     - UNARY_RPC
   disallow_comment_ignores: true
+  disable_builtin: true
 breaking:
   use:
     - WIRE_JSON
   ignore_unstable_packages: true
+  disable_builtin: true
+plugins:
+  - plugin: ["buf", "beta", "buf-plugin-v2"]

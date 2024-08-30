@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckserver/internal/bufcheckserverutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckserver/internal/buflintvalidate"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver/internal/bufcheckserverutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
