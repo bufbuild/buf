@@ -3072,7 +3072,8 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
-		`Failure: plugin configs are set but custom lint plugins are not enabled: "BUF_BETA_PLUGINS_ENABLED" is not set`,
+		"Failure: there are plugins set in the buf.yaml, however this feature is in beta and not yet officially released."+
+			" In order to use plugins, set the environment variable BUF_BETA_PLUGINS_ENABLED=1",
 		internaltesting.NewEnvFunc(t),
 		nil,
 		"lint",
@@ -3590,7 +3591,8 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
-		`Failure: plugin configs are set but custom breaking plugins are not enabled: "BUF_BETA_PLUGINS_ENABLED" is not set`,
+		"Failure: there are plugins set in the buf.yaml, however this feature is in beta and not yet officially released."+
+			" In order to use plugins, set the environment variable BUF_BETA_PLUGINS_ENABLED=1",
 		internaltesting.NewEnvFunc(t),
 		nil,
 		"breaking",
