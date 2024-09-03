@@ -287,8 +287,3 @@ issues:
       # trip this off.
       path: private/pkg/oauth2/device.go
       text: "G101:"
-    - linters:
-          - staticcheck
-      # This linter is for testing and calls a deprecated method on purpose.
-      path: private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext/handlers.go
-      text: "deprecated"
