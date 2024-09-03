@@ -138,6 +138,11 @@ func run(
 		if err != nil {
 			return err
 		}
+		if len(imageWithConfig.PluginConfigs()) > 0 {
+			if err := bufcli.CheckBetaPluginEnabled(container); err != nil {
+				return fmt.Errorf("plugin configs are set but custom lint plugins are not enabled: %w", err)
+			}
+		}
 		if err := client.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),

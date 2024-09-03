@@ -219,6 +219,11 @@ func run(
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 		}
+		if len(imageWithConfig.PluginConfigs()) > 0 {
+			if err := bufcli.CheckBetaPluginEnabled(container); err != nil {
+				return fmt.Errorf("plugin configs are set but custom breaking plugins are not enabled: %w", err)
+			}
+		}
 		if err := client.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),

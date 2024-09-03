@@ -3067,7 +3067,35 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 			]
 		}`,
 	)
-
+	// test lint plugin is gated by env var
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		1,
+		`Failure: plugin configs are set but custom lint plugins are not enabled: "BUF_BETA_PLUGINS_ENABLED" is not set`,
+		func(use string) map[string]string {
+			envMap := internaltesting.NewEnvFunc(t)(use)
+			delete(envMap, "BUF_BETA_PLUGINS_ENABLED")
+			return envMap
+		},
+		nil,
+		"lint",
+		filepath.Join("testdata", "check_plugins", "current"),
+		"--config",
+		`{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"lint": {
+				"use": ["ATTRIBUTES_SUFFIXES"]
+			},
+			"plugins":[
+				{"plugin": "buf-plugin-rpc-ext"}
+			]
+		}`,
+	)
 	// tests that if a plugin panics, the buf CLI does not panic
 	require.NotPanics(
 		t,
@@ -3548,6 +3576,27 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
 testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
 	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+	// test breaking plugin is gated by env var
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		1,
+		`Failure: plugin configs are set but custom breaking plugins are not enabled: "BUF_BETA_PLUGINS_ENABLED" is not set`,
+		func(use string) map[string]string {
+			envMap := internaltesting.NewEnvFunc(t)(use)
+			delete(envMap, "BUF_BETA_PLUGINS_ENABLED")
+			return envMap
+		},
+		nil,
 		"breaking",
 		filepath.Join("testdata", "check_plugins", "current", "proto"),
 		"--against",

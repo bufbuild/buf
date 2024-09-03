@@ -51,6 +51,7 @@ func NewEnvFunc(tb testing.TB) func(string) map[string]string {
 			useEnvVar(use, "CACHE_DIR"):  tempDirPath,
 			useEnvVar(use, "CONFIG_DIR"): tempDirPath,
 			"PATH":                       os.Getenv("PATH"),
+			"BUF_BETA_PLUGINS_ENABLED":   "1",
 		}
 	}
 }

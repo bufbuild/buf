@@ -16,6 +16,7 @@ package bufcli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -24,6 +25,7 @@ import (
 )
 
 const (
+	betaPluginEnabledEnvKey       = "BUF_BETA_PLUGINS_ENABLED"
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
@@ -83,4 +85,14 @@ func WarnBetaCommand(_ context.Context, container appext.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
 	}
+}
+
+// CheckBetaPluginEnabled checks whether beta lint/breaking plugin is enabled through an env var.
+// This returns nil if it is enabled and an error otherwise. The error only indicates that the
+// env var is not set, and the caller should wrap the error to provide more context.
+func CheckBetaPluginEnabled(container appext.Container) error {
+	if container.Env(betaPluginEnabledEnvKey) == "" {
+		return fmt.Errorf("%q is not set", betaPluginEnabledEnvKey)
+	}
+	return nil
 }
