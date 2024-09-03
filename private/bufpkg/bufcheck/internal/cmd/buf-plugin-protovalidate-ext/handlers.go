@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -34,7 +35,7 @@ func checkFieldNotSkippedNoImport(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
-	if constraints.GetSkipped() {
+	if constraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS {
 		skippedRuleName := "(buf.validate.field).skipped"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
 			skippedRuleName = "(buf.validate.field).repeated.items.skipped"
@@ -58,7 +59,7 @@ func checkFieldNotSkipped(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
-	if constraints.GetSkipped() {
+	if constraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS {
 		skippedRuleName := "(buf.validate.field).skipped"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
 			skippedRuleName = "(buf.validate.field).repeated.items.skipped"
