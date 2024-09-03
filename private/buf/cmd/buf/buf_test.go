@@ -4424,6 +4424,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 	require.Equal(t, expectedData, string(data))
 }
 
+// TODO: remove this as part of publicly releasing lint/breaking plugins
 func testRunStdoutWithBetaPluginEnabled(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	testRunStdoutWithEnvOverride(
 		t,
