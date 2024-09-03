@@ -2894,7 +2894,7 @@ func TestLintWithPaths(t *testing.T) {
 func TestLintWithPlugins(t *testing.T) {
 	t.Parallel()
 	// defaults only, comment ignores on.
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -2919,7 +2919,7 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 	// There are still lint failures for protovalidate despite being set as an ignore path because
 	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
 	// for the module -- this is expected behavior for now.
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -2978,7 +2978,7 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 	// There are still lint failures for protovalidate despite being set as an ignore path because
 	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
 	// for the module -- this is expected behavior for now.
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3027,7 +3027,7 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 		}`,
 	)
 	// Set the same category for lint and breaking, but ensure that only the lint rules run.
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3073,11 +3073,7 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
 		`Failure: plugin configs are set but custom lint plugins are not enabled: "BUF_BETA_PLUGINS_ENABLED" is not set`,
-		func(use string) map[string]string {
-			envMap := internaltesting.NewEnvFunc(t)(use)
-			delete(envMap, "BUF_BETA_PLUGINS_ENABLED")
-			return envMap
-		},
+		internaltesting.NewEnvFunc(t),
 		nil,
 		"lint",
 		filepath.Join("testdata", "check_plugins", "current"),
@@ -3108,7 +3104,11 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 					`panic: this panic is intentional`,
 					`Failure: plugin "buf-plugin-panic" failed: Exited with code 2: exit status 2`,
 				},
-				internaltesting.NewEnvFunc(t),
+				func(use string) map[string]string {
+					defaultTestingEnv := internaltesting.NewEnvFunc(t)(use)
+					defaultTestingEnv["BUF_BETA_PLUGINS_ENABLED"] = "1"
+					return defaultTestingEnv
+				},
 				nil,
 				"lint",
 				filepath.Join("testdata", "check_plugins", "current"),
@@ -3214,7 +3214,7 @@ func TestBreakingWithPlugins(t *testing.T) {
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3265,7 +3265,7 @@ testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3307,7 +3307,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requi
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3350,7 +3350,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3394,7 +3394,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3437,7 +3437,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		0,
@@ -3477,7 +3477,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		0,
@@ -3519,7 +3519,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3568,7 +3568,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		"current",
 		"previous",
 	)
-	testRunStdout(
+	testRunStdoutWithBetaPluginEnabled(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3591,11 +3591,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
 		`Failure: plugin configs are set but custom breaking plugins are not enabled: "BUF_BETA_PLUGINS_ENABLED" is not set`,
-		func(use string) map[string]string {
-			envMap := internaltesting.NewEnvFunc(t)(use)
-			delete(envMap, "BUF_BETA_PLUGINS_ENABLED")
-			return envMap
-		},
+		internaltesting.NewEnvFunc(t),
 		nil,
 		"breaking",
 		filepath.Join("testdata", "check_plugins", "current", "proto"),
@@ -4426,6 +4422,35 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 	data, err := os.ReadFile(filepath.Join(tempDir, "buf.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
+}
+
+func testRunStdoutWithBetaPluginEnabled(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
+	testRunStdoutWithEnvOverride(
+		t,
+		map[string]string{"BUF_BETA_PLUGINS_ENABLED": "1"},
+		stdin,
+		expectedExitCode,
+		expectedStdout,
+		args...,
+	)
+}
+
+func testRunStdoutWithEnvOverride(t *testing.T, envOverride map[string]string, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStdout(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStdout,
+		func(use string) map[string]string {
+			defaultTestingEnv := internaltesting.NewEnvFunc(t)(use)
+			for key, value := range envOverride {
+				defaultTestingEnv[key] = value
+			}
+			return defaultTestingEnv
+		},
+		stdin,
+		args...,
+	)
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
