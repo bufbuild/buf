@@ -26,8 +26,8 @@ github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee h1:E6ET8YUcYJ
 github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee/go.mod h1:HjGFxsck9RObrTJp2hXQZfWhPgZqnR6sR1U5fCA/Kus=
 github.com/bufbuild/protovalidate-go v0.6.4 h1:QtNIz4LGclM3UArQv/R1AKNF7MO8wriT9v7b8Gnmqak=
 github.com/bufbuild/protovalidate-go v0.6.4/go.mod h1:HlkVnkE/zVYZvHIG/a7QZuzqC9bSqHaOOTeRomYF0Q8=
-github.com/bufbuild/protoyaml-go v0.1.11 h1:Iyixd6Y5dx6ws6Uh8APgC1lMyvXt710NayoY8cY0Vj8=
-github.com/bufbuild/protoyaml-go v0.1.11/go.mod h1:KCBItkvZOK/zwGueLdH1Wx1RLyFn5rCH7YjQrdty2Wc=
+github.com/bufbuild/protoyaml-go v0.1.12 h1:tIJrwvGxumVpNwLsw/AevT1QnkPDBuAObBSuBAdmAWY=
+github.com/bufbuild/protoyaml-go v0.1.12/go.mod h1:Xmz3wct+08Va+g9gjIuLTAmxW2w6sre5Wrgw7K3gn0I=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
@@ -220,8 +220,8 @@ github.com/quic-go/quic-go v0.46.0 h1:uuwLClEEyk1DNvchH8uCByQVjo3yKL9opKulExNDs7
 github.com/quic-go/quic-go v0.46.0/go.mod h1:1dLehS7TIR64+vxGR70GDcatWTOtMX2PUtnKsjbTurI=
 github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU5NdKM8=
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
-github.com/rs/cors v1.11.0 h1:0B9GE/r9Bc2UxRMMtymBkHTenPkHDv0CW4Y98GBY+po=
-github.com/rs/cors v1.11.0/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
+github.com/rs/cors v1.11.1 h1:eU3gRzXLRK57F5rKMGMZURNdIG4EoAmX8k94r9wXWHA=
+github.com/rs/cors v1.11.1/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
