@@ -370,7 +370,7 @@ func (c *client) getMultiClient(
 // TODO: remove this as part of publicly releasing lint/breaking plugins
 func validatePluginConfigs(pluginConfigs []bufconfig.PluginConfig, isPluginEnabled bool) error {
 	if len(pluginConfigs) > 0 && !isPluginEnabled {
-		return fmt.Errorf("custom plugins are not publicly supported. Please contact us at https://buf.build/docs/contact")
+		return fmt.Errorf("custom plugins are not publicly supported. For more information, please contact us at https://buf.build/docs/contact")
 	}
 	return nil
 }
