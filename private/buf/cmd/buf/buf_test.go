@@ -3067,6 +3067,7 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 			]
 		}`,
 	)
+
 	// tests that if a plugin panics, the buf CLI does not panic
 	require.NotPanics(
 		t,
@@ -3079,11 +3080,7 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 					`panic: this panic is intentional`,
 					`Failure: plugin "buf-plugin-panic" failed: Exited with code 2: exit status 2`,
 				},
-				func(use string) map[string]string {
-					defaultTestingEnv := internaltesting.NewEnvFunc(t)(use)
-					defaultTestingEnv["BUF_BETA_PLUGINS_ENABLED"] = "1"
-					return defaultTestingEnv
-				},
+				internaltesting.NewEnvFunc(t),
 				nil,
 				"lint",
 				filepath.Join("testdata", "check_plugins", "current"),

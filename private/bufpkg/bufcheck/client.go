@@ -367,6 +367,7 @@ func (c *client) getMultiClient(
 	return newMultiClient(c.logger, checkClientSpecs), nil
 }
 
+// TODO: remove this as part of publicly releasing lint/breaking plugins
 func validatePluginConfigs(pluginConfigs []bufconfig.PluginConfig, isPluginEnabled bool) error {
 	if len(pluginConfigs) > 0 && !isPluginEnabled {
 		return fmt.Errorf("custom plugins are not publicly supported. Please contact us at https://buf.build/docs/contact")
@@ -518,6 +519,7 @@ func checkCommentLineForCheckIgnore(
 
 type lintOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
 
@@ -526,7 +528,8 @@ func newLintOptions() *lintOptions {
 }
 
 type breakingOptions struct {
-	pluginConfigs  []bufconfig.PluginConfig
+	pluginConfigs []bufconfig.PluginConfig
+	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled  bool
 	excludeImports bool
 }
@@ -537,6 +540,7 @@ func newBreakingOptions() *breakingOptions {
 
 type configuredRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
 
@@ -546,6 +550,7 @@ func newConfiguredRulesOptions() *configuredRulesOptions {
 
 type allRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
 
@@ -555,6 +560,7 @@ func newAllRulesOptions() *allRulesOptions {
 
 type allCategoriesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
 
