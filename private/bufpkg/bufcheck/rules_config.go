@@ -389,11 +389,13 @@ func warnReferencedDeprecatedIDsForIDType(
 		var specialCallout string
 		if deprecatedID == "DEFAULT" {
 			specialCallout = `
+
 	The concept of a default rule has been introduced. A default rule is a rule that will be run
 	if no rules are explicitly configured in your buf.yaml. Run buf config ls-lint-rules or
 	buf config ls-breaking-rules to see which rules are defaults. With this introduction, having a category
 	also named DEFAULT is confusing, as while it happpens that all the rules in the DEFAULT category
-	are also default rules, the name has become overloaded.`
+	are also default rules, the name has become overloaded.
+`
 		}
 		logger.Warn(
 			fmt.Sprintf(
