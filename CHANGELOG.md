@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.40.0] - 2024-09-04
 
 - Add concept of a default lint or breaking rule, which is printed out as a property when running
@@ -1239,6 +1243,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.40.0...HEAD
 [v1.40.0]: https://github.com/bufbuild/buf/compare/v1.39.0...v1.40.0
 [v1.39.0]: https://github.com/bufbuild/buf/compare/v1.38.0...v1.39.0
 [v1.38.0]: https://github.com/bufbuild/buf/compare/v1.37.0...v1.38.0
