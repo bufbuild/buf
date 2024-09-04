@@ -138,11 +138,17 @@ func run(
 		if err != nil {
 			return err
 		}
+		lintOptions := []bufcheck.LintOption{
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+		}
+		if bufcli.IsPluginEnabled(container) {
+			lintOptions = append(lintOptions, bufcheck.WithPluginsEnabled())
+		}
 		if err := client.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
-			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			lintOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {

@@ -24,6 +24,7 @@ import (
 )
 
 const (
+	betaPluginEnabledEnvKey       = "BUF_BETA_PLUGINS_ENABLED"
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
@@ -83,4 +84,11 @@ func WarnBetaCommand(_ context.Context, container appext.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
 	}
+}
+
+// IsPluginEnabled returns whether the env var enabling beta lint/breaking plugin is set.
+//
+// TODO: remove this as part of publicly releasing lint/breaking plugins
+func IsPluginEnabled(container appext.Container) bool {
+	return container.Env(betaPluginEnabledEnvKey) != ""
 }

@@ -219,6 +219,9 @@ func run(
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 		}
+		if bufcli.IsPluginEnabled(container) {
+			breakingOptions = append(breakingOptions, bufcheck.WithPluginsEnabled())
+		}
 		if err := client.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
