@@ -100,6 +100,10 @@ type BufYAMLFile interface {
 	// breaking config. Otherwise, this will return nil, so callers should be aware this may be
 	// empty.
 	TopLevelBreakingConfig() BreakingConfig
+	// PluginConfigs returns the PluginConfigs for the File.
+	//
+	// For v1 buf.yaml files, this will always return nil.
+	PluginConfigs() []PluginConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -120,6 +124,7 @@ type BufYAMLFile interface {
 func NewBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
+	pluginConfigs []PluginConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	options ...BufYAMLFileOption,
 ) (BufYAMLFile, error) {
@@ -133,6 +138,7 @@ func NewBufYAMLFile(
 		moduleConfigs,
 		nil, // Do not set top-level lint config, use only module configs
 		nil, // Do not set top-level breaking config, use only module configs
+		pluginConfigs,
 		configuredDepModuleRefs,
 		bufYAMLFileOptions.includeDocsLink,
 	)
@@ -246,6 +252,7 @@ type bufYAMLFile struct {
 	moduleConfigs           []ModuleConfig
 	topLevelLintConfig      LintConfig
 	topLevelBreakingConfig  BreakingConfig
+	pluginConfigs           []PluginConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 	includeDocsLink         bool
 }
@@ -256,6 +263,7 @@ func newBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	topLevelLintConfig LintConfig,
 	topLevelBreakingConfig BreakingConfig,
+	pluginConfigs []PluginConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
@@ -310,6 +318,7 @@ func newBufYAMLFile(
 		moduleConfigs:           moduleConfigs,
 		topLevelLintConfig:      topLevelLintConfig,
 		topLevelBreakingConfig:  topLevelBreakingConfig,
+		pluginConfigs:           pluginConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 		includeDocsLink:         includeDocsLink,
 	}, nil
@@ -337,6 +346,10 @@ func (c *bufYAMLFile) TopLevelLintConfig() LintConfig {
 
 func (c *bufYAMLFile) TopLevelBreakingConfig() BreakingConfig {
 	return c.topLevelBreakingConfig
+}
+
+func (c *bufYAMLFile) PluginConfigs() []PluginConfig {
+	return c.pluginConfigs
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
@@ -440,6 +453,7 @@ func readBufYAMLFile(
 			},
 			lintConfig,
 			breakingConfig,
+			nil,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -628,6 +642,14 @@ func readBufYAMLFile(
 				return nil, err
 			}
 		}
+		var pluginConfigs []PluginConfig
+		for _, externalPluginConfig := range externalBufYAMLFile.Plugins {
+			pluginConfig, err := newPluginConfigForExternalV2(externalPluginConfig)
+			if err != nil {
+				return nil, err
+			}
+			pluginConfigs = append(pluginConfigs, pluginConfig)
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -638,6 +660,7 @@ func readBufYAMLFile(
 			moduleConfigs,
 			topLevelLintConfig,
 			topLevelBreakingConfig,
+			pluginConfigs,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -753,8 +776,12 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// We could make other decisions: if there are two or more matching configs, do a default,
 		// and then just override the non-matching, but this gets complicated. The current logic
 		// takes care of the base case when writing buf.yaml files.
+		//
+		// Edit: We added in plugin configs to this as well, so assume the above applies to
+		// plugin configs too.
 		stringToExternalLint := make(map[string]externalBufYAMLFileLintV2)
 		stringToExternalBreaking := make(map[string]externalBufYAMLFileBreakingV1Beta1V1V2)
+		stringToExternalPlugins := make(map[string][]externalBufYAMLFilePluginV2)
 
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
@@ -805,7 +832,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
 
-		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 {
+		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 && len(stringToExternalPlugins) <= 1 {
 			externalLint, err := getZeroOrSingleValueForMap(stringToExternalLint)
 			if err != nil {
 				return syserror.Wrap(err)
@@ -814,8 +841,13 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if err != nil {
 				return syserror.Wrap(err)
 			}
+			externalPlugins, err := getZeroOrSingleValueForMap(stringToExternalPlugins)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
 			externalBufYAMLFile.Lint = externalLint
 			externalBufYAMLFile.Breaking = externalBreaking
+			externalBufYAMLFile.Plugins = externalPlugins
 			for i := 0; i < len(externalBufYAMLFile.Modules); i++ {
 				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV2{}
 				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
@@ -826,6 +858,16 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Name = externalBufYAMLFile.Modules[0].Name
 			externalBufYAMLFile.Modules = []externalBufYAMLFileModuleV2{}
 		}
+
+		var externalPlugins []externalBufYAMLFilePluginV2
+		for _, pluginConfig := range bufYAMLFile.PluginConfigs() {
+			externalPlugin, err := newExternalV2ForPluginConfig(pluginConfig)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			externalPlugins = append(externalPlugins, externalPlugin)
+		}
+		externalBufYAMLFile.Plugins = externalPlugins
 
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
@@ -967,6 +1009,7 @@ func getLintConfigForExternalLintV1Beta1V1(
 			externalLint.Except,
 			ignore,
 			ignoreOnly,
+			externalLint.DisableBuiltin,
 		)
 		if err != nil {
 			return nil, err
@@ -1017,6 +1060,7 @@ func getLintConfigForExternalLintV2(
 			externalLint.Except,
 			ignore,
 			ignoreOnly,
+			externalLint.DisableBuiltin,
 		)
 		if err != nil {
 			return nil, err
@@ -1067,6 +1111,7 @@ func getBreakingConfigForExternalBreaking(
 			externalBreaking.Except,
 			ignore,
 			ignoreOnly,
+			externalBreaking.DisableBuiltin,
 		)
 		if err != nil {
 			return nil, err
@@ -1110,6 +1155,11 @@ func isLintOrBreakingDisabledBasedOnIgnores(
 //     are transforming a path from the default workspace-wide lint or breaking config. We want to skip these paths.
 //     If requirePathsToBeContainedWithinModuleDirPath is true, return error.
 //   - Otherwise, adds the path relative to the given module directory path to the returned slice.
+//
+// It is important to note that because we are only taking paths that are contained in the module
+// directory and check configurations can only respect paths that are a part of the module. This means
+// that import paths from outside of the module cannot be configured as a part of the check configuration
+// for a module.
 //
 // isLintOrBreakingDisabledBasedOnIgnores should be called before this function.
 func getRelPathsForLintOrBreakingExternalPaths(
@@ -1159,6 +1209,7 @@ func getExternalLintV1Beta1V1ForLintConfig(lintConfig LintConfig, moduleDirPath 
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+	externalLint.DisableBuiltin = lintConfig.DisableBuiltin()
 	return externalLint
 }
 
@@ -1181,6 +1232,7 @@ func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string)
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.DisallowCommentIgnores = !lintConfig.AllowCommentIgnores()
+	externalLint.DisableBuiltin = lintConfig.DisableBuiltin()
 	return externalLint
 }
 
@@ -1198,6 +1250,7 @@ func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleD
 		externalBreaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
 	}
 	externalBreaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+	externalBreaking.DisableBuiltin = breakingConfig.DisableBuiltin()
 	return externalBreaking
 }
 
@@ -1226,6 +1279,7 @@ type externalBufYAMLFileV2 struct {
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 // externalBufYAMLFileModuleV2 represents a single module configuation within a v2 buf.yaml file.
@@ -1264,6 +1318,7 @@ type externalBufYAMLFileLintV1Beta1V1 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+	DisableBuiltin                       bool                `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 // Suppressing unused warning. Keeping this function around for now.
@@ -1279,7 +1334,8 @@ func (el externalBufYAMLFileLintV1Beta1V1) isEmpty() bool {
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
 		el.ServiceSuffix == "" &&
-		!el.AllowCommentIgnores
+		!el.AllowCommentIgnores &&
+		!el.DisableBuiltin
 }
 
 // externalBufYAMLFileLintV2 represents lint configuation within a  v2 buf.yaml file.
@@ -1299,6 +1355,7 @@ type externalBufYAMLFileLintV2 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	DisallowCommentIgnores               bool                `json:"disallow_comment_ignores,omitempty" yaml:"disallow_comment_ignores,omitempty"`
+	DisableBuiltin                       bool                `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 func (el externalBufYAMLFileLintV2) isEmpty() bool {
@@ -1311,7 +1368,8 @@ func (el externalBufYAMLFileLintV2) isEmpty() bool {
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
 		el.ServiceSuffix == "" &&
-		!el.DisallowCommentIgnores
+		!el.DisallowCommentIgnores &&
+		!el.DisableBuiltin
 }
 
 // externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
@@ -1327,6 +1385,7 @@ type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
 	/// IgnoreOnly are the ID/category to paths to ignore.
 	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+	DisableBuiltin         bool                `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
@@ -1334,7 +1393,14 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 		len(eb.Except) == 0 &&
 		len(eb.Ignore) == 0 &&
 		len(eb.IgnoreOnly) == 0 &&
-		!eb.IgnoreUnstablePackages
+		!eb.IgnoreUnstablePackages &&
+		!eb.DisableBuiltin
+}
+
+// externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.gyaml file.
+type externalBufYAMLFilePluginV2 struct {
+	Plugin  any            `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Options map[string]any `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {

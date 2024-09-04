@@ -144,6 +144,11 @@ type FileAnnotation interface {
 	Type() string
 	// Message is the message of the annotation.
 	Message() string
+	// PluginName is the name of the plugin that the annotation originated from.
+	//
+	// May be empty if this annotation did not originate from a plugin.
+	// This may be added to the printed message field for certain printers.
+	PluginName() string
 
 	isFileAnnotation()
 }
@@ -157,6 +162,7 @@ func NewFileAnnotation(
 	endColumn int,
 	typeString string,
 	message string,
+	pluginName string,
 ) FileAnnotation {
 	return newFileAnnotation(
 		fileInfo,
@@ -166,6 +172,7 @@ func NewFileAnnotation(
 		endColumn,
 		typeString,
 		message,
+		pluginName,
 	)
 }
 

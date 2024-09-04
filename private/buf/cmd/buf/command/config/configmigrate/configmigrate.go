@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -127,6 +128,7 @@ func run(
 	}
 	migrator := bufmigrate.NewMigrator(
 		container.Logger(),
+		tracing.NewTracer(container.Tracer()),
 		runner,
 		moduleKeyProvider,
 		commitProvider,

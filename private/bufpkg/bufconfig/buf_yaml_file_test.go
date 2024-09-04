@@ -214,6 +214,30 @@ modules:
 		// input
 		`version: v2
 modules:
+  - path: foo
+  - path: bar
+plugins:
+  - plugin: buf-plugin-foo
+    options:
+      key1: value1
+`,
+		// expected output
+		`version: v2
+modules:
+  - path: bar
+  - path: foo
+plugins:
+  - plugin: buf-plugin-foo
+    options:
+      key1: value1
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
   - path: .
 `,
 		// expected output

@@ -22,11 +22,13 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -34,6 +36,8 @@ import (
 
 type migrateBuilder struct {
 	logger             *zap.Logger
+	tracer             tracing.Tracer
+	runner             command.Runner
 	commitProvider     bufmodule.CommitProvider
 	bucket             storage.ReadBucket
 	destinationDirPath string
@@ -53,12 +57,16 @@ type migrateBuilder struct {
 
 func newMigrateBuilder(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
+	runner command.Runner,
 	commitProvider bufmodule.CommitProvider,
 	bucket storage.ReadBucket,
 	destinationDirPath string,
 ) *migrateBuilder {
 	return &migrateBuilder{
 		logger:                           logger,
+		tracer:                           tracer,
+		runner:                           runner,
 		commitProvider:                   commitProvider,
 		bucket:                           bucket,
 		destinationDirPath:               destinationDirPath,
@@ -188,6 +196,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
+					false,
 				),
 				"",
 				false,
@@ -200,6 +209,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
+					false,
 				),
 				false,
 			),
@@ -262,11 +272,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			if err != nil {
 				return err
 			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
@@ -298,11 +308,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
-		lintConfig, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.LintConfig())
 		if err != nil {
 			return err
 		}
-		breakingConfig, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.BreakingConfig())
 		if err != nil {
 			return err
 		}

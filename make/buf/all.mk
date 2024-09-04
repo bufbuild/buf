@@ -1,7 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-# TODO: Remove antlr when we no longer need Golang <1.22
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/antlr4-go/antlr/v4@v4.13.0
+#GO_GET_PKGS := $(GO_GET_PKGS)
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -20,8 +18,14 @@ GO_BINS := $(GO_BINS) \
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
-	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
-GO_MOD_VERSION := 1.21
+	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
+GO_MOD_VERSION := 1.22
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
@@ -32,12 +36,14 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/ \
-	private/buf/cmd/buf/testdata/imports/*/v3/modulelocks/
+	private/buf/cmd/buf/testdata/imports/cache/v3/modulelocks/ \
+	private/buf/cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/ \
+	private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
-PROTOVALIDATE_VERSION := v0.6.0
+PROTOVALIDATE_VERSION := v0.7.1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
@@ -126,7 +132,7 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
@@ -141,7 +147,7 @@ bufgeneratego:
 bufgeneratebuflinttestdata:
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgeneratego \

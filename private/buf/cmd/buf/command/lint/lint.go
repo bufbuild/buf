@@ -22,9 +22,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
@@ -83,7 +84,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors or check violations printed to stdout. Must be one of %s",
-			stringutil.SliceToString(buflint.AllFormatStrings),
+			stringutil.SliceToString(bufcli.AllLintFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -130,15 +131,24 @@ func run(
 	if err != nil {
 		return err
 	}
+	tracer := tracing.NewTracer(container.Tracer())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		if err := buflint.NewHandler(
-			container.Logger(),
-			tracing.NewTracer(container.Tracer()),
-		).Check(
+		client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+		if err != nil {
+			return err
+		}
+		lintOptions := []bufcheck.LintOption{
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+		}
+		if bufcli.IsPluginEnabled(container) {
+			lintOptions = append(lintOptions, bufcheck.WithPluginsEnabled())
+		}
+		if err := client.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
+			lintOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {
@@ -151,7 +161,7 @@ func run(
 	if len(allFileAnnotations) > 0 {
 		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
 		if flags.ErrorFormat == "config-ignore-yaml" {
-			if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+			if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 				container.Stdout(),
 				allFileAnnotationSet,
 			); err != nil {

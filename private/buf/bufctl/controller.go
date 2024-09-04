@@ -56,8 +56,10 @@ import (
 // ImageWithConfig pairs an Image with lint and breaking configuration.
 type ImageWithConfig interface {
 	bufimage.Image
+
 	LintConfig() bufconfig.LintConfig
 	BreakingConfig() bufconfig.BreakingConfig
+	PluginConfigs() []bufconfig.PluginConfig
 
 	isImageWithConfig()
 }
@@ -380,6 +382,7 @@ func (c *controller) GetTargetImageWithConfigs(
 		}
 		lintConfig := bufconfig.DefaultLintConfigV1
 		breakingConfig := bufconfig.DefaultBreakingConfigV1
+		var pluginConfigs []bufconfig.PluginConfig
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
 			bucket,
@@ -393,6 +396,7 @@ func (c *controller) GetTargetImageWithConfigs(
 			// We did not find a buf.yaml in our current directory, and there was no config override.
 			// Use the defaults.
 		} else {
+			pluginConfigs = bufYAMLFile.PluginConfigs()
 			if topLevelLintConfig := bufYAMLFile.TopLevelLintConfig(); topLevelLintConfig == nil {
 				// Ensure that this is a v2 config
 				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
@@ -418,6 +422,7 @@ func (c *controller) GetTargetImageWithConfigs(
 				image,
 				lintConfig,
 				breakingConfig,
+				pluginConfigs,
 			),
 		}, nil
 	default:
@@ -1066,6 +1071,7 @@ func (c *controller) buildTargetImageWithConfigs(
 				image,
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
+				workspace.PluginConfigs(),
 			),
 		)
 	}

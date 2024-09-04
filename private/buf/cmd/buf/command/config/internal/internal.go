@@ -25,10 +25,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/spf13/pflag"
 )
 
@@ -45,16 +48,12 @@ const (
 func NewLSCommand(
 	name string,
 	builder appext.SubCommandBuilder,
-	ruleType string,
-	getAllRulesV1Beta1 func() ([]bufcheck.Rule, error),
-	getAllRulesV1 func() ([]bufcheck.Rule, error),
-	getAllRulesV2 func() ([]bufcheck.Rule, error),
-	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
+	ruleType check.RuleType,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: fmt.Sprintf("List %s rules", ruleType),
+		Short: fmt.Sprintf("List %s rules", ruleType.String()),
 		Args:  appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -63,10 +62,7 @@ func NewLSCommand(
 					container,
 					flags,
 					name,
-					getAllRulesV1Beta1,
-					getAllRulesV1,
-					getAllRulesV2,
-					getRulesForModuleConfig,
+					ruleType,
 				)
 			},
 		),
@@ -152,10 +148,7 @@ func lsRun(
 	container appext.Container,
 	flags *flags,
 	commandName string,
-	getAllRulesV1Beta1 func() ([]bufcheck.Rule, error),
-	getAllRulesV1 func() ([]bufcheck.Rule, error),
-	getAllRulesV2 func() ([]bufcheck.Rule, error),
-	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
+	ruleType check.RuleType,
 ) error {
 	if flags.ConfiguredOnly {
 		if flags.Version != "" {
@@ -185,42 +178,39 @@ func lsRun(
 				bufconfig.DefaultModuleConfigV2,
 			},
 			nil,
+			nil,
 		)
 		if err != nil {
 			return err
 		}
 	}
+	tracer := tracing.NewTracer(container.Tracer())
+	client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+	if err != nil {
+		return err
+	}
 
 	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		var moduleConfig bufconfig.ModuleConfig
 		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 			if len(moduleConfigs) != 1 {
 				return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
 			}
-			rules, err = getRulesForModuleConfig(moduleConfigs[0])
-			if err != nil {
-				return err
-			}
+			moduleConfig = moduleConfigs[0]
 		case bufconfig.FileVersionV2:
 			switch len(moduleConfigs) {
 			case 0:
 				return syserror.New("got 0 ModuleConfigs from a BufYAMLFile")
 			case 1:
-				rules, err = getRulesForModuleConfig(moduleConfigs[0])
-				if err != nil {
-					return err
-				}
+				moduleConfig = moduleConfigs[0]
 			default:
 				if flags.ModulePath == "" {
 					return appcmd.NewInvalidArgumentErrorf("--%s must be specified if the the buf.yaml has more than one module", modulePathFlagName)
 				}
-				moduleConfig, err := getModuleConfigForModulePath(moduleConfigs, flags.ModulePath)
-				if err != nil {
-					return err
-				}
-				rules, err = getRulesForModuleConfig(moduleConfig)
+				moduleConfig, err = getModuleConfigForModulePath(moduleConfigs, flags.ModulePath)
 				if err != nil {
 					return err
 				}
@@ -228,25 +218,45 @@ func lsRun(
 		default:
 			return syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
-	} else {
-		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1:
-			rules, err = getAllRulesV1Beta1()
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV1:
-			rules, err = getAllRulesV1()
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV2:
-			rules, err = getAllRulesV2()
-			if err != nil {
-				return err
-			}
+		var checkConfig bufconfig.CheckConfig
+		switch ruleType {
+		case check.RuleTypeLint:
+			checkConfig = moduleConfig.LintConfig()
+		case check.RuleTypeBreaking:
+			checkConfig = moduleConfig.BreakingConfig()
 		default:
-			return syserror.Newf("unknown FileVersion: %v", fileVersion)
+			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
+		}
+		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		}
+		if bufcli.IsPluginEnabled(container) {
+			configuredRuleOptions = append(configuredRuleOptions, bufcheck.WithPluginsEnabled())
+		}
+		rules, err = client.ConfiguredRules(
+			ctx,
+			ruleType,
+			checkConfig,
+			configuredRuleOptions...,
+		)
+		if err != nil {
+			return err
+		}
+	} else {
+		allRulesOptions := []bufcheck.AllRulesOption{
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		}
+		if bufcli.IsPluginEnabled(container) {
+			allRulesOptions = append(allRulesOptions, bufcheck.WithPluginsEnabled())
+		}
+		rules, err = client.AllRules(
+			ctx,
+			ruleType,
+			bufYAMLFile.FileVersion(),
+			allRulesOptions...,
+		)
+		if err != nil {
+			return err
 		}
 	}
 	return bufcli.PrintRules(

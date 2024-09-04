@@ -25,9 +25,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/spf13/pflag"
 )
 
@@ -43,15 +46,12 @@ const (
 func NewLSCommand(
 	name string,
 	builder appext.SubCommandBuilder,
-	ruleType string,
-	getAllRulesV1Beta1 func() ([]bufcheck.Rule, error),
-	getAllRulesV1 func() ([]bufcheck.Rule, error),
-	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
+	ruleType check.RuleType,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:        name,
-		Short:      fmt.Sprintf("List %s rules", ruleType),
+		Short:      fmt.Sprintf("List %s rules", ruleType.String()),
 		Args:       appcmd.NoArgs,
 		Deprecated: fmt.Sprintf(`use "buf config %s" instead. However, "buf mod %s" will continue to work.`, name, name),
 		Hidden:     true,
@@ -62,9 +62,7 @@ func NewLSCommand(
 					container,
 					flags,
 					name,
-					getAllRulesV1Beta1,
-					getAllRulesV1,
-					getRulesForModuleConfig,
+					ruleType,
 				)
 			},
 		),
@@ -141,9 +139,7 @@ func lsRun(
 	container appext.Container,
 	flags *flags,
 	commandName string,
-	getAllRulesV1Beta1 func() ([]bufcheck.Rule, error),
-	getAllRulesV1 func() ([]bufcheck.Rule, error),
-	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
+	ruleType check.RuleType,
 ) error {
 	if flags.All {
 		// We explicitly document that if all is set, config is ignored.
@@ -167,44 +163,45 @@ func lsRun(
 				bufconfig.DefaultModuleConfigV1,
 			},
 			nil,
+			nil,
 		)
 		if err != nil {
 			return err
 		}
 	}
+	fileVersion := bufYAMLFile.FileVersion()
+	if fileVersion == bufconfig.FileVersionV2 {
+		return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
+	}
+	// BufYAMLFiles <=v1 never had plugins.
+	tracer := tracing.NewTracer(container.Tracer())
+	client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+	if err != nil {
+		return err
+	}
 	var rules []bufcheck.Rule
 	if flags.All {
-		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1:
-			rules, err = getAllRulesV1Beta1()
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV1:
-			rules, err = getAllRulesV1()
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV2:
-			return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
-		default:
-			return syserror.Newf("unknown FileVersion: %v", fileVersion)
+		rules, err = client.AllRules(ctx, ruleType, bufYAMLFile.FileVersion())
+		if err != nil {
+			return err
 		}
 	} else {
-		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			moduleConfigs := bufYAMLFile.ModuleConfigs()
-			if len(moduleConfigs) != 1 {
-				return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
-			}
-			rules, err = getRulesForModuleConfig(moduleConfigs[0])
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV2:
-			return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
+		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		if len(moduleConfigs) != 1 {
+			return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
+		}
+		var checkConfig bufconfig.CheckConfig
+		switch ruleType {
+		case check.RuleTypeLint:
+			checkConfig = moduleConfigs[0].LintConfig()
+		case check.RuleTypeBreaking:
+			checkConfig = moduleConfigs[0].BreakingConfig()
 		default:
-			return syserror.Newf("unknown FileVersion: %v", fileVersion)
+			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
+		}
+		rules, err = client.ConfiguredRules(ctx, ruleType, checkConfig)
+		if err != nil {
+			return err
 		}
 	}
 	return bufcli.PrintRules(

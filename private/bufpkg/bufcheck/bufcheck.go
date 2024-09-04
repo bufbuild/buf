@@ -12,84 +12,181 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufcheck contains the implementations of the lint and breaking change detection rules.
-//
-// There is a lot of shared logic between the two, and originally they were actually combined into
-// one logical entity (where some checks happened to be linters, and some checks happen to be
-// breaking change detectors), so some of this is historical.
 package bufcheck
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"io"
-	"strings"
-	"text/tabwriter"
 
-	"go.uber.org/multierr"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/bufplugin-go/check"
+	"go.uber.org/zap"
 )
 
-// Rule is a rule.
-type Rule interface {
-	// ID returns the ID of the Rule.
+// Rules are returned sorted by ID, but PrintRules does our sort by category.
+type Client interface {
+	// Lint lints the given Image with the given LintConfig.
 	//
-	// UPPER_SNAKE_CASE.
-	ID() string
-	// Categories returns the categories of the Rule.
+	// The Image should have source code info for this to work properly.
 	//
-	// UPPER_SNAKE_CASE.
-	// Sorted.
-	// May be empty.
-	Categories() []string
-	// Purpose returns the purpose of the Rule.
+	// Images should *not* be filtered with regards to imports before passing to this function.
 	//
-	// Full sentence.
-	Purpose() string
-
-	// Deprecated returns whether or not this rule is deprecated.
+	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
+	Lint(ctx context.Context, config bufconfig.LintConfig, image bufimage.Image, options ...LintOption) error
+	// Breaking checks the given Images for breaking changes with the given BreakingConfig.
 	//
-	// If it is, it may be replaced by 0 or more rules. These will be denoted with Replacements.
-	Deprecated() bool
-	// ReplacementIDs returns the IDs of the Rules that replace this Rule.
+	// The Images should have source code info for this to work properly.
 	//
-	// This means that the combination of the Rules specified by ReplacementIDs replace this Rule entirely,
-	// and this Rule is considered equivalent to the AND of the rules specified by ReplacementIDs.
+	// Images should *not* be filtered with regards to imports before passing to this function.
+	// To exclude imports, pass BreakingWithExcludeImports.
 	//
-	// This will only be non-empty if Deprecated is true.
-	//
-	// Is it not valid for a Deprecated Rule to specify another Deprecated Rule as a replacement. We verify
-	// that this does not happen for any VersionSpec in testing. TODO
-	ReplacementIDs() []string
+	// An error of type bufanalysis.FileAnnotationSet will be returned lint failure.
+	Breaking(ctx context.Context, config bufconfig.BreakingConfig, image bufimage.Image, againstImage bufimage.Image, options ...BreakingOption) error
+	// ConfiguredRules returns all of the Configured Rules for the given RuleType.
+	ConfiguredRules(ctx context.Context, ruleType check.RuleType, config bufconfig.CheckConfig, options ...ConfiguredRulesOption) ([]Rule, error)
+	// AllRules returns all Rules (configured or not) for the given RuleType.
+	AllRules(ctx context.Context, ruleType check.RuleType, fileVersion bufconfig.FileVersion, options ...AllRulesOption) ([]Rule, error)
+	// AllCategories returns all Categories.
+	AllCategories(ctx context.Context, fileVersion bufconfig.FileVersion, options ...AllCategoriesOption) ([]Category, error)
 }
 
-// PrintRules prints the rules to the writer.
+// Rule is an individual line or breaking Rule.
+//
+// It wraps check.Rule and adds the name of the plugin that implements the Rule.
+type Rule interface {
+	check.Rule
+
+	// BufcheckCategories returns the Rule's Categories.
+	BufcheckCategories() []Category
+
+	// Plugin returns the name of the plugin that created this Rule.
+	//
+	// Names are freeform.
+	//
+	// Will be empty for Rules based on builtin plugins.
+	PluginName() string
+
+	isRule()
+	isRuleOrCategory()
+}
+
+// Category is an individual line or breaking Category.
+//
+// It wraps check.Category and adds the name of the plugin that implements the Category.
+type Category interface {
+	check.Category
+
+	// Plugin returns the name of the plugin that created this Category.
+	//
+	// Names are freeform.
+	//
+	// Will be empty for Categorys based on builtin plugins.
+	PluginName() string
+
+	isCategory()
+	isRuleOrCategory()
+}
+
+// RuleOrCategory is a union interface with the common types in both Rule and Category.
+type RuleOrCategory interface {
+	ID() string
+	Purpose() string
+	Deprecated() bool
+	ReplacementIDs() []string
+	PluginName() string
+
+	isRuleOrCategory()
+}
+
+// LintOption is an option for Lint.
+type LintOption interface {
+	applyToLint(*lintOptions)
+}
+
+// BreakingOption is an option for Breaking.
+type BreakingOption interface {
+	applyToBreaking(*breakingOptions)
+}
+
+// BreakingWithExcludeImports returns a new BreakingOption that says to exclude imports from
+// breaking change detection.
+//
+// The default is to check imports for breaking changes.
+func BreakingWithExcludeImports() BreakingOption {
+	return &excludeImportsOption{}
+}
+
+// ConfiguredRulesOption is an option for ConfiguredRules.
+type ConfiguredRulesOption interface {
+	applyToConfiguredRules(*configuredRulesOptions)
+}
+
+// AllRulesOption is an option for AllRules.
+type AllRulesOption interface {
+	applyToAllRules(*allRulesOptions)
+}
+
+// AllCategoriesOption is an option for AllCategories.
+type AllCategoriesOption interface {
+	applyToAllCategories(*allCategoriesOptions)
+}
+
+// ClientFunctionOption is an option that applies to any Client function.
+type ClientFunctionOption interface {
+	LintOption
+	BreakingOption
+	ConfiguredRulesOption
+	AllRulesOption
+	AllCategoriesOption
+}
+
+// WithPluginConfigs returns a new ClientFunctionOption that says to also use the given plugins.
+//
+// The default is to only use the builtin Rules and Categories.
+func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOption {
+	return &pluginConfigsOption{
+		pluginConfigs: pluginConfigs,
+	}
+}
+
+// WithPluginsEnabled returns a new ClientFunctionOption  that says to enable the use of plugins.
+// Client Methods, such as Client.Lint(), fail if WithPluginConfigs is set without this.
+//
+// TODO: remove this as part of publicly releasing lint/breaking plugins
+func WithPluginsEnabled() ClientFunctionOption {
+	return pluginsEnabledOption{}
+}
+
+// NewClient returns a new Client.
+func NewClient(
+	logger *zap.Logger,
+	tracer tracing.Tracer,
+	runner command.Runner,
+	options ...ClientOption,
+) (Client, error) {
+	return newClient(logger, tracer, runner, options...)
+}
+
+// ClientOption is an option for a new Client.
+type ClientOption func(*clientOptions)
+
+// ClientWithStderr returns a new ClientOption that specifies a stderr to proxy plugin stderrs to.
+//
+// The default is the equivalent of /dev/null.
+func ClientWithStderr(stderr io.Writer) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.stderr = stderr
+	}
+}
+
+// PrintRules prints the rules to the Writer.
 func PrintRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (retErr error) {
-	printRulesOptions := newPrintRulesOptions()
-	for _, option := range options {
-		option(printRulesOptions)
-	}
-	if len(rules) == 0 {
-		return nil
-	}
-	if !printRulesOptions.asJSON {
-		tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
-		defer func() {
-			retErr = multierr.Append(retErr, tabWriter.Flush())
-		}()
-		writer = tabWriter
-		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tPURPOSE"); err != nil {
-			return err
-		}
-	}
-	for _, rule := range rules {
-		if !printRulesOptions.includeDeprecated && rule.Deprecated() {
-			continue
-		}
-		if err := printRule(writer, rule, printRulesOptions.asJSON); err != nil {
-			return err
-		}
-	}
-	return nil
+	return printRules(writer, rules, options...)
 }
 
 // PrintRulesOption is an option for PrintRules.
@@ -111,46 +208,26 @@ func PrintRulesWithDeprecated() PrintRulesOption {
 	}
 }
 
-func printRule(writer io.Writer, rule Rule, asJSON bool) error {
-	if asJSON {
-		data, err := json.Marshal(newExternalRule(rule))
-		if err != nil {
-			return err
+// GetDeprecatedIDToReplacementIDs gets a map from deprecated ID to replacement IDs.
+func GetDeprecatedIDToReplacementIDs[R RuleOrCategory](rulesOrCategories []R) (map[string][]string, error) {
+	idToRuleOrCategory, err := slicesext.ToUniqueValuesMap(rulesOrCategories, func(ruleOrCategory R) string { return ruleOrCategory.ID() })
+	if err != nil {
+		return nil, err
+	}
+	idToReplacementIDs := make(map[string][]string)
+	for _, ruleOrCategory := range rulesOrCategories {
+		if ruleOrCategory.Deprecated() {
+			replacementIDs := ruleOrCategory.ReplacementIDs()
+			if replacementIDs == nil {
+				replacementIDs = []string{}
+			}
+			for _, replacementID := range replacementIDs {
+				if _, ok := idToRuleOrCategory[replacementID]; !ok {
+					return nil, syserror.Newf("unknown rule or category ID given as a replacement ID: %q", replacementID)
+				}
+			}
+			idToReplacementIDs[ruleOrCategory.ID()] = replacementIDs
 		}
-		if _, err := fmt.Fprintln(writer, string(data)); err != nil {
-			return err
-		}
-		return nil
 	}
-	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), rule.Purpose()); err != nil {
-		return err
-	}
-	return nil
-}
-
-type externalRule struct {
-	ID           string   `json:"id" yaml:"id"`
-	Categories   []string `json:"categories" yaml:"categories"`
-	Purpose      string   `json:"purpose" yaml:"purpose"`
-	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
-	Replacements []string `json:"replacements" yaml:"replacements"`
-}
-
-func newExternalRule(rule Rule) *externalRule {
-	return &externalRule{
-		ID:           rule.ID(),
-		Categories:   rule.Categories(),
-		Purpose:      rule.Purpose(),
-		Deprecated:   rule.Deprecated(),
-		Replacements: rule.ReplacementIDs(),
-	}
-}
-
-type printRulesOptions struct {
-	asJSON            bool
-	includeDeprecated bool
-}
-
-func newPrintRulesOptions() *printRulesOptions {
-	return &printRulesOptions{}
+	return idToReplacementIDs, nil
 }

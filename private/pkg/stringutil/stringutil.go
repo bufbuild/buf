@@ -16,6 +16,7 @@
 package stringutil
 
 import (
+	"bytes"
 	"strings"
 	"unicode"
 
@@ -53,6 +54,80 @@ func SplitTrimLinesNoEmpty(output string) []string {
 			lines = append(lines, line)
 		}
 	}
+	return lines
+}
+
+// WordWrap wraps the text by word with a maximum character length per returned line of charLimit.
+//
+// Adapted from https://github.com/mitchellh/go-wordwrap/blob/ecf0936a077a4bd73a1cc2ac5c370f2b55618d62/wordwrap.go
+// See https://github.com/mitchellh/go-wordwrap/blob/ecf0936a077a4bd73a1cc2ac5c370f2b55618d62/LICENSE.md
+func WordWrap(text string, charLimit int) []string {
+	const nbsp = 0xA0
+
+	var lines []string
+	// Initialize a buffer with a slightly larger size to account for breaks
+	init := make([]byte, 0, len(text))
+	buf := bytes.NewBuffer(init)
+
+	var current int
+	var wordBuf, spaceBuf bytes.Buffer
+	var wordBufLen, spaceBufLen int
+
+	for _, char := range text {
+		if char == '\n' {
+			if wordBuf.Len() == 0 {
+				if current+spaceBufLen <= charLimit {
+					_, _ = spaceBuf.WriteTo(buf)
+				}
+				spaceBuf.Reset()
+				spaceBufLen = 0
+			} else {
+				_, _ = spaceBuf.WriteTo(buf)
+				spaceBuf.Reset()
+				spaceBufLen = 0
+				_, _ = wordBuf.WriteTo(buf)
+				wordBuf.Reset()
+				wordBufLen = 0
+			}
+			buf.WriteRune(char)
+			current = 0
+		} else if unicode.IsSpace(char) && char != nbsp {
+			if spaceBuf.Len() == 0 || wordBuf.Len() > 0 {
+				current += spaceBufLen + wordBufLen
+				_, _ = spaceBuf.WriteTo(buf)
+				spaceBuf.Reset()
+				spaceBufLen = 0
+				_, _ = wordBuf.WriteTo(buf)
+				wordBuf.Reset()
+				wordBufLen = 0
+			}
+
+			spaceBuf.WriteRune(char)
+			spaceBufLen++
+		} else {
+			wordBuf.WriteRune(char)
+			wordBufLen++
+
+			if current+wordBufLen+spaceBufLen > charLimit && wordBufLen < charLimit {
+				lines = append(lines, buf.String())
+				buf.Reset()
+				current = 0
+				spaceBuf.Reset()
+				spaceBufLen = 0
+			}
+		}
+	}
+
+	if wordBuf.Len() == 0 {
+		if current+spaceBufLen <= charLimit {
+			_, _ = spaceBuf.WriteTo(buf)
+		}
+	} else {
+		_, _ = spaceBuf.WriteTo(buf)
+		_, _ = wordBuf.WriteTo(buf)
+	}
+	lines = append(lines, buf.String())
+
 	return lines
 }
 

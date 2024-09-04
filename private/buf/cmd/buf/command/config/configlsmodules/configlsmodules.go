@@ -142,6 +142,7 @@ func getExternalModules(
 					bufconfig.DefaultModuleConfigV2,
 				},
 				nil,
+				nil,
 			)
 			if err != nil {
 				return nil, err

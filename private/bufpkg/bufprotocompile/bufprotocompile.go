@@ -88,6 +88,7 @@ func FileAnnotationForErrorWithPos(
 		endColumn,
 		typeString,
 		message,
+		"",
 	), nil
 }
 

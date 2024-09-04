@@ -145,7 +145,8 @@ func run(
 		bufconfig.NewLintConfig(
 			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
-				[]string{"DEFAULT"},
+				[]string{"STANDARD"},
+				false,
 			),
 			"",
 			false,
@@ -159,6 +160,7 @@ func run(
 			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
 				[]string{"FILE"},
+				false,
 			),
 			false,
 		),
@@ -171,6 +173,7 @@ func run(
 		[]bufconfig.ModuleConfig{
 			moduleConfig,
 		},
+		nil,
 		nil,
 		bufconfig.BufYAMLFileWithIncludeDocsLink(),
 	)

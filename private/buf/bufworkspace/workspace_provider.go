@@ -125,7 +125,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	// By default, the assocated configuration for a Module gotten by ModuleKey is just
+	// By default, the associated configuration for a Module gotten by ModuleKey is just
 	// the default config. However, if we have a config override, we may have different
 	// lint or breaking config. We will only apply this different config for the specific
 	// module we are targeting, while the rest will retain the default config - generally,
@@ -139,6 +139,10 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	// non-target modules as the config override might have file paths, and we won't
 	// lint or breaking change detect against non-target modules anyways.
 	targetModuleConfig := bufconfig.DefaultModuleConfigV1
+	// By default, there will be no plugin configs, however, similar to the lint and breaking
+	// configs, there may be an override, in which case, we need to populate the plugin configs
+	// from the override.
+	var pluginConfigs []bufconfig.PluginConfig
 	if config.configOverride != "" {
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
 		if err != nil {
@@ -170,6 +174,9 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 					break
 				}
 			}
+		}
+		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+			pluginConfigs = bufYAMLFile.PluginConfigs()
 		}
 	}
 
@@ -206,6 +213,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
+		pluginConfigs,
 		nil,
 		false,
 	), nil
@@ -356,6 +364,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
+		nil,
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -451,6 +460,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v2Targeting.bucketIDToModuleConfig,
+		v2Targeting.bufYAMLFile.PluginConfigs(),
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -460,6 +470,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	moduleSet bufmodule.ModuleSet,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
+	pluginConfigs []bufconfig.PluginConfig,
 	// Expected to already be unique by ModuleFullName.
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	isV2 bool,
@@ -484,6 +495,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		moduleSet,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
+		pluginConfigs,
 		configuredDepModuleRefs,
 		isV2,
 	), nil

@@ -122,7 +122,7 @@ func newGenerateConfigFromExternalFileV2(
 	}
 	generatePluginConfigs, err := slicesext.MapError(
 		externalFile.Plugins,
-		newPluginConfigFromExternalV2,
+		newGeneratePluginConfigFromExternalV2,
 	)
 	if err != nil {
 		return nil, err

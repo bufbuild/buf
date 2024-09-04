@@ -14,7 +14,15 @@
 /private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /private/buf/cmd/buf/command/alpha/protoc/test.txt
 /private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml/protoc-gen-top-level-type-names-yaml
-/private/buf/cmd/buf/testdata/imports/*/v3/modulelocks/
+/private/buf/cmd/buf/testdata/imports/cache/v3/modulelocks/
+/private/buf/cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/
+/private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/
+/private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category/buf-plugin-duplicate-category
+/private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule/buf-plugin-duplicate-rule
+/private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic/buf-plugin-panic
+/private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext/buf-plugin-protovalidate-ext
+/private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext/buf-plugin-rpc-ext
+/private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix/buf-plugin-suffix
 /private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data/buf-legacyfederation-go-data
 /private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
 /private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id/buf-new-commit-id

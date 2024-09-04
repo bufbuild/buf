@@ -294,3 +294,37 @@ func TestIsAlphanumeric(t *testing.T) {
 	require.True(t, IsAlphanumeric('9'))
 	require.False(t, IsAlphanumeric('!'))
 }
+
+func TestWordWrap(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(
+		t,
+		[]string{
+			"",
+		},
+		WordWrap("", 7),
+	)
+	assert.Equal(
+		t,
+		[]string{
+			"foo bar",
+		},
+		WordWrap("foo bar", 7),
+	)
+	assert.Equal(
+		t,
+		[]string{
+			"foo",
+			"bar",
+		},
+		WordWrap("foo bar", 6),
+	)
+	assert.Equal(
+		t,
+		[]string{
+			"foobar",
+		},
+		WordWrap("foobar", 5),
+	)
+}

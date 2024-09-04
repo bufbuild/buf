@@ -51,6 +51,8 @@ func NewEnvFunc(tb testing.TB) func(string) map[string]string {
 			useEnvVar(use, "CACHE_DIR"):  tempDirPath,
 			useEnvVar(use, "CONFIG_DIR"): tempDirPath,
 			"PATH":                       os.Getenv("PATH"),
+			// TODO: remove this as part of publicly releasing lint/breaking plugins
+			"BUF_BETA_PLUGINS_ENABLED": "1",
 		}
 	}
 }

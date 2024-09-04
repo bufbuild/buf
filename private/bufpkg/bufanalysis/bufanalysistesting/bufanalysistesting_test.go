@@ -35,6 +35,7 @@ func TestBasic(t *testing.T) {
 			0,
 			"FOO",
 			"Hello.",
+			"",
 		),
 		newFileAnnotation(
 			t,
@@ -45,6 +46,7 @@ func TestBasic(t *testing.T) {
 			1,
 			"FOO",
 			"Hello.",
+			"buf-plugin-foo",
 		),
 	}
 	sb := &strings.Builder{}
@@ -53,7 +55,7 @@ func TestBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		`path/to/file.proto:1:1:Hello.
-path/to/file.proto:2:1:Hello.
+path/to/file.proto:2:1:Hello. (buf-plugin-foo)
 `,
 		sb.String(),
 	)
@@ -63,7 +65,7 @@ path/to/file.proto:2:1:Hello.
 	assert.Equal(
 		t,
 		`{"path":"path/to/file.proto","start_line":1,"start_column":1,"end_line":1,"end_column":1,"type":"FOO","message":"Hello."}
-{"path":"path/to/file.proto","start_line":2,"start_column":1,"end_line":2,"end_column":1,"type":"FOO","message":"Hello."}
+{"path":"path/to/file.proto","start_line":2,"start_column":1,"end_line":2,"end_column":1,"type":"FOO","message":"Hello.","plugin":"buf-plugin-foo"}
 `,
 		sb.String(),
 	)
@@ -72,7 +74,7 @@ path/to/file.proto:2:1:Hello.
 	require.NoError(t, err)
 	assert.Equal(t,
 		`path/to/file.proto(1,1) : error FOO : Hello.
-path/to/file.proto(2,1) : error FOO : Hello.
+path/to/file.proto(2,1) : error FOO : Hello. (buf-plugin-foo)
 `,
 		sb.String(),
 	)
@@ -86,7 +88,7 @@ path/to/file.proto(2,1) : error FOO : Hello.
       <failure message="path/to/file.proto:1:1:Hello." type="FOO"></failure>
     </testcase>
     <testcase name="FOO_2_1">
-      <failure message="path/to/file.proto:2:1:Hello." type="FOO"></failure>
+      <failure message="path/to/file.proto:2:1:Hello. (buf-plugin-foo)" type="FOO"></failure>
     </testcase>
   </testsuite>
 </testsuites>
@@ -108,6 +110,7 @@ path/to/file.proto(2,1) : error FOO : Hello.
 					0,
 					"FOO",
 					"Hello.",
+					"",
 				),
 				newFileAnnotation(
 					t,
@@ -118,6 +121,7 @@ path/to/file.proto(2,1) : error FOO : Hello.
 					0,
 					"FOO",
 					"Hello.",
+					"buf-plugin-foo",
 				),
 			)...,
 		),
@@ -125,10 +129,10 @@ path/to/file.proto(2,1) : error FOO : Hello.
 	)
 	require.NoError(t, err)
 	assert.Equal(t,
-		`::error file=<input>::Hello.
+		`::error file=<input>::Hello. (buf-plugin-foo)
 ::error file=path/to/file.proto::Hello.
 ::error file=path/to/file.proto,line=1,endLine=1::Hello.
-::error file=path/to/file.proto,line=2,col=1,endLine=2,endColumn=1::Hello.
+::error file=path/to/file.proto,line=2,col=1,endLine=2,endColumn=1::Hello. (buf-plugin-foo)
 `,
 		sb.String(),
 	)

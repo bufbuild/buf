@@ -26,15 +26,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
 )
 
@@ -67,8 +64,9 @@ func handle(
 		// this is actually checked as part of ReadImageEnv but just in case
 		return errors.New(`"against_input" is required`)
 	}
-	container, err := newAppextContainer(
+	container, err := internal.NewAppextContainerForPluginEnv(
 		pluginEnv,
+		appName,
 		externalConfig.LogLevel,
 		externalConfig.LogFormat,
 	)
@@ -101,8 +99,9 @@ func handle(
 	if err != nil {
 		return err
 	}
+	var breakingOptions []bufcheck.BreakingOption
 	if externalConfig.ExcludeImports {
-		againstImage = bufimage.ImageWithoutImports(againstImage)
+		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 	}
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
@@ -116,11 +115,18 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if err := bufbreaking.NewHandler(container.Logger(), tracing.NopTracer).Check(
+	// The protoc plugins do not support custom lint/breaking change plugins for now.
+	tracer := tracing.NewTracer(container.Tracer())
+	client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(pluginEnv.Stderr))
+	if err != nil {
+		return err
+	}
+	if err := client.Breaking(
 		ctx,
 		moduleConfig.BreakingConfig(),
-		againstImage,
 		image,
+		againstImage,
+		breakingOptions...,
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
@@ -152,54 +158,4 @@ type externalConfig struct {
 	LogFormat          string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
 	ErrorFormat        string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
 	Timeout            time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-}
-
-func newAppextContainer(
-	pluginEnv protoplugin.PluginEnv,
-	logLevel string,
-	logFormat string,
-) (appext.Container, error) {
-	logger, err := zaputil.NewLoggerForFlagValues(
-		pluginEnv.Stderr,
-		logLevel,
-		logFormat,
-	)
-	if err != nil {
-		return nil, err
-	}
-	appContainer, err := newAppContainer(pluginEnv)
-	if err != nil {
-		return nil, err
-	}
-	return appext.NewContainer(
-		appContainer,
-		appName,
-		logger,
-		verbose.NopPrinter,
-	)
-}
-
-type appContainer struct {
-	app.EnvContainer
-	app.StderrContainer
-	app.StdinContainer
-	app.StdoutContainer
-	app.ArgContainer
-}
-
-func newAppContainer(pluginEnv protoplugin.PluginEnv) (*appContainer, error) {
-	envContainer, err := app.NewEnvContainerForEnviron(pluginEnv.Environ)
-	if err != nil {
-		return nil, err
-	}
-	return &appContainer{
-		EnvContainer:    envContainer,
-		StderrContainer: app.NewStderrContainer(pluginEnv.Stderr),
-		// cannot read against input from stdin, this is for the CodeGeneratorRequest
-		StdinContainer: app.NewStdinContainer(nil),
-		// cannot write output to stdout, this is for the CodeGeneratorResponse
-		StdoutContainer: app.NewStdoutContainer(nil),
-		// no args
-		ArgContainer: app.NewArgContainer(),
-	}, nil
 }

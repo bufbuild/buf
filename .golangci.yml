@@ -151,11 +151,11 @@ issues:
     - linters:
         - staticcheck
       text: "GetIgnoreEmpty is deprecated"
-      path: private/bufpkg/bufcheck/buflint/internal/buflintvalidate/field.go
+      path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/field.go
     - linters:
         - staticcheck
       text: "GetSkipped is deprecated"
-      path: private/bufpkg/bufcheck/buflint/internal/buflintvalidate/field.go
+      path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/field.go
     - linters:
         - gochecknoinits
       # we actually want to use init here
