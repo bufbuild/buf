@@ -227,21 +227,33 @@ func lsRun(
 		default:
 			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
 		}
+		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		}
+		if bufcli.IsPluginEnabled(container) {
+			configuredRuleOptions = append(configuredRuleOptions, bufcheck.WithPluginsEnabled())
+		}
 		rules, err = client.ConfiguredRules(
 			ctx,
 			ruleType,
 			checkConfig,
-			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			configuredRuleOptions...,
 		)
 		if err != nil {
 			return err
 		}
 	} else {
+		allRulesOptions := []bufcheck.AllRulesOption{
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		}
+		if bufcli.IsPluginEnabled(container) {
+			allRulesOptions = append(allRulesOptions, bufcheck.WithPluginsEnabled())
+		}
 		rules, err = client.AllRules(
 			ctx,
 			ruleType,
 			bufYAMLFile.FileVersion(),
-			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			allRulesOptions...,
 		)
 		if err != nil {
 			return err

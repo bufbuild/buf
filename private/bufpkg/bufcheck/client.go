@@ -99,6 +99,9 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
+	if err := validatePluginConfigs(lintOptions.pluginConfigs, lintOptions.pluginEnabled); err != nil {
+		return err
+	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		lintConfig.FileVersion(),
@@ -158,6 +161,9 @@ func (c *client) Breaking(
 	breakingOptions := newBreakingOptions()
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
+	}
+	if err := validatePluginConfigs(breakingOptions.pluginConfigs, breakingOptions.pluginEnabled); err != nil {
+		return err
 	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
@@ -226,6 +232,9 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
+	if err := validatePluginConfigs(configuredRulesOptions.pluginConfigs, configuredRulesOptions.pluginEnabled); err != nil {
+		return nil, err
+	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		checkConfig.FileVersion(),
@@ -256,6 +265,9 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
+	if err := validatePluginConfigs(allRulesOptions.pluginConfigs, allRulesOptions.pluginEnabled); err != nil {
+		return nil, err
+	}
 	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
 	if err != nil {
 		return nil, err
@@ -274,6 +286,9 @@ func (c *client) AllCategories(
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
+	}
+	if err := validatePluginConfigs(allCategoriesOptions.pluginConfigs, allCategoriesOptions.pluginEnabled); err != nil {
+		return nil, err
 	}
 	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
 	return categories, err
@@ -350,6 +365,13 @@ func (c *client) getMultiClient(
 		)
 	}
 	return newMultiClient(c.logger, checkClientSpecs), nil
+}
+
+func validatePluginConfigs(pluginConfigs []bufconfig.PluginConfig, isPluginEnabled bool) error {
+	if len(pluginConfigs) > 0 && !isPluginEnabled {
+		return fmt.Errorf("custom plugins are not publicly supported. Please contact us at https://buf.build/docs/contact")
+	}
+	return nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
@@ -496,6 +518,7 @@ func checkCommentLineForCheckIgnore(
 
 type lintOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	pluginEnabled bool
 }
 
 func newLintOptions() *lintOptions {
@@ -504,6 +527,7 @@ func newLintOptions() *lintOptions {
 
 type breakingOptions struct {
 	pluginConfigs  []bufconfig.PluginConfig
+	pluginEnabled  bool
 	excludeImports bool
 }
 
@@ -513,6 +537,7 @@ func newBreakingOptions() *breakingOptions {
 
 type configuredRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	pluginEnabled bool
 }
 
 func newConfiguredRulesOptions() *configuredRulesOptions {
@@ -521,6 +546,7 @@ func newConfiguredRulesOptions() *configuredRulesOptions {
 
 type allRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	pluginEnabled bool
 }
 
 func newAllRulesOptions() *allRulesOptions {
@@ -529,6 +555,7 @@ func newAllRulesOptions() *allRulesOptions {
 
 type allCategoriesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	pluginEnabled bool
 }
 
 func newAllCategoriesOptions() *allCategoriesOptions {
@@ -571,4 +598,26 @@ func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) 
 
 func (p *pluginConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
 	allCategoriesOptions.pluginConfigs = append(allCategoriesOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+type pluginsEnabledOption struct{}
+
+func (pluginsEnabledOption) applyToLint(lintOptions *lintOptions) {
+	lintOptions.pluginEnabled = true
+}
+
+func (pluginsEnabledOption) applyToBreaking(breakingOptions *breakingOptions) {
+	breakingOptions.pluginEnabled = true
+}
+
+func (pluginsEnabledOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
+	configuredRulesOptions.pluginEnabled = true
+}
+
+func (pluginsEnabledOption) applyToAllRules(allRulesOptions *allRulesOptions) {
+	allRulesOptions.pluginEnabled = true
+}
+
+func (pluginsEnabledOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
+	allCategoriesOptions.pluginEnabled = true
 }

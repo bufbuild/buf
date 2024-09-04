@@ -16,7 +16,6 @@ package bufcli
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -87,17 +86,9 @@ func WarnBetaCommand(_ context.Context, container appext.Container) {
 	}
 }
 
-// CheckBetaPluginEnabled checks whether beta lint/breaking plugin is enabled through an env var.
-// This returns nil if it is enabled and an error otherwise.
+// IsPluginEnabled returns whether the env var enabling beta lint/breaking plugin is set.
 //
 // TODO: remove this as part of publicly releasing lint/breaking plugins
-func CheckBetaPluginEnabled(container appext.Container) error {
-	if container.Env(betaPluginEnabledEnvKey) == "" {
-		return fmt.Errorf(
-			"there are plugins set in the buf.yaml, however this feature is in beta and not yet officially released."+
-				" In order to use plugins, set the environment variable %s=1",
-			betaPluginEnabledEnvKey,
-		)
-	}
-	return nil
+func IsPluginEnabled(container appext.Container) bool {
+	return container.Env(betaPluginEnabledEnvKey) != ""
 }

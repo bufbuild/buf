@@ -219,11 +219,8 @@ func run(
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 		}
-		if len(imageWithConfig.PluginConfigs()) > 0 {
-			// TODO: remove this as part of publicly releasing lint/breaking plugins
-			if err := bufcli.CheckBetaPluginEnabled(container); err != nil {
-				return err
-			}
+		if bufcli.IsPluginEnabled(container) {
+			breakingOptions = append(breakingOptions, bufcheck.WithPluginsEnabled())
 		}
 		if err := client.Breaking(
 			ctx,

@@ -2894,7 +2894,7 @@ func TestLintWithPaths(t *testing.T) {
 func TestLintWithPlugins(t *testing.T) {
 	t.Parallel()
 	// defaults only, comment ignores on.
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -2919,7 +2919,7 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 	// There are still lint failures for protovalidate despite being set as an ignore path because
 	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
 	// for the module -- this is expected behavior for now.
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -2978,7 +2978,7 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 	// There are still lint failures for protovalidate despite being set as an ignore path because
 	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
 	// for the module -- this is expected behavior for now.
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3027,7 +3027,7 @@ testdata/check_plugins/current/vendor/protovalidate/buf/validate/priv/private.pr
 		}`,
 	)
 	// Set the same category for lint and breaking, but ensure that only the lint rules run.
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3063,32 +3063,6 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 					}
 				},
 				{"plugin": "buf-plugin-protovalidate-ext"},
-				{"plugin": "buf-plugin-rpc-ext"}
-			]
-		}`,
-	)
-	// test lint plugin is gated by env var
-	appcmdtesting.RunCommandExitCodeStderr(
-		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		1,
-		"Failure: there are plugins set in the buf.yaml, however this feature is in beta and not yet officially released."+
-			" In order to use plugins, set the environment variable BUF_BETA_PLUGINS_ENABLED=1",
-		internaltesting.NewEnvFunc(t),
-		nil,
-		"lint",
-		filepath.Join("testdata", "check_plugins", "current"),
-		"--config",
-		`{
-			"version":"v2",
-			"modules": [
-				{"path": "testdata/check_plugins/current/proto"},
-				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
-			],
-			"lint": {
-				"use": ["ATTRIBUTES_SUFFIXES"]
-			},
-			"plugins":[
 				{"plugin": "buf-plugin-rpc-ext"}
 			]
 		}`,
@@ -3215,7 +3189,7 @@ func TestBreakingWithPlugins(t *testing.T) {
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3266,7 +3240,7 @@ testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3308,7 +3282,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requi
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3351,7 +3325,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3395,7 +3369,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3438,7 +3412,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		0,
@@ -3478,7 +3452,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		0,
@@ -3520,7 +3494,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "comm
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3569,7 +3543,7 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 		"current",
 		"previous",
 	)
-	testRunStdoutWithBetaPluginEnabled(
+	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
@@ -3577,24 +3551,6 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
 testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
 	`),
-		"breaking",
-		filepath.Join("testdata", "check_plugins", "current", "proto"),
-		"--against",
-		filepath.Join("testdata", "check_plugins", "previous", "proto"),
-		"--config",
-		currentConfig,
-		"--against-config",
-		previousConfig,
-	)
-	// test breaking plugin is gated by env var
-	appcmdtesting.RunCommandExitCodeStderr(
-		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		1,
-		"Failure: there are plugins set in the buf.yaml, however this feature is in beta and not yet officially released."+
-			" In order to use plugins, set the environment variable BUF_BETA_PLUGINS_ENABLED=1",
-		internaltesting.NewEnvFunc(t),
-		nil,
 		"breaking",
 		filepath.Join("testdata", "check_plugins", "current", "proto"),
 		"--against",
@@ -4424,36 +4380,6 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 	data, err := os.ReadFile(filepath.Join(tempDir, "buf.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
-}
-
-// TODO: remove this as part of publicly releasing lint/breaking plugins
-func testRunStdoutWithBetaPluginEnabled(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	testRunStdoutWithEnvOverride(
-		t,
-		map[string]string{"BUF_BETA_PLUGINS_ENABLED": "1"},
-		stdin,
-		expectedExitCode,
-		expectedStdout,
-		args...,
-	)
-}
-
-func testRunStdoutWithEnvOverride(t *testing.T, envOverride map[string]string, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdout(
-		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStdout,
-		func(use string) map[string]string {
-			defaultTestingEnv := internaltesting.NewEnvFunc(t)(use)
-			for key, value := range envOverride {
-				defaultTestingEnv[key] = value
-			}
-			return defaultTestingEnv
-		},
-		stdin,
-		args...,
-	)
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
