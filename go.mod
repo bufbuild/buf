@@ -12,9 +12,9 @@ require (
 	github.com/bufbuild/bufplugin-go v0.0.0-20240828204705-cbd41905bb9c
 	github.com/bufbuild/protocompile v0.14.0
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
-	github.com/bufbuild/protovalidate-go v0.6.4
-	github.com/bufbuild/protoyaml-go v0.1.11
-	github.com/docker/docker v27.1.2+incompatible
+	github.com/bufbuild/protovalidate-go v0.6.5
+	github.com/bufbuild/protoyaml-go v0.1.12
+	github.com/docker/docker v27.2.0+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
 	github.com/gofrs/uuid/v5 v5.3.0
@@ -28,7 +28,7 @@ require (
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/profile v1.7.0
 	github.com/quic-go/quic-go v0.46.0
-	github.com/rs/cors v1.11.0
+	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
