@@ -4,14 +4,10 @@ modules:
     name: buf.build/bufbuild/buf
 lint:
   use:
-    - STANDARD
+    - DEFAULT
     - UNARY_RPC
-    - PAGE_REQUEST_HAS_TOKEN
   disallow_comment_ignores: true
 breaking:
   use:
     - WIRE_JSON
   ignore_unstable_packages: true
-plugins:
-  - plugin: protovalidate-ext
-  - plugin: buf-plugin-rpc-ext
