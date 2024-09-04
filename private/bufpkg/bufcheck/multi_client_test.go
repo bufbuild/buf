@@ -94,13 +94,13 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	request, err := requestSpec.ToRequest(ctx)
 	require.NoError(t, err)
 
-	var clientOptions []check.ClientOption
+	var clientForSpecOptions []check.ClientForSpecOption
 	if cacheRules {
-		clientOptions = append(clientOptions, check.ClientWithCacheRulesAndCategories())
+		clientForSpecOptions = append(clientForSpecOptions, check.ClientWithCacheRulesAndCategories())
 	}
-	fieldLowerSnakeCaseClient, err := check.NewClientForSpec(fieldLowerSnakeCaseSpec, clientOptions...)
+	fieldLowerSnakeCaseClient, err := check.NewClientForSpec(fieldLowerSnakeCaseSpec, clientForSpecOptions...)
 	require.NoError(t, err)
-	timestampSuffixClient, err := check.NewClientForSpec(timestampSuffixSpec, clientOptions...)
+	timestampSuffixClient, err := check.NewClientForSpec(timestampSuffixSpec, clientForSpecOptions...)
 	require.NoError(t, err)
 	emptyOptions, err := check.NewOptions(nil)
 	require.NoError(t, err)
