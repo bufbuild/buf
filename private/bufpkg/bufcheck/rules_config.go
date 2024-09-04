@@ -386,12 +386,22 @@ func warnReferencedDeprecatedIDsForIDType(
 		default:
 			replaceString = fmt.Sprintf(" It has been replaced by %s %s.", pluralIDType, strings.Join(replacementIDs, ", "))
 		}
+		var specialCallout string
+		if deprecatedID == "DEFAULT" {
+			specialCallout = `
+	The concept of a default rule has been introduced. A default rule is a rule that will be run
+	if no rules are explicitly configured in your buf.yaml. Run buf config ls-lint-rules or
+	buf config ls-breaking-rules to see which rules are defaults. With this introduction, having a category
+	also named DEFAULT is confusing, as while it happpens that all the rules in the DEFAULT category
+	are also default rules, the name has become overloaded.`
+		}
 		logger.Warn(
 			fmt.Sprintf(
-				"%s %s referenced in your buf.yaml is deprecated.%s\n\t%s will continue to work. We recommend replacing %s in your buf.yaml, but no action is immediately necessary.",
+				"%s %s referenced in your buf.yaml is deprecated.%s%s\n\tAs with all buf changes, this change is backwards-compatible: %s will continue to work.\n\tWe recommend replacing %s in your buf.yaml, but no action is immediately necessary.",
 				capitalizedIDType,
 				deprecatedID,
 				replaceString,
+				specialCallout,
 				deprecatedID,
 				deprecatedID,
 			),
