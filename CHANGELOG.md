@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add concept of a default lint or breaking rule, which is printed out as a property when running
+  `buf config ls-{breaking,lint}-rules`. Default rules are those rules which are run if no lint
+  or breaking rules are explicitly configured in your `buf.yaml`.
+- Rename `DEFAULT` lint rule category to `STANDARD`. With the concept of default rules being introduced,
+  having a category named `DEFAULT` is confusing, as while it happens that all the rules in the `DEFAULT`
+  lint category are also default rules, the name has become overloaded. As with all `buf` changes, this
+  change is backwards-compatible: the `DEFAULT` lint category continues to work, and always will. We
+  recommend changing to `STANDARD`, however.
 
 ## [v1.39.0] - 2024-08-27
 

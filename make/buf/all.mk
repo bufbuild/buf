@@ -1,5 +1,6 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-#GO_GET_PKGS := $(GO_GET_PKGS)
+# TODO: Remove when we no longer need Go 1.21
+GO_GET_PKGS := $(GO_GET_PKGS) github.com/antlr4-go/antlr/v4@v4.13.0
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -25,7 +26,7 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
-GO_MOD_VERSION := 1.22
+GO_MOD_VERSION := 1.21
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
