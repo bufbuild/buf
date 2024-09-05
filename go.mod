@@ -120,3 +120,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.0 // indirect
 )
+
+replace github.com/bufbuild/protovalidate-go => github.com/jchadwick-buf/protovalidate-go v0.0.0-20240904032402-bfe586b85ffd
+
+replace buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go => ../pv-gen

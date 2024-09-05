@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate/shared"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
@@ -111,7 +112,7 @@ func checkCELForField(
 
 func checkCEL(
 	celEnv *cel.Env,
-	celConstraints []*validate.Constraint,
+	celConstraints []*shared.Constraint,
 	parentName string,
 	parentNameCapitalized string,
 	celName string,
