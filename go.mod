@@ -121,6 +121,8 @@ require (
 	google.golang.org/grpc v1.66.0 // indirect
 )
 
+// TODO: remove
 replace github.com/bufbuild/protovalidate-go => github.com/jchadwick-buf/protovalidate-go v0.0.0-20240904032402-bfe586b85ffd
 
+// TODO: remove
 replace buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go => ../pv-gen
