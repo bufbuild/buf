@@ -491,3 +491,20 @@ func ElementsContained[T comparable](superset []T, subset []T) bool {
 	}
 	return true
 }
+
+// TrimPrefix removes a leading prefix from s, otherwise leaves s as-is.
+//
+// Returns whether a prefix was actually removed.
+func TrimPrefix[T comparable](s []T, prefix []T) ([]T, bool) {
+	if len(s) < len(prefix) {
+		return s, false
+	}
+
+	for i, x := range prefix {
+		if s[i] != x {
+			return s, false
+		}
+	}
+
+	return s[len(prefix):], true
+}

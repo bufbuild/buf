@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
 )
 
 // NewCommand constructs the CLI command for executing the LSP.
@@ -70,16 +69,13 @@ func (lsp *lsp) Listen(ctx context.Context, container appext.Container) error {
 		return err
 	}
 
-	conn := jsonrpc2.NewConn(jsonrpc2.NewStream(transport))
-
-	server, err := buflsp.New(ctx, container, conn)
+	conn, err := buflsp.Serve(ctx, container, jsonrpc2.NewStream(transport))
 	if err != nil {
 		return err
 	}
-
-	conn.Go(ctx, protocol.ServerHandler(server, nil))
 	<-conn.Done()
 	return conn.Err()
+
 }
 
 // dial opens a connection to the LSP client.

@@ -19,17 +19,22 @@ package buflsp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -37,17 +42,27 @@ import (
 // initializing the server.
 var ErrNotInit = fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize)
 
-// New constructs a new LSP server, ready to begin listening.
-func New(
+// New spawns a new LSP server, listening on the given stream.
+//
+// Returns a context for managing the server.
+func Serve(
 	ctx context.Context,
 	container appext.Container,
-	conn jsonrpc2.Conn,
-) (protocol.Server, error) {
+	stream jsonrpc2.Stream,
+) (jsonrpc2.Conn, error) {
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return nil, err
 	}
 
+	bucketProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	bucket, err := bucketProvider.NewReadWriteBucket("/",
+		storageos.ReadWriteBucketWithSymlinksIfSupported())
+	if err != nil {
+		return nil, err
+	}
+
+	conn := jsonrpc2.NewConn(stream)
 	server := &server{
 		conn:   conn,
 		client: protocol.ClientDispatcher(conn, container.Logger()),
@@ -55,12 +70,14 @@ func New(
 		logger:     container.Logger(),
 		tracer:     tracing.NewTracer(container.Tracer()),
 		controller: controller,
+		rootBucket: bucket,
 	}
-	server.files = newFiles(ctx, server)
+	server.files = newFiles(server)
 	off := protocol.TraceOff
 	server.traceValue.Store(&off)
 
-	return server, nil
+	conn.Go(ctx, server.makeHandler())
+	return conn, nil
 }
 
 // server is an LSP server.
@@ -77,6 +94,7 @@ type server struct {
 	logger     *zap.Logger
 	tracer     tracing.Tracer
 	controller bufctl.Controller
+	rootBucket storage.ReadBucket
 	files      *files
 
 	wktModuleSet bufmodule.ModuleSet
@@ -131,4 +149,64 @@ func (server *server) loadWTKs(ctx context.Context) (err error) {
 	builder.AddLocalModule(datawkt.ReadBucket, "." /*isTarget=*/, true)
 	server.wktModuleSet, err = builder.Build()
 	return
+}
+
+// makeHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
+// to inject debug logging, tracing, and timeouts to requests.
+func (server *server) makeHandler() jsonrpc2.Handler {
+	actual := protocol.ServerHandler(server, nil)
+	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (err error) {
+		ctx, span := server.tracer.Start(ctx,
+			tracing.WithErr(&err),
+			tracing.WithAttributes(attribute.String("method", req.Method())),
+		)
+		defer span.End()
+
+		server.logger.Debug(
+			"processing request",
+			zap.String("method", req.Method()),
+			zap.ByteString("params", req.Params()),
+		)
+
+		// Each request is handled in a separate goroutine, and has a fixed timeout.
+		// This is to enforce responsiveness on the LSP side: if something is going to take
+		// a long time, it should be offloaded.
+		ctx, done := context.WithTimeout(ctx, 3*time.Second)
+		ctx = withReentrancy(ctx)
+
+		go func() {
+			defer done()
+			err = actual(ctx, server.adaptReplier(reply, req), req)
+		}()
+
+		<-ctx.Done()
+		if ctx.Err() == context.DeadlineExceeded {
+			// Don't return this error; that will kill the whole server!
+			server.logger.Sugar().Errorf(
+				"timed out while handling %s; this is likely a bug", req.Method())
+		}
+		return
+	}
+}
+
+// adaptReplier wraps a jsonrpc2.Replier, allowing us to inject logging and tracing and so on.
+func (server *server) adaptReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2.Replier {
+	return func(ctx context.Context, result any, err error) error {
+		if err != nil {
+			server.logger.Debug(
+				"responding",
+				zap.String("method", req.Method()),
+				zap.Error(err),
+			)
+		} else {
+			json, _ := json.Marshal(result)
+			server.logger.Debug(
+				"responding",
+				zap.String("method", req.Method()),
+				zap.ByteString("params", json),
+			)
+		}
+
+		return reply(ctx, result, err)
+	}
 }

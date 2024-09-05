@@ -54,6 +54,8 @@ func (server *server) Initialize(
 				// necessarily making the LSP slow.
 				Change: protocol.TextDocumentSyncKindFull,
 			},
+			DefinitionProvider: true,
+			HoverProvider:      true,
 		},
 		ServerInfo: &serverInfo,
 	}, nil
@@ -90,8 +92,6 @@ func (server *server) Shutdown(ctx context.Context) error {
 	if err := server.checkInit(); err != nil {
 		return err
 	}
-
-	server.files.shutdown()
 
 	return nil
 }
