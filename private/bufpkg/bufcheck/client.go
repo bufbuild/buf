@@ -491,13 +491,14 @@ func ignoreLocation(
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured
-// comment ignore prefix, a number of spaces (at least one), the ruleID of the check.
+// comment ignore prefix, a space and the ruleID of the check.
 //
-// All of the following comments ignore SERVICE_PASCAL_CASE and this rule only:
+// All of the following comments are valid, ignoring SERVICE_PASCAL_CASE and this rule only:
 //
 //	// buf:lint:ignore SERVICE_PASCAL_CASE, SERVICE_SUFFIX
 //	// buf:lint:ignore SERVICE_PASCAL_CASE
-//	// buf:lint:ignore SERVICE_PASCAL_CASE   some other comment
+//	// buf:lint:ignore SERVICE_PASCAL_CASEsome other comment
+//	// buf:lint:ignore SERVICE_PASCAL_CASE some other comment
 //
 // While the following is invalid and a nop
 //
