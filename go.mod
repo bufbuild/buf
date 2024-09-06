@@ -12,20 +12,11 @@ require (
 	buf.build/go/bufplugin v0.2.0
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1
-<<<<<<< HEAD
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20240910161437-27b7a335254b
 	github.com/bufbuild/protovalidate-go v0.6.5
 	github.com/bufbuild/protoyaml-go v0.1.12
 	github.com/docker/docker v27.2.1+incompatible
-=======
-	github.com/bufbuild/protocompile v0.14.0
-	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
-	github.com/bufbuild/protovalidate-go v0.6.4
-	github.com/bufbuild/protoyaml-go v0.1.11
-	github.com/docker/docker v27.1.2+incompatible
-	github.com/fsnotify/fsnotify v1.6.0
->>>>>>> 77701c179 (add an LSP)
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
 	github.com/gofrs/uuid/v5 v5.3.0

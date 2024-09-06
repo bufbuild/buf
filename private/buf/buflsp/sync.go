@@ -62,14 +62,30 @@ func getReentrancy(ctx context.Context) uint32 {
 
 // Lock attempts to acquire this mutex or blocks.
 //
-// Unlike sync.Mutex, this takes a Context. If that context was updated with withReentrancy,
+// Unlike [sync.Mutex.Lock], this takes a Context. If that context was updated with withReentrancy,
 // this function will panic when attempting to lock the mutex while it is already held by a
 // goroutine using this same context.
 //
 // NOTE: to Lock() and Unlock() with the same context DO NOT synchronize with each other. For example,
 // attempting to lock this mutex from two different goroutines with the same context will
 // result in undefined behavior.
-func (mu *mutex) Lock(ctx context.Context) {
+//
+// Also unlike [sync.Mutex.Lock], it returns an idempotent unlocker function. This can be used like
+// defer mu.LockFunc()(). Note that only the outer function call is deferred: this is part of the
+// definition of defer. See https://go.dev/play/p/RJNKRcoQRo1. This unlocker can also be used to
+// defer unlocking but also unlock before the function returns.
+//
+// The returned unlocker is not thread-safe.
+func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
+	var unlocked bool
+	unlocker = func() {
+		if unlocked {
+			return
+		}
+		mu.Unlock(ctx)
+		unlocked = true
+	}
+
 	id := getReentrancy(ctx)
 	if id == 0 {
 		// If no ID is present, simply lock the lock.
@@ -92,6 +108,7 @@ func (mu *mutex) Lock(ctx context.Context) {
 	mu.mu.Lock()
 	mu.who.Store(id)
 	mu.lockers++
+	return
 }
 
 // Unlock releases this mutex.

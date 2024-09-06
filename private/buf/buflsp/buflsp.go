@@ -19,7 +19,6 @@ package buflsp
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -37,10 +36,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
-
-// ErrNotInit is returned by LSP server methods that are called without first
-// initializing the server.
-var ErrNotInit = fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize)
 
 // New spawns a new LSP server, listening on the given stream.
 //
@@ -64,8 +59,11 @@ func Serve(
 
 	conn := jsonrpc2.NewConn(stream)
 	server := &server{
-		conn:   conn,
-		client: protocol.ClientDispatcher(conn, container.Logger()),
+		conn: conn,
+		client: protocol.ClientDispatcher(
+			&connAdapter{Conn: conn, Logger: container.Logger()},
+			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
+		),
 
 		logger:     container.Logger(),
 		tracer:     tracing.NewTracer(container.Tracer()),
@@ -107,15 +105,6 @@ type server struct {
 	traceValue atomic.Pointer[protocol.TraceValue]
 }
 
-// checkInit is a helper that checks if initialization has occurred and, if not,
-// returns an appropriate error.
-func (server *server) checkInit() error {
-	if server.initParams.Load() != nil {
-		return nil
-	}
-	return ErrNotInit
-}
-
 // init performs *actual* initialization of the server. This is called by Initialize().
 //
 // It may only be called once for a given server.
@@ -130,7 +119,7 @@ func (server *server) init(ctx context.Context, params *protocol.InitializeParam
 	// goroutine and some channels.
 
 	// Load the WKTs asap. They're always needed and don't need to hit the filesystem.
-	if err := server.loadWTKs(ctx); err != nil {
+	if err := server.loadWKTs(ctx); err != nil {
 		return err
 	}
 
@@ -138,7 +127,7 @@ func (server *server) init(ctx context.Context, params *protocol.InitializeParam
 }
 
 // loadWKTs loads a ModuleSet for the well-known types.
-func (server *server) loadWTKs(ctx context.Context) (err error) {
+func (server *server) loadWKTs(ctx context.Context) (err error) {
 	builder := bufmodule.NewModuleSetBuilder(
 		ctx,
 		server.tracer,
@@ -176,7 +165,17 @@ func (server *server) makeHandler() jsonrpc2.Handler {
 
 		go func() {
 			defer done()
-			err = actual(ctx, server.adaptReplier(reply, req), req)
+			replier := server.adaptReplier(reply, req)
+
+			// Verify that the server has been initialized if this isn't the initialization
+			// request.
+			if req.Method() != protocol.MethodInitialize && server.initParams.Load() == nil {
+				err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method",
+					protocol.MethodInitialize))
+				return
+			}
+
+			err = actual(ctx, replier, req)
 		}()
 
 		<-ctx.Done()
@@ -193,20 +192,79 @@ func (server *server) makeHandler() jsonrpc2.Handler {
 func (server *server) adaptReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2.Replier {
 	return func(ctx context.Context, result any, err error) error {
 		if err != nil {
-			server.logger.Debug(
-				"responding",
+			server.logger.Warn(
+				"responding with error",
 				zap.String("method", req.Method()),
 				zap.Error(err),
 			)
 		} else {
-			json, _ := json.Marshal(result)
 			server.logger.Debug(
 				"responding",
 				zap.String("method", req.Method()),
-				zap.ByteString("params", json),
+				zap.Reflect("params", result),
 			)
 		}
 
 		return reply(ctx, result, err)
 	}
+}
+
+// connAdapter wraps a connection and logs calls and notifications.
+//
+// By default, the ClientDispatcher does not log the bodies of requests and responses, making
+// for much lower-quality debugging.
+type connAdapter struct {
+	jsonrpc2.Conn
+	Logger *zap.Logger
+}
+
+func (conn *connAdapter) Call(
+	ctx context.Context, method string, params, result any) (id jsonrpc2.ID, err error) {
+	conn.Logger.Debug(
+		"call",
+		zap.String("method", method),
+		zap.Reflect("params", params),
+	)
+
+	id, err = conn.Conn.Call(ctx, method, params, result)
+	if err != nil {
+		conn.Logger.Warn(
+			"call returned error",
+			zap.String("method", method),
+			zap.Error(err),
+		)
+	} else {
+		conn.Logger.Warn(
+			"call returned",
+			zap.String("method", method),
+			zap.Reflect("result", result),
+		)
+	}
+
+	return
+}
+
+func (conn *connAdapter) Notify(
+	ctx context.Context, method string, params any) error {
+	conn.Logger.Debug(
+		"notify",
+		zap.String("method", method),
+		zap.Reflect("params", params),
+	)
+
+	err := conn.Conn.Notify(ctx, method, params)
+	if err != nil {
+		conn.Logger.Warn(
+			"notify returned error",
+			zap.String("method", method),
+			zap.Error(err),
+		)
+	} else {
+		conn.Logger.Warn(
+			"notify returned",
+			zap.String("method", method),
+		)
+	}
+
+	return err
 }

@@ -67,10 +67,6 @@ func (server *server) Initialized(
 	ctx context.Context,
 	params *protocol.InitializedParams,
 ) error {
-	if err := server.checkInit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -78,10 +74,6 @@ func (server *server) SetTrace(
 	ctx context.Context,
 	params *protocol.SetTraceParams,
 ) error {
-	if err := server.checkInit(); err != nil {
-		return err
-	}
-
 	server.traceValue.Store(&params.Value)
 	return nil
 }
@@ -89,21 +81,13 @@ func (server *server) SetTrace(
 // Shutdown is sent by the client when it wants the server to shut down and exit.
 // The client will wait until Shutdown returns, and then call Exit.
 func (server *server) Shutdown(ctx context.Context) error {
-	if err := server.checkInit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 // Exit is a notification that the client has seen shutdown complete, and that the
 // server should now exit.
 func (server *server) Exit(ctx context.Context) error {
-	if err := server.checkInit(); err != nil {
-		return err
-	}
-
-	// TODO: return an error if Shutdown() has not been
+	// TODO: return an error if Shutdown() has not been called yet.
 
 	// Close the connection. This will let the server shut down gracefully once this
 	// notification is replied to.

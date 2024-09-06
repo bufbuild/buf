@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/refcount"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
@@ -36,60 +36,38 @@ import (
 // files is a manager for all files the LSP is currently handling.
 type files struct {
 	server *server
-
-	files map[protocol.URI]*file
-	mu    mutex
+	table  refcount.Map[protocol.URI, file]
 }
 
 // newFiles creates a new file manager.
 func newFiles(server *server) *files {
-	return &files{
-		server: server,
-		files:  make(map[protocol.URI]*file),
-	}
+	return &files{server: server}
 }
 
-// FindOrCreate finds a file with the given URI, or creates one.
-//
-// This function grabs the files lock; this lock must be released by calling the returned
-// function, usually in a defer.
-//
-// opening indicates that this find is opening a file in a new window.
-func (files *files) FindOrCreate(ctx context.Context, uri protocol.URI, opening bool) *file {
-	ctx, span := files.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(uri))))
-	defer span.End()
-	_ = ctx
-
-	files.mu.Lock(ctx)
-	defer files.mu.Unlock(ctx)
-
-	// Look up or create the file in the file manager.
-	var entry *file
-	if found, ok := files.files[uri]; ok {
-		entry = found
-	} else {
-		entry = &file{
-			server: files.server,
-			uri:    uri,
-		}
-
-		if !opening {
-			files.server.logger.Sugar().Warnf(
-				"Find() called with opening set to false on a file that doesn't exist", uri)
-
-			// Presumably this file has been opened at least once?
-			entry.refs.Add(1)
-		}
-
-		files.files[uri] = entry
+// Open finds a file with the given URI, or creates one.
+func (files *files) Open(ctx context.Context, uri protocol.URI) *file {
+	file, found := files.table.Insert(uri)
+	if !found {
+		file.server = files.server
+		file.uri = uri
 	}
 
-	if opening {
-		entry.refs.Add(1)
-	}
+	return file
+}
 
-	return entry
+// Get finds a file with the given URI, or returns nil.
+func (files *files) Get(uri protocol.URI) *file {
+	return files.table.Get(uri)
+}
+
+// Close marks a file as closed.
+//
+// This will not necessarily evict the file, since there may be more than one user
+// for this file.
+func (files *files) Close(ctx context.Context, uri protocol.URI) {
+	if deleted := files.table.Delete(uri); deleted != nil {
+		deleted.Reset(ctx)
+	}
 }
 
 // file is a file that has been opened by the client.
@@ -101,11 +79,25 @@ type file struct {
 	server *server
 	uri    protocol.URI
 
-	// This is the number of users of this file. This can either be windows
-	// in the editor, or other files that import it and need it for symbol lookup.
-	refs atomic.Int32
-
 	// All variables after this lock variables are protected by file.mu.
+	//
+	// NOTE: this package must NEVER attempt to acquire a lock on a file while
+	// holding a lock on another file. This guarantees that any concurrent operations
+	// on distinct files can always make forward progress, even if the information they
+	// have is incomplete. This trades off up-to-date accuracy for responsiveness.
+	//
+	// For example, suppose g1 locks a.proto, and then attempts to lock b.proto
+	// because it followed a pointer in importMap. However, in the meantime, g2
+	// has acquired b.proto's lock already, and attempts to acquire a lock to a.proto,
+	// again because of a pointer in importMap. This will deadlock, and it will
+	// deadlock in such a way that will be undetectable to the Go scheduler, so the
+	// LSP will hang forever.
+	//
+	// This seems like a contrived scenario, but it can happen if a user creates two
+	// mutually-recursive Protobuf files. Although this is not permitted by Protobuf,
+	// the LSP must handle this invalid state gracefully.
+	//
+	// TODO(mcy): enforce this somehow.
 	mu mutex
 
 	text    string
@@ -124,7 +116,7 @@ type file struct {
 	moduleSet bufmodule.ModuleSet
 }
 
-type importMap map[*ast.ImportNode]*file
+type importMap map[string]*file
 
 // Owner returns the file manager that owns this file.
 func (file *file) Owner() *files {
@@ -142,16 +134,25 @@ func (file *file) Package() []string {
 
 // Reset clears all bookkeeping information on this file.
 func (file *file) Reset(ctx context.Context) {
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
-	defer span.End()
+	file.server.logger.Sugar().Debugf("resetting file %v", file.uri)
+
+	// Lock and unlock to acquire the import map.
+	// This map is never mutated after being created, so we only
+	// need to read the pointer.
+	//
+	// We need to lock and unlock because Close() will call Reset() on other
+	// files, and this will deadlock if cyclic imports exist.
+	file.mu.Lock(ctx)
+	imports := file.imports
+	file.mu.Unlock(ctx)
+
+	// Close all imported files while file.mu is not held.
+	for _, imported := range imports {
+		imported.Close(ctx)
+	}
 
 	file.mu.Lock(ctx)
 	defer file.mu.Unlock(ctx)
-
-	for _, imported := range file.imports {
-		imported.Close(ctx)
-	}
 
 	file.ast = nil
 	file.pkg = nil
@@ -165,27 +166,7 @@ func (file *file) Reset(ctx context.Context) {
 // This will not necessarily evict the file, since there may be more than one user
 // for this file.
 func (file *file) Close(ctx context.Context) {
-	if file.refs.Load() == 0 {
-		// This is a re-entrant call to Close() through Reset(), so we just return.
-		return
-	}
-
-	if file.refs.Add(-1) > 0 {
-		// There still exist other copies of this file elsewhere.
-		return
-	}
-
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
-	defer span.End()
-
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
-	file.Reset(ctx)
-
-	file.Owner().mu.Lock(ctx)
-	defer file.Owner().mu.Unlock(ctx)
-	delete(file.Owner().files, file.uri)
+	file.server.files.Close(ctx, file.uri)
 }
 
 // ReadFromDisk reads this file from disk if it has never had data loaded into it before.
@@ -193,12 +174,6 @@ func (file *file) Close(ctx context.Context) {
 // If it has been read from disk before, or has received updates from the LSP client, this
 // function returns nil.
 func (file *file) ReadFromDisk(ctx context.Context) (err error) {
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithErr(&err),
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
-	defer span.End()
-	_ = ctx
-
 	file.mu.Lock(ctx)
 	defer file.mu.Unlock(ctx)
 	if file.hasText {
@@ -218,15 +193,12 @@ func (file *file) ReadFromDisk(ctx context.Context) (err error) {
 // Update updates the contents of this file with the given text received from
 // the LSP client.
 func (file *file) Update(ctx context.Context, version int32, text string) {
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
-	defer span.End()
+	file.Reset(ctx)
 
 	file.mu.Lock(ctx)
 	defer file.mu.Unlock(ctx)
 
-	file.server.logger.Sugar().Infof("new file version: %v, %v", file.uri, file.version)
-	file.Reset(ctx)
+	file.server.logger.Sugar().Infof("new file version: %v, %v -> %v", file.uri, file.version, version)
 	file.version = version
 	file.text = text
 	file.hasText = true
@@ -251,15 +223,21 @@ func (file *file) FindWorkspace(ctx context.Context) {
 	file.moduleSet = workspace
 }
 
+// Refresh rebuilds all of a file's internal book-keeping.
+//
+// If deep is set, this will also load imports and refresh those, too.
+func (file *file) Refresh(ctx context.Context) {
+	if file.RefreshAST(ctx) {
+		file.PublishDiagnostics(ctx)
+	}
+	file.IndexImports(ctx)
+	file.IndexSymbols(ctx)
+}
+
 // RefreshAST reparses the file and generates diagnostics if necessary.
 //
 // Returns whether a reparse was necessary.
 func (file *file) RefreshAST(ctx context.Context) bool {
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
-	defer span.End()
-	_ = ctx
-
 	file.mu.Lock(ctx)
 	defer file.mu.Unlock(ctx)
 	if file.ast != nil {
@@ -281,6 +259,7 @@ func (file *file) RefreshAST(ctx context.Context) bool {
 
 	file.ast = parsed
 	file.diagnostics = report
+	file.server.logger.Sugar().Debugf("got %v diagnostic(s)", len(file.diagnostics))
 
 	// Search for a potential package node.
 	if file.ast != nil {
@@ -308,8 +287,7 @@ func (file *file) PublishDiagnostics(ctx context.Context) {
 		return
 	}
 
-	// Publish the diagnostics. We can discard this error, it gets logged automatically
-	// by the loggingStream.
+	// Publish the diagnostics. This error is automatically logged by the LSP framework.
 	_ = file.server.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
 		URI: file.uri,
 		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
@@ -325,8 +303,8 @@ func (file *file) IndexImports(ctx context.Context) {
 		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
 	defer span.End()
 
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
+	unlock := file.mu.Lock(ctx)
+	defer unlock()
 
 	if file.ast == nil || file.imports != nil {
 		return
@@ -352,19 +330,28 @@ func (file *file) IndexImports(ctx context.Context) {
 			continue
 		}
 
-		imported := file.Owner().FindOrCreate(ctx, uri, true)
-		file.imports[node] = imported
+		imported := file.Owner().Open(ctx, uri)
+		file.imports[node.Name.AsString()] = imported
+	}
 
-		if err := imported.ReadFromDisk(ctx); err != nil {
-			file.server.logger.Sugar().Warnf("could not load import import %q from disk: %w", imported.uri, err)
+	// Drop the lock after copying the pointer to the imports map. This
+	// particular map will not be mutated further, and since we're going to grab the lock of
+	// other files, we need to drop the currently held lock.
+	fileImports := file.imports
+	unlock()
+
+	for _, file := range fileImports {
+		if err := file.ReadFromDisk(ctx); err != nil {
+			file.server.logger.Sugar().Warnf("could not load import import %q from disk: %w",
+				file.uri, err)
 			continue
 		}
 
 		// Parse the imported file and find all symbols in it, but do not
 		// index symbols in the import's imports, otherwise we will recursively
 		// index the universe and that would be quite slow.
-		imported.RefreshAST(ctx)
-		imported.IndexSymbols(ctx)
+		file.RefreshAST(ctx)
+		file.IndexSymbols(ctx)
 	}
 }
 
@@ -414,18 +401,9 @@ func (server *server) DidOpen(
 	ctx context.Context,
 	params *protocol.DidOpenTextDocumentParams,
 ) error {
-	if err := server.checkInit(); err != nil {
-		return err
-	}
-
-	file := server.files.FindOrCreate(ctx, params.TextDocument.URI, true)
+	file := server.files.Open(ctx, params.TextDocument.URI)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
-	if file.RefreshAST(ctx) {
-		file.PublishDiagnostics(ctx)
-	}
-	file.IndexImports(ctx)
-	file.IndexSymbols(ctx)
-
+	go file.Refresh(context.WithoutCancel(ctx))
 	return nil
 }
 
@@ -435,18 +413,14 @@ func (server *server) DidChange(
 	ctx context.Context,
 	params *protocol.DidChangeTextDocumentParams,
 ) error {
-	if err := server.checkInit(); err != nil {
-		return err
+	file := server.files.Get(params.TextDocument.URI)
+	if file == nil {
+		// Update for a file we don't know about? Seems bad!
+		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
-	file := server.files.FindOrCreate(ctx, params.TextDocument.URI, true)
 	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
-	if file.RefreshAST(ctx) {
-		file.PublishDiagnostics(ctx)
-	}
-	file.IndexImports(ctx)
-	file.IndexSymbols(ctx)
-
+	go file.Refresh(context.WithoutCancel(ctx))
 	return nil
 }
 
@@ -456,10 +430,6 @@ func (server *server) DidClose(
 	ctx context.Context,
 	params *protocol.DidCloseTextDocumentParams,
 ) error {
-	if err := server.checkInit(); err != nil {
-		return err
-	}
-
-	server.files.FindOrCreate(ctx, params.TextDocument.URI, false).Close(ctx)
+	server.files.Close(ctx, params.TextDocument.URI)
 	return nil
 }
