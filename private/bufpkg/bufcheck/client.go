@@ -491,27 +491,25 @@ func ignoreLocation(
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured
-// comment ignore prefix, and the rest of the string is the ruleID of the check.
+// comment ignore prefix, a space and the ruleID of the check.
 //
-// We currently do not support multiple rules per comment ignore:
+// All of the following comments are valid, ignoring SERVICE_PASCAL_CASE and this rule only:
 //
-//	Invalid:
-//		// buf:lint:ignore SERVICE_SUFFIX, SERVICE_PASCAL_CASE
+//	// buf:lint:ignore SERVICE_PASCAL_CASE, SERVICE_SUFFIX (only SERVICE_PASCAL_CASE is ignored)
+//	// buf:lint:ignore SERVICE_PASCAL_CASE
+//	// buf:lint:ignore SERVICE_PASCAL_CASEsome other comment
+//	// buf:lint:ignore SERVICE_PASCAL_CASE some other comment
 //
-//	Valid:
-//		// buf:lint:ignore SERVICE_SUFFIX
-//		// buf:lint:ignore SERVICE_PASCAL_CASE
+// While the following is invalid and a nop
+//
+//	// buf:lint:ignoreSERVICE_PASCAL_CASE
 func checkCommentLineForCheckIgnore(
 	commentLine string,
 	commentIgnorePrefix string,
 	ruleID string,
 ) bool {
-	if after, ok := strings.CutPrefix(commentLine, commentIgnorePrefix); ok {
-		if strings.TrimSpace(after) == ruleID {
-			return true
-		}
-	}
-	return false
+	fullIgnorePrefix := commentIgnorePrefix + " " + ruleID
+	return strings.HasPrefix(commentLine, fullIgnorePrefix)
 }
 
 type lintOptions struct {

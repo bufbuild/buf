@@ -1189,6 +1189,14 @@ func TestCommentIgnoresOnlyRule(t *testing.T) {
 	)
 }
 
+func TestCommentIgnoresWithTrailingComment(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"comment_ignores_with_trailing_comment",
+	)
+}
+
 func TestRunLintCustomPlugins(t *testing.T) {
 	t.Parallel()
 	testLint(

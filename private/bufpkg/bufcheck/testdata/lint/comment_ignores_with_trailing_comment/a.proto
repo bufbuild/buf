@@ -1,0 +1,4 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH trailing comment after the ignore comment is also OK
+package a;
