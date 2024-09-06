@@ -24,9 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -41,7 +39,7 @@ import (
 type client struct {
 	logger                          *zap.Logger
 	tracer                          tracing.Tracer
-	runner                          command.Runner
+	runnerProvider                  RunnerProvider
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
@@ -49,7 +47,7 @@ type client struct {
 func newClient(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	runner command.Runner,
+	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (*client, error) {
 	clientOptions := newClientOptions()
@@ -71,10 +69,10 @@ func newClient(
 	}
 
 	return &client{
-		logger: logger,
-		tracer: tracer,
-		runner: runner,
-		stderr: clientOptions.stderr,
+		logger:         logger,
+		tracer:         tracer,
+		runnerProvider: runnerProvider,
+		stderr:         clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
@@ -343,11 +341,10 @@ func (c *client) getMultiClient(
 		pluginPath := pluginConfig.Path()
 		checkClient := check.NewClient(
 			pluginrpc.NewClient(
-				pluginrpcutil.NewRunner(
-					c.runner,
+				c.runnerProvider.NewRunner(
 					// We know that Path is of at least length 1.
 					pluginPath[0],
-					pluginrpcutil.RunnerWithArgs(pluginPath[1:]...),
+					pluginPath[1:]...,
 				),
 				pluginrpc.ClientWithStderr(c.stderr),
 				// We have to set binary as some things cannot be encoded as JSON.
