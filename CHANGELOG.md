@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue with `buf lint` where comment ignores in the shape of `// buf:lint:ignore <RULE_ID> <extra comment>`
+  are not recognized due to the extra comment.
 
 ## [v1.40.0] - 2024-09-04
 
