@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.40.1] - 2024-09-06
 
 - Fix issue with `buf lint` where comment ignores in the shape of `// buf:lint:ignore <RULE_ID> <extra comment>`
@@ -1244,6 +1248,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.40.1...HEAD
 [v1.40.1]: https://github.com/bufbuild/buf/compare/v1.40.0...v1.40.1
 [v1.40.0]: https://github.com/bufbuild/buf/compare/v1.39.0...v1.40.0
 [v1.39.0]: https://github.com/bufbuild/buf/compare/v1.38.0...v1.39.0
