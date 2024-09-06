@@ -495,7 +495,7 @@ func ignoreLocation(
 //
 // All of the following comments are valid, ignoring SERVICE_PASCAL_CASE and this rule only:
 //
-//	// buf:lint:ignore SERVICE_PASCAL_CASE, SERVICE_SUFFIX
+//	// buf:lint:ignore SERVICE_PASCAL_CASE, SERVICE_SUFFIX (only SERVICE_PASCAL_CASE is ignored)
 //	// buf:lint:ignore SERVICE_PASCAL_CASE
 //	// buf:lint:ignore SERVICE_PASCAL_CASEsome other comment
 //	// buf:lint:ignore SERVICE_PASCAL_CASE some other comment
