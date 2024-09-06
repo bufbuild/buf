@@ -35,16 +35,16 @@ type mutex struct {
 	lockers uint32
 }
 
-var nextReentrancyId uint32 = 1
+var nextReentrancyID uint32 = 1
 
 // withMutexId enables this context to be used to non-reentrantly lock a mutex.
 //
 // This function essentially creates a scope in which attempting to reentrantly lock a mutex
 // panics instead of deadlocking.
 func withReentrancy(ctx context.Context) context.Context {
-	id := nextReentrancyId
-	nextReentrancyId++
-	return context.WithValue(ctx, &nextReentrancyId, id)
+	id := nextReentrancyID
+	nextReentrancyID++
+	return context.WithValue(ctx, &nextReentrancyID, id)
 }
 
 // getRentrancy returns the reentrancy ID for this context, or 0 if ctx is nil or has no
@@ -53,7 +53,7 @@ func getReentrancy(ctx context.Context) uint32 {
 	if ctx == nil {
 		return 0
 	}
-	id, ok := ctx.Value(&nextReentrancyId).(uint32)
+	id, ok := ctx.Value(&nextReentrancyID).(uint32)
 	if !ok {
 		return 0
 	}
@@ -90,7 +90,7 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 	if id == 0 {
 		// If no ID is present, simply lock the lock.
 		mu.mu.Lock()
-		return
+		return unlocker
 	}
 
 	if mu.who.Load() == id {
@@ -102,13 +102,13 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		// require that callers do not attempt to lock and unlock the mutex with the same
 		// context concurrently.
 		mu.lockers++
-		return
+		return unlocker
 	}
 
 	mu.mu.Lock()
 	mu.who.Store(id)
 	mu.lockers++
-	return
+	return unlocker
 }
 
 // Unlock releases this mutex.

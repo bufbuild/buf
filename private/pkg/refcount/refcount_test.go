@@ -21,6 +21,8 @@ import (
 )
 
 func TestMap(t *testing.T) {
+	t.Parallel()
+
 	var table Map[string, int]
 
 	value, found := table.Insert("foo")

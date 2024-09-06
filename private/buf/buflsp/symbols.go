@@ -163,6 +163,56 @@ func (file *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbo
 	return symbol
 }
 
+// Range constructs an LSP protocol code range for this symbol.
+func (symbol *symbol) Range() protocol.Range {
+	return protocol.Range{
+		// NOTE: protocompile uses 1-indexed lines and columns (as most compilers do) but bizarrely
+		// the LSP protocol wants 0-indexed lines and columns, which is a little weird.
+		//319
+		// FIXME: the LSP protocol defines positions in terms of UTF-16, so we will need
+		// to sort that out at some point.
+		Start: protocol.Position{
+			Line:      uint32(symbol.info.Start().Line) - 1,
+			Character: uint32(symbol.info.Start().Col) - 1,
+		},
+		End: protocol.Position{
+			Line:      uint32(symbol.info.End().Line) - 1,
+			Character: uint32(symbol.info.End().Col) - 1,
+		},
+	}
+}
+
+// Definition looks up the definition of this symbol, if known.
+func (symbol *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
+	var (
+		file *file
+		path []string
+	)
+	switch kind := symbol.kind.(type) {
+	case *definition:
+		file = symbol.file
+		path = kind.path
+	case *reference:
+		file = kind.file
+		path = kind.path
+	}
+
+	if file == nil {
+		return nil, nil
+	}
+
+	file.mu.Lock(ctx)
+	defer file.mu.Unlock(ctx)
+	for _, symbol := range file.symbols {
+		def, ok := symbol.kind.(*definition)
+		if ok && slices.Equal(path, def.path) {
+			return symbol, def.node
+		}
+	}
+
+	return nil, nil
+}
+
 // ReferencePath returns the reference path of this string, i.e., the components of
 // a path like foo.bar.Baz.
 //
@@ -294,6 +344,59 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (symbol *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
+	enc.AddString("file", symbol.file.uri.Filename())
+
+	// zapPos converts an ast.SourcePos into a zap marshaller.
+	zapPos := func(pos ast.SourcePos) zapcore.ObjectMarshalerFunc {
+		return func(enc zapcore.ObjectEncoder) error {
+			enc.AddInt("offset", pos.Offset)
+			enc.AddInt("line", pos.Line)
+			enc.AddInt("col", pos.Col)
+			return nil
+		}
+	}
+
+	err = enc.AddObject("start", zapPos(symbol.info.Start()))
+	if err != nil {
+		return err
+	}
+
+	err = enc.AddObject("end", zapPos(symbol.info.End()))
+	if err != nil {
+		return err
+	}
+
+	switch kind := symbol.kind.(type) {
+	case *builtin:
+		enc.AddString("builtin", kind.name)
+
+	case *import_:
+		if kind.file != nil {
+			enc.AddString("imports", kind.file.uri.Filename())
+		}
+
+	case *definition:
+		enc.AddString("defines", strings.Join(kind.path, "."))
+
+	case *reference:
+		if kind.file != nil {
+			enc.AddString("imports", kind.file.uri.Filename())
+		}
+		if kind.path != nil {
+			enc.AddString("references", strings.Join(kind.path, "."))
+		}
+		if kind.seeTypeOf != nil {
+			err = enc.AddObject("see_type_of", kind.seeTypeOf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // symbolWalker is an AST walker that generates the symbol table for a file in IndexSymbols().
@@ -438,6 +541,7 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 				}
 			} else {
 				// We are inside of descriptor.proto, i.e., hell.
+				_ = part // Silence a lint.
 			}
 			prevWasExt = part.IsExtension()
 		}
@@ -479,8 +583,8 @@ func (walker *symbolWalker) newDef(node ast.Node, name *ast.IdentNode) *symbol {
 // ResolveCrossFile().
 //
 // Returns a new symbol for that reference.
-func (walker *symbolWalker) newRef(name ast.IdentValueNode) (symbol *symbol) {
-	symbol = walker.newSymbol(name)
+func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
+	symbol := walker.newSymbol(name)
 	components, absolute := symbol.ReferencePath()
 
 	// Handle the built-in types.
@@ -490,7 +594,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) (symbol *symbol) {
 			"fixed32", "fixed64", "sfixed32", "sfixed64",
 			"float", "double", "string", "bytes":
 			symbol.kind = &builtin{components[0]}
-			return
+			return symbol
 		}
 	}
 
@@ -508,7 +612,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) (symbol *symbol) {
 			if findDeclByPath(message.Decls, components) != nil {
 				ref.file = walker.file
 				ref.path = append(makeNestingPath(walker.path[:i+1]), components...)
-				return
+				return symbol
 			}
 		}
 	}
@@ -517,7 +621,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) (symbol *symbol) {
 	if findDeclByPath(walker.file.ast.Decls, components) != nil {
 		ref.file = walker.file
 		ref.path = components
-		return
+		return symbol
 	}
 
 	// Also try with the package removed.
@@ -525,7 +629,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) (symbol *symbol) {
 		if findDeclByPath(walker.file.ast.Decls, path) != nil {
 			ref.file = walker.file
 			ref.path = path
-			return
+			return symbol
 		}
 	}
 
@@ -535,7 +639,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) (symbol *symbol) {
 	// If we couldn't resolve the symbol, symbol.definedIn will be nil.
 	// However, for hover, it's necessary to still remember the components.
 	ref.path = components
-	return
+	return symbol
 }
 
 // findDeclByPath searches for a declaration node that the given path names that is nested
@@ -594,6 +698,15 @@ func findDeclByPath[N ast.Node](nodes []N, path []string) ast.Node {
 	return nil
 }
 
+// compareRanges compares two ranges for lexicographic ordering.
+func comparePositions(a, b protocol.Position) int {
+	diff := int(a.Line) - int(b.Line)
+	if diff == 0 {
+		return int(a.Character) - int(b.Character)
+	}
+	return diff
+}
+
 // makeNestingPath converts a path composed of messages, enums, and services into a path
 // composed of their names.
 func makeNestingPath(path []ast.Node) []string {
@@ -609,108 +722,6 @@ func makeNestingPath(path []ast.Node) []string {
 			return "<error>"
 		}
 	})
-}
-
-// Range constructs an LSP protocol code range for this symbol.
-func (symbol *symbol) Range() protocol.Range {
-	return protocol.Range{
-		// NOTE: protocompile uses 1-indexed lines and columns (as most compilers do) but bizarrely
-		// the LSP protocol wants 0-indexed lines and columns, which is a little weird.
-		//319
-		// FIXME: the LSP protocol defines positions in terms of UTF-16, so we will need
-		// to sort that out at some point.
-		Start: protocol.Position{
-			Line:      uint32(symbol.info.Start().Line) - 1,
-			Character: uint32(symbol.info.Start().Col) - 1,
-		},
-		End: protocol.Position{
-			Line:      uint32(symbol.info.End().Line) - 1,
-			Character: uint32(symbol.info.End().Col) - 1,
-		},
-	}
-}
-
-// Definition looks up the definition of this symbol, if known.
-func (symbol *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
-	var (
-		file *file
-		path []string
-	)
-	switch kind := symbol.kind.(type) {
-	case *definition:
-		file = symbol.file
-		path = kind.path
-	case *reference:
-		file = kind.file
-		path = kind.path
-	}
-
-	if file == nil {
-		return nil, nil
-	}
-
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
-	for _, symbol := range file.symbols {
-		def, ok := symbol.kind.(*definition)
-		if ok && slices.Equal(path, def.path) {
-			return symbol, def.node
-		}
-	}
-
-	return nil, nil
-}
-
-func (symbol *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("file", symbol.file.uri.Filename())
-
-	// zapPos converts an ast.SourcePos into a zap marshaller.
-	zapPos := func(pos ast.SourcePos) zapcore.ObjectMarshalerFunc {
-		return func(enc zapcore.ObjectEncoder) error {
-			enc.AddInt("offset", pos.Offset)
-			enc.AddInt("line", pos.Line)
-			enc.AddInt("col", pos.Col)
-			return nil
-		}
-	}
-
-	enc.AddObject("start", zapPos(symbol.info.Start()))
-	enc.AddObject("end", zapPos(symbol.info.End()))
-
-	switch kind := symbol.kind.(type) {
-	case *builtin:
-		enc.AddString("builtin", kind.name)
-
-	case *import_:
-		if kind.file != nil {
-			enc.AddString("imports", kind.file.uri.Filename())
-		}
-
-	case *definition:
-		enc.AddString("defines", strings.Join(kind.path, "."))
-
-	case *reference:
-		if kind.file != nil {
-			enc.AddString("imports", kind.file.uri.Filename())
-		}
-		if kind.path != nil {
-			enc.AddString("references", strings.Join(kind.path, "."))
-		}
-		if kind.seeTypeOf != nil {
-			enc.AddObject("see_type_of", kind.seeTypeOf)
-		}
-	}
-
-	return nil
-}
-
-// compareRanges compares two ranges for lexicographic ordering.
-func comparePositions(a, b protocol.Position) int {
-	diff := int(a.Line) - int(b.Line)
-	if diff == 0 {
-		return int(a.Character) - int(b.Character)
-	}
-	return diff
 }
 
 // Definition is the entry point for hover inlays.

@@ -184,7 +184,7 @@ func (server *server) makeHandler() jsonrpc2.Handler {
 			server.logger.Sugar().Errorf(
 				"timed out while handling %s; this is likely a bug", req.Method())
 		}
-		return
+		return err
 	}
 }
 

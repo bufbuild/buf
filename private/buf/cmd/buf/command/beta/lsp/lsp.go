@@ -75,7 +75,6 @@ func (lsp *lsp) Listen(ctx context.Context, container appext.Container) error {
 	}
 	<-conn.Done()
 	return conn.Err()
-
 }
 
 // dial opens a connection to the LSP client.
