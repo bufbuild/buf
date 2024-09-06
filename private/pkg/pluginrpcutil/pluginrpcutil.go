@@ -34,3 +34,29 @@ func RunnerWithArgs(args ...string) RunnerOption {
 		runnerOptions.args = args
 	}
 }
+
+// RunnerProvider provides pluginrpc.Runners for program names and args.
+type RunnerProvider interface {
+	NewRunner(programName string, programArgs ...string) pluginrpc.Runner
+}
+
+// RunnerProviderFunc is a function that implements RunnerProvider.
+type RunnerProviderFunc func(programName string, programArgs ...string) pluginrpc.Runner
+
+// NewRunner implements RunnerProvider.
+func (r RunnerProviderFunc) NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
+	return r(programName, programArgs...)
+}
+
+// NewRunnerProvider returns a new RunnerProvider for the command.Runner.
+func NewRunnerProvider(delegate command.Runner) RunnerProvider {
+	return RunnerProviderFunc(
+		func(programName string, programArgs ...string) pluginrpc.Runner {
+			return NewRunner(
+				delegate,
+				programName,
+				RunnerWithArgs(programArgs...),
+			)
+		},
+	)
+}
