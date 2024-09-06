@@ -20,19 +20,8 @@ import (
 )
 
 // NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
-func NewRunner(delegate command.Runner, programName string, options ...RunnerOption) pluginrpc.Runner {
-	return newRunner(delegate, programName, options...)
-}
-
-// RunnerOption is an option for a new Runner.
-type RunnerOption func(*runnerOptions)
-
-// RunnerWithArgs returns a new RunnerOption that specifies a sub-command to invoke
-// on the program.
-func RunnerWithArgs(args ...string) RunnerOption {
-	return func(runnerOptions *runnerOptions) {
-		runnerOptions.args = args
-	}
+func NewRunner(delegate command.Runner, programName string, programArgs ...string) pluginrpc.Runner {
+	return newRunner(delegate, programName, programArgs...)
 }
 
 // RunnerProvider provides pluginrpc.Runners for program names and args.
@@ -55,7 +44,7 @@ func NewRunnerProvider(delegate command.Runner) RunnerProvider {
 			return NewRunner(
 				delegate,
 				programName,
-				RunnerWithArgs(programArgs...),
+				programArgs...,
 			)
 		},
 	)
