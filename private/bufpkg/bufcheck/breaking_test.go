@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -1347,7 +1348,7 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, command.NewRunner())
+	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()))
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,

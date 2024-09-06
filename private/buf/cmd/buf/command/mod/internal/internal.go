@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -175,7 +176,7 @@ func lsRun(
 	}
 	// BufYAMLFiles <=v1 never had plugins.
 	tracer := tracing.NewTracer(container.Tracer())
-	client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+	client, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}

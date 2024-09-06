@@ -27,29 +27,25 @@ import (
 type runner struct {
 	delegate    command.Runner
 	programName string
-	args        []string
+	programArgs []string
 }
 
 func newRunner(
 	delegate command.Runner,
 	programName string,
-	options ...RunnerOption,
+	programArgs ...string,
 ) *runner {
-	runnerOptions := newRunnerOptions()
-	for _, option := range options {
-		option(runnerOptions)
-	}
 	return &runner{
 		delegate:    delegate,
 		programName: programName,
-		args:        runnerOptions.args,
+		programArgs: programArgs,
 	}
 }
 
 func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 	args := env.Args
-	if len(r.args) > 0 {
-		args = append(slices.Clone(r.args), env.Args...)
+	if len(r.programArgs) > 0 {
+		args = append(slices.Clone(r.programArgs), env.Args...)
 	}
 	if err := r.delegate.Run(
 		ctx,
@@ -66,12 +62,4 @@ func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 		return err
 	}
 	return nil
-}
-
-type runnerOptions struct {
-	args []string
-}
-
-func newRunnerOptions() *runnerOptions {
-	return &runnerOptions{}
 }
