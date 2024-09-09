@@ -309,7 +309,8 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 	sourceCodeInfo := imageFile.FileDescriptorProto().GetSourceCodeInfo()
 	resolver := filteredImage.Resolver()
 
-	checkExpectation(t, ctx, sourceCodeInfo, bucket, expectedFile,
+	checkExpectation(
+		t, ctx, sourceCodeInfo, bucket, expectedFile,
 		protoencoding.NewJSONMarshaler(resolver, protoencoding.JSONMarshalerWithIndent()).Marshal,
 		protoencoding.NewJSONUnmarshaler(resolver).Unmarshal,
 	)
