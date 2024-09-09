@@ -15,11 +15,8 @@
 package bufimageutil
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"os"
-	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -30,15 +27,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoprint"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
-	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -52,35 +48,35 @@ func TestOptions(t *testing.T) {
 	t.Parallel()
 	t.Run("message", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo"}, "pkg.Foo.txtar")
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo"}, "pkg.Foo.binpb")
 	})
 	t.Run("enum", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.FooEnum"}, "pkg.FooEnum.txtar")
+		runDiffTest(t, "testdata/options", []string{"pkg.FooEnum"}, "pkg.FooEnum.binpb")
 	})
 	t.Run("service", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
+		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.binpb")
 	})
 	t.Run("method", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.txtar")
+		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.binpb")
 	})
 	t.Run("all", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.binpb")
 	})
 	t.Run("exclude-options", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.binpb", WithExcludeCustomOptions())
 	})
 	t.Run("files", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.txtar")
+		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.binpb")
 	})
 	t.Run("all-with-files", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.txtar")
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.binpb")
 	})
 }
 
@@ -88,19 +84,19 @@ func TestNesting(t *testing.T) {
 	t.Parallel()
 	t.Run("message", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo"}, "message.txtar")
+		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo"}, "message.binpb")
 	})
 	t.Run("recursenested", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo.NestedFoo.NestedNestedFoo"}, "recursenested.txtar")
+		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo.NestedFoo.NestedNestedFoo"}, "recursenested.binpb")
 	})
 	t.Run("enum", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.FooEnum"}, "enum.txtar")
+		runDiffTest(t, "testdata/nesting", []string{"pkg.FooEnum"}, "enum.binpb")
 	})
 	t.Run("usingother", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.Baz"}, "usingother.txtar")
+		runDiffTest(t, "testdata/nesting", []string{"pkg.Baz"}, "usingother.binpb")
 	})
 }
 
@@ -108,58 +104,58 @@ func TestImportModifiers(t *testing.T) {
 	t.Parallel()
 	t.Run("regular_weak", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportWeak"}, "regular_weak.txtar")
+		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportWeak"}, "regular_weak.binpb")
 	})
 	t.Run("weak_public", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"ImportWeak", "ImportPublic"}, "weak_public.txtar")
+		runDiffTest(t, "testdata/importmods", []string{"ImportWeak", "ImportPublic"}, "weak_public.binpb")
 	})
 	t.Run("regular_public", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportPublic"}, "regular_public.txtar")
+		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportPublic"}, "regular_public.binpb")
 	})
 	t.Run("noimports", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"NoImports"}, "noimports.txtar")
+		runDiffTest(t, "testdata/importmods", []string{"NoImports"}, "noimports.binpb")
 	})
 }
 
 func TestExtensions(t *testing.T) {
 	t.Parallel()
-	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
-	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.txtar", WithExcludeKnownExtensions())
+	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.binpb")
+	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.binpb", WithExcludeKnownExtensions())
 }
 
 func TestPackages(t *testing.T) {
 	t.Parallel()
-	runDiffTest(t, "testdata/packages", []string{""}, "root.txtar")
-	runDiffTest(t, "testdata/packages", []string{"foo"}, "foo.txtar")
-	runDiffTest(t, "testdata/packages", []string{"foo.bar"}, "foo.bar.txtar")
-	runDiffTest(t, "testdata/packages", []string{"foo.bar.baz"}, "foo.bar.baz.txtar")
+	runDiffTest(t, "testdata/packages", []string{""}, "root.binpb")
+	runDiffTest(t, "testdata/packages", []string{"foo"}, "foo.binpb")
+	runDiffTest(t, "testdata/packages", []string{"foo.bar"}, "foo.bar.binpb")
+	runDiffTest(t, "testdata/packages", []string{"foo.bar.baz"}, "foo.bar.baz.binpb")
 }
 
 func TestAny(t *testing.T) {
 	t.Parallel()
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax"}, "c1.txtar")
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InField"}, "c2.txtar")
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InList"}, "c3.txtar")
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InMap"}, "c4.txtar")
-	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxValidType"}, "d.txtar")
-	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxInvalidType"}, "e.txtar")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax"}, "c1.binpb")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InField"}, "c2.binpb")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InList"}, "c3.binpb")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InMap"}, "c4.binpb")
+	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxValidType"}, "d.binpb")
+	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxInvalidType"}, "e.binpb")
 }
 
 func TestSourceCodeInfo(t *testing.T) {
 	t.Parallel()
 	noExts := []ImageFilterOption{WithExcludeCustomOptions(), WithExcludeKnownExtensions()}
-	runSourceCodeInfoTest(t, "foo.bar.Foo", "Foo.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar.Foo", "Foo+Ext.txtar")
-	runSourceCodeInfoTest(t, "foo.bar.Foo.NestedFoo", "NestedFoo.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar.Bar", "Bar.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar.Baz", "Baz.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar.Quz", "Quz.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar.Svc", "Svc.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar.Svc.Do", "Do.txtar", noExts...)
-	runSourceCodeInfoTest(t, "foo.bar", "all.txtar")
+	runSourceCodeInfoTest(t, "foo.bar.Foo", "Foo.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Foo", "Foo+Ext.json")
+	runSourceCodeInfoTest(t, "foo.bar.Foo.NestedFoo", "NestedFoo.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Bar", "Bar.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Baz", "Baz.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Quz", "Quz.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Svc", "Svc.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Svc.Do", "Do.json", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar", "all.json")
 }
 
 func TestTransitivePublic(t *testing.T) {
@@ -184,7 +180,7 @@ func TestTransitivePublic(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
+	_, err = proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 }
 
@@ -276,44 +272,28 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	err = proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
 
-	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(fileDescriptorSet)
-	require.NoError(t, err)
-	archive := &txtar.Archive{}
-	printer := protoprint.Printer{
-		SortElements: true,
-		Compact:      true,
-	}
-	for fname, d := range reflectDescriptors {
-		fileBuilder := &bytes.Buffer{}
-		require.NoError(t, printer.PrintProtoFile(d, fileBuilder), "expected no error while printing %q", fname)
-		archive.Files = append(
-			archive.Files,
-			txtar.File{
-				Name: fname,
-				Data: fileBuilder.Bytes(),
-			},
-		)
-	}
-	sort.SliceStable(archive.Files, func(i, j int) bool {
-		return archive.Files[i].Name < archive.Files[j].Name
-	})
-	generated := txtar.Format(archive)
-	checkExpectation(t, ctx, generated, bucket, expectedFile)
+	checkExpectation(
+		t, ctx, fileDescriptorSet, bucket, expectedFile,
+		proto.MarshalOptions{Deterministic: true}.Marshal,
+		proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal,
+	)
 }
 
-func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket storage.ReadWriteBucket, expectedFile string) {
+func checkExpectation(
+	t *testing.T, ctx context.Context, actual proto.Message, bucket storage.ReadWriteBucket, expectedFile string,
+	marshalFunc func(proto.Message) ([]byte, error),
+	unmarshalFunc func([]byte, proto.Message) error,
+) {
 	if shouldUpdateExpectations != "" {
-		writer, err := bucket.Put(ctx, expectedFile)
+		data, err := marshalFunc(actual)
 		require.NoError(t, err)
-		_, err = writer.Write(actual)
-		require.NoError(t, err)
-		require.NoError(t, writer.Close())
+		require.NoError(t, storage.PutPath(ctx, bucket, expectedFile, data))
 	} else {
-		expectedReader, err := bucket.Get(ctx, expectedFile)
+		expected, err := storage.ReadPath(ctx, bucket, expectedFile)
 		require.NoError(t, err)
-		expected, err := io.ReadAll(expectedReader)
-		require.NoError(t, err)
-		assert.Equal(t, string(expected), string(actual))
+		expect := actual.ProtoReflect().New().Interface()
+		require.NoError(t, unmarshalFunc(expected, expect))
+		assert.Empty(t, cmp.Diff(expect, actual, protocmp.Transform()))
 	}
 }
 
@@ -327,13 +307,13 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 
 	imageFile := filteredImage.GetFile("test.proto")
 	sourceCodeInfo := imageFile.FileDescriptorProto().GetSourceCodeInfo()
-	actual, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(sourceCodeInfo)
-	require.NoError(t, err)
+	resolver := filteredImage.Resolver()
 
-	checkExpectation(t, ctx, actual, bucket, expectedFile)
+	checkExpectation(t, ctx, sourceCodeInfo, bucket, expectedFile,
+		protoencoding.NewJSONMarshaler(resolver, protoencoding.JSONMarshalerWithIndent()).Marshal,
+		protoencoding.NewJSONUnmarshaler(resolver).Unmarshal,
+	)
 
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
-	require.NoError(t, err)
 	file, err := resolver.FindFileByPath("test.proto")
 	require.NoError(t, err)
 	examineComments(t, file)
