@@ -566,11 +566,6 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("--%s cannot be used with --%s", unixSocketFlagName, http3FlagName)
 	}
 
-	// NOTE: This can be removed once trailer support lands for quic-go: https://github.com/quic-go/quic-go/issues/2266
-	if f.Protocol == connect.ProtocolGRPC && f.HTTP3 {
-		return fmt.Errorf("--%s cannot be used with --%s=%s", http3FlagName, protocolFlagName, connect.ProtocolGRPC)
-	}
-
 	if f.Netrc && f.NetrcFile != "" {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
