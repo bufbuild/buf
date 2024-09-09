@@ -120,3 +120,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.0 // indirect
 )
+
+// temporary until something akin to https://github.com/bufbuild/protoplugin/pull/17 is merged
+replace github.com/bufbuild/protoplugin => github.com/jchadwick-buf/protoplugin v0.0.0-20240909191235-edfe697940bd

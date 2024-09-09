@@ -34,6 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protoplugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 const (
@@ -43,7 +45,12 @@ const (
 
 // Main is the main.
 func Main() {
-	protoplugin.Main(protoplugin.HandlerFunc(handle))
+	protoplugin.Main(
+		protoplugin.HandlerFunc(handle),
+		protoplugin.WithUnmarshalOptions(proto.UnmarshalOptions{
+			Resolver: (*protoregistry.Types)(nil),
+		}),
+	)
 }
 
 func handle(
