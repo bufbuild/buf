@@ -27,22 +27,23 @@ const (
 	enumReservedNameTypeTag  = int32(5)
 )
 
+// enums is the state when an element representing enums in the source path was parsed.
 func enums(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, enumNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, enumNameTypeTag),
 		)
 	}
-	if len(sourcePath) == i+1 {
+	if len(fullSourcePath) == index+1 {
 		// This path does not extend beyond the enum declaration, return associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
@@ -50,23 +51,32 @@ func enums(
 	return enum, associatedPaths, nil
 }
 
-func enum(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// enum is the state when an element representing a specific child path of an enum was parsed.
+func enum(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case enumNameTypeTag:
 		// The enum name has already been added, can terminate here immediately.
 		return nil, nil, nil
 	case enumValuesTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have enum value declaration without index")
+		// We check to make sure that the length of the source path contains at least the current
+		// token and an index. This is because all source paths for enum values are expected
+		// to have indices.
+		if len(fullSourcePath) < index+2 {
+			return nil, nil, newInvalidSourcePathError(fullSourcePath, "cannot have enum value declaration without index")
 		}
 		return enumValues, nil, nil
 	case enumOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	case enumReservedRangeTypeTag:
-		return reservedRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// For reserved ranges, we add the full path and then return the reserved ranges state to
+		// validate the path.
+		return reservedRanges, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	case enumReservedNameTypeTag:
-		return reservedNames, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// For reserved names, we add the full path and then return the reserved names state to
+		// validate the path.
+		return reservedNames, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid enum path")
 }

@@ -41,26 +41,27 @@ var (
 	}
 )
 
+// fields is the state when an element representing fields in the source path was parsed.
 func fields(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, fieldNameTypeTag),
-			childAssociatedPath(sourcePath, i, fieldNumberTypeTag),
-			childAssociatedPath(sourcePath, i, fieldLabelTypeTag),
-			childAssociatedPath(sourcePath, i, fieldTypeTypeTag),
-			childAssociatedPath(sourcePath, i, fieldTypeNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, fieldNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, fieldNumberTypeTag),
+			childAssociatedPath(fullSourcePath, index, fieldLabelTypeTag),
+			childAssociatedPath(fullSourcePath, index, fieldTypeTypeTag),
+			childAssociatedPath(fullSourcePath, index, fieldTypeNameTypeTag),
 		)
 	}
-	if len(sourcePath) == i+1 {
+	if len(fullSourcePath) == index+1 {
 		// This does not extend beyond the field declaration, return the associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
@@ -68,7 +69,8 @@ func fields(
 	return field, associatedPaths, nil
 }
 
-func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// field is the state when an element representing a specific child path of a field was parsed.
+func field(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// TODO: use slices.Contains in the future
 	if slicesext.ElementsContained(
 		terminalFieldTokens,
@@ -79,29 +81,34 @@ func field(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 	}
 	switch token {
 	case fieldOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	case fieldDefaultValueTypeTag:
-		return nil, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// Default value is a terminal path, but was not already added to our associated paths,
+		// since default values are specific to proto2. Add the path and terminate.
+		return nil, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid field path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid field path")
 }
 
+// extensions is the state when an element representing extensions in the source path was parsed.
 func extensions(
 	token int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
-	// An extension is effectively a field descriptor, so we start by getting all paths for fields.
-	field, associatedPaths, err := fields(token, sourcePath, i, excludeChildAssociatedPaths)
+	// Extensions share the same descriptor proto definition as fields, so we can parse them
+	// using the same states.
+	field, associatedPaths, err := fields(token, fullSourcePath, index, excludeChildAssociatedPaths)
 	if err != nil {
 		return nil, nil, err
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, extensionExtendeeTypeTag),
+			childAssociatedPath(fullSourcePath, index, extensionExtendeeTypeTag),
 		)
 	}
 	return field, associatedPaths, nil

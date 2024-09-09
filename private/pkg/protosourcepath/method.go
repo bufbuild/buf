@@ -38,26 +38,27 @@ var (
 	}
 )
 
+// methods is the state when an element representing methods in the source path was parsed.
 func methods(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, methodNameTypeTag),
-			childAssociatedPath(sourcePath, i, methodInputTypeTypeTag),
-			childAssociatedPath(sourcePath, i, methodOutputTypeTypeTag),
-			childAssociatedPath(sourcePath, i, methodClientStreamingTypeTag),
-			childAssociatedPath(sourcePath, i, methodServerStreamingTypeTag),
+			childAssociatedPath(fullSourcePath, index, methodNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, methodInputTypeTypeTag),
+			childAssociatedPath(fullSourcePath, index, methodOutputTypeTypeTag),
+			childAssociatedPath(fullSourcePath, index, methodClientStreamingTypeTag),
+			childAssociatedPath(fullSourcePath, index, methodServerStreamingTypeTag),
 		)
 	}
-	if len(sourcePath) == i+1 {
+	if len(fullSourcePath) == index+1 {
 		// This does not extend beyond the method declaration, return associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
@@ -65,7 +66,8 @@ func methods(
 	return method, associatedPaths, nil
 }
 
-func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// method is the state when an element representing a specific child path of a method was parsed.
+func method(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// TODO: use slices.Contains in the future
 	if slicesext.ElementsContained(
 		terminalMethodTokens,
@@ -76,8 +78,9 @@ func method(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (sta
 	}
 	switch token {
 	case methodOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid method path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid method path")
 }

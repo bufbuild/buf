@@ -25,22 +25,23 @@ const (
 	serviceOptionTypeTag  = int32(3)
 )
 
+// services is the state when an element representing services in the source path was parsed.
 func services(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, serviceNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, serviceNameTypeTag),
 		)
 	}
-	if len(sourcePath) == +1 {
+	if len(fullSourcePath) == +1 {
 		// This does not extend beyond the declaration, return associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
@@ -48,19 +49,24 @@ func services(
 	return service, associatedPaths, nil
 }
 
-func service(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// service is the state when an element representing a specific child path of a service was parsed.
+func service(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case serviceNameTypeTag:
 		// The path for service name has already been added, can termiante here immediately.
 		return nil, nil, nil
 	case serviceMethodsTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have method declaration without index")
+		// We check to make sure that the length of the source path contains at least the current
+		// token and an index. This is because all source paths for methods are expected
+		// to have indices.
+		if len(fullSourcePath) < index+2 {
+			return nil, nil, newInvalidSourcePathError(fullSourcePath, "cannot have method declaration without index")
 		}
 		return methods, nil, nil
 	case serviceOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid service path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid service path")
 }
