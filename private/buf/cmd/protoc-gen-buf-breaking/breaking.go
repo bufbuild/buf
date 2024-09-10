@@ -32,10 +32,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protoplugin"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 const (
@@ -47,9 +46,7 @@ const (
 func Main() {
 	protoplugin.Main(
 		protoplugin.HandlerFunc(handle),
-		protoplugin.WithUnmarshalOptions(proto.UnmarshalOptions{
-			Resolver: (*protoregistry.Types)(nil),
-		}),
+		protoplugin.WithExtensionTypeResolver(protoencoding.EmptyResolver),
 	)
 }
 

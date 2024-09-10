@@ -13,7 +13,7 @@ require (
 	connectrpc.com/otelconnect v0.7.1
 	github.com/bufbuild/bufplugin-go v0.1.0
 	github.com/bufbuild/protocompile v0.14.1
-	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee
+	github.com/bufbuild/protoplugin v0.0.0-20240910161437-27b7a335254b
 	github.com/bufbuild/protovalidate-go v0.6.5
 	github.com/bufbuild/protoyaml-go v0.1.12
 	github.com/docker/docker v27.2.0+incompatible
@@ -120,6 +120,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.0 // indirect
 )
-
-// temporary until something akin to https://github.com/bufbuild/protoplugin/pull/17 is merged
-replace github.com/bufbuild/protoplugin => github.com/jchadwick-buf/protoplugin v0.0.0-20240909191235-edfe697940bd
