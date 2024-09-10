@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
+// EmptyResolver is a resolver that never resolves any descriptors. All methods will return (nil, NotFound).
+var EmptyResolver Resolver = emptyResolver{}
+
 // Resolver can resolve files, messages, enums, and extensions.
 type Resolver interface {
 	protodesc.Resolver

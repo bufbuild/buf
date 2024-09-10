@@ -26,8 +26,6 @@ import (
 
 const maxTagNumber = 536870911 // 2^29 - 1
 
-var EmptyResolver Resolver = emptyResolver{}
-
 func newResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	if len(fileDescriptors) == 0 {
 		return nil, nil
