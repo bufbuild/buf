@@ -20,7 +20,6 @@
 // string key, but we want to evict elements of that map if no structure holds
 // the key to it anymore. Doing this correctly requires a separately managed
 // refcount. For this, you would use [refcount.Map].
-
 package refcount
 
 import "sync"
@@ -36,7 +35,7 @@ import "sync"
 //
 // recount.Map is thread-safe: insertions synchronize-before deletions.
 type Map[K comparable, V any] struct {
-	mu    sync.RWMutex
+	lock  sync.RWMutex
 	table map[K]*counted[V]
 }
 
@@ -54,8 +53,8 @@ func (m *Map[K, V]) Insert(key K) (value *V, found bool) {
 	//
 	// This optimization is not performed in the name of expediency, I have
 	// only recorded it as potential future work
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	if m.table == nil {
 		m.table = make(map[K]*counted[V])
@@ -75,8 +74,8 @@ func (m *Map[K, V]) Insert(key K) (value *V, found bool) {
 // This is identical to ordinary map lookup: if they key is not present, it does not
 // insert and returns nil.
 func (m *Map[K, V]) Get(key K) *V {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+	m.lock.RLock()
+	defer m.lock.RUnlock()
 	value := m.table[key]
 	if value == nil {
 		return nil
@@ -92,8 +91,8 @@ func (m *Map[K, V]) Get(key K) *V {
 // If the key is present and was actually evicted, the element it maps to is returned. Otherwise,
 // this function returns nil.
 func (m *Map[K, V]) Delete(key K) *V {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	v := m.table[key]
 	if v == nil {
@@ -111,6 +110,6 @@ func (m *Map[K, V]) Delete(key K) *V {
 
 // counted is a reference-counted value.
 type counted[T any] struct {
-	count int32 // Protected by Map.mu.
+	count int32 // Protected by Map.lock.
 	value T
 }

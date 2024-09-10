@@ -83,7 +83,6 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 
 // FormatFileNode formats the given file node and writ the result to dest.
 func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
-	// TODO: This should live in protocompile.
 	formatter := newFormatter(dest, fileNode)
 	return formatter.Run()
 }

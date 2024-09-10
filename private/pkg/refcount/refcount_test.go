@@ -23,7 +23,7 @@ import (
 func TestMap(t *testing.T) {
 	t.Parallel()
 
-	var table Map[string, int]
+	table := &Map[string, int]{}
 
 	value, found := table.Insert("foo")
 	assert.Equal(t, *value, 0)

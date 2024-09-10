@@ -494,17 +494,20 @@ func ElementsContained[T comparable](superset []T, subset []T) bool {
 
 // TrimPrefix removes a leading prefix from s, otherwise leaves s as-is.
 //
-// Returns whether a prefix was actually removed.
-func TrimPrefix[T comparable](s []T, prefix []T) ([]T, bool) {
-	if len(s) < len(prefix) {
+// A slice s is considered to have a prefix p if the elements of p are equal
+// to the first len(p) elements of s.
+//
+// Returns false if p was not a prefix of s.
+func TrimPrefix[T comparable](s []T, p []T) ([]T, bool) {
+	if len(s) < len(p) {
 		return s, false
 	}
 
-	for i, x := range prefix {
+	for i, x := range p {
 		if s[i] != x {
 			return s, false
 		}
 	}
 
-	return s[len(prefix):], true
+	return s[len(p):], true
 }

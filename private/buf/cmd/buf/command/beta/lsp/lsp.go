@@ -32,39 +32,55 @@ import (
 	"go.lsp.dev/jsonrpc2"
 )
 
+const (
+	// pipe is chosen because that's what the vscode LSP client expects.
+	pipeFlagName = "pipe"
+)
+
 // NewCommand constructs the CLI command for executing the LSP.
 func NewCommand(name string, builder appext.Builder) *appcmd.Command {
-	var lsp lsp
+	flags := newFlags()
 	return &appcmd.Command{
-		Use:       name,
-		Short:     "Start the language server.",
-		Args:      appcmd.NoArgs,
-		Run:       builder.NewRunFunc(lsp.Listen),
-		BindFlags: lsp.Bind,
+		Use:   name,
+		Short: "Start the language server",
+		Args:  appcmd.NoArgs,
+		Run: builder.NewRunFunc(
+			func(ctx context.Context, container appext.Container) error {
+				return run(ctx, container, flags)
+			},
+		),
+		BindFlags: flags.Bind,
 	}
 }
 
-// lsp represents configuration state for the LSP command.
-//
-// In other words, this type translates user input into configration for the server itself. This
-// type defines functions for starting the server according to that configuration. This is done
-// so that the actual server implementation is completely agnostic to the transport.
-type lsp struct {
+type flags struct {
 	// A file path to a UNIX socket to use for IPC. If empty, stdio is used instead.
 	PipePath string
 }
 
 // Bind sets up the CLI flags that the LSP needs.
-func (lsp *lsp) Bind(flagSet *pflag.FlagSet) {
-	// NOTE: --pipe is chosen because that's what the vscode LSP client expects.
-	flagSet.StringVar(&lsp.PipePath, "pipe", "", "path to a UNIX socket to listen on; uses stdio if not specified")
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.PipePath,
+		pipeFlagName,
+		"",
+		"path to a UNIX socket to listen on; uses stdio if not specified",
+	)
 }
 
-// Listen starts the LSP server and listens on the configured
-func (lsp *lsp) Listen(ctx context.Context, container appext.Container) error {
+func newFlags() *flags {
+	return &flags{}
+}
+
+// run starts the LSP server and listens on the configured.
+func run(
+	ctx context.Context,
+	container appext.Container,
+	flags *flags,
+) error {
 	bufcli.WarnBetaCommand(ctx, container)
 
-	transport, err := lsp.dial(container)
+	transport, err := dial(container, flags)
 	if err != nil {
 		return err
 	}
@@ -78,12 +94,12 @@ func (lsp *lsp) Listen(ctx context.Context, container appext.Container) error {
 }
 
 // dial opens a connection to the LSP client.
-func (lsp *lsp) dial(container appext.Container) (io.ReadWriteCloser, error) {
+func dial(container appext.Container, flags *flags) (io.ReadWriteCloser, error) {
 	switch {
-	case lsp.PipePath != "":
-		conn, err := net.Dial("unix", lsp.PipePath)
+	case flags.PipePath != "":
+		conn, err := net.Dial("unix", flags.PipePath)
 		if err != nil {
-			return nil, fmt.Errorf("could not open IPC socket %q: %w", lsp.PipePath, err)
+			return nil, fmt.Errorf("could not open IPC socket %q: %w", flags.PipePath, err)
 		}
 		return conn, nil
 
