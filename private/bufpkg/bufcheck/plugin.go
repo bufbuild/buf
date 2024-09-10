@@ -12,14 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pluginrpcutil
+package bufcheck
 
 import (
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"pluginrpc.com/pluginrpc"
 )
 
-// NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
-func NewRunner(delegate command.Runner, programName string, programArgs ...string) pluginrpc.Runner {
-	return newRunner(delegate, programName, programArgs...)
+type plugin struct {
+	pluginrpc.Runner
+
+	pluginConfig bufconfig.PluginConfig
+}
+
+func newPlugin(
+	pluginConfig bufconfig.PluginConfig,
+	runner pluginrpc.Runner,
+) *plugin {
+	return &plugin{
+		Runner:       runner,
+		pluginConfig: pluginConfig,
+	}
+}
+
+func (p *plugin) Config() bufconfig.PluginConfig {
+	return p.pluginConfig
 }

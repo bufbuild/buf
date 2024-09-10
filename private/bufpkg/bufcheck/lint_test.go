@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -1294,13 +1293,15 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()))
+	plugins, err := bufcheck.NewPluginsForRunner(command.NewRunner(), workspace.PluginConfigs()...)
+	require.NoError(t, err)
+	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer)
 	require.NoError(t, err)
 	err = client.Lint(
 		ctx,
 		lintConfig,
 		image,
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPlugins(plugins...),
 		bufcheck.WithPluginsEnabled(),
 	)
 	if len(expectedFileAnnotations) == 0 {

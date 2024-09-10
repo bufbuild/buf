@@ -39,7 +39,6 @@ import (
 type client struct {
 	logger                          *zap.Logger
 	tracer                          tracing.Tracer
-	runnerProvider                  RunnerProvider
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
@@ -47,7 +46,6 @@ type client struct {
 func newClient(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (*client, error) {
 	clientOptions := newClientOptions()
@@ -69,10 +67,9 @@ func newClient(
 	}
 
 	return &client{
-		logger:         logger,
-		tracer:         tracer,
-		runnerProvider: runnerProvider,
-		stderr:         clientOptions.stderr,
+		logger: logger,
+		tracer: tracer,
+		stderr: clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
@@ -97,13 +94,13 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	if err := validatePluginConfigs(lintOptions.pluginConfigs, lintOptions.pluginEnabled); err != nil {
+	if err := validatePlugins(lintOptions.plugins, lintOptions.pluginEnabled); err != nil {
 		return err
 	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		lintConfig.FileVersion(),
-		lintOptions.pluginConfigs,
+		lintOptions.plugins,
 		lintConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -129,7 +126,7 @@ func (c *client) Lint(
 	}
 	multiClient, err := c.getMultiClient(
 		lintConfig.FileVersion(),
-		lintOptions.pluginConfigs,
+		lintOptions.plugins,
 		lintConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
@@ -160,13 +157,13 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	if err := validatePluginConfigs(breakingOptions.pluginConfigs, breakingOptions.pluginEnabled); err != nil {
+	if err := validatePlugins(breakingOptions.plugins, breakingOptions.pluginEnabled); err != nil {
 		return err
 	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		breakingConfig.FileVersion(),
-		breakingOptions.pluginConfigs,
+		breakingOptions.plugins,
 		breakingConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -203,7 +200,7 @@ func (c *client) Breaking(
 	}
 	multiClient, err := c.getMultiClient(
 		breakingConfig.FileVersion(),
-		breakingOptions.pluginConfigs,
+		breakingOptions.plugins,
 		breakingConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
@@ -230,13 +227,13 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	if err := validatePluginConfigs(configuredRulesOptions.pluginConfigs, configuredRulesOptions.pluginEnabled); err != nil {
+	if err := validatePlugins(configuredRulesOptions.plugins, configuredRulesOptions.pluginEnabled); err != nil {
 		return nil, err
 	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		checkConfig.FileVersion(),
-		configuredRulesOptions.pluginConfigs,
+		configuredRulesOptions.plugins,
 		checkConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -263,10 +260,10 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	if err := validatePluginConfigs(allRulesOptions.pluginConfigs, allRulesOptions.pluginEnabled); err != nil {
+	if err := validatePlugins(allRulesOptions.plugins, allRulesOptions.pluginEnabled); err != nil {
 		return nil, err
 	}
-	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
+	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.plugins, false)
 	if err != nil {
 		return nil, err
 	}
@@ -285,17 +282,17 @@ func (c *client) AllCategories(
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	if err := validatePluginConfigs(allCategoriesOptions.pluginConfigs, allCategoriesOptions.pluginEnabled); err != nil {
+	if err := validatePlugins(allCategoriesOptions.plugins, allCategoriesOptions.pluginEnabled); err != nil {
 		return nil, err
 	}
-	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
+	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.plugins, false)
 	return categories, err
 }
 
 func (c *client) allRulesAndCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
-	pluginConfigs []bufconfig.PluginConfig,
+	plugins []Plugin,
 	disableBuiltin bool,
 ) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
@@ -305,7 +302,7 @@ func (c *client) allRulesAndCategories(
 	if err != nil {
 		return nil, nil, err
 	}
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, plugins, disableBuiltin, emptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -314,7 +311,7 @@ func (c *client) allRulesAndCategories(
 
 func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
-	pluginConfigs []bufconfig.PluginConfig,
+	plugins []Plugin,
 	disableBuiltin bool,
 	defaultOptions check.Options,
 ) (*multiClient, error) {
@@ -330,22 +327,15 @@ func (c *client) getMultiClient(
 			newCheckClientSpec("", defaultCheckClient, defaultOptions),
 		)
 	}
-	for _, pluginConfig := range pluginConfigs {
-		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
-			return nil, syserror.New("we only handle local plugins for now with lint and breaking")
-		}
+	for _, plugin := range plugins {
+		pluginConfig := plugin.Config()
 		options, err := check.NewOptions(pluginConfig.Options())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
 		}
-		pluginPath := pluginConfig.Path()
 		checkClient := check.NewClient(
 			pluginrpc.NewClient(
-				c.runnerProvider.NewRunner(
-					// We know that Path is of at least length 1.
-					pluginPath[0],
-					pluginPath[1:]...,
-				),
+				plugin,
 				pluginrpc.ClientWithStderr(c.stderr),
 				// We have to set binary as some things cannot be encoded as JSON.
 				// Example: google.protobuf.Timestamps with positive seconds and negative nanos.
@@ -365,8 +355,8 @@ func (c *client) getMultiClient(
 }
 
 // TODO: remove this as part of publicly releasing lint/breaking plugins
-func validatePluginConfigs(pluginConfigs []bufconfig.PluginConfig, isPluginEnabled bool) error {
-	if len(pluginConfigs) > 0 && !isPluginEnabled {
+func validatePlugins(plugins []Plugin, isPluginEnabled bool) error {
+	if len(plugins) > 0 && !isPluginEnabled {
 		return fmt.Errorf("custom plugins are not yet supported. For more information, please contact us at https://buf.build/docs/contact")
 	}
 	return nil
@@ -513,7 +503,7 @@ func checkCommentLineForCheckIgnore(
 }
 
 type lintOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	plugins []Plugin
 	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
@@ -523,7 +513,7 @@ func newLintOptions() *lintOptions {
 }
 
 type breakingOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	plugins []Plugin
 	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled  bool
 	excludeImports bool
@@ -534,7 +524,7 @@ func newBreakingOptions() *breakingOptions {
 }
 
 type configuredRulesOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	plugins []Plugin
 	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
@@ -544,7 +534,7 @@ func newConfiguredRulesOptions() *configuredRulesOptions {
 }
 
 type allRulesOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	plugins []Plugin
 	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
@@ -554,7 +544,7 @@ func newAllRulesOptions() *allRulesOptions {
 }
 
 type allCategoriesOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	plugins []Plugin
 	// TODO: remove this as part of publicly releasing lint/breaking plugins
 	pluginEnabled bool
 }
@@ -577,28 +567,28 @@ func (e *excludeImportsOption) applyToBreaking(breakingOptions *breakingOptions)
 	breakingOptions.excludeImports = true
 }
 
-type pluginConfigsOption struct {
-	pluginConfigs []bufconfig.PluginConfig
+type pluginsOption struct {
+	plugins []Plugin
 }
 
-func (p *pluginConfigsOption) applyToLint(lintOptions *lintOptions) {
-	lintOptions.pluginConfigs = append(lintOptions.pluginConfigs, p.pluginConfigs...)
+func (p *pluginsOption) applyToLint(lintOptions *lintOptions) {
+	lintOptions.plugins = append(lintOptions.plugins, p.plugins...)
 }
 
-func (p *pluginConfigsOption) applyToBreaking(breakingOptions *breakingOptions) {
-	breakingOptions.pluginConfigs = append(breakingOptions.pluginConfigs, p.pluginConfigs...)
+func (p *pluginsOption) applyToBreaking(breakingOptions *breakingOptions) {
+	breakingOptions.plugins = append(breakingOptions.plugins, p.plugins...)
 }
 
-func (p *pluginConfigsOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
-	configuredRulesOptions.pluginConfigs = append(configuredRulesOptions.pluginConfigs, p.pluginConfigs...)
+func (p *pluginsOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
+	configuredRulesOptions.plugins = append(configuredRulesOptions.plugins, p.plugins...)
 }
 
-func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) {
-	allRulesOptions.pluginConfigs = append(allRulesOptions.pluginConfigs, p.pluginConfigs...)
+func (p *pluginsOption) applyToAllRules(allRulesOptions *allRulesOptions) {
+	allRulesOptions.plugins = append(allRulesOptions.plugins, p.plugins...)
 }
 
-func (p *pluginConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
-	allCategoriesOptions.pluginConfigs = append(allCategoriesOptions.pluginConfigs, p.pluginConfigs...)
+func (p *pluginsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
+	allCategoriesOptions.plugins = append(allCategoriesOptions.plugins, p.plugins...)
 }
 
 type pluginsEnabledOption struct{}

@@ -21,6 +21,8 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -145,12 +147,12 @@ type ClientFunctionOption interface {
 	AllCategoriesOption
 }
 
-// WithPluginConfigs returns a new ClientFunctionOption that says to also use the given plugins.
+// WithPlugin returns a new ClientFunctionOption that says to also use the given plugins.
 //
 // The default is to only use the builtin Rules and Categories.
-func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOption {
-	return &pluginConfigsOption{
-		pluginConfigs: pluginConfigs,
+func WithPlugins(plugins ...Plugin) ClientFunctionOption {
+	return &pluginsOption{
+		plugins: plugins,
 	}
 }
 
@@ -162,27 +164,44 @@ func WithPluginsEnabled() ClientFunctionOption {
 	return pluginsEnabledOption{}
 }
 
-// RunnerProvider provides pluginrpc.Runners for program names and args.
-type RunnerProvider interface {
-	NewRunner(programName string, programArgs ...string) pluginrpc.Runner
+// Plugin is a configured lint or breaking plugin that wraps a pluginrpc.Runner.
+type Plugin interface {
+	Config() bufconfig.PluginConfig
+	pluginrpc.Runner
 }
 
-// RunnerProviderFunc is a function that implements RunnerProvider.
-type RunnerProviderFunc func(programName string, programArgs ...string) pluginrpc.Runner
+// NewPlugin returns a new Plugin.
+func NewPlugin(
+	pluginConfig bufconfig.PluginConfig,
+	runner pluginrpc.Runner,
+) Plugin {
+	return newPlugin(pluginConfig, runner)
+}
 
-// NewRunner implements RunnerProvider.
-func (r RunnerProviderFunc) NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
-	return r(programName, programArgs...)
+// NewPluginsForRunner returns new Plugins for the command.Runner and configs.
+func NewPluginsForRunner(delegate command.Runner, pluginConfigs ...bufconfig.PluginConfig) ([]Plugin, error) {
+	return slicesext.MapError(
+		pluginConfigs,
+		func(pluginConfig bufconfig.PluginConfig) (Plugin, error) {
+			if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
+				return nil, syserror.New("we only handle local plugins for now with lint and breaking")
+			}
+			path := pluginConfig.Path()
+			return NewPlugin(
+				pluginConfig,
+				pluginrpcutil.NewRunner(delegate, path[0], path[1:]...),
+			), nil
+		},
+	)
 }
 
 // NewClient returns a new Client.
 func NewClient(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (Client, error) {
-	return newClient(logger, tracer, runnerProvider, options...)
+	return newClient(logger, tracer, options...)
 }
 
 // ClientOption is an option for a new Client.
