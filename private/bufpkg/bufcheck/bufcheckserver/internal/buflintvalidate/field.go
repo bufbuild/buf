@@ -306,21 +306,25 @@ func checkConstraintsForField(
 			},
 		)
 	}
-	exampleValues = nil
 	typeRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		if string(fd.Name()) == "example" {
-			// This assumed all *Rules.Example are repeated, otherwise it panics.
-			list := value.List()
-			for i := 0; i < list.Len(); i++ {
-				exampleValues = append(exampleValues, list.Get(i))
-			}
-			return false
-		}
-		return true
-	})
+	// // This also works. Using this would allow dropping most of the code setting examples values.
+	// // However, a lot of the methods called here may panic, even though in practice they won't,
+	// // except for the rare case where a typed rule in protovalidate has an example field that's
+	// // not repeated.
+	// exampleValues = nil
+	// typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+	// 	if string(fd.Name()) == "example" {
+	// 		// This assumed all *Rules.Example are repeated, otherwise it panics.
+	// 		list := value.List()
+	// 		for i := 0; i < list.Len(); i++ {
+	// 			exampleValues = append(exampleValues, list.Get(i))
+	// 		}
+	// 		return false
+	// 	}
+	// 	return true
+	// })
 	if len(exampleValues) > 0 {
-		return checkExampleValues(adder, typeRulesMessage, fieldDescriptor, exampleValues)
+		return checkExampleValues(adder, fieldConstraints, typeRulesMessage, fieldDescriptor, exampleValues)
 	}
 	return nil
 }
@@ -786,30 +790,54 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 
 func checkExampleValues(
 	adder *adder,
+	fieldConstraints *validate.FieldConstraints,
 	typeRulesMessage protoreflect.Message,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	exampleValues []protoreflect.Value,
 ) error {
+	// TODO: remove
+	fmt.Println("field:", fieldDescriptor.Name())
 	v, err := protovalidate.New()
 	if err != nil {
 		return err
 	}
-	var hasConstraints bool
-	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		if string(fd.Name()) != "example" {
-			hasConstraints = true
-			return false
-		}
-		return true
-	})
-	// TODO: this is incorrect, also needs to check for cel etc.
+	hasConstraints := len(fieldConstraints.GetCel()) > 0
+	// TODO: check if this checks shared rules
+	// TODO: add a test where only shared rules and examples are specified
+	if !hasConstraints {
+		typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+			if string(fd.Name()) != "example" {
+				hasConstraints = true
+				return false
+			}
+			return true
+		})
+	}
 	if !hasConstraints {
 		adder.addForPathf(nil, "example value is specified by there are no constraints defined")
+		// No need to check if example values satifisy constraints, because there is none.
 		return nil
 	}
 	parentMessageDescriptor := fieldDescriptor.ContainingMessage()
+	// TODO: remove
+	fmt.Println("parent:", parentMessageDescriptor.Name())
 	for _, exampleValue := range exampleValues {
+		// For each example value, instantiate a message of its containing message's type
+		// and set the field that we are linting to the example value:
+		// containingMessage {
+		//   ...
+		//   fieldToLint: exampleValue,
+		//   ...
+		// }
+		// and validate this message instance with protovalidate and filter the structured
+		// errors by field name to determine whether this example value fails rules defined
+		// on the same field.
+		//
+		// Note: there might be cel expressions defined on the message level that the example
+		// value would cause to fail, but we have no way of knowing that the example value is
+		// the reason, therefore it's ok to only filter for field level failures.
 		messageToValidate := dynamicpb.NewMessage(parentMessageDescriptor)
+		// TODO: what about maps?
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
 			list := messageToValidate.NewField(fieldDescriptor).List()
 			list.Append(exampleValue)
@@ -822,6 +850,8 @@ func checkExampleValues(
 			continue
 		}
 		if errors.Is(err, &protovalidate.CompilationError{}) {
+			// TODO: remove
+			fmt.Println("FAIL TO COMPILE", err.Error())
 			// Expression failing to compile meaning some custom shared rules are invalid,
 			// which is checked in this rule (PROTOVALIDATE), but not in this code block.
 			// TODO: verify
@@ -830,6 +860,8 @@ func checkExampleValues(
 		validationErr := &protovalidate.ValidationError{}
 		if errors.As(err, &validationErr) {
 			for _, violation := range validationErr.Violations {
+				// TODO: remove
+				fmt.Println(fieldDescriptor.Name(), violation.FieldPath)
 				if violation.FieldPath == string(fieldDescriptor.Name()) {
 					adder.addForPathf(nil, `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.ConstraintId, violation.Message)
 				}
