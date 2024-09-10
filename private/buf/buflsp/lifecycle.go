@@ -54,8 +54,9 @@ func (server *server) Initialize(
 				// necessarily making the LSP slow.
 				Change: protocol.TextDocumentSyncKindFull,
 			},
-			DefinitionProvider: true,
-			HoverProvider:      true,
+			DefinitionProvider:         true,
+			DocumentFormattingProvider: true,
+			HoverProvider:              true,
 		},
 		ServerInfo: &serverInfo,
 	}, nil

@@ -165,6 +165,10 @@ func (file *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbo
 
 // Range constructs an LSP protocol code range for this symbol.
 func (symbol *symbol) Range() protocol.Range {
+	return info2range(symbol.info)
+}
+
+func info2range(info ast.NodeInfo) protocol.Range {
 	return protocol.Range{
 		// NOTE: protocompile uses 1-indexed lines and columns (as most compilers do) but bizarrely
 		// the LSP protocol wants 0-indexed lines and columns, which is a little weird.
@@ -172,41 +176,33 @@ func (symbol *symbol) Range() protocol.Range {
 		// FIXME: the LSP protocol defines positions in terms of UTF-16, so we will need
 		// to sort that out at some point.
 		Start: protocol.Position{
-			Line:      uint32(symbol.info.Start().Line) - 1,
-			Character: uint32(symbol.info.Start().Col) - 1,
+			Line:      uint32(info.Start().Line) - 1,
+			Character: uint32(info.Start().Col) - 1,
 		},
 		End: protocol.Position{
-			Line:      uint32(symbol.info.End().Line) - 1,
-			Character: uint32(symbol.info.End().Col) - 1,
+			Line:      uint32(info.End().Line) - 1,
+			Character: uint32(info.End().Col) - 1,
 		},
 	}
 }
 
 // Definition looks up the definition of this symbol, if known.
 func (symbol *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
-	var (
-		file *file
-		path []string
-	)
 	switch kind := symbol.kind.(type) {
 	case *definition:
-		file = symbol.file
-		path = kind.path
+		return symbol, kind.node
 	case *reference:
-		file = kind.file
-		path = kind.path
-	}
+		if kind.file == nil {
+			return nil, nil
+		}
 
-	if file == nil {
-		return nil, nil
-	}
-
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
-	for _, symbol := range file.symbols {
-		def, ok := symbol.kind.(*definition)
-		if ok && slices.Equal(path, def.path) {
-			return symbol, def.node
+		kind.file.mu.Lock(ctx)
+		defer kind.file.mu.Unlock(ctx)
+		for _, symbol := range kind.file.symbols {
+			def, ok := symbol.kind.(*definition)
+			if ok && slices.Equal(kind.path, def.path) {
+				return symbol, def.node
+			}
 		}
 	}
 
@@ -618,7 +614,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 	}
 
 	// If we couldn't find it within a nested message, we now try to find it at the top level.
-	if findDeclByPath(walker.file.ast.Decls, components) != nil {
+	if !absolute && findDeclByPath(walker.file.ast.Decls, components) != nil {
 		ref.file = walker.file
 		ref.path = components
 		return symbol
@@ -676,9 +672,13 @@ func findDeclByPath[N ast.Node](nodes []N, path []string) ast.Node {
 			}
 
 		case *ast.ExtendNode:
-			return findDeclByPath(node.Decls, path)
+			if found := findDeclByPath(node.Decls, path); found != nil {
+				return found
+			}
 		case *ast.OneofNode:
-			return findDeclByPath(node.Decls, path)
+			if found := findDeclByPath(node.Decls, path); found != nil {
+				return found
+			}
 
 		case *ast.EnumNode:
 			if len(path) == 1 && node.Name.Val == path[0] {
@@ -724,6 +724,84 @@ func makeNestingPath(path []ast.Node) []string {
 	})
 }
 
+// builtinDocs contains documentation for the built-in types, to display in hover inlays.
+var builtinDocs = map[string][]string{
+	"int32": {
+		"A 32-bit integer (varint encoding).",
+		"",
+		"Values of this type range between `-2147483648` and `2147483647`.",
+		"Beware that negative values are encoded as five bytes on the wire!",
+	},
+	"int64": {
+		"A 64-bit integer (varint encoding).",
+		"",
+		"Values of this type range between `-9223372036854775808` and `9223372036854775807`.",
+		"Beware that negative values are encoded as ten bytes on the wire!",
+	},
+
+	"uint32": {
+		"A 32-bit unsigned integer (varint encoding).",
+		"",
+		"Values of this type range between `0` and `4294967295`.",
+	},
+	"uint64": {
+		"A 64-bit unsigned integer (varint encoding).",
+		"",
+		"Values of this type range between `0` and `18446744073709551615`.",
+	},
+
+	"sint32": {
+		"A 32-bit integer (ZigZag encoding).",
+		"",
+		"Values of this type range between `-2147483648` and `2147483647`.",
+	},
+	"sint64": {
+		"A 64-bit integer (ZigZag encoding).",
+		"",
+		"Values of this type range between `-9223372036854775808` and `9223372036854775807`.",
+	},
+
+	"fixed32": {
+		"A 32-bit unsigned integer (4-byte encoding).",
+		"",
+		"Values of this type range between `0` and `4294967295`.",
+	},
+	"fixed64": {
+		"A 64-bit unsigned integer (8-byte encoding).",
+		"",
+		"Values of this type range between `0` and `18446744073709551615`.",
+	},
+
+	"sfixed32": {
+		"A 32-bit integer (4-byte encoding).",
+		"",
+		"Values of this type range between `-2147483648` and `2147483647`.",
+	},
+	"sfixed64": {
+		"A 64-bit integer (8-byte encoding).",
+		"",
+		"Values of this type range between `-9223372036854775808` and `9223372036854775807`.",
+	},
+
+	"float": {
+		"A single-precision floating point number (IEEE-745.2008 binary32).",
+	},
+	"double": {
+		"A double-precision floating point number (IEEE-745.2008 binary64).",
+	},
+
+	"string": {
+		"A string of text.",
+		"",
+		"Stores at most 4GB of text. Intended to be UTF-8 encoded Unicode; use `bytes` if you need other encodings.",
+	},
+	"bytes": {
+		"A blob of arbitrary bytes.",
+		"",
+		"Stores at most 4GB of binary data. Encoded as base64 in JSON.",
+	},
+}
+
 // Definition is the entry point for hover inlays.
 func (server *server) Hover(
 	ctx context.Context,
@@ -748,8 +826,21 @@ func (server *server) Hover(
 
 	switch kind := symbol.kind.(type) {
 	case *builtin:
-		fmt.Fprintf(&tooltip, "```proto\nbuiltin %s\n```\n", kind.name)
-		fmt.Fprintf(&tooltip, "Builtin Protobuf type.")
+		fmt.Fprintf(&tooltip, "```proto\n%s\n```\n", kind.name)
+		for _, line := range builtinDocs[kind.name] {
+			fmt.Fprintln(&tooltip, line)
+		}
+
+		fmt.Fprintln(&tooltip)
+		fmt.Fprintf(&tooltip, "This is a built-in Protobuf type. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)")
+		range_ := symbol.Range() // Need to spill this here because Hover.Range is a pointer.
+		return &protocol.Hover{
+			Contents: protocol.MarkupContent{
+				Kind:  protocol.Markdown,
+				Value: tooltip.String(),
+			},
+			Range: &range_,
+		}, nil
 
 	case *reference:
 		def, node = symbol.Definition(ctx)
@@ -764,12 +855,8 @@ func (server *server) Hover(
 		return nil, nil
 	}
 
-	if def == nil {
-		return nil, nil
-	}
-
 	pkg := "<empty>"
-	if node := file.pkg; node != nil {
+	if node := def.file.pkg; node != nil {
 		pkg = string(node.Name.AsIdentifier())
 	}
 
@@ -780,6 +867,7 @@ func (server *server) Hover(
 		// by the client.
 		info := file.ast.NodeInfo(node)
 		allComments := []ast.Comments{info.LeadingComments(), info.TrailingComments()}
+		var printed bool
 		for _, comments := range allComments {
 			for i := 0; i < comments.Len(); i++ {
 				comment := comments.Index(i).RawText()
@@ -792,12 +880,20 @@ func (server *server) Hover(
 					comment = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/"))
 				}
 
+				if comment != "" {
+					printed = true
+				}
+
 				// No need to process Markdown in comment; this Just Works!
 				fmt.Fprintln(&tooltip, comment)
 			}
 		}
+
+		if !printed {
+			fmt.Println(&tooltip, "<missing docs>")
+		}
 	} else {
-		fmt.Fprintf(&tooltip, "*could not resolve type*")
+		fmt.Fprintf(&tooltip, "<could not resolve type>")
 	}
 
 	range_ := symbol.Range() // Need to spill this here because Hover.Range is a pointer.

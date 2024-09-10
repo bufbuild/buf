@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/refcount"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -422,6 +423,37 @@ func (server *server) DidChange(
 	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
 	go file.Refresh(context.WithoutCancel(ctx))
 	return nil
+}
+
+// Formatting is called whenever the user explicitly requests formatting.
+func (server *server) Formatting(
+	ctx context.Context,
+	params *protocol.DocumentFormattingParams,
+) ([]protocol.TextEdit, error) {
+	file := server.files.Get(params.TextDocument.URI)
+	if file == nil {
+		// Format for a file we don't know about? Seems bad!
+		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
+	}
+
+	// Currently we have no way to honor any of the parameters.
+	_ = params
+
+	file.mu.Lock(ctx)
+	defer file.mu.Unlock(ctx)
+	if file.ast == nil {
+		return nil, nil
+	}
+
+	var out strings.Builder
+	if err := bufformat.FormatFileNode(&out, file.ast); err != nil {
+		return nil, err
+	}
+
+	return []protocol.TextEdit{{
+		Range:   info2range(file.ast.NodeInfo(file.ast)),
+		NewText: out.String(),
+	}}, nil
 }
 
 // DidOpen is called whenever the client opens a document. This is our signal to parse
