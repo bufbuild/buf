@@ -14,7 +14,7 @@
 
 // Package buflsp implements a language server for Protobuf.
 //
-// The main entry-point of this package is the New() function, which creates a new LSP server.
+// The main entry-point of this package is the Serve() function, which creates a new LSP server.
 package buflsp
 
 import (
@@ -25,8 +25,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -37,7 +35,12 @@ import (
 	"go.uber.org/zap"
 )
 
-// New spawns a new LSP server, listening on the given stream.
+const (
+	// TODO: make configurable
+	handlerTimeout = 3 * time.Second
+)
+
+// Serve spawns a new LSP server, listening on the given stream.
 //
 // Returns a context for managing the server.
 func Serve(
@@ -51,8 +54,10 @@ func Serve(
 	}
 
 	bucketProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	bucket, err := bucketProvider.NewReadWriteBucket("/",
-		storageos.ReadWriteBucketWithSymlinksIfSupported())
+	bucket, err := bucketProvider.NewReadWriteBucket(
+		"/",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +69,6 @@ func Serve(
 			&connAdapter{Conn: conn, Logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-
 		logger:     container.Logger(),
 		tracer:     tracing.NewTracer(container.Tracer()),
 		controller: controller,
@@ -74,7 +78,7 @@ func Serve(
 	off := protocol.TraceOff
 	server.traceValue.Store(&off)
 
-	conn.Go(ctx, server.makeHandler())
+	conn.Go(ctx, server.newHandler())
 	return conn, nil
 }
 
@@ -94,8 +98,6 @@ type server struct {
 	controller bufctl.Controller
 	rootBucket storage.ReadBucket
 	files      *files
-
-	wktModuleSet bufmodule.ModuleSet
 
 	// These are atomics, because they are read often add written to
 	// almost never, but potentially concurrently. Having them side-by-side
@@ -118,35 +120,17 @@ func (server *server) init(ctx context.Context, params *protocol.InitializeParam
 	// the client, if tracing is turned on. The right way to do this is with an extra
 	// goroutine and some channels.
 
-	// Load the WKTs asap. They're always needed and don't need to hit the filesystem.
-	if err := server.loadWKTs(ctx); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-// loadWKTs loads a ModuleSet for the well-known types.
-func (server *server) loadWKTs(ctx context.Context) (err error) {
-	builder := bufmodule.NewModuleSetBuilder(
-		ctx,
-		server.tracer,
-		bufmodule.NopModuleDataProvider,
-		bufmodule.NopCommitProvider,
-	)
-	// DO NOT MERGE: is isTarget necessary?
-	builder.AddLocalModule(datawkt.ReadBucket, "." /*isTarget=*/, true)
-	server.wktModuleSet, err = builder.Build()
-	return
-}
-
-// makeHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
+// newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
 // to inject debug logging, tracing, and timeouts to requests.
-func (server *server) makeHandler() jsonrpc2.Handler {
+func (server *server) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(server, nil)
-	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (err error) {
-		ctx, span := server.tracer.Start(ctx,
-			tracing.WithErr(&err),
+	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
+		ctx, span := server.tracer.Start(
+			ctx,
+			tracing.WithErr(&retErr),
 			tracing.WithAttributes(attribute.String("method", req.Method())),
 		)
 		defer span.End()
@@ -160,7 +144,7 @@ func (server *server) makeHandler() jsonrpc2.Handler {
 		// Each request is handled in a separate goroutine, and has a fixed timeout.
 		// This is to enforce responsiveness on the LSP side: if something is going to take
 		// a long time, it should be offloaded.
-		ctx, done := context.WithTimeout(ctx, 3*time.Second)
+		ctx, done := context.WithTimeout(ctx, handlerTimeout)
 		ctx = withReentrancy(ctx)
 
 		go func() {
@@ -170,21 +154,20 @@ func (server *server) makeHandler() jsonrpc2.Handler {
 			// Verify that the server has been initialized if this isn't the initialization
 			// request.
 			if req.Method() != protocol.MethodInitialize && server.initParams.Load() == nil {
-				err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method",
+				retErr = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method",
 					protocol.MethodInitialize))
 				return
 			}
 
-			err = actual(ctx, replier, req)
+			retErr = actual(ctx, replier, req)
 		}()
 
 		<-ctx.Done()
 		if ctx.Err() == context.DeadlineExceeded {
 			// Don't return this error; that will kill the whole server!
-			server.logger.Sugar().Errorf(
-				"timed out while handling %s; this is likely a bug", req.Method())
+			server.logger.Sugar().Errorf("timed out while handling %s; this is likely a bug", req.Method())
 		}
-		return err
+		return retErr
 	}
 }
 
@@ -215,6 +198,7 @@ func (server *server) adaptReplier(reply jsonrpc2.Replier, req jsonrpc2.Request)
 // for much lower-quality debugging.
 type connAdapter struct {
 	jsonrpc2.Conn
+
 	Logger *zap.Logger
 }
 
