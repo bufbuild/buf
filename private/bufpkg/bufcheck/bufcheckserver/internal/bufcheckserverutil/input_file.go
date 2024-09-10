@@ -15,8 +15,8 @@
 package bufcheckserverutil
 
 import (
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/gofrs/uuid/v5"
 )
 

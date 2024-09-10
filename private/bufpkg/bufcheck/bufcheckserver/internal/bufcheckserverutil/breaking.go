@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/bufplugin-go/check"
 )
 
 // NewBreakingFilePairRuleHandler returns a new check.RuleHandler for the given function.

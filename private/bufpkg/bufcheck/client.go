@@ -20,6 +20,7 @@ import (
 	"io"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -31,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )

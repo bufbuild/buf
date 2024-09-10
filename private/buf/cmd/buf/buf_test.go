@@ -28,6 +28,7 @@ import (
 	"strings"
 	"testing"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
@@ -44,7 +45,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

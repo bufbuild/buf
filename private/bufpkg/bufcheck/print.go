@@ -23,9 +23,9 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/multierr"
 )
 

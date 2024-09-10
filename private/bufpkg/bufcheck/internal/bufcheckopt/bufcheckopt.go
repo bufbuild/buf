@@ -15,7 +15,7 @@
 package bufcheckopt
 
 import (
-	"github.com/bufbuild/bufplugin-go/check"
+	"buf.build/go/bufplugin/check"
 )
 
 const (

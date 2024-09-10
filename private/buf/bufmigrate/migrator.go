@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -32,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
