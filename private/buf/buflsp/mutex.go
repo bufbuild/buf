@@ -22,29 +22,14 @@ import (
 	"sync/atomic"
 )
 
-// mutex is a sync.Mutex with some extra features.
-//
-// The main feature is reentrancy. Within the LSP, we need to lock-protect many structures,
-// and it is very easy to deadlock if the same request tries to lock something multiple times.
-// To achieve this, Lock() takes a context, which must be modified by withReentrancy().
-type mutex struct {
-	mu sync.Mutex
-	// This is the id of the context currently holding the lock.
-	who atomic.Uint32
-	// This is the number of times we have acquired this lock, assuming who is nonzero.
-	lockers uint32
-}
+var nextReentrancyID atomic.Uint32
 
-var nextReentrancyID uint32 = 1
-
-// withMutexId enables this context to be used to non-reentrantly lock a mutex.
+// withReentrancy enables this context to be used to non-reentrantly lock a mutex.
 //
 // This function essentially creates a scope in which attempting to reentrantly lock a mutex
 // panics instead of deadlocking.
 func withReentrancy(ctx context.Context) context.Context {
-	id := nextReentrancyID
-	nextReentrancyID++
-	return context.WithValue(ctx, &nextReentrancyID, id)
+	return context.WithValue(ctx, &nextReentrancyID, nextReentrancyID.Add(1))
 }
 
 // getRentrancy returns the reentrancy ID for this context, or 0 if ctx is nil or has no
@@ -58,6 +43,19 @@ func getReentrancy(ctx context.Context) uint32 {
 		return 0
 	}
 	return id
+}
+
+// mutex is a sync.Mutex with some extra features.
+//
+// The main feature is reentrancy. Within the LSP, we need to lock-protect many structures,
+// and it is very easy to deadlock if the same request tries to lock something multiple times.
+// To achieve this, Lock() takes a context, which must be modified by withReentrancy().
+type mutex struct {
+	lock sync.Mutex
+	// This is the id of the context currently holding the lock.
+	who atomic.Uint32
+	// This is the number of times we have acquired this lock, assuming who is nonzero.
+	numLockers uint32
 }
 
 // Lock attempts to acquire this mutex or blocks.
@@ -89,7 +87,7 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 	id := getReentrancy(ctx)
 	if id == 0 {
 		// If no ID is present, simply lock the lock.
-		mu.mu.Lock()
+		mu.lock.Lock()
 		return unlocker
 	}
 
@@ -101,13 +99,13 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		// Situations where the load above would go stale are not possible, because we
 		// require that callers do not attempt to lock and unlock the mutex with the same
 		// context concurrently.
-		mu.lockers++
+		mu.numLockers++
 		return unlocker
 	}
 
-	mu.mu.Lock()
+	mu.lock.Lock()
 	mu.who.Store(id)
-	mu.lockers++
+	mu.numLockers++
 	return unlocker
 }
 
@@ -118,7 +116,7 @@ func (mu *mutex) Unlock(ctx context.Context) {
 	id := getReentrancy(ctx)
 	if id == 0 {
 		// If no ID is present, simply unlock the lock.
-		mu.mu.Lock()
+		mu.lock.Lock()
 		return
 	}
 
@@ -127,9 +125,9 @@ func (mu *mutex) Unlock(ctx context.Context) {
 		panic("attempted to unlock reentrant mutex with the wrong context")
 	}
 
-	mu.lockers--
-	if mu.lockers == 0 {
+	mu.numLockers--
+	if mu.numLockers == 0 {
 		mu.who.Store(0)
-		mu.mu.Unlock()
+		mu.lock.Unlock()
 	}
 }

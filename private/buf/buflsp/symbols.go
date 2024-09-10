@@ -104,7 +104,7 @@ func (file *file) IndexSymbols(ctx context.Context) {
 		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
 	defer span.End()
 
-	unlock := file.mu.Lock(ctx)
+	unlock := file.lock.Lock(ctx)
 	defer unlock()
 
 	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
@@ -112,7 +112,7 @@ func (file *file) IndexSymbols(ctx context.Context) {
 	file.symbols = nil
 
 	// Generate new symbols.
-	newWalker(file).Walk(file.ast)
+	newWalker(file).Walk(file.fileNode)
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(file.symbols, func(s1, s2 *symbol) int {
@@ -138,8 +138,8 @@ func (file *file) IndexSymbols(ctx context.Context) {
 //
 // Returns nil if no symbol is found.
 func (file *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
+	file.lock.Lock(ctx)
+	defer file.lock.Unlock(ctx)
 
 	// Binary search for the symbol whose start is before or equal to cursor.
 	idx, found := slices.BinarySearchFunc(file.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
@@ -165,25 +165,7 @@ func (file *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbo
 
 // Range constructs an LSP protocol code range for this symbol.
 func (symbol *symbol) Range() protocol.Range {
-	return info2range(symbol.info)
-}
-
-func info2range(info ast.NodeInfo) protocol.Range {
-	return protocol.Range{
-		// NOTE: protocompile uses 1-indexed lines and columns (as most compilers do) but bizarrely
-		// the LSP protocol wants 0-indexed lines and columns, which is a little weird.
-		//319
-		// FIXME: the LSP protocol defines positions in terms of UTF-16, so we will need
-		// to sort that out at some point.
-		Start: protocol.Position{
-			Line:      uint32(info.Start().Line) - 1,
-			Character: uint32(info.Start().Col) - 1,
-		},
-		End: protocol.Position{
-			Line:      uint32(info.End().Line) - 1,
-			Character: uint32(info.End().Col) - 1,
-		},
-	}
+	return infoToRange(symbol.info)
 }
 
 // Definition looks up the definition of this symbol, if known.
@@ -196,8 +178,8 @@ func (symbol *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
 			return nil, nil
 		}
 
-		kind.file.mu.Lock(ctx)
-		defer kind.file.mu.Unlock(ctx)
+		kind.file.lock.Lock(ctx)
+		defer kind.file.lock.Unlock(ctx)
 		for _, symbol := range kind.file.symbols {
 			def, ok := symbol.kind.(*definition)
 			if ok && slices.Equal(kind.path, def.path) {
@@ -279,7 +261,7 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 
 			// Now, find the symbol for the field's type in the file's symbol table.
 			// Searching by offset is faster.
-			info := def.file.ast.NodeInfo(field.FldType)
+			info := def.file.fileNode.NodeInfo(field.FldType)
 			ty := def.file.SymbolAt(ctx, protocol.Position{
 				Line:      uint32(info.Start().Line) - 1,
 				Character: uint32(info.Start().Col) - 1,
@@ -317,9 +299,9 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 		// Make a copy of the import table pointer and then drop the lock,
 		// since searching inside of the imports will need to acquire other
 		// files' locks.
-		symbol.file.mu.Lock(ctx)
+		symbol.file.lock.Lock(ctx)
 		imports := symbol.file.imports
-		symbol.file.mu.Unlock(ctx)
+		symbol.file.lock.Unlock(ctx)
 
 		if imports == nil {
 			// Hopeless. We'll have to try again once we have imports!
@@ -333,7 +315,7 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 				continue
 			}
 
-			if findDeclByPath(imported.ast.Decls, path) != nil {
+			if findDeclByPath(imported.fileNode.Decls, path) != nil {
 				kind.file = imported
 				kind.path = path
 				break
@@ -553,7 +535,7 @@ func (walker *symbolWalker) newSymbol(name ast.Node) *symbol {
 	symbol := &symbol{
 		file: walker.file,
 		name: name,
-		info: walker.file.ast.NodeInfo(name),
+		info: walker.file.fileNode.NodeInfo(name),
 	}
 
 	walker.file.symbols = append(walker.file.symbols, symbol)
@@ -614,7 +596,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 	}
 
 	// If we couldn't find it within a nested message, we now try to find it at the top level.
-	if !absolute && findDeclByPath(walker.file.ast.Decls, components) != nil {
+	if !absolute && findDeclByPath(walker.file.fileNode.Decls, components) != nil {
 		ref.file = walker.file
 		ref.path = components
 		return symbol
@@ -622,7 +604,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 
 	// Also try with the package removed.
 	if path, ok := slicesext.TrimPrefix(components, symbol.file.Package()); ok {
-		if findDeclByPath(walker.file.ast.Decls, path) != nil {
+		if findDeclByPath(walker.file.fileNode.Decls, path) != nil {
 			ref.file = walker.file
 			ref.path = path
 			return symbol
@@ -856,7 +838,7 @@ func (server *server) Hover(
 	}
 
 	pkg := "<empty>"
-	if node := def.file.pkg; node != nil {
+	if node := def.file.packageNode; node != nil {
 		pkg = string(node.Name.AsIdentifier())
 	}
 
@@ -865,7 +847,7 @@ func (server *server) Hover(
 	if node != nil {
 		// Dump all of the comments into the tooltip. These will be rendered as Markdown automatically
 		// by the client.
-		info := file.ast.NodeInfo(node)
+		info := file.fileNode.NodeInfo(node)
 		allComments := []ast.Comments{info.LeadingComments(), info.TrailingComments()}
 		var printed bool
 		for _, comments := range allComments {
@@ -935,4 +917,22 @@ func (server *server) Definition(
 	}
 
 	return nil, nil
+}
+
+func infoToRange(info ast.NodeInfo) protocol.Range {
+	return protocol.Range{
+		// NOTE: protocompile uses 1-indexed lines and columns (as most compilers do) but bizarrely
+		// the LSP protocol wants 0-indexed lines and columns, which is a little weird.
+		//319
+		// FIXME: the LSP protocol defines positions in terms of UTF-16, so we will need
+		// to sort that out at some point.
+		Start: protocol.Position{
+			Line:      uint32(info.Start().Line) - 1,
+			Character: uint32(info.Start().Col) - 1,
+		},
+		End: protocol.Position{
+			Line:      uint32(info.End().Line) - 1,
+			Character: uint32(info.End().Col) - 1,
+		},
+	}
 }

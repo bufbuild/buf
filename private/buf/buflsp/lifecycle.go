@@ -23,9 +23,9 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-var serverInfo = makeServerInfo()
+var serverInfo = newServerInfo()
 
-func makeServerInfo() protocol.ServerInfo {
+func newServerInfo() protocol.ServerInfo {
 	info := protocol.ServerInfo{Name: "buf-lsp"}
 	if buildInfo, ok := debug.ReadBuildInfo(); ok {
 		info.Version = buildInfo.Main.Version

@@ -75,12 +75,12 @@ func (files *files) Close(ctx context.Context, uri protocol.URI) {
 //
 // Mutating a file is thread-safe.
 type file struct {
-	// server and uri are not protected by file.mu; they are immutable after
+	// server and uri are not protected by file.lock; they are immutable after
 	// file creation!
 	server *server
 	uri    protocol.URI
 
-	// All variables after this lock variables are protected by file.mu.
+	// All variables after this lock variables are protected by file.lock.
 	//
 	// NOTE: this package must NEVER attempt to acquire a lock on a file while
 	// holding a lock on another file. This guarantees that any concurrent operations
@@ -99,17 +99,17 @@ type file struct {
 	// the LSP must handle this invalid state gracefully.
 	//
 	// TODO(mcy): enforce this somehow.
-	mu mutex
+	lock mutex
 
 	text    string
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 	// Always set false->true. Once true, never becomes false again.
 
-	ast         *ast.FileNode
-	pkg         *ast.PackageNode
+	fileNode    *ast.FileNode
+	packageNode *ast.PackageNode
 	diagnostics []protocol.Diagnostic
-	imports     importMap
+	imports     map[string]*file
 	symbols     []*symbol
 
 	// This is the module set that this file belongs to. It is used to search for
@@ -117,25 +117,23 @@ type file struct {
 	moduleSet bufmodule.ModuleSet
 }
 
-type importMap map[string]*file
-
 // Owner returns the file manager that owns this file.
-func (file *file) Owner() *files {
-	return file.server.files
+func (f *file) Owner() *files {
+	return f.server.files
 }
 
 // Package returns the package of this file, if known.
-func (file *file) Package() []string {
-	if file.pkg == nil {
+func (f *file) Package() []string {
+	if f.packageNode == nil {
 		return nil
 	}
 
-	return strings.Split(string(file.pkg.Name.AsIdentifier()), ".")
+	return strings.Split(string(f.packageNode.Name.AsIdentifier()), ".")
 }
 
 // Reset clears all bookkeeping information on this file.
-func (file *file) Reset(ctx context.Context) {
-	file.server.logger.Sugar().Debugf("resetting file %v", file.uri)
+func (f *file) Reset(ctx context.Context) {
+	f.server.logger.Sugar().Debugf("resetting file %v", f.uri)
 
 	// Lock and unlock to acquire the import map.
 	// This map is never mutated after being created, so we only
@@ -143,105 +141,105 @@ func (file *file) Reset(ctx context.Context) {
 	//
 	// We need to lock and unlock because Close() will call Reset() on other
 	// files, and this will deadlock if cyclic imports exist.
-	file.mu.Lock(ctx)
-	imports := file.imports
-	file.mu.Unlock(ctx)
+	f.lock.Lock(ctx)
+	imports := f.imports
+	f.lock.Unlock(ctx)
 
 	// Close all imported files while file.mu is not held.
 	for _, imported := range imports {
 		imported.Close(ctx)
 	}
 
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
 
-	file.ast = nil
-	file.pkg = nil
-	file.diagnostics = nil
-	file.imports = nil
-	file.symbols = nil
+	f.fileNode = nil
+	f.packageNode = nil
+	f.diagnostics = nil
+	f.imports = nil
+	f.symbols = nil
 }
 
 // Close marks a file as closed.
 //
 // This will not necessarily evict the file, since there may be more than one user
 // for this file.
-func (file *file) Close(ctx context.Context) {
-	file.server.files.Close(ctx, file.uri)
+func (f *file) Close(ctx context.Context) {
+	f.server.files.Close(ctx, f.uri)
 }
 
 // ReadFromDisk reads this file from disk if it has never had data loaded into it before.
 //
 // If it has been read from disk before, or has received updates from the LSP client, this
 // function returns nil.
-func (file *file) ReadFromDisk(ctx context.Context) (err error) {
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
-	if file.hasText {
+func (f *file) ReadFromDisk(ctx context.Context) (err error) {
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
+	if f.hasText {
 		return nil
 	}
 
-	data, err := os.ReadFile(file.uri.Filename())
+	data, err := os.ReadFile(f.uri.Filename())
 	if err != nil {
-		return fmt.Errorf("could not read file %q from disk: %w", file.uri, err)
+		return fmt.Errorf("could not read file %q from disk: %w", f.uri, err)
 	}
 
-	file.version = -1
-	file.text = string(data)
+	f.version = -1
+	f.text = string(data)
 	return nil
 }
 
 // Update updates the contents of this file with the given text received from
 // the LSP client.
-func (file *file) Update(ctx context.Context, version int32, text string) {
-	file.Reset(ctx)
+func (f *file) Update(ctx context.Context, version int32, text string) {
+	f.Reset(ctx)
 
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
 
-	file.server.logger.Sugar().Infof("new file version: %v, %v -> %v", file.uri, file.version, version)
-	file.version = version
-	file.text = text
-	file.hasText = true
+	f.server.logger.Sugar().Infof("new file version: %v, %v -> %v", f.uri, f.version, version)
+	f.version = version
+	f.text = text
+	f.hasText = true
 }
 
-func (file *file) FindWorkspace(ctx context.Context) {
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
+func (f *file) FindWorkspace(ctx context.Context) {
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
 
 	// Try to dig up a ModuleSet for this file.
-	workspace, err := file.server.controller.GetWorkspace(ctx, file.uri.Filename(),
+	workspace, err := f.server.controller.GetWorkspace(ctx, f.uri.Filename(),
 		bufctl.WithImageExcludeImports(false),
 		bufctl.WithImageExcludeSourceInfo(false),
 	)
 	if err != nil {
-		file.server.logger.Sugar().Warnf(
+		f.server.logger.Sugar().Warnf(
 			"no Buf workspace found for %s, continuing with limited features; %s",
-			file.uri.Filename(), err,
+			f.uri.Filename(), err,
 		)
 	}
 
-	file.moduleSet = workspace
+	f.moduleSet = workspace
 }
 
 // Refresh rebuilds all of a file's internal book-keeping.
 //
 // If deep is set, this will also load imports and refresh those, too.
-func (file *file) Refresh(ctx context.Context) {
-	if file.RefreshAST(ctx) {
-		file.PublishDiagnostics(ctx)
+func (f *file) Refresh(ctx context.Context) {
+	if f.RefreshAST(ctx) {
+		f.PublishDiagnostics(ctx)
 	}
-	file.IndexImports(ctx)
-	file.IndexSymbols(ctx)
+	f.IndexImports(ctx)
+	f.IndexSymbols(ctx)
 }
 
 // RefreshAST reparses the file and generates diagnostics if necessary.
 //
 // Returns whether a reparse was necessary.
-func (file *file) RefreshAST(ctx context.Context) bool {
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
-	if file.ast != nil {
+func (f *file) RefreshAST(ctx context.Context) bool {
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
+	if f.fileNode != nil {
 		return false
 	}
 
@@ -251,22 +249,22 @@ func (file *file) RefreshAST(ctx context.Context) bool {
 	report := report{}
 	handler := reporter.NewHandler(&report)
 
-	file.server.logger.Sugar().Infof("parsing AST for %v, %v", file.uri, file.version)
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.text), handler)
+	f.server.logger.Sugar().Infof("parsing AST for %v, %v", f.uri, f.version)
+	parsed, err := parser.Parse(f.uri.Filename(), strings.NewReader(f.text), handler)
 	if err == nil {
 		// Throw away the error. It doesn't contain anything not in the diagnostic array.
 		_, _ = parser.ResultFromAST(parsed, true, handler)
 	}
 
-	file.ast = parsed
-	file.diagnostics = report
-	file.server.logger.Sugar().Debugf("got %v diagnostic(s)", len(file.diagnostics))
+	f.fileNode = parsed
+	f.diagnostics = report
+	f.server.logger.Sugar().Debugf("got %v diagnostic(s)", len(f.diagnostics))
 
 	// Search for a potential package node.
-	if file.ast != nil {
-		for _, decl := range file.ast.Decls {
+	if f.fileNode != nil {
+		for _, decl := range f.fileNode.Decls {
 			if pkg, ok := decl.(*ast.PackageNode); ok {
-				file.pkg = pkg
+				f.packageNode = pkg
 				break
 			}
 		}
@@ -276,49 +274,49 @@ func (file *file) RefreshAST(ctx context.Context) bool {
 }
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
-func (file *file) PublishDiagnostics(ctx context.Context) {
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
+func (f *file) PublishDiagnostics(ctx context.Context) {
+	ctx, span := f.server.tracer.Start(ctx,
+		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
 
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
 
-	if file.diagnostics == nil {
+	if f.diagnostics == nil {
 		return
 	}
 
 	// Publish the diagnostics. This error is automatically logged by the LSP framework.
-	_ = file.server.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-		URI: file.uri,
+	_ = f.server.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
+		URI: f.uri,
 		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
 		// This seems like a bug in the LSP protocol package.
-		Version:     uint32(file.version),
-		Diagnostics: file.diagnostics,
+		Version:     uint32(f.version),
+		Diagnostics: f.diagnostics,
 	})
 }
 
 // IndexImports finds URIs for all of the files imported by this file.
-func (file *file) IndexImports(ctx context.Context) {
-	ctx, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
+func (f *file) IndexImports(ctx context.Context) {
+	ctx, span := f.server.tracer.Start(ctx,
+		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
 
-	unlock := file.mu.Lock(ctx)
+	unlock := f.lock.Lock(ctx)
 	defer unlock()
 
-	if file.ast == nil || file.imports != nil {
+	if f.fileNode == nil || f.imports != nil {
 		return
 	}
 
-	imports, err := findImportable(ctx, file.server.rootBucket, "/", file.server.logger, file.uri)
+	imports, err := findImportable(ctx, f.server.rootBucket, "/", f.server.logger, f.uri)
 	if err != nil {
-		file.server.logger.Sugar().Warnf("could not compute importable files for %s: %s", file.uri, err)
+		f.server.logger.Sugar().Warnf("could not compute importable files for %s: %s", f.uri, err)
 		return
 	}
 
-	file.imports = make(importMap)
-	for _, decl := range file.ast.Decls {
+	f.imports = make(map[string]*file)
+	for _, decl := range f.fileNode.Decls {
 		node, ok := decl.(*ast.ImportNode)
 		if !ok {
 			continue
@@ -327,18 +325,18 @@ func (file *file) IndexImports(ctx context.Context) {
 		name := node.Name.AsString()
 		uri, ok := imports[name]
 		if !ok {
-			file.server.logger.Sugar().Warnf("could not find URI for import %q", name)
+			f.server.logger.Sugar().Warnf("could not find URI for import %q", name)
 			continue
 		}
 
-		imported := file.Owner().Open(ctx, uri)
-		file.imports[node.Name.AsString()] = imported
+		imported := f.Owner().Open(ctx, uri)
+		f.imports[node.Name.AsString()] = imported
 	}
 
 	// Drop the lock after copying the pointer to the imports map. This
 	// particular map will not be mutated further, and since we're going to grab the lock of
 	// other files, we need to drop the currently held lock.
-	fileImports := file.imports
+	fileImports := f.imports
 	unlock()
 
 	for _, file := range fileImports {
@@ -361,14 +359,14 @@ func (file *file) IndexImports(ctx context.Context) {
 type report []protocol.Diagnostic
 
 // Error implements reporter.Handler for *diagnostics.
-func (diagnostics *report) Error(err reporter.ErrorWithPos) error {
-	*diagnostics = append(*diagnostics, error2diagnostic(err, false))
+func (r *report) Error(err reporter.ErrorWithPos) error {
+	*r = append(*r, error2diagnostic(err, false))
 	return nil
 }
 
 // Error implements reporter.Handler for *diagnostics.
-func (diagnostics *report) Warning(err reporter.ErrorWithPos) {
-	*diagnostics = append(*diagnostics, error2diagnostic(err, true))
+func (r *report) Warning(err reporter.ErrorWithPos) {
+	*r = append(*r, error2diagnostic(err, true))
 }
 
 // error2diagnostic converts a protocompile error into a diagnostic.
@@ -439,21 +437,23 @@ func (server *server) Formatting(
 	// Currently we have no way to honor any of the parameters.
 	_ = params
 
-	file.mu.Lock(ctx)
-	defer file.mu.Unlock(ctx)
-	if file.ast == nil {
+	file.lock.Lock(ctx)
+	defer file.lock.Unlock(ctx)
+	if file.fileNode == nil {
 		return nil, nil
 	}
 
 	var out strings.Builder
-	if err := bufformat.FormatFileNode(&out, file.ast); err != nil {
+	if err := bufformat.FormatFileNode(&out, file.fileNode); err != nil {
 		return nil, err
 	}
 
-	return []protocol.TextEdit{{
-		Range:   info2range(file.ast.NodeInfo(file.ast)),
-		NewText: out.String(),
-	}}, nil
+	return []protocol.TextEdit{
+		{
+			Range:   infoToRange(file.fileNode.NodeInfo(file.fileNode)),
+			NewText: out.String(),
+		},
+	}, nil
 }
 
 // DidOpen is called whenever the client opens a document. This is our signal to parse
