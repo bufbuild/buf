@@ -15,8 +15,8 @@
 package bufcheckserverutil
 
 import (
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/bufplugin-go/check"
 )
 
 // Request is a check.Request that also includes bufprotosource functionality.

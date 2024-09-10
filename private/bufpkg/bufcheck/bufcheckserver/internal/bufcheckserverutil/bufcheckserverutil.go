@@ -17,9 +17,9 @@ package bufcheckserverutil
 import (
 	"context"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/bufplugin-go/check"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 )

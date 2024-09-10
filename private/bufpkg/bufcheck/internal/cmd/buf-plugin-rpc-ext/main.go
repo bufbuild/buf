@@ -18,8 +18,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/bufbuild/bufplugin-go/check"
-	"github.com/bufbuild/bufplugin-go/check/checkutil"
+	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/check/checkutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

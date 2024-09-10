@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/bufplugin-go/check"
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
