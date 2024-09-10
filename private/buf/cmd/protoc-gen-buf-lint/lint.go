@@ -45,6 +45,10 @@ const (
 func Main() {
 	protoplugin.Main(
 		protoplugin.HandlerFunc(handle),
+		// An `EmptyResolver` is passed to protoplugin for unmarshalling instead of defaulting to
+		// protoregistry.GlobalTypes so that extensions are not inadvertently parsed from generated
+		// code linked into the binary. Extensions are later reparsed with the descriptorset itself.
+		// https://github.com/bufbuild/buf/issues/3306
 		protoplugin.WithExtensionTypeResolver(protoencoding.EmptyResolver),
 	)
 }
