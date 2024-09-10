@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -32,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/spf13/pflag"
 )
 
