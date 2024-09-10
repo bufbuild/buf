@@ -15,6 +15,7 @@
 package buflintvalidate
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -22,10 +23,13 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/protovalidate-go"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -220,23 +224,103 @@ func checkConstraintsForField(
 	}
 	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-		return numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
+		if err := numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage); err != nil {
+			return nil
+		}
 	}
+	var exampleValues []protoreflect.Value
 	switch typeRulesFieldNumber {
+	case floatRulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetFloat().GetExample(), protoreflect.ValueOfFloat32)
+	case doubleRulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetDouble().GetExample(), protoreflect.ValueOfFloat64)
+	case int32RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetInt32().GetExample(), protoreflect.ValueOfInt32)
+	case sInt32RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetSint32().GetExample(), protoreflect.ValueOfInt32)
+	case sFixed32RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetSfixed32().GetExample(), protoreflect.ValueOfInt32)
+	case fixed32RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetFixed32().GetExample(), protoreflect.ValueOfUint32)
+	case uInt32RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetUint32().GetExample(), protoreflect.ValueOfUint32)
+	case int64RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetInt64().GetExample(), protoreflect.ValueOfInt64)
+	case sFixed64RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetSfixed64().GetExample(), protoreflect.ValueOfInt64)
+	case sInt64RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetSint64().GetExample(), protoreflect.ValueOfInt64)
+	case fixed64RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetFixed64().GetExample(), protoreflect.ValueOfUint64)
+	case uInt64RulesFieldNumber:
+		exampleValues = slicesext.Map(fieldConstraints.GetUint64().GetExample(), protoreflect.ValueOfUint64)
 	case boolRulesFieldNumber:
-		// Bool rules only have `const` and does not need validating.
+		// Bool rules only have one constraint, `const`, which does not need validating.
+		// However, we still validate that example values satify the constraint.
+		exampleValues = slicesext.Map(fieldConstraints.GetBool().GetExample(), protoreflect.ValueOfBool)
 	case stringRulesFieldNumber:
-		return checkStringRules(adder, fieldConstraints.GetString_())
+		stringRules := fieldConstraints.GetString_()
+		if err := checkStringRules(adder, stringRules); err != nil {
+			return err
+		}
+		exampleValues = slicesext.Map(stringRules.GetExample(), protoreflect.ValueOfString)
 	case bytesRulesFieldNumber:
-		return checkBytesRules(adder, fieldConstraints.GetBytes())
+		bytesRules := fieldConstraints.GetBytes()
+		if err := checkBytesRules(adder, bytesRules); err != nil {
+			return err
+		}
+		exampleValues = slicesext.Map(
+			bytesRules.GetExample(),
+			protoreflect.ValueOfBytes,
+		)
 	case enumRulesFieldNumber:
-		checkEnumRules(adder, fieldConstraints.GetEnum())
+		enumRules := fieldConstraints.GetEnum()
+		checkEnumRules(adder, enumRules)
+		exampleValues = slicesext.Map(
+			enumRules.GetExample(),
+			protoreflect.ValueOfInt32,
+		)
 	case anyRulesFieldNumber:
+		// Any does not have example values.
 		checkAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
-		return checkDurationRules(adder, fieldConstraints.GetDuration())
+		durationRules := fieldConstraints.GetDuration()
+		if err := checkDurationRules(adder, durationRules); err != nil {
+			return err
+		}
+		exampleValues = slicesext.Map(
+			durationRules.GetExample(),
+			func(duration *durationpb.Duration) protoreflect.Value {
+				return protoreflect.ValueOfMessage(duration.ProtoReflect())
+			},
+		)
 	case timestampRulesFieldNumber:
-		return checkTimestampRules(adder, fieldConstraints.GetTimestamp())
+		timestampRules := fieldConstraints.GetTimestamp()
+		if err := checkTimestampRules(adder, timestampRules); err != nil {
+			return err
+		}
+		exampleValues = slicesext.Map(
+			timestampRules.GetExample(),
+			func(timestamp *timestamppb.Timestamp) protoreflect.Value {
+				return protoreflect.ValueOfMessage(timestamp.ProtoReflect())
+			},
+		)
+	}
+	exampleValues = nil
+	typeRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
+	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+		if string(fd.Name()) == "example" {
+			// This assumed all *Rules.Example are repeated, otherwise it panics.
+			list := value.List()
+			for i := 0; i < list.Len(); i++ {
+				exampleValues = append(exampleValues, list.Get(i))
+			}
+			return false
+		}
+		return true
+	})
+	if len(exampleValues) > 0 {
+		return checkExampleValues(adder, typeRulesMessage, fieldDescriptor, exampleValues)
 	}
 	return nil
 }
@@ -697,6 +781,69 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 			)
 		}
 	}
+	return nil
+}
+
+func checkExampleValues(
+	adder *adder,
+	typeRulesMessage protoreflect.Message,
+	fieldDescriptor protoreflect.FieldDescriptor,
+	exampleValues []protoreflect.Value,
+) error {
+	v, err := protovalidate.New()
+	if err != nil {
+		return err
+	}
+	var hasConstraints bool
+	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		if string(fd.Name()) != "example" {
+			hasConstraints = true
+			return false
+		}
+		return true
+	})
+	// TODO: this is incorrect, also needs to check for cel etc.
+	if !hasConstraints {
+		adder.addForPathf(nil, "example value is specified by there are no constraints defined")
+		return nil
+	}
+	parentMessageDescriptor := fieldDescriptor.ContainingMessage()
+	for _, exampleValue := range exampleValues {
+		messageToValidate := dynamicpb.NewMessage(parentMessageDescriptor)
+		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
+			list := messageToValidate.NewField(fieldDescriptor).List()
+			list.Append(exampleValue)
+			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOfList(list))
+		} else {
+			messageToValidate.Set(fieldDescriptor, exampleValue)
+		}
+		err := v.Validate(messageToValidate)
+		if err == nil {
+			continue
+		}
+		if errors.Is(err, &protovalidate.CompilationError{}) {
+			// Expression failing to compile meaning some custom shared rules are invalid,
+			// which is checked in this rule (PROTOVALIDATE), but not in this code block.
+			// TODO: verify
+			break
+		}
+		validationErr := &protovalidate.ValidationError{}
+		if errors.As(err, &validationErr) {
+			for _, violation := range validationErr.Violations {
+				if violation.FieldPath == string(fieldDescriptor.Name()) {
+					adder.addForPathf(nil, `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.ConstraintId, violation.Message)
+				}
+			}
+			continue
+		}
+		runtimeError := &protovalidate.RuntimeError{}
+		if errors.As(err, &runtimeError) {
+			adder.addForPathf(nil, "example fail at runtime: %s", runtimeError.Error())
+			continue
+		}
+		return fmt.Errorf("unexpected error from protovalidate: %s", err.Error())
+	}
+
 	return nil
 }
 
