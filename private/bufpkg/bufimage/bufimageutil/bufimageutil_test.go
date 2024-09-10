@@ -180,7 +180,7 @@ func TestTransitivePublic(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	_, err = proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
+	_, err = protoencoding.NewWireMarshaler().Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 }
 
@@ -274,8 +274,8 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 
 	checkExpectation(
 		t, ctx, fileDescriptorSet, bucket, expectedFile,
-		proto.MarshalOptions{Deterministic: true}.Marshal,
-		proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal,
+		protoencoding.NewWireMarshaler().Marshal,
+		protoencoding.NewWireUnmarshaler(filteredImage.Resolver()).Unmarshal,
 	)
 }
 
