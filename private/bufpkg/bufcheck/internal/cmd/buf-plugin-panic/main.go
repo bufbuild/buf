@@ -17,8 +17,8 @@ package main
 import (
 	"context"
 
-	"github.com/bufbuild/bufplugin-go/check"
-	"github.com/bufbuild/bufplugin-go/check/checkutil"
+	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/check/checkutil"
 )
 
 func main() {

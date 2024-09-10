@@ -14,7 +14,7 @@
 
 package bufcheck
 
-import "github.com/bufbuild/bufplugin-go/check"
+import "buf.build/go/bufplugin/check"
 
 var _ check.Category = &category{}
 var _ Category = &category{}
