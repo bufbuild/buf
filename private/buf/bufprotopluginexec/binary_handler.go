@@ -92,10 +92,10 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	responseWriter.AddCodeGeneratorResponseFiles(response.GetFile()...)
+	responseWriter.AddError(response.GetError())
 	responseWriter.SetSupportedFeatures(response.GetSupportedFeatures())
 	responseWriter.SetMinimumEdition(response.GetMinimumEdition())
 	responseWriter.SetMaximumEdition(response.GetMaximumEdition())
-	responseWriter.SetError(response.GetError())
 	return nil
 }
 

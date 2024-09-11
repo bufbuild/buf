@@ -52,7 +52,7 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) protop
 			}
 			response := plugin.Response()
 			responseWriter.AddCodeGeneratorResponseFiles(response.GetFile()...)
-			responseWriter.SetError(response.GetError())
+			responseWriter.AddError(response.GetError())
 			responseWriter.SetFeatureProto3Optional()
 			return nil
 		},

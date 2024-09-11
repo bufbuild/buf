@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add HTTP/3 support for gRPC with `buf curl`.
+- Fix issue where errors from protoc plugins may be overwritten when executing plugins in parallel.
 
 ## [v1.40.1] - 2024-09-06
 
