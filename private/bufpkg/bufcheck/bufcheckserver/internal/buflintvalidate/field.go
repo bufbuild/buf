@@ -23,7 +23,7 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/proto"
@@ -167,6 +167,8 @@ func checkField(
 			addFunc:             add,
 		},
 		constraints,
+		fieldDescriptor.ContainingMessage(),
+		nil,
 		fieldDescriptor,
 		fieldDescriptor.Cardinality() == protoreflect.Repeated,
 	)
@@ -175,6 +177,16 @@ func checkField(
 func checkConstraintsForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
+	// TODO: fix wording
+	// This is needed because recursive calls of this function still need the same
+	// containing message. For example, checkConstraintsForField(.., fieldDescriptor, ...)
+	// may call checkConstraintsForField(..., fieldDescriptor.MapKey(), ...), but the map
+	// key should be associated with the same containing message as the field's. Since
+	// fieldDescriptor.MapKey().ContainingMessage() is not the same as fieldDescriptor.ContainingMessage(),
+	// this needs to be passed around.
+	containingMessageDescriptor protoreflect.MessageDescriptor,
+	// Only pass a non nil value when the field is a synthetic map key/value field
+	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	expectRepeatedRule bool,
 ) error {
@@ -213,10 +225,10 @@ func checkConstraintsForField(
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	// Map and repeated special cases that contain fieldConstraints.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor)
+		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor, containingMessageDescriptor)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor)
+		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor, containingMessageDescriptor)
 	}
 	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber, expectRepeatedRule)
 	if !typesMatch {
@@ -228,58 +240,22 @@ func checkConstraintsForField(
 			return nil
 		}
 	}
-	var exampleValues []protoreflect.Value
 	switch typeRulesFieldNumber {
-	case floatRulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetFloat().GetExample(), protoreflect.ValueOfFloat32)
-	case doubleRulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetDouble().GetExample(), protoreflect.ValueOfFloat64)
-	case int32RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetInt32().GetExample(), protoreflect.ValueOfInt32)
-	case sInt32RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetSint32().GetExample(), protoreflect.ValueOfInt32)
-	case sFixed32RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetSfixed32().GetExample(), protoreflect.ValueOfInt32)
-	case fixed32RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetFixed32().GetExample(), protoreflect.ValueOfUint32)
-	case uInt32RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetUint32().GetExample(), protoreflect.ValueOfUint32)
-	case int64RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetInt64().GetExample(), protoreflect.ValueOfInt64)
-	case sFixed64RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetSfixed64().GetExample(), protoreflect.ValueOfInt64)
-	case sInt64RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetSint64().GetExample(), protoreflect.ValueOfInt64)
-	case fixed64RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetFixed64().GetExample(), protoreflect.ValueOfUint64)
-	case uInt64RulesFieldNumber:
-		exampleValues = slicesext.Map(fieldConstraints.GetUint64().GetExample(), protoreflect.ValueOfUint64)
 	case boolRulesFieldNumber:
 		// Bool rules only have one constraint, `const`, which does not need validating.
-		// However, we still validate that example values satify the constraint.
-		exampleValues = slicesext.Map(fieldConstraints.GetBool().GetExample(), protoreflect.ValueOfBool)
 	case stringRulesFieldNumber:
 		stringRules := fieldConstraints.GetString_()
 		if err := checkStringRules(adder, stringRules); err != nil {
 			return err
 		}
-		exampleValues = slicesext.Map(stringRules.GetExample(), protoreflect.ValueOfString)
 	case bytesRulesFieldNumber:
 		bytesRules := fieldConstraints.GetBytes()
 		if err := checkBytesRules(adder, bytesRules); err != nil {
 			return err
 		}
-		exampleValues = slicesext.Map(
-			bytesRules.GetExample(),
-			protoreflect.ValueOfBytes,
-		)
 	case enumRulesFieldNumber:
 		enumRules := fieldConstraints.GetEnum()
 		checkEnumRules(adder, enumRules)
-		exampleValues = slicesext.Map(
-			enumRules.GetExample(),
-			protoreflect.ValueOfInt32,
-		)
 	case anyRulesFieldNumber:
 		// Any does not have example values.
 		checkAnyRules(adder, fieldConstraints.GetAny())
@@ -288,43 +264,39 @@ func checkConstraintsForField(
 		if err := checkDurationRules(adder, durationRules); err != nil {
 			return err
 		}
-		exampleValues = slicesext.Map(
-			durationRules.GetExample(),
-			func(duration *durationpb.Duration) protoreflect.Value {
-				return protoreflect.ValueOfMessage(duration.ProtoReflect())
-			},
-		)
 	case timestampRulesFieldNumber:
 		timestampRules := fieldConstraints.GetTimestamp()
 		if err := checkTimestampRules(adder, timestampRules); err != nil {
 			return err
 		}
-		exampleValues = slicesext.Map(
-			timestampRules.GetExample(),
-			func(timestamp *timestamppb.Timestamp) protoreflect.Value {
-				return protoreflect.ValueOfMessage(timestamp.ProtoReflect())
-			},
-		)
 	}
 	typeRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-	// // This also works. Using this would allow dropping most of the code setting examples values.
-	// // However, a lot of the methods called here may panic, even though in practice they won't,
-	// // except for the rare case where a typed rule in protovalidate has an example field that's
-	// // not repeated.
-	// exampleValues = nil
-	// typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-	// 	if string(fd.Name()) == "example" {
-	// 		// This assumed all *Rules.Example are repeated, otherwise it panics.
-	// 		list := value.List()
-	// 		for i := 0; i < list.Len(); i++ {
-	// 			exampleValues = append(exampleValues, list.Get(i))
-	// 		}
-	// 		return false
-	// 	}
-	// 	return true
-	// })
+	var exampleValues []protoreflect.Value
+	var exampleFieldNumber int32
+	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+		// TODO: make "exmaple" a const
+		if string(fd.Name()) == "example" {
+			exampleFieldNumber = int32(fd.Number())
+			// This assumed all *Rules.Example are repeated, otherwise it panics.
+			list := value.List()
+			for i := 0; i < list.Len(); i++ {
+				exampleValues = append(exampleValues, list.Get(i))
+			}
+			return false
+		}
+		return true
+	})
 	if len(exampleValues) > 0 {
-		return checkExampleValues(adder, fieldConstraints, typeRulesMessage, fieldDescriptor, exampleValues)
+		return checkExampleValues(
+			adder,
+			[]int32{typeRulesFieldNumber, exampleFieldNumber},
+			fieldConstraints,
+			typeRulesMessage,
+			containingMessageDescriptor,
+			parentMapFieldDescriptor,
+			fieldDescriptor,
+			exampleValues,
+		)
 	}
 	return nil
 }
@@ -455,6 +427,7 @@ func checkRepeatedRules(
 	baseAdder *adder,
 	repeatedRules *validate.RepeatedRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
+	containingMessageDescriptor protoreflect.MessageDescriptor,
 ) error {
 	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
@@ -497,13 +470,14 @@ func checkRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
-	return checkConstraintsForField(itemAdder, repeatedRules.Items, fieldDescriptor, false)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false)
 }
 
 func checkMapRules(
 	baseAdder *adder,
 	mapRules *validate.MapRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
+	containingMessageDescriptor protoreflect.MessageDescriptor,
 ) error {
 	if !fieldDescriptor.IsMap() {
 		baseAdder.addForPathf(
@@ -535,12 +509,12 @@ func checkMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
-	err := checkConstraintsForField(keyAdder, mapRules.Keys, fieldDescriptor.MapKey(), false)
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false)
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
-	return checkConstraintsForField(valueAdder, mapRules.Values, fieldDescriptor.MapValue(), false)
+	return checkConstraintsForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false)
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
@@ -790,13 +764,15 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 
 func checkExampleValues(
 	adder *adder,
+	pathToExampleValues []int32,
 	fieldConstraints *validate.FieldConstraints,
 	typeRulesMessage protoreflect.Message,
+	containingMessageDescriptor protoreflect.MessageDescriptor,
+	// Not nil only if fieldDescriptor is a synthetic field for map key/value.
+	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	exampleValues []protoreflect.Value,
 ) error {
-	// TODO: remove
-	fmt.Println("field:", fieldDescriptor.Name())
 	v, err := protovalidate.New()
 	if err != nil {
 		return err
@@ -814,14 +790,11 @@ func checkExampleValues(
 		})
 	}
 	if !hasConstraints {
-		adder.addForPathf(nil, "example value is specified by there are no constraints defined")
+		adder.addForPathf(pathToExampleValues, "example value is specified by there are no constraints defined")
 		// No need to check if example values satifisy constraints, because there is none.
 		return nil
 	}
-	parentMessageDescriptor := fieldDescriptor.ContainingMessage()
-	// TODO: remove
-	fmt.Println("parent:", parentMessageDescriptor.Name())
-	for _, exampleValue := range exampleValues {
+	for exampleValueIndex, exampleValue := range exampleValues {
 		// For each example value, instantiate a message of its containing message's type
 		// and set the field that we are linting to the example value:
 		// containingMessage {
@@ -836,12 +809,65 @@ func checkExampleValues(
 		// Note: there might be cel expressions defined on the message level that the example
 		// value would cause to fail, but we have no way of knowing that the example value is
 		// the reason, therefore it's ok to only filter for field level failures.
-		messageToValidate := dynamicpb.NewMessage(parentMessageDescriptor)
-		// TODO: what about maps?
-		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
+		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
+		// TODO: test it for repeated min item
+		// This is needed because the shape of field path in a protovalidate.Violation depends on
+		// the type of the field descriptor.
+		matchViolationFunc := func(violation *validate.Violation) bool {
+			return violation.FieldPath == string(fieldDescriptor.Name())
+		}
+		if fieldDescriptor.IsList() { // this is linting for items (they have the same descriptor) // TODO: update this comment so that it makes sense
 			list := messageToValidate.NewField(fieldDescriptor).List()
 			list.Append(exampleValue)
 			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOfList(list))
+			matchViolationFunc = func(violation *validate.Violation) bool {
+				prefix := fieldDescriptor.Name() + "["
+				suffix := "]"
+				fieldPath := violation.FieldPath
+				return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
+			}
+		} else if parentMapFieldDescriptor != nil {
+			mapEntryMessageDescriptor := fieldDescriptor.ContainingMessage()
+			if !mapEntryMessageDescriptor.IsMapEntry() {
+				return syserror.Newf("containing message %q is not a map", mapEntryMessageDescriptor.Name())
+			}
+			if !parentMapFieldDescriptor.IsMap() {
+				return syserror.Newf("parent field descriptor %q is passed but is not a map field", parentMapFieldDescriptor.Name())
+			}
+			if containingMessageDescriptor.Fields().ByName(parentMapFieldDescriptor.Name()) == nil {
+				return syserror.Newf("containing message %q does not have field named %q", containingMessageDescriptor.Name(), parentMapFieldDescriptor.Name())
+			}
+			if parentMapFieldDescriptor.Message().Name() != mapEntryMessageDescriptor.Name() {
+				return syserror.Newf("field %q should have parent of type %q but has type %q", fieldDescriptor.Name(), parentMapFieldDescriptor.Message().Name(), containingMessageDescriptor.Name())
+			}
+			mapEntry := messageToValidate.NewField(parentMapFieldDescriptor).Map()
+			switch fieldDescriptor.Name() {
+			case "key":
+				mapEntry.Set(
+					exampleValue.MapKey(),
+					dynamicpb.NewMessage(parentMapFieldDescriptor.Message()).NewField(parentMapFieldDescriptor.MapValue()),
+				)
+				matchViolationFunc = func(violation *validate.Violation) bool {
+					prefix := parentMapFieldDescriptor.Name() + "["
+					suffix := "]"
+					fieldPath := violation.FieldPath
+					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.ForKey
+				}
+			case "value":
+				mapEntry.Set(
+					dynamicpb.NewMessage(parentMapFieldDescriptor.Message()).NewField(parentMapFieldDescriptor.MapKey()).MapKey(),
+					exampleValue,
+				)
+				matchViolationFunc = func(violation *validate.Violation) bool {
+					prefix := parentMapFieldDescriptor.Name() + "["
+					suffix := "]"
+					fieldPath := violation.FieldPath
+					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.ForKey
+				}
+			default:
+				return syserror.Newf("expected key or value as sythetic field name for map entry's field name, got %q", fieldDescriptor.Name())
+			}
+			messageToValidate.Set(parentMapFieldDescriptor, protoreflect.ValueOfMap(mapEntry))
 		} else {
 			messageToValidate.Set(fieldDescriptor, exampleValue)
 		}
@@ -849,28 +875,26 @@ func checkExampleValues(
 		if err == nil {
 			continue
 		}
-		if errors.Is(err, &protovalidate.CompilationError{}) {
-			// TODO: remove
-			fmt.Println("FAIL TO COMPILE", err.Error())
+		var compilationErr *protovalidate.CompilationError
+		if errors.As(err, &compilationErr) {
 			// Expression failing to compile meaning some custom shared rules are invalid,
 			// which is checked in this rule (PROTOVALIDATE), but not in this code block.
-			// TODO: verify
 			break
 		}
 		validationErr := &protovalidate.ValidationError{}
 		if errors.As(err, &validationErr) {
 			for _, violation := range validationErr.Violations {
-				// TODO: remove
-				fmt.Println(fieldDescriptor.Name(), violation.FieldPath)
-				if violation.FieldPath == string(fieldDescriptor.Name()) {
-					adder.addForPathf(nil, `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.ConstraintId, violation.Message)
+				if matchViolationFunc(violation) {
+					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.ConstraintId, violation.Message)
 				}
 			}
 			continue
 		}
 		runtimeError := &protovalidate.RuntimeError{}
 		if errors.As(err, &runtimeError) {
-			adder.addForPathf(nil, "example fail at runtime: %s", runtimeError.Error())
+			// TODO: what to do here?
+			// return an error?
+			adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), "example fail at runtime: %s", runtimeError.Error())
 			continue
 		}
 		return fmt.Errorf("unexpected error from protovalidate: %s", err.Error())
