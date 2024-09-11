@@ -147,7 +147,7 @@ func handle(
 			); err != nil {
 				return err
 			}
-			responseWriter.SetError(strings.TrimSpace(buffer.String()))
+			responseWriter.AddError(strings.TrimSpace(buffer.String()))
 			return nil
 		}
 		return err
