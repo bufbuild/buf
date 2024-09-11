@@ -1,9 +1,9 @@
-
-†
-a.protopkg"n
-Foo
-x (	Rx1
-
-nested_foo (2.pkg.Foo.NestedFooR	nestedFoo&
-	NestedFoo
-nested_x (	RnestedXbproto3
+00000000  0a 86 01 0a 07 61 2e 70  72 6f 74 6f 12 03 70 6b  |.....a.proto..pk|
+00000010  67 22 6e 0a 03 46 6f 6f  12 0c 0a 01 78 18 01 20  |g"n..Foo....x.. |
+00000020  01 28 09 52 01 78 12 31  0a 0a 6e 65 73 74 65 64  |.(.R.x.1..nested|
+00000030  5f 66 6f 6f 18 02 20 01  28 0b 32 12 2e 70 6b 67  |_foo.. .(.2..pkg|
+00000040  2e 46 6f 6f 2e 4e 65 73  74 65 64 46 6f 6f 52 09  |.Foo.NestedFooR.|
+00000050  6e 65 73 74 65 64 46 6f  6f 1a 26 0a 09 4e 65 73  |nestedFoo.&..Nes|
+00000060  74 65 64 46 6f 6f 12 19  0a 08 6e 65 73 74 65 64  |tedFoo....nested|
+00000070  5f 78 18 01 20 01 28 09  52 07 6e 65 73 74 65 64  |_x.. .(.R.nested|
+00000080  58 62 06 70 72 6f 74 6f  33 

@@ -15,7 +15,10 @@
 package bufimageutil
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
+	"fmt"
 	"os"
 	"testing"
 
@@ -274,8 +277,8 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 
 	checkExpectation(
 		t, ctx, fileDescriptorSet, bucket, expectedFile,
-		protoencoding.NewWireMarshaler().Marshal,
-		protoencoding.NewWireUnmarshaler(filteredImage.Resolver()).Unmarshal,
+		newWireHexMarshaler(),
+		newWireHexUnmarshaler(filteredImage.Resolver()),
 	)
 }
 
@@ -465,5 +468,48 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 				}
 			}
 		}
+	}
+}
+
+// newWireHexMarshaler returns a function that marshals a proto.Message to a hex dump
+// of the wire encoding of the message.
+func newWireHexMarshaler() func(proto.Message) ([]byte, error) {
+	marshalFunc := protoencoding.NewWireMarshaler().Marshal
+	return func(message proto.Message) ([]byte, error) {
+		data, err := marshalFunc(message)
+		if err != nil {
+			return nil, err
+		}
+		var buf bytes.Buffer
+		_, _ = hex.Dumper(&buf).Write(data)
+		return buf.Bytes(), nil
+	}
+}
+
+// newWireHexUnmarshaler returns a function that unmarshals a proto.Message from a hex dump
+// of the wire encoding of the message.
+func newWireHexUnmarshaler(resolver protoencoding.Resolver) func([]byte, proto.Message) error {
+	unmarshalFunc := protoencoding.NewWireUnmarshaler(resolver).Unmarshal
+	return func(data []byte, message proto.Message) error {
+		var buf bytes.Buffer
+		for _, line := range bytes.Split(data, []byte("\n")) {
+			if len(line) == 0 {
+				continue
+			}
+			parts := bytes.Split(line, []byte("  "))
+			if len(parts) < 2 {
+				return fmt.Errorf("invalid hex line: %s", line)
+			}
+			_, _ = buf.Write(bytes.ReplaceAll(parts[1], []byte(" "), nil))
+			if len(parts) > 2 {
+				_, _ = buf.Write(bytes.ReplaceAll(parts[2], []byte(" "), nil))
+			}
+		}
+		data, err := hex.AppendDecode(nil, buf.Bytes())
+		if err != nil {
+			return err
+		}
+		return unmarshalFunc(data, message)
+
 	}
 }

@@ -1,4 +1,3 @@
-
-(
-	foo.protofoo"
-MessageInFoobproto3
+00000000  0a 28 0a 09 66 6f 6f 2e  70 72 6f 74 6f 12 03 66  |.(..foo.proto..f|
+00000010  6f 6f 22 0e 0a 0c 4d 65  73 73 61 67 65 49 6e 46  |oo"...MessageInF|
+00000020  6f 6f 62 06 70 72 6f 74  6f 33 

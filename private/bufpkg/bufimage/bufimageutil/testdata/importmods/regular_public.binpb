@@ -1,13 +1,13 @@
-
-"
-regular.proto"	
-Regularbproto3
- 
-public.proto"
-Publicbproto3
-~
-a.protoregular.protopublic.proto"'
-ImportRegular
-x (2.RegularRx"%
-ImportPublic
-x (2.PublicRxbproto3
+00000000  0a 22 0a 0d 72 65 67 75  6c 61 72 2e 70 72 6f 74  |."..regular.prot|
+00000010  6f 22 09 0a 07 52 65 67  75 6c 61 72 62 06 70 72  |o"...Regularb.pr|
+00000020  6f 74 6f 33 0a 20 0a 0c  70 75 62 6c 69 63 2e 70  |oto3. ..public.p|
+00000030  72 6f 74 6f 22 08 0a 06  50 75 62 6c 69 63 62 06  |roto"...Publicb.|
+00000040  70 72 6f 74 6f 33 0a 7e  0a 07 61 2e 70 72 6f 74  |proto3.~..a.prot|
+00000050  6f 1a 0d 72 65 67 75 6c  61 72 2e 70 72 6f 74 6f  |o..regular.proto|
+00000060  1a 0c 70 75 62 6c 69 63  2e 70 72 6f 74 6f 22 27  |..public.proto"'|
+00000070  0a 0d 49 6d 70 6f 72 74  52 65 67 75 6c 61 72 12  |..ImportRegular.|
+00000080  16 0a 01 78 18 01 20 01  28 0b 32 08 2e 52 65 67  |...x.. .(.2..Reg|
+00000090  75 6c 61 72 52 01 78 22  25 0a 0c 49 6d 70 6f 72  |ularR.x"%..Impor|
+000000a0  74 50 75 62 6c 69 63 12  15 0a 01 78 18 01 20 01  |tPublic....x.. .|
+000000b0  28 0b 32 07 2e 50 75 62  6c 69 63 52 01 78 62 06  |(.2..PublicR.xb.|
+000000c0  70 72 6f 74 6f 33 
