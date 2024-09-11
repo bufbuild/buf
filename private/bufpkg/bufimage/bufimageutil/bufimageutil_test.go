@@ -510,6 +510,5 @@ func newWireHexUnmarshaler(resolver protoencoding.Resolver) func([]byte, proto.M
 			return err
 		}
 		return unmarshalFunc(data, message)
-
 	}
 }
