@@ -22,45 +22,53 @@ import (
 	"sync/atomic"
 )
 
-var nextReentrancyID atomic.Uint32
+const poison = ^uint64(0)
 
-// withReentrancy enables this context to be used to non-reentrantly lock a mutex.
-//
-// This function essentially creates a scope in which attempting to reentrantly lock a mutex
-// panics instead of deadlocking.
-func withReentrancy(ctx context.Context) context.Context {
-	return context.WithValue(ctx, &nextReentrancyID, nextReentrancyID.Add(1))
+var nextRequestID atomic.Uint64
+
+// withReentrancy assigns a unique request ID to the given context, which can be retrieved
+// with with getRequestID.
+func withRequestID(ctx context.Context) context.Context {
+	// This will always be unique. It is impossible to increment a uint64 and wrap around before
+	// the heat death of the universe.
+	id := nextRequestID.Add(1)
+	// We need to give the context package a unique identifier for the request; it can be
+	// any value. The address of the global we mint new IDs from is actually great for this,
+	// because users can't access it outside of this package, nor can they extract it out
+	// of the context itself.
+	return context.WithValue(ctx, &nextRequestID, id)
 }
 
-// getRentrancy returns the reentrancy ID for this context, or 0 if ctx is nil or has no
+// getRequestID returns the request ID for this context, or 0 if ctx is nil or has no
 // such ID.
-func getReentrancy(ctx context.Context) uint32 {
+func getRequestID(ctx context.Context) uint64 {
 	if ctx == nil {
 		return 0
 	}
-	id, ok := ctx.Value(&nextReentrancyID).(uint32)
+	id, ok := ctx.Value(&nextRequestID).(uint64)
 	if !ok {
 		return 0
 	}
-	return id
+
+	// Make sure we don't return 0. This is the only place where the id is actually
+	// witnessed so doing +1 won't affect anything.
+	return id + 1
 }
 
 // mutex is a sync.Mutex with some extra features.
 //
-// The main feature is reentrancy. Within the LSP, we need to lock-protect many structures,
+// The main feature is reentrancy-checking. Within the LSP, we need to lock-protect many structures,
 // and it is very easy to deadlock if the same request tries to lock something multiple times.
-// To achieve this, Lock() takes a context, which must be modified by withReentrancy().
+// To achieve this, Lock() takes a context, which must be modified by withRequestID().
 type mutex struct {
 	lock sync.Mutex
 	// This is the id of the context currently holding the lock.
-	who atomic.Uint32
-	// This is the number of times we have acquired this lock, assuming who is nonzero.
-	numLockers uint32
+	who atomic.Uint64
 }
 
 // Lock attempts to acquire this mutex or blocks.
 //
-// Unlike [sync.Mutex.Lock], this takes a Context. If that context was updated with withReentrancy,
+// Unlike [sync.Mutex.Lock], this takes a Context. If that context was updated with withRequestID,
 // this function will panic when attempting to lock the mutex while it is already held by a
 // goroutine using this same context.
 //
@@ -69,7 +77,7 @@ type mutex struct {
 // result in undefined behavior.
 //
 // Also unlike [sync.Mutex.Lock], it returns an idempotent unlocker function. This can be used like
-// defer mu.LockFunc()(). Note that only the outer function call is deferred: this is part of the
+// defer mu.Lock()(). Note that only the outer function call is deferred: this is part of the
 // definition of defer. See https://go.dev/play/p/RJNKRcoQRo1. This unlocker can also be used to
 // defer unlocking but also unlock before the function returns.
 //
@@ -84,49 +92,38 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		unlocked = true
 	}
 
-	id := getReentrancy(ctx)
-	if id == 0 {
-		// If no ID is present, simply lock the lock.
+	id := getRequestID(ctx)
+
+	switch who := mu.who.Load(); {
+	case who == poison:
+		// This lock was locked twice by the same request and should probably never be
+		// unlocked. panic.
+		fallthrough
+	case who == id && id > 0:
+		// We seem to have tried to lock this lock twice. Panic, and poison the lock.
+		mu.who.Store(poison)
+		panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
+	default:
+		// Block until the lock is free.
 		mu.lock.Lock()
+		mu.who.Store(id)
 		return unlocker
 	}
-
-	if mu.who.Load() == id {
-		// This context is the one currently holding this lock. If we see any other
-		// value, this means the lock is either unlocked, or currently held by a different
-		// context.
-		//
-		// Situations where the load above would go stale are not possible, because we
-		// require that callers do not attempt to lock and unlock the mutex with the same
-		// context concurrently.
-		mu.numLockers++
-		return unlocker
-	}
-
-	mu.lock.Lock()
-	mu.who.Store(id)
-	mu.numLockers++
-	return unlocker
 }
 
 // Unlock releases this mutex.
 //
 // Unlock must be called with the same context that locked it, otherwise this function panics.
 func (mu *mutex) Unlock(ctx context.Context) {
-	id := getReentrancy(ctx)
-	if id == 0 {
-		// If no ID is present, simply unlock the lock.
-		mu.lock.Lock()
-		return
-	}
-
-	// See the comment in Lock() for why this check is sufficient.
-	if mu.who.Load() != id {
-		panic("attempted to unlock reentrant mutex with the wrong context")
-	}
-
-	mu.numLockers--
-	if mu.numLockers == 0 {
+	id := getRequestID(ctx)
+	switch who := mu.who.Load(); {
+	case who == poison:
+		// This lock was locked twice by the same request and should probably never be
+		// unlocked. panic.
+		panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
+	case who != id && id > 0:
+		panic("buflsp/mutex.go: lock was locked by one request and unlocked by another")
+	default:
 		mu.who.Store(0)
 		mu.lock.Unlock()
 	}

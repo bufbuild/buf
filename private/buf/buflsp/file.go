@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This file defines all of the document synchronization message handlers for buflsp.server.
+// This file defines file manipulation operations.
 
 package buflsp
 
@@ -20,65 +20,28 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/refcount"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/zap"
 )
 
-// files is a manager for all files the LSP is currently handling.
-type files struct {
-	server *server
-	table  refcount.Map[protocol.URI, file]
-}
-
-// newFiles creates a new file manager.
-func newFiles(server *server) *files {
-	return &files{server: server}
-}
-
-// Open finds a file with the given URI, or creates one.
-func (files *files) Open(ctx context.Context, uri protocol.URI) *file {
-	file, found := files.table.Insert(uri)
-	if !found {
-		file.server = files.server
-		file.uri = uri
-	}
-
-	return file
-}
-
-// Get finds a file with the given URI, or returns nil.
-func (files *files) Get(uri protocol.URI) *file {
-	return files.table.Get(uri)
-}
-
-// Close marks a file as closed.
-//
-// This will not necessarily evict the file, since there may be more than one user
-// for this file.
-func (files *files) Close(ctx context.Context, uri protocol.URI) {
-	if deleted := files.table.Delete(uri); deleted != nil {
-		deleted.Reset(ctx)
-	}
-}
+const descriptorPath = "google/protobuf/descriptor.proto"
 
 // file is a file that has been opened by the client.
 //
 // Mutating a file is thread-safe.
 type file struct {
-	// server and uri are not protected by file.lock; they are immutable after
+	// lsp and uri are not protected by file.lock; they are immutable after
 	// file creation!
-	server *server
-	uri    protocol.URI
+	lsp *lsp
+	uri protocol.URI
 
 	// All variables after this lock variables are protected by file.lock.
 	//
@@ -111,15 +74,11 @@ type file struct {
 	diagnostics []protocol.Diagnostic
 	imports     map[string]*file
 	symbols     []*symbol
-
-	// This is the module set that this file belongs to. It is used to search for
-	// things like symbol definitions.
-	moduleSet bufmodule.ModuleSet
 }
 
-// Owner returns the file manager that owns this file.
-func (f *file) Owner() *files {
-	return f.server.files
+// Manager returns the file manager that owns this file.
+func (f *file) Manager() *fileManager {
+	return f.lsp.fileManager
 }
 
 // Package returns the package of this file, if known.
@@ -133,7 +92,7 @@ func (f *file) Package() []string {
 
 // Reset clears all bookkeeping information on this file.
 func (f *file) Reset(ctx context.Context) {
-	f.server.logger.Sugar().Debugf("resetting file %v", f.uri)
+	f.lsp.logger.Sugar().Debugf("resetting file %v", f.uri)
 
 	// Lock and unlock to acquire the import map.
 	// This map is never mutated after being created, so we only
@@ -165,7 +124,7 @@ func (f *file) Reset(ctx context.Context) {
 // This will not necessarily evict the file, since there may be more than one user
 // for this file.
 func (f *file) Close(ctx context.Context) {
-	f.server.files.Close(ctx, f.uri)
+	f.lsp.fileManager.Close(ctx, f.uri)
 }
 
 // ReadFromDisk reads this file from disk if it has never had data loaded into it before.
@@ -197,29 +156,10 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.lock.Lock(ctx)
 	defer f.lock.Unlock(ctx)
 
-	f.server.logger.Sugar().Infof("new file version: %v, %v -> %v", f.uri, f.version, version)
+	f.lsp.logger.Sugar().Infof("new file version: %v, %v -> %v", f.uri, f.version, version)
 	f.version = version
 	f.text = text
 	f.hasText = true
-}
-
-func (f *file) FindWorkspace(ctx context.Context) {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
-
-	// Try to dig up a ModuleSet for this file.
-	workspace, err := f.server.controller.GetWorkspace(ctx, f.uri.Filename(),
-		bufctl.WithImageExcludeImports(false),
-		bufctl.WithImageExcludeSourceInfo(false),
-	)
-	if err != nil {
-		f.server.logger.Sugar().Warnf(
-			"no Buf workspace found for %s, continuing with limited features; %s",
-			f.uri.Filename(), err,
-		)
-	}
-
-	f.moduleSet = workspace
 }
 
 // Refresh rebuilds all of a file's internal book-keeping.
@@ -249,7 +189,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 	report := report{}
 	handler := reporter.NewHandler(&report)
 
-	f.server.logger.Sugar().Infof("parsing AST for %v, %v", f.uri, f.version)
+	f.lsp.logger.Sugar().Infof("parsing AST for %v, %v", f.uri, f.version)
 	parsed, err := parser.Parse(f.uri.Filename(), strings.NewReader(f.text), handler)
 	if err == nil {
 		// Throw away the error. It doesn't contain anything not in the diagnostic array.
@@ -258,7 +198,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 	f.fileNode = parsed
 	f.diagnostics = report
-	f.server.logger.Sugar().Debugf("got %v diagnostic(s)", len(f.diagnostics))
+	f.lsp.logger.Sugar().Debugf("got %v diagnostic(s)", len(f.diagnostics))
 
 	// Search for a potential package node.
 	if f.fileNode != nil {
@@ -275,7 +215,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
 func (f *file) PublishDiagnostics(ctx context.Context) {
-	ctx, span := f.server.tracer.Start(ctx,
+	ctx, span := f.lsp.tracer.Start(ctx,
 		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
 
@@ -287,7 +227,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 	}
 
 	// Publish the diagnostics. This error is automatically logged by the LSP framework.
-	_ = f.server.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
+	_ = f.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
 		URI: f.uri,
 		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
 		// This seems like a bug in the LSP protocol package.
@@ -298,7 +238,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
-	ctx, span := f.server.tracer.Start(ctx,
+	ctx, span := f.lsp.tracer.Start(ctx,
 		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
 
@@ -309,9 +249,9 @@ func (f *file) IndexImports(ctx context.Context) {
 		return
 	}
 
-	imports, err := findImportable(ctx, f.server.rootBucket, "/", f.server.logger, f.uri)
+	imports, err := f.lsp.findImportable(ctx, f.uri)
 	if err != nil {
-		f.server.logger.Sugar().Warnf("could not compute importable files for %s: %s", f.uri, err)
+		f.lsp.logger.Sugar().Warnf("could not compute importable files for %s: %s", f.uri, err)
 		return
 	}
 
@@ -325,13 +265,25 @@ func (f *file) IndexImports(ctx context.Context) {
 		name := node.Name.AsString()
 		uri, ok := imports[name]
 		if !ok {
-			f.server.logger.Sugar().Warnf("could not find URI for import %q", name)
+			f.lsp.logger.Sugar().Warnf("could not find URI for import %q", name)
 			continue
 		}
 
-		imported := f.Owner().Open(ctx, uri)
+		imported := f.Manager().Open(ctx, uri)
 		f.imports[node.Name.AsString()] = imported
 	}
+
+	if _, ok := f.imports[descriptorPath]; !ok {
+		descriptorURI := imports[descriptorPath]
+		if f.uri == descriptorURI {
+			f.imports[descriptorPath] = f
+		} else {
+			imported := f.Manager().Open(ctx, descriptorURI)
+			f.imports[descriptorPath] = imported
+		}
+	}
+
+	// FIXME: This algorithm is not correct: it does not account for `import public`.
 
 	// Drop the lock after copying the pointer to the imports map. This
 	// particular map will not be mutated further, and since we're going to grab the lock of
@@ -341,7 +293,7 @@ func (f *file) IndexImports(ctx context.Context) {
 
 	for _, file := range fileImports {
 		if err := file.ReadFromDisk(ctx); err != nil {
-			file.server.logger.Sugar().Warnf("could not load import import %q from disk: %w",
+			file.lsp.logger.Sugar().Warnf("could not load import import %q from disk: %w",
 				file.uri, err)
 			continue
 		}
@@ -354,114 +306,67 @@ func (f *file) IndexImports(ctx context.Context) {
 	}
 }
 
-// report is a reporter.Reporter that captures diagnostic events as
-// protocol.Diagnostic values.
-type report []protocol.Diagnostic
+// IndexSymbols processes the AST of a file and generates symbols for each symbol in
+// the document.
+func (f *file) IndexSymbols(ctx context.Context) {
+	_, span := f.lsp.tracer.Start(ctx,
+		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
+	defer span.End()
 
-// Error implements reporter.Handler for *diagnostics.
-func (r *report) Error(err reporter.ErrorWithPos) error {
-	*r = append(*r, error2diagnostic(err, false))
-	return nil
+	unlock := f.lock.Lock(ctx)
+	defer unlock()
+
+	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
+	// symbols unconditionally.
+	f.symbols = nil
+
+	// Generate new symbols.
+	newWalker(f).Walk(f.fileNode, f.fileNode)
+
+	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
+	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
+		diff := s1.info.Start().Offset - s2.info.Start().Offset
+		if diff == 0 {
+			return s1.info.End().Offset - s2.info.End().Offset
+		}
+		return diff
+	})
+
+	// Now we can drop the lock and search for cross-file references.
+	symbols := f.symbols
+	unlock()
+	for _, symbol := range symbols {
+		symbol.ResolveCrossFile(ctx)
+	}
+
+	f.lsp.logger.Sugar().Debugf("symbol indexing complete %s", f.uri)
 }
 
-// Error implements reporter.Handler for *diagnostics.
-func (r *report) Warning(err reporter.ErrorWithPos) {
-	*r = append(*r, error2diagnostic(err, true))
-}
-
-// error2diagnostic converts a protocompile error into a diagnostic.
+// SymbolAt finds a symbol in this file at the given cursor position, if one exists.
 //
-// Unfortunately, protocompile's errors are currently too meagre to provide full code
-// spans; that will require a fix in the compiler.
-func error2diagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnostic {
-	pos := protocol.Position{
-		Line:      uint32(err.GetPosition().Line - 1),
-		Character: uint32(err.GetPosition().Col - 1),
+// Returns nil if no symbol is found.
+func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
+
+	// Binary search for the symbol whose start is before or equal to cursor.
+	idx, found := slices.BinarySearchFunc(f.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
+		return comparePositions(sym.Range().Start, cursor)
+	})
+	if !found {
+		if idx == 0 {
+			return nil
+		}
+		idx--
 	}
 
-	diagnostic := protocol.Diagnostic{
-		// TODO: The compiler currently does not record spans for diagnostics. This is
-		// essentially a bug that will result in worse diagnostics until fixed.
-		Range:    protocol.Range{Start: pos, End: pos},
-		Severity: protocol.DiagnosticSeverityError,
-		Message:  err.Unwrap().Error(),
+	symbol := f.symbols[idx]
+	f.lsp.logger.Debug("found symbol", zap.Object("symbol", symbol))
+
+	// Check that cursor is before the end of the symbol.
+	if comparePositions(symbol.Range().End, cursor) <= 0 {
+		return nil
 	}
 
-	if isWarning {
-		diagnostic.Severity = protocol.DiagnosticSeverityWarning
-	}
-
-	return diagnostic
-}
-
-// DidOpen is called whenever the client opens a document. This is our signal to parse
-// the file.
-func (server *server) DidOpen(
-	ctx context.Context,
-	params *protocol.DidOpenTextDocumentParams,
-) error {
-	file := server.files.Open(ctx, params.TextDocument.URI)
-	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
-	go file.Refresh(context.WithoutCancel(ctx))
-	return nil
-}
-
-// DidOpen is called whenever the client opens a document. This is our signal to parse
-// the file.
-func (server *server) DidChange(
-	ctx context.Context,
-	params *protocol.DidChangeTextDocumentParams,
-) error {
-	file := server.files.Get(params.TextDocument.URI)
-	if file == nil {
-		// Update for a file we don't know about? Seems bad!
-		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
-	}
-
-	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
-	go file.Refresh(context.WithoutCancel(ctx))
-	return nil
-}
-
-// Formatting is called whenever the user explicitly requests formatting.
-func (server *server) Formatting(
-	ctx context.Context,
-	params *protocol.DocumentFormattingParams,
-) ([]protocol.TextEdit, error) {
-	file := server.files.Get(params.TextDocument.URI)
-	if file == nil {
-		// Format for a file we don't know about? Seems bad!
-		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
-	}
-
-	// Currently we have no way to honor any of the parameters.
-	_ = params
-
-	file.lock.Lock(ctx)
-	defer file.lock.Unlock(ctx)
-	if file.fileNode == nil {
-		return nil, nil
-	}
-
-	var out strings.Builder
-	if err := bufformat.FormatFileNode(&out, file.fileNode); err != nil {
-		return nil, err
-	}
-
-	return []protocol.TextEdit{
-		{
-			Range:   infoToRange(file.fileNode.NodeInfo(file.fileNode)),
-			NewText: out.String(),
-		},
-	}, nil
-}
-
-// DidOpen is called whenever the client opens a document. This is our signal to parse
-// the file.
-func (server *server) DidClose(
-	ctx context.Context,
-	params *protocol.DidCloseTextDocumentParams,
-) error {
-	server.files.Close(ctx, params.TextDocument.URI)
-	return nil
+	return symbol
 }

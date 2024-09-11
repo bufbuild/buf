@@ -14,7 +14,7 @@
 
 // This file defines all of the message handlers that involve symbols.
 //
-// In particular, this file handles semantic information in files that have been
+// In particular, this file handles semantic information in fileManager that have been
 // *opened by the editor*, and thus do not need references to Buf modules to find.
 // See imports.go for that part of the LSP.
 
@@ -27,10 +27,8 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
-	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -47,6 +45,9 @@ type symbol struct {
 	info ast.NodeInfo
 	// What kind of symbol this is.
 	kind symbolKind
+
+	// Whether this symbol came from an option node.
+	isOption bool
 }
 
 // symbolKind is a kind of symbol. It is implemented by *definition, *reference, and *import_.
@@ -79,6 +80,9 @@ type reference struct {
 	// baz is a symbol, whose reference depends on the type of foo.bar, which depends on the
 	// imports of the file foo.bar is defined in.
 	seeTypeOf *symbol
+
+	// If this is nonnil, this is a non-custom option reference defined in the given node.
+	isNonCustomOptionIn ast.Node
 }
 
 // import_ is a symbol representing an import.
@@ -97,82 +101,16 @@ func (*reference) isSymbolKind()  {}
 func (*import_) isSymbolKind()    {}
 func (*builtin) isSymbolKind()    {}
 
-// IndexSymbols processes the AST of a file and generates symbols for each symbol in
-// the document.
-func (file *file) IndexSymbols(ctx context.Context) {
-	_, span := file.server.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(file.uri))))
-	defer span.End()
-
-	unlock := file.lock.Lock(ctx)
-	defer unlock()
-
-	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
-	// symbols unconditionally.
-	file.symbols = nil
-
-	// Generate new symbols.
-	newWalker(file).Walk(file.fileNode)
-
-	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
-	slices.SortFunc(file.symbols, func(s1, s2 *symbol) int {
-		diff := s1.info.Start().Offset - s2.info.Start().Offset
-		if diff == 0 {
-			return s1.info.End().Offset - s2.info.End().Offset
-		}
-		return diff
-	})
-
-	// Now we can drop the lock and search for cross-file references.
-	symbols := file.symbols
-	unlock()
-	for _, symbol := range symbols {
-		symbol.ResolveCrossFile(ctx)
-	}
-
-	file.server.logger.Debug("symbol indexing complete",
-		zap.Int("count", len(symbols)), zap.Objects("symbols", symbols))
-}
-
-// SymbolAt finds a symbol in this file at the given cursor position, if one exists.
-//
-// Returns nil if no symbol is found.
-func (file *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	file.lock.Lock(ctx)
-	defer file.lock.Unlock(ctx)
-
-	// Binary search for the symbol whose start is before or equal to cursor.
-	idx, found := slices.BinarySearchFunc(file.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
-		return comparePositions(sym.Range().Start, cursor)
-	})
-	if !found {
-		if idx == 0 {
-			return nil
-		}
-		idx--
-	}
-
-	symbol := file.symbols[idx]
-	file.server.logger.Debug("found symbol", zap.Object("symbol", symbol))
-
-	// Check that cursor is before the end of the symbol.
-	if comparePositions(symbol.Range().End, cursor) <= 0 {
-		return nil
-	}
-
-	return symbol
-}
-
 // Range constructs an LSP protocol code range for this symbol.
-func (symbol *symbol) Range() protocol.Range {
-	return infoToRange(symbol.info)
+func (s *symbol) Range() protocol.Range {
+	return infoToRange(s.info)
 }
 
 // Definition looks up the definition of this symbol, if known.
-func (symbol *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
-	switch kind := symbol.kind.(type) {
+func (s *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
+	switch kind := s.kind.(type) {
 	case *definition:
-		return symbol, kind.node
+		return s, kind.node
 	case *reference:
 		if kind.file == nil {
 			return nil, nil
@@ -195,8 +133,8 @@ func (symbol *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
 // a path like foo.bar.Baz.
 //
 // Returns nil if the name of this symbol is not a path.
-func (symbol *symbol) ReferencePath() (path []string, absolute bool) {
-	switch name := symbol.name.(type) {
+func (s *symbol) ReferencePath() (path []string, absolute bool) {
+	switch name := s.name.(type) {
 	case *ast.IdentNode:
 		path = []string{name.Val}
 	case *ast.CompoundIdentNode:
@@ -206,9 +144,9 @@ func (symbol *symbol) ReferencePath() (path []string, absolute bool) {
 	return
 }
 
-// Resolve attempts to resolve an unresolved reference across files.
-func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
-	switch kind := symbol.kind.(type) {
+// Resolve attempts to resolve an unresolved reference across fileManager.
+func (s *symbol) ResolveCrossFile(ctx context.Context) {
+	switch kind := s.kind.(type) {
 	case *definition:
 	case *builtin:
 	case *import_:
@@ -220,29 +158,29 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 			return
 		}
 
-		components, _ := symbol.ReferencePath()
+		components, _ := s.ReferencePath()
 
 		// This is a field of some foreign type. We need to track down where this is.
 		if kind.seeTypeOf != nil {
 			ref, ok := kind.seeTypeOf.kind.(*reference)
 			if !ok || ref.file == nil {
-				symbol.file.server.logger.Debug(
+				s.file.lsp.logger.Debug(
 					"unexpected unresolved or non-reference symbol for seeTypeOf",
-					zap.Object("symbol", symbol))
+					zap.Object("symbol", s))
 				return
 			}
 
 			// Fully index the file this reference is in, if different from the current.
-			if symbol.file != ref.file {
+			if s.file != ref.file {
 				ref.file.Refresh(ctx)
 			}
 
 			// Find the definition that contains the type we want.
 			def, node := kind.seeTypeOf.Definition(ctx)
 			if def == nil {
-				symbol.file.server.logger.Debug(
+				s.file.lsp.logger.Debug(
 					"could not resolve dependent symbol definition",
-					zap.Object("symbol", symbol),
+					zap.Object("symbol", s),
 					zap.Object("dep", kind.seeTypeOf))
 				return
 			}
@@ -251,9 +189,9 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 			// TODO: Support more exotic field types.
 			field, ok := node.(*ast.FieldNode)
 			if !ok {
-				symbol.file.server.logger.Debug(
+				s.file.lsp.logger.Debug(
 					"dependent symbol definition was not a field",
-					zap.Object("symbol", symbol),
+					zap.Object("symbol", s),
 					zap.Object("dep", kind.seeTypeOf),
 					zap.Object("def", def))
 				return
@@ -267,9 +205,9 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 				Character: uint32(info.Start().Col) - 1,
 			})
 			if ty == nil {
-				symbol.file.server.logger.Debug(
+				s.file.lsp.logger.Debug(
 					"dependent symbol's field type didn't resolve",
-					zap.Object("symbol", symbol),
+					zap.Object("symbol", s),
 					zap.Object("dep", kind.seeTypeOf),
 					zap.Object("def", def))
 				return
@@ -281,9 +219,9 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 			// when we go to hover over the symbol.
 			ref, ok = ty.kind.(*reference)
 			if !ok || ty.file == nil {
-				symbol.file.server.logger.Debug(
+				s.file.lsp.logger.Debug(
 					"dependent symbol's field type didn't resolve to a reference",
-					zap.Object("symbol", symbol),
+					zap.Object("symbol", s),
 					zap.Object("dep", kind.seeTypeOf),
 					zap.Object("def", def),
 					zap.Object("resolved", ty))
@@ -296,12 +234,72 @@ func (symbol *symbol) ResolveCrossFile(ctx context.Context) {
 			return
 		}
 
+		if kind.isNonCustomOptionIn != nil {
+			var optionsType []string
+			switch kind.isNonCustomOptionIn.(type) {
+			case *ast.FileNode:
+				optionsType = []string{"FileOptions"}
+			case *ast.MessageNode:
+				optionsType = []string{"MessageOptions"}
+			case *ast.FieldNode, *ast.MapFieldNode:
+				optionsType = []string{"FieldOptions"}
+			case *ast.OneofNode:
+				optionsType = []string{"OneofOptions"}
+			case *ast.EnumNode:
+				optionsType = []string{"EnumOptions"}
+			case *ast.EnumValueNode:
+				optionsType = []string{"EnumValueOptions"}
+			case *ast.ServiceNode:
+				optionsType = []string{"ServiceOptions"}
+			case *ast.RPCNode:
+				optionsType = []string{"MethodOptions"}
+			case *ast.ExtensionRangeNode:
+				optionsType = []string{"DescriptorProto", "ExtensionRangeOptions"}
+			default:
+				// This node cannot contain options.
+				return
+			}
+
+			fieldPath := append(optionsType, kind.path...)
+
+			// Make a copy of the import table pointer and then drop the lock,
+			// since searching inside of the imports will need to acquire other
+			// fileManager' locks.
+			s.file.lock.Lock(ctx)
+			descriptorProto := s.file.imports[descriptorPath]
+			s.file.lock.Unlock(ctx)
+
+			if descriptorProto == nil {
+				return
+			}
+
+			// Look for a symbol with this exact path in descriptor proto.
+
+			descriptorProto.lock.Lock(ctx)
+			defer descriptorProto.lock.Unlock(ctx)
+
+			var fieldSymbol *symbol
+			for _, symbol := range descriptorProto.symbols {
+				if def, ok := symbol.kind.(*definition); ok && slices.Equal(def.path, fieldPath) {
+					fieldSymbol = symbol
+					break
+				}
+			}
+			if fieldSymbol == nil {
+				return
+			}
+
+			kind.file = descriptorProto
+			kind.path = fieldPath
+			return
+		}
+
 		// Make a copy of the import table pointer and then drop the lock,
 		// since searching inside of the imports will need to acquire other
-		// files' locks.
-		symbol.file.lock.Lock(ctx)
-		imports := symbol.file.imports
-		symbol.file.lock.Unlock(ctx)
+		// fileManager' locks.
+		s.file.lock.Lock(ctx)
+		imports := s.file.imports
+		s.file.lock.Unlock(ctx)
 
 		if imports == nil {
 			// Hopeless. We'll have to try again once we have imports!
@@ -377,6 +375,112 @@ func (symbol *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
 	return nil
 }
 
+// FormatDocs finds appropriate  documentation for the given symbol and constructs a Markdown
+// string for showing to the client.
+//
+// Returns the empty string if no docs are available.
+func (s *symbol) FormatDocs(ctx context.Context) string {
+	var (
+		tooltip strings.Builder
+		def     *symbol
+		node    ast.Node
+		path    []string
+	)
+
+	switch kind := s.kind.(type) {
+	case *builtin:
+		fmt.Fprintf(&tooltip, "```proto\nbuiltin %s\n```\n", kind.name)
+		for _, line := range builtinDocs[kind.name] {
+			fmt.Fprintln(&tooltip, line)
+		}
+
+		fmt.Fprintln(&tooltip)
+		fmt.Fprintf(
+			&tooltip,
+			"This is a built-in Protobuf type. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+		)
+		return tooltip.String()
+
+	case *reference:
+		def, node = s.Definition(ctx)
+		path = kind.path
+
+	case *definition:
+		def = s
+		node = kind.node
+		path = kind.path
+
+	default:
+		return ""
+	}
+
+	pkg := "<empty>"
+	if pkgNode := def.file.packageNode; pkgNode != nil {
+		pkg = string(pkgNode.Name.AsIdentifier())
+	}
+
+	what := "unresolved"
+	switch node.(type) {
+	case *ast.FileNode:
+		what = "file"
+	case *ast.MessageNode:
+		what = "message"
+	case *ast.FieldNode, *ast.MapFieldNode:
+		what = "field"
+	case *ast.GroupNode:
+		what = "group"
+	case *ast.OneofNode:
+		what = "oneof"
+	case *ast.EnumNode:
+		what = "enum"
+	case *ast.EnumValueNode:
+		what = "enum value"
+	case *ast.ServiceNode:
+		what = "service"
+	case *ast.RPCNode:
+		what = "rpc"
+	}
+
+	fmt.Fprintf(&tooltip, "```proto-decl\n%s %s.%s\n```\n", what, pkg, strings.Join(path, "."))
+
+	if node == nil {
+		fmt.Fprintln(&tooltip, "<could not resolve type>")
+		return tooltip.String()
+	}
+
+	// Dump all of the comments into the tooltip. These will be rendered as Markdown automatically
+	// by the client.
+	info := def.file.fileNode.NodeInfo(node)
+	allComments := []ast.Comments{info.LeadingComments(), info.TrailingComments()}
+	var printed bool
+	for _, comments := range allComments {
+		for i := 0; i < comments.Len(); i++ {
+			comment := comments.Index(i).RawText()
+
+			// The compiler does not currently provide comments without their
+			// delimited removed, so we have to do this ourselves.
+			if strings.HasPrefix(comment, "//") {
+				comment = strings.TrimSpace(strings.TrimPrefix(comment, "//"))
+			} else {
+				comment = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/"))
+			}
+
+			if comment != "" {
+				printed = true
+			}
+
+			// No need to process Markdown in comment; this Just Works!
+			fmt.Fprintln(&tooltip, comment)
+		}
+	}
+
+	if !printed {
+		fmt.Fprintln(&tooltip, "<missing docs>")
+	}
+
+	return tooltip.String()
+}
+
 // symbolWalker is an AST walker that generates the symbol table for a file in IndexSymbols().
 type symbolWalker struct {
 	file *file
@@ -411,7 +515,7 @@ func newWalker(file *file) *symbolWalker {
 	return walker
 }
 
-func (walker *symbolWalker) Walk(node ast.Node) {
+func (walker *symbolWalker) Walk(node, parent ast.Node) {
 	// Save the stack depth on entry, so we can undo it on exit.
 	top := len(walker.path)
 	defer func() { walker.path = walker.path[:top] }()
@@ -419,7 +523,7 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 	switch node := node.(type) {
 	case *ast.FileNode:
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.ImportNode:
@@ -436,20 +540,20 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 		walker.newDef(node, node.Name)
 		walker.path = append(walker.path, node)
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.ExtendNode:
 		walker.newRef(node.Extendee)
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.GroupNode:
 		walker.newDef(node, node.Name)
 		// TODO: also do the name of the generated field.
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.FieldNode:
@@ -457,7 +561,7 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 		walker.newRef(node.FldType)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
-				walker.Walk(option)
+				walker.Walk(option, node)
 			}
 		}
 
@@ -467,7 +571,7 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 		walker.newRef(node.MapType.ValueType)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
-				walker.Walk(option)
+				walker.Walk(option, node)
 			}
 		}
 
@@ -477,14 +581,14 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 		// pushing to walker.path.
 		// walker.path = append(walker.path, node.Name.Val)
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.EnumNode:
 		walker.newDef(node, node.Name)
 		walker.path = append(walker.path, node)
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.EnumValueNode:
@@ -494,7 +598,7 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 		walker.newDef(node, node.Name)
 		walker.path = append(walker.path, node)
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.RPCNode:
@@ -502,26 +606,28 @@ func (walker *symbolWalker) Walk(node ast.Node) {
 		walker.newRef(node.Input.MessageType)
 		walker.newRef(node.Output.MessageType)
 		for _, decl := range node.Decls {
-			walker.Walk(decl)
+			walker.Walk(decl, node)
 		}
 
 	case *ast.OptionNode:
-		var prevWasExt bool
-		for _, part := range node.Name.Parts {
+		for i, part := range node.Name.Parts {
+			var next *symbol
 			if part.IsExtension() {
-				walker.newRef(part.Name)
-			} else if prevWasExt {
+				next = walker.newRef(part.Name)
+			} else if i == 0 {
+				// This lies in descriptor.proto and has to wait until we're resolving
+				// cross-file references.
+				next = walker.newSymbol(part.Name)
+				next.kind = &reference{
+					path:                []string{part.Value()},
+					isNonCustomOptionIn: parent}
+			} else {
 				// This depends on the type of the previous symbol.
 				prev := walker.file.symbols[len(walker.file.symbols)-1]
-				next := walker.newRef(part.Name)
-				if kind, ok := next.kind.(*reference); ok {
-					kind.seeTypeOf = prev
-				}
-			} else {
-				// We are inside of descriptor.proto, i.e., hell.
-				_ = part // Silence a lint.
+				next = walker.newSymbol(part.Name)
+				next.kind = &reference{seeTypeOf: prev}
 			}
-			prevWasExt = part.IsExtension()
+			next.isOption = true
 		}
 
 		// TODO: node.Val
@@ -704,219 +810,6 @@ func makeNestingPath(path []ast.Node) []string {
 			return "<error>"
 		}
 	})
-}
-
-// builtinDocs contains documentation for the built-in types, to display in hover inlays.
-var builtinDocs = map[string][]string{
-	"int32": {
-		"A 32-bit integer (varint encoding).",
-		"",
-		"Values of this type range between `-2147483648` and `2147483647`.",
-		"Beware that negative values are encoded as five bytes on the wire!",
-	},
-	"int64": {
-		"A 64-bit integer (varint encoding).",
-		"",
-		"Values of this type range between `-9223372036854775808` and `9223372036854775807`.",
-		"Beware that negative values are encoded as ten bytes on the wire!",
-	},
-
-	"uint32": {
-		"A 32-bit unsigned integer (varint encoding).",
-		"",
-		"Values of this type range between `0` and `4294967295`.",
-	},
-	"uint64": {
-		"A 64-bit unsigned integer (varint encoding).",
-		"",
-		"Values of this type range between `0` and `18446744073709551615`.",
-	},
-
-	"sint32": {
-		"A 32-bit integer (ZigZag encoding).",
-		"",
-		"Values of this type range between `-2147483648` and `2147483647`.",
-	},
-	"sint64": {
-		"A 64-bit integer (ZigZag encoding).",
-		"",
-		"Values of this type range between `-9223372036854775808` and `9223372036854775807`.",
-	},
-
-	"fixed32": {
-		"A 32-bit unsigned integer (4-byte encoding).",
-		"",
-		"Values of this type range between `0` and `4294967295`.",
-	},
-	"fixed64": {
-		"A 64-bit unsigned integer (8-byte encoding).",
-		"",
-		"Values of this type range between `0` and `18446744073709551615`.",
-	},
-
-	"sfixed32": {
-		"A 32-bit integer (4-byte encoding).",
-		"",
-		"Values of this type range between `-2147483648` and `2147483647`.",
-	},
-	"sfixed64": {
-		"A 64-bit integer (8-byte encoding).",
-		"",
-		"Values of this type range between `-9223372036854775808` and `9223372036854775807`.",
-	},
-
-	"float": {
-		"A single-precision floating point number (IEEE-745.2008 binary32).",
-	},
-	"double": {
-		"A double-precision floating point number (IEEE-745.2008 binary64).",
-	},
-
-	"string": {
-		"A string of text.",
-		"",
-		"Stores at most 4GB of text. Intended to be UTF-8 encoded Unicode; use `bytes` if you need other encodings.",
-	},
-	"bytes": {
-		"A blob of arbitrary bytes.",
-		"",
-		"Stores at most 4GB of binary data. Encoded as base64 in JSON.",
-	},
-}
-
-// Definition is the entry point for hover inlays.
-func (server *server) Hover(
-	ctx context.Context,
-	params *protocol.HoverParams,
-) (*protocol.Hover, error) {
-	file := server.files.Get(params.TextDocument.URI)
-	if file == nil {
-		return nil, nil
-	}
-
-	var (
-		tooltip strings.Builder
-		def     *symbol
-		node    ast.Node
-		path    []string
-	)
-
-	symbol := file.SymbolAt(ctx, params.Position)
-	if symbol == nil {
-		return nil, nil
-	}
-
-	switch kind := symbol.kind.(type) {
-	case *builtin:
-		fmt.Fprintf(&tooltip, "```proto\n%s\n```\n", kind.name)
-		for _, line := range builtinDocs[kind.name] {
-			fmt.Fprintln(&tooltip, line)
-		}
-
-		fmt.Fprintln(&tooltip)
-		fmt.Fprintf(&tooltip, "This is a built-in Protobuf type. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)")
-		range_ := symbol.Range() // Need to spill this here because Hover.Range is a pointer.
-		return &protocol.Hover{
-			Contents: protocol.MarkupContent{
-				Kind:  protocol.Markdown,
-				Value: tooltip.String(),
-			},
-			Range: &range_,
-		}, nil
-
-	case *reference:
-		def, node = symbol.Definition(ctx)
-		path = kind.path
-
-	case *definition:
-		def = symbol
-		node = kind.node
-		path = kind.path
-
-	default:
-		return nil, nil
-	}
-
-	pkg := "<empty>"
-	if node := def.file.packageNode; node != nil {
-		pkg = string(node.Name.AsIdentifier())
-	}
-
-	fmt.Fprintf(&tooltip, "```proto\n%s.%s\n```\n", pkg, strings.Join(path, "."))
-
-	if node != nil {
-		// Dump all of the comments into the tooltip. These will be rendered as Markdown automatically
-		// by the client.
-		info := file.fileNode.NodeInfo(node)
-		allComments := []ast.Comments{info.LeadingComments(), info.TrailingComments()}
-		var printed bool
-		for _, comments := range allComments {
-			for i := 0; i < comments.Len(); i++ {
-				comment := comments.Index(i).RawText()
-
-				// The compiler does not currently provide comments without their
-				// delimited removed, so we have to do this ourselves.
-				if strings.HasPrefix(comment, "//") {
-					comment = strings.TrimSpace(strings.TrimPrefix(comment, "//"))
-				} else {
-					comment = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/"))
-				}
-
-				if comment != "" {
-					printed = true
-				}
-
-				// No need to process Markdown in comment; this Just Works!
-				fmt.Fprintln(&tooltip, comment)
-			}
-		}
-
-		if !printed {
-			fmt.Println(&tooltip, "<missing docs>")
-		}
-	} else {
-		fmt.Fprintf(&tooltip, "<could not resolve type>")
-	}
-
-	range_ := symbol.Range() // Need to spill this here because Hover.Range is a pointer.
-	return &protocol.Hover{
-		Contents: protocol.MarkupContent{
-			Kind:  protocol.Markdown,
-			Value: tooltip.String(),
-		},
-		Range: &range_,
-	}, nil
-}
-
-// Definition is the entry point for go-to-definition.
-func (server *server) Definition(
-	ctx context.Context,
-	params *protocol.DefinitionParams,
-) ([]protocol.Location, error) {
-	file := server.files.Get(params.TextDocument.URI)
-	if file == nil {
-		return nil, nil
-	}
-
-	symbol := file.SymbolAt(ctx, params.Position)
-	if symbol == nil {
-		return nil, nil
-	}
-
-	if imp, ok := symbol.kind.(*import_); ok {
-		// This is an import, we just want to jump to the file.
-		return []protocol.Location{{URI: imp.file.uri}}, nil
-	}
-
-	def, _ := symbol.Definition(ctx)
-	if def != nil {
-		return []protocol.Location{{
-			URI:   def.file.uri,
-			Range: def.Range(),
-		}}, nil
-	}
-
-	return nil, nil
 }
 
 func infoToRange(info ast.NodeInfo) protocol.Range {
