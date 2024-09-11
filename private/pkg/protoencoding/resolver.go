@@ -218,3 +218,33 @@ func (c combinedResolver) FindEnumByName(enum protoreflect.FullName) (protorefle
 	}
 	return nil, protoregistry.NotFound
 }
+
+type emptyResolver struct{}
+
+func (emptyResolver) FindFileByPath(string) (protoreflect.FileDescriptor, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindDescriptorByName(protoreflect.FullName) (protoreflect.Descriptor, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindEnumByName(protoreflect.FullName) (protoreflect.EnumType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindExtensionByName(protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindExtensionByNumber(protoreflect.FullName, protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindMessageByName(protoreflect.FullName) (protoreflect.MessageType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindMessageByURL(string) (protoreflect.MessageType, error) {
+	return nil, protoregistry.NotFound
+}
