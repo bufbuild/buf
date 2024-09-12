@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/ast"
@@ -37,19 +38,15 @@ const (
 	semanticTypeInterface
 	semanticTypeMethod
 	semanticTypeDecorator
-
-	semanticModifierDeprecated = iota
 )
 
 var (
-	// This must match the order of the indices in the above const block.
+	// These slices must match the order of the indices in the above const block.
 	semanticTypeLegend = []string{
 		"type", "struct", "variable", "enum",
 		"enumMember", "interface", "method", "decorator",
 	}
-	semanticModifierLegend = []string{
-		"deprecated",
-	}
+	semanticModifierLegend = []string{}
 )
 
 // server is an implementation of protocol.Server.
@@ -312,9 +309,16 @@ func (s *server) SemanticTokensFull(
 		return nil, nil
 	}
 
-	file.lock.Lock(ctx)
-	symbols := file.symbols
-	file.lock.Unlock(ctx)
+	var symbols []*symbol
+	for {
+		file.lock.Lock(ctx)
+		symbols = file.symbols
+		file.lock.Unlock(ctx)
+		if symbols != nil {
+			break
+		}
+		time.Sleep(1 * time.Millisecond)
+	}
 
 	var (
 		encoded           []uint32
@@ -327,6 +331,8 @@ func (s *server) SemanticTokensFull(
 			semanticType = semanticTypeDecorator
 		} else if def, defNode := symbol.Definition(ctx); def != nil {
 			switch defNode.(type) {
+			case *ast.FileNode:
+				continue
 			case *ast.MessageNode, *ast.GroupNode:
 				semanticType = semanticTypeStruct
 			case *ast.FieldNode, *ast.MapFieldNode, *ast.OneofNode:

@@ -262,6 +262,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 
 			fieldPath := append(optionsType, kind.path...)
 
+			if slices.Equal(fieldPath, []string{"FieldOptions", "default"}) {
+				// This one is a bit magical.
+				s.kind = &builtin{name: "default"}
+				return
+			}
+
 			// Make a copy of the import table pointer and then drop the lock,
 			// since searching inside of the imports will need to acquire other
 			// fileManager' locks.
@@ -322,8 +328,8 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	}
 }
 
-func (symbol *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
-	enc.AddString("file", symbol.file.uri.Filename())
+func (s *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
+	enc.AddString("file", s.file.uri.Filename())
 
 	// zapPos converts an ast.SourcePos into a zap marshaller.
 	zapPos := func(pos ast.SourcePos) zapcore.ObjectMarshalerFunc {
@@ -335,17 +341,17 @@ func (symbol *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
 		}
 	}
 
-	err = enc.AddObject("start", zapPos(symbol.info.Start()))
+	err = enc.AddObject("start", zapPos(s.info.Start()))
 	if err != nil {
 		return err
 	}
 
-	err = enc.AddObject("end", zapPos(symbol.info.End()))
+	err = enc.AddObject("end", zapPos(s.info.End()))
 	if err != nil {
 		return err
 	}
 
-	switch kind := symbol.kind.(type) {
+	switch kind := s.kind.(type) {
 	case *builtin:
 		enc.AddString("builtin", kind.name)
 
@@ -375,7 +381,7 @@ func (symbol *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
 	return nil
 }
 
-// FormatDocs finds appropriate  documentation for the given symbol and constructs a Markdown
+// FormatDocs finds appropriate  documentation for the given s and constructs a Markdown
 // string for showing to the client.
 //
 // Returns the empty string if no docs are available.
@@ -397,7 +403,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		fmt.Fprintln(&tooltip)
 		fmt.Fprintf(
 			&tooltip,
-			"This is a built-in Protobuf type. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+			"This symbol is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
 		)
 		return tooltip.String()
 
@@ -420,13 +426,21 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	}
 
 	what := "unresolved"
-	switch node.(type) {
+	switch node := node.(type) {
 	case *ast.FileNode:
 		what = "file"
 	case *ast.MessageNode:
 		what = "message"
-	case *ast.FieldNode, *ast.MapFieldNode:
+	case *ast.FieldNode:
 		what = "field"
+		if node.FieldExtendee() != nil {
+			what = "extension"
+		}
+	case *ast.MapFieldNode:
+		what = "field"
+		if node.FieldExtendee() != nil {
+			what = "extension"
+		}
 	case *ast.GroupNode:
 		what = "group"
 	case *ast.OneofNode:
@@ -434,18 +448,33 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	case *ast.EnumNode:
 		what = "enum"
 	case *ast.EnumValueNode:
-		what = "enum value"
+		what = "const"
 	case *ast.ServiceNode:
 		what = "service"
 	case *ast.RPCNode:
 		what = "rpc"
 	}
 
-	fmt.Fprintf(&tooltip, "```proto-decl\n%s %s.%s\n```\n", what, pkg, strings.Join(path, "."))
+	fmt.Fprintf(&tooltip, "```proto-decl\n%s %s.%s\n```\n\n", what, pkg, strings.Join(path, "."))
 
 	if node == nil {
 		fmt.Fprintln(&tooltip, "<could not resolve type>")
 		return tooltip.String()
+	}
+
+	if def.file.module != nil {
+		path := strings.Join(path, ".")
+
+		fmt.Fprintf(
+			&tooltip,
+			"[`%s.%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s.%s)\n\n",
+			pkg,
+			path,
+			def.file.module,
+			pkg,
+			pkg,
+			path,
+		)
 	}
 
 	// Dump all of the comments into the tooltip. These will be rendered as Markdown automatically
@@ -515,116 +544,126 @@ func newWalker(file *file) *symbolWalker {
 	return walker
 }
 
-func (walker *symbolWalker) Walk(node, parent ast.Node) {
+func (w *symbolWalker) Walk(node, parent ast.Node) {
+	if node == nil {
+		return
+	}
+
 	// Save the stack depth on entry, so we can undo it on exit.
-	top := len(walker.path)
-	defer func() { walker.path = walker.path[:top] }()
+	top := len(w.path)
+	defer func() { w.path = w.path[:top] }()
 
 	switch node := node.(type) {
 	case *ast.FileNode:
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.ImportNode:
 		// Generate a symbol for the import string. This symbol points to a file,
 		// not another symbol.
-		symbol := walker.newSymbol(node.Name)
+		symbol := w.newSymbol(node.Name)
 		import_ := new(import_)
 		symbol.kind = import_
-		if imported, ok := walker.file.imports[node.Name.AsString()]; ok {
+		if imported, ok := w.file.imports[node.Name.AsString()]; ok {
 			import_.file = imported
 		}
 
 	case *ast.MessageNode:
-		walker.newDef(node, node.Name)
-		walker.path = append(walker.path, node)
+		w.newDef(node, node.Name)
+		w.path = append(w.path, node)
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.ExtendNode:
-		walker.newRef(node.Extendee)
+		w.newRef(node.Extendee)
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.GroupNode:
-		walker.newDef(node, node.Name)
+		w.newDef(node, node.Name)
 		// TODO: also do the name of the generated field.
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.FieldNode:
-		walker.newDef(node, node.Name)
-		walker.newRef(node.FldType)
+		w.newDef(node, node.Name)
+		w.newRef(node.FldType)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
-				walker.Walk(option, node)
+				w.Walk(option, node)
 			}
 		}
 
 	case *ast.MapFieldNode:
-		walker.newDef(node, node.Name)
-		walker.newRef(node.MapType.KeyType)
-		walker.newRef(node.MapType.ValueType)
+		w.newDef(node, node.Name)
+		w.newRef(node.MapType.KeyType)
+		w.newRef(node.MapType.ValueType)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
-				walker.Walk(option, node)
+				w.Walk(option, node)
 			}
 		}
 
 	case *ast.OneofNode:
-		walker.newDef(node, node.Name)
+		w.newDef(node, node.Name)
 		// NOTE: oneof fields are not scoped to their oneof's name, so we can skip
-		// pushing to walker.path.
-		// walker.path = append(walker.path, node.Name.Val)
+		// pushing to w.path.
+		// w.path = append(w.path, node.Name.Val)
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.EnumNode:
-		walker.newDef(node, node.Name)
-		walker.path = append(walker.path, node)
+		w.newDef(node, node.Name)
+		w.path = append(w.path, node)
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.EnumValueNode:
-		walker.newDef(node, node.Name)
+		w.newDef(node, node.Name)
+		if node.Options != nil {
+			for _, option := range node.Options.Options {
+				w.Walk(option, node)
+			}
+		}
 
 	case *ast.ServiceNode:
-		walker.newDef(node, node.Name)
-		walker.path = append(walker.path, node)
+		w.newDef(node, node.Name)
+		w.path = append(w.path, node)
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.RPCNode:
-		walker.newDef(node, node.Name)
-		walker.newRef(node.Input.MessageType)
-		walker.newRef(node.Output.MessageType)
+		w.newDef(node, node.Name)
+		w.newRef(node.Input.MessageType)
+		w.newRef(node.Output.MessageType)
 		for _, decl := range node.Decls {
-			walker.Walk(decl, node)
+			w.Walk(decl, node)
 		}
 
 	case *ast.OptionNode:
 		for i, part := range node.Name.Parts {
 			var next *symbol
 			if part.IsExtension() {
-				next = walker.newRef(part.Name)
+				next = w.newRef(part.Name)
 			} else if i == 0 {
 				// This lies in descriptor.proto and has to wait until we're resolving
 				// cross-file references.
-				next = walker.newSymbol(part.Name)
+				next = w.newSymbol(part.Name)
 				next.kind = &reference{
 					path:                []string{part.Value()},
-					isNonCustomOptionIn: parent}
+					isNonCustomOptionIn: parent,
+				}
 			} else {
 				// This depends on the type of the previous symbol.
-				prev := walker.file.symbols[len(walker.file.symbols)-1]
-				next = walker.newSymbol(part.Name)
+				prev := w.file.symbols[len(w.file.symbols)-1]
+				next = w.newSymbol(part.Name)
 				next.kind = &reference{seeTypeOf: prev}
 			}
 			next.isOption = true
@@ -637,25 +676,25 @@ func (walker *symbolWalker) Walk(node, parent ast.Node) {
 // newSymbol creates a new symbol and adds it to the running list.
 //
 // name is the node representing the name of the symbol that can be go-to-definition'd.
-func (walker *symbolWalker) newSymbol(name ast.Node) *symbol {
+func (w *symbolWalker) newSymbol(name ast.Node) *symbol {
 	symbol := &symbol{
-		file: walker.file,
+		file: w.file,
 		name: name,
-		info: walker.file.fileNode.NodeInfo(name),
+		info: w.file.fileNode.NodeInfo(name),
 	}
 
-	walker.file.symbols = append(walker.file.symbols, symbol)
+	w.file.symbols = append(w.file.symbols, symbol)
 	return symbol
 }
 
 // newDef creates a new symbol for a definition, and adds it to the running list.
 //
 // Returns a new symbol for that definition.
-func (walker *symbolWalker) newDef(node ast.Node, name *ast.IdentNode) *symbol {
-	symbol := walker.newSymbol(name)
+func (w *symbolWalker) newDef(node ast.Node, name *ast.IdentNode) *symbol {
+	symbol := w.newSymbol(name)
 	symbol.kind = &definition{
 		node: node,
-		path: append(makeNestingPath(walker.path), name.Val),
+		path: append(makeNestingPath(w.path), name.Val),
 	}
 	return symbol
 }
@@ -663,12 +702,12 @@ func (walker *symbolWalker) newDef(node ast.Node, name *ast.IdentNode) *symbol {
 // newDef creates a new symbol for a name reference, and adds it to the running list.
 //
 // newRef performs same-file Protobuf name resolution. It searches for a partial package
-// name in each enclosing scope (per walker.path). Cross-file resolution is done by
+// name in each enclosing scope (per w.path). Cross-file resolution is done by
 // ResolveCrossFile().
 //
 // Returns a new symbol for that reference.
-func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
-	symbol := walker.newSymbol(name)
+func (w *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
+	symbol := w.newSymbol(name)
 	components, absolute := symbol.ReferencePath()
 
 	// Handle the built-in types.
@@ -676,7 +715,7 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 		switch components[0] {
 		case "int32", "int64", "uint32", "uint64", "sint32", "sint64",
 			"fixed32", "fixed64", "sfixed32", "sfixed64",
-			"float", "double", "string", "bytes":
+			"float", "double", "bool", "string", "bytes":
 			symbol.kind = &builtin{components[0]}
 			return symbol
 		}
@@ -687,31 +726,31 @@ func (walker *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 
 	// First, search the containing messages.
 	if !absolute {
-		for i := len(walker.path) - 1; i >= 0; i-- {
-			message, ok := walker.path[i].(*ast.MessageNode)
+		for i := len(w.path) - 1; i >= 0; i-- {
+			message, ok := w.path[i].(*ast.MessageNode)
 			if !ok {
 				continue
 			}
 
 			if findDeclByPath(message.Decls, components) != nil {
-				ref.file = walker.file
-				ref.path = append(makeNestingPath(walker.path[:i+1]), components...)
+				ref.file = w.file
+				ref.path = append(makeNestingPath(w.path[:i+1]), components...)
 				return symbol
 			}
 		}
 	}
 
 	// If we couldn't find it within a nested message, we now try to find it at the top level.
-	if !absolute && findDeclByPath(walker.file.fileNode.Decls, components) != nil {
-		ref.file = walker.file
+	if !absolute && findDeclByPath(w.file.fileNode.Decls, components) != nil {
+		ref.file = w.file
 		ref.path = components
 		return symbol
 	}
 
 	// Also try with the package removed.
 	if path, ok := slicesext.TrimPrefix(components, symbol.file.Package()); ok {
-		if findDeclByPath(walker.file.fileNode.Decls, path) != nil {
-			ref.file = walker.file
+		if findDeclByPath(w.file.fileNode.Decls, path) != nil {
+			ref.file = w.file
 			ref.path = path
 			return symbol
 		}

@@ -23,6 +23,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
@@ -40,8 +41,9 @@ const descriptorPath = "google/protobuf/descriptor.proto"
 type file struct {
 	// lsp and uri are not protected by file.lock; they are immutable after
 	// file creation!
-	lsp *lsp
-	uri protocol.URI
+	lsp    *lsp
+	uri    protocol.URI
+	module bufmodule.ModuleFullName
 
 	// All variables after this lock variables are protected by file.lock.
 	//
@@ -263,22 +265,25 @@ func (f *file) IndexImports(ctx context.Context) {
 		}
 
 		name := node.Name.AsString()
-		uri, ok := imports[name]
+		fileInfo, ok := imports[name]
 		if !ok {
 			f.lsp.logger.Sugar().Warnf("could not find URI for import %q", name)
 			continue
 		}
 
-		imported := f.Manager().Open(ctx, uri)
+		imported := f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
+		imported.module = fileInfo.ModuleFullName()
 		f.imports[node.Name.AsString()] = imported
 	}
 
 	if _, ok := f.imports[descriptorPath]; !ok {
-		descriptorURI := imports[descriptorPath]
+		descriptorFile := imports[descriptorPath]
+		descriptorURI := protocol.URI("file://" + descriptorFile.LocalPath())
 		if f.uri == descriptorURI {
 			f.imports[descriptorPath] = f
 		} else {
 			imported := f.Manager().Open(ctx, descriptorURI)
+			imported.module = descriptorFile.ModuleFullName()
 			f.imports[descriptorPath] = imported
 		}
 	}

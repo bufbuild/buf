@@ -92,4 +92,17 @@ var builtinDocs = map[string][]string{
 		"",
 		"Stores at most 4GB of binary data. Encoded as base64 in JSON.",
 	},
+
+	"bool": {
+		"A Boolean value: `true` or `false`.",
+		"",
+		"Encoded as a single byte: `0x00` or `0xff` (all non-zero bytes decode to `true`).",
+	},
+
+	"default": {
+		"A magic option that specifies the field's default value.",
+		"",
+		"Unlike every other option on a field, this does not have a corresponding field in",
+		"`google.protobuf.FieldOptions`; it is implemented by compiler magic.",
+	},
 }

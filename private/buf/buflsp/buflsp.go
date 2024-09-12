@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -145,15 +146,15 @@ func (l *lsp) init(params *protocol.InitializeParams) error {
 func (l *lsp) findImportable(
 	ctx context.Context,
 	uri protocol.URI,
-) (map[string]protocol.URI, error) {
+) (map[string]bufimage.ImageFileInfo, error) {
 	fileInfos, err := l.controller.GetImportableImageFileInfos(ctx, uri.Filename())
 	if err != nil {
 		return nil, err
 	}
 
-	imports := make(map[string]protocol.URI)
+	imports := make(map[string]bufimage.ImageFileInfo)
 	for _, fileInfo := range fileInfos {
-		imports[fileInfo.Path()] = protocol.URI("file://" + fileInfo.LocalPath())
+		imports[fileInfo.Path()] = fileInfo
 	}
 
 	l.logger.Sugar().Debugf("found imports for %q: %#v", uri, imports)
