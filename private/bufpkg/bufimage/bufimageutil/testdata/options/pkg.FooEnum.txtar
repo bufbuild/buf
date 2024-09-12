@@ -220,15 +220,15 @@ import "google/protobuf/descriptor.proto";
 message UsedOption {
   string foo = 1;
   extend google.protobuf.FileOptions {
-    optional UsedOption file_foo = 50000;
-    optional string file_baz = 50002;
+    UsedOption file_foo = 50000;
+    string file_baz = 50002;
   }
 }
 extend google.protobuf.EnumOptions {
-  optional UsedOption enum_foo = 50000;
-  optional string enum_baz = 50002;
+  UsedOption enum_foo = 50000;
+  string enum_baz = 50002;
 }
 extend google.protobuf.EnumValueOptions {
-  optional UsedOption enum_value_foo = 50000;
-  optional string enum_value_baz = 50002;
+  UsedOption enum_value_foo = 50000;
+  string enum_value_baz = 50002;
 }
