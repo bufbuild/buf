@@ -942,7 +942,8 @@ var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
 		responseWriter bufcheckserverutil.ResponseWriter,
 		request bufcheckserverutil.Request,
 	) error {
-		// TODO: refactor so fact this add func is no longer needed
+		// TODO: refactor so that this add func is no longer needed, but for now,
+		// keeping as is
 		addAnnotationFunc := func(
 			_ bufprotosource.Descriptor,
 			location bufprotosource.Location,
@@ -957,19 +958,24 @@ var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
 				args...,
 			)
 		}
-		types := new(protoregistry.Types)
-		files := request.ProtosourceFiles()
-		// Check shared rules extending protovalidate rules.
-		// This also registers these extensions to types if they are valid, which will
-		// be useful later on when example values are checked. Therefore, this check
-		// regisrer must happen first.
-		for _, file := range files {
-			// Regardless if the file is import, we want to add shared rule extensions to the types registry,
-			// as long as the extension's cel expressions compile.
+		extensionTypesFromRequest := new(protoregistry.Types)
+		// This for-loop checks that shared rules' cel expressions compile and add
+		// those that compile to the extension types, as a side effect. These types
+		// will be useful later on when example values are checked. Therefore, this
+		// loop must run before field and messages are checked.
+		for _, file := range request.ProtosourceFiles() {
+			// Regardless whether its file is an import, we want to add a shared rule
+			// extension to the types registry, as long as the extension's cel
+			// expressions compile.
+			// TODO: pass a nop addFunc the file is an import,
 			if err := bufprotosource.ForEachMessage(
 				func(message bufprotosource.Message) error {
-					for _, field := range message.Extensions() {
-						if err := buflintvalidate.CheckAndRegisterSharedRuleExtension(addAnnotationFunc, field, types); err != nil {
+					for _, extension := range message.Extensions() {
+						if err := buflintvalidate.CheckAndRegisterSharedRuleExtension(
+							addAnnotationFunc,
+							extension,
+							extensionTypesFromRequest,
+						); err != nil {
 							return nil
 						}
 					}
@@ -979,15 +985,19 @@ var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
 			); err != nil {
 				return err
 			}
-			for _, field := range file.Extensions() {
-				if err := buflintvalidate.CheckAndRegisterSharedRuleExtension(addAnnotationFunc, field, types); err != nil {
+			for _, extension := range file.Extensions() {
+				if err := buflintvalidate.CheckAndRegisterSharedRuleExtension(
+					addAnnotationFunc,
+					extension,
+					extensionTypesFromRequest,
+				); err != nil {
 					return nil
 				}
 			}
 		}
 		if err := bufcheckserverutil.NewLintMessageRuleHandler(
 			func(
-				responseWriter bufcheckserverutil.ResponseWriter,
+				_ bufcheckserverutil.ResponseWriter,
 				_ bufcheckserverutil.Request,
 				message bufprotosource.Message,
 			) error {
@@ -995,13 +1005,14 @@ var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
 			}).Handle(ctx, responseWriter, request); err != nil {
 			return err
 		}
+		// At this point the extension types are already populated.
 		if err := bufcheckserverutil.NewLintFieldRuleHandler(
 			func(
-				responseWriter bufcheckserverutil.ResponseWriter,
+				_ bufcheckserverutil.ResponseWriter,
 				_ bufcheckserverutil.Request,
 				field bufprotosource.Field,
 			) error {
-				return buflintvalidate.CheckField(addAnnotationFunc, field, types)
+				return buflintvalidate.CheckField(addAnnotationFunc, field, extensionTypesFromRequest)
 			}).Handle(ctx, responseWriter, request); err != nil {
 			return err
 		}

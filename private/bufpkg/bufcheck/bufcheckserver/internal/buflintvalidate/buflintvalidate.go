@@ -15,90 +15,24 @@
 package buflintvalidate
 
 import (
-	"strings"
-
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/bufbuild/protovalidate-go/resolver"
-	"github.com/google/cel-go/cel"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 // https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
 const disabledFieldNumberInMesageConstraints = 1
 
-// TODO: add doc
-// Only registers if cel compiles
+// CheckAndRegisterSharedRuleExtension checks whether an extension extending a protovalidate rule
+// is valid, checking that all of its CEL expressionus compile. If so, the extension type is added to
+// the extension types passed in.
 func CheckAndRegisterSharedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	// TODO: update parameter type and name
-	types *protoregistry.Types,
+	extensionTypesToPopulate *protoregistry.Types,
 ) error {
-	fieldDescriptor, err := field.AsDescriptor()
-	if err != nil {
-		return err
-	}
-	// TODO: move to a different func instead of having nested ifs
-	if fieldDescriptor.IsExtension() {
-		extendedStandardRuleDescriptor := fieldDescriptor.ContainingMessage()
-		extendedRuleFullName := extendedStandardRuleDescriptor.FullName()
-		if strings.HasPrefix(string(extendedRuleFullName), "buf.validate.") && strings.HasSuffix(string(extendedRuleFullName), "Rules") {
-			// Just to be extra sure.
-			if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) != nil {
-				if extendedRules := resolveExt[*validate.SharedFieldConstraints](fieldDescriptor.Options(), validate.E_SharedField); extendedRules != nil {
-					celEnv, err := celext.DefaultEnv(false)
-					if err != nil {
-						return err
-					}
-					// TODO: add an example in comment
-					// This is a bit of hacky, relying on the fact that each *Rules has a const rule,
-					// we take advantage of it to give "this" a type.
-					ruleConstFieldDescriptor := extendedStandardRuleDescriptor.Fields().ByName("const")
-					if ruleConstFieldDescriptor == nil {
-						// This shouldn't happen
-						return syserror.Newf("unexpected protovalidate rule without a const rule, which is relied upon by buf lint")
-					}
-					thisType := celext.ProtoFieldToCELType(ruleConstFieldDescriptor, false, false)
-					celEnv, err = celEnv.Extend(
-						append(
-							celext.RequiredCELEnvOptions(fieldDescriptor),
-							cel.Variable("rule", celext.ProtoFieldToCELType(fieldDescriptor, false, false)),
-							cel.Variable("this", thisType),
-						)...,
-					)
-					if err != nil {
-						return err
-					}
-					if checkCEL(
-						celEnv,
-						extendedRules.GetCel(),
-						"TODO1",
-						"TODO2",
-						"TODO3",
-						func(index int, format string, args ...interface{}) {
-							addAnnotationFunc(
-								field,
-								// TODO: move 1 to a const
-								field.OptionExtensionLocation(validate.E_SharedField, 1, int32(index)),
-								nil,
-								format,
-								args...,
-							)
-						},
-					) {
-						if err := types.RegisterExtension(dynamicpb.NewExtensionType(fieldDescriptor)); err != nil {
-							return err
-						}
-					}
-				}
-			}
-		}
-	}
-	return nil
+	return checkAndRegisterSharedRuleExtension(addAnnotationFunc, field, extensionTypesToPopulate)
 }
 
 // CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.
