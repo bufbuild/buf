@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protoplugin"
 )
@@ -42,7 +43,14 @@ const (
 
 // Main is the main.
 func Main() {
-	protoplugin.Main(protoplugin.HandlerFunc(handle))
+	protoplugin.Main(
+		protoplugin.HandlerFunc(handle),
+		// An `EmptyResolver` is passed to protoplugin for unmarshalling instead of defaulting to
+		// protoregistry.GlobalTypes so that extensions are not inadvertently parsed from generated
+		// code linked into the binary. Extensions are later reparsed with the descriptorset itself.
+		// https://github.com/bufbuild/buf/issues/3306
+		protoplugin.WithExtensionTypeResolver(protoencoding.EmptyResolver),
+	)
 }
 
 func handle(
@@ -121,7 +129,7 @@ func handle(
 					return err
 				}
 			}
-			responseWriter.SetError(strings.TrimSpace(buffer.String()))
+			responseWriter.AddError(strings.TrimSpace(buffer.String()))
 			return nil
 		}
 		return err

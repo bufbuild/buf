@@ -30,14 +30,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoprint"
+	"github.com/jhump/protoreflect/v2/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -184,7 +184,7 @@ func TestTransitivePublic(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
+	_, err = protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 }
 
@@ -276,24 +276,26 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	err = proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
 
-	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(fileDescriptorSet)
+	files, err := protodesc.NewFiles(fileDescriptorSet)
 	require.NoError(t, err)
+
 	archive := &txtar.Archive{}
 	printer := protoprint.Printer{
 		SortElements: true,
 		Compact:      true,
 	}
-	for fname, d := range reflectDescriptors {
+	files.RangeFiles(func(fileDescriptor protoreflect.FileDescriptor) bool {
 		fileBuilder := &bytes.Buffer{}
-		require.NoError(t, printer.PrintProtoFile(d, fileBuilder), "expected no error while printing %q", fname)
+		require.NoError(t, printer.PrintProtoFile(fileDescriptor, fileBuilder), "expected no error while printing %q", fileDescriptor.Path())
 		archive.Files = append(
 			archive.Files,
 			txtar.File{
-				Name: fname,
+				Name: fileDescriptor.Path(),
 				Data: fileBuilder.Bytes(),
 			},
 		)
-	}
+		return true
+	})
 	sort.SliceStable(archive.Files, func(i, j int) bool {
 		return archive.Files[i].Name < archive.Files[j].Name
 	})

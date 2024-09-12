@@ -199,15 +199,15 @@ import "google/protobuf/descriptor.proto";
 message UsedOption {
   string foo = 1;
   extend google.protobuf.FileOptions {
-    optional UsedOption file_foo = 50000;
-    optional string file_baz = 50002;
+    UsedOption file_foo = 50000;
+    string file_baz = 50002;
   }
 }
 extend google.protobuf.MethodOptions {
-  optional UsedOption method_foo = 50000;
-  optional string method_baz = 50002;
+  UsedOption method_foo = 50000;
+  string method_baz = 50002;
 }
 extend google.protobuf.ServiceOptions {
-  optional UsedOption service_foo = 50000;
-  optional string service_baz = 50002;
+  UsedOption service_foo = 50000;
+  string service_baz = 50002;
 }

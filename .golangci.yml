@@ -287,8 +287,3 @@ issues:
       # trip this off.
       path: private/pkg/oauth2/device.go
       text: "G101:"
-      # TODO: Remove once github.com/jhump/protoreflect is no longer a dependency
-    - linters:
-        - staticcheck
-      path: private/bufpkg/bufimage/bufimageutil/bufimageutil_test.go
-      test: "SA1019:"
