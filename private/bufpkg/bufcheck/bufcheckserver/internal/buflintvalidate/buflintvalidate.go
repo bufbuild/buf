@@ -18,11 +18,18 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/protovalidate-go/resolver"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 // https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
 const disabledFieldNumberInMesageConstraints = 1
+
+// ExtensionTypeResolver is an extension resolver, the same type as the Resolver in proto.UnmarshalOptions.
+type ExtensionTypeResolver interface {
+	FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error)
+	FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error)
+}
 
 // CheckAndRegisterSharedRuleExtension checks whether an extension extending a protovalidate rule
 // is valid, checking that all of its CEL expressionus compile. If so, the extension type is added to
@@ -74,8 +81,7 @@ func CheckMessage(
 func CheckField(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	// TODO: update parameter type and name
-	types *protoregistry.Types,
+	extenExtensionTypeResolver ExtensionTypeResolver,
 ) error {
-	return checkField(addAnnotationFunc, field, types)
+	return checkField(addAnnotationFunc, field, extenExtensionTypeResolver)
 }
