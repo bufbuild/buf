@@ -85,7 +85,12 @@ func run(
 		return err
 	}
 
-	conn, err := buflsp.Serve(ctx, container, jsonrpc2.NewStream(transport))
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
+
+	conn, err := buflsp.Serve(ctx, container, controller, jsonrpc2.NewStream(transport))
 	if err != nil {
 		return err
 	}

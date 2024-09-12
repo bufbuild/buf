@@ -23,10 +23,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -48,18 +46,9 @@ const (
 func Serve(
 	ctx context.Context,
 	container appext.Container,
+	controller bufctl.Controller,
 	stream jsonrpc2.Stream,
 ) (jsonrpc2.Conn, error) {
-	controller, err := bufcli.NewController(container)
-	if err != nil {
-		return nil, err
-	}
-
-	moduleDataProvider, err := bufcli.NewModuleDataProvider(container)
-	if err != nil {
-		return nil, err
-	}
-
 	// The LSP protocol deals with absolute filesystem paths. This requires us to
 	// bypass the bucket API completely, so we create a bucket pointing at the filesystem
 	// root.
@@ -81,11 +70,10 @@ func Serve(
 			&connAdapter{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-		logger:             container.Logger(),
-		tracer:             tracing.NewTracer(container.Tracer()),
-		controller:         controller,
-		rootBucket:         bucket,
-		moduleDataProvider: moduleDataProvider,
+		logger:     container.Logger(),
+		tracer:     tracing.NewTracer(container.Tracer()),
+		controller: controller,
+		rootBucket: bucket,
 	}
 	lsp.fileManager = newFiles(lsp)
 	off := protocol.TraceOff
@@ -106,12 +94,11 @@ type lsp struct {
 	conn   jsonrpc2.Conn
 	client protocol.Client
 
-	logger             *zap.Logger
-	tracer             tracing.Tracer
-	controller         bufctl.Controller
-	rootBucket         storage.ReadBucket
-	moduleDataProvider bufmodule.ModuleDataProvider
-	fileManager        *fileManager
+	logger      *zap.Logger
+	tracer      tracing.Tracer
+	controller  bufctl.Controller
+	rootBucket  storage.ReadBucket
+	fileManager *fileManager
 
 	// These are atomics, because they are read often add written to
 	// almost never, but potentially concurrently. Having them side-by-side
