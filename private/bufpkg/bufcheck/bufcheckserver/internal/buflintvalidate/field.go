@@ -160,14 +160,13 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	adder := &adder{
-		field:               field,
-		fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
-		addFunc:             add,
-	}
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	return checkConstraintsForField(
-		adder,
+		&adder{
+			field:               field,
+			fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
+			addFunc:             add,
+		},
 		constraints,
 		fieldDescriptor.ContainingMessage(),
 		nil,
@@ -246,35 +245,25 @@ func checkConstraintsForField(
 	}
 	switch typeRulesFieldNumber {
 	case boolRulesFieldNumber:
-		// Bool rules only have one constraint, `const`, which does not need validating.
+		// Bool rules only have `const` and does not need validating.
 	case stringRulesFieldNumber:
-		stringRules := fieldConstraints.GetString_()
-		err := reparseUnrecognized(stringRules.ProtoReflect(), extenExtensionTypeResolver)
-		if err != nil {
-			return fmt.Errorf("error reparsing message: %w", err)
-		}
-		if err := checkStringRules(adder, stringRules); err != nil {
+		if err := checkStringRules(adder, fieldConstraints.GetString_()); err != nil {
 			return err
 		}
 	case bytesRulesFieldNumber:
-		bytesRules := fieldConstraints.GetBytes()
-		if err := checkBytesRules(adder, bytesRules); err != nil {
+		if err := checkBytesRules(adder, fieldConstraints.GetBytes()); err != nil {
 			return err
 		}
 	case enumRulesFieldNumber:
-		enumRules := fieldConstraints.GetEnum()
-		checkEnumRules(adder, enumRules)
+		checkEnumRules(adder, fieldConstraints.GetEnum())
 	case anyRulesFieldNumber:
-		// Any does not have example values.
 		checkAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
-		durationRules := fieldConstraints.GetDuration()
-		if err := checkDurationRules(adder, durationRules); err != nil {
+		if err := checkDurationRules(adder, fieldConstraints.GetDuration()); err != nil {
 			return err
 		}
 	case timestampRulesFieldNumber:
-		timestampRules := fieldConstraints.GetTimestamp()
-		if err := checkTimestampRules(adder, timestampRules); err != nil {
+		if err := checkTimestampRules(adder, fieldConstraints.GetTimestamp()); err != nil {
 			return err
 		}
 	}
