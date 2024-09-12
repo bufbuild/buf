@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate/shared"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
@@ -110,14 +109,16 @@ func checkCELForField(
 	return nil
 }
 
+// Returns true only if all cel expressions compile
 func checkCEL(
 	celEnv *cel.Env,
-	celConstraints []*shared.Constraint,
+	celConstraints []*validate.Constraint,
 	parentName string,
 	parentNameCapitalized string,
 	celName string,
 	add func(int, string, ...interface{}),
-) {
+) bool {
+	allCelExpressionsCompile := true
 	idToConstraintIndices := make(map[string][]int, len(celConstraints))
 	for i, celConstraint := range celConstraints {
 		if celID := celConstraint.GetId(); celID != "" {
@@ -143,14 +144,14 @@ func checkCEL(
 		} else {
 			add(i, "%s has an empty %s.id. IDs should always be specified.", parentNameCapitalized, celName)
 		}
-		if len(strings.TrimSpace(celConstraint.Expression)) == 0 {
+		if len(strings.TrimSpace(celConstraint.GetExpression())) == 0 {
 			add(i, "%s has an empty %s.expression. Expressions should always be specified.", parentNameCapitalized, celName)
 			continue
 		}
-		ast, compileIssues := celEnv.Compile(celConstraint.Expression)
+		ast, compileIssues := celEnv.Compile(celConstraint.GetExpression())
 		switch {
 		case ast.OutputType().IsAssignableType(cel.BoolType):
-			if celConstraint.Message == "" {
+			if celConstraint.GetMessage() == "" {
 				add(
 					i,
 					"%s has an empty %s.message for an expression that evaluates to a boolean. If an expression evaluates to a boolean, a message should always be specified.",
@@ -159,7 +160,7 @@ func checkCEL(
 				)
 			}
 		case ast.OutputType().IsAssignableType(cel.StringType):
-			if celConstraint.Message != "" {
+			if celConstraint.GetMessage() != "" {
 				add(
 					i,
 					"%s has a %s with an expression that evaluates to a string, and also has a message. The message is redundant - since the expression evaluates to a string, its result will be printed instead of the message, so the message should be removed.",
@@ -180,6 +181,7 @@ func checkCEL(
 			)
 		}
 		if compileIssues.Err() != nil {
+			allCelExpressionsCompile = false
 			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
 				add(
 					i,
@@ -205,6 +207,7 @@ func checkCEL(
 			)
 		}
 	}
+	return allCelExpressionsCompile
 }
 
 // this depends on the undocumented behavior of cel-go's error message

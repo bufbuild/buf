@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -154,24 +155,102 @@ var (
 func checkField(
 	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
+	// TODO: update type and name
+	types *protoregistry.Types,
 ) error {
 	fieldDescriptor, err := field.AsDescriptor()
 	if err != nil {
 		return err
 	}
+	adder := &adder{
+		field:               field,
+		fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
+		addFunc:             add,
+	}
+	// TODO: move to a different func instead of having nested ifs
+	// if fieldDescriptor.IsExtension() {
+	// 	extendedStandardRuleDescriptor := fieldDescriptor.ContainingMessage()
+	// 	extendedRuleName := extendedStandardRuleDescriptor.Name()
+	// 	if strings.HasPrefix(string(extendedRuleName), "buf.validate.") && strings.HasSuffix(string(extendedRuleName), "Rules") {
+	// 		// Just to be extra sure.
+	// 		if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleName) != nil {
+	// 			if extendedRules := resolveExt[*validate.SharedFieldConstraints](extendedStandardRuleDescriptor.Options(), validate.E_SharedField); extendedRules != nil {
+	// 				celEnv, err := celext.DefaultEnv(false)
+	// 				if err != nil {
+	// 					return err
+	// 				}
+	// 				celEnv, err = celEnv.Extend(
+	// 					append(
+	// 						celext.RequiredCELEnvOptions(fieldDescriptor),
+	// 						// TODO: this is incorrect
+	// 						cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, false)),
+	// 						// TODO: this might be incorrect
+	// 						cel.Variable("rule", celext.ProtoFieldToCELType(fieldDescriptor, false, false)),
+	// 					)...,
+	// 				)
+	// 				if err != nil {
+	// 					return err
+	// 				}
+	// 				checkCEL(
+	// 					celEnv,
+	// 					extendedRules.GetCel(),
+	// 					fmt.Sprintf("TODO1"),
+	// 					fmt.Sprintf("TODO2"),
+	// 					fmt.Sprintf("TODO3"),
+	// 					func(index int, format string, args ...interface{}) {
+	// 						adder.addForPathf(
+	// 							[]int32{celFieldNumberInFieldConstraints, int32(index)},
+	// 							format,
+	// 							args...,
+	// 						)
+	// 					},
+	// 				)
+	// 			}
+	// 		}
+	// 	}
+	// }
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	return checkConstraintsForField(
-		&adder{
-			field:               field,
-			fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
-			addFunc:             add,
-		},
+		adder,
 		constraints,
 		fieldDescriptor.ContainingMessage(),
 		nil,
 		fieldDescriptor,
 		fieldDescriptor.Cardinality() == protoreflect.Repeated,
+		// TODO: update type and name
+		types,
 	)
+}
+
+// TODO: this function is copied directly from protovalidate-go
+// We have 3 options:
+// 1. in protovalidate-go, add DefaultResolver.ResolveSharedFieldConstraints
+// 2. in protovalidate-go
+func resolveExt[C proto.Message](
+	options proto.Message,
+	extType protoreflect.ExtensionType,
+) (constraints C) {
+	num := extType.TypeDescriptor().Number()
+	var msg proto.Message
+
+	proto.RangeExtensions(options, func(typ protoreflect.ExtensionType, i interface{}) bool {
+		if num != typ.TypeDescriptor().Number() {
+			return true
+		}
+		msg, _ = i.(proto.Message)
+		return false
+	})
+
+	if msg == nil {
+		return constraints
+	} else if m, ok := msg.(C); ok {
+		return m
+	}
+
+	constraints, _ = constraints.ProtoReflect().New().Interface().(C)
+	b, _ := proto.Marshal(msg)
+	_ = proto.Unmarshal(b, constraints)
+	return constraints
 }
 
 func checkConstraintsForField(
@@ -189,6 +268,8 @@ func checkConstraintsForField(
 	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	expectRepeatedRule bool,
+	// TODO: update parameter type and name
+	types *protoregistry.Types,
 ) error {
 	if fieldConstraints == nil {
 		return nil
@@ -225,10 +306,10 @@ func checkConstraintsForField(
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	// Map and repeated special cases that contain fieldConstraints.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor, containingMessageDescriptor)
+		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor, containingMessageDescriptor, types)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor, containingMessageDescriptor)
+		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor, containingMessageDescriptor, types)
 	}
 	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber, expectRepeatedRule)
 	if !typesMatch {
@@ -245,6 +326,10 @@ func checkConstraintsForField(
 		// Bool rules only have one constraint, `const`, which does not need validating.
 	case stringRulesFieldNumber:
 		stringRules := fieldConstraints.GetString_()
+		err := reparseUnrecognized(stringRules.ProtoReflect(), types)
+		if err != nil {
+			return fmt.Errorf("error reparsing message: %w", err)
+		}
 		if err := checkStringRules(adder, stringRules); err != nil {
 			return err
 		}
@@ -301,6 +386,32 @@ func checkConstraintsForField(
 	return nil
 }
 
+type fieldExclusiveConstraintsResolver struct {
+	protovalidate.StandardConstraintResolver
+	targetField protoreflect.FieldDescriptor
+}
+
+func (r *fieldExclusiveConstraintsResolver) ResolveFieldConstraints(desc protoreflect.FieldDescriptor) *validate.FieldConstraints {
+	if desc.FullName() != r.targetField.FullName() {
+		return nil
+	}
+	return r.StandardConstraintResolver.ResolveFieldConstraints(desc)
+}
+
+func reparseUnrecognized(reflectMessage protoreflect.Message, types *protoregistry.Types) error {
+	unknown := reflectMessage.GetUnknown()
+	if len(unknown) > 0 {
+		reflectMessage.SetUnknown(nil)
+		options := proto.UnmarshalOptions{
+			Resolver: types,
+			Merge:    true,
+		}
+		if err := options.Unmarshal(unknown, reflectMessage.Interface()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func checkFieldFlags(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
@@ -428,6 +539,8 @@ func checkRepeatedRules(
 	repeatedRules *validate.RepeatedRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
+	// TODO: update parameter type and name
+	types *protoregistry.Types,
 ) error {
 	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
@@ -470,7 +583,7 @@ func checkRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
-	return checkConstraintsForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false, types)
 }
 
 func checkMapRules(
@@ -478,6 +591,8 @@ func checkMapRules(
 	mapRules *validate.MapRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
+	// TODO: update parameter type and name
+	types *protoregistry.Types,
 ) error {
 	if !fieldDescriptor.IsMap() {
 		baseAdder.addForPathf(
@@ -509,12 +624,12 @@ func checkMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
-	err := checkConstraintsForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false)
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false, types)
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
-	return checkConstraintsForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false)
+	return checkConstraintsForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false, types)
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
@@ -773,7 +888,16 @@ func checkExampleValues(
 	fieldDescriptor protoreflect.FieldDescriptor,
 	exampleValues []protoreflect.Value,
 ) error {
-	v, err := protovalidate.New()
+	v, err := protovalidate.New(
+		protovalidate.WithStandardConstraintInterceptor(
+			func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
+				return &fieldExclusiveConstraintsResolver{
+					StandardConstraintResolver: res,
+					targetField:                fieldDescriptor,
+				}
+			},
+		),
+	)
 	if err != nil {
 		return err
 	}
@@ -814,7 +938,7 @@ func checkExampleValues(
 		// This is needed because the shape of field path in a protovalidate.Violation depends on
 		// the type of the field descriptor.
 		matchViolationFunc := func(violation *validate.Violation) bool {
-			return violation.FieldPath == string(fieldDescriptor.Name())
+			return violation.GetFieldPath() == string(fieldDescriptor.Name())
 		}
 		if fieldDescriptor.IsList() { // this is linting for items (they have the same descriptor) // TODO: update this comment so that it makes sense
 			list := messageToValidate.NewField(fieldDescriptor).List()
@@ -823,7 +947,7 @@ func checkExampleValues(
 			matchViolationFunc = func(violation *validate.Violation) bool {
 				prefix := fieldDescriptor.Name() + "["
 				suffix := "]"
-				fieldPath := violation.FieldPath
+				fieldPath := violation.GetFieldPath()
 				return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
 			}
 		} else if parentMapFieldDescriptor != nil {
@@ -850,8 +974,8 @@ func checkExampleValues(
 				matchViolationFunc = func(violation *validate.Violation) bool {
 					prefix := parentMapFieldDescriptor.Name() + "["
 					suffix := "]"
-					fieldPath := violation.FieldPath
-					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.ForKey
+					fieldPath := violation.GetFieldPath()
+					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.GetForKey()
 				}
 			case "value":
 				mapEntry.Set(
@@ -861,8 +985,8 @@ func checkExampleValues(
 				matchViolationFunc = func(violation *validate.Violation) bool {
 					prefix := parentMapFieldDescriptor.Name() + "["
 					suffix := "]"
-					fieldPath := violation.FieldPath
-					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.ForKey
+					fieldPath := violation.GetFieldPath()
+					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
 				}
 			default:
 				return syserror.Newf("expected key or value as sythetic field name for map entry's field name, got %q", fieldDescriptor.Name())
@@ -885,7 +1009,7 @@ func checkExampleValues(
 		if errors.As(err, &validationErr) {
 			for _, violation := range validationErr.Violations {
 				if matchViolationFunc(violation) {
-					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.ConstraintId, violation.Message)
+					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.GetConstraintId(), violation.GetMessage())
 				}
 			}
 			continue

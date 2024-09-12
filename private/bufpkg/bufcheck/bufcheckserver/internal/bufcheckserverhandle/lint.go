@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/bufplugin-go/check"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -935,55 +936,79 @@ func handleLintPackageVersionSuffix(
 }
 
 // HandleLintProtovalidate is a handle function.
-var HandleLintProtovalidate = bufcheckserverutil.NewMultiHandler(
-	// NOTE: Oneofs also have protovalidate support, but they only have a "required" field, so nothing to lint.
-	bufcheckserverutil.NewLintMessageRuleHandler(handleLintMessageProtovalidate),
-	bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldProtovalidate),
+var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
+	func(
+		ctx context.Context,
+		responseWriter bufcheckserverutil.ResponseWriter,
+		request bufcheckserverutil.Request,
+	) error {
+		// TODO: refactor so fact this add func is no longer needed
+		addAnnotationFunc := func(
+			_ bufprotosource.Descriptor,
+			location bufprotosource.Location,
+			_ []bufprotosource.Location,
+			format string,
+			args ...interface{},
+		) {
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				nil,
+				format,
+				args...,
+			)
+		}
+		types := new(protoregistry.Types)
+		files := request.ProtosourceFiles()
+		// Check shared rules extending protovalidate rules.
+		// This also registers these extensions to types if they are valid, which will
+		// be useful later on when example values are checked. Therefore, this check
+		// regisrer must happen first.
+		for _, file := range files {
+			// Regardless if the file is import, we want to add shared rule extensions to the types registry,
+			// as long as the extension's cel expressions compile.
+			if err := bufprotosource.ForEachMessage(
+				func(message bufprotosource.Message) error {
+					for _, field := range message.Extensions() {
+						if err := buflintvalidate.CheckAndRegisterSharedRuleExtension(addAnnotationFunc, field, types); err != nil {
+							return nil
+						}
+					}
+					return nil
+				},
+				file,
+			); err != nil {
+				return err
+			}
+			for _, field := range file.Extensions() {
+				if err := buflintvalidate.CheckAndRegisterSharedRuleExtension(addAnnotationFunc, field, types); err != nil {
+					return nil
+				}
+			}
+		}
+		if err := bufcheckserverutil.NewLintMessageRuleHandler(
+			func(
+				responseWriter bufcheckserverutil.ResponseWriter,
+				_ bufcheckserverutil.Request,
+				message bufprotosource.Message,
+			) error {
+				return buflintvalidate.CheckMessage(addAnnotationFunc, message)
+			}).Handle(ctx, responseWriter, request); err != nil {
+			return err
+		}
+		if err := bufcheckserverutil.NewLintFieldRuleHandler(
+			func(
+				responseWriter bufcheckserverutil.ResponseWriter,
+				_ bufcheckserverutil.Request,
+				field bufprotosource.Field,
+			) error {
+				return buflintvalidate.CheckField(addAnnotationFunc, field, types)
+			}).Handle(ctx, responseWriter, request); err != nil {
+			return err
+		}
+		// NOTE: Oneofs also have protovalidate support, but they only have a "required" field, so nothing to lint.
+		return nil
+	},
 )
-
-func handleLintMessageProtovalidate(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	message bufprotosource.Message,
-) error {
-	addAnnotationFunc := func(
-		_ bufprotosource.Descriptor,
-		location bufprotosource.Location,
-		_ []bufprotosource.Location,
-		format string,
-		args ...interface{},
-	) {
-		responseWriter.AddProtosourceAnnotation(
-			location,
-			nil,
-			format,
-			args...,
-		)
-	}
-	return buflintvalidate.CheckMessage(addAnnotationFunc, message)
-}
-
-func handleLintFieldProtovalidate(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	field bufprotosource.Field,
-) error {
-	addAnnotationFunc := func(
-		_ bufprotosource.Descriptor,
-		location bufprotosource.Location,
-		_ []bufprotosource.Location,
-		format string,
-		args ...interface{},
-	) {
-		responseWriter.AddProtosourceAnnotation(
-			location,
-			nil,
-			format,
-			args...,
-		)
-	}
-	return buflintvalidate.CheckField(addAnnotationFunc, field)
-}
 
 // HandleLintRPCNoClientStreaming is a handle function.
 var HandleLintRPCNoClientStreaming = bufcheckserverutil.NewLintMethodRuleHandler(handleLintRPCNoClientStreaming)
