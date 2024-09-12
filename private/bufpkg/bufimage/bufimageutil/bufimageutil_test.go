@@ -184,7 +184,7 @@ func TestTransitivePublic(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	_, err = protoencoding.NewWireMarshaler().Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
+	_, err = protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 }
 
@@ -286,7 +286,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	}
 	files.RangeFiles(func(fileDescriptor protoreflect.FileDescriptor) bool {
 		fileBuilder := &bytes.Buffer{}
-		require.NoError(t, printer.PrintProtoFile(fileDescriptor, fileBuilder), "expected no error while printing %q", fileDescriptor.Name())
+		require.NoError(t, printer.PrintProtoFile(fileDescriptor, fileBuilder), "expected no error while printing %q", fileDescriptor.Path())
 		archive.Files = append(
 			archive.Files,
 			txtar.File{
