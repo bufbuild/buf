@@ -942,8 +942,7 @@ var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
 		responseWriter bufcheckserverutil.ResponseWriter,
 		request bufcheckserverutil.Request,
 	) error {
-		// TODO: refactor so that this add func is no longer needed, but for now,
-		// keeping as is
+		// TODO: refactor so that add func is no longer needed
 		addAnnotationFunc := func(
 			_ bufprotosource.Descriptor,
 			location bufprotosource.Location,
