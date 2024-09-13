@@ -58,7 +58,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Print the dependency graph in the given format (default DOT)",
+		Short: "Print the dependency graph",
 		Long: `As an example, if module in directory "src/proto" depends on module "buf.build/foo/bar"
 from the BSR with commit "12345", and "buf.build/foo/bar:12345" depends on module "buf.build/foo/baz"
 from the BSR with commit "67890", the following will be printed:
@@ -121,7 +121,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
-		"dot",
+		dotFormatString,
 		fmt.Sprintf(
 			"The format to print graph as. Must be one of %s",
 			stringutil.SliceToString(allGraphFormatStrings),
@@ -208,6 +208,8 @@ func run(
 			return err
 		}
 		graphString = string(data)
+	default:
+		return appcmd.NewInvalidArgumentErrorf("invalid value for --%s: %s", formatFlagName, flags.Format)
 	}
 	_, err = fmt.Fprintln(container.Stdout(), graphString)
 	return err
@@ -263,8 +265,7 @@ func (e *externalModule) addDeps(
 		if ok {
 			// If this dependency has already been seen, we can simply update our current module
 			// and return early.
-			currentDeps := e.Deps
-			e.Deps = append(currentDeps, depExternalModule)
+			e.Deps = append(e.Deps, depExternalModule)
 			return nil
 		}
 		// Otherwise, we create a new external module for our direct dependency. However, we do
@@ -282,8 +283,7 @@ func (e *externalModule) addDeps(
 			return err
 		}
 		moduleFullNameOrOpaqueIDToExternalModule[depModuleFullNameOrOpaqueID] = depExternalModule
-		currentDeps := e.Deps
-		e.Deps = append(currentDeps, depExternalModule)
+		e.Deps = append(e.Deps, depExternalModule)
 	}
 	return nil
 }
@@ -308,7 +308,7 @@ func externalModuleNoDepsForModule(module bufmodule.Module) (externalModule, err
 func sortExternalModules(externalModules []externalModule) {
 	slices.SortFunc(
 		externalModules,
-		func(a, b externalModule) int {
+		func(a externalModule, b externalModule) int {
 			if a.Name > b.Name {
 				return 1
 			}
