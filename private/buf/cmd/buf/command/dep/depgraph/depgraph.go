@@ -37,7 +37,6 @@ const (
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
 	formatFlagName          = "format"
-	remoteOnlyFlagName      = "remote-only"
 
 	dotFormatString  = "dot"
 	jsonFormatString = "json"
@@ -99,7 +98,6 @@ type flags struct {
 	// special
 	InputHashtag string
 	Format       string
-	RemoteOnly   bool
 }
 
 func newFlags() *flags {
@@ -127,12 +125,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(allGraphFormatStrings),
 		),
 	)
-	flagSet.BoolVar(
-		&f.RemoteOnly,
-		remoteOnlyFlagName,
-		false,
-		"Show only remote modules in the graph.",
-	)
 }
 
 func run(
@@ -156,12 +148,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	var moduleSetToDAGOptions []bufmodule.ModuleSetToDAGOption
-	if flags.RemoteOnly {
-		// We only want remote modules in our graph.
-		moduleSetToDAGOptions = append(moduleSetToDAGOptions, bufmodule.ModuleSetToDAGWithRemoteOnly())
-	}
-	graph, err := bufmodule.ModuleSetToDAG(workspace, moduleSetToDAGOptions...)
+	graph, err := bufmodule.ModuleSetToDAG(workspace)
 	if err != nil {
 		return err
 	}
@@ -251,6 +238,7 @@ type externalModule struct {
 	Commit string           `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest string           `json:"digest,omitempty" yaml:"digest,omitempty"`
 	Deps   []externalModule `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Local  bool             `json:"local,omitempty" yaml:"local,omitempty"`
 }
 
 func (e *externalModule) addDeps(
@@ -302,6 +290,7 @@ func externalModuleNoDepsForModule(module bufmodule.Module) (externalModule, err
 		Name:   moduleFullNameOrOpaqueID(module),
 		Commit: dashlessCommitIDStringForModule(module),
 		Digest: digest.String(),
+		Local:  module.IsLocal(),
 	}, nil
 }
 
