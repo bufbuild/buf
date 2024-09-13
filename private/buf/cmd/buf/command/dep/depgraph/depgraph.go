@@ -58,8 +58,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Print the dependency graph in DOT format",
-		// TODO(doria): update the docs to reflect the JSON fromat
+		Short: "Print the dependency graph in the given format (default DOT)",
 		Long: `As an example, if module in directory "src/proto" depends on module "buf.build/foo/bar"
 from the BSR with commit "12345", and "buf.build/foo/bar:12345" depends on module "buf.build/foo/baz"
 from the BSR with commit "67890", the following will be printed:
@@ -83,7 +82,6 @@ brew install graphviz
 You can easily visualize a dependency graph using the dot tool:
 
 buf dep graph | dot -Tpng >| graph.png && open graph.png
-
 ` + bufcli.GetSourceOrModuleLong(`the source or module to print the dependency graph for`),
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -133,7 +131,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.RemoteOnly,
 		remoteOnlyFlagName,
 		false,
-		"List only remote dependencies.",
+		"Show only remote modules in the graph.",
 	)
 }
 
@@ -263,8 +261,8 @@ func (e *externalModule) addDeps(
 		depModuleFullNameOrOpaqueID := moduleFullNameOrOpaqueID(dep)
 		depExternalModule, ok := moduleFullNameOrOpaqueIDToExternalModule[depModuleFullNameOrOpaqueID]
 		if ok {
-			// If this dependency has already been seen, we can simply update our curent module and
-			// return early.
+			// If this dependency has already been seen, we can simply update our current module
+			// and return early.
 			currentDeps := e.Deps
 			e.Deps = append(currentDeps, depExternalModule)
 			return nil

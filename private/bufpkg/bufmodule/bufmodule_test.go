@@ -306,6 +306,35 @@ func TestBasic(t *testing.T) {
 		graph,
 		bufmodule.Module.OpaqueID,
 	)
+	graphRemoteOnly, err := bufmodule.ModuleSetToDAG(moduleSet, bufmodule.ModuleSetToDAGWithRemoteOnly())
+	require.NoError(t, err)
+	dagtest.RequireGraphEqual(
+		t,
+		[]dagtest.ExpectedNode[string]{
+			{
+				Key:      "buf.build/foo/extdep1",
+				Outbound: []string{},
+			},
+			{
+				Key: "buf.build/foo/extdep3",
+				Outbound: []string{
+					"buf.build/foo/extdep4",
+				},
+			},
+			{
+				Key:      "buf.build/foo/extdep4",
+				Outbound: []string{},
+			},
+			{
+				Key: "buf.build/foo/extdep2",
+				Outbound: []string{
+					"buf.build/foo/extdep1",
+				},
+			},
+		},
+		graphRemoteOnly,
+		bufmodule.Module.OpaqueID,
+	)
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(moduleSet)
 	require.NoError(t, err)
 	require.Equal(
