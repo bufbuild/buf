@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf dep graph --format` flag that defaults to `dot`, and adds the option `json`, to print
+  the dependency graph in JSON format.
 
 ## [v1.41.0] - 2024-09-11
 
