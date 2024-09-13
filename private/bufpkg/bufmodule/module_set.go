@@ -470,9 +470,7 @@ func moduleSetToDAGRec(
 	//
 	// We do not return early and ignore local modules entirely, because we still want to check
 	// for remote dependencies from local modules.
-	if remoteOnly && !module.IsLocal() {
-		graph.AddNode(module)
-	} else {
+	if !remoteOnly || !module.IsLocal() {
 		graph.AddNode(module)
 	}
 	directModuleDeps, err := ModuleDirectModuleDeps(module)
@@ -482,9 +480,7 @@ func moduleSetToDAGRec(
 	for _, directModuleDep := range directModuleDeps {
 		// If remoteOnly is set, then we only want to add the edge if both the module _and_ the
 		// dependency are remote.
-		if remoteOnly && !module.IsLocal() && !directModuleDep.IsLocal() {
-			graph.AddEdge(module, directModuleDep)
-		} else {
+		if !remoteOnly || (!module.IsLocal() && !directModuleDep.IsLocal()) {
 			graph.AddEdge(module, directModuleDep)
 		}
 		// We still want to check all transitive dependencies for all modules.
