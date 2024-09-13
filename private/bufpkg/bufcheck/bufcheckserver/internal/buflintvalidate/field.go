@@ -263,6 +263,7 @@ func checkConstraintsForField(
 			parentMapFieldDescriptor,
 			fieldDescriptor,
 			exampleValues,
+			extensionTypeResolver,
 		); err != nil {
 			return err
 		}
@@ -763,22 +764,10 @@ func checkExampleValues(
 	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	exampleValues []protoreflect.Value,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
-	v, err := protovalidate.New(
-		protovalidate.WithStandardConstraintInterceptor(
-			func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
-				return &constraintsResolverForTargetField{
-					StandardConstraintResolver: res,
-					targetField:                fieldDescriptor,
-				}
-			},
-		),
-	)
-	if err != nil {
-		return err
-	}
+	reparseUnrecognized(typeRulesMessage, extensionTypeResolver)
 	hasConstraints := len(fieldConstraints.GetCel()) > 0
-	// TODO: check if this checks shared rules
 	// TODO: add a test where only shared rules and examples are specified
 	if !hasConstraints {
 		typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
@@ -794,40 +783,73 @@ func checkExampleValues(
 		// No need to check if example values satifisy constraints, because there is none.
 		return nil
 	}
-	for exampleValueIndex, exampleValue := range exampleValues {
-		// For each example value, instantiate a message of its containing message's type
-		// and set the field that we are linting to the example value:
-		// containingMessage {
-		//   ...
-		//   fieldToLint: exampleValue,
-		//   ...
-		// }
-		// and validate this message instance with protovalidate and filter the structured
-		// errors by field name to determine whether this example value fails rules defined
-		// on the same field.
-		//
-		// Note: there might be cel expressions defined on the message level that the example
-		// value would cause to fail, but we have no way of knowing that the example value is
-		// the reason, therefore it's ok to only filter for field level failures.
-		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
-		// TODO: test it for repeated min item
-		// This is needed because the shape of field path in a protovalidate.Violation depends on
-		// the type of the field descriptor.
-		matchViolationFunc := func(violation *validate.Violation) bool {
-			return violation.GetFieldPath() == string(fieldDescriptor.Name())
+	// For each example value, instantiate a message of its containing message's type
+	// and set the field that we are linting to the example value:
+	//  containingMessage {
+	//    ...
+	//    fieldToLint: exampleValue,
+	//    ...
+	//  }
+	// and validate this message instance with protovalidate and filter the structured
+	// errors by field name to determine whether this example value fails rules defined
+	// on the same field.
+	v, err := protovalidate.New(
+		protovalidate.WithStandardConstraintInterceptor(
+			func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
+				// Pass a constraint resolver interceptor so that constraints on other
+				// fields are not looked at by the validator.
+				return &constraintsResolverForTargetField{
+					StandardConstraintResolver: res,
+					targetField:                fieldDescriptor,
+				}
+			},
+		),
+	)
+	if err != nil {
+		return err
+	}
+	// The shape of field path in a protovalidate.Violation depends on the type of the field descriptor.
+	// TODO: verify that this can be relied on.
+	violationFilterFunc := func(violation *validate.Violation) bool {
+		return violation.GetFieldPath() == string(fieldDescriptor.Name())
+	}
+	switch {
+	case fieldDescriptor.IsList():
+		// Field path looks like repeate_field[10]
+		violationFilterFunc = func(violation *validate.Violation) bool {
+			prefix := fieldDescriptor.Name() + "["
+			suffix := "]"
+			fieldPath := violation.GetFieldPath()
+			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
 		}
-		if fieldDescriptor.IsList() { // this is linting for items (they have the same descriptor) // TODO: update this comment so that it makes sense
+	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "key":
+		// Field path looks like map_field["the key value that failed"] and ForKey is set to true.
+		violationFilterFunc = func(violation *validate.Violation) bool {
+			prefix := parentMapFieldDescriptor.Name() + "["
+			suffix := "]"
+			fieldPath := violation.GetFieldPath()
+			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.GetForKey()
+		}
+	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "value":
+		// Field path looks like map_field["the key value that failed"], but ForKey is set to false.
+		violationFilterFunc = func(violation *validate.Violation) bool {
+			prefix := parentMapFieldDescriptor.Name() + "["
+			suffix := "]"
+			fieldPath := violation.GetFieldPath()
+			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
+		}
+	}
+	// TODO: test it for repeated min item
+	for exampleValueIndex, exampleValue := range exampleValues {
+		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
+		switch {
+		case fieldDescriptor.IsList():
 			list := messageToValidate.NewField(fieldDescriptor).List()
 			list.Append(exampleValue)
 			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOfList(list))
-			matchViolationFunc = func(violation *validate.Violation) bool {
-				prefix := fieldDescriptor.Name() + "["
-				suffix := "]"
-				fieldPath := violation.GetFieldPath()
-				return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
-			}
-		} else if parentMapFieldDescriptor != nil {
+		case parentMapFieldDescriptor != nil:
 			mapEntryMessageDescriptor := fieldDescriptor.ContainingMessage()
+			// We are being very defensive, because a type mismatch may cause a panic in protoreflect.
 			if !mapEntryMessageDescriptor.IsMapEntry() {
 				return syserror.Newf("containing message %q is not a map", mapEntryMessageDescriptor.Name())
 			}
@@ -847,28 +869,16 @@ func checkExampleValues(
 					exampleValue.MapKey(),
 					dynamicpb.NewMessage(parentMapFieldDescriptor.Message()).NewField(parentMapFieldDescriptor.MapValue()),
 				)
-				matchViolationFunc = func(violation *validate.Violation) bool {
-					prefix := parentMapFieldDescriptor.Name() + "["
-					suffix := "]"
-					fieldPath := violation.GetFieldPath()
-					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.GetForKey()
-				}
 			case "value":
 				mapEntry.Set(
 					dynamicpb.NewMessage(parentMapFieldDescriptor.Message()).NewField(parentMapFieldDescriptor.MapKey()).MapKey(),
 					exampleValue,
 				)
-				matchViolationFunc = func(violation *validate.Violation) bool {
-					prefix := parentMapFieldDescriptor.Name() + "["
-					suffix := "]"
-					fieldPath := violation.GetFieldPath()
-					return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
-				}
 			default:
 				return syserror.Newf("expected key or value as sythetic field name for map entry's field name, got %q", fieldDescriptor.Name())
 			}
 			messageToValidate.Set(parentMapFieldDescriptor, protoreflect.ValueOfMap(mapEntry))
-		} else {
+		default:
 			messageToValidate.Set(fieldDescriptor, exampleValue)
 		}
 		err := v.Validate(messageToValidate)
@@ -877,14 +887,14 @@ func checkExampleValues(
 		}
 		var compilationErr *protovalidate.CompilationError
 		if errors.As(err, &compilationErr) {
-			// Expression failing to compile meaning some custom shared rules are invalid,
-			// which is checked in this rule (PROTOVALIDATE), but not in this code block.
+			// Expression failing to compile meaning some CEL expressions are invalid,
+			// which is checked in this rule (PROTOVALIDATE), but not by this function.
 			break
 		}
 		validationErr := &protovalidate.ValidationError{}
 		if errors.As(err, &validationErr) {
 			for _, violation := range validationErr.Violations {
-				if matchViolationFunc(violation) {
+				if violationFilterFunc(violation) {
 					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.GetConstraintId(), violation.GetMessage())
 				}
 			}
@@ -892,14 +902,13 @@ func checkExampleValues(
 		}
 		runtimeError := &protovalidate.RuntimeError{}
 		if errors.As(err, &runtimeError) {
-			// TODO: what to do here?
-			// return an error?
+			// TODO: what to do here? return an error?
+			// TODO: see if i can test this with zero division
 			adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), "example fail at runtime: %s", runtimeError.Error())
 			continue
 		}
 		return fmt.Errorf("unexpected error from protovalidate: %s", err.Error())
 	}
-
 	return nil
 }
 

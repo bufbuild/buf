@@ -21,6 +21,8 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+// This implements protovalidate.StandardConstraintResolver, see checkExampleValues' comment
+// for why this is needed.
 type constraintsResolverForTargetField struct {
 	protovalidate.StandardConstraintResolver
 	targetField protoreflect.FieldDescriptor
@@ -31,6 +33,14 @@ func (r *constraintsResolverForTargetField) ResolveFieldConstraints(desc protore
 		return nil
 	}
 	return r.StandardConstraintResolver.ResolveFieldConstraints(desc)
+}
+
+func (r *constraintsResolverForTargetField) ResolveMessageConstraints(desc protoreflect.MessageDescriptor) *validate.MessageConstraints {
+	return nil
+}
+
+func (r *constraintsResolverForTargetField) ResolveOneofConstraints(desc protoreflect.OneofDescriptor) *validate.OneofConstraints {
+	return nil
 }
 
 // TODO: this function is copied directly from protovalidate-go.
