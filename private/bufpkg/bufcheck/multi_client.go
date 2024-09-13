@@ -21,9 +21,9 @@ import (
 	"strings"
 	"sync"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 )
 

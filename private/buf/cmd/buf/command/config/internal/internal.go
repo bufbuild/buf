@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -27,11 +28,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/spf13/pflag"
 )
 
@@ -185,7 +186,7 @@ func lsRun(
 		}
 	}
 	tracer := tracing.NewTracer(container.Tracer())
-	client, err := bufcheck.NewClient(container.Logger(), tracer, command.NewRunner(), bufcheck.ClientWithStderr(container.Stderr()))
+	client, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}

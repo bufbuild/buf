@@ -15,9 +15,9 @@
 package bufcheck
 
 import (
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/bufplugin-go/check"
 )
 
 const lintCommentIgnorePrefix = "buf:lint:ignore"

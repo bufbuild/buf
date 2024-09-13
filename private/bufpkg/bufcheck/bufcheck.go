@@ -18,14 +18,14 @@ import (
 	"context"
 	"io"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
+	"pluginrpc.com/pluginrpc"
 )
 
 // Rules are returned sorted by ID, but PrintRules does our sort by category.
@@ -162,14 +162,27 @@ func WithPluginsEnabled() ClientFunctionOption {
 	return pluginsEnabledOption{}
 }
 
+// RunnerProvider provides pluginrpc.Runners for program names and args.
+type RunnerProvider interface {
+	NewRunner(programName string, programArgs ...string) pluginrpc.Runner
+}
+
+// RunnerProviderFunc is a function that implements RunnerProvider.
+type RunnerProviderFunc func(programName string, programArgs ...string) pluginrpc.Runner
+
+// NewRunner implements RunnerProvider.
+func (r RunnerProviderFunc) NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
+	return r(programName, programArgs...)
+}
+
 // NewClient returns a new Client.
 func NewClient(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	runner command.Runner,
+	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (Client, error) {
-	return newClient(logger, tracer, runner, options...)
+	return newClient(logger, tracer, runnerProvider, options...)
 }
 
 // ClientOption is an option for a new Client.

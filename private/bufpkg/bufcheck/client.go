@@ -20,20 +20,18 @@ import (
 	"io"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )
@@ -41,7 +39,7 @@ import (
 type client struct {
 	logger                          *zap.Logger
 	tracer                          tracing.Tracer
-	runner                          command.Runner
+	runnerProvider                  RunnerProvider
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
@@ -49,7 +47,7 @@ type client struct {
 func newClient(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	runner command.Runner,
+	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (*client, error) {
 	clientOptions := newClientOptions()
@@ -71,10 +69,10 @@ func newClient(
 	}
 
 	return &client{
-		logger: logger,
-		tracer: tracer,
-		runner: runner,
-		stderr: clientOptions.stderr,
+		logger:         logger,
+		tracer:         tracer,
+		runnerProvider: runnerProvider,
+		stderr:         clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
@@ -343,11 +341,10 @@ func (c *client) getMultiClient(
 		pluginPath := pluginConfig.Path()
 		checkClient := check.NewClient(
 			pluginrpc.NewClient(
-				pluginrpcutil.NewRunner(
-					c.runner,
+				c.runnerProvider.NewRunner(
 					// We know that Path is of at least length 1.
 					pluginPath[0],
-					pluginrpcutil.RunnerWithArgs(pluginPath[1:]...),
+					pluginPath[1:]...,
 				),
 				pluginrpc.ClientWithStderr(c.stderr),
 				// We have to set binary as some things cannot be encoded as JSON.
@@ -494,27 +491,25 @@ func ignoreLocation(
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured
-// comment ignore prefix, and the rest of the string is the ruleID of the check.
+// comment ignore prefix, a space and the ruleID of the check.
 //
-// We currently do not support multiple rules per comment ignore:
+// All of the following comments are valid, ignoring SERVICE_PASCAL_CASE and this rule only:
 //
-//	Invalid:
-//		// buf:lint:ignore SERVICE_SUFFIX, SERVICE_PASCAL_CASE
+//	// buf:lint:ignore SERVICE_PASCAL_CASE, SERVICE_SUFFIX (only SERVICE_PASCAL_CASE is ignored)
+//	// buf:lint:ignore SERVICE_PASCAL_CASE
+//	// buf:lint:ignore SERVICE_PASCAL_CASEsome other comment
+//	// buf:lint:ignore SERVICE_PASCAL_CASE some other comment
 //
-//	Valid:
-//		// buf:lint:ignore SERVICE_SUFFIX
-//		// buf:lint:ignore SERVICE_PASCAL_CASE
+// While the following is invalid and a nop
+//
+//	// buf:lint:ignoreSERVICE_PASCAL_CASE
 func checkCommentLineForCheckIgnore(
 	commentLine string,
 	commentIgnorePrefix string,
 	ruleID string,
 ) bool {
-	if after, ok := strings.CutPrefix(commentLine, commentIgnorePrefix); ok {
-		if strings.TrimSpace(after) == ruleID {
-			return true
-		}
-	}
-	return false
+	fullIgnorePrefix := commentIgnorePrefix + " " + ruleID
+	return strings.HasPrefix(commentLine, fullIgnorePrefix)
 }
 
 type lintOptions struct {

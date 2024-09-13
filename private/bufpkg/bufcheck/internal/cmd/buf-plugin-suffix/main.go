@@ -17,7 +17,7 @@ package main
 import (
 	"context"
 
-	"github.com/bufbuild/bufplugin-go/check"
+	"buf.build/go/bufplugin/check"
 )
 
 const (

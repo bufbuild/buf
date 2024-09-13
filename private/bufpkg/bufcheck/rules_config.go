@@ -19,12 +19,12 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/bufplugin-go/check"
 	"go.uber.org/zap"
 )
 

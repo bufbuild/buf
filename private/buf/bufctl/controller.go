@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"sort"
 
+	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
@@ -47,7 +48,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protoyaml-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"

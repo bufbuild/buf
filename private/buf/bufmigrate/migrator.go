@@ -22,16 +22,17 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/bufplugin-go/check"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -712,7 +713,7 @@ func equivalentCheckConfigInV2(
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
 	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(logger, tracer, runner)
+	client, err := bufcheck.NewClient(logger, tracer, pluginrpcutil.NewRunnerProvider(runner))
 	if err != nil {
 		return nil, err
 	}

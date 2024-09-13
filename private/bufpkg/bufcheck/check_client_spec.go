@@ -15,7 +15,7 @@
 package bufcheck
 
 import (
-	"github.com/bufbuild/bufplugin-go/check"
+	"buf.build/go/bufplugin/check"
 )
 
 // checkClientSpec contains a check.Client and details on what to do about

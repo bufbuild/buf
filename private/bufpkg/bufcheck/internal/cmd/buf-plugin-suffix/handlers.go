@@ -19,8 +19,8 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/bufplugin-go/check"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
