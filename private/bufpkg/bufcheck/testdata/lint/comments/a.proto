@@ -52,11 +52,11 @@ enum EnumFoo2 {
 message MessageFoo2 {
   // comment
   message MessageBar {
-  // comment
+    // comment
     enum Foo {
-  // comment
+      // comment
       FOO_UNSPECIFIED = 0;
-  // comment
+      // comment
       FOO_ONE = 1;
     }
     // comment
@@ -69,11 +69,11 @@ message MessageFoo2 {
         int64 baz = 2;
       }
     }
-        // comment
+    // comment
     int64 foo = 1;
-        // comment
+    // comment
     oneof bar {
-        // comment
+      // comment
       int64 baz = 2;
     }
   }
@@ -150,11 +150,11 @@ enum EnumFoo4 {
 message MessageFoo4 {
   //
   message MessageBar {
-  //
+    //
     enum Foo {
-  //
+      //
       FOO_UNSPECIFIED = 0;
-  //
+      //
       FOO_ONE = 1;
     }
     //
@@ -167,11 +167,11 @@ message MessageFoo4 {
         int64 baz = 2;
       }
     }
-        //
+    //
     int64 foo = 1;
-        //
+    //
     oneof bar {
-        //
+      //
       int64 baz = 2;
     }
   }
@@ -211,11 +211,11 @@ enum EnumFoo5 {
 message MessageFoo5 {
   /*   */
   message MessageBar {
-  /*   */
+    /*   */
     enum Foo {
-  /*   */
+      /*   */
       FOO_UNSPECIFIED = 0;
-  /*   */
+      /*   */
       FOO_ONE = 1;
     }
     /*   */
@@ -228,11 +228,11 @@ message MessageFoo5 {
         int64 baz = 2;
       }
     }
-        /*   */
+    /*   */
     int64 foo = 1;
-        /*   */
+    /*   */
     oneof bar {
-        /*   */
+      /*   */
       int64 baz = 2;
     }
   }
