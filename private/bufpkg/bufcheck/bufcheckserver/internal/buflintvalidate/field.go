@@ -154,7 +154,7 @@ var (
 func checkField(
 	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	extenExtensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
 	fieldDescriptor, err := field.AsDescriptor()
 	if err != nil {
@@ -172,7 +172,7 @@ func checkField(
 		nil,
 		fieldDescriptor,
 		fieldDescriptor.Cardinality() == protoreflect.Repeated,
-		extenExtensionTypeResolver,
+		extensionTypeResolver,
 	)
 }
 
@@ -191,7 +191,7 @@ func checkConstraintsForField(
 	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	expectRepeatedRule bool,
-	extenExtensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
 	if fieldConstraints == nil {
 		return nil
@@ -228,10 +228,10 @@ func checkConstraintsForField(
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	// Map and repeated special cases that contain fieldConstraints.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor, containingMessageDescriptor, extenExtensionTypeResolver)
+		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor, containingMessageDescriptor, extensionTypeResolver)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor, containingMessageDescriptor, extenExtensionTypeResolver)
+		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor, containingMessageDescriptor, extensionTypeResolver)
 	}
 	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber, expectRepeatedRule)
 	if !typesMatch {
@@ -417,7 +417,7 @@ func checkRepeatedRules(
 	repeatedRules *validate.RepeatedRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
-	extenExtensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
 	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
@@ -460,7 +460,7 @@ func checkRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
-	return checkConstraintsForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false, extenExtensionTypeResolver)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false, extensionTypeResolver)
 }
 
 func checkMapRules(
@@ -468,7 +468,7 @@ func checkMapRules(
 	mapRules *validate.MapRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
-	extenExtensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
 	if !fieldDescriptor.IsMap() {
 		baseAdder.addForPathf(
@@ -500,12 +500,12 @@ func checkMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
-	err := checkConstraintsForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false, extenExtensionTypeResolver)
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false, extensionTypeResolver)
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
-	return checkConstraintsForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false, extenExtensionTypeResolver)
+	return checkConstraintsForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false, extensionTypeResolver)
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {

@@ -81,7 +81,7 @@ func CheckMessage(
 func CheckField(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	extenExtensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
-	return checkField(addAnnotationFunc, field, extenExtensionTypeResolver)
+	return checkField(addAnnotationFunc, field, extensionTypeResolver)
 }

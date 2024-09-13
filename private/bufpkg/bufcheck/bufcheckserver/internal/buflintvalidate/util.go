@@ -68,13 +68,13 @@ func resolveExt[C proto.Message](
 // TODO: this is copied from protovalidate-go, with the difference that types is passed as a parameter.
 func reparseUnrecognized(
 	reflectMessage protoreflect.Message,
-	extenExtensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver ExtensionTypeResolver,
 ) error {
 	unknown := reflectMessage.GetUnknown()
 	if len(unknown) > 0 {
 		reflectMessage.SetUnknown(nil)
 		options := proto.UnmarshalOptions{
-			Resolver: extenExtensionTypeResolver,
+			Resolver: extensionTypeResolver,
 			Merge:    true,
 		}
 		if err := options.Unmarshal(unknown, reflectMessage.Interface()); err != nil {
