@@ -237,36 +237,6 @@ func checkConstraintsForField(
 	if !typesMatch {
 		return nil
 	}
-	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
-		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-		if err := numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage); err != nil {
-			return nil
-		}
-	}
-	switch typeRulesFieldNumber {
-	case boolRulesFieldNumber:
-		// Bool rules only have `const` and does not need validating.
-	case stringRulesFieldNumber:
-		if err := checkStringRules(adder, fieldConstraints.GetString_()); err != nil {
-			return err
-		}
-	case bytesRulesFieldNumber:
-		if err := checkBytesRules(adder, fieldConstraints.GetBytes()); err != nil {
-			return err
-		}
-	case enumRulesFieldNumber:
-		checkEnumRules(adder, fieldConstraints.GetEnum())
-	case anyRulesFieldNumber:
-		checkAnyRules(adder, fieldConstraints.GetAny())
-	case durationRulesFieldNumber:
-		if err := checkDurationRules(adder, fieldConstraints.GetDuration()); err != nil {
-			return err
-		}
-	case timestampRulesFieldNumber:
-		if err := checkTimestampRules(adder, fieldConstraints.GetTimestamp()); err != nil {
-			return err
-		}
-	}
 	typeRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
 	var exampleValues []protoreflect.Value
 	var exampleFieldNumber int32
@@ -284,7 +254,7 @@ func checkConstraintsForField(
 		return true
 	})
 	if len(exampleValues) > 0 {
-		return checkExampleValues(
+		if err := checkExampleValues(
 			adder,
 			[]int32{typeRulesFieldNumber, exampleFieldNumber},
 			fieldConstraints,
@@ -293,7 +263,29 @@ func checkConstraintsForField(
 			parentMapFieldDescriptor,
 			fieldDescriptor,
 			exampleValues,
-		)
+		); err != nil {
+			return err
+		}
+	}
+	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
+		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
+		return numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
+	}
+	switch typeRulesFieldNumber {
+	case boolRulesFieldNumber:
+		// Bool rules only have `const` and does not need validating.
+	case stringRulesFieldNumber:
+		return checkStringRules(adder, fieldConstraints.GetString_())
+	case bytesRulesFieldNumber:
+		return checkBytesRules(adder, fieldConstraints.GetBytes())
+	case enumRulesFieldNumber:
+		checkEnumRules(adder, fieldConstraints.GetEnum())
+	case anyRulesFieldNumber:
+		checkAnyRules(adder, fieldConstraints.GetAny())
+	case durationRulesFieldNumber:
+		return checkDurationRules(adder, fieldConstraints.GetDuration())
+	case timestampRulesFieldNumber:
+		return checkTimestampRules(adder, fieldConstraints.GetTimestamp())
 	}
 	return nil
 }
