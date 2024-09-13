@@ -966,6 +966,8 @@ var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(
 			// Regardless whether its file is an import, we want to add a shared rule
 			// extension to the types registry, as long as the extension's cel
 			// expressions compile.
+			// TODO: add a test where a shared rule is defined in an import and a
+			// non-import uses this rule.
 			// TODO: pass a nop addFunc the file is an import,
 			if err := bufprotosource.ForEachMessage(
 				func(message bufprotosource.Message) error {

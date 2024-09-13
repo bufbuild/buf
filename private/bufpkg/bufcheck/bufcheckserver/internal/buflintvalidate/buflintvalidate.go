@@ -74,7 +74,7 @@ func CheckMessage(
 // CheckField validates that all rules on the field are valid, and any CEL expressions compile.
 //
 // For a set of rules to be valid, it must
-//  1. permit _some_ value
+//  1. permit _some_ value and all example values, if any
 //  2. have a type compatible with the field it validates.
 //
 // addAnnotationFunc adds an annotation with the descriptor and location for check results.
