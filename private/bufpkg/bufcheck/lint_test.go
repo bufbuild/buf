@@ -1194,7 +1194,7 @@ func TestRunLintCustomPlugins(t *testing.T) {
 	testLint(
 		t,
 		"custom_plugins",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 1, 1, 1, 1, "PACKAGE_DEFINED"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 1, 17, 2, "PAGE_REQUEST_HAS_TOKEN"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 1, 25, 2, "PAGE_RESPONSE_HAS_TOKEN"),

@@ -1211,7 +1211,7 @@ func TestRunBreakingIntEnum(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_int_enum",
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 0, 0, 0, 0, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
 	)
@@ -1224,7 +1224,7 @@ func TestRunBreakingMessageEnum(t *testing.T) {
 		"breaking_message_enum",
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 0, 0, 0, 0, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
 	)
@@ -1248,7 +1248,7 @@ func TestRunBreakingMessageMessage(t *testing.T) {
 		t,
 		"breaking_message_message",
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 0, 0, 0, 0, "MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
 	)
 }

@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,9 +26,13 @@ func NewFileAnnotationNoLocationOrPath(
 	t *testing.T,
 	typeString string,
 ) bufanalysis.FileAnnotation {
-	return NewFileAnnotationNoLocation(
+	return NewFileAnnotation(
 		t,
 		"",
+		0,
+		0,
+		0,
+		0,
 		typeString,
 	)
 }
@@ -45,10 +48,10 @@ func NewFileAnnotationNoLocation(
 	return NewFileAnnotation(
 		t,
 		path,
-		0,
-		0,
-		0,
-		0,
+		1,
+		1,
+		1,
+		1,
 		typeString,
 	)
 }
@@ -113,8 +116,8 @@ func AssertFileAnnotationsEqual(
 	actual = normalizeFileAnnotations(t, actual)
 	if !assert.Equal(
 		t,
-		slicesext.Map(expected, bufanalysis.FileAnnotation.String),
-		slicesext.Map(actual, bufanalysis.FileAnnotation.String),
+		expected,
+		actual,
 	) {
 		t.Log("If actuals are correct, change expectations to the following:")
 		for _, annotation := range actual {
