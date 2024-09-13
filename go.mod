@@ -122,7 +122,7 @@ require (
 )
 
 // TODO: remove
-replace github.com/bufbuild/protovalidate-go => ../pvgojohn
+replace github.com/bufbuild/protovalidate-go => ../pvgojohn // commit e474f9b456a57181c0c8ad6785be9c9c2ab0a0be
 
 // TODO: remove
-replace buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go => ../pv-gen
+replace buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go => ../pv-gen // commit 4fd7a369f04577fc71d8ff33ed733105aae84894
