@@ -109,34 +109,29 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 
 	id := getRequestID(ctx)
 
-	switch who := mu.who.Load(); {
-	case who == poison:
-		// This lock was locked twice by the same request and should probably never be
-		// unlocked. panic.
-		fallthrough
-	case who == id && id > 0:
+	if mu.who.Load() == id && id > 0 {
 		// We seem to have tried to lock this lock twice. Panic, and poison the lock.
 		mu.who.Store(poison)
 		panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
-	default:
-		// Block until the lock is free.
-		mu.lock.Lock()
-		mu.who.Store(id)
-
-		if mu.pool != nil {
-			mu.pool.lock.Lock()
-			defer mu.pool.lock.Unlock()
-			if mu.pool.held == nil {
-				mu.pool.held = make(map[uint64]*mutex)
-			}
-			if held := mu.pool.held[id]; held != nil {
-				panic(fmt.Sprintf("buflsp/mutex.go: attempted to acquire two non-reentrant locks at once: %p -> %p", mu, held))
-			}
-			mu.pool.held[id] = mu
-		}
-
-		return unlocker
 	}
+
+	// Block until we acquire the lock.
+	mu.lock.Lock()
+	mu.storeWho(id)
+
+	if mu.pool != nil {
+		mu.pool.lock.Lock()
+		defer mu.pool.lock.Unlock()
+		if mu.pool.held == nil {
+			mu.pool.held = make(map[uint64]*mutex)
+		}
+		if held := mu.pool.held[id]; held != nil {
+			panic(fmt.Sprintf("buflsp/mutex.go: attempted to acquire two non-reentrant locks at once: %p -> %p", mu, held))
+		}
+		mu.pool.held[id] = mu
+	}
+
+	return unlocker
 }
 
 // Unlock releases this mutex.
@@ -144,25 +139,33 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 // Unlock must be called with the same context that locked it, otherwise this function panics.
 func (mu *mutex) Unlock(ctx context.Context) {
 	id := getRequestID(ctx)
-	switch who := mu.who.Load(); {
-	case who == poison:
-		// This lock was locked twice by the same request and should probably never be
-		// unlocked. panic.
-		panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
-	case who != id && id > 0:
+	if mu.who.Load() != id {
 		panic("buflsp/mutex.go: lock was locked by one request and unlocked by another")
-	default:
-		mu.who.Store(0)
+	}
 
-		if mu.pool != nil {
-			mu.pool.lock.Lock()
-			defer mu.pool.lock.Unlock()
-			if held := mu.pool.held[id]; held != mu {
-				panic(fmt.Sprintf("buflsp/mutex.go: attempted to unlock the wrong lock: %p -> %p", mu, held))
-			}
-			delete(mu.pool.held, id)
+	mu.storeWho(0)
+
+	if mu.pool != nil {
+		mu.pool.lock.Lock()
+		defer mu.pool.lock.Unlock()
+		if held := mu.pool.held[id]; held != mu {
+			panic(fmt.Sprintf("buflsp/mutex.go: attempted to unlock the wrong lock: %p -> %p", mu, held))
 		}
+		delete(mu.pool.held, id)
+	}
 
-		mu.lock.Unlock()
+	mu.lock.Unlock()
+}
+
+func (mu *mutex) storeWho(id uint64) {
+	for {
+		// This has to be a CAS loop to avoid races with a poisoning p.
+		old := mu.who.Load()
+		if old == poison {
+			panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
+		}
+		if mu.who.CompareAndSwap(old, id) {
+			break
+		}
 	}
 }

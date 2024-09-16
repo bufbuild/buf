@@ -189,14 +189,26 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 //
 // If deep is set, this will also load imports and refresh those, too.
 func (f *file) Refresh(ctx context.Context) {
+	progress := newProgress(f.lsp)
+	progress.Begin(ctx, "Indexing")
+
+	progress.Report(ctx, "Parsing AST", 1.0/6)
 	hasReport := f.RefreshAST(ctx)
 
+	progress.Report(ctx, "Indexing Imports", 2.0/6)
 	f.IndexImports(ctx)
+
+	progress.Report(ctx, "Detecting Module", 3.0/6)
 	f.FindModule(ctx)
+
+	progress.Report(ctx, "Linking Descriptors", 4.0/6)
 	f.BuildImage(ctx)
 	hasReport = f.RunLints(ctx) || hasReport // Avoid short-circuit here.
+
+	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)
 
+	progress.Done(ctx)
 	if hasReport {
 		f.PublishDiagnostics(ctx)
 	}

@@ -95,6 +95,8 @@ func (s *server) Initialize(
 		TokenModifiers []string `json:"tokenModifiers"`
 	}
 	type SemanticTokensOptions struct {
+		protocol.WorkDoneProgressOptions
+
 		Legend SematicTokensLegend `json:"legend"`
 		Full   bool                `json:"full"`
 	}
@@ -110,10 +112,13 @@ func (s *server) Initialize(
 				// necessarily making the LSP slow.
 				Change: protocol.TextDocumentSyncKindFull,
 			},
-			DefinitionProvider:         true,
+			DefinitionProvider: &protocol.DefinitionOptions{
+				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
+			},
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
 			SemanticTokensProvider: &SemanticTokensOptions{
+				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 				Legend: SematicTokensLegend{
 					TokenTypes:     semanticTypeLegend,
 					TokenModifiers: semanticModifierLegend,
@@ -278,6 +283,10 @@ func (s *server) Definition(
 		return nil, nil
 	}
 
+	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
+	progress.Begin(ctx, "Searching")
+	defer progress.Done(ctx)
+
 	symbol := file.SymbolAt(ctx, params.Position)
 	if symbol == nil {
 		return nil, nil
@@ -309,6 +318,10 @@ func (s *server) SemanticTokensFull(
 		return nil, nil
 	}
 
+	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
+	progress.Begin(ctx, "Processing Tokens")
+	defer progress.Done(ctx)
+
 	var symbols []*symbol
 	for {
 		file.lock.Lock(ctx)
@@ -324,7 +337,9 @@ func (s *server) SemanticTokensFull(
 		encoded           []uint32
 		prevLine, prevCol uint32
 	)
-	for _, symbol := range symbols {
+	for i, symbol := range symbols {
+		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(symbols)), float64(i)/float64(len(symbols)))
+
 		var semanticType uint32
 
 		if symbol.isOption {
