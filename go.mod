@@ -24,7 +24,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/jdx/go-netrc v1.0.0
-	github.com/jhump/protoreflect/v2 v2.0.0-beta.1
+	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
 	github.com/klauspost/compress v1.17.9
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
