@@ -662,7 +662,10 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	messageLiteralNode *ast.MessageLiteralNode,
 	inArrayLiteral bool,
 ) bool {
-	if len(messageLiteralNode.Elements) == 0 || len(messageLiteralNode.Elements) > 1 ||
+	// We only want to write a compact message literal for a message literal with either 0 or
+	// 1 elements, and if there are no interior comments, and the element, if present, is not
+	// a message or array literal.
+	if len(messageLiteralNode.Elements) > 1 ||
 		f.hasInteriorComments(messageLiteralNode.Children()...) ||
 		messageLiteralHasNestedMessageOrArray(messageLiteralNode) {
 		return false
@@ -691,25 +694,28 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 		f.Indent(openNode)
 	}
 	f.writeInline(openNode)
-	fieldNode := messageLiteralNode.Elements[0]
-	f.writeInline(fieldNode.Name)
-	if fieldNode.Sep != nil {
-		f.writeInline(fieldNode.Sep)
-	} else {
-		f.WriteString(":")
-	}
-	f.Space()
-	if messageLiteralNode.Seps[0] != nil {
-		// We are dropping the optional trailing separator. If it had
-		// trailing comments and the value does not, move the separator's
-		// trailing comment to the value.
-		sepTrailingComments := f.nodeInfo(messageLiteralNode.Seps[0]).TrailingComments()
-		if sepTrailingComments.Len() > 0 &&
-			f.nodeInfo(fieldNode.Val).TrailingComments().Len() == 0 {
-			f.setTrailingComments(fieldNode.Val, sepTrailingComments)
+	// We check if our compact message has one element, if so, write that value as compact.
+	if len(messageLiteralNode.Elements) == 1 {
+		fieldNode := messageLiteralNode.Elements[0]
+		f.writeInline(fieldNode.Name)
+		if fieldNode.Sep != nil {
+			f.writeInline(fieldNode.Sep)
+		} else {
+			f.WriteString(":")
 		}
+		f.Space()
+		if messageLiteralNode.Seps[0] != nil {
+			// We are dropping the optional trailing separator. If it had
+			// trailing comments and the value does not, move the separator's
+			// trailing comment to the value.
+			sepTrailingComments := f.nodeInfo(messageLiteralNode.Seps[0]).TrailingComments()
+			if sepTrailingComments.Len() > 0 &&
+				f.nodeInfo(fieldNode.Val).TrailingComments().Len() == 0 {
+				f.setTrailingComments(fieldNode.Val, sepTrailingComments)
+			}
+		}
+		f.writeInline(fieldNode.Val)
 	}
-	f.writeInline(fieldNode.Val)
 	f.writeInline(closeNode)
 	return true
 }

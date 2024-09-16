@@ -24,6 +24,37 @@ message Foo {
       /* Two */
       "is a"
       /* Three */
-      "compound string" // Trailing
+      "compound string"
+, // Trailing
+    (custom.message_literal_field_option) = /* Before */ {
+      /* interior comment */
+      rule: "rule"
+    }, // Trailing
+    (custom.message_literal_no_interior_comment_field_option) = /* Before */ {rule: "rule"}, // Trailing
+    (custom.nested_message_literal_field_option) = {
+      // Comment on nested message
+      nested: {
+        nested_nested: {
+          /* interior comment on nested_nested message */
+          inner_most: "value"
+        }
+      } /* Trailing */
+      // Before
+      other_nested: /* Before */ {once: "value"} /* Trailing */
+    },
+    (custom.message_literal_with_array_literals) = {
+      additional_rules: [] /* comment on , */
+      additional_rules: [] /* comment on [ */
+      additional_rules: [] /* multi-line comment on , */
+      additional_rules: [
+        /* Before */ {}, // Trailing
+        /* Before */ {rule: "child"}, /* child node */
+        {
+          rule: "another_child"
+          additional_rules: [] /* Trailing */
+        }
+      ]
+      rule: "parent" // but this one is
+    }
   ];
 }
