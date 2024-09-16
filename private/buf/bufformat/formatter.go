@@ -1248,6 +1248,19 @@ func (f *formatter) hasInteriorComments(nodes ...ast.Node) bool {
 //	  "bar"
 //	]
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
+	// We need to check if there are any trailing comments on the array literal itself that
+	// needs to be handled. The trailing comments may end up on the array literal node itself
+	// rather than the closing bracket in the case where an array literal is an element of a
+	// message literal, and trailing comments on the separator are attached to array literal.
+	arrayLiteralTrailingComments := f.nodeInfo(arrayLiteralNode).TrailingComments()
+	// Similar to how we handle trailing comments on separators, we check if there are any
+	// existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the array literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if arrayLiteralTrailingComments.Len() > 0 && f.nodeInfo(arrayLiteralNode.CloseBracket).TrailingComments().Len() == 0 {
+		f.setTrailingComments(arrayLiteralNode.CloseBracket, arrayLiteralTrailingComments)
+	}
+
 	if len(arrayLiteralNode.Elements) == 1 &&
 		!f.hasInteriorComments(arrayLiteralNode.Children()...) &&
 		!arrayLiteralHasNestedMessageOrArray(arrayLiteralNode) {
@@ -1282,6 +1295,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 			}
 		}
 	}
+
 	f.writeCompositeValueBody(
 		arrayLiteralNode.OpenBracket,
 		arrayLiteralNode.CloseBracket,

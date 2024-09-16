@@ -1,18 +1,18 @@
-syntax = "proto3";
+syntax = 'proto3';
 
 extend google.protobuf.MethodOptions {
   Rule rule = 99999999;
 }
 
 service Service {
-    rpc Method(Message) returns (Message) {
-        option (rule) = {
-            additional_rules: [] // This comment will get deleted
-            additional_rules: [] // This comment is safe
-            additional_rules: [] /* this one is not */
-            rule: "parent" // but this one is
-        };
-    }
+  rpc Method(Message) returns (Message) {
+    option (rule) = {
+      additional_rules: [] /* This comment will get deleted */
+      additional_rules: [] /* This comment is safe */
+      additional_rules: [] /* this one is not */
+      rule: "parent" // but this one is
+    };
+  }
 }
 
 message Message {}
