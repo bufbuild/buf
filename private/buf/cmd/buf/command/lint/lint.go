@@ -142,9 +142,6 @@ func run(
 		lintOptions := []bufcheck.LintOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
 		}
-		if bufcli.IsPluginEnabled(container) {
-			lintOptions = append(lintOptions, bufcheck.WithPluginsEnabled())
-		}
 		if err := client.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
