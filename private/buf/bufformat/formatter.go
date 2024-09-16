@@ -450,7 +450,9 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 	}
 
 	if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
-		f.writeCompoundStringLiteralIndent(node)
+		// We write the compound string literal node and end in-line to handle any commas for
+		// the option.
+		f.writeCompoundStringLiteralIndentEndInline(node)
 		return
 	}
 	f.writeInline(optionNode.Val)

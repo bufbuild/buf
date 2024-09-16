@@ -24,8 +24,7 @@ message Foo {
       /* Two */
       "is a"
       /* Three */
-      "compound string"
-, // Trailing
+      "compound string", // Trailing
     (custom.message_literal_field_option) = /* Before */ {
       /* interior comment */
       rule: "rule"
