@@ -18,19 +18,31 @@ package buflsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/ast"
+	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
+	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
+	"github.com/gofrs/uuid/v5"
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const descriptorPath = "google/protobuf/descriptor.proto"
@@ -41,9 +53,8 @@ const descriptorPath = "google/protobuf/descriptor.proto"
 type file struct {
 	// lsp and uri are not protected by file.lock; they are immutable after
 	// file creation!
-	lsp    *lsp
-	uri    protocol.URI
-	module bufmodule.ModuleFullName
+	lsp *lsp
+	uri protocol.URI
 
 	// All variables after this lock variables are protected by file.lock.
 	//
@@ -63,7 +74,7 @@ type file struct {
 	// mutually-recursive Protobuf files. Although this is not permitted by Protobuf,
 	// the LSP must handle this invalid state gracefully.
 	//
-	// TODO(mcy): enforce this somehow.
+	// This is enforced by mutex.go.
 	lock mutex
 
 	text    string
@@ -71,11 +82,19 @@ type file struct {
 	hasText bool // Whether this file has ever had text read into it.
 	// Always set false->true. Once true, never becomes false again.
 
+	workspace bufworkspace.Workspace
+	module    bufmodule.Module
+	fileInfo  bufimage.ImageFileInfo
+
+	isWKT bool
+
 	fileNode    *ast.FileNode
 	packageNode *ast.PackageNode
 	diagnostics []protocol.Diagnostic
+	importable  map[string]bufimage.ImageFileInfo
 	imports     map[string]*file
 	symbols     []*symbol
+	image       bufimage.Image
 }
 
 // Manager returns the file manager that owns this file.
@@ -117,8 +136,10 @@ func (f *file) Reset(ctx context.Context) {
 	f.fileNode = nil
 	f.packageNode = nil
 	f.diagnostics = nil
+	f.importable = nil
 	f.imports = nil
 	f.symbols = nil
+	f.image = nil
 }
 
 // Close marks a file as closed.
@@ -168,11 +189,17 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 //
 // If deep is set, this will also load imports and refresh those, too.
 func (f *file) Refresh(ctx context.Context) {
-	if f.RefreshAST(ctx) {
+	hasReport := f.RefreshAST(ctx)
+
+	f.IndexImports(ctx)
+	f.FindModule(ctx)
+	f.BuildImage(ctx)
+	hasReport = f.RunLints(ctx) || hasReport // Avoid short-circuit here.
+	f.IndexSymbols(ctx)
+
+	if hasReport {
 		f.PublishDiagnostics(ctx)
 	}
-	f.IndexImports(ctx)
-	f.IndexSymbols(ctx)
 }
 
 // RefreshAST reparses the file and generates diagnostics if necessary.
@@ -199,7 +226,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 	}
 
 	f.fileNode = parsed
-	f.diagnostics = report
+	f.diagnostics = report.diagnostics
 	f.lsp.logger.Sugar().Debugf("got %v diagnostic(s)", len(f.diagnostics))
 
 	// Search for a potential package node.
@@ -238,6 +265,45 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 	})
 }
 
+// FindModule finds the Buf module for this file.
+func (f *file) FindModule(ctx context.Context) {
+	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
+	if err != nil {
+		f.lsp.logger.Warn("could not load workspace", zap.String("uri", string(f.uri)), zap.Error(err))
+		return
+	}
+
+	// Figure out which module this file belongs to.
+	var module bufmodule.Module
+	for _, mod := range workspace.Modules() {
+		// We do not care about this error, so we discard it.
+		_ = mod.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if fileInfo.LocalPath() == f.uri.Filename() {
+				module = mod
+			}
+			return nil
+		})
+		if module != nil {
+			break
+		}
+	}
+	if module == nil {
+		f.lsp.logger.Sugar().Warnf("could not find module for %q", f.uri)
+	}
+
+	// Determine if this is the WKT module. We do so by checking if this module contains
+	// descriptor.proto.
+	file, err := module.GetFile(ctx, descriptorPath)
+	if err == nil {
+		defer file.Close()
+	}
+
+	f.lock.Lock(ctx)
+	f.workspace = workspace
+	f.module = module
+	f.lock.Unlock(ctx)
+}
+
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
 	ctx, span := f.lsp.tracer.Start(ctx,
@@ -251,10 +317,23 @@ func (f *file) IndexImports(ctx context.Context) {
 		return
 	}
 
-	imports, err := f.lsp.findImportable(ctx, f.uri)
+	importable, err := f.lsp.findImportable(ctx, f.uri)
 	if err != nil {
 		f.lsp.logger.Sugar().Warnf("could not compute importable files for %s: %s", f.uri, err)
 		return
+	}
+	f.importable = importable
+
+	// Find the FileInfo for this path. The crazy thing is that it may appear in importable
+	// multiple times, with different path lengths! We want to pick the one with the longest path
+	// length.
+	for _, fileInfo := range importable {
+		if fileInfo.LocalPath() == f.uri.Filename() {
+			if f.fileInfo != nil && len(f.fileInfo.Path()) > len(fileInfo.Path()) {
+				continue
+			}
+			f.fileInfo = fileInfo
+		}
 	}
 
 	f.imports = make(map[string]*file)
@@ -265,27 +344,36 @@ func (f *file) IndexImports(ctx context.Context) {
 		}
 
 		name := node.Name.AsString()
-		fileInfo, ok := imports[name]
+		fileInfo, ok := importable[name]
 		if !ok {
 			f.lsp.logger.Sugar().Warnf("could not find URI for import %q", name)
 			continue
 		}
 
-		imported := f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
-		imported.module = fileInfo.ModuleFullName()
+		var imported *file
+		if fileInfo.LocalPath() == f.uri.Filename() {
+			imported = f
+		} else {
+			imported = f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
+		}
+
+		imported.fileInfo = fileInfo
+		f.isWKT = strings.HasPrefix("google/protobuf/", fileInfo.Path())
 		f.imports[node.Name.AsString()] = imported
 	}
 
+	// descriptor.proto is always implicitly imported.
 	if _, ok := f.imports[descriptorPath]; !ok {
-		descriptorFile := imports[descriptorPath]
+		descriptorFile := importable[descriptorPath]
 		descriptorURI := protocol.URI("file://" + descriptorFile.LocalPath())
 		if f.uri == descriptorURI {
 			f.imports[descriptorPath] = f
 		} else {
 			imported := f.Manager().Open(ctx, descriptorURI)
-			imported.module = descriptorFile.ModuleFullName()
+			imported.fileInfo = descriptorFile
 			f.imports[descriptorPath] = imported
 		}
+		f.isWKT = true
 	}
 
 	// FIXME: This algorithm is not correct: it does not account for `import public`.
@@ -309,6 +397,204 @@ func (f *file) IndexImports(ctx context.Context) {
 		file.RefreshAST(ctx)
 		file.IndexSymbols(ctx)
 	}
+}
+
+// BuildImage builds a Buf Image for this file. This does not use the controller to build
+// the image, because we need delicate control over the input files: namely, for the case
+// when we depend on a file that has been opened and modified in the editor.
+//
+// This operation requires IndexImports().
+func (f *file) BuildImage(ctx context.Context) {
+	f.lock.Lock(ctx)
+	importable := f.importable
+	fileInfo := f.fileInfo
+	f.lock.Unlock(ctx)
+
+	if importable == nil || fileInfo == nil {
+		return
+	}
+
+	var report report
+	var symbols linker.Symbols
+	compiler := protocompile.Compiler{
+		SourceInfoMode: protocompile.SourceInfoExtraOptionLocations,
+		Resolver: &protocompile.SourceResolver{
+			Accessor: func(path string) (io.ReadCloser, error) {
+				var uri protocol.URI
+				fileInfo, ok := importable[path]
+				if ok {
+					uri = protocol.URI("file://" + fileInfo.LocalPath())
+				} else {
+					uri = protocol.URI("file://" + path)
+				}
+
+				if file := f.Manager().Get(uri); file != nil {
+					return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
+				} else if !ok {
+					return nil, os.ErrNotExist
+				}
+
+				return os.Open(fileInfo.LocalPath())
+			},
+		},
+		Symbols:  &symbols,
+		Reporter: &report,
+	}
+
+	compiled, err := compiler.Compile(ctx, fileInfo.Path())
+	if err != nil {
+		f.lock.Lock(ctx)
+		f.diagnostics = report.diagnostics
+		f.lock.Unlock(ctx)
+	}
+	if compiled[0] == nil {
+		return
+	}
+
+	var imageFiles []bufimage.ImageFile
+	seen := map[string]bool{}
+
+	queue := []protoreflect.FileDescriptor{compiled[0]}
+	for len(queue) > 0 {
+		descriptor := queue[len(queue)-1]
+		queue = queue[:len(queue)-1]
+
+		if seen[descriptor.Path()] {
+			continue
+		}
+		seen[descriptor.Path()] = true
+
+		unused, ok := report.unusedImports[descriptor.Path()]
+		var unusedIndices []int32
+		if ok {
+			unusedIndices = make([]int32, 0, len(unused))
+		}
+
+		imports := descriptor.Imports()
+		for i := 0; i < imports.Len(); i++ {
+			dep := imports.Get(i).FileDescriptor
+			if dep == nil {
+				f.lsp.logger.Sugar().Warnf("found nil FileDescriptor for import %s", imports.Get(i).Path())
+				continue
+			}
+
+			queue = append(queue, dep)
+
+			if unused != nil {
+				if _, ok := unused[dep.Path()]; ok {
+					unusedIndices = append(unusedIndices, int32(i))
+				}
+			}
+		}
+
+		descriptorProto := protoutil.ProtoFromFileDescriptor(descriptor)
+		if descriptorProto == nil {
+			err = fmt.Errorf("protoutil.ProtoFromFileDescriptor() returned nil for %q", descriptor.Path())
+			break
+		}
+
+		var imageFile bufimage.ImageFile
+		imageFile, err = bufimage.NewImageFile(
+			descriptorProto,
+			nil,
+			uuid.UUID{},
+			"",
+			descriptor.Path(),
+			descriptor.Path() != fileInfo.Path(),
+			report.syntaxMissing[descriptor.Path()],
+			unusedIndices,
+		)
+		if err != nil {
+			break
+		}
+
+		imageFiles = append(imageFiles, imageFile)
+		f.lsp.logger.Sugar().Debugf("added image file for %s", descriptor.Path())
+	}
+
+	if err != nil {
+		f.lsp.logger.Warn("could not build image", zap.String("uri", string(f.uri)), zap.Error(err))
+		return
+	}
+
+	image, err := bufimage.NewImage(imageFiles)
+	if err != nil {
+		f.lsp.logger.Warn("could not build image", zap.String("uri", string(f.uri)), zap.Error(err))
+		return
+	}
+
+	f.lock.Lock(ctx)
+	f.image = image
+	f.lock.Unlock(ctx)
+}
+
+// RunLints runs linting on this file. Returns whether any lints failed.
+//
+// This operation requires BuildImage().
+func (f *file) RunLints(ctx context.Context) bool {
+	if f.isWKT {
+		// Well-known types are not linted.
+		return false
+	}
+
+	f.lock.Lock(ctx)
+	workspace := f.workspace
+	module := f.module
+	image := f.image
+	f.lock.Unlock(ctx)
+
+	if module == nil || image == nil {
+		f.lsp.logger.Sugar().Warnf("could not find image for %q", f.uri)
+		return false
+	}
+
+	f.lsp.logger.Sugar().Debugf("running lint for %q in %v", f.uri, module.ModuleFullName())
+
+	lintConfig := workspace.GetLintConfigForOpaqueID(module.OpaqueID())
+	err := f.lsp.checkClient.Lint(
+		ctx,
+		lintConfig,
+		image,
+		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPluginsEnabled(),
+	)
+
+	if err == nil {
+		f.lsp.logger.Sugar().Warnf("lint generated no errors for %s", f.uri)
+		return false
+	}
+
+	var annotations bufanalysis.FileAnnotationSet
+	if !errors.As(err, &annotations) {
+		f.lsp.logger.Warn("error while linting", zap.String("uri", string(f.uri)), zap.Error(err))
+		return false
+	}
+
+	f.lsp.logger.Sugar().Warnf("lint generated %d error(s) for %s", len(annotations.FileAnnotations()), f.uri)
+
+	f.lock.Lock(ctx)
+	f.lock.Unlock(ctx)
+	for _, annotation := range annotations.FileAnnotations() {
+		f.lsp.logger.Sugar().Info(annotation.FileInfo().Path(), " ", annotation.FileInfo().ExternalPath())
+
+		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      uint32(annotation.StartLine()) - 1,
+					Character: uint32(annotation.StartColumn()) - 1,
+				},
+				End: protocol.Position{
+					Line:      uint32(annotation.EndLine()) - 1,
+					Character: uint32(annotation.EndColumn()) - 1,
+				},
+			},
+			Code:     annotation.Type(),
+			Severity: protocol.DiagnosticSeverityError,
+			Source:   "buf lint",
+			Message:  annotation.Message(),
+		})
+	}
+	return true
 }
 
 // IndexSymbols processes the AST of a file and generates symbols for each symbol in

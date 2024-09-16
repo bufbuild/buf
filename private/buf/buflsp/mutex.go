@@ -18,6 +18,7 @@ package buflsp
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -55,6 +56,19 @@ func getRequestID(ctx context.Context) uint64 {
 	return id + 1
 }
 
+// mutexPool represents a group of reentrant muteces that cannot be acquired simultaneously.
+//
+// A zero mutexPool is ready to use.
+type mutexPool struct {
+	lock sync.Mutex
+	held map[uint64]*mutex
+}
+
+// NewMutex creates a new mutex in this pool.
+func (mp *mutexPool) NewMutex() mutex {
+	return mutex{pool: mp}
+}
+
 // mutex is a sync.Mutex with some extra features.
 //
 // The main feature is reentrancy-checking. Within the LSP, we need to lock-protect many structures,
@@ -63,7 +77,8 @@ func getRequestID(ctx context.Context) uint64 {
 type mutex struct {
 	lock sync.Mutex
 	// This is the id of the context currently holding the lock.
-	who atomic.Uint64
+	who  atomic.Uint64
+	pool *mutexPool
 }
 
 // Lock attempts to acquire this mutex or blocks.
@@ -107,6 +122,19 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		// Block until the lock is free.
 		mu.lock.Lock()
 		mu.who.Store(id)
+
+		if mu.pool != nil {
+			mu.pool.lock.Lock()
+			defer mu.pool.lock.Unlock()
+			if mu.pool.held == nil {
+				mu.pool.held = make(map[uint64]*mutex)
+			}
+			if held := mu.pool.held[id]; held != nil {
+				panic(fmt.Sprintf("buflsp/mutex.go: attempted to acquire two non-reentrant locks at once: %p -> %p", mu, held))
+			}
+			mu.pool.held[id] = mu
+		}
+
 		return unlocker
 	}
 }
@@ -125,6 +153,16 @@ func (mu *mutex) Unlock(ctx context.Context) {
 		panic("buflsp/mutex.go: lock was locked by one request and unlocked by another")
 	default:
 		mu.who.Store(0)
+
+		if mu.pool != nil {
+			mu.pool.lock.Lock()
+			defer mu.pool.lock.Unlock()
+			if held := mu.pool.held[id]; held != mu {
+				panic(fmt.Sprintf("buflsp/mutex.go: attempted to unlock the wrong lock: %p -> %p", mu, held))
+			}
+			delete(mu.pool.held, id)
+		}
+
 		mu.lock.Unlock()
 	}
 }

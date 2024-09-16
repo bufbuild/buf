@@ -17,23 +17,44 @@
 package buflsp
 
 import (
+	"fmt"
+
+	"github.com/bufbuild/protocompile/linker"
+	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
 )
 
 // report is a reporter.Reporter that captures diagnostic events as
 // protocol.Diagnostic values.
-type report []protocol.Diagnostic
+type report struct {
+	diagnostics   []protocol.Diagnostic
+	syntaxMissing map[string]bool
+	unusedImports map[string]map[string]bool
+}
 
 // Error implements reporter.Handler for *diagnostics.
 func (r *report) Error(err reporter.ErrorWithPos) error {
-	*r = append(*r, newDiagnostic(err, false))
+	r.diagnostics = append(r.diagnostics, newDiagnostic(err, false))
 	return nil
 }
 
 // Error implements reporter.Handler for *diagnostics.
 func (r *report) Warning(err reporter.ErrorWithPos) {
-	*r = append(*r, newDiagnostic(err, true))
+	r.diagnostics = append(r.diagnostics, newDiagnostic(err, true))
+
+	if err.Unwrap() == parser.ErrNoSyntax {
+		r.syntaxMissing[err.GetPosition().Filename] = true
+	} else if unusedImport, ok := err.Unwrap().(linker.ErrorUnusedImport); ok {
+		path := err.GetPosition().Filename
+		unused, ok := r.unusedImports[path]
+		if !ok {
+			unused = map[string]bool{}
+			r.unusedImports[path] = unused
+		}
+
+		unused[unusedImport.UnusedImport()] = true
+	}
 }
 
 // error2diagnostic converts a protocompile error into a diagnostic.
@@ -51,7 +72,7 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnosti
 		// essentially a bug that will result in worse diagnostics until fixed.
 		Range:    protocol.Range{Start: pos, End: pos},
 		Severity: protocol.DiagnosticSeverityError,
-		Message:  err.Unwrap().Error(),
+		Message:  fmt.Sprintf("%s:%d:%d: %s", err.GetPosition().Filename, err.GetPosition().Line, err.GetPosition().Col, err.Unwrap().Error()),
 	}
 
 	if isWarning {

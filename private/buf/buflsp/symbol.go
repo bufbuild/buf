@@ -462,7 +462,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		return tooltip.String()
 	}
 
-	if def.file.module != nil {
+	if def.file.fileInfo != nil {
 		path := strings.Join(path, ".")
 
 		fmt.Fprintf(
@@ -470,7 +470,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 			"[`%s.%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s.%s)\n\n",
 			pkg,
 			path,
-			def.file.module,
+			def.file.fileInfo.ModuleFullName(),
 			pkg,
 			pkg,
 			path,

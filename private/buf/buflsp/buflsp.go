@@ -24,8 +24,11 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -36,7 +39,6 @@ import (
 )
 
 const (
-	// TODO: make configurable
 	handlerTimeout = 3 * time.Second
 )
 
@@ -63,6 +65,12 @@ func Serve(
 
 	container.CacheDirPath()
 
+	tracer := tracing.NewTracer(container.Tracer())
+	checkClient, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+	if err != nil {
+		return nil, err
+	}
+
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
 		conn: conn,
@@ -70,12 +78,13 @@ func Serve(
 			&connAdapter{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-		logger:     container.Logger(),
-		tracer:     tracing.NewTracer(container.Tracer()),
-		controller: controller,
-		rootBucket: bucket,
+		logger:      container.Logger(),
+		tracer:      tracer,
+		controller:  controller,
+		checkClient: checkClient,
+		rootBucket:  bucket,
 	}
-	lsp.fileManager = newFiles(lsp)
+	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
@@ -97,10 +106,11 @@ type lsp struct {
 	logger      *zap.Logger
 	tracer      tracing.Tracer
 	controller  bufctl.Controller
+	checkClient bufcheck.Client
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
 
-	// These are atomics, because they are read often add written to
+	// These are atomics, because they are read often and written to
 	// almost never, but potentially concurrently. Having them side-by-side
 	// is fine; they are almost never written to so false sharing is not a
 	// concern.
@@ -192,6 +202,7 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 		if ctx.Err() == context.DeadlineExceeded {
 			// Don't return this error; that will kill the whole server!
 			l.logger.Sugar().Errorf("timed out while handling %s; this is likely a bug", req.Method())
+			return nil
 		}
 		return retErr
 	}
