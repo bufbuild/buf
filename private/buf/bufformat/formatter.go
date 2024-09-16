@@ -595,9 +595,23 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 			f.writeMessageLiteralElements(messageLiteralNode)
 		}
 	}
+	closeNode := messageLiteralClose(messageLiteralNode)
+	// In the case where we are writing a compact message literal, we need to check if there
+	// are any trailing comments on the message literal that needs to be handled. The trailing
+	// comments may end up on the message literal node itself rather than the closing bracket
+	// in the case where a message literal is an element of a message literal, and trailing
+	// comments on the separator are attached to message literal.
+	messageLiteralTrailingComments := f.nodeInfo(messageLiteralNode).TrailingComments()
+	// Similar to how we handle the trailing comments on separators, we check if there are
+	// any existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the message literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if messageLiteralTrailingComments.Len() > 0 && f.nodeInfo(closeNode).TrailingComments().Len() == 0 {
+		f.setTrailingComments(closeNode, messageLiteralTrailingComments)
+	}
 	f.writeCompositeValueBody(
 		messageLiteralOpen(messageLiteralNode),
-		messageLiteralClose(messageLiteralNode),
+		closeNode,
 		elementWriterFunc,
 	)
 }
@@ -621,9 +635,23 @@ func (f *formatter) writeMessageLiteralForArray(
 	if lastElement {
 		closeWriter = f.writeBodyEnd
 	}
+	closeNode := messageLiteralClose(messageLiteralNode)
+	// In the case where we are writing a compact message literal, we need to check if there
+	// are any trailing comments on the message literal that needs to be handled. The trailing
+	// comments may end up on the message literal node itself rather than the closing bracket
+	// in the case where a message literal is an element of a message literal, and trailing
+	// comments on the separator are attached to message literal.
+	messageLiteralTrailingComments := f.nodeInfo(messageLiteralNode).TrailingComments()
+	// Similar to how we handle the trailing comments on separators, we check if there are
+	// any existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the message literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if messageLiteralTrailingComments.Len() > 0 && f.nodeInfo(closeNode).TrailingComments().Len() == 0 {
+		f.setTrailingComments(closeNode, messageLiteralTrailingComments)
+	}
 	f.writeBody(
 		messageLiteralOpen(messageLiteralNode),
-		messageLiteralClose(messageLiteralNode),
+		closeNode,
 		elementWriterFunc,
 		f.writeOpenBracePrefixForArray,
 		closeWriter,
@@ -639,10 +667,26 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 		messageLiteralHasNestedMessageOrArray(messageLiteralNode) {
 		return false
 	}
+
 	// messages with a single scalar field and no comments can be
 	// printed all on one line
 	openNode := messageLiteralOpen(messageLiteralNode)
 	closeNode := messageLiteralClose(messageLiteralNode)
+
+	// In the case where we are writing a compact message literal, we need to check if there
+	// are any trailing comments on the message literal that needs to be handled. The trailing
+	// comments may end up on the message literal node itself rather than the closing bracket
+	// in the case where a message literal is an element of a message literal, and trailing
+	// comments on the separator are attached to message literal.
+	messageLiteralTrailingComments := f.nodeInfo(messageLiteralNode).TrailingComments()
+	// Similar to how we handle the trailing comments on separators, we check if there are
+	// any existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the message literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if messageLiteralTrailingComments.Len() > 0 && f.nodeInfo(closeNode).TrailingComments().Len() == 0 {
+		f.setTrailingComments(closeNode, messageLiteralTrailingComments)
+	}
+
 	if inArrayLiteral {
 		f.Indent(openNode)
 	}
