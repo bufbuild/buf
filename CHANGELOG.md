@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add support for custom lint and breaking change plugins. See
+  [our launch blog post](https://buf.build/blog/buf-custom-lint-breaking-change-plugins)
+  for more details!
 - Fix bugs in `buf format` where trailing comments on commas in message literals were not properly
   propagated to the formatted proto, empty message literals were not properly indented, and
   compound strings in options added an extra newline before trailing commas.
