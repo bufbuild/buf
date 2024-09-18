@@ -216,14 +216,29 @@ func ModuleSetRemoteOpaqueIDs(moduleSet ModuleSet) []string {
 //
 // This only starts at target Modules. If a Module is not part of a graph
 // with a target Module as a source, it will not be added.
-func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string, Module], error) {
+func ModuleSetToDAG(moduleSet ModuleSet, options ...ModuleSetToDAGOption) (*dag.Graph[string, Module], error) {
+	moduleSetToDAGOptions := newModuleSetToDAGOptions()
+	for _, option := range options {
+		option(moduleSetToDAGOptions)
+	}
 	graph := dag.NewGraph[string, Module](Module.OpaqueID)
 	for _, module := range ModuleSetTargetModules(moduleSet) {
-		if err := moduleSetToDAGRec(module, graph); err != nil {
+		if err := moduleSetToDAGRec(module, graph, moduleSetToDAGOptions.remoteOnly); err != nil {
 			return nil, err
 		}
 	}
 	return graph, nil
+}
+
+// ModuleSetToDAGOption is an option for ModuleSetToDAG.
+type ModuleSetToDAGOption func(*moduleSetToDAGOptions)
+
+// ModuleSetToDAGWithRemoteOnly returns a new ModuleSetToDAGOption that specifies the graph
+// should be built with only remote modules.
+func ModuleSetToDAGWithRemoteOnly() ModuleSetToDAGOption {
+	return func(moduleSetToDAGOptions *moduleSetToDAGOptions) {
+		moduleSetToDAGOptions.remoteOnly = true
+	}
 }
 
 // *** PRIVATE ***
@@ -401,6 +416,14 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 
 func (*moduleSet) isModuleSet() {}
 
+type moduleSetToDAGOptions struct {
+	remoteOnly bool
+}
+
+func newModuleSetToDAGOptions() *moduleSetToDAGOptions {
+	return &moduleSetToDAGOptions{}
+}
+
 // utils
 
 func moduleSetTargetLocalModulesAndTransitiveLocalDepsRec(
@@ -440,15 +463,28 @@ func moduleSetTargetLocalModulesAndTransitiveLocalDepsRec(
 func moduleSetToDAGRec(
 	module Module,
 	graph *dag.Graph[string, Module],
+	remoteOnly bool,
 ) error {
-	graph.AddNode(module)
+	// If remoteOnly is set, then we only want to add remote modules as nodes. However, we do
+	// not want to return necessarily, because we want to capture all remote dependencies.
+	//
+	// We do not return early and ignore local modules entirely, because we still want to check
+	// for remote dependencies from local modules.
+	if !remoteOnly || !module.IsLocal() {
+		graph.AddNode(module)
+	}
 	directModuleDeps, err := ModuleDirectModuleDeps(module)
 	if err != nil {
 		return err
 	}
 	for _, directModuleDep := range directModuleDeps {
-		graph.AddEdge(module, directModuleDep)
-		if err := moduleSetToDAGRec(directModuleDep, graph); err != nil {
+		// If remoteOnly is set, then we only want to add the edge if both the module _and_ the
+		// dependency are remote.
+		if !remoteOnly || (!module.IsLocal() && !directModuleDep.IsLocal()) {
+			graph.AddEdge(module, directModuleDep)
+		}
+		// We still want to check all transitive dependencies for all modules.
+		if err := moduleSetToDAGRec(directModuleDep, graph, remoteOnly); err != nil {
 			return err
 		}
 	}

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add `buf dep graph --format` flag that defaults to `dot`, and adds the option `json`, to print
+  the dependency graph in JSON format.
 - Fix bugs in `buf format` where trailing comments on commas in message literals were not properly
   propagated to the formatted proto, empty message literals were not properly indented, and
   compound strings in options added an extra newline before trailing commas.
