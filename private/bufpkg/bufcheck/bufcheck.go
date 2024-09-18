@@ -182,7 +182,7 @@ func NewRunnerProvider(delegate command.Runner) RunnerProvider {
 	return RunnerProviderFunc(
 		func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 			if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
-				return nil, syserror.New("we only handle local plugins for now with lint and breaking")
+				return nil, syserror.New("only local plugins are supported")
 			}
 			path := pluginConfig.Path()
 			return pluginrpcutil.NewRunner(
