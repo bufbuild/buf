@@ -21,6 +21,8 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -162,17 +164,35 @@ func WithPluginsEnabled() ClientFunctionOption {
 	return pluginsEnabledOption{}
 }
 
-// RunnerProvider provides pluginrpc.Runners for program names and args.
+// RunnerProvider provides pluginrpc.Runners for a given plugin config.
 type RunnerProvider interface {
-	NewRunner(programName string, programArgs ...string) pluginrpc.Runner
+	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 }
 
 // RunnerProviderFunc is a function that implements RunnerProvider.
-type RunnerProviderFunc func(programName string, programArgs ...string) pluginrpc.Runner
+type RunnerProviderFunc func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
-func (r RunnerProviderFunc) NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
-	return r(programName, programArgs...)
+func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
+	return r(pluginConfig)
+}
+
+// NewRunnerProvider returns a new RunnerProvider for the command.Runner.
+func NewRunnerProvider(delegate command.Runner) RunnerProvider {
+	return RunnerProviderFunc(
+		func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
+			if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
+				return nil, syserror.New("only local plugins are supported")
+			}
+			path := pluginConfig.Path()
+			return pluginrpcutil.NewRunner(
+				delegate,
+				// We know that Path is of at least length 1.
+				path[0],
+				path[1:]...,
+			), nil
+		},
+	)
 }
 
 // NewClient returns a new Client.

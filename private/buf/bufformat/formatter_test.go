@@ -60,13 +60,13 @@ func testFormatProto2(t *testing.T) {
 
 func testFormatProto3(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto3/all/v1")
+	testFormatNoDiff(t, "testdata/proto3/block/v1")
 	testFormatNoDiff(t, "testdata/proto3/file/v1")
 	testFormatNoDiff(t, "testdata/proto3/header/v1")
 	testFormatNoDiff(t, "testdata/proto3/literal/v1")
 	testFormatNoDiff(t, "testdata/proto3/oneof/v1")
 	testFormatNoDiff(t, "testdata/proto3/range/v1")
 	testFormatNoDiff(t, "testdata/proto3/service/v1")
-	testFormatNoDiff(t, "testdata/proto3/block/v1")
 }
 
 func testFormatNoDiff(t *testing.T, path string) {
