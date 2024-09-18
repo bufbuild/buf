@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.42.0] - 2024-09-18
 
 - Add support for custom lint and breaking change plugins. See
   [our launch blog post](https://buf.build/blog/buf-custom-lint-breaking-change-plugins)
@@ -1260,7 +1260,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.41.0...HEAD
+[v1.42.0]: https://github.com/bufbuild/buf/compare/v1.41.0...v1.42.0
 [v1.41.0]: https://github.com/bufbuild/buf/compare/v1.40.1...v1.41.0
 [v1.40.1]: https://github.com/bufbuild/buf/compare/v1.40.0...v1.40.1
 [v1.40.0]: https://github.com/bufbuild/buf/compare/v1.39.0...v1.40.0
