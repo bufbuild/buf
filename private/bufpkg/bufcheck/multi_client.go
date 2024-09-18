@@ -101,13 +101,13 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 					}
 					return fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 				}
-				lock.Lock()
 				annotations := slicesext.Map(
 					delegateResponse.Annotations(),
 					func(checkAnnotation check.Annotation) *annotation {
 						return newAnnotation(checkAnnotation, delegate.PluginName)
 					},
 				)
+				lock.Lock()
 				allAnnotations = append(allAnnotations, annotations...)
 				lock.Unlock()
 				return nil
