@@ -1356,7 +1356,6 @@ func testBreaking(
 		previousImage,
 		bufcheck.BreakingWithExcludeImports(),
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPluginsEnabled(),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)

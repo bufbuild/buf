@@ -156,14 +156,6 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOp
 	}
 }
 
-// WithPluginsEnabled returns a new ClientFunctionOption  that says to enable the use of plugins.
-// Client Methods, such as Client.Lint(), fail if WithPluginConfigs is set without this.
-//
-// TODO: remove this as part of publicly releasing lint/breaking plugins
-func WithPluginsEnabled() ClientFunctionOption {
-	return pluginsEnabledOption{}
-}
-
 // RunnerProvider provides pluginrpc.Runners for a given plugin config.
 type RunnerProvider interface {
 	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)

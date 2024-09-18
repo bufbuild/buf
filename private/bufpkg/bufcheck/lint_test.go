@@ -1300,7 +1300,6 @@ func testLintWithOptions(
 		lintConfig,
 		image,
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPluginsEnabled(),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)
