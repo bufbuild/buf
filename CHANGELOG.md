@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix bugs in `buf format` where trailing comments on commas in message literals were not properly
+  propagated to the formatted proto, empty message literals were not properly indented, and
+  compound strings in options added an extra newline before trailing commas.
 
 ## [v1.41.0] - 2024-09-11
 

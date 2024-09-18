@@ -316,21 +316,17 @@ func (c *client) getMultiClient(
 		)
 	}
 	for _, pluginConfig := range pluginConfigs {
-		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
-			return nil, syserror.New("we only handle local plugins for now with lint and breaking")
-		}
 		options, err := check.NewOptions(pluginConfig.Options())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
 		}
-		pluginPath := pluginConfig.Path()
+		runner, err := c.runnerProvider.NewRunner(pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("could not create runner for plugin %q: %w", pluginConfig.Name(), err)
+		}
 		checkClient := check.NewClient(
 			pluginrpc.NewClient(
-				c.runnerProvider.NewRunner(
-					// We know that Path is of at least length 1.
-					pluginPath[0],
-					pluginPath[1:]...,
-				),
+				runner,
 				pluginrpc.ClientWithStderr(c.stderr),
 				// We have to set binary as some things cannot be encoded as JSON.
 				// Example: google.protobuf.Timestamps with positive seconds and negative nanos.
