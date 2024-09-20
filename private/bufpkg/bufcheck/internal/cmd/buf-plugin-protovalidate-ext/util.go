@@ -40,14 +40,14 @@ func breakingRuleHandlerForFile(
 		) error {
 			fileDescriptorPathToFileDescriptor := make(map[string]descriptor.FileDescriptor)
 			for _, fileDescriptor := range request.FileDescriptors() {
-				fileDescriptorPathToFileDescriptor[fileDescriptor.Protoreflect().Path()] = fileDescriptor
+				fileDescriptorPathToFileDescriptor[fileDescriptor.ProtoreflectFileDescriptor().Path()] = fileDescriptor
 			}
 			for _, againstFileDescriptor := range request.AgainstFileDescriptors() {
 				if !checkImport && againstFileDescriptor.IsImport() {
 					continue
 				}
-				if fileDescriptor, ok := fileDescriptorPathToFileDescriptor[againstFileDescriptor.Protoreflect().Path()]; ok {
-					if err := f(ctx, responseWriter, request, fileDescriptor.Protoreflect(), againstFileDescriptor.Protoreflect()); err != nil {
+				if fileDescriptor, ok := fileDescriptorPathToFileDescriptor[againstFileDescriptor.ProtoreflectFileDescriptor().Path()]; ok {
+					if err := f(ctx, responseWriter, request, fileDescriptor.ProtoreflectFileDescriptor(), againstFileDescriptor.ProtoreflectFileDescriptor()); err != nil {
 						return err
 					}
 				}

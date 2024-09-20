@@ -416,7 +416,7 @@ func ignoreFileLocation(
 		return true, nil
 	}
 
-	protoreflectFileDescriptor := fileDescriptor.Protoreflect()
+	protoreflectFileDescriptor := fileDescriptor.ProtoreflectFileDescriptor()
 	path := protoreflectFileDescriptor.Path()
 	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
 		return true, nil

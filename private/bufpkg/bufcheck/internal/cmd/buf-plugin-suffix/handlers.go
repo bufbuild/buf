@@ -46,7 +46,7 @@ func handleLintServiceBannedSuffixes(
 		return err
 	}
 	for _, fileDescriptor := range request.FileDescriptors() {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		for i := 0; i < descriptor.Services().Len(); i++ {
 			service := descriptor.Services().Get(i)
 			checkDescriptorBannedSuffixes(responseWriter, service, bannedServiceSuffixes, "Service")
@@ -65,7 +65,7 @@ func handleLintRPCBannedSuffixes(
 		return err
 	}
 	for _, fileDescriptor := range request.FileDescriptors() {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		for i := 0; i < descriptor.Services().Len(); i++ {
 			methods := descriptor.Services().Get(i).Methods()
 			for j := 0; j < methods.Len(); j++ {
@@ -87,7 +87,7 @@ func handleLintFieldBannedSuffixes(
 		return err
 	}
 	for _, fileDescriptor := range request.FileDescriptors() {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		for i := 0; i < descriptor.Messages().Len(); i++ {
 			message := descriptor.Messages().Get(i)
 			checkBannedFieldSuffixesForMessage(responseWriter, message, bannedFieldSuffixes)
@@ -123,7 +123,7 @@ func handleLintEnumValueBannedSuffixes(
 		return err
 	}
 	for _, fileDescriptor := range request.FileDescriptors() {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		for i := 0; i < descriptor.Enums().Len(); i++ {
 			enum := descriptor.Enums().Get(i)
 			for j := 0; j < enum.Values().Len(); j++ {
@@ -239,7 +239,7 @@ func mapServiceNameToServiceDescriptorForFilesAndNoChangeSuffixes(
 ) map[string]protoreflect.ServiceDescriptor {
 	result := map[string]protoreflect.ServiceDescriptor{}
 	for _, fileDescriptor := range fileDescriptors {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		for i := 0; i < descriptor.Services().Len(); i++ {
 			service := descriptor.Services().Get(i)
 			if checkDescriptorHasNoChangeSuffix(service, serviceNoChangeSuffixes) {
@@ -318,7 +318,7 @@ func mapMessageNameToMessageDescriptorForFilesAndNoChangeSuffixes(
 ) map[string]protoreflect.MessageDescriptor {
 	result := map[string]protoreflect.MessageDescriptor{}
 	for _, fileDescriptor := range fileDescriptors {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		messages := getNestedMessageDescriptors(descriptor.Messages(), messageNoChangeSuffixes)
 		for _, message := range messages {
 			result[string(message.FullName())] = message
@@ -408,7 +408,7 @@ func mapEnumNameToEnumDescriptorForFilesAndNoChangeSuffixes(
 ) map[string]protoreflect.EnumDescriptor {
 	result := map[string]protoreflect.EnumDescriptor{}
 	for _, fileDescriptor := range fileDescriptors {
-		descriptor := fileDescriptor.Protoreflect()
+		descriptor := fileDescriptor.ProtoreflectFileDescriptor()
 		for i := 0; i < descriptor.Enums().Len(); i++ {
 			enum := descriptor.Enums().Get(i)
 			if checkDescriptorHasNoChangeSuffix(enum, enumNoChangeSuffixes) {

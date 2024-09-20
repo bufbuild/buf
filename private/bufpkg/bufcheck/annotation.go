@@ -67,7 +67,7 @@ func annotationToFileAnnotation(
 			annotation.PluginName(),
 		)
 	}
-	path := fileLocation.FileDescriptor().Protoreflect().Path()
+	path := fileLocation.FileDescriptor().ProtoreflectFileDescriptor().Path()
 	// While it never should, it is OK if pathToExternalPath returns "" for a given path.
 	// We handle this in fileInfo.
 	fileInfo := newFileInfo(path, pathToExternalPath[path])
