@@ -115,10 +115,6 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
 	}
 
-	// Block until we acquire the lock.
-	mu.lock.Lock()
-	mu.storeWho(id)
-
 	if mu.pool != nil {
 		mu.pool.lock.Lock()
 		defer mu.pool.lock.Unlock()
@@ -130,6 +126,10 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		}
 		mu.pool.held[id] = mu
 	}
+
+	// Ok, we're definitely not holding a lock, so we can block until we acquire the lock.
+	mu.lock.Lock()
+	mu.storeWho(id)
 
 	return unlocker
 }

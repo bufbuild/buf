@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
-	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
@@ -36,10 +35,6 @@ import (
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
-)
-
-const (
-	handlerTimeout = 3 * time.Second
 )
 
 // Serve spawns a new LSP server, listening on the given stream.
@@ -177,34 +172,17 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			zap.ByteString("params", req.Params()),
 		)
 
-		// Each request is handled in a separate goroutine, and has a fixed timeout.
-		// This is to enforce responsiveness on the LSP side: if something is going to take
-		// a long time, it should be offloaded.
-		ctx, done := context.WithTimeout(ctx, handlerTimeout)
 		ctx = withRequestID(ctx)
 
-		go func() {
-			defer done()
-			replier := l.adaptReplier(reply, req)
+		replier := l.adaptReplier(reply, req)
 
-			// Verify that the server has been initialized if this isn't the initialization
-			// request.
-			if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
-				retErr = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method",
-					protocol.MethodInitialize))
-				return
-			}
-
-			retErr = actual(ctx, replier, req)
-		}()
-
-		<-ctx.Done()
-		if ctx.Err() == context.DeadlineExceeded {
-			// Don't return this error; that will kill the whole server!
-			l.logger.Sugar().Errorf("timed out while handling %s; this is likely a bug", req.Method())
-			return nil
+		// Verify that the server has been initialized if this isn't the initialization
+		// request.
+		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
+			return replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
 		}
-		return retErr
+
+		return actual(ctx, replier, req)
 	}
 }
 
