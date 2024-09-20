@@ -22,6 +22,7 @@ import (
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/check/checktest"
 	"buf.build/go/bufplugin/check/checkutil"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -102,7 +103,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	require.NoError(t, err)
 	timestampSuffixClient, err := check.NewClientForSpec(timestampSuffixSpec, clientForSpecOptions...)
 	require.NoError(t, err)
-	emptyOptions, err := check.NewOptions(nil)
+	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
 		zap.NewNop(),
@@ -129,7 +130,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 		[]checktest.ExpectedAnnotation{
 			{
 				RuleID: fieldLowerSnakeCaseRuleID,
-				Location: &checktest.ExpectedLocation{
+				FileLocation: &checktest.ExpectedFileLocation{
 					FileName:    "simple.proto",
 					StartLine:   10,
 					StartColumn: 2,
@@ -139,7 +140,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 			},
 			{
 				RuleID: timestampSuffixRuleID,
-				Location: &checktest.ExpectedLocation{
+				FileLocation: &checktest.ExpectedFileLocation{
 					FileName:    "simple.proto",
 					StartLine:   9,
 					StartColumn: 2,
@@ -162,7 +163,7 @@ func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
 
 	fieldLowerSnakeCaseClient, err := check.NewClientForSpec(fieldLowerSnakeCaseSpec)
 	require.NoError(t, err)
-	emptyOptions, err := check.NewOptions(nil)
+	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
 		zap.NewNop(),
@@ -193,7 +194,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 		[]string{"buf-plugin-duplicate-rule"},
 	)
 	require.NoError(t, err)
-	emptyOptions, err := check.NewOptions(nil)
+	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 
 	multiClient, err := client.getMultiClient(
@@ -256,7 +257,7 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 	require.NoError(t, err)
 	client2, err := check.NewClientForSpec(client2Spec)
 	require.NoError(t, err)
-	emptyOptions, err := check.NewOptions(nil)
+	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
 		zap.NewNop(),
@@ -287,7 +288,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 		[]string{"buf-plugin-duplicate-category"},
 	)
 	require.NoError(t, err)
-	emptyOptions, err := check.NewOptions(nil)
+	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 
 	multiClient, err := client.getMultiClient(
@@ -330,7 +331,7 @@ func checkTimestampSuffix(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	timestampSuffix := defaultTimestampSuffix
-	timestampSuffixOptionValue, err := check.GetStringValue(request.Options(), timestampSuffixOptionKey)
+	timestampSuffixOptionValue, err := option.GetStringValue(request.Options(), timestampSuffixOptionKey)
 	if err != nil {
 		return err
 	}

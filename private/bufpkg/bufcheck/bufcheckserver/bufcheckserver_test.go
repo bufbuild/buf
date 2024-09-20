@@ -56,7 +56,7 @@ func TestServicePascalCase(t *testing.T) {
 			ExpectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID: "SERVICE_PASCAL_CASE",
-					Location: &checktest.ExpectedLocation{
+					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "a.proto",
 						StartLine:   7,
 						StartColumn: 8,
@@ -66,7 +66,7 @@ func TestServicePascalCase(t *testing.T) {
 				},
 				{
 					RuleID: "SERVICE_PASCAL_CASE",
-					Location: &checktest.ExpectedLocation{
+					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "a.proto",
 						StartLine:   8,
 						StartColumn: 8,
@@ -76,7 +76,7 @@ func TestServicePascalCase(t *testing.T) {
 				},
 				{
 					RuleID: "SERVICE_PASCAL_CASE",
-					Location: &checktest.ExpectedLocation{
+					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "a.proto",
 						StartLine:   9,
 						StartColumn: 8,
@@ -86,7 +86,7 @@ func TestServicePascalCase(t *testing.T) {
 				},
 				{
 					RuleID: "SERVICE_PASCAL_CASE",
-					Location: &checktest.ExpectedLocation{
+					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "a.proto",
 						StartLine:   10,
 						StartColumn: 8,

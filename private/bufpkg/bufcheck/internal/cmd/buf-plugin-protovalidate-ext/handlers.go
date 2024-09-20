@@ -19,6 +19,7 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -113,7 +114,7 @@ func checkValidateIDDashless(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	idFieldName := defaultIDFieldName
-	idFieldNameOptionValue, err := check.GetStringValue(request.Options(), idFieldNameOptionKey)
+	idFieldNameOptionValue, err := option.GetStringValue(request.Options(), idFieldNameOptionKey)
 	if err != nil {
 		return err
 	}

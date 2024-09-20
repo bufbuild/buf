@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/descriptor"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -111,7 +113,7 @@ func (c *client) Lint(
 		return err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
-	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
+	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
@@ -176,20 +178,20 @@ func (c *client) Breaking(
 		return err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
-	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
+	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
 	}
-	againstFiles, err := check.FilesForProtoFiles(imageToProtoFiles(againstImage))
+	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(againstImage))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
 	}
 	request, err := check.NewRequest(
-		files,
+		fileDescriptors,
 		check.WithRuleIDs(config.RuleIDs...),
-		check.WithAgainstFiles(againstFiles),
+		check.WithAgainstFileDescriptors(againstFileDescriptors),
 		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
@@ -286,11 +288,7 @@ func (c *client) allRulesAndCategories(
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
-	emptyOptions, err := check.NewOptions(nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, option.EmptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -301,7 +299,7 @@ func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 	disableBuiltin bool,
-	defaultOptions check.Options,
+	defaultOptions option.Options,
 ) (*multiClient, error) {
 	var checkClientSpecs []*checkClientSpec
 	if !disableBuiltin {
@@ -316,7 +314,7 @@ func (c *client) getMultiClient(
 		)
 	}
 	for _, pluginConfig := range pluginConfigs {
-		options, err := check.NewOptions(pluginConfig.Options())
+		options, err := option.NewOptions(pluginConfig.Options())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
 		}
@@ -393,8 +391,8 @@ func ignoreAnnotation(
 	config *config,
 	annotation *annotation,
 ) (bool, error) {
-	if location := annotation.Location(); location != nil {
-		ignore, err := ignoreLocation(config, annotation.RuleID(), location)
+	if fileLocation := annotation.FileLocation(); fileLocation != nil {
+		ignore, err := ignoreFileLocation(config, annotation.RuleID(), fileLocation)
 		if err != nil {
 			return false, err
 		}
@@ -402,24 +400,24 @@ func ignoreAnnotation(
 			return true, nil
 		}
 	}
-	if againstLocation := annotation.AgainstLocation(); againstLocation != nil {
-		return ignoreLocation(config, annotation.RuleID(), againstLocation)
+	if againstFileLocation := annotation.AgainstFileLocation(); againstFileLocation != nil {
+		return ignoreFileLocation(config, annotation.RuleID(), againstFileLocation)
 	}
 	return false, nil
 }
 
-func ignoreLocation(
+func ignoreFileLocation(
 	config *config,
 	ruleID string,
-	location check.Location,
+	fileLocation descriptor.FileLocation,
 ) (bool, error) {
-	file := location.File()
-	if config.ExcludeImports && file.IsImport() {
+	fileDescriptor := fileLocation.FileDescriptor()
+	if config.ExcludeImports && fileDescriptor.IsImport() {
 		return true, nil
 	}
 
-	fileDescriptor := file.FileDescriptor()
-	path := fileDescriptor.Path()
+	protoreflectFileDescriptor := fileDescriptor.ProtoreflectFileDescriptor()
+	path := protoreflectFileDescriptor.Path()
 	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
 		return true, nil
 	}
@@ -430,7 +428,7 @@ func ignoreLocation(
 
 	// Not a great design, but will never be triggered by lint since this is never set.
 	if config.IgnoreUnstablePackages {
-		if packageVersion, ok := protoversion.NewPackageVersionForPackage(string(fileDescriptor.Package())); ok {
+		if packageVersion, ok := protoversion.NewPackageVersionForPackage(string(protoreflectFileDescriptor.Package())); ok {
 			if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
 				return true, nil
 			}
@@ -440,7 +438,7 @@ func ignoreLocation(
 	// Not a great design, but will never be triggered by breaking since this is never set.
 	// Therefore, never called for an againstLocation  (since lint never has againstLocations).
 	if config.AllowCommentIgnores && config.CommentIgnorePrefix != "" {
-		sourcePath := location.SourcePath()
+		sourcePath := fileLocation.SourcePath()
 		if len(sourcePath) == 0 {
 			return false, nil
 		}
@@ -448,7 +446,7 @@ func ignoreLocation(
 		if err != nil {
 			return false, err
 		}
-		sourceLocations := fileDescriptor.SourceLocations()
+		sourceLocations := protoreflectFileDescriptor.SourceLocations()
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
 			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {

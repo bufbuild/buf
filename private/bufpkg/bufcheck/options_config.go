@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 )
@@ -27,7 +28,7 @@ type optionsConfig struct {
 	//
 	// Do not pass these to plugin check.Clients. Use options from checkClientSpecs instead.
 	// Will never be nil.
-	DefaultOptions         check.Options
+	DefaultOptions         option.Options
 	AllowCommentIgnores    bool
 	IgnoreUnstablePackages bool
 	CommentIgnorePrefix    string

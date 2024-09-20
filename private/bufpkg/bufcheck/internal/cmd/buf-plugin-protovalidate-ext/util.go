@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/descriptor"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -37,16 +38,16 @@ func breakingRuleHandlerForFile(
 			responseWriter check.ResponseWriter,
 			request check.Request,
 		) error {
-			filePathToFile := make(map[string]check.File)
-			for _, file := range request.Files() {
-				filePathToFile[file.FileDescriptor().Path()] = file
+			fileDescriptorPathToFileDescriptor := make(map[string]descriptor.FileDescriptor)
+			for _, fileDescriptor := range request.FileDescriptors() {
+				fileDescriptorPathToFileDescriptor[fileDescriptor.ProtoreflectFileDescriptor().Path()] = fileDescriptor
 			}
-			for _, againstFile := range request.AgainstFiles() {
-				if !checkImport && againstFile.IsImport() {
+			for _, againstFileDescriptor := range request.AgainstFileDescriptors() {
+				if !checkImport && againstFileDescriptor.IsImport() {
 					continue
 				}
-				if file, ok := filePathToFile[againstFile.FileDescriptor().Path()]; ok {
-					if err := f(ctx, responseWriter, request, file.FileDescriptor(), againstFile.FileDescriptor()); err != nil {
+				if fileDescriptor, ok := fileDescriptorPathToFileDescriptor[againstFileDescriptor.ProtoreflectFileDescriptor().Path()]; ok {
+					if err := f(ctx, responseWriter, request, fileDescriptor.ProtoreflectFileDescriptor(), againstFileDescriptor.ProtoreflectFileDescriptor()); err != nil {
 						return err
 					}
 				}

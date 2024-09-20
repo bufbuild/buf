@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/descriptor"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -32,11 +33,11 @@ func Before(
 	ctx context.Context,
 	request check.Request,
 ) (context.Context, check.Request, error) {
-	protosourceFiles, err := protosourceFilesForFiles(ctx, request.Files())
+	protosourceFiles, err := protosourceFilesForFileDescriptors(ctx, request.FileDescriptors())
 	if err != nil {
 		return nil, nil, err
 	}
-	againstProtosourceFiles, err := protosourceFilesForFiles(ctx, request.AgainstFiles())
+	againstProtosourceFiles, err := protosourceFilesForFileDescriptors(ctx, request.AgainstFileDescriptors())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -94,17 +95,17 @@ func (h multiRuleHandler) Handle(ctx context.Context, responseWriter check.Respo
 	return nil
 }
 
-func protosourceFilesForFiles(ctx context.Context, files []check.File) ([]bufprotosource.File, error) {
-	if len(files) == 0 {
+func protosourceFilesForFileDescriptors(ctx context.Context, fileDescriptors []descriptor.FileDescriptor) ([]bufprotosource.File, error) {
+	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}
 	resolver, err := protodesc.NewFiles(
 		&descriptorpb.FileDescriptorSet{
-			File: slicesext.Map(files, check.File.FileDescriptorProto),
+			File: slicesext.Map(fileDescriptors, descriptor.FileDescriptor.FileDescriptorProto),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return bufprotosource.NewFiles(ctx, slicesext.Map(files, newInputFile), resolver)
+	return bufprotosource.NewFiles(ctx, slicesext.Map(fileDescriptors, newInputFile), resolver)
 }

@@ -19,6 +19,7 @@ import (
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/check/checkutil"
+	"buf.build/go/bufplugin/descriptor"
 )
 
 func main() {
@@ -38,6 +39,6 @@ func main() {
 	)
 }
 
-func checkPanic(context.Context, check.ResponseWriter, check.Request, check.File) error {
+func checkPanic(context.Context, check.ResponseWriter, check.Request, descriptor.FileDescriptor) error {
 	panic("this panic is intentional")
 }

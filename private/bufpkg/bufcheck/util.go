@@ -15,20 +15,20 @@
 package bufcheck
 
 import (
-	checkv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/check/v1"
+	descriptorv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/descriptor/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
-func imageToProtoFiles(image bufimage.Image) []*checkv1.File {
+func imageToProtoFileDescriptors(image bufimage.Image) []*descriptorv1.FileDescriptor {
 	if image == nil {
 		return nil
 	}
-	return slicesext.Map(image.Files(), imageFileToProtoFile)
+	return slicesext.Map(image.Files(), imageToProtoFileDescriptor)
 }
 
-func imageFileToProtoFile(imageFile bufimage.ImageFile) *checkv1.File {
-	return &checkv1.File{
+func imageToProtoFileDescriptor(imageFile bufimage.ImageFile) *descriptorv1.FileDescriptor {
+	return &descriptorv1.FileDescriptor{
 		FileDescriptorProto: imageFile.FileDescriptorProto(),
 		IsImport:            imageFile.IsImport(),
 		IsSyntaxUnspecified: imageFile.IsSyntaxUnspecified(),
