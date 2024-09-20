@@ -5,11 +5,11 @@ go 1.22.0
 toolchain go1.23.1
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240904181154-a0be11449112.2
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-00000000000000-9761ea6a8cee.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240821192916-45ba72cdd479.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240821192916-45ba72cdd479.2
-	buf.build/go/bufplugin v0.2.0
+	buf.build/go/bufplugin v0.2.1-0.20240920182654-d68e828cd8f9
 	buf.build/go/protoyaml v0.2.0
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/otelconnect v0.7.1

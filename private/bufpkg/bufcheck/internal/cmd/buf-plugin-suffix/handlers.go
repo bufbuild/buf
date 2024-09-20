@@ -20,6 +20,8 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/descriptor"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -43,8 +45,8 @@ func handleLintServiceBannedSuffixes(
 	if err != nil {
 		return err
 	}
-	for _, file := range request.Files() {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range request.FileDescriptors() {
+		descriptor := fileDescriptor.Protoreflect()
 		for i := 0; i < descriptor.Services().Len(); i++ {
 			service := descriptor.Services().Get(i)
 			checkDescriptorBannedSuffixes(responseWriter, service, bannedServiceSuffixes, "Service")
@@ -62,8 +64,8 @@ func handleLintRPCBannedSuffixes(
 	if err != nil {
 		return err
 	}
-	for _, file := range request.Files() {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range request.FileDescriptors() {
+		descriptor := fileDescriptor.Protoreflect()
 		for i := 0; i < descriptor.Services().Len(); i++ {
 			methods := descriptor.Services().Get(i).Methods()
 			for j := 0; j < methods.Len(); j++ {
@@ -84,8 +86,8 @@ func handleLintFieldBannedSuffixes(
 	if err != nil {
 		return err
 	}
-	for _, file := range request.Files() {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range request.FileDescriptors() {
+		descriptor := fileDescriptor.Protoreflect()
 		for i := 0; i < descriptor.Messages().Len(); i++ {
 			message := descriptor.Messages().Get(i)
 			checkBannedFieldSuffixesForMessage(responseWriter, message, bannedFieldSuffixes)
@@ -120,8 +122,8 @@ func handleLintEnumValueBannedSuffixes(
 	if err != nil {
 		return err
 	}
-	for _, file := range request.Files() {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range request.FileDescriptors() {
+		descriptor := fileDescriptor.Protoreflect()
 		for i := 0; i < descriptor.Enums().Len(); i++ {
 			enum := descriptor.Enums().Get(i)
 			for j := 0; j < enum.Values().Len(); j++ {
@@ -189,11 +191,11 @@ func handleBreakingServiceSuffixesNoChange(
 		return err
 	}
 	previousNoChangeServiceNameToServiceDescriptor := mapServiceNameToServiceDescriptorForFilesAndNoChangeSuffixes(
-		request.AgainstFiles(),
+		request.AgainstFileDescriptors(),
 		serviceNoChangeSuffixes,
 	)
 	currentNoChangeServiceNameToServiceDescriptor := mapServiceNameToServiceDescriptorForFilesAndNoChangeSuffixes(
-		request.Files(),
+		request.FileDescriptors(),
 		nil,
 	)
 	for previousServiceName, previousServiceDescriptor := range previousNoChangeServiceNameToServiceDescriptor {
@@ -232,12 +234,12 @@ func handleBreakingServiceSuffixesNoChange(
 // service descriptors for the given check files based on the the no change suffixes.
 // If no suffixes are passed, then all services are returned.
 func mapServiceNameToServiceDescriptorForFilesAndNoChangeSuffixes(
-	files []check.File,
+	fileDescriptors []descriptor.FileDescriptor,
 	serviceNoChangeSuffixes []string,
 ) map[string]protoreflect.ServiceDescriptor {
 	result := map[string]protoreflect.ServiceDescriptor{}
-	for _, file := range files {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range fileDescriptors {
+		descriptor := fileDescriptor.Protoreflect()
 		for i := 0; i < descriptor.Services().Len(); i++ {
 			service := descriptor.Services().Get(i)
 			if checkDescriptorHasNoChangeSuffix(service, serviceNoChangeSuffixes) {
@@ -268,11 +270,11 @@ func handleBreakingMessageSuffixesNoChange(
 		return err
 	}
 	previousNoChangeMessageNameToMessageDescriptor := mapMessageNameToMessageDescriptorForFilesAndNoChangeSuffixes(
-		request.AgainstFiles(),
+		request.AgainstFileDescriptors(),
 		messageNoChangeSuffixes,
 	)
 	currentNoChangeMessageNameToMessageDescriptor := mapMessageNameToMessageDescriptorForFilesAndNoChangeSuffixes(
-		request.Files(),
+		request.FileDescriptors(),
 		messageNoChangeSuffixes,
 	)
 	for previousMessageName, previousMessageDescriptor := range previousNoChangeMessageNameToMessageDescriptor {
@@ -311,12 +313,12 @@ func handleBreakingMessageSuffixesNoChange(
 // message descriptors for the given check files based on the the no change suffixes.
 // If no suffixes are passed, then all messages are returned.
 func mapMessageNameToMessageDescriptorForFilesAndNoChangeSuffixes(
-	files []check.File,
+	fileDescriptors []descriptor.FileDescriptor,
 	messageNoChangeSuffixes []string,
 ) map[string]protoreflect.MessageDescriptor {
 	result := map[string]protoreflect.MessageDescriptor{}
-	for _, file := range files {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range fileDescriptors {
+		descriptor := fileDescriptor.Protoreflect()
 		messages := getNestedMessageDescriptors(descriptor.Messages(), messageNoChangeSuffixes)
 		for _, message := range messages {
 			result[string(message.FullName())] = message
@@ -361,11 +363,11 @@ func handleBreakingEnumSuffixesNoChange(
 		return err
 	}
 	previousNoChangeEnumNameToEnumDescriptor := mapEnumNameToEnumDescriptorForFilesAndNoChangeSuffixes(
-		request.AgainstFiles(),
+		request.AgainstFileDescriptors(),
 		enumNoChangeSuffixes,
 	)
 	currentNoChangeEnumNameToEnumDescriptor := mapEnumNameToEnumDescriptorForFilesAndNoChangeSuffixes(
-		request.Files(),
+		request.FileDescriptors(),
 		enumNoChangeSuffixes,
 	)
 	for previousEnumName, previousEnumDescriptor := range previousNoChangeEnumNameToEnumDescriptor {
@@ -401,12 +403,12 @@ func handleBreakingEnumSuffixesNoChange(
 }
 
 func mapEnumNameToEnumDescriptorForFilesAndNoChangeSuffixes(
-	files []check.File,
+	fileDescriptors []descriptor.FileDescriptor,
 	enumNoChangeSuffixes []string,
 ) map[string]protoreflect.EnumDescriptor {
 	result := map[string]protoreflect.EnumDescriptor{}
-	for _, file := range files {
-		descriptor := file.FileDescriptor()
+	for _, fileDescriptor := range fileDescriptors {
+		descriptor := fileDescriptor.Protoreflect()
 		for i := 0; i < descriptor.Enums().Len(); i++ {
 			enum := descriptor.Enums().Get(i)
 			if checkDescriptorHasNoChangeSuffix(enum, enumNoChangeSuffixes) {
@@ -469,5 +471,5 @@ func getSuffixes(
 	request check.Request,
 	optionKey string,
 ) ([]string, error) {
-	return check.GetStringSliceValue(request.Options(), optionKey)
+	return option.GetStringSliceValue(request.Options(), optionKey)
 }

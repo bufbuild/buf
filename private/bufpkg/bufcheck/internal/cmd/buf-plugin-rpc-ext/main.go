@@ -20,6 +20,7 @@ import (
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/check/checkutil"
+	"buf.build/go/bufplugin/option"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -71,7 +72,7 @@ func checkPageRequestHasToken(
 		return nil
 	}
 	pageRPCPrefixes := defaultPageRPCPrefixes
-	pageRPCPrefixesOptionValue, err := check.GetStringSliceValue(request.Options(), pageRPCPrefixOptionKey)
+	pageRPCPrefixesOptionValue, err := option.GetStringSliceValue(request.Options(), pageRPCPrefixOptionKey)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func checkPageRequestHasToken(
 		return nil
 	}
 	pageTokenFieldName := defaultPageTokenFieldName
-	pageTokenFieldNameOptionValue, err := check.GetStringValue(request.Options(), pageTokenFieldNameOptionKey)
+	pageTokenFieldNameOptionValue, err := option.GetStringValue(request.Options(), pageTokenFieldNameOptionKey)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func checkPageResponseHasToken(
 		return nil
 	}
 	pageRPCPrefixes := defaultPageRPCPrefixes
-	pageRPCPrefixesOptionValue, err := check.GetStringSliceValue(request.Options(), pageRPCPrefixOptionKey)
+	pageRPCPrefixesOptionValue, err := option.GetStringSliceValue(request.Options(), pageRPCPrefixOptionKey)
 	if err != nil {
 		return err
 	}
@@ -139,7 +140,7 @@ func checkPageResponseHasToken(
 		return nil
 	}
 	pageTokenFieldName := defaultPageTokenFieldName
-	pageTokenFieldNameOptionValue, err := check.GetStringValue(request.Options(), pageTokenFieldNameOptionKey)
+	pageTokenFieldNameOptionValue, err := option.GetStringValue(request.Options(), pageTokenFieldNameOptionKey)
 	if err != nil {
 		return err
 	}
