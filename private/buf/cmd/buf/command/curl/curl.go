@@ -40,6 +40,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -965,7 +966,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}
 
-	resolvers := make([]bufcurl.Resolver, 0, len(f.Schemas)+1)
+	resolvers := make([]bufcurl.Resolver, 0, len(f.Schemas)+2)
 	if f.Reflect {
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
@@ -1010,7 +1011,13 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 		resolvers = append(resolvers, bufcurl.ResolverForImage(image))
 	}
-	res := bufcurl.CombineResolvers(resolvers...)
+	// Add a WKT resolver to the end of the end of the list. This is used
+	// for printing a WKT encoded in a "google.protobuf.Any" type as JSON.
+	wktResolver, err := bufcurl.NewWKTResolver(ctx, tracing.NewTracer(container.Tracer()))
+	if err != nil {
+		return err
+	}
+	res := bufcurl.CombineResolvers(append(resolvers, wktResolver)...)
 
 	switch {
 	case f.ListServices || f.ListMethods:
