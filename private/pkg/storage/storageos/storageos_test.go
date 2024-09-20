@@ -85,17 +85,13 @@ func TestOS(t *testing.T) {
 		require.NoError(t, err)
 		tempDir = filepath.Join(tempDir, "sym")
 		require.NoError(t, os.Symlink(actualTempDir, tempDir))
-		t.Cleanup(func() {
-			if err := os.Remove(tempDir); err != nil {
-				t.Error(err)
-			}
-		})
 		provider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 		bucket, err := provider.NewReadWriteBucket(tempDir, storageos.ReadWriteBucketWithSymlinksIfSupported())
 		require.NoError(t, err)
 
-		_, err = bucket.Get(ctx, "foo.txt")
+		foo, err := bucket.Get(ctx, "foo.txt")
 		require.NoError(t, err)
+		require.NoError(t, foo.Close())
 
 		// Try reading a file as if foo.txt is a directory.
 		_, err = bucket.Get(ctx, "foo.txt/bar.txt")
