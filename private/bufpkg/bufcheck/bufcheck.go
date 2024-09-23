@@ -21,8 +21,8 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -170,21 +170,24 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 }
 
 // NewRunnerProvider returns a new RunnerProvider for the command.Runner.
-func NewRunnerProvider(delegate command.Runner) RunnerProvider {
-	return RunnerProviderFunc(
-		func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
-			if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
-				return nil, syserror.New("only local plugins are supported")
-			}
-			path := pluginConfig.Path()
-			return pluginrpcutil.NewRunner(
-				delegate,
-				// We know that Path is of at least length 1.
-				path[0],
-				path[1:]...,
-			), nil
-		},
-	)
+//
+// This implementation should only be used for local applications.
+func NewRunnerProvider(
+	delegate command.Runner,
+	options ...RunnerProviderOption,
+) RunnerProvider {
+	return newRunnerProvider(delegate, options...)
+}
+
+// RunnerProviderOption is an option for NewRunnerProvider.
+type RunnerProviderOption func(*runnerProviderOptions)
+
+// RunnerProviderWithWASMRuntime returns a new RunnerProviderOption that
+// specifies a WASM runtime. This is required for local WASM plugins.
+func RunnerProviderWithWASMRuntime(wasmRuntime bufwasm.Runtime) RunnerProviderOption {
+	return func(runnerProviderOptions *runnerProviderOptions) {
+		runnerProviderOptions.wasmRuntime = wasmRuntime
+	}
 }
 
 // NewClient returns a new Client.

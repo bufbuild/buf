@@ -58,7 +58,12 @@ func Serve(
 	}
 
 	tracer := tracing.NewTracer(container.Tracer())
-	checkClient, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+	checkClient, err := bufcheck.NewClient(
+		container.Logger(),
+		tracer,
+		bufcheck.NewRunnerProvider(command.NewRunner()),
+		bufcheck.ClientWithStderr(container.Stderr()),
+	)
 	if err != nil {
 		return nil, err
 	}

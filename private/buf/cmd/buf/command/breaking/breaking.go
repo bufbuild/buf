@@ -209,7 +209,12 @@ func run(
 	tracer := tracing.NewTracer(container.Tracer())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+		client, err := bufcheck.NewClient(
+			container.Logger(),
+			tracer,
+			bufcheck.NewRunnerProvider(command.NewRunner()),
+			bufcheck.ClientWithStderr(container.Stderr()),
+		)
 		if err != nil {
 			return err
 		}

@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -94,6 +95,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
+				start := time.Now()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
 					if delegate.PluginName == "" {
@@ -110,6 +112,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 				lock.Lock()
 				allAnnotations = append(allAnnotations, annotations...)
 				lock.Unlock()
+				c.logger.Debug("checked delegate client", zap.String("pluginName", delegate.PluginName), zap.Duration("duration", time.Since(start)))
 				return nil
 			},
 		)
@@ -151,6 +154,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {
+		start := time.Now()
 		delegateCheckRules, err := delegate.Client.ListRules(ctx)
 		if err != nil {
 			if delegate.PluginName == "" {
@@ -165,11 +169,13 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 		rules = append(rules, delegateRules...)
 		// Already sorted.
 		chunkedRuleIDs[i] = slicesext.Map(delegateRules, Rule.ID)
+		c.logger.Debug("list rules delegate client", zap.String("pluginName", delegate.PluginName), zap.Duration("duration", time.Since(start)))
 	}
 
 	var categories []Category
 	chunkedCategoryIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {
+		start := time.Now()
 		delegateCheckCategories, err := delegate.Client.ListCategories(ctx)
 		if err != nil {
 			if delegate.PluginName == "" {
@@ -184,6 +190,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 		categories = append(categories, delegateCategories...)
 		// Already sorted.
 		chunkedCategoryIDs[i] = slicesext.Map(delegateCategories, Category.ID)
+		c.logger.Debug("list categories delegate client", zap.String("pluginName", delegate.PluginName), zap.Duration("duration", time.Since(start)))
 	}
 
 	if err := validateNoDuplicateRulesOrCategories(rules, categories); err != nil {

@@ -103,6 +103,10 @@ var (
 	//
 	// Normalized.
 	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "modulelocks")
+	// v3CachePluginsRelDirPath is the relative path to the plugins cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CachePluginsRelDirPath = normalpath.Join("v3", "plugins")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -133,6 +137,17 @@ func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, er
 			clientConfig,
 		),
 	)
+}
+
+// CreatePluginCacheDir creates the cache directory for plugins.
+//
+// This is used by the [bufwasm.WithLocalCacheDir] option.
+func CreatePluginCacheDir(container appext.Container) (string, error) {
+	if err := createCacheDir(container.CacheDirPath(), v3CachePluginsRelDirPath); err != nil {
+		return "", err
+	}
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CachePluginsRelDirPath)
+	return fullCacheDirPath, nil
 }
 
 // newWKTStore returns a new bufwktstore.Store while creating the required cache directories.

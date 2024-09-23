@@ -1,0 +1,20 @@
+version: v2
+lint:
+  use:
+    - PACKAGE_DEFINED
+    - SERVICE_BANNED_SUFFIXES
+    - RPC_BANNED_SUFFIXES
+    - FIELD_BANNED_SUFFIXES
+    - ENUM_VALUE_BANNED_SUFFIXES
+plugins:
+  - plugin: buf-plugin-suffix.wasm
+    options:
+      service_banned_suffixes:
+        - Mock
+        - Test
+      rpc_banned_suffixes:
+        - Element
+      field_banned_suffixes:
+        - _uuid
+      enum_value_banned_suffixes:
+        - _INVALID

@@ -1,0 +1,129 @@
+// Copyright 2020-2024 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bufwasm
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/tetratelabs/wazero"
+	"github.com/tetratelabs/wazero/api"
+	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
+	"go.uber.org/multierr"
+)
+
+const (
+	// defaultMaxMemoryBytes is the maximum memory size in bytes.
+	defaultMaxMemoryBytes = 1 << 29 // 512 MiB
+	// wasmPageSize is the page size in bytes.
+	wasmPageSize = 1 << 16 // 64 KiB
+)
+
+type runtime struct {
+	runtime wazero.Runtime
+	cache   wazero.CompilationCache
+}
+
+var _ Runtime = (*runtime)(nil)
+
+func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error) {
+	var cfg runtimeConfig
+	for _, opt := range options {
+		opt.apply(&cfg)
+	}
+	// Create the runtime config with enforceable limits.
+	runtimeConfig := wazero.NewRuntimeConfig().
+		WithCoreFeatures(api.CoreFeaturesV2).
+		WithCloseOnContextDone(true).
+		WithMemoryLimitPages(cfg.getMaxMemoryBytes() / wasmPageSize)
+	var cache wazero.CompilationCache
+	if cfg.cacheDir != "" {
+		var err error
+		cache, err = wazero.NewCompilationCacheWithDir(cfg.cacheDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create compilation cache: %w", err)
+		}
+		runtimeConfig = runtimeConfig.WithCompilationCache(cache)
+	}
+	r := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
+
+	// Init wasi.
+	wasi_snapshot_preview1.MustInstantiate(ctx, r)
+
+	return &runtime{
+		runtime: r,
+		cache:   cache,
+	}, nil
+}
+
+func (r *runtime) Compile(ctx context.Context, name string, module []byte) (Plugin, error) {
+	if name == "" {
+		// The plugin is required to be named. We cannot use the name
+		// from the WASM binary as this is not guaranteed to be set and
+		// may conflict with the provided name.
+		return nil, fmt.Errorf("name is empty")
+	}
+	// Compile the module. This operation is hashed on module by the wazero
+	// runtime.
+	compiledModule, err := r.runtime.CompileModule(ctx, module)
+	if err != nil {
+		return nil, err
+	}
+	return &plugin{
+		name:           name,
+		runtime:        r.runtime,
+		compiledModule: compiledModule,
+	}, nil
+}
+
+func (r *runtime) Release(ctx context.Context) error {
+	err := r.runtime.Close(ctx)
+	if r.cache != nil {
+		err = multierr.Append(err, r.cache.Close(ctx))
+	}
+	return err
+}
+
+type runtimeConfig struct {
+	maxMemoryBytes uint32
+	cacheDir       string
+}
+
+func (r *runtimeConfig) getMaxMemoryBytes() uint32 {
+	if r.maxMemoryBytes == 0 {
+		return defaultMaxMemoryBytes
+	}
+	return r.maxMemoryBytes
+}
+
+type runtimeOptionFunc func(*runtimeConfig)
+
+func (f runtimeOptionFunc) apply(cfg *runtimeConfig) {
+	f(cfg)
+}
+
+var _ RuntimeOption = runtimeOptionFunc(nil)
+
+type unimplementedRuntime struct{}
+
+var _ Runtime = unimplementedRuntime{}
+
+func (unimplementedRuntime) Compile(ctx context.Context, name string, module []byte) (Plugin, error) {
+	return nil, syserror.Newf("not implemented")
+}
+func (unimplementedRuntime) Release(ctx context.Context) error {
+	return nil
+}

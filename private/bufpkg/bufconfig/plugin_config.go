@@ -18,6 +18,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -25,6 +26,8 @@ import (
 const (
 	// PluginConfigTypeLocal is the local plugin config type.
 	PluginConfigTypeLocal PluginConfigType = iota + 1
+	// PluginConfigTypeLocalWASM is the local WASM plugin config type.
+	PluginConfigTypeLocalWASM
 )
 
 // PluginConfigType is a generate plugin configuration type.
@@ -62,6 +65,18 @@ func NewLocalPluginConfig(
 	)
 }
 
+// NewLocalWASMPluginConfig returns a new PluginConfig for a local WASM plugin.
+func NewLocalWASMPluginConfig(
+	name string,
+	options map[string]any,
+	path []string,
+) (PluginConfig, error) {
+	return newLocalWASMPluginConfig(
+		name,
+		options,
+	)
+}
+
 // *** PRIVATE ***
 
 type pluginConfig struct {
@@ -85,11 +100,29 @@ func newPluginConfigForExternalV2(
 		}
 		options[key] = value
 	}
-	// TODO: differentiate between local and remote in the future
-	// Use the same heuristic that we do for dir vs module in buffetch
+	// Differentiate between local and remote plugins.
+	// Local plugins are specified as a path to a binary or a WASM file.
+	// Remote plugins are specified as a module reference.
+	// Paths with more than one element are assumed to be local plugin commands.
+	// This heuristic is based on the buffetch heuristics for inputs.
 	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Plugin)
 	if err != nil {
 		return nil, err
+	}
+	if len(path) == 1 {
+		name := path[0]
+		// TODO: Parse as a module reference to fail early if we find
+		// a remote plugin reference. This syntax is subject to change.
+		if _, err := bufmodule.ParseModuleRef(name); err == nil {
+			return nil, syserror.Newf("remote plugins are not yet supported")
+		}
+		// WASM plugins are suffixed with .wasm. Otherwise, it's a binary.
+		if strings.HasSuffix(name, ".wasm") {
+			return newLocalWASMPluginConfig(
+				name,
+				options,
+			)
+		}
 	}
 	return newLocalPluginConfig(
 		strings.Join(path, " "),
@@ -111,6 +144,17 @@ func newLocalPluginConfig(
 		name:             name,
 		options:          options,
 		path:             path,
+	}, nil
+}
+
+func newLocalWASMPluginConfig(
+	name string,
+	options map[string]any,
+) (*pluginConfig, error) {
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeLocalWASM,
+		name:             name,
+		options:          options,
 	}, nil
 }
 
