@@ -51,11 +51,9 @@ type RecommendedRepository struct {
 
 func (x *RecommendedRepository) Reset() {
 	*x = RecommendedRepository{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RecommendedRepository) String() string {
@@ -66,7 +64,7 @@ func (*RecommendedRepository) ProtoMessage() {}
 
 func (x *RecommendedRepository) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -128,11 +126,9 @@ type SetRecommendedResource struct {
 
 func (x *SetRecommendedResource) Reset() {
 	*x = SetRecommendedResource{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SetRecommendedResource) String() string {
@@ -143,7 +139,7 @@ func (*SetRecommendedResource) ProtoMessage() {}
 
 func (x *SetRecommendedResource) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -180,11 +176,9 @@ type RecommendedRepositoriesRequest struct {
 
 func (x *RecommendedRepositoriesRequest) Reset() {
 	*x = RecommendedRepositoriesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RecommendedRepositoriesRequest) String() string {
@@ -195,7 +189,7 @@ func (*RecommendedRepositoriesRequest) ProtoMessage() {}
 
 func (x *RecommendedRepositoriesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -220,11 +214,9 @@ type RecommendedRepositoriesResponse struct {
 
 func (x *RecommendedRepositoriesResponse) Reset() {
 	*x = RecommendedRepositoriesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RecommendedRepositoriesResponse) String() string {
@@ -235,7 +227,7 @@ func (*RecommendedRepositoriesResponse) ProtoMessage() {}
 
 func (x *RecommendedRepositoriesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -265,11 +257,9 @@ type ListRecommendedResourcesRequest struct {
 
 func (x *ListRecommendedResourcesRequest) Reset() {
 	*x = ListRecommendedResourcesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRecommendedResourcesRequest) String() string {
@@ -280,7 +270,7 @@ func (*ListRecommendedResourcesRequest) ProtoMessage() {}
 
 func (x *ListRecommendedResourcesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -305,11 +295,9 @@ type ListRecommendedResourcesResponse struct {
 
 func (x *ListRecommendedResourcesResponse) Reset() {
 	*x = ListRecommendedResourcesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRecommendedResourcesResponse) String() string {
@@ -320,7 +308,7 @@ func (*ListRecommendedResourcesResponse) ProtoMessage() {}
 
 func (x *ListRecommendedResourcesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -352,11 +340,9 @@ type SetRecommendedResourcesRequest struct {
 
 func (x *SetRecommendedResourcesRequest) Reset() {
 	*x = SetRecommendedResourcesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SetRecommendedResourcesRequest) String() string {
@@ -367,7 +353,7 @@ func (*SetRecommendedResourcesRequest) ProtoMessage() {}
 
 func (x *SetRecommendedResourcesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -397,11 +383,9 @@ type SetRecommendedResourcesResponse struct {
 
 func (x *SetRecommendedResourcesResponse) Reset() {
 	*x = SetRecommendedResourcesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SetRecommendedResourcesResponse) String() string {
@@ -412,7 +396,7 @@ func (*SetRecommendedResourcesResponse) ProtoMessage() {}
 
 func (x *SetRecommendedResourcesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -586,104 +570,6 @@ func file_buf_alpha_registry_v1alpha1_recommendation_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_resource_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*RecommendedRepository); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*SetRecommendedResource); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*RecommendedRepositoriesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*RecommendedRepositoriesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRecommendedResourcesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRecommendedResourcesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*SetRecommendedResourcesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*SetRecommendedResourcesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

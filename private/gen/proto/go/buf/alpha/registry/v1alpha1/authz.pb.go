@@ -46,11 +46,9 @@ type UserCanCreateOrganizationRepositoryRequest struct {
 
 func (x *UserCanCreateOrganizationRepositoryRequest) Reset() {
 	*x = UserCanCreateOrganizationRepositoryRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanCreateOrganizationRepositoryRequest) String() string {
@@ -61,7 +59,7 @@ func (*UserCanCreateOrganizationRepositoryRequest) ProtoMessage() {}
 
 func (x *UserCanCreateOrganizationRepositoryRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -93,11 +91,9 @@ type UserCanCreateOrganizationRepositoryResponse struct {
 
 func (x *UserCanCreateOrganizationRepositoryResponse) Reset() {
 	*x = UserCanCreateOrganizationRepositoryResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanCreateOrganizationRepositoryResponse) String() string {
@@ -108,7 +104,7 @@ func (*UserCanCreateOrganizationRepositoryResponse) ProtoMessage() {}
 
 func (x *UserCanCreateOrganizationRepositoryResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -142,11 +138,9 @@ type UserCanSeeRepositorySettingsRequest struct {
 
 func (x *UserCanSeeRepositorySettingsRequest) Reset() {
 	*x = UserCanSeeRepositorySettingsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanSeeRepositorySettingsRequest) String() string {
@@ -157,7 +151,7 @@ func (*UserCanSeeRepositorySettingsRequest) ProtoMessage() {}
 
 func (x *UserCanSeeRepositorySettingsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -189,11 +183,9 @@ type UserCanSeeRepositorySettingsResponse struct {
 
 func (x *UserCanSeeRepositorySettingsResponse) Reset() {
 	*x = UserCanSeeRepositorySettingsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanSeeRepositorySettingsResponse) String() string {
@@ -204,7 +196,7 @@ func (*UserCanSeeRepositorySettingsResponse) ProtoMessage() {}
 
 func (x *UserCanSeeRepositorySettingsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -238,11 +230,9 @@ type UserCanSeeOrganizationSettingsRequest struct {
 
 func (x *UserCanSeeOrganizationSettingsRequest) Reset() {
 	*x = UserCanSeeOrganizationSettingsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanSeeOrganizationSettingsRequest) String() string {
@@ -253,7 +243,7 @@ func (*UserCanSeeOrganizationSettingsRequest) ProtoMessage() {}
 
 func (x *UserCanSeeOrganizationSettingsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -285,11 +275,9 @@ type UserCanSeeOrganizationSettingsResponse struct {
 
 func (x *UserCanSeeOrganizationSettingsResponse) Reset() {
 	*x = UserCanSeeOrganizationSettingsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanSeeOrganizationSettingsResponse) String() string {
@@ -300,7 +288,7 @@ func (*UserCanSeeOrganizationSettingsResponse) ProtoMessage() {}
 
 func (x *UserCanSeeOrganizationSettingsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -334,11 +322,9 @@ type UserCanAddOrganizationMemberRequest struct {
 
 func (x *UserCanAddOrganizationMemberRequest) Reset() {
 	*x = UserCanAddOrganizationMemberRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanAddOrganizationMemberRequest) String() string {
@@ -349,7 +335,7 @@ func (*UserCanAddOrganizationMemberRequest) ProtoMessage() {}
 
 func (x *UserCanAddOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -383,11 +369,9 @@ type UserCanAddOrganizationMemberResponse struct {
 
 func (x *UserCanAddOrganizationMemberResponse) Reset() {
 	*x = UserCanAddOrganizationMemberResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanAddOrganizationMemberResponse) String() string {
@@ -398,7 +382,7 @@ func (*UserCanAddOrganizationMemberResponse) ProtoMessage() {}
 
 func (x *UserCanAddOrganizationMemberResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -432,11 +416,9 @@ type UserCanUpdateOrganizationMemberRequest struct {
 
 func (x *UserCanUpdateOrganizationMemberRequest) Reset() {
 	*x = UserCanUpdateOrganizationMemberRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanUpdateOrganizationMemberRequest) String() string {
@@ -447,7 +429,7 @@ func (*UserCanUpdateOrganizationMemberRequest) ProtoMessage() {}
 
 func (x *UserCanUpdateOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -481,11 +463,9 @@ type UserCanUpdateOrganizationMemberResponse struct {
 
 func (x *UserCanUpdateOrganizationMemberResponse) Reset() {
 	*x = UserCanUpdateOrganizationMemberResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanUpdateOrganizationMemberResponse) String() string {
@@ -496,7 +476,7 @@ func (*UserCanUpdateOrganizationMemberResponse) ProtoMessage() {}
 
 func (x *UserCanUpdateOrganizationMemberResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -530,11 +510,9 @@ type UserCanRemoveOrganizationMemberRequest struct {
 
 func (x *UserCanRemoveOrganizationMemberRequest) Reset() {
 	*x = UserCanRemoveOrganizationMemberRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanRemoveOrganizationMemberRequest) String() string {
@@ -545,7 +523,7 @@ func (*UserCanRemoveOrganizationMemberRequest) ProtoMessage() {}
 
 func (x *UserCanRemoveOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -579,11 +557,9 @@ type UserCanRemoveOrganizationMemberResponse struct {
 
 func (x *UserCanRemoveOrganizationMemberResponse) Reset() {
 	*x = UserCanRemoveOrganizationMemberResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanRemoveOrganizationMemberResponse) String() string {
@@ -594,7 +570,7 @@ func (*UserCanRemoveOrganizationMemberResponse) ProtoMessage() {}
 
 func (x *UserCanRemoveOrganizationMemberResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -628,11 +604,9 @@ type UserCanDeleteOrganizationRequest struct {
 
 func (x *UserCanDeleteOrganizationRequest) Reset() {
 	*x = UserCanDeleteOrganizationRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanDeleteOrganizationRequest) String() string {
@@ -643,7 +617,7 @@ func (*UserCanDeleteOrganizationRequest) ProtoMessage() {}
 
 func (x *UserCanDeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -675,11 +649,9 @@ type UserCanDeleteOrganizationResponse struct {
 
 func (x *UserCanDeleteOrganizationResponse) Reset() {
 	*x = UserCanDeleteOrganizationResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanDeleteOrganizationResponse) String() string {
@@ -690,7 +662,7 @@ func (*UserCanDeleteOrganizationResponse) ProtoMessage() {}
 
 func (x *UserCanDeleteOrganizationResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -724,11 +696,9 @@ type UserCanDeleteRepositoryRequest struct {
 
 func (x *UserCanDeleteRepositoryRequest) Reset() {
 	*x = UserCanDeleteRepositoryRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanDeleteRepositoryRequest) String() string {
@@ -739,7 +709,7 @@ func (*UserCanDeleteRepositoryRequest) ProtoMessage() {}
 
 func (x *UserCanDeleteRepositoryRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -771,11 +741,9 @@ type UserCanDeleteRepositoryResponse struct {
 
 func (x *UserCanDeleteRepositoryResponse) Reset() {
 	*x = UserCanDeleteRepositoryResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanDeleteRepositoryResponse) String() string {
@@ -786,7 +754,7 @@ func (*UserCanDeleteRepositoryResponse) ProtoMessage() {}
 
 func (x *UserCanDeleteRepositoryResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -816,11 +784,9 @@ type UserCanDeleteUserRequest struct {
 
 func (x *UserCanDeleteUserRequest) Reset() {
 	*x = UserCanDeleteUserRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanDeleteUserRequest) String() string {
@@ -831,7 +797,7 @@ func (*UserCanDeleteUserRequest) ProtoMessage() {}
 
 func (x *UserCanDeleteUserRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -856,11 +822,9 @@ type UserCanDeleteUserResponse struct {
 
 func (x *UserCanDeleteUserResponse) Reset() {
 	*x = UserCanDeleteUserResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanDeleteUserResponse) String() string {
@@ -871,7 +835,7 @@ func (*UserCanDeleteUserResponse) ProtoMessage() {}
 
 func (x *UserCanDeleteUserResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -901,11 +865,9 @@ type UserCanSeeServerAdminPanelRequest struct {
 
 func (x *UserCanSeeServerAdminPanelRequest) Reset() {
 	*x = UserCanSeeServerAdminPanelRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanSeeServerAdminPanelRequest) String() string {
@@ -916,7 +878,7 @@ func (*UserCanSeeServerAdminPanelRequest) ProtoMessage() {}
 
 func (x *UserCanSeeServerAdminPanelRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -941,11 +903,9 @@ type UserCanSeeServerAdminPanelResponse struct {
 
 func (x *UserCanSeeServerAdminPanelResponse) Reset() {
 	*x = UserCanSeeServerAdminPanelResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[19]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanSeeServerAdminPanelResponse) String() string {
@@ -956,7 +916,7 @@ func (*UserCanSeeServerAdminPanelResponse) ProtoMessage() {}
 
 func (x *UserCanSeeServerAdminPanelResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[19]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -990,11 +950,9 @@ type UserCanManageRepositoryContributorsRequest struct {
 
 func (x *UserCanManageRepositoryContributorsRequest) Reset() {
 	*x = UserCanManageRepositoryContributorsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[20]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanManageRepositoryContributorsRequest) String() string {
@@ -1005,7 +963,7 @@ func (*UserCanManageRepositoryContributorsRequest) ProtoMessage() {}
 
 func (x *UserCanManageRepositoryContributorsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[20]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1039,11 +997,9 @@ type UserCanManageRepositoryContributorsResponse struct {
 
 func (x *UserCanManageRepositoryContributorsResponse) Reset() {
 	*x = UserCanManageRepositoryContributorsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[21]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanManageRepositoryContributorsResponse) String() string {
@@ -1054,7 +1010,7 @@ func (*UserCanManageRepositoryContributorsResponse) ProtoMessage() {}
 
 func (x *UserCanManageRepositoryContributorsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[21]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1088,11 +1044,9 @@ type UserCanReviewCommitsRequest struct {
 
 func (x *UserCanReviewCommitsRequest) Reset() {
 	*x = UserCanReviewCommitsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[22]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanReviewCommitsRequest) String() string {
@@ -1103,7 +1057,7 @@ func (*UserCanReviewCommitsRequest) ProtoMessage() {}
 
 func (x *UserCanReviewCommitsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[22]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1135,11 +1089,9 @@ type UserCanReviewCommitsResponse struct {
 
 func (x *UserCanReviewCommitsResponse) Reset() {
 	*x = UserCanReviewCommitsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[23]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserCanReviewCommitsResponse) String() string {
@@ -1150,7 +1102,7 @@ func (*UserCanReviewCommitsResponse) ProtoMessage() {}
 
 func (x *UserCanReviewCommitsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[23]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1535,296 +1487,6 @@ func file_buf_alpha_registry_v1alpha1_authz_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_role_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanCreateOrganizationRepositoryRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanCreateOrganizationRepositoryResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanSeeRepositorySettingsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanSeeRepositorySettingsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanSeeOrganizationSettingsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanSeeOrganizationSettingsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanAddOrganizationMemberRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanAddOrganizationMemberResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanUpdateOrganizationMemberRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanUpdateOrganizationMemberResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanRemoveOrganizationMemberRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanRemoveOrganizationMemberResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanDeleteOrganizationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanDeleteOrganizationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanDeleteRepositoryRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanDeleteRepositoryResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanDeleteUserRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanDeleteUserResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanSeeServerAdminPanelRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[19].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanSeeServerAdminPanelResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[20].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanManageRepositoryContributorsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[21].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanManageRepositoryContributorsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[22].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanReviewCommitsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_authz_proto_msgTypes[23].Exporter = func(v any, i int) any {
-			switch v := v.(*UserCanReviewCommitsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

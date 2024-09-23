@@ -52,11 +52,9 @@ type ListAuditedEventsRequest struct {
 
 func (x *ListAuditedEventsRequest) Reset() {
 	*x = ListAuditedEventsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListAuditedEventsRequest) String() string {
@@ -67,7 +65,7 @@ func (*ListAuditedEventsRequest) ProtoMessage() {}
 
 func (x *ListAuditedEventsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -124,11 +122,9 @@ type ListAuditedEventsResponse struct {
 
 func (x *ListAuditedEventsResponse) Reset() {
 	*x = ListAuditedEventsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListAuditedEventsResponse) String() string {
@@ -139,7 +135,7 @@ func (*ListAuditedEventsResponse) ProtoMessage() {}
 
 func (x *ListAuditedEventsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -266,32 +262,6 @@ func file_buf_alpha_audit_v1alpha1_service_proto_init() {
 		return
 	}
 	file_buf_alpha_audit_v1alpha1_event_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*ListAuditedEventsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_service_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*ListAuditedEventsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

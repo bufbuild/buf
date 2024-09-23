@@ -96,11 +96,9 @@ type Digest struct {
 
 func (x *Digest) Reset() {
 	*x = Digest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Digest) String() string {
@@ -111,7 +109,7 @@ func (*Digest) ProtoMessage() {}
 
 func (x *Digest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -154,11 +152,9 @@ type Blob struct {
 
 func (x *Blob) Reset() {
 	*x = Blob{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Blob) String() string {
@@ -169,7 +165,7 @@ func (*Blob) ProtoMessage() {}
 
 func (x *Blob) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -235,11 +231,9 @@ type Module struct {
 
 func (x *Module) Reset() {
 	*x = Module{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Module) String() string {
@@ -250,7 +244,7 @@ func (*Module) ProtoMessage() {}
 
 func (x *Module) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -329,11 +323,9 @@ type ModuleFile struct {
 
 func (x *ModuleFile) Reset() {
 	*x = ModuleFile{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ModuleFile) String() string {
@@ -344,7 +336,7 @@ func (*ModuleFile) ProtoMessage() {}
 
 func (x *ModuleFile) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -388,11 +380,9 @@ type ModuleReference struct {
 
 func (x *ModuleReference) Reset() {
 	*x = ModuleReference{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ModuleReference) String() string {
@@ -403,7 +393,7 @@ func (*ModuleReference) ProtoMessage() {}
 
 func (x *ModuleReference) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -465,11 +455,9 @@ type ModulePin struct {
 
 func (x *ModulePin) Reset() {
 	*x = ModulePin{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ModulePin) String() string {
@@ -480,7 +468,7 @@ func (*ModulePin) ProtoMessage() {}
 
 func (x *ModulePin) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -670,80 +658,6 @@ func init() { file_buf_alpha_module_v1alpha1_module_proto_init() }
 func file_buf_alpha_module_v1alpha1_module_proto_init() {
 	if File_buf_alpha_module_v1alpha1_module_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*Digest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*Blob); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*Module); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*ModuleFile); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*ModuleReference); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*ModulePin); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

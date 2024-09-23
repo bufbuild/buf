@@ -58,11 +58,9 @@ type RepositoryTag struct {
 
 func (x *RepositoryTag) Reset() {
 	*x = RepositoryTag{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryTag) String() string {
@@ -73,7 +71,7 @@ func (*RepositoryTag) ProtoMessage() {}
 
 func (x *RepositoryTag) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -136,11 +134,9 @@ type GetRepositoryTagRequest struct {
 
 func (x *GetRepositoryTagRequest) Reset() {
 	*x = GetRepositoryTagRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetRepositoryTagRequest) String() string {
@@ -151,7 +147,7 @@ func (*GetRepositoryTagRequest) ProtoMessage() {}
 
 func (x *GetRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -190,11 +186,9 @@ type GetRepositoryTagResponse struct {
 
 func (x *GetRepositoryTagResponse) Reset() {
 	*x = GetRepositoryTagResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetRepositoryTagResponse) String() string {
@@ -205,7 +199,7 @@ func (*GetRepositoryTagResponse) ProtoMessage() {}
 
 func (x *GetRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -242,11 +236,9 @@ type CreateRepositoryTagRequest struct {
 
 func (x *CreateRepositoryTagRequest) Reset() {
 	*x = CreateRepositoryTagRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateRepositoryTagRequest) String() string {
@@ -257,7 +249,7 @@ func (*CreateRepositoryTagRequest) ProtoMessage() {}
 
 func (x *CreateRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -303,11 +295,9 @@ type CreateRepositoryTagResponse struct {
 
 func (x *CreateRepositoryTagResponse) Reset() {
 	*x = CreateRepositoryTagResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateRepositoryTagResponse) String() string {
@@ -318,7 +308,7 @@ func (*CreateRepositoryTagResponse) ProtoMessage() {}
 
 func (x *CreateRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -355,11 +345,9 @@ type UpdateRepositoryTagRequest struct {
 
 func (x *UpdateRepositoryTagRequest) Reset() {
 	*x = UpdateRepositoryTagRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateRepositoryTagRequest) String() string {
@@ -370,7 +358,7 @@ func (*UpdateRepositoryTagRequest) ProtoMessage() {}
 
 func (x *UpdateRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -416,11 +404,9 @@ type UpdateRepositoryTagResponse struct {
 
 func (x *UpdateRepositoryTagResponse) Reset() {
 	*x = UpdateRepositoryTagResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateRepositoryTagResponse) String() string {
@@ -431,7 +417,7 @@ func (*UpdateRepositoryTagResponse) ProtoMessage() {}
 
 func (x *UpdateRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -468,11 +454,9 @@ type ListRepositoryTagsRequest struct {
 
 func (x *ListRepositoryTagsRequest) Reset() {
 	*x = ListRepositoryTagsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryTagsRequest) String() string {
@@ -483,7 +467,7 @@ func (*ListRepositoryTagsRequest) ProtoMessage() {}
 
 func (x *ListRepositoryTagsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -538,11 +522,9 @@ type ListRepositoryTagsResponse struct {
 
 func (x *ListRepositoryTagsResponse) Reset() {
 	*x = ListRepositoryTagsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryTagsResponse) String() string {
@@ -553,7 +535,7 @@ func (*ListRepositoryTagsResponse) ProtoMessage() {}
 
 func (x *ListRepositoryTagsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -599,11 +581,9 @@ type ListRepositoryTagsForReferenceRequest struct {
 
 func (x *ListRepositoryTagsForReferenceRequest) Reset() {
 	*x = ListRepositoryTagsForReferenceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) String() string {
@@ -614,7 +594,7 @@ func (*ListRepositoryTagsForReferenceRequest) ProtoMessage() {}
 
 func (x *ListRepositoryTagsForReferenceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -676,11 +656,9 @@ type ListRepositoryTagsForReferenceResponse struct {
 
 func (x *ListRepositoryTagsForReferenceResponse) Reset() {
 	*x = ListRepositoryTagsForReferenceResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryTagsForReferenceResponse) String() string {
@@ -691,7 +669,7 @@ func (*ListRepositoryTagsForReferenceResponse) ProtoMessage() {}
 
 func (x *ListRepositoryTagsForReferenceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -950,140 +928,6 @@ func init() { file_buf_alpha_registry_v1alpha1_repository_tag_proto_init() }
 func file_buf_alpha_registry_v1alpha1_repository_tag_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_repository_tag_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryTag); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*GetRepositoryTagRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*GetRepositoryTagResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*CreateRepositoryTagRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*CreateRepositoryTagResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateRepositoryTagRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateRepositoryTagResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryTagsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryTagsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryTagsForReferenceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryTagsForReferenceResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}

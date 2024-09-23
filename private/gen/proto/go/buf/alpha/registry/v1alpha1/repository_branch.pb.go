@@ -64,11 +64,9 @@ type RepositoryBranch struct {
 
 func (x *RepositoryBranch) Reset() {
 	*x = RepositoryBranch{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryBranch) String() string {
@@ -79,7 +77,7 @@ func (*RepositoryBranch) ProtoMessage() {}
 
 func (x *RepositoryBranch) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -163,11 +161,9 @@ type GetRepositoryBranchRequest struct {
 
 func (x *GetRepositoryBranchRequest) Reset() {
 	*x = GetRepositoryBranchRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetRepositoryBranchRequest) String() string {
@@ -178,7 +174,7 @@ func (*GetRepositoryBranchRequest) ProtoMessage() {}
 
 func (x *GetRepositoryBranchRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -217,11 +213,9 @@ type GetRepositoryBranchResponse struct {
 
 func (x *GetRepositoryBranchResponse) Reset() {
 	*x = GetRepositoryBranchResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetRepositoryBranchResponse) String() string {
@@ -232,7 +226,7 @@ func (*GetRepositoryBranchResponse) ProtoMessage() {}
 
 func (x *GetRepositoryBranchResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -268,11 +262,9 @@ type ListRepositoryBranchesRequest struct {
 
 func (x *ListRepositoryBranchesRequest) Reset() {
 	*x = ListRepositoryBranchesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryBranchesRequest) String() string {
@@ -283,7 +275,7 @@ func (*ListRepositoryBranchesRequest) ProtoMessage() {}
 
 func (x *ListRepositoryBranchesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -331,11 +323,9 @@ type ListRepositoryBranchesResponse struct {
 
 func (x *ListRepositoryBranchesResponse) Reset() {
 	*x = ListRepositoryBranchesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryBranchesResponse) String() string {
@@ -346,7 +336,7 @@ func (*ListRepositoryBranchesResponse) ProtoMessage() {}
 
 func (x *ListRepositoryBranchesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -396,11 +386,9 @@ type ListRepositoryBranchesByReferenceRequest struct {
 
 func (x *ListRepositoryBranchesByReferenceRequest) Reset() {
 	*x = ListRepositoryBranchesByReferenceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryBranchesByReferenceRequest) String() string {
@@ -411,7 +399,7 @@ func (*ListRepositoryBranchesByReferenceRequest) ProtoMessage() {}
 
 func (x *ListRepositoryBranchesByReferenceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -501,11 +489,9 @@ type ListRepositoryBranchesByReferenceResponse struct {
 
 func (x *ListRepositoryBranchesByReferenceResponse) Reset() {
 	*x = ListRepositoryBranchesByReferenceResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryBranchesByReferenceResponse) String() string {
@@ -516,7 +502,7 @@ func (*ListRepositoryBranchesByReferenceResponse) ProtoMessage() {}
 
 func (x *ListRepositoryBranchesByReferenceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -556,11 +542,9 @@ type GetCurrentDefaultBranchRequest struct {
 
 func (x *GetCurrentDefaultBranchRequest) Reset() {
 	*x = GetCurrentDefaultBranchRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetCurrentDefaultBranchRequest) String() string {
@@ -571,7 +555,7 @@ func (*GetCurrentDefaultBranchRequest) ProtoMessage() {}
 
 func (x *GetCurrentDefaultBranchRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -603,11 +587,9 @@ type GetCurrentDefaultBranchResponse struct {
 
 func (x *GetCurrentDefaultBranchResponse) Reset() {
 	*x = GetCurrentDefaultBranchResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetCurrentDefaultBranchResponse) String() string {
@@ -618,7 +600,7 @@ func (*GetCurrentDefaultBranchResponse) ProtoMessage() {}
 
 func (x *GetCurrentDefaultBranchResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -857,116 +839,6 @@ func init() { file_buf_alpha_registry_v1alpha1_repository_branch_proto_init() }
 func file_buf_alpha_registry_v1alpha1_repository_branch_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_repository_branch_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryBranch); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*GetRepositoryBranchRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*GetRepositoryBranchResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryBranchesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryBranchesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryBranchesByReferenceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryBranchesByReferenceResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*GetCurrentDefaultBranchRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*GetCurrentDefaultBranchResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[5].OneofWrappers = []any{
 		(*ListRepositoryBranchesByReferenceRequest_CommitName)(nil),

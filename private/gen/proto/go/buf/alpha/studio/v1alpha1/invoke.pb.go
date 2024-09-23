@@ -70,11 +70,9 @@ type Headers struct {
 
 func (x *Headers) Reset() {
 	*x = Headers{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Headers) String() string {
@@ -85,7 +83,7 @@ func (*Headers) ProtoMessage() {}
 
 func (x *Headers) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -135,11 +133,9 @@ type InvokeRequest struct {
 
 func (x *InvokeRequest) Reset() {
 	*x = InvokeRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *InvokeRequest) String() string {
@@ -150,7 +146,7 @@ func (*InvokeRequest) ProtoMessage() {}
 
 func (x *InvokeRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -203,11 +199,9 @@ type InvokeResponse struct {
 
 func (x *InvokeResponse) Reset() {
 	*x = InvokeResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *InvokeResponse) String() string {
@@ -218,7 +212,7 @@ func (*InvokeResponse) ProtoMessage() {}
 
 func (x *InvokeResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -335,44 +329,6 @@ func init() { file_buf_alpha_studio_v1alpha1_invoke_proto_init() }
 func file_buf_alpha_studio_v1alpha1_invoke_proto_init() {
 	if File_buf_alpha_studio_v1alpha1_invoke_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*Headers); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*InvokeRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*InvokeResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
