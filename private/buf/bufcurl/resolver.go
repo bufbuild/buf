@@ -15,8 +15,13 @@
 package bufcurl
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -95,4 +100,32 @@ func (c *combinedResolver) ListServices() ([]protoreflect.FullName, error) {
 		serviceNames = append(serviceNames, serviceName)
 	}
 	return serviceNames, nil
+}
+
+// NewWKTResolver returns a Resolver that can resolve all well-known types.
+func NewWKTResolver(ctx context.Context, tracer tracing.Tracer) (Resolver, error) {
+	moduleSet, err := bufmodule.NewModuleSetBuilder(
+		ctx,
+		tracer,
+		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
+	).AddLocalModule(
+		datawkt.ReadBucket,
+		".",
+		true,
+	).Build()
+	if err != nil {
+		return nil, err
+	}
+	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	image, err := bufimage.BuildImage(
+		ctx,
+		tracer,
+		module,
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ResolverForImage(image), nil
 }
