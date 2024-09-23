@@ -118,7 +118,7 @@ func (f *file) Package() []string {
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.Sugar().Debugf("resetting file %v", f.uri)
 
-	// Lock and unlock to acquire the import map.
+	// Lock and unlock to acquire the import map, then nil everything out
 	// This map is never mutated after being created, so we only
 	// need to read the pointer.
 	//
@@ -126,15 +126,6 @@ func (f *file) Reset(ctx context.Context) {
 	// files, and this will deadlock if cyclic imports exist.
 	f.lock.Lock(ctx)
 	imports := f.imports
-	f.lock.Unlock(ctx)
-
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
-
-	// Close all imported files while file.mu is not held.
-	for _, imported := range imports {
-		imported.Close(ctx)
-	}
 
 	f.fileNode = nil
 	f.packageNode = nil
@@ -143,6 +134,13 @@ func (f *file) Reset(ctx context.Context) {
 	f.imports = nil
 	f.symbols = nil
 	f.image = nil
+	f.lock.Unlock(ctx)
+
+	// Close all imported files while file.mu is not held.
+	for _, imported := range imports {
+		imported.Close(ctx)
+	}
+
 }
 
 // Close marks a file as closed.
