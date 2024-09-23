@@ -142,14 +142,14 @@ func checkCEL(
 		} else {
 			add(i, "%s has an empty %s.id. IDs should always be specified.", parentNameCapitalized, celName)
 		}
-		if len(strings.TrimSpace(celConstraint.Expression)) == 0 {
+		if celConstraint.GetExpression() == "" {
 			add(i, "%s has an empty %s.expression. Expressions should always be specified.", parentNameCapitalized, celName)
 			continue
 		}
-		ast, compileIssues := celEnv.Compile(celConstraint.Expression)
+		ast, compileIssues := celEnv.Compile(celConstraint.GetExpression())
 		switch {
 		case ast.OutputType().IsAssignableType(cel.BoolType):
-			if celConstraint.Message == "" {
+			if celConstraint.GetMessage() == "" {
 				add(
 					i,
 					"%s has an empty %s.message for an expression that evaluates to a boolean. If an expression evaluates to a boolean, a message should always be specified.",
@@ -158,7 +158,7 @@ func checkCEL(
 				)
 			}
 		case ast.OutputType().IsAssignableType(cel.StringType):
-			if celConstraint.Message != "" {
+			if celConstraint.GetMessage() != "" {
 				add(
 					i,
 					"%s has a %s with an expression that evaluates to a string, and also has a message. The message is redundant - since the expression evaluates to a string, its result will be printed instead of the message, so the message should be removed.",
