@@ -27,35 +27,6 @@ const poison = ^uint64(0)
 
 var nextRequestID atomic.Uint64
 
-// withReentrancy assigns a unique request ID to the given context, which can be retrieved
-// with with getRequestID.
-func withRequestID(ctx context.Context) context.Context {
-	// This will always be unique. It is impossible to increment a uint64 and wrap around before
-	// the heat death of the universe.
-	id := nextRequestID.Add(1)
-	// We need to give the context package a unique identifier for the request; it can be
-	// any value. The address of the global we mint new IDs from is actually great for this,
-	// because users can't access it outside of this package, nor can they extract it out
-	// of the context itself.
-	return context.WithValue(ctx, &nextRequestID, id)
-}
-
-// getRequestID returns the request ID for this context, or 0 if ctx is nil or has no
-// such ID.
-func getRequestID(ctx context.Context) uint64 {
-	if ctx == nil {
-		return 0
-	}
-	id, ok := ctx.Value(&nextRequestID).(uint64)
-	if !ok {
-		return 0
-	}
-
-	// Make sure we don't return 0. This is the only place where the id is actually
-	// witnessed so doing +1 won't affect anything.
-	return id + 1
-}
-
 // mutexPool represents a group of reentrant muteces that cannot be acquired simultaneously.
 //
 // A zero mutexPool is ready to use.
@@ -179,4 +150,33 @@ func (mu *mutex) storeWho(id uint64) {
 			break
 		}
 	}
+}
+
+// withRequestID assigns a unique request ID to the given context, which can be retrieved
+// with with getRequestID.
+func withRequestID(ctx context.Context) context.Context {
+	// This will always be unique. It is impossible to increment a uint64 and wrap around before
+	// the heat death of the universe.
+	id := nextRequestID.Add(1)
+	// We need to give the context package a unique identifier for the request; it can be
+	// any value. The address of the global we mint new IDs from is actually great for this,
+	// because users can't access it outside of this package, nor can they extract it out
+	// of the context itself.
+	return context.WithValue(ctx, &nextRequestID, id)
+}
+
+// getRequestID returns the request ID for this context, or 0 if ctx is nil or has no
+// such ID.
+func getRequestID(ctx context.Context) uint64 {
+	if ctx == nil {
+		return 0
+	}
+	id, ok := ctx.Value(&nextRequestID).(uint64)
+	if !ok {
+		return 0
+	}
+
+	// Make sure we don't return 0. This is the only place where the id is actually
+	// witnessed so doing +1 won't affect anything.
+	return id + 1
 }

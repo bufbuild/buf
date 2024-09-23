@@ -77,7 +77,10 @@ type file struct {
 	// This is enforced by mutex.go.
 	lock mutex
 
-	text    string
+	text string
+	// Version is an opaque version identifier given to us by the LSP client. This
+	// is used in the protocol to disambiguate which version of a file e.g. publishing
+	// diagnostics or symbols an operating refers to.
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 	// Always set false->true. Once true, never becomes false again.
@@ -125,13 +128,13 @@ func (f *file) Reset(ctx context.Context) {
 	imports := f.imports
 	f.lock.Unlock(ctx)
 
+	f.lock.Lock(ctx)
+	defer f.lock.Unlock(ctx)
+
 	// Close all imported files while file.mu is not held.
 	for _, imported := range imports {
 		imported.Close(ctx)
 	}
-
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 
 	f.fileNode = nil
 	f.packageNode = nil

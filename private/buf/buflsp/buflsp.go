@@ -51,14 +51,12 @@ func Serve(
 	// root.
 	bucketProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	bucket, err := bucketProvider.NewReadWriteBucket(
-		"/", // This is not correct for Windows.
+		"/", // TODO: This is not correct for Windows.
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
 		return nil, err
 	}
-
-	container.CacheDirPath()
 
 	tracer := tracing.NewTracer(container.Tracer())
 	checkClient, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
@@ -70,7 +68,7 @@ func Serve(
 	lsp := &lsp{
 		conn: conn,
 		client: protocol.ClientDispatcher(
-			&connAdapter{Conn: conn, logger: container.Logger()},
+			&connWrapper{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
@@ -86,6 +84,8 @@ func Serve(
 	conn.Go(ctx, lsp.newHandler())
 	return conn, nil
 }
+
+// *** PRIVATE ***
 
 // lsp contains all of the LSP server's state. (I.e., it is the "god class" the protocol requires
 // that we implement).
@@ -174,7 +174,7 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 
 		ctx = withRequestID(ctx)
 
-		replier := l.adaptReplier(reply, req)
+		replier := l.wrapReplier(reply, req)
 
 		// Verify that the server has been initialized if this isn't the initialization
 		// request.
@@ -184,86 +184,4 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 
 		return actual(ctx, replier, req)
 	}
-}
-
-// adaptReplier wraps a jsonrpc2.Replier, allowing us to inject logging and tracing and so on.
-func (l *lsp) adaptReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2.Replier {
-	return func(ctx context.Context, result any, err error) error {
-		if err != nil {
-			l.logger.Warn(
-				"responding with error",
-				zap.String("method", req.Method()),
-				zap.Error(err),
-			)
-		} else {
-			l.logger.Debug(
-				"responding",
-				zap.String("method", req.Method()),
-				zap.Reflect("params", result),
-			)
-		}
-
-		return reply(ctx, result, err)
-	}
-}
-
-// connAdapter wraps a connection and logs calls and notifications.
-//
-// By default, the ClientDispatcher does not log the bodies of requests and responses, making
-// for much lower-quality debugging.
-type connAdapter struct {
-	jsonrpc2.Conn
-
-	logger *zap.Logger
-}
-
-func (c *connAdapter) Call(
-	ctx context.Context, method string, params, result any) (id jsonrpc2.ID, err error) {
-	c.logger.Debug(
-		"call",
-		zap.String("method", method),
-		zap.Reflect("params", params),
-	)
-
-	id, err = c.Conn.Call(ctx, method, params, result)
-	if err != nil {
-		c.logger.Warn(
-			"call returned error",
-			zap.String("method", method),
-			zap.Error(err),
-		)
-	} else {
-		c.logger.Warn(
-			"call returned",
-			zap.String("method", method),
-			zap.Reflect("result", result),
-		)
-	}
-
-	return
-}
-
-func (c *connAdapter) Notify(
-	ctx context.Context, method string, params any) error {
-	c.logger.Debug(
-		"notify",
-		zap.String("method", method),
-		zap.Reflect("params", params),
-	)
-
-	err := c.Conn.Notify(ctx, method, params)
-	if err != nil {
-		c.logger.Warn(
-			"notify returned error",
-			zap.String("method", method),
-			zap.Error(err),
-		)
-	} else {
-		c.logger.Warn(
-			"notify returned",
-			zap.String("method", method),
-		)
-	}
-
-	return err
 }

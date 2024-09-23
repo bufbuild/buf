@@ -57,7 +57,7 @@ func (r *report) Warning(err reporter.ErrorWithPos) {
 	}
 }
 
-// error2diagnostic converts a protocompile error into a diagnostic.
+// newDiagnostic converts a protocompile error into a diagnostic.
 //
 // Unfortunately, protocompile's errors are currently too meagre to provide full code
 // spans; that will require a fix in the compiler.
