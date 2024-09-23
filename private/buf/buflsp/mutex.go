@@ -69,6 +69,35 @@ func (mp *mutexPool) NewMutex() mutex {
 	return mutex{pool: mp}
 }
 
+// check checks what id is either not holding a lock, or is holding the given
+// map, depending on whether isUnlock is set.
+func (mp *mutexPool) check(id uint64, mu *mutex, isUnlock bool) {
+	if mp == nil {
+		return
+	}
+
+	mp.lock.Lock()
+	defer mp.lock.Unlock()
+
+	if mp.held == nil {
+		mp.held = make(map[uint64]*mutex)
+	}
+
+	if isUnlock {
+		if held := mp.held[id]; held != mu {
+			panic(fmt.Sprintf("buflsp/mutex.go: attempted to unlock incorrect non-reentrant lock: %p -> %p", held, mu))
+		}
+
+		delete(mp.held, id)
+	} else {
+		if held := mp.held[id]; held != nil {
+			panic(fmt.Sprintf("buflsp/mutex.go: attempted to acquire two non-reentrant locks at once: %p -> %p", mu, held))
+		}
+
+		mp.held[id] = mu
+	}
+}
+
 // mutex is a sync.Mutex with some extra features.
 //
 // The main feature is reentrancy-checking. Within the LSP, we need to lock-protect many structures,
@@ -115,17 +144,7 @@ func (mu *mutex) Lock(ctx context.Context) (unlocker func()) {
 		panic("buflsp/mutex.go: non-reentrant lock locked twice by the same request")
 	}
 
-	if mu.pool != nil {
-		mu.pool.lock.Lock()
-		defer mu.pool.lock.Unlock()
-		if mu.pool.held == nil {
-			mu.pool.held = make(map[uint64]*mutex)
-		}
-		if held := mu.pool.held[id]; held != nil {
-			panic(fmt.Sprintf("buflsp/mutex.go: attempted to acquire two non-reentrant locks at once: %p -> %p", mu, held))
-		}
-		mu.pool.held[id] = mu
-	}
+	mu.pool.check(id, mu, false)
 
 	// Ok, we're definitely not holding a lock, so we can block until we acquire the lock.
 	mu.lock.Lock()
@@ -145,15 +164,7 @@ func (mu *mutex) Unlock(ctx context.Context) {
 
 	mu.storeWho(0)
 
-	if mu.pool != nil {
-		mu.pool.lock.Lock()
-		defer mu.pool.lock.Unlock()
-		if held := mu.pool.held[id]; held != mu {
-			panic(fmt.Sprintf("buflsp/mutex.go: attempted to unlock the wrong lock: %p -> %p", mu, held))
-		}
-		delete(mu.pool.held, id)
-	}
-
+	mu.pool.check(id, mu, true)
 	mu.lock.Unlock()
 }
 
