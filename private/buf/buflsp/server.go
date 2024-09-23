@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/ast"
@@ -143,7 +142,7 @@ func (s *server) SetTrace(
 	ctx context.Context,
 	params *protocol.SetTraceParams,
 ) error {
-	s.lsp.traceValue.Store(&params.Value)
+	s.lsp.traceValue = &params.Value
 	return nil
 }
 
@@ -208,8 +207,6 @@ func (s *server) Formatting(
 	// Currently we have no way to honor any of the parameters.
 	_ = params
 
-	file.lock.Lock(ctx)
-	defer file.lock.Unlock(ctx)
 	if file.fileNode == nil {
 		return nil, nil
 	}
@@ -322,17 +319,7 @@ func (s *server) SemanticTokensFull(
 	progress.Begin(ctx, "Processing Tokens")
 	defer progress.Done(ctx)
 
-	var symbols []*symbol
-	for {
-		file.lock.Lock(ctx)
-		symbols = file.symbols
-		file.lock.Unlock(ctx)
-		if symbols != nil {
-			break
-		}
-		time.Sleep(1 * time.Millisecond)
-	}
-
+	symbols := file.symbols
 	var (
 		encoded           []uint32
 		prevLine, prevCol uint32

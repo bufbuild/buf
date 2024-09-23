@@ -116,8 +116,6 @@ func (s *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
 			return nil, nil
 		}
 
-		kind.file.lock.Lock(ctx)
-		defer kind.file.lock.Unlock(ctx)
 		for _, symbol := range kind.file.symbols {
 			def, ok := symbol.kind.(*definition)
 			if ok && slices.Equal(kind.path, def.path) {
@@ -268,22 +266,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 				return
 			}
 
-			// Make a copy of the import table pointer and then drop the lock,
-			// since searching inside of the imports will need to acquire other
-			// fileManager' locks.
-			s.file.lock.Lock(ctx)
 			descriptorProto := s.file.imports[descriptorPath]
-			s.file.lock.Unlock(ctx)
-
 			if descriptorProto == nil {
 				return
 			}
 
 			// Look for a symbol with this exact path in descriptor proto.
-
-			descriptorProto.lock.Lock(ctx)
-			defer descriptorProto.lock.Unlock(ctx)
-
 			var fieldSymbol *symbol
 			for _, symbol := range descriptorProto.symbols {
 				if def, ok := symbol.kind.(*definition); ok && slices.Equal(def.path, fieldPath) {
@@ -300,13 +288,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			return
 		}
 
-		// Make a copy of the import table pointer and then drop the lock,
-		// since searching inside of the imports will need to acquire other
-		// fileManager' locks.
-		s.file.lock.Lock(ctx)
 		imports := s.file.imports
-		s.file.lock.Unlock(ctx)
-
 		if imports == nil {
 			// Hopeless. We'll have to try again once we have imports!
 			return
@@ -756,8 +738,7 @@ func (w *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 		}
 	}
 
-	// NOTE: cross-file resolution happens elsewhere, after we have walked the whole
-	// ast and dropped this file's lock.
+	// NOTE: cross-file resolution happens elsewhere.
 
 	// If we couldn't resolve the symbol, symbol.definedIn will be nil.
 	// However, for hover, it's necessary to still remember the components.

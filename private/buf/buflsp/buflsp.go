@@ -20,7 +20,7 @@ package buflsp
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
+	"sync"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
@@ -81,7 +81,7 @@ func Serve(
 	}
 	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
-	lsp.traceValue.Store(&off)
+	lsp.traceValue = &off
 
 	conn.Go(ctx, lsp.newHandler())
 	return conn, nil
@@ -97,6 +97,9 @@ func Serve(
 type lsp struct {
 	conn   jsonrpc2.Conn
 	client protocol.Client
+	// lock is used to ensure that requests are processed serially.
+	// This simplifies the implementation of the server.
+	lock sync.Mutex
 
 	logger      *zap.Logger
 	tracer      tracing.Tracer
@@ -105,22 +108,18 @@ type lsp struct {
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
 
-	// These are atomics, because they are read often and written to
-	// almost never, but potentially concurrently. Having them side-by-side
-	// is fine; they are almost never written to so false sharing is not a
-	// concern.
-	initParams atomic.Pointer[protocol.InitializeParams]
-	traceValue atomic.Pointer[protocol.TraceValue]
+	// InitializeParams is set once, and never changed.
+	initParams *protocol.InitializeParams
+	traceValue *protocol.TraceValue
 }
 
 // init performs *actual* initialization of the server. This is called by Initialize().
 //
 // It may only be called once for a given server.
 func (l *lsp) init(params *protocol.InitializeParams) error {
-	if l.initParams.Load() != nil {
-		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
+	if l.initParams == nil {
+		l.initParams = params
 	}
-	l.initParams.Store(params)
 
 	// TODO: set up logging. We need to forward everything from server.logger through to
 	// the client, if tracing is turned on. The right way to do this is with an extra
@@ -166,22 +165,23 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 		)
 		defer span.End()
 
+		replier := l.adaptReplier(reply, req)
+
+		// Process requests serially.
+		l.lock.Lock()
+		defer l.lock.Unlock()
+
 		l.logger.Debug(
 			"processing request",
 			zap.String("method", req.Method()),
 			zap.ByteString("params", req.Params()),
 		)
 
-		ctx = withRequestID(ctx)
-
-		replier := l.adaptReplier(reply, req)
-
 		// Verify that the server has been initialized if this isn't the initialization
 		// request.
-		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
+		if req.Method() != protocol.MethodInitialize && l.initParams == nil {
 			return replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
 		}
-
 		return actual(ctx, replier, req)
 	}
 }

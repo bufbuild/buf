@@ -51,31 +51,9 @@ const descriptorPath = "google/protobuf/descriptor.proto"
 //
 // Mutating a file is thread-safe.
 type file struct {
-	// lsp and uri are not protected by file.lock; they are immutable after
-	// file creation!
+	// lsp and uri are immutable after file creation!
 	lsp *lsp
 	uri protocol.URI
-
-	// All variables after this lock variables are protected by file.lock.
-	//
-	// NOTE: this package must NEVER attempt to acquire a lock on a file while
-	// holding a lock on another file. This guarantees that any concurrent operations
-	// on distinct files can always make forward progress, even if the information they
-	// have is incomplete. This trades off up-to-date accuracy for responsiveness.
-	//
-	// For example, suppose g1 locks a.proto, and then attempts to lock b.proto
-	// because it followed a pointer in importMap. However, in the meantime, g2
-	// has acquired b.proto's lock already, and attempts to acquire a lock to a.proto,
-	// again because of a pointer in importMap. This will deadlock, and it will
-	// deadlock in such a way that will be undetectable to the Go scheduler, so the
-	// LSP will hang forever.
-	//
-	// This seems like a contrived scenario, but it can happen if a user creates two
-	// mutually-recursive Protobuf files. Although this is not permitted by Protobuf,
-	// the LSP must handle this invalid state gracefully.
-	//
-	// This is enforced by mutex.go.
-	lock mutex
 
 	text    string
 	version int32
@@ -115,23 +93,10 @@ func (f *file) Package() []string {
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.Sugar().Debugf("resetting file %v", f.uri)
 
-	// Lock and unlock to acquire the import map.
-	// This map is never mutated after being created, so we only
-	// need to read the pointer.
-	//
-	// We need to lock and unlock because Close() will call Reset() on other
-	// files, and this will deadlock if cyclic imports exist.
-	f.lock.Lock(ctx)
-	imports := f.imports
-	f.lock.Unlock(ctx)
-
 	// Close all imported files while file.mu is not held.
-	for _, imported := range imports {
+	for _, imported := range f.imports {
 		imported.Close(ctx)
 	}
-
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 
 	f.fileNode = nil
 	f.packageNode = nil
@@ -155,8 +120,6 @@ func (f *file) Close(ctx context.Context) {
 // If it has been read from disk before, or has received updates from the LSP client, this
 // function returns nil.
 func (f *file) ReadFromDisk(ctx context.Context) (err error) {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 	if f.hasText {
 		return nil
 	}
@@ -175,9 +138,6 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 // the LSP client.
 func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.Reset(ctx)
-
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 
 	f.lsp.logger.Sugar().Infof("new file version: %v, %v -> %v", f.uri, f.version, version)
 	f.version = version
@@ -218,8 +178,6 @@ func (f *file) Refresh(ctx context.Context) {
 //
 // Returns whether a reparse was necessary.
 func (f *file) RefreshAST(ctx context.Context) bool {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 	if f.fileNode != nil {
 		return false
 	}
@@ -259,9 +217,6 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 	ctx, span := f.lsp.tracer.Start(ctx,
 		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
-
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 
 	if f.diagnostics == nil {
 		return
@@ -310,10 +265,8 @@ func (f *file) FindModule(ctx context.Context) {
 		defer file.Close()
 	}
 
-	f.lock.Lock(ctx)
 	f.workspace = workspace
 	f.module = module
-	f.lock.Unlock(ctx)
 }
 
 // IndexImports finds URIs for all of the files imported by this file.
@@ -321,9 +274,6 @@ func (f *file) IndexImports(ctx context.Context) {
 	ctx, span := f.lsp.tracer.Start(ctx,
 		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
-
-	unlock := f.lock.Lock(ctx)
-	defer unlock()
 
 	if f.fileNode == nil || f.imports != nil {
 		return
@@ -390,11 +340,7 @@ func (f *file) IndexImports(ctx context.Context) {
 
 	// FIXME: This algorithm is not correct: it does not account for `import public`.
 
-	// Drop the lock after copying the pointer to the imports map. This
-	// particular map will not be mutated further, and since we're going to grab the lock of
-	// other files, we need to drop the currently held lock.
 	fileImports := f.imports
-	unlock()
 
 	for _, file := range fileImports {
 		if err := file.ReadFromDisk(ctx); err != nil {
@@ -417,10 +363,8 @@ func (f *file) IndexImports(ctx context.Context) {
 //
 // This operation requires IndexImports().
 func (f *file) BuildImage(ctx context.Context) {
-	f.lock.Lock(ctx)
 	importable := f.importable
 	fileInfo := f.fileInfo
-	f.lock.Unlock(ctx)
 
 	if importable == nil || fileInfo == nil {
 		return
@@ -455,9 +399,7 @@ func (f *file) BuildImage(ctx context.Context) {
 
 	compiled, err := compiler.Compile(ctx, fileInfo.Path())
 	if err != nil {
-		f.lock.Lock(ctx)
 		f.diagnostics = report.diagnostics
-		f.lock.Unlock(ctx)
 	}
 	if compiled[0] == nil {
 		return
@@ -535,9 +477,7 @@ func (f *file) BuildImage(ctx context.Context) {
 		return
 	}
 
-	f.lock.Lock(ctx)
 	f.image = image
-	f.lock.Unlock(ctx)
 }
 
 // RunLints runs linting on this file. Returns whether any lints failed.
@@ -549,11 +489,9 @@ func (f *file) RunLints(ctx context.Context) bool {
 		return false
 	}
 
-	f.lock.Lock(ctx)
 	workspace := f.workspace
 	module := f.module
 	image := f.image
-	f.lock.Unlock(ctx)
 
 	if module == nil || image == nil {
 		f.lsp.logger.Sugar().Warnf("could not find image for %q", f.uri)
@@ -584,8 +522,6 @@ func (f *file) RunLints(ctx context.Context) bool {
 
 	f.lsp.logger.Sugar().Warnf("lint generated %d error(s) for %s", len(annotations.FileAnnotations()), f.uri)
 
-	f.lock.Lock(ctx)
-	f.lock.Unlock(ctx)
 	for _, annotation := range annotations.FileAnnotations() {
 		f.lsp.logger.Sugar().Info(annotation.FileInfo().Path(), " ", annotation.FileInfo().ExternalPath())
 
@@ -616,9 +552,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
 	defer span.End()
 
-	unlock := f.lock.Lock(ctx)
-	defer unlock()
-
 	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
 	// symbols unconditionally.
 	f.symbols = nil
@@ -635,9 +568,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		return diff
 	})
 
-	// Now we can drop the lock and search for cross-file references.
+	// Now we can drop the search for cross-file references.
 	symbols := f.symbols
-	unlock()
 	for _, symbol := range symbols {
 		symbol.ResolveCrossFile(ctx)
 	}
@@ -649,9 +581,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 //
 // Returns nil if no symbol is found.
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
-
 	// Binary search for the symbol whose start is before or equal to cursor.
 	idx, found := slices.BinarySearchFunc(f.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
 		return comparePositions(sym.Range().Start, cursor)
