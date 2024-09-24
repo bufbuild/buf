@@ -53,11 +53,9 @@ type Reference struct {
 
 func (x *Reference) Reset() {
 	*x = Reference{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Reference) String() string {
@@ -68,7 +66,7 @@ func (*Reference) ProtoMessage() {}
 
 func (x *Reference) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -192,11 +190,9 @@ type RepositoryMainReference struct {
 
 func (x *RepositoryMainReference) Reset() {
 	*x = RepositoryMainReference{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryMainReference) String() string {
@@ -207,7 +203,7 @@ func (*RepositoryMainReference) ProtoMessage() {}
 
 func (x *RepositoryMainReference) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -249,11 +245,9 @@ type RepositoryDraft struct {
 
 func (x *RepositoryDraft) Reset() {
 	*x = RepositoryDraft{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryDraft) String() string {
@@ -264,7 +258,7 @@ func (*RepositoryDraft) ProtoMessage() {}
 
 func (x *RepositoryDraft) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -310,11 +304,9 @@ type RepositoryVCSCommit struct {
 
 func (x *RepositoryVCSCommit) Reset() {
 	*x = RepositoryVCSCommit{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryVCSCommit) String() string {
@@ -325,7 +317,7 @@ func (*RepositoryVCSCommit) ProtoMessage() {}
 
 func (x *RepositoryVCSCommit) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -383,11 +375,9 @@ type GetReferenceByNameRequest struct {
 
 func (x *GetReferenceByNameRequest) Reset() {
 	*x = GetReferenceByNameRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetReferenceByNameRequest) String() string {
@@ -398,7 +388,7 @@ func (*GetReferenceByNameRequest) ProtoMessage() {}
 
 func (x *GetReferenceByNameRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -444,11 +434,9 @@ type GetReferenceByNameResponse struct {
 
 func (x *GetReferenceByNameResponse) Reset() {
 	*x = GetReferenceByNameResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetReferenceByNameResponse) String() string {
@@ -459,7 +447,7 @@ func (*GetReferenceByNameResponse) ProtoMessage() {}
 
 func (x *GetReferenceByNameResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -651,80 +639,6 @@ func file_buf_alpha_registry_v1alpha1_reference_proto_init() {
 	file_buf_alpha_registry_v1alpha1_repository_branch_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_commit_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_tag_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*Reference); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryMainReference); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryDraft); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryVCSCommit); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*GetReferenceByNameRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*GetReferenceByNameResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0].OneofWrappers = []any{
 		(*Reference_Branch)(nil),
 		(*Reference_Tag)(nil),

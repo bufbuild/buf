@@ -46,11 +46,9 @@ type DisplayOrganizationElementsRequest struct {
 
 func (x *DisplayOrganizationElementsRequest) Reset() {
 	*x = DisplayOrganizationElementsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayOrganizationElementsRequest) String() string {
@@ -61,7 +59,7 @@ func (*DisplayOrganizationElementsRequest) ProtoMessage() {}
 
 func (x *DisplayOrganizationElementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -100,11 +98,9 @@ type DisplayOrganizationElementsResponse struct {
 
 func (x *DisplayOrganizationElementsResponse) Reset() {
 	*x = DisplayOrganizationElementsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayOrganizationElementsResponse) String() string {
@@ -115,7 +111,7 @@ func (*DisplayOrganizationElementsResponse) ProtoMessage() {}
 
 func (x *DisplayOrganizationElementsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -170,11 +166,9 @@ type DisplayRepositoryElementsRequest struct {
 
 func (x *DisplayRepositoryElementsRequest) Reset() {
 	*x = DisplayRepositoryElementsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayRepositoryElementsRequest) String() string {
@@ -185,7 +179,7 @@ func (*DisplayRepositoryElementsRequest) ProtoMessage() {}
 
 func (x *DisplayRepositoryElementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -224,11 +218,9 @@ type DisplayRepositoryElementsResponse struct {
 
 func (x *DisplayRepositoryElementsResponse) Reset() {
 	*x = DisplayRepositoryElementsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayRepositoryElementsResponse) String() string {
@@ -239,7 +231,7 @@ func (*DisplayRepositoryElementsResponse) ProtoMessage() {}
 
 func (x *DisplayRepositoryElementsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -290,11 +282,9 @@ type DisplayUserElementsRequest struct {
 
 func (x *DisplayUserElementsRequest) Reset() {
 	*x = DisplayUserElementsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayUserElementsRequest) String() string {
@@ -305,7 +295,7 @@ func (*DisplayUserElementsRequest) ProtoMessage() {}
 
 func (x *DisplayUserElementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -331,11 +321,9 @@ type DisplayUserElementsResponse struct {
 
 func (x *DisplayUserElementsResponse) Reset() {
 	*x = DisplayUserElementsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayUserElementsResponse) String() string {
@@ -346,7 +334,7 @@ func (*DisplayUserElementsResponse) ProtoMessage() {}
 
 func (x *DisplayUserElementsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -376,11 +364,9 @@ type DisplayServerElementsRequest struct {
 
 func (x *DisplayServerElementsRequest) Reset() {
 	*x = DisplayServerElementsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayServerElementsRequest) String() string {
@@ -391,7 +377,7 @@ func (*DisplayServerElementsRequest) ProtoMessage() {}
 
 func (x *DisplayServerElementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -417,11 +403,9 @@ type DisplayServerElementsResponse struct {
 
 func (x *DisplayServerElementsResponse) Reset() {
 	*x = DisplayServerElementsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayServerElementsResponse) String() string {
@@ -432,7 +416,7 @@ func (*DisplayServerElementsResponse) ProtoMessage() {}
 
 func (x *DisplayServerElementsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -466,11 +450,9 @@ type DisplayOwnerEntitledElementsRequest struct {
 
 func (x *DisplayOwnerEntitledElementsRequest) Reset() {
 	*x = DisplayOwnerEntitledElementsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayOwnerEntitledElementsRequest) String() string {
@@ -481,7 +463,7 @@ func (*DisplayOwnerEntitledElementsRequest) ProtoMessage() {}
 
 func (x *DisplayOwnerEntitledElementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -514,11 +496,9 @@ type DisplayOwnerEntitledElementsResponse struct {
 
 func (x *DisplayOwnerEntitledElementsResponse) Reset() {
 	*x = DisplayOwnerEntitledElementsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayOwnerEntitledElementsResponse) String() string {
@@ -529,7 +509,7 @@ func (*DisplayOwnerEntitledElementsResponse) ProtoMessage() {}
 
 func (x *DisplayOwnerEntitledElementsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -563,11 +543,9 @@ type DisplayRepositoryEntitledElementsRequest struct {
 
 func (x *DisplayRepositoryEntitledElementsRequest) Reset() {
 	*x = DisplayRepositoryEntitledElementsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayRepositoryEntitledElementsRequest) String() string {
@@ -578,7 +556,7 @@ func (*DisplayRepositoryEntitledElementsRequest) ProtoMessage() {}
 
 func (x *DisplayRepositoryEntitledElementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -611,11 +589,9 @@ type DisplayRepositoryEntitledElementsResponse struct {
 
 func (x *DisplayRepositoryEntitledElementsResponse) Reset() {
 	*x = DisplayRepositoryEntitledElementsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DisplayRepositoryEntitledElementsResponse) String() string {
@@ -626,7 +602,7 @@ func (*DisplayRepositoryEntitledElementsResponse) ProtoMessage() {}
 
 func (x *DisplayRepositoryEntitledElementsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -660,11 +636,9 @@ type ListManageableRepositoryRolesRequest struct {
 
 func (x *ListManageableRepositoryRolesRequest) Reset() {
 	*x = ListManageableRepositoryRolesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListManageableRepositoryRolesRequest) String() string {
@@ -675,7 +649,7 @@ func (*ListManageableRepositoryRolesRequest) ProtoMessage() {}
 
 func (x *ListManageableRepositoryRolesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -709,11 +683,9 @@ type ListManageableRepositoryRolesResponse struct {
 
 func (x *ListManageableRepositoryRolesResponse) Reset() {
 	*x = ListManageableRepositoryRolesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListManageableRepositoryRolesResponse) String() string {
@@ -724,7 +696,7 @@ func (*ListManageableRepositoryRolesResponse) ProtoMessage() {}
 
 func (x *ListManageableRepositoryRolesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -761,11 +733,9 @@ type ListManageableUserRepositoryRolesRequest struct {
 
 func (x *ListManageableUserRepositoryRolesRequest) Reset() {
 	*x = ListManageableUserRepositoryRolesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListManageableUserRepositoryRolesRequest) String() string {
@@ -776,7 +746,7 @@ func (*ListManageableUserRepositoryRolesRequest) ProtoMessage() {}
 
 func (x *ListManageableUserRepositoryRolesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -817,11 +787,9 @@ type ListManageableUserRepositoryRolesResponse struct {
 
 func (x *ListManageableUserRepositoryRolesResponse) Reset() {
 	*x = ListManageableUserRepositoryRolesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListManageableUserRepositoryRolesResponse) String() string {
@@ -832,7 +800,7 @@ func (*ListManageableUserRepositoryRolesResponse) ProtoMessage() {}
 
 func (x *ListManageableUserRepositoryRolesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1124,200 +1092,6 @@ func file_buf_alpha_registry_v1alpha1_display_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_role_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayOrganizationElementsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayOrganizationElementsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayRepositoryElementsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayRepositoryElementsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayUserElementsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayUserElementsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayServerElementsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayServerElementsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayOwnerEntitledElementsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayOwnerEntitledElementsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayRepositoryEntitledElementsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*DisplayRepositoryEntitledElementsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*ListManageableRepositoryRolesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*ListManageableRepositoryRolesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*ListManageableUserRepositoryRolesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_display_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*ListManageableUserRepositoryRolesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

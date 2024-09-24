@@ -164,6 +164,11 @@ func (r *reflectionResolver) ListServices() ([]protoreflect.FullName, error) {
 	}
 	switch response := resp.MessageResponse.(type) {
 	case *reflectionv1.ServerReflectionResponse_ErrorResponse:
+		// This should never happen, however we do a bounds check to ensure we are doing a safe
+		// conversion from int32 (ErrorResponse.ErrorCode) to uint32 (connect.Code).
+		if response.ErrorResponse.ErrorCode < 0 {
+			return nil, fmt.Errorf("server replied with unsupported error code: %v", response.ErrorResponse.ErrorCode)
+		}
 		return nil, connect.NewWireError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
 	case *reflectionv1.ServerReflectionResponse_ListServicesResponse:
 		serviceNames := make([]protoreflect.FullName, len(response.ListServicesResponse.Service))
@@ -338,6 +343,11 @@ func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.File
 func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*descriptorpb.FileDescriptorProto, error) {
 	switch response := resp.MessageResponse.(type) {
 	case *reflectionv1.ServerReflectionResponse_ErrorResponse:
+		// This should never happen, however we do a bounds check to ensure we are doing a safe
+		// conversion from int32 (ErrorResponse.ErrorCode) to uint32 (connect.Code).
+		if response.ErrorResponse.ErrorCode < 0 {
+			return nil, fmt.Errorf("server replied with unsupported error code: %v", response.ErrorResponse.ErrorCode)
+		}
 		return nil, connect.NewWireError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
 	case *reflectionv1.ServerReflectionResponse_FileDescriptorResponse:
 		files := make([]*descriptorpb.FileDescriptorProto, len(response.FileDescriptorResponse.FileDescriptorProto))

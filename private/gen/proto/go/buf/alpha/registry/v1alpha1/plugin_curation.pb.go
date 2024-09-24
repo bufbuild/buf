@@ -507,11 +507,9 @@ type GoConfig struct {
 
 func (x *GoConfig) Reset() {
 	*x = GoConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GoConfig) String() string {
@@ -522,7 +520,7 @@ func (*GoConfig) ProtoMessage() {}
 
 func (x *GoConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -574,11 +572,9 @@ type NPMConfig struct {
 
 func (x *NPMConfig) Reset() {
 	*x = NPMConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *NPMConfig) String() string {
@@ -589,7 +585,7 @@ func (*NPMConfig) ProtoMessage() {}
 
 func (x *NPMConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -641,11 +637,9 @@ type MavenConfig struct {
 
 func (x *MavenConfig) Reset() {
 	*x = MavenConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *MavenConfig) String() string {
@@ -656,7 +650,7 @@ func (*MavenConfig) ProtoMessage() {}
 
 func (x *MavenConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -706,11 +700,9 @@ type NugetConfig struct {
 
 func (x *NugetConfig) Reset() {
 	*x = NugetConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *NugetConfig) String() string {
@@ -721,7 +713,7 @@ func (*NugetConfig) ProtoMessage() {}
 
 func (x *NugetConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -759,11 +751,9 @@ type CmakeConfig struct {
 
 func (x *CmakeConfig) Reset() {
 	*x = CmakeConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CmakeConfig) String() string {
@@ -774,7 +764,7 @@ func (*CmakeConfig) ProtoMessage() {}
 
 func (x *CmakeConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -800,11 +790,9 @@ type SwiftConfig struct {
 
 func (x *SwiftConfig) Reset() {
 	*x = SwiftConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SwiftConfig) String() string {
@@ -815,7 +803,7 @@ func (*SwiftConfig) ProtoMessage() {}
 
 func (x *SwiftConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -856,11 +844,9 @@ type PythonConfig struct {
 
 func (x *PythonConfig) Reset() {
 	*x = PythonConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PythonConfig) String() string {
@@ -871,7 +857,7 @@ func (*PythonConfig) ProtoMessage() {}
 
 func (x *PythonConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -922,11 +908,9 @@ type CargoConfig struct {
 
 func (x *CargoConfig) Reset() {
 	*x = CargoConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CargoConfig) String() string {
@@ -937,7 +921,7 @@ func (*CargoConfig) ProtoMessage() {}
 
 func (x *CargoConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -990,11 +974,9 @@ type RegistryConfig struct {
 
 func (x *RegistryConfig) Reset() {
 	*x = RegistryConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RegistryConfig) String() string {
@@ -1005,7 +987,7 @@ func (*RegistryConfig) ProtoMessage() {}
 
 func (x *RegistryConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1159,11 +1141,9 @@ type CuratedPluginReference struct {
 
 func (x *CuratedPluginReference) Reset() {
 	*x = CuratedPluginReference{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CuratedPluginReference) String() string {
@@ -1174,7 +1154,7 @@ func (*CuratedPluginReference) ProtoMessage() {}
 
 func (x *CuratedPluginReference) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1271,11 +1251,9 @@ type CuratedPlugin struct {
 
 func (x *CuratedPlugin) Reset() {
 	*x = CuratedPlugin{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CuratedPlugin) String() string {
@@ -1286,7 +1264,7 @@ func (*CuratedPlugin) ProtoMessage() {}
 
 func (x *CuratedPlugin) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1465,11 +1443,9 @@ type GenerateCodeRequest struct {
 
 func (x *GenerateCodeRequest) Reset() {
 	*x = GenerateCodeRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GenerateCodeRequest) String() string {
@@ -1480,7 +1456,7 @@ func (*GenerateCodeRequest) ProtoMessage() {}
 
 func (x *GenerateCodeRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1535,11 +1511,9 @@ type GenerateCodeResponse struct {
 
 func (x *GenerateCodeResponse) Reset() {
 	*x = GenerateCodeResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GenerateCodeResponse) String() string {
@@ -1550,7 +1524,7 @@ func (*GenerateCodeResponse) ProtoMessage() {}
 
 func (x *GenerateCodeResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1593,11 +1567,9 @@ type PluginGenerationRequest struct {
 
 func (x *PluginGenerationRequest) Reset() {
 	*x = PluginGenerationRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PluginGenerationRequest) String() string {
@@ -1608,7 +1580,7 @@ func (*PluginGenerationRequest) ProtoMessage() {}
 
 func (x *PluginGenerationRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1663,11 +1635,9 @@ type PluginGenerationResponse struct {
 
 func (x *PluginGenerationResponse) Reset() {
 	*x = PluginGenerationResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PluginGenerationResponse) String() string {
@@ -1678,7 +1648,7 @@ func (*PluginGenerationResponse) ProtoMessage() {}
 
 func (x *PluginGenerationResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1716,11 +1686,9 @@ type DeleteCuratedPluginRequest struct {
 
 func (x *DeleteCuratedPluginRequest) Reset() {
 	*x = DeleteCuratedPluginRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteCuratedPluginRequest) String() string {
@@ -1731,7 +1699,7 @@ func (*DeleteCuratedPluginRequest) ProtoMessage() {}
 
 func (x *DeleteCuratedPluginRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1775,11 +1743,9 @@ type DeleteCuratedPluginResponse struct {
 
 func (x *DeleteCuratedPluginResponse) Reset() {
 	*x = DeleteCuratedPluginResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteCuratedPluginResponse) String() string {
@@ -1790,7 +1756,7 @@ func (*DeleteCuratedPluginResponse) ProtoMessage() {}
 
 func (x *DeleteCuratedPluginResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1847,11 +1813,9 @@ type CreateCuratedPluginRequest struct {
 
 func (x *CreateCuratedPluginRequest) Reset() {
 	*x = CreateCuratedPluginRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateCuratedPluginRequest) String() string {
@@ -1862,7 +1826,7 @@ func (*CreateCuratedPluginRequest) ProtoMessage() {}
 
 func (x *CreateCuratedPluginRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1993,11 +1957,9 @@ type CreateCuratedPluginResponse struct {
 
 func (x *CreateCuratedPluginResponse) Reset() {
 	*x = CreateCuratedPluginResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateCuratedPluginResponse) String() string {
@@ -2008,7 +1970,7 @@ func (*CreateCuratedPluginResponse) ProtoMessage() {}
 
 func (x *CreateCuratedPluginResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2047,11 +2009,9 @@ type ListCuratedPluginsRequest struct {
 
 func (x *ListCuratedPluginsRequest) Reset() {
 	*x = ListCuratedPluginsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[19]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListCuratedPluginsRequest) String() string {
@@ -2062,7 +2022,7 @@ func (*ListCuratedPluginsRequest) ProtoMessage() {}
 
 func (x *ListCuratedPluginsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[19]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2124,11 +2084,9 @@ type ListCuratedPluginsResponse struct {
 
 func (x *ListCuratedPluginsResponse) Reset() {
 	*x = ListCuratedPluginsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[20]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListCuratedPluginsResponse) String() string {
@@ -2139,7 +2097,7 @@ func (*ListCuratedPluginsResponse) ProtoMessage() {}
 
 func (x *ListCuratedPluginsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[20]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2191,11 +2149,9 @@ type GetLatestCuratedPluginRequest struct {
 
 func (x *GetLatestCuratedPluginRequest) Reset() {
 	*x = GetLatestCuratedPluginRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[21]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetLatestCuratedPluginRequest) String() string {
@@ -2206,7 +2162,7 @@ func (*GetLatestCuratedPluginRequest) ProtoMessage() {}
 
 func (x *GetLatestCuratedPluginRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[21]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2268,11 +2224,9 @@ type GetLatestCuratedPluginResponse struct {
 
 func (x *GetLatestCuratedPluginResponse) Reset() {
 	*x = GetLatestCuratedPluginResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[22]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetLatestCuratedPluginResponse) String() string {
@@ -2283,7 +2237,7 @@ func (*GetLatestCuratedPluginResponse) ProtoMessage() {}
 
 func (x *GetLatestCuratedPluginResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[22]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2324,11 +2278,9 @@ type CuratedPluginVersionRevisions struct {
 
 func (x *CuratedPluginVersionRevisions) Reset() {
 	*x = CuratedPluginVersionRevisions{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[23]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CuratedPluginVersionRevisions) String() string {
@@ -2339,7 +2291,7 @@ func (*CuratedPluginVersionRevisions) ProtoMessage() {}
 
 func (x *CuratedPluginVersionRevisions) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[23]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2382,11 +2334,9 @@ type GoConfig_RuntimeLibrary struct {
 
 func (x *GoConfig_RuntimeLibrary) Reset() {
 	*x = GoConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[24]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GoConfig_RuntimeLibrary) String() string {
@@ -2397,7 +2347,7 @@ func (*GoConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *GoConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[24]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2440,11 +2390,9 @@ type NPMConfig_RuntimeLibrary struct {
 
 func (x *NPMConfig_RuntimeLibrary) Reset() {
 	*x = NPMConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[25]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *NPMConfig_RuntimeLibrary) String() string {
@@ -2455,7 +2403,7 @@ func (*NPMConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *NPMConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[25]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2499,11 +2447,9 @@ type MavenConfig_RuntimeLibrary struct {
 
 func (x *MavenConfig_RuntimeLibrary) Reset() {
 	*x = MavenConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[26]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *MavenConfig_RuntimeLibrary) String() string {
@@ -2514,7 +2460,7 @@ func (*MavenConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *MavenConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[26]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2576,11 +2522,9 @@ type MavenConfig_CompilerConfig struct {
 
 func (x *MavenConfig_CompilerConfig) Reset() {
 	*x = MavenConfig_CompilerConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[27]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *MavenConfig_CompilerConfig) String() string {
@@ -2591,7 +2535,7 @@ func (*MavenConfig_CompilerConfig) ProtoMessage() {}
 
 func (x *MavenConfig_CompilerConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[27]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2638,11 +2582,9 @@ type MavenConfig_CompilerJavaConfig struct {
 
 func (x *MavenConfig_CompilerJavaConfig) Reset() {
 	*x = MavenConfig_CompilerJavaConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[28]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *MavenConfig_CompilerJavaConfig) String() string {
@@ -2653,7 +2595,7 @@ func (*MavenConfig_CompilerJavaConfig) ProtoMessage() {}
 
 func (x *MavenConfig_CompilerJavaConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[28]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2714,11 +2656,9 @@ type MavenConfig_CompilerKotlinConfig struct {
 
 func (x *MavenConfig_CompilerKotlinConfig) Reset() {
 	*x = MavenConfig_CompilerKotlinConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[29]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) String() string {
@@ -2729,7 +2669,7 @@ func (*MavenConfig_CompilerKotlinConfig) ProtoMessage() {}
 
 func (x *MavenConfig_CompilerKotlinConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[29]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2788,11 +2728,9 @@ type MavenConfig_RuntimeConfig struct {
 
 func (x *MavenConfig_RuntimeConfig) Reset() {
 	*x = MavenConfig_RuntimeConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[30]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *MavenConfig_RuntimeConfig) String() string {
@@ -2803,7 +2741,7 @@ func (*MavenConfig_RuntimeConfig) ProtoMessage() {}
 
 func (x *MavenConfig_RuntimeConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[30]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2858,11 +2796,9 @@ type NugetConfig_RuntimeLibrary struct {
 
 func (x *NugetConfig_RuntimeLibrary) Reset() {
 	*x = NugetConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[31]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *NugetConfig_RuntimeLibrary) String() string {
@@ -2873,7 +2809,7 @@ func (*NugetConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *NugetConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[31]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2931,11 +2867,9 @@ type SwiftConfig_RuntimeLibrary struct {
 
 func (x *SwiftConfig_RuntimeLibrary) Reset() {
 	*x = SwiftConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[32]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SwiftConfig_RuntimeLibrary) String() string {
@@ -2946,7 +2880,7 @@ func (*SwiftConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *SwiftConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[32]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3017,11 +2951,9 @@ type SwiftConfig_RuntimeLibrary_Platform struct {
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) Reset() {
 	*x = SwiftConfig_RuntimeLibrary_Platform{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[33]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) String() string {
@@ -3032,7 +2964,7 @@ func (*SwiftConfig_RuntimeLibrary_Platform) ProtoMessage() {}
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[33]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3073,11 +3005,9 @@ type PythonConfig_RuntimeLibrary struct {
 
 func (x *PythonConfig_RuntimeLibrary) Reset() {
 	*x = PythonConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[34]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PythonConfig_RuntimeLibrary) String() string {
@@ -3088,7 +3018,7 @@ func (*PythonConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *PythonConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[34]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3131,11 +3061,9 @@ type CargoConfig_RuntimeLibrary struct {
 
 func (x *CargoConfig_RuntimeLibrary) Reset() {
 	*x = CargoConfig_RuntimeLibrary{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[35]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CargoConfig_RuntimeLibrary) String() string {
@@ -3146,7 +3074,7 @@ func (*CargoConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *CargoConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[35]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -4004,440 +3932,6 @@ func init() { file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() }
 func file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_plugin_curation_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*GoConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*NPMConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*MavenConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*NugetConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*CmakeConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*SwiftConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*PythonConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*CargoConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*RegistryConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*CuratedPluginReference); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*CuratedPlugin); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*GenerateCodeRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*GenerateCodeResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*PluginGenerationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*PluginGenerationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*DeleteCuratedPluginRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*DeleteCuratedPluginResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*CreateCuratedPluginRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*CreateCuratedPluginResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[19].Exporter = func(v any, i int) any {
-			switch v := v.(*ListCuratedPluginsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[20].Exporter = func(v any, i int) any {
-			switch v := v.(*ListCuratedPluginsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[21].Exporter = func(v any, i int) any {
-			switch v := v.(*GetLatestCuratedPluginRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[22].Exporter = func(v any, i int) any {
-			switch v := v.(*GetLatestCuratedPluginResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[23].Exporter = func(v any, i int) any {
-			switch v := v.(*CuratedPluginVersionRevisions); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[24].Exporter = func(v any, i int) any {
-			switch v := v.(*GoConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[25].Exporter = func(v any, i int) any {
-			switch v := v.(*NPMConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[26].Exporter = func(v any, i int) any {
-			switch v := v.(*MavenConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[27].Exporter = func(v any, i int) any {
-			switch v := v.(*MavenConfig_CompilerConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[28].Exporter = func(v any, i int) any {
-			switch v := v.(*MavenConfig_CompilerJavaConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[29].Exporter = func(v any, i int) any {
-			switch v := v.(*MavenConfig_CompilerKotlinConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[30].Exporter = func(v any, i int) any {
-			switch v := v.(*MavenConfig_RuntimeConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[31].Exporter = func(v any, i int) any {
-			switch v := v.(*NugetConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[32].Exporter = func(v any, i int) any {
-			switch v := v.(*SwiftConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[33].Exporter = func(v any, i int) any {
-			switch v := v.(*SwiftConfig_RuntimeLibrary_Platform); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[34].Exporter = func(v any, i int) any {
-			switch v := v.(*PythonConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[35].Exporter = func(v any, i int) any {
-			switch v := v.(*CargoConfig_RuntimeLibrary); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[8].OneofWrappers = []any{
 		(*RegistryConfig_GoConfig)(nil),

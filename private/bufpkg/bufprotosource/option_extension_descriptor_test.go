@@ -15,6 +15,7 @@
 package bufprotosource
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -121,10 +122,19 @@ func TestOptionExtensionLocation(t *testing.T) {
 func checkLocation(t *testing.T, loc Location, sourceCodeInfoLoc *descriptorpb.SourceCodeInfo_Location) {
 	t.Helper()
 	assert.Equal(t, sourceCodeInfoLoc.GetLeadingComments(), loc.LeadingComments())
+	// Bounds assertions for int -> int32 conversion
+	assert.Less(t, loc.StartLine(), math.MaxInt32)
+	assert.Greater(t, loc.StartLine(), math.MinInt32)
+	assert.Less(t, loc.StartColumn(), math.MaxInt32)
+	assert.Greater(t, loc.StartLine(), math.MinInt32)
 	span := []int32{int32(loc.StartLine() - 1), int32(loc.StartColumn() - 1)}
 	if loc.EndLine() != loc.StartLine() {
+		assert.Less(t, loc.EndLine(), math.MaxInt32)
+		assert.Greater(t, loc.EndLine(), math.MinInt32)
 		span = append(span, int32(loc.EndLine()-1))
 	}
+	assert.Less(t, loc.EndColumn(), math.MaxInt32)
+	assert.Greater(t, loc.EndColumn(), math.MinInt32)
 	span = append(span, int32(loc.EndColumn()-1))
 	assert.Equal(t, sourceCodeInfoLoc.Span, span)
 }

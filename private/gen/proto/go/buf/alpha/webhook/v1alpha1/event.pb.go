@@ -52,11 +52,9 @@ type EventRequest struct {
 
 func (x *EventRequest) Reset() {
 	*x = EventRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *EventRequest) String() string {
@@ -67,7 +65,7 @@ func (*EventRequest) ProtoMessage() {}
 
 func (x *EventRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -111,11 +109,9 @@ type EventPayload struct {
 
 func (x *EventPayload) Reset() {
 	*x = EventPayload{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *EventPayload) String() string {
@@ -126,7 +122,7 @@ func (*EventPayload) ProtoMessage() {}
 
 func (x *EventPayload) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -174,11 +170,9 @@ type EventResponse struct {
 
 func (x *EventResponse) Reset() {
 	*x = EventResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *EventResponse) String() string {
@@ -189,7 +183,7 @@ func (*EventResponse) ProtoMessage() {}
 
 func (x *EventResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -220,11 +214,9 @@ type RepositoryPushEvent struct {
 
 func (x *RepositoryPushEvent) Reset() {
 	*x = RepositoryPushEvent{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryPushEvent) String() string {
@@ -235,7 +227,7 @@ func (*RepositoryPushEvent) ProtoMessage() {}
 
 func (x *RepositoryPushEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -393,56 +385,6 @@ func init() { file_buf_alpha_webhook_v1alpha1_event_proto_init() }
 func file_buf_alpha_webhook_v1alpha1_event_proto_init() {
 	if File_buf_alpha_webhook_v1alpha1_event_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*EventRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*EventPayload); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*EventResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryPushEvent); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[1].OneofWrappers = []any{
 		(*EventPayload_RepositoryPush)(nil),

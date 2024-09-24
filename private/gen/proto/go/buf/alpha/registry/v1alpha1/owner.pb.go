@@ -48,11 +48,9 @@ type Owner struct {
 
 func (x *Owner) Reset() {
 	*x = Owner{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Owner) String() string {
@@ -63,7 +61,7 @@ func (*Owner) ProtoMessage() {}
 
 func (x *Owner) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -128,11 +126,9 @@ type GetOwnerByNameRequest struct {
 
 func (x *GetOwnerByNameRequest) Reset() {
 	*x = GetOwnerByNameRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetOwnerByNameRequest) String() string {
@@ -143,7 +139,7 @@ func (*GetOwnerByNameRequest) ProtoMessage() {}
 
 func (x *GetOwnerByNameRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -175,11 +171,9 @@ type GetOwnerByNameResponse struct {
 
 func (x *GetOwnerByNameResponse) Reset() {
 	*x = GetOwnerByNameResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetOwnerByNameResponse) String() string {
@@ -190,7 +184,7 @@ func (*GetOwnerByNameResponse) ProtoMessage() {}
 
 func (x *GetOwnerByNameResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -312,44 +306,6 @@ func file_buf_alpha_registry_v1alpha1_owner_proto_init() {
 	}
 	file_buf_alpha_registry_v1alpha1_organization_proto_init()
 	file_buf_alpha_registry_v1alpha1_user_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*Owner); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*GetOwnerByNameRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*GetOwnerByNameResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[0].OneofWrappers = []any{
 		(*Owner_User)(nil),
 		(*Owner_Organization)(nil),

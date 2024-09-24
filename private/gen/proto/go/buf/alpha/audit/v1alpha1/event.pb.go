@@ -358,11 +358,9 @@ type Actor struct {
 
 func (x *Actor) Reset() {
 	*x = Actor{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Actor) String() string {
@@ -373,7 +371,7 @@ func (*Actor) ProtoMessage() {}
 
 func (x *Actor) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -425,11 +423,9 @@ type Resource struct {
 
 func (x *Resource) Reset() {
 	*x = Resource{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Resource) String() string {
@@ -440,7 +436,7 @@ func (*Resource) ProtoMessage() {}
 
 func (x *Resource) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -492,11 +488,9 @@ type EventMetadata struct {
 
 func (x *EventMetadata) Reset() {
 	*x = EventMetadata{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *EventMetadata) String() string {
@@ -507,7 +501,7 @@ func (*EventMetadata) ProtoMessage() {}
 
 func (x *EventMetadata) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -612,11 +606,9 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *Event) String() string {
@@ -627,7 +619,7 @@ func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1223,11 +1215,9 @@ type PayloadOrganizationCreated struct {
 
 func (x *PayloadOrganizationCreated) Reset() {
 	*x = PayloadOrganizationCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationCreated) String() string {
@@ -1238,7 +1228,7 @@ func (*PayloadOrganizationCreated) ProtoMessage() {}
 
 func (x *PayloadOrganizationCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1261,11 +1251,9 @@ type PayloadOrganizationDeleted struct {
 
 func (x *PayloadOrganizationDeleted) Reset() {
 	*x = PayloadOrganizationDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationDeleted) String() string {
@@ -1276,7 +1264,7 @@ func (*PayloadOrganizationDeleted) ProtoMessage() {}
 
 func (x *PayloadOrganizationDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1308,11 +1296,9 @@ type PayloadOrganizationMemberAdded struct {
 
 func (x *PayloadOrganizationMemberAdded) Reset() {
 	*x = PayloadOrganizationMemberAdded{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationMemberAdded) String() string {
@@ -1323,7 +1309,7 @@ func (*PayloadOrganizationMemberAdded) ProtoMessage() {}
 
 func (x *PayloadOrganizationMemberAdded) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1387,11 +1373,9 @@ type PayloadOrganizationMemberRoleChanged struct {
 
 func (x *PayloadOrganizationMemberRoleChanged) Reset() {
 	*x = PayloadOrganizationMemberRoleChanged{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationMemberRoleChanged) String() string {
@@ -1402,7 +1386,7 @@ func (*PayloadOrganizationMemberRoleChanged) ProtoMessage() {}
 
 func (x *PayloadOrganizationMemberRoleChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1476,11 +1460,9 @@ type PayloadOrganizationMemberRemoved struct {
 
 func (x *PayloadOrganizationMemberRemoved) Reset() {
 	*x = PayloadOrganizationMemberRemoved{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationMemberRemoved) String() string {
@@ -1491,7 +1473,7 @@ func (*PayloadOrganizationMemberRemoved) ProtoMessage() {}
 
 func (x *PayloadOrganizationMemberRemoved) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1547,11 +1529,9 @@ type PayloadOrganizationIDPGroupAdded struct {
 
 func (x *PayloadOrganizationIDPGroupAdded) Reset() {
 	*x = PayloadOrganizationIDPGroupAdded{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationIDPGroupAdded) String() string {
@@ -1562,7 +1542,7 @@ func (*PayloadOrganizationIDPGroupAdded) ProtoMessage() {}
 
 func (x *PayloadOrganizationIDPGroupAdded) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1604,11 +1584,9 @@ type PayloadOrganizationIDPGroupRemoved struct {
 
 func (x *PayloadOrganizationIDPGroupRemoved) Reset() {
 	*x = PayloadOrganizationIDPGroupRemoved{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadOrganizationIDPGroupRemoved) String() string {
@@ -1619,7 +1597,7 @@ func (*PayloadOrganizationIDPGroupRemoved) ProtoMessage() {}
 
 func (x *PayloadOrganizationIDPGroupRemoved) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1666,11 +1644,9 @@ type PayloadRepositoryCreated struct {
 
 func (x *PayloadRepositoryCreated) Reset() {
 	*x = PayloadRepositoryCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryCreated) String() string {
@@ -1681,7 +1657,7 @@ func (*PayloadRepositoryCreated) ProtoMessage() {}
 
 func (x *PayloadRepositoryCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1739,11 +1715,9 @@ type PayloadRepositoryDeleted struct {
 
 func (x *PayloadRepositoryDeleted) Reset() {
 	*x = PayloadRepositoryDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryDeleted) String() string {
@@ -1754,7 +1728,7 @@ func (*PayloadRepositoryDeleted) ProtoMessage() {}
 
 func (x *PayloadRepositoryDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1815,11 +1789,9 @@ type PayloadRepositoryCommitPushed struct {
 
 func (x *PayloadRepositoryCommitPushed) Reset() {
 	*x = PayloadRepositoryCommitPushed{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryCommitPushed) String() string {
@@ -1830,7 +1802,7 @@ func (*PayloadRepositoryCommitPushed) ProtoMessage() {}
 
 func (x *PayloadRepositoryCommitPushed) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1920,11 +1892,9 @@ type PayloadRepositoryContributorAdded struct {
 
 func (x *PayloadRepositoryContributorAdded) Reset() {
 	*x = PayloadRepositoryContributorAdded{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryContributorAdded) String() string {
@@ -1935,7 +1905,7 @@ func (*PayloadRepositoryContributorAdded) ProtoMessage() {}
 
 func (x *PayloadRepositoryContributorAdded) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2006,11 +1976,9 @@ type PayloadRepositoryContributorRoleChanged struct {
 
 func (x *PayloadRepositoryContributorRoleChanged) Reset() {
 	*x = PayloadRepositoryContributorRoleChanged{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryContributorRoleChanged) String() string {
@@ -2021,7 +1989,7 @@ func (*PayloadRepositoryContributorRoleChanged) ProtoMessage() {}
 
 func (x *PayloadRepositoryContributorRoleChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2097,11 +2065,9 @@ type PayloadRepositoryContributorRemoved struct {
 
 func (x *PayloadRepositoryContributorRemoved) Reset() {
 	*x = PayloadRepositoryContributorRemoved{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryContributorRemoved) String() string {
@@ -2112,7 +2078,7 @@ func (*PayloadRepositoryContributorRemoved) ProtoMessage() {}
 
 func (x *PayloadRepositoryContributorRemoved) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2179,11 +2145,9 @@ type PayloadRepositoryVisibilityChanged struct {
 
 func (x *PayloadRepositoryVisibilityChanged) Reset() {
 	*x = PayloadRepositoryVisibilityChanged{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryVisibilityChanged) String() string {
@@ -2194,7 +2158,7 @@ func (*PayloadRepositoryVisibilityChanged) ProtoMessage() {}
 
 func (x *PayloadRepositoryVisibilityChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2254,11 +2218,9 @@ type PayloadRepositoryDefaultLabelNameChanged struct {
 
 func (x *PayloadRepositoryDefaultLabelNameChanged) Reset() {
 	*x = PayloadRepositoryDefaultLabelNameChanged{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryDefaultLabelNameChanged) String() string {
@@ -2269,7 +2231,7 @@ func (*PayloadRepositoryDefaultLabelNameChanged) ProtoMessage() {}
 
 func (x *PayloadRepositoryDefaultLabelNameChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2329,11 +2291,9 @@ type PayloadRepositoryDefaultBranchChanged struct {
 
 func (x *PayloadRepositoryDefaultBranchChanged) Reset() {
 	*x = PayloadRepositoryDefaultBranchChanged{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[19]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryDefaultBranchChanged) String() string {
@@ -2344,7 +2304,7 @@ func (*PayloadRepositoryDefaultBranchChanged) ProtoMessage() {}
 
 func (x *PayloadRepositoryDefaultBranchChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[19]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2395,11 +2355,9 @@ type PayloadUserCreated struct {
 
 func (x *PayloadUserCreated) Reset() {
 	*x = PayloadUserCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[20]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserCreated) String() string {
@@ -2410,7 +2368,7 @@ func (*PayloadUserCreated) ProtoMessage() {}
 
 func (x *PayloadUserCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[20]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2433,11 +2391,9 @@ type PayloadUserReactivated struct {
 
 func (x *PayloadUserReactivated) Reset() {
 	*x = PayloadUserReactivated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[21]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserReactivated) String() string {
@@ -2448,7 +2404,7 @@ func (*PayloadUserReactivated) ProtoMessage() {}
 
 func (x *PayloadUserReactivated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[21]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2471,11 +2427,9 @@ type PayloadUserDeactivated struct {
 
 func (x *PayloadUserDeactivated) Reset() {
 	*x = PayloadUserDeactivated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[22]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserDeactivated) String() string {
@@ -2486,7 +2440,7 @@ func (*PayloadUserDeactivated) ProtoMessage() {}
 
 func (x *PayloadUserDeactivated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[22]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2509,11 +2463,9 @@ type PayloadUserDeleted struct {
 
 func (x *PayloadUserDeleted) Reset() {
 	*x = PayloadUserDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[23]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserDeleted) String() string {
@@ -2524,7 +2476,7 @@ func (*PayloadUserDeleted) ProtoMessage() {}
 
 func (x *PayloadUserDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[23]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2547,11 +2499,9 @@ type PayloadUserLoggedIn struct {
 
 func (x *PayloadUserLoggedIn) Reset() {
 	*x = PayloadUserLoggedIn{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[24]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserLoggedIn) String() string {
@@ -2562,7 +2512,7 @@ func (*PayloadUserLoggedIn) ProtoMessage() {}
 
 func (x *PayloadUserLoggedIn) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[24]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2585,11 +2535,9 @@ type PayloadUserLoggedOut struct {
 
 func (x *PayloadUserLoggedOut) Reset() {
 	*x = PayloadUserLoggedOut{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[25]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserLoggedOut) String() string {
@@ -2600,7 +2548,7 @@ func (*PayloadUserLoggedOut) ProtoMessage() {}
 
 func (x *PayloadUserLoggedOut) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[25]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2627,11 +2575,9 @@ type PayloadUserAutoMergedFromNewIdP struct {
 
 func (x *PayloadUserAutoMergedFromNewIdP) Reset() {
 	*x = PayloadUserAutoMergedFromNewIdP{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[26]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadUserAutoMergedFromNewIdP) String() string {
@@ -2642,7 +2588,7 @@ func (*PayloadUserAutoMergedFromNewIdP) ProtoMessage() {}
 
 func (x *PayloadUserAutoMergedFromNewIdP) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[26]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2670,11 +2616,9 @@ type PayloadCuratedPluginCreated struct {
 
 func (x *PayloadCuratedPluginCreated) Reset() {
 	*x = PayloadCuratedPluginCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[27]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadCuratedPluginCreated) String() string {
@@ -2685,7 +2629,7 @@ func (*PayloadCuratedPluginCreated) ProtoMessage() {}
 
 func (x *PayloadCuratedPluginCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[27]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2727,11 +2671,9 @@ type PayloadCuratedPluginDeleted struct {
 
 func (x *PayloadCuratedPluginDeleted) Reset() {
 	*x = PayloadCuratedPluginDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[28]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadCuratedPluginDeleted) String() string {
@@ -2742,7 +2684,7 @@ func (*PayloadCuratedPluginDeleted) ProtoMessage() {}
 
 func (x *PayloadCuratedPluginDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[28]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2784,11 +2726,9 @@ type PayloadTokenCreated struct {
 
 func (x *PayloadTokenCreated) Reset() {
 	*x = PayloadTokenCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[29]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadTokenCreated) String() string {
@@ -2799,7 +2739,7 @@ func (*PayloadTokenCreated) ProtoMessage() {}
 
 func (x *PayloadTokenCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[29]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2839,11 +2779,9 @@ type PayloadTokenDeleted struct {
 
 func (x *PayloadTokenDeleted) Reset() {
 	*x = PayloadTokenDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[30]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadTokenDeleted) String() string {
@@ -2854,7 +2792,7 @@ func (*PayloadTokenDeleted) ProtoMessage() {}
 
 func (x *PayloadTokenDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[30]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2887,11 +2825,9 @@ type PayloadSCIMTokenCreated struct {
 
 func (x *PayloadSCIMTokenCreated) Reset() {
 	*x = PayloadSCIMTokenCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[31]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadSCIMTokenCreated) String() string {
@@ -2902,7 +2838,7 @@ func (*PayloadSCIMTokenCreated) ProtoMessage() {}
 
 func (x *PayloadSCIMTokenCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[31]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2932,11 +2868,9 @@ type PayloadSCIMTokenDeleted struct {
 
 func (x *PayloadSCIMTokenDeleted) Reset() {
 	*x = PayloadSCIMTokenDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[32]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadSCIMTokenDeleted) String() string {
@@ -2947,7 +2881,7 @@ func (*PayloadSCIMTokenDeleted) ProtoMessage() {}
 
 func (x *PayloadSCIMTokenDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[32]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2981,11 +2915,9 @@ type PayloadRepositoryCommitDeleted struct {
 
 func (x *PayloadRepositoryCommitDeleted) Reset() {
 	*x = PayloadRepositoryCommitDeleted{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[33]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryCommitDeleted) String() string {
@@ -2996,7 +2928,7 @@ func (*PayloadRepositoryCommitDeleted) ProtoMessage() {}
 
 func (x *PayloadRepositoryCommitDeleted) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[33]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3069,11 +3001,9 @@ type PayloadRepositoryLabelCreated struct {
 
 func (x *PayloadRepositoryLabelCreated) Reset() {
 	*x = PayloadRepositoryLabelCreated{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[34]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryLabelCreated) String() string {
@@ -3084,7 +3014,7 @@ func (*PayloadRepositoryLabelCreated) ProtoMessage() {}
 
 func (x *PayloadRepositoryLabelCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[34]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3167,11 +3097,9 @@ type PayloadRepositoryLabelMoved struct {
 
 func (x *PayloadRepositoryLabelMoved) Reset() {
 	*x = PayloadRepositoryLabelMoved{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[35]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryLabelMoved) String() string {
@@ -3182,7 +3110,7 @@ func (*PayloadRepositoryLabelMoved) ProtoMessage() {}
 
 func (x *PayloadRepositoryLabelMoved) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[35]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3264,11 +3192,9 @@ type PayloadRepositoryLabelArchived struct {
 
 func (x *PayloadRepositoryLabelArchived) Reset() {
 	*x = PayloadRepositoryLabelArchived{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[36]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryLabelArchived) String() string {
@@ -3279,7 +3205,7 @@ func (*PayloadRepositoryLabelArchived) ProtoMessage() {}
 
 func (x *PayloadRepositoryLabelArchived) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[36]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3339,11 +3265,9 @@ type PayloadRepositoryLabelUnarchived struct {
 
 func (x *PayloadRepositoryLabelUnarchived) Reset() {
 	*x = PayloadRepositoryLabelUnarchived{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[37]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadRepositoryLabelUnarchived) String() string {
@@ -3354,7 +3278,7 @@ func (*PayloadRepositoryLabelUnarchived) ProtoMessage() {}
 
 func (x *PayloadRepositoryLabelUnarchived) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[37]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3410,11 +3334,9 @@ type PayloadServerBreakingChangePolicyEnabled struct {
 
 func (x *PayloadServerBreakingChangePolicyEnabled) Reset() {
 	*x = PayloadServerBreakingChangePolicyEnabled{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[38]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadServerBreakingChangePolicyEnabled) String() string {
@@ -3425,7 +3347,7 @@ func (*PayloadServerBreakingChangePolicyEnabled) ProtoMessage() {}
 
 func (x *PayloadServerBreakingChangePolicyEnabled) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[38]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3462,11 +3384,9 @@ type PayloadServerBreakingChangePolicyDisabled struct {
 
 func (x *PayloadServerBreakingChangePolicyDisabled) Reset() {
 	*x = PayloadServerBreakingChangePolicyDisabled{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[39]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadServerBreakingChangePolicyDisabled) String() string {
@@ -3477,7 +3397,7 @@ func (*PayloadServerBreakingChangePolicyDisabled) ProtoMessage() {}
 
 func (x *PayloadServerBreakingChangePolicyDisabled) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[39]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3500,11 +3420,9 @@ type PayloadServerUniquenessPolicyEnabled struct {
 
 func (x *PayloadServerUniquenessPolicyEnabled) Reset() {
 	*x = PayloadServerUniquenessPolicyEnabled{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[40]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadServerUniquenessPolicyEnabled) String() string {
@@ -3515,7 +3433,7 @@ func (*PayloadServerUniquenessPolicyEnabled) ProtoMessage() {}
 
 func (x *PayloadServerUniquenessPolicyEnabled) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[40]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3538,11 +3456,9 @@ type PayloadServerUniquenessPolicyDisabled struct {
 
 func (x *PayloadServerUniquenessPolicyDisabled) Reset() {
 	*x = PayloadServerUniquenessPolicyDisabled{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[41]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadServerUniquenessPolicyDisabled) String() string {
@@ -3553,7 +3469,7 @@ func (*PayloadServerUniquenessPolicyDisabled) ProtoMessage() {}
 
 func (x *PayloadServerUniquenessPolicyDisabled) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[41]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3579,11 +3495,9 @@ type PayloadDeviceAuthorizationGrantApproved struct {
 
 func (x *PayloadDeviceAuthorizationGrantApproved) Reset() {
 	*x = PayloadDeviceAuthorizationGrantApproved{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[42]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadDeviceAuthorizationGrantApproved) String() string {
@@ -3594,7 +3508,7 @@ func (*PayloadDeviceAuthorizationGrantApproved) ProtoMessage() {}
 
 func (x *PayloadDeviceAuthorizationGrantApproved) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[42]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -3627,11 +3541,9 @@ type PayloadDeviceAuthorizationGrantDenied struct {
 
 func (x *PayloadDeviceAuthorizationGrantDenied) Reset() {
 	*x = PayloadDeviceAuthorizationGrantDenied{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[43]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *PayloadDeviceAuthorizationGrantDenied) String() string {
@@ -3642,7 +3554,7 @@ func (*PayloadDeviceAuthorizationGrantDenied) ProtoMessage() {}
 
 func (x *PayloadDeviceAuthorizationGrantDenied) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[43]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -4698,536 +4610,6 @@ func init() { file_buf_alpha_audit_v1alpha1_event_proto_init() }
 func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 	if File_buf_alpha_audit_v1alpha1_event_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*Actor); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*Resource); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*EventMetadata); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*Event); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationMemberAdded); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationMemberRoleChanged); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationMemberRemoved); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationIDPGroupAdded); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadOrganizationIDPGroupRemoved); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryCommitPushed); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryContributorAdded); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryContributorRoleChanged); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryContributorRemoved); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryVisibilityChanged); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryDefaultLabelNameChanged); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[19].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryDefaultBranchChanged); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[20].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[21].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserReactivated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[22].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserDeactivated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[23].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[24].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserLoggedIn); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[25].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserLoggedOut); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[26].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadUserAutoMergedFromNewIdP); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[27].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadCuratedPluginCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[28].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadCuratedPluginDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[29].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadTokenCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[30].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadTokenDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[31].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadSCIMTokenCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[32].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadSCIMTokenDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[33].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryCommitDeleted); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[34].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryLabelCreated); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[35].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryLabelMoved); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[36].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryLabelArchived); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[37].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadRepositoryLabelUnarchived); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[38].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadServerBreakingChangePolicyEnabled); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[39].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadServerBreakingChangePolicyDisabled); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[40].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadServerUniquenessPolicyEnabled); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[41].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadServerUniquenessPolicyDisabled); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[42].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadDeviceAuthorizationGrantApproved); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[43].Exporter = func(v any, i int) any {
-			switch v := v.(*PayloadDeviceAuthorizationGrantDenied); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[3].OneofWrappers = []any{
 		(*Event_OrganizationCreated)(nil),
