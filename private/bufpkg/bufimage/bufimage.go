@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"math"
 	"slices"
 	"sort"
 	"strings"
@@ -703,6 +704,11 @@ func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolve
 						}
 					}
 					if !isPublic {
+						// This should never happen, however we do a bounds check to ensure that we are
+						// doing a safe conversion for the index.
+						if i > math.MaxInt32 || i < math.MinInt32 {
+							return fmt.Errorf("unused dependency index out-of-bounds for int32 conversion: %v", i)
+						}
 						bufExt.UnusedDependency = append(bufExt.UnusedDependency, int32(i))
 					}
 				}

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -306,6 +307,11 @@ func getImageFilesRec(
 		dependency := fileDescriptor.Imports().Get(i).FileDescriptor
 		if unusedDependencyFilenames != nil {
 			if _, ok := unusedDependencyFilenames[dependency.Path()]; ok {
+				// This should never happen, however we do a bounds check to ensure that we are
+				// doing a safe conversion for the index.
+				if i > math.MaxInt32 || i < math.MinInt32 {
+					return nil, fmt.Errorf("unused dependency index out-of-bounds for int32 conversion: %v", i)
+				}
 				unusedDependencyIndexes = append(
 					unusedDependencyIndexes,
 					int32(i),
