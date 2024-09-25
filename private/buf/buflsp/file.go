@@ -476,7 +476,7 @@ func (f *file) BuildImage(ctx context.Context) {
 		}
 		seen[descriptor.Path()] = true
 
-		unused, ok := report.unusedImports[descriptor.Path()]
+		unused, ok := report.pathToUnusedImports[descriptor.Path()]
 		var unusedIndices []int32
 		if ok {
 			unusedIndices = make([]int32, 0, len(unused))

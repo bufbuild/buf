@@ -28,9 +28,9 @@ import (
 // report is a reporter.Reporter that captures diagnostic events as
 // protocol.Diagnostic values.
 type report struct {
-	diagnostics   []protocol.Diagnostic
-	syntaxMissing map[string]bool
-	unusedImports map[string]map[string]bool
+	diagnostics         []protocol.Diagnostic
+	syntaxMissing       map[string]bool
+	pathToUnusedImports map[string]map[string]bool
 }
 
 // Error implements reporter.Handler for *diagnostics.
@@ -47,10 +47,10 @@ func (r *report) Warning(err reporter.ErrorWithPos) {
 		r.syntaxMissing[err.GetPosition().Filename] = true
 	} else if unusedImport, ok := err.Unwrap().(linker.ErrorUnusedImport); ok {
 		path := err.GetPosition().Filename
-		unused, ok := r.unusedImports[path]
+		unused, ok := r.pathToUnusedImports[path]
 		if !ok {
 			unused = map[string]bool{}
-			r.unusedImports[path] = unused
+			r.pathToUnusedImports[path] = unused
 		}
 
 		unused[unusedImport.UnusedImport()] = true
