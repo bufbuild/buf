@@ -89,11 +89,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/protoglobal"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // Main is the entrypoint to the buf CLI.
 func Main(name string) {
+	protoglobal.DisableGlobalFiles()
 	appcmd.Main(context.Background(), NewRootCommand(name))
 }
 

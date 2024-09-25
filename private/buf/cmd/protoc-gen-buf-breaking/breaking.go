@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/protoglobal"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protoplugin"
 )
@@ -43,6 +44,7 @@ const (
 
 // Main is the main.
 func Main() {
+	protoglobal.DisableGlobalFiles()
 	protoplugin.Main(
 		protoplugin.HandlerFunc(handle),
 		// An `EmptyResolver` is passed to protoplugin for unmarshalling instead of defaulting to
