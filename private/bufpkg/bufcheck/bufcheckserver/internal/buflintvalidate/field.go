@@ -241,7 +241,7 @@ func checkConstraintsForField(
 	var exampleValues []protoreflect.Value
 	var exampleFieldNumber int32
 	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		// TODO: make "exmaple" a const
+		// TODO: make "example" a const
 		if string(fd.Name()) == "example" {
 			exampleFieldNumber = int32(fd.Number())
 			// This assumed all *Rules.Example are repeated, otherwise it panics.
@@ -766,7 +766,9 @@ func checkExampleValues(
 	exampleValues []protoreflect.Value,
 	extensionTypeResolver ExtensionTypeResolver,
 ) error {
-	reparseUnrecognized(typeRulesMessage, extensionTypeResolver)
+	if err := reparseUnrecognized(typeRulesMessage, extensionTypeResolver); err != nil {
+		return err
+	}
 	hasConstraints := len(fieldConstraints.GetCel()) > 0
 	// TODO: add a test where only shared rules and examples are specified
 	if !hasConstraints {
