@@ -31,15 +31,16 @@ type ExtensionTypeResolver interface {
 	FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error)
 }
 
-// CheckAndRegisterSharedRuleExtension checks whether an extension extending a protovalidate rule
+// CheckAndRegisterPredefinedRuleExtension checks whether an extension extending a protovalidate rule
 // is valid, checking that all of its CEL expressionus compile. If so, the extension type is added to
 // the extension types passed in.
-func CheckAndRegisterSharedRuleExtension(
+func CheckAndRegisterPredefinedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
 	extensionTypesToPopulate *protoregistry.Types,
+	fileIsImport bool,
 ) error {
-	return checkAndRegisterSharedRuleExtension(addAnnotationFunc, field, extensionTypesToPopulate)
+	return checkAndRegisterPredefinedRuleExtension(addAnnotationFunc, field, extensionTypesToPopulate, fileIsImport)
 }
 
 // CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.

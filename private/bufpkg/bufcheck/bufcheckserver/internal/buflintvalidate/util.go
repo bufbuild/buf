@@ -17,6 +17,7 @@ package buflintvalidate
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/google/cel-go/cel"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -43,11 +44,9 @@ func (r *constraintsResolverForTargetField) ResolveOneofConstraints(desc protore
 	return nil
 }
 
-// TODO: this function is copied directly from protovalidate-go.
-// We have 3 options:
-// 1. Go to protovalidate-go and add DefaultResolver.ResolveSharedFieldConstraints.
-// 2. Go to protovalidate-go and make this public.
-// 3. Leave it as is.
+// This function is copied directly from protovalidate-go.
+//
+// This resolves the given extension and returns the constraints for the extension.
 func resolveExt[C proto.Message](
 	options proto.Message,
 	extType protoreflect.ExtensionType,
@@ -75,13 +74,21 @@ func resolveExt[C proto.Message](
 	return constraints
 }
 
-// TODO: this is copied from protovalidate-go, with the difference that types is passed as a parameter.
+// This function is copied from protovalidate-go, with the only difference being that types
+// are based as parameters.
+//
+// reparseUnrecognized checks if there are unknown extensions on the protoreflect message.
+// If so, then it attempts to use the provided extension resolver to unmarshal the unknown
+// extension. Setting proto.UnmarshalOptions.Merge to "true" does not reset reflectMessage.Interface()
+// and allows us to unmarshal directly to reflectMessage.Interface() additively.
 func reparseUnrecognized(
 	reflectMessage protoreflect.Message,
 	extensionTypeResolver ExtensionTypeResolver,
 ) error {
 	unknown := reflectMessage.GetUnknown()
 	if len(unknown) > 0 {
+		// We can call reflectMessage.SetUnknown to nil optimistically because if we fail to
+		// unmarshal, we will simply return the error.
 		reflectMessage.SetUnknown(nil)
 		options := proto.UnmarshalOptions{
 			Resolver: extensionTypeResolver,
@@ -91,5 +98,53 @@ func reparseUnrecognized(
 			return err
 		}
 	}
+	return nil
+}
+
+func celTypeForStandardRuleMessageDescriptor(
+	ruleMessageDescriptor protoreflect.MessageDescriptor,
+) *cel.Type {
+	switch ruleMessageDescriptor.FullName() {
+	case (&validate.AnyRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.AnyType
+	case (&validate.BoolRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.BoolType
+	case (&validate.BytesRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.BytesType
+	case (&validate.StringRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.StringType
+	case
+		(&validate.Int32Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.Int64Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.SInt32Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.SInt64Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.SFixed32Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.SFixed64Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.EnumRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.IntType
+	case
+		(&validate.UInt32Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.UInt64Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.Fixed32Rules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.Fixed64Rules{}).ProtoReflect().Descriptor().FullName():
+		return cel.UintType
+	case
+		(&validate.DoubleRules{}).ProtoReflect().Descriptor().FullName(),
+		(&validate.FloatRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.DoubleType
+	case (&validate.MapRules{}).ProtoReflect().Descriptor().FullName():
+		// The key and value constraints are handled separately as field constraints, so we use
+		// cel.DynType for key and value here.
+		return cel.MapType(cel.DynType, cel.DynType)
+	case (&validate.RepeatedRules{}).ProtoReflect().Descriptor().FullName():
+		// The repeated type is handled separately as field constraints, so we use cel.DynType
+		// for the value type here.
+		return cel.ListType(cel.DynType)
+	case (&validate.DurationRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.DurationType
+	case (&validate.TimestampRules{}).ProtoReflect().Descriptor().FullName():
+		return cel.TimestampType
+	}
+	// We default to returning nil if this does not match with one of the *Rule declarations.
 	return nil
 }

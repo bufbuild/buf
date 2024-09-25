@@ -19,16 +19,22 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-func checkAndRegisterSharedRuleExtension(
+const (
+	celFieldNumberPath = int32(1)
+)
+
+func checkAndRegisterPredefinedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	extension bufprotosource.Field,
 	extensionTypesToPopulate *protoregistry.Types,
+	fileIsImport bool,
 ) error {
 	extensionDescriptor, err := extension.AsDescriptor()
 	if err != nil {
@@ -48,36 +54,37 @@ func checkAndRegisterSharedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	sharedConstraints := resolveExt[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined)
-	if sharedConstraints == nil {
+	predefinedConstraints := resolveExt[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined)
+	if predefinedConstraints == nil {
 		return nil
 	}
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
 	}
-	// Two keywords need type declaration, "this" and "rule", for the expression to compile.
+	// In order to evaluate whether the CEL expression for the rule compiles, we need to check
+	// the type declaration for two keywords, "this" and "rule".
+	// "this" refers to the type the rule is checking, e.g. StringRules would have type string.
+	// "rule" refers to the type of the rule extension, e.g. a rule that checks the length
+	// of a string has type int32 to represent the length.
+	//
 	// In this example, an int32 field is added to extend string rules, and therefore,
 	// "rule" has type int32 and "this" has type "string":
 	//
 	// extend buf.validate.StringRules {
-	//	 optional int32 my_max = 47892 [(buf.validate.shared_field).cel = {
+	//	 optional int32 my_max = 47892 [(buf.validate.predefined).cel = {
 	//	   id: "mymax"
 	//	   message: "at most max"
 	//	   expression: "size(this) < rule"
 	//	 }];
 	// }
 	//
-	ruleType := celext.ProtoFieldToCELType(extensionDescriptor, false, false) // TODO: forItems should probably be false?
-	// This is a bit of hacky, relying on the fact that each *Rules has a const rule,
-	// and we take advantage of each buf.validate.<Foo>Rules.const has type <Foo>, which
-	// is the type "this" should have.
-	ruleConstFieldDescriptor := extendedStandardRuleDescriptor.Fields().ByName("const")
-	if ruleConstFieldDescriptor == nil {
-		// This isn't necessarily an error, it could be caused by a future buf.validate.*Rules without a const field.
-		return nil
+	ruleType := celext.ProtoFieldToCELType(extensionDescriptor, false, false)
+	// To check for the type of "this", we check the descriptor for the rule type we are extending.
+	thisType := celTypeForStandardRuleMessageDescriptor(extendedStandardRuleDescriptor)
+	if thisType == nil {
+		return syserror.Newf("extension for unexpected rule type %q found", extendedStandardRuleDescriptor.FullName())
 	}
-	thisType := celext.ProtoFieldToCELType(ruleConstFieldDescriptor, false, false) // TODO: forItems is probably false?
 	celEnv, err = celEnv.Extend(
 		append(
 			celext.RequiredCELEnvOptions(extensionDescriptor),
@@ -88,17 +95,26 @@ func checkAndRegisterSharedRuleExtension(
 	if err != nil {
 		return err
 	}
+	// If the file is an import file, we only want to check that the CEL expression compiles,
+	// but we do not want to produce file annotations, so we set the addAnnotationFunc to a nop.
+	if fileIsImport {
+		addAnnotationFunc = func(
+			_ bufprotosource.Descriptor,
+			_ bufprotosource.Location,
+			_ []bufprotosource.Location,
+			_ string, _ ...interface{}) {
+		}
+	}
 	allCELExpressionsCompile := checkCEL(
 		celEnv,
-		sharedConstraints.GetCel(),
+		predefinedConstraints.GetCel(),
 		"extension field",
 		"Extension field",
-		"(buf.validate.shared_field).cel",
+		"(buf.validate.predefined).cel",
 		func(index int, format string, args ...interface{}) {
 			addAnnotationFunc(
 				extension,
-				// TODO: move 1 to a const
-				extension.OptionExtensionLocation(validate.E_Predefined, 1, int32(index)),
+				extension.OptionExtensionLocation(validate.E_Predefined, celFieldNumberPath, int32(index)),
 				nil,
 				format,
 				args...,

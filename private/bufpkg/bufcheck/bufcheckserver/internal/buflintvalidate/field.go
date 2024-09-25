@@ -98,6 +98,8 @@ const (
 	ltNowFieldNumberInTimestampRules  = 7
 	gtNowFieldNumberInTimestampRules  = 8
 	withInFieldNumberInTimestampRules = 9
+
+	exampleName = "example"
 )
 
 var (
@@ -179,7 +181,6 @@ func checkField(
 func checkConstraintsForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
-	// TODO: fix wording
 	// This is needed because recursive calls of this function still need the same
 	// containing message. For example, checkConstraintsForField(.., fieldDescriptor, ...)
 	// may call checkConstraintsForField(..., fieldDescriptor.MapKey(), ...), but the map
@@ -241,8 +242,7 @@ func checkConstraintsForField(
 	var exampleValues []protoreflect.Value
 	var exampleFieldNumber int32
 	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		// TODO: make "example" a const
-		if string(fd.Name()) == "example" {
+		if string(fd.Name()) == exampleName {
 			exampleFieldNumber = int32(fd.Number())
 			// This assumed all *Rules.Example are repeated, otherwise it panics.
 			list := value.List()
@@ -770,10 +770,9 @@ func checkExampleValues(
 		return err
 	}
 	hasConstraints := len(fieldConstraints.GetCel()) > 0
-	// TODO: add a test where only shared rules and examples are specified
 	if !hasConstraints {
 		typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-			if string(fd.Name()) != "example" {
+			if string(fd.Name()) != exampleName {
 				hasConstraints = true
 				return false
 			}
@@ -811,13 +810,12 @@ func checkExampleValues(
 		return err
 	}
 	// The shape of field path in a protovalidate.Violation depends on the type of the field descriptor.
-	// TODO: verify that this can be relied on.
 	violationFilterFunc := func(violation *validate.Violation) bool {
 		return violation.GetFieldPath() == string(fieldDescriptor.Name())
 	}
 	switch {
 	case fieldDescriptor.IsList():
-		// Field path looks like repeate_field[10]
+		// Field path looks like repeated_field[10]
 		violationFilterFunc = func(violation *validate.Violation) bool {
 			prefix := fieldDescriptor.Name() + "["
 			suffix := "]"
@@ -841,7 +839,6 @@ func checkExampleValues(
 			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
 		}
 	}
-	// TODO: test it for repeated min item
 	for exampleValueIndex, exampleValue := range exampleValues {
 		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
 		switch {
@@ -900,13 +897,6 @@ func checkExampleValues(
 					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.GetConstraintId(), violation.GetMessage())
 				}
 			}
-			continue
-		}
-		runtimeError := &protovalidate.RuntimeError{}
-		if errors.As(err, &runtimeError) {
-			// TODO: what to do here? return an error?
-			// TODO: see if i can test this with zero division
-			adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), "example fail at runtime: %s", runtimeError.Error())
 			continue
 		}
 		return fmt.Errorf("unexpected error from protovalidate: %s", err.Error())
