@@ -85,19 +85,19 @@ type file struct {
 	hasText bool // Whether this file has ever had text read into it.
 	// Always set false->true. Once true, never becomes false again.
 
-	workspace bufworkspace.Workspace
-	module    bufmodule.Module
-	fileInfo  bufimage.ImageFileInfo
+	workspace     bufworkspace.Workspace
+	module        bufmodule.Module
+	imageFileInfo bufimage.ImageFileInfo
 
 	isWKT bool
 
-	fileNode    *ast.FileNode
-	packageNode *ast.PackageNode
-	diagnostics []protocol.Diagnostic
-	importable  map[string]bufimage.ImageFileInfo
-	imports     map[string]*file
-	symbols     []*symbol
-	image       bufimage.Image
+	fileNode          *ast.FileNode
+	packageNode       *ast.PackageNode
+	diagnostics       []protocol.Diagnostic
+	importableToImage map[string]bufimage.ImageFileInfo
+	importToFile      map[string]*file
+	symbols           []*symbol
+	image             bufimage.Image
 }
 
 // Manager returns the file manager that owns this file.
@@ -125,13 +125,13 @@ func (f *file) Reset(ctx context.Context) {
 	// We need to lock and unlock because Close() will call Reset() on other
 	// files, and this will deadlock if cyclic imports exist.
 	f.lock.Lock(ctx)
-	imports := f.imports
+	imports := f.importToFile
 
 	f.fileNode = nil
 	f.packageNode = nil
 	f.diagnostics = nil
-	f.importable = nil
-	f.imports = nil
+	f.importableToImage = nil
+	f.importToFile = nil
 	f.symbols = nil
 	f.image = nil
 	f.lock.Unlock(ctx)
@@ -325,7 +325,7 @@ func (f *file) IndexImports(ctx context.Context) {
 	unlock := f.lock.Lock(ctx)
 	defer unlock()
 
-	if f.fileNode == nil || f.imports != nil {
+	if f.fileNode == nil || f.importToFile != nil {
 		return
 	}
 
@@ -334,21 +334,21 @@ func (f *file) IndexImports(ctx context.Context) {
 		f.lsp.logger.Sugar().Warnf("could not compute importable files for %s: %s", f.uri, err)
 		return
 	}
-	f.importable = importable
+	f.importableToImage = importable
 
 	// Find the FileInfo for this path. The crazy thing is that it may appear in importable
 	// multiple times, with different path lengths! We want to pick the one with the longest path
 	// length.
 	for _, fileInfo := range importable {
 		if fileInfo.LocalPath() == f.uri.Filename() {
-			if f.fileInfo != nil && len(f.fileInfo.Path()) > len(fileInfo.Path()) {
+			if f.imageFileInfo != nil && len(f.imageFileInfo.Path()) > len(fileInfo.Path()) {
 				continue
 			}
-			f.fileInfo = fileInfo
+			f.imageFileInfo = fileInfo
 		}
 	}
 
-	f.imports = make(map[string]*file)
+	f.importToFile = make(map[string]*file)
 	for _, decl := range f.fileNode.Decls {
 		node, ok := decl.(*ast.ImportNode)
 		if !ok {
@@ -369,21 +369,21 @@ func (f *file) IndexImports(ctx context.Context) {
 			imported = f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
 		}
 
-		imported.fileInfo = fileInfo
+		imported.imageFileInfo = fileInfo
 		f.isWKT = strings.HasPrefix("google/protobuf/", fileInfo.Path())
-		f.imports[node.Name.AsString()] = imported
+		f.importToFile[node.Name.AsString()] = imported
 	}
 
 	// descriptor.proto is always implicitly imported.
-	if _, ok := f.imports[descriptorPath]; !ok {
+	if _, ok := f.importToFile[descriptorPath]; !ok {
 		descriptorFile := importable[descriptorPath]
 		descriptorURI := protocol.URI("file://" + descriptorFile.LocalPath())
 		if f.uri == descriptorURI {
-			f.imports[descriptorPath] = f
+			f.importToFile[descriptorPath] = f
 		} else {
 			imported := f.Manager().Open(ctx, descriptorURI)
-			imported.fileInfo = descriptorFile
-			f.imports[descriptorPath] = imported
+			imported.imageFileInfo = descriptorFile
+			f.importToFile[descriptorPath] = imported
 		}
 		f.isWKT = true
 	}
@@ -393,7 +393,7 @@ func (f *file) IndexImports(ctx context.Context) {
 	// Drop the lock after copying the pointer to the imports map. This
 	// particular map will not be mutated further, and since we're going to grab the lock of
 	// other files, we need to drop the currently held lock.
-	fileImports := f.imports
+	fileImports := f.importToFile
 	unlock()
 
 	for _, file := range fileImports {
@@ -418,8 +418,8 @@ func (f *file) IndexImports(ctx context.Context) {
 // This operation requires IndexImports().
 func (f *file) BuildImage(ctx context.Context) {
 	f.lock.Lock(ctx)
-	importable := f.importable
-	fileInfo := f.fileInfo
+	importable := f.importableToImage
+	fileInfo := f.imageFileInfo
 	f.lock.Unlock(ctx)
 
 	if importable == nil || fileInfo == nil {

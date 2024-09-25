@@ -272,7 +272,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// since searching inside of the imports will need to acquire other
 			// fileManager' locks.
 			s.file.lock.Lock(ctx)
-			descriptorProto := s.file.imports[descriptorPath]
+			descriptorProto := s.file.importToFile[descriptorPath]
 			s.file.lock.Unlock(ctx)
 
 			if descriptorProto == nil {
@@ -304,7 +304,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 		// since searching inside of the imports will need to acquire other
 		// fileManager' locks.
 		s.file.lock.Lock(ctx)
-		imports := s.file.imports
+		imports := s.file.importToFile
 		s.file.lock.Unlock(ctx)
 
 		if imports == nil {
@@ -462,7 +462,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		return tooltip.String()
 	}
 
-	if def.file.fileInfo != nil {
+	if def.file.imageFileInfo != nil {
 		path := strings.Join(path, ".")
 
 		fmt.Fprintf(
@@ -470,7 +470,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 			"[`%s.%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s.%s)\n\n",
 			pkg,
 			path,
-			def.file.fileInfo.ModuleFullName(),
+			def.file.imageFileInfo.ModuleFullName(),
 			pkg,
 			pkg,
 			path,
@@ -565,7 +565,7 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 		symbol := w.newSymbol(node.Name)
 		import_ := new(import_)
 		symbol.kind = import_
-		if imported, ok := w.file.imports[node.Name.AsString()]; ok {
+		if imported, ok := w.file.importToFile[node.Name.AsString()]; ok {
 			import_.file = imported
 		}
 
