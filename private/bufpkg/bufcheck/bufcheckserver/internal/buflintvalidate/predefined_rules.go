@@ -48,7 +48,7 @@ func checkAndRegisterSharedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	sharedConstraints := resolveExt[*validate.SharedFieldConstraints](extensionDescriptor.Options(), validate.E_SharedField)
+	sharedConstraints := resolveExt[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined)
 	if sharedConstraints == nil {
 		return nil
 	}
@@ -98,7 +98,7 @@ func checkAndRegisterSharedRuleExtension(
 			addAnnotationFunc(
 				extension,
 				// TODO: move 1 to a const
-				extension.OptionExtensionLocation(validate.E_SharedField, 1, int32(index)),
+				extension.OptionExtensionLocation(validate.E_Predefined, 1, int32(index)),
 				nil,
 				format,
 				args...,
