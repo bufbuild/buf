@@ -140,7 +140,6 @@ func (f *file) Reset(ctx context.Context) {
 	for _, imported := range imports {
 		imported.Close(ctx)
 	}
-
 }
 
 // Close marks a file as closed.
