@@ -75,11 +75,9 @@ type RepositoryCommit struct {
 
 func (x *RepositoryCommit) Reset() {
 	*x = RepositoryCommit{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositoryCommit) String() string {
@@ -90,7 +88,7 @@ func (*RepositoryCommit) ProtoMessage() {}
 
 func (x *RepositoryCommit) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -218,11 +216,9 @@ type ListRepositoryCommitsByBranchRequest struct {
 
 func (x *ListRepositoryCommitsByBranchRequest) Reset() {
 	*x = ListRepositoryCommitsByBranchRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryCommitsByBranchRequest) String() string {
@@ -233,7 +229,7 @@ func (*ListRepositoryCommitsByBranchRequest) ProtoMessage() {}
 
 func (x *ListRepositoryCommitsByBranchRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -301,11 +297,9 @@ type ListRepositoryCommitsByBranchResponse struct {
 
 func (x *ListRepositoryCommitsByBranchResponse) Reset() {
 	*x = ListRepositoryCommitsByBranchResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryCommitsByBranchResponse) String() string {
@@ -316,7 +310,7 @@ func (*ListRepositoryCommitsByBranchResponse) ProtoMessage() {}
 
 func (x *ListRepositoryCommitsByBranchResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -364,11 +358,9 @@ type ListRepositoryCommitsByReferenceRequest struct {
 
 func (x *ListRepositoryCommitsByReferenceRequest) Reset() {
 	*x = ListRepositoryCommitsByReferenceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryCommitsByReferenceRequest) String() string {
@@ -379,7 +371,7 @@ func (*ListRepositoryCommitsByReferenceRequest) ProtoMessage() {}
 
 func (x *ListRepositoryCommitsByReferenceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -447,11 +439,9 @@ type ListRepositoryCommitsByReferenceResponse struct {
 
 func (x *ListRepositoryCommitsByReferenceResponse) Reset() {
 	*x = ListRepositoryCommitsByReferenceResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryCommitsByReferenceResponse) String() string {
@@ -462,7 +452,7 @@ func (*ListRepositoryCommitsByReferenceResponse) ProtoMessage() {}
 
 func (x *ListRepositoryCommitsByReferenceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -507,11 +497,9 @@ type GetRepositoryCommitByReferenceRequest struct {
 
 func (x *GetRepositoryCommitByReferenceRequest) Reset() {
 	*x = GetRepositoryCommitByReferenceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetRepositoryCommitByReferenceRequest) String() string {
@@ -522,7 +510,7 @@ func (*GetRepositoryCommitByReferenceRequest) ProtoMessage() {}
 
 func (x *GetRepositoryCommitByReferenceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -568,11 +556,9 @@ type GetRepositoryCommitByReferenceResponse struct {
 
 func (x *GetRepositoryCommitByReferenceResponse) Reset() {
 	*x = GetRepositoryCommitByReferenceResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetRepositoryCommitByReferenceResponse) String() string {
@@ -583,7 +569,7 @@ func (*GetRepositoryCommitByReferenceResponse) ProtoMessage() {}
 
 func (x *GetRepositoryCommitByReferenceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -623,11 +609,9 @@ type ListRepositoryDraftCommitsRequest struct {
 
 func (x *ListRepositoryDraftCommitsRequest) Reset() {
 	*x = ListRepositoryDraftCommitsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryDraftCommitsRequest) String() string {
@@ -638,7 +622,7 @@ func (*ListRepositoryDraftCommitsRequest) ProtoMessage() {}
 
 func (x *ListRepositoryDraftCommitsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -700,11 +684,9 @@ type ListRepositoryDraftCommitsResponse struct {
 
 func (x *ListRepositoryDraftCommitsResponse) Reset() {
 	*x = ListRepositoryDraftCommitsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListRepositoryDraftCommitsResponse) String() string {
@@ -715,7 +697,7 @@ func (*ListRepositoryDraftCommitsResponse) ProtoMessage() {}
 
 func (x *ListRepositoryDraftCommitsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -759,11 +741,9 @@ type DeleteRepositoryDraftCommitRequest struct {
 
 func (x *DeleteRepositoryDraftCommitRequest) Reset() {
 	*x = DeleteRepositoryDraftCommitRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteRepositoryDraftCommitRequest) String() string {
@@ -774,7 +754,7 @@ func (*DeleteRepositoryDraftCommitRequest) ProtoMessage() {}
 
 func (x *DeleteRepositoryDraftCommitRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -818,11 +798,9 @@ type DeleteRepositoryDraftCommitResponse struct {
 
 func (x *DeleteRepositoryDraftCommitResponse) Reset() {
 	*x = DeleteRepositoryDraftCommitResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteRepositoryDraftCommitResponse) String() string {
@@ -833,7 +811,7 @@ func (*DeleteRepositoryDraftCommitResponse) ProtoMessage() {}
 
 func (x *DeleteRepositoryDraftCommitResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1136,140 +1114,6 @@ func file_buf_alpha_registry_v1alpha1_repository_commit_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_repository_tag_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositoryCommit); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryCommitsByBranchRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryCommitsByBranchResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryCommitsByReferenceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryCommitsByReferenceResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*GetRepositoryCommitByReferenceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*GetRepositoryCommitByReferenceResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryDraftCommitsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*ListRepositoryDraftCommitsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*DeleteRepositoryDraftCommitRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*DeleteRepositoryDraftCommitResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

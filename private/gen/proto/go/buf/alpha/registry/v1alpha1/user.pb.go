@@ -164,11 +164,9 @@ type User struct {
 
 func (x *User) Reset() {
 	*x = User{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *User) String() string {
@@ -179,7 +177,7 @@ func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -274,11 +272,9 @@ type OrganizationUser struct {
 
 func (x *OrganizationUser) Reset() {
 	*x = OrganizationUser{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *OrganizationUser) String() string {
@@ -289,7 +285,7 @@ func (*OrganizationUser) ProtoMessage() {}
 
 func (x *OrganizationUser) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -349,11 +345,9 @@ type UserPluginPreference struct {
 
 func (x *UserPluginPreference) Reset() {
 	*x = UserPluginPreference{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserPluginPreference) String() string {
@@ -364,7 +358,7 @@ func (*UserPluginPreference) ProtoMessage() {}
 
 func (x *UserPluginPreference) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -403,11 +397,9 @@ type CreateUserRequest struct {
 
 func (x *CreateUserRequest) Reset() {
 	*x = CreateUserRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateUserRequest) String() string {
@@ -418,7 +410,7 @@ func (*CreateUserRequest) ProtoMessage() {}
 
 func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -450,11 +442,9 @@ type CreateUserResponse struct {
 
 func (x *CreateUserResponse) Reset() {
 	*x = CreateUserResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateUserResponse) String() string {
@@ -465,7 +455,7 @@ func (*CreateUserResponse) ProtoMessage() {}
 
 func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -497,11 +487,9 @@ type GetUserRequest struct {
 
 func (x *GetUserRequest) Reset() {
 	*x = GetUserRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetUserRequest) String() string {
@@ -512,7 +500,7 @@ func (*GetUserRequest) ProtoMessage() {}
 
 func (x *GetUserRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -544,11 +532,9 @@ type GetUserResponse struct {
 
 func (x *GetUserResponse) Reset() {
 	*x = GetUserResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetUserResponse) String() string {
@@ -559,7 +545,7 @@ func (*GetUserResponse) ProtoMessage() {}
 
 func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -591,11 +577,9 @@ type GetUserByUsernameRequest struct {
 
 func (x *GetUserByUsernameRequest) Reset() {
 	*x = GetUserByUsernameRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetUserByUsernameRequest) String() string {
@@ -606,7 +590,7 @@ func (*GetUserByUsernameRequest) ProtoMessage() {}
 
 func (x *GetUserByUsernameRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -638,11 +622,9 @@ type GetUserByUsernameResponse struct {
 
 func (x *GetUserByUsernameResponse) Reset() {
 	*x = GetUserByUsernameResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetUserByUsernameResponse) String() string {
@@ -653,7 +635,7 @@ func (*GetUserByUsernameResponse) ProtoMessage() {}
 
 func (x *GetUserByUsernameResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -692,11 +674,9 @@ type ListUsersRequest struct {
 
 func (x *ListUsersRequest) Reset() {
 	*x = ListUsersRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListUsersRequest) String() string {
@@ -707,7 +687,7 @@ func (*ListUsersRequest) ProtoMessage() {}
 
 func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -769,11 +749,9 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListUsersResponse) String() string {
@@ -784,7 +762,7 @@ func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -827,11 +805,9 @@ type ListOrganizationUsersRequest struct {
 
 func (x *ListOrganizationUsersRequest) Reset() {
 	*x = ListOrganizationUsersRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListOrganizationUsersRequest) String() string {
@@ -842,7 +818,7 @@ func (*ListOrganizationUsersRequest) ProtoMessage() {}
 
 func (x *ListOrganizationUsersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -897,11 +873,9 @@ type ListOrganizationUsersResponse struct {
 
 func (x *ListOrganizationUsersResponse) Reset() {
 	*x = ListOrganizationUsersResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListOrganizationUsersResponse) String() string {
@@ -912,7 +886,7 @@ func (*ListOrganizationUsersResponse) ProtoMessage() {}
 
 func (x *ListOrganizationUsersResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -949,11 +923,9 @@ type DeleteUserRequest struct {
 
 func (x *DeleteUserRequest) Reset() {
 	*x = DeleteUserRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteUserRequest) String() string {
@@ -964,7 +936,7 @@ func (*DeleteUserRequest) ProtoMessage() {}
 
 func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -987,11 +959,9 @@ type DeleteUserResponse struct {
 
 func (x *DeleteUserResponse) Reset() {
 	*x = DeleteUserResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteUserResponse) String() string {
@@ -1002,7 +972,7 @@ func (*DeleteUserResponse) ProtoMessage() {}
 
 func (x *DeleteUserResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1027,11 +997,9 @@ type DeactivateUserRequest struct {
 
 func (x *DeactivateUserRequest) Reset() {
 	*x = DeactivateUserRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeactivateUserRequest) String() string {
@@ -1042,7 +1010,7 @@ func (*DeactivateUserRequest) ProtoMessage() {}
 
 func (x *DeactivateUserRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1072,11 +1040,9 @@ type DeactivateUserResponse struct {
 
 func (x *DeactivateUserResponse) Reset() {
 	*x = DeactivateUserResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeactivateUserResponse) String() string {
@@ -1087,7 +1053,7 @@ func (*DeactivateUserResponse) ProtoMessage() {}
 
 func (x *DeactivateUserResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1115,11 +1081,9 @@ type UpdateUserServerRoleRequest struct {
 
 func (x *UpdateUserServerRoleRequest) Reset() {
 	*x = UpdateUserServerRoleRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateUserServerRoleRequest) String() string {
@@ -1130,7 +1094,7 @@ func (*UpdateUserServerRoleRequest) ProtoMessage() {}
 
 func (x *UpdateUserServerRoleRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1167,11 +1131,9 @@ type UpdateUserServerRoleResponse struct {
 
 func (x *UpdateUserServerRoleResponse) Reset() {
 	*x = UpdateUserServerRoleResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateUserServerRoleResponse) String() string {
@@ -1182,7 +1144,7 @@ func (*UpdateUserServerRoleResponse) ProtoMessage() {}
 
 func (x *UpdateUserServerRoleResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1208,11 +1170,9 @@ type CountUsersRequest struct {
 
 func (x *CountUsersRequest) Reset() {
 	*x = CountUsersRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CountUsersRequest) String() string {
@@ -1223,7 +1183,7 @@ func (*CountUsersRequest) ProtoMessage() {}
 
 func (x *CountUsersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1255,11 +1215,9 @@ type CountUsersResponse struct {
 
 func (x *CountUsersResponse) Reset() {
 	*x = CountUsersResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CountUsersResponse) String() string {
@@ -1270,7 +1228,7 @@ func (*CountUsersResponse) ProtoMessage() {}
 
 func (x *CountUsersResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1306,11 +1264,9 @@ type UpdateUserSettingsRequest struct {
 
 func (x *UpdateUserSettingsRequest) Reset() {
 	*x = UpdateUserSettingsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateUserSettingsRequest) String() string {
@@ -1321,7 +1277,7 @@ func (*UpdateUserSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateUserSettingsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1365,11 +1321,9 @@ type UpdateUserSettingsResponse struct {
 
 func (x *UpdateUserSettingsResponse) Reset() {
 	*x = UpdateUserSettingsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateUserSettingsResponse) String() string {
@@ -1380,7 +1334,7 @@ func (*UpdateUserSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateUserSettingsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1403,11 +1357,9 @@ type GetUserPluginPreferencesRequest struct {
 
 func (x *GetUserPluginPreferencesRequest) Reset() {
 	*x = GetUserPluginPreferencesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetUserPluginPreferencesRequest) String() string {
@@ -1418,7 +1370,7 @@ func (*GetUserPluginPreferencesRequest) ProtoMessage() {}
 
 func (x *GetUserPluginPreferencesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1443,11 +1395,9 @@ type GetUserPluginPreferencesResponse struct {
 
 func (x *GetUserPluginPreferencesResponse) Reset() {
 	*x = GetUserPluginPreferencesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetUserPluginPreferencesResponse) String() string {
@@ -1458,7 +1408,7 @@ func (*GetUserPluginPreferencesResponse) ProtoMessage() {}
 
 func (x *GetUserPluginPreferencesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1490,11 +1440,9 @@ type UpdateUserPluginPreferencesRequest struct {
 
 func (x *UpdateUserPluginPreferencesRequest) Reset() {
 	*x = UpdateUserPluginPreferencesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateUserPluginPreferencesRequest) String() string {
@@ -1505,7 +1453,7 @@ func (*UpdateUserPluginPreferencesRequest) ProtoMessage() {}
 
 func (x *UpdateUserPluginPreferencesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1537,11 +1485,9 @@ type UpdateUserPluginPreferencesResponse struct {
 
 func (x *UpdateUserPluginPreferencesResponse) Reset() {
 	*x = UpdateUserPluginPreferencesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateUserPluginPreferencesResponse) String() string {
@@ -1552,7 +1498,7 @@ func (*UpdateUserPluginPreferencesResponse) ProtoMessage() {}
 
 func (x *UpdateUserPluginPreferencesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2024,332 +1970,6 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init()
 	file_buf_alpha_registry_v1alpha1_role_proto_init()
 	file_buf_alpha_registry_v1alpha1_verification_status_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*User); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*OrganizationUser); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*UserPluginPreference); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*CreateUserRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*CreateUserResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*GetUserRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*GetUserResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*GetUserByUsernameRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*GetUserByUsernameResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*ListUsersRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*ListUsersResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*ListOrganizationUsersRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*ListOrganizationUsersResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*DeleteUserRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*DeleteUserResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*DeactivateUserRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*DeactivateUserResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateUserServerRoleRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateUserServerRoleResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19].Exporter = func(v any, i int) any {
-			switch v := v.(*CountUsersRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20].Exporter = func(v any, i int) any {
-			switch v := v.(*CountUsersResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateUserSettingsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateUserSettingsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23].Exporter = func(v any, i int) any {
-			switch v := v.(*GetUserPluginPreferencesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24].Exporter = func(v any, i int) any {
-			switch v := v.(*GetUserPluginPreferencesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateUserPluginPreferencesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26].Exporter = func(v any, i int) any {
-			switch v := v.(*UpdateUserPluginPreferencesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

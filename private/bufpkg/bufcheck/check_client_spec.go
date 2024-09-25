@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/option"
 )
 
 // checkClientSpec contains a check.Client and details on what to do about
@@ -25,10 +26,10 @@ import (
 type checkClientSpec struct {
 	PluginName string
 	Client     check.Client
-	Options    check.Options
+	Options    option.Options
 }
 
-func newCheckClientSpec(pluginName string, client check.Client, options check.Options) *checkClientSpec {
+func newCheckClientSpec(pluginName string, client check.Client, options option.Options) *checkClientSpec {
 	return &checkClientSpec{
 		PluginName: pluginName,
 		Client:     client,

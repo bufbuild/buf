@@ -2,21 +2,21 @@ module github.com/bufbuild/buf
 
 go 1.22.0
 
-toolchain go1.23.0
+toolchain go1.23.1
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240904181154-a0be11449112.2
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240821192916-45ba72cdd479.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240821192916-45ba72cdd479.2
-	buf.build/go/bufplugin v0.2.0
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240920201003-06b7587d0fdf.2
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240920164238-5a7b106cbb87.2
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20240925012807-1610ffa05635.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240925012807-1610ffa05635.2
+	buf.build/go/bufplugin v0.3.0
 	buf.build/go/protoyaml v0.2.0
-	connectrpc.com/connect v1.16.2
+	connectrpc.com/connect v1.17.0
 	connectrpc.com/otelconnect v0.7.1
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20240911180120-7bb73e41a54a
-	github.com/bufbuild/protovalidate-go v0.6.5
-	github.com/docker/docker v27.2.1+incompatible
+	github.com/bufbuild/protovalidate-go v0.7.0
+	github.com/docker/docker v27.3.1+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
 	github.com/gofrs/uuid/v5 v5.3.0
@@ -24,8 +24,8 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/jdx/go-netrc v1.0.0
-	github.com/jhump/protoreflect/v2 v2.0.0-beta.1
-	github.com/klauspost/compress v1.17.9
+	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
+	github.com/klauspost/compress v1.17.10
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/profile v1.7.0
@@ -47,7 +47,7 @@ require (
 	golang.org/x/sync v0.8.0
 	golang.org/x/term v0.24.0
 	golang.org/x/tools v0.25.0
-	google.golang.org/protobuf v1.34.3-0.20240816073751-94ecbc261689
+	google.golang.org/protobuf v1.34.3-0.20240906163944-03df6c145d96
 	gopkg.in/yaml.v3 v3.0.1
 	pluginrpc.com/pluginrpc v0.3.0
 )
@@ -67,10 +67,10 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/containerd/ttrpc v1.2.5 // indirect
 	github.com/containerd/typeurl/v2 v2.2.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v27.2.1+incompatible // indirect
+	github.com/docker/cli v27.3.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -104,24 +104,17 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0 // indirect
 	go.opentelemetry.io/otel/metric v1.30.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/grpc v1.66.2 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240924160255-9d4c2d233b61 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240924160255-9d4c2d233b61 // indirect
+	google.golang.org/grpc v1.67.0 // indirect
 )
-
-// TODO: remove
-replace github.com/bufbuild/protovalidate-go => ../pvgojohn // commit e474f9b456a57181c0c8ad6785be9c9c2ab0a0be
-
-// TODO: remove
-replace buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go => ../pv-gen // commit 4fd7a369f04577fc71d8ff33ed733105aae84894

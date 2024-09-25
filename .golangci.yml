@@ -287,3 +287,58 @@ issues:
       # trip this off.
       path: private/pkg/oauth2/device.go
       text: "G101:"
+    # G115 checks for integer overflow from integer conversions. There are known false
+    # positives from the check (https://github.com/securego/gosec/issues/1212) that are
+    # actively being worked on. Each exemption below is a false positive or for a safe operation,
+    # such as parsing indices from descriptors and/or images.
+    - linters:
+        - gosec
+      # Loop index conversion to uint64.
+      path: private/buf/bufgen/features.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # Converting result from utf8.RuneCountInString to uint64.
+      path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/field.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # PluginReference revision is validated with a bounds check at construction time.
+      path: private/bufpkg/bufremoteplugin/bufremoteplugin.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # A bounds check has been added for int32 -> uint32 conversion this is being flagged
+      # as a false positive.
+      path: private/buf/bufcurl/reflection_resolver.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # bufprotosource converts indices to int32 to form the source path. Since it is parsing
+      # from the fileDescriptor set, the operation should be safe.
+      path: private/bufpkg/bufprotosource/paths.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # bufimageutil is handling images and converting loop indices to int32. Since it is
+      # parsing from an Image, the operation should be safe.
+      path: private/bufpkg/bufimage/bufimageutil/bufimageutil.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # Bounds checks have been added with assertion statements to ensure safe int -> int32
+      # conversions, this is a false positive.
+      path: private/bufpkg/bufprotosource/option_extension_descriptor_test.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # This converts results from strconv.ParseInt with the bit size set to 32 to int32,
+      # so it should be a safe conversion, this is a false positive.
+      path: private/buf/bufprotopluginexec/version.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # This checks the cel constraints from an Image, and converts loop indices to int32
+      # to set the source path for the location, this operation should be safe.
+      path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/cel.go
+      text: "G115:"

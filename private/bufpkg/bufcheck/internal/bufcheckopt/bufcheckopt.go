@@ -15,7 +15,7 @@
 package bufcheckopt
 
 import (
-	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/option"
 )
 
 const (
@@ -30,14 +30,14 @@ const (
 	defaultServiceSuffix       = "Service"
 )
 
-// OptionsSpec builds check.Options for clients.
+// OptionsSpec builds option.Options for clients.
 //
 // These can then be sent over the wire to servers.
 //
 // Note that we don't expose OptionsSpec for the server-side rules, instead we rely
 // on the static functions, as we want to move our rules to be as native to bufplugin-go
 // as possible. Instead of i.e. attaching an Options struct to bufcheckserverutil.Requests,
-// we have individual rules go through the direct reading of check.Options using
+// we have individual rules go through the direct reading of option.Options using
 // the static functions below.
 //
 // Only use this on the client side.
@@ -65,8 +65,8 @@ type OptionsSpec struct {
 	CommentExcludes []string
 }
 
-// ToOptions builds a check.Options.
-func (o *OptionsSpec) ToOptions() (check.Options, error) {
+// ToOptions builds a option.Options.
+func (o *OptionsSpec) ToOptions() (option.Options, error) {
 	keyToValue := make(map[string]any, 5)
 	if value := o.EnumZeroValueSuffix; len(value) > 0 {
 		keyToValue[enumZeroValueSuffixKey] = value
@@ -86,14 +86,14 @@ func (o *OptionsSpec) ToOptions() (check.Options, error) {
 	if value := o.CommentExcludes; len(value) > 0 {
 		keyToValue[commentExcludesKey] = value
 	}
-	return check.NewOptions(keyToValue)
+	return option.NewOptions(keyToValue)
 }
 
 // GetEnumZeroValueSuffix gets the enum zero-value suffix.
 //
 // Returns the default suffix if the option is not set.
-func GetEnumZeroValueSuffix(options check.Options) (string, error) {
-	value, err := check.GetStringValue(options, enumZeroValueSuffixKey)
+func GetEnumZeroValueSuffix(options option.Options) (string, error) {
+	value, err := option.GetStringValue(options, enumZeroValueSuffixKey)
 	if err != nil {
 		return "", err
 	}
@@ -106,31 +106,31 @@ func GetEnumZeroValueSuffix(options check.Options) (string, error) {
 // GetRPCAllowSameRequestResponse returns true if the rpc_allow_same_request_response option is set to true.
 //
 // Returns error if the value was unrecognized.
-func GetRPCAllowSameRequestResponse(options check.Options) (bool, error) {
-	return check.GetBoolValue(options, rpcAllowSameRequestResponseKey)
+func GetRPCAllowSameRequestResponse(options option.Options) (bool, error) {
+	return option.GetBoolValue(options, rpcAllowSameRequestResponseKey)
 }
 
 // GetRPCAllowGoogleProtobufEmptyRequests returns true if the rpc_allow_google_protobuf_empty_requests
 // option is set to true.
 //
 // Returns error if the value was unrecognized.
-func GetRPCAllowGoogleProtobufEmptyRequests(options check.Options) (bool, error) {
-	return check.GetBoolValue(options, rpcAllowGoogleProtobufEmptyRequestsKey)
+func GetRPCAllowGoogleProtobufEmptyRequests(options option.Options) (bool, error) {
+	return option.GetBoolValue(options, rpcAllowGoogleProtobufEmptyRequestsKey)
 }
 
 // GetRPCAllowGoogleProtobufEmptyResponses returns true if the rpc_allow_google_protobuf_empty_responses
 // option is set to true.
 //
 // Returns error if the value was unrecognized.
-func GetRPCAllowGoogleProtobufEmptyResponses(options check.Options) (bool, error) {
-	return check.GetBoolValue(options, rpcAllowGoogleProtobufEmptyResponsesKey)
+func GetRPCAllowGoogleProtobufEmptyResponses(options option.Options) (bool, error) {
+	return option.GetBoolValue(options, rpcAllowGoogleProtobufEmptyResponsesKey)
 }
 
 // GetServiceSuffix gets the service suffix.
 //
 // Returns the default suffix if the option is not set.
-func GetServiceSuffix(options check.Options) (string, error) {
-	value, err := check.GetStringValue(options, serviceSuffixKey)
+func GetServiceSuffix(options option.Options) (string, error) {
+	value, err := option.GetStringValue(options, serviceSuffixKey)
 	if err != nil {
 		return "", err
 	}
@@ -145,6 +145,6 @@ func GetServiceSuffix(options check.Options) (string, error) {
 // If a comment line starts with one of these excludes, it is not considered an actual comment.
 //
 // The returned slice is guaranteed to have only non-empty elements.
-func GetCommentExcludes(options check.Options) ([]string, error) {
-	return check.GetStringSliceValue(options, commentExcludesKey)
+func GetCommentExcludes(options option.Options) ([]string, error) {
+	return option.GetStringSliceValue(options, commentExcludesKey)
 }

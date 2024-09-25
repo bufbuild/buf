@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -186,7 +185,7 @@ func lsRun(
 		}
 	}
 	tracer := tracing.NewTracer(container.Tracer())
-	client, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+	client, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return err
 	}
@@ -231,9 +230,6 @@ func lsRun(
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
 		}
-		if bufcli.IsPluginEnabled(container) {
-			configuredRuleOptions = append(configuredRuleOptions, bufcheck.WithPluginsEnabled())
-		}
 		rules, err = client.ConfiguredRules(
 			ctx,
 			ruleType,
@@ -246,9 +242,6 @@ func lsRun(
 	} else {
 		allRulesOptions := []bufcheck.AllRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
-		}
-		if bufcli.IsPluginEnabled(container) {
-			allRulesOptions = append(allRulesOptions, bufcheck.WithPluginsEnabled())
 		}
 		rules, err = client.AllRules(
 			ctx,

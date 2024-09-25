@@ -51,11 +51,9 @@ type GitIdentity struct {
 
 func (x *GitIdentity) Reset() {
 	*x = GitIdentity{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GitIdentity) String() string {
@@ -66,7 +64,7 @@ func (*GitIdentity) ProtoMessage() {}
 
 func (x *GitIdentity) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -122,11 +120,9 @@ type GitCommitInformation struct {
 
 func (x *GitCommitInformation) Reset() {
 	*x = GitCommitInformation{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GitCommitInformation) String() string {
@@ -137,7 +133,7 @@ func (*GitCommitInformation) ProtoMessage() {}
 
 func (x *GitCommitInformation) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -255,32 +251,6 @@ func init() { file_buf_alpha_registry_v1alpha1_git_metadata_proto_init() }
 func file_buf_alpha_registry_v1alpha1_git_metadata_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_git_metadata_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*GitIdentity); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_git_metadata_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*GitCommitInformation); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

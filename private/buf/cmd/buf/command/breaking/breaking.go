@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -210,7 +209,7 @@ func run(
 	tracer := tracing.NewTracer(container.Tracer())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+		client, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
 		if err != nil {
 			return err
 		}
@@ -219,9 +218,6 @@ func run(
 		}
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
-		}
-		if bufcli.IsPluginEnabled(container) {
-			breakingOptions = append(breakingOptions, bufcheck.WithPluginsEnabled())
 		}
 		if err := client.Breaking(
 			ctx,

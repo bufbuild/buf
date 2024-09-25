@@ -275,11 +275,9 @@ type RepositorySearchResult struct {
 
 func (x *RepositorySearchResult) Reset() {
 	*x = RepositorySearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *RepositorySearchResult) String() string {
@@ -290,7 +288,7 @@ func (*RepositorySearchResult) ProtoMessage() {}
 
 func (x *RepositorySearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -351,11 +349,9 @@ type OrganizationSearchResult struct {
 
 func (x *OrganizationSearchResult) Reset() {
 	*x = OrganizationSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *OrganizationSearchResult) String() string {
@@ -366,7 +362,7 @@ func (*OrganizationSearchResult) ProtoMessage() {}
 
 func (x *OrganizationSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -407,11 +403,9 @@ type UserSearchResult struct {
 
 func (x *UserSearchResult) Reset() {
 	*x = UserSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UserSearchResult) String() string {
@@ -422,7 +416,7 @@ func (*UserSearchResult) ProtoMessage() {}
 
 func (x *UserSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -470,11 +464,9 @@ type TeamSearchResult struct {
 
 func (x *TeamSearchResult) Reset() {
 	*x = TeamSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *TeamSearchResult) String() string {
@@ -485,7 +477,7 @@ func (*TeamSearchResult) ProtoMessage() {}
 
 func (x *TeamSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -536,11 +528,9 @@ type CuratedPluginSearchResult struct {
 
 func (x *CuratedPluginSearchResult) Reset() {
 	*x = CuratedPluginSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CuratedPluginSearchResult) String() string {
@@ -551,7 +541,7 @@ func (*CuratedPluginSearchResult) ProtoMessage() {}
 
 func (x *CuratedPluginSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -610,11 +600,9 @@ type ModuleElementSearchResult struct {
 
 func (x *ModuleElementSearchResult) Reset() {
 	*x = ModuleElementSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ModuleElementSearchResult) String() string {
@@ -625,7 +613,7 @@ func (*ModuleElementSearchResult) ProtoMessage() {}
 
 func (x *ModuleElementSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -702,11 +690,9 @@ type ModuleFileSearchResult struct {
 
 func (x *ModuleFileSearchResult) Reset() {
 	*x = ModuleFileSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ModuleFileSearchResult) String() string {
@@ -717,7 +703,7 @@ func (*ModuleFileSearchResult) ProtoMessage() {}
 
 func (x *ModuleFileSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -779,11 +765,9 @@ type SearchResult struct {
 
 func (x *SearchResult) Reset() {
 	*x = SearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchResult) String() string {
@@ -794,7 +778,7 @@ func (*SearchResult) ProtoMessage() {}
 
 func (x *SearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -933,11 +917,9 @@ type ElementSearchResult struct {
 
 func (x *ElementSearchResult) Reset() {
 	*x = ElementSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ElementSearchResult) String() string {
@@ -948,7 +930,7 @@ func (*ElementSearchResult) ProtoMessage() {}
 
 func (x *ElementSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1088,11 +1070,9 @@ type FileSearchResult struct {
 
 func (x *FileSearchResult) Reset() {
 	*x = FileSearchResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *FileSearchResult) String() string {
@@ -1103,7 +1083,7 @@ func (*FileSearchResult) ProtoMessage() {}
 
 func (x *FileSearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1167,11 +1147,9 @@ type SearchModuleContentResult struct {
 
 func (x *SearchModuleContentResult) Reset() {
 	*x = SearchModuleContentResult{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchModuleContentResult) String() string {
@@ -1182,7 +1160,7 @@ func (*SearchModuleContentResult) ProtoMessage() {}
 
 func (x *SearchModuleContentResult) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1252,11 +1230,9 @@ type SearchRequest struct {
 
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchRequest) String() string {
@@ -1267,7 +1243,7 @@ func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1322,11 +1298,9 @@ type SearchResponse struct {
 
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchResponse) String() string {
@@ -1337,7 +1311,7 @@ func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1388,11 +1362,9 @@ type SearchTagRequest struct {
 
 func (x *SearchTagRequest) Reset() {
 	*x = SearchTagRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchTagRequest) String() string {
@@ -1403,7 +1375,7 @@ func (*SearchTagRequest) ProtoMessage() {}
 
 func (x *SearchTagRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1479,11 +1451,9 @@ type SearchTagResponse struct {
 
 func (x *SearchTagResponse) Reset() {
 	*x = SearchTagResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchTagResponse) String() string {
@@ -1494,7 +1464,7 @@ func (*SearchTagResponse) ProtoMessage() {}
 
 func (x *SearchTagResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1545,11 +1515,9 @@ type SearchDraftRequest struct {
 
 func (x *SearchDraftRequest) Reset() {
 	*x = SearchDraftRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchDraftRequest) String() string {
@@ -1560,7 +1528,7 @@ func (*SearchDraftRequest) ProtoMessage() {}
 
 func (x *SearchDraftRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1636,11 +1604,9 @@ type SearchDraftResponse struct {
 
 func (x *SearchDraftResponse) Reset() {
 	*x = SearchDraftResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchDraftResponse) String() string {
@@ -1651,7 +1617,7 @@ func (*SearchDraftResponse) ProtoMessage() {}
 
 func (x *SearchDraftResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1703,11 +1669,9 @@ type SearchModuleContentRequest struct {
 
 func (x *SearchModuleContentRequest) Reset() {
 	*x = SearchModuleContentRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchModuleContentRequest) String() string {
@@ -1718,7 +1682,7 @@ func (*SearchModuleContentRequest) ProtoMessage() {}
 
 func (x *SearchModuleContentRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1787,11 +1751,9 @@ type SearchModuleContentResponse struct {
 
 func (x *SearchModuleContentResponse) Reset() {
 	*x = SearchModuleContentResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SearchModuleContentResponse) String() string {
@@ -1802,7 +1764,7 @@ func (*SearchModuleContentResponse) ProtoMessage() {}
 
 func (x *SearchModuleContentResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2324,236 +2286,6 @@ func file_buf_alpha_registry_v1alpha1_search_proto_init() {
 	file_buf_alpha_registry_v1alpha1_repository_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_commit_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_tag_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*RepositorySearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*OrganizationSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*UserSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*TeamSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*CuratedPluginSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*ModuleElementSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*ModuleFileSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*ElementSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*FileSearchResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchModuleContentResult); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchTagRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchTagResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchDraftRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchDraftResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchModuleContentRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*SearchModuleContentResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7].OneofWrappers = []any{
 		(*SearchResult_Repository)(nil),
 		(*SearchResult_Organization)(nil),

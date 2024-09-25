@@ -15,23 +15,23 @@
 package bufcheckserverutil
 
 import (
-	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/descriptor"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/gofrs/uuid/v5"
 )
 
 type inputFile struct {
-	check.File
+	descriptor.FileDescriptor
 }
 
-func newInputFile(file check.File) *inputFile {
+func newInputFile(fileDescriptor descriptor.FileDescriptor) *inputFile {
 	return &inputFile{
-		File: file,
+		FileDescriptor: fileDescriptor,
 	}
 }
 
 func (i *inputFile) Path() string {
-	return i.File.FileDescriptorProto().GetName()
+	return i.FileDescriptor.FileDescriptorProto().GetName()
 }
 
 func (i *inputFile) ExternalPath() string {

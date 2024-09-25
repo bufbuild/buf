@@ -102,11 +102,9 @@ type StudioAgentPreset struct {
 
 func (x *StudioAgentPreset) Reset() {
 	*x = StudioAgentPreset{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *StudioAgentPreset) String() string {
@@ -117,7 +115,7 @@ func (*StudioAgentPreset) ProtoMessage() {}
 
 func (x *StudioAgentPreset) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -168,11 +166,9 @@ type ListStudioAgentPresetsRequest struct {
 
 func (x *ListStudioAgentPresetsRequest) Reset() {
 	*x = ListStudioAgentPresetsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListStudioAgentPresetsRequest) String() string {
@@ -183,7 +179,7 @@ func (*ListStudioAgentPresetsRequest) ProtoMessage() {}
 
 func (x *ListStudioAgentPresetsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -208,11 +204,9 @@ type ListStudioAgentPresetsResponse struct {
 
 func (x *ListStudioAgentPresetsResponse) Reset() {
 	*x = ListStudioAgentPresetsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListStudioAgentPresetsResponse) String() string {
@@ -223,7 +217,7 @@ func (*ListStudioAgentPresetsResponse) ProtoMessage() {}
 
 func (x *ListStudioAgentPresetsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -255,11 +249,9 @@ type SetStudioAgentPresetsRequest struct {
 
 func (x *SetStudioAgentPresetsRequest) Reset() {
 	*x = SetStudioAgentPresetsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SetStudioAgentPresetsRequest) String() string {
@@ -270,7 +262,7 @@ func (*SetStudioAgentPresetsRequest) ProtoMessage() {}
 
 func (x *SetStudioAgentPresetsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -300,11 +292,9 @@ type SetStudioAgentPresetsResponse struct {
 
 func (x *SetStudioAgentPresetsResponse) Reset() {
 	*x = SetStudioAgentPresetsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *SetStudioAgentPresetsResponse) String() string {
@@ -315,7 +305,7 @@ func (*SetStudioAgentPresetsResponse) ProtoMessage() {}
 
 func (x *SetStudioAgentPresetsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -455,68 +445,6 @@ func init() { file_buf_alpha_registry_v1alpha1_studio_proto_init() }
 func file_buf_alpha_registry_v1alpha1_studio_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_studio_proto != nil {
 		return
-	}
-	if !protoimpl.UnsafeEnabled {
-		file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*StudioAgentPreset); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*ListStudioAgentPresetsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*ListStudioAgentPresetsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*SetStudioAgentPresetsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_studio_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*SetStudioAgentPresetsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

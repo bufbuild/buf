@@ -131,6 +131,24 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 		graph,
 		bufmodule.Module.OpaqueID,
 	)
+	graphRemoteOnly, err := bufmodule.ModuleSetToDAG(workspace, bufmodule.ModuleSetToDAGWithRemoteOnly())
+	require.NoError(t, err)
+	dagtest.RequireGraphEqual(
+		t,
+		[]dagtest.ExpectedNode[string]{
+			{
+				Key: "buf.testing/acme/extension",
+			},
+			{
+				Key: "buf.testing/acme/date",
+				Outbound: []string{
+					"buf.testing/acme/extension",
+				},
+			},
+		},
+		graphRemoteOnly,
+		bufmodule.Module.OpaqueID,
+	)
 	module = workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	_, err = module.StatFileInfo(ctx, "acme/bond/real/v1/bond.proto")

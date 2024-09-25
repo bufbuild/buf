@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/bufplugin/descriptor"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -97,9 +99,6 @@ func (c *client) Lint(
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	if err := validatePluginConfigs(lintOptions.pluginConfigs, lintOptions.pluginEnabled); err != nil {
-		return err
-	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		lintConfig.FileVersion(),
@@ -114,7 +113,7 @@ func (c *client) Lint(
 		return err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
-	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
+	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
@@ -160,9 +159,6 @@ func (c *client) Breaking(
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	if err := validatePluginConfigs(breakingOptions.pluginConfigs, breakingOptions.pluginEnabled); err != nil {
-		return err
-	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		breakingConfig.FileVersion(),
@@ -182,20 +178,20 @@ func (c *client) Breaking(
 		return err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
-	files, err := check.FilesForProtoFiles(imageToProtoFiles(image))
+	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
 	}
-	againstFiles, err := check.FilesForProtoFiles(imageToProtoFiles(againstImage))
+	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(againstImage))
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
 	}
 	request, err := check.NewRequest(
-		files,
+		fileDescriptors,
 		check.WithRuleIDs(config.RuleIDs...),
-		check.WithAgainstFiles(againstFiles),
+		check.WithAgainstFileDescriptors(againstFileDescriptors),
 		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
@@ -230,9 +226,6 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	if err := validatePluginConfigs(configuredRulesOptions.pluginConfigs, configuredRulesOptions.pluginEnabled); err != nil {
-		return nil, err
-	}
 	allRules, allCategories, err := c.allRulesAndCategories(
 		ctx,
 		checkConfig.FileVersion(),
@@ -263,9 +256,6 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	if err := validatePluginConfigs(allRulesOptions.pluginConfigs, allRulesOptions.pluginEnabled); err != nil {
-		return nil, err
-	}
 	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
 	if err != nil {
 		return nil, err
@@ -285,9 +275,6 @@ func (c *client) AllCategories(
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	if err := validatePluginConfigs(allCategoriesOptions.pluginConfigs, allCategoriesOptions.pluginEnabled); err != nil {
-		return nil, err
-	}
 	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
 	return categories, err
 }
@@ -301,11 +288,7 @@ func (c *client) allRulesAndCategories(
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
-	emptyOptions, err := check.NewOptions(nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, emptyOptions)
+	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, option.EmptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -316,7 +299,7 @@ func (c *client) getMultiClient(
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 	disableBuiltin bool,
-	defaultOptions check.Options,
+	defaultOptions option.Options,
 ) (*multiClient, error) {
 	var checkClientSpecs []*checkClientSpec
 	if !disableBuiltin {
@@ -331,21 +314,17 @@ func (c *client) getMultiClient(
 		)
 	}
 	for _, pluginConfig := range pluginConfigs {
-		if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
-			return nil, syserror.New("we only handle local plugins for now with lint and breaking")
-		}
-		options, err := check.NewOptions(pluginConfig.Options())
+		options, err := option.NewOptions(pluginConfig.Options())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
 		}
-		pluginPath := pluginConfig.Path()
+		runner, err := c.runnerProvider.NewRunner(pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("could not create runner for plugin %q: %w", pluginConfig.Name(), err)
+		}
 		checkClient := check.NewClient(
 			pluginrpc.NewClient(
-				c.runnerProvider.NewRunner(
-					// We know that Path is of at least length 1.
-					pluginPath[0],
-					pluginPath[1:]...,
-				),
+				runner,
 				pluginrpc.ClientWithStderr(c.stderr),
 				// We have to set binary as some things cannot be encoded as JSON.
 				// Example: google.protobuf.Timestamps with positive seconds and negative nanos.
@@ -362,14 +341,6 @@ func (c *client) getMultiClient(
 		)
 	}
 	return newMultiClient(c.logger, checkClientSpecs), nil
-}
-
-// TODO: remove this as part of publicly releasing lint/breaking plugins
-func validatePluginConfigs(pluginConfigs []bufconfig.PluginConfig, isPluginEnabled bool) error {
-	if len(pluginConfigs) > 0 && !isPluginEnabled {
-		return fmt.Errorf("custom plugins are not yet supported. For more information, please contact us at https://buf.build/docs/contact")
-	}
-	return nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
@@ -420,8 +391,8 @@ func ignoreAnnotation(
 	config *config,
 	annotation *annotation,
 ) (bool, error) {
-	if location := annotation.Location(); location != nil {
-		ignore, err := ignoreLocation(config, annotation.RuleID(), location)
+	if fileLocation := annotation.FileLocation(); fileLocation != nil {
+		ignore, err := ignoreFileLocation(config, annotation.RuleID(), fileLocation)
 		if err != nil {
 			return false, err
 		}
@@ -429,24 +400,24 @@ func ignoreAnnotation(
 			return true, nil
 		}
 	}
-	if againstLocation := annotation.AgainstLocation(); againstLocation != nil {
-		return ignoreLocation(config, annotation.RuleID(), againstLocation)
+	if againstFileLocation := annotation.AgainstFileLocation(); againstFileLocation != nil {
+		return ignoreFileLocation(config, annotation.RuleID(), againstFileLocation)
 	}
 	return false, nil
 }
 
-func ignoreLocation(
+func ignoreFileLocation(
 	config *config,
 	ruleID string,
-	location check.Location,
+	fileLocation descriptor.FileLocation,
 ) (bool, error) {
-	file := location.File()
-	if config.ExcludeImports && file.IsImport() {
+	fileDescriptor := fileLocation.FileDescriptor()
+	if config.ExcludeImports && fileDescriptor.IsImport() {
 		return true, nil
 	}
 
-	fileDescriptor := file.FileDescriptor()
-	path := fileDescriptor.Path()
+	protoreflectFileDescriptor := fileDescriptor.ProtoreflectFileDescriptor()
+	path := protoreflectFileDescriptor.Path()
 	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
 		return true, nil
 	}
@@ -457,7 +428,7 @@ func ignoreLocation(
 
 	// Not a great design, but will never be triggered by lint since this is never set.
 	if config.IgnoreUnstablePackages {
-		if packageVersion, ok := protoversion.NewPackageVersionForPackage(string(fileDescriptor.Package())); ok {
+		if packageVersion, ok := protoversion.NewPackageVersionForPackage(string(protoreflectFileDescriptor.Package())); ok {
 			if packageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
 				return true, nil
 			}
@@ -467,7 +438,7 @@ func ignoreLocation(
 	// Not a great design, but will never be triggered by breaking since this is never set.
 	// Therefore, never called for an againstLocation  (since lint never has againstLocations).
 	if config.AllowCommentIgnores && config.CommentIgnorePrefix != "" {
-		sourcePath := location.SourcePath()
+		sourcePath := fileLocation.SourcePath()
 		if len(sourcePath) == 0 {
 			return false, nil
 		}
@@ -475,7 +446,7 @@ func ignoreLocation(
 		if err != nil {
 			return false, err
 		}
-		sourceLocations := fileDescriptor.SourceLocations()
+		sourceLocations := protoreflectFileDescriptor.SourceLocations()
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
 			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
@@ -514,8 +485,6 @@ func checkCommentLineForCheckIgnore(
 
 type lintOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
-	// TODO: remove this as part of publicly releasing lint/breaking plugins
-	pluginEnabled bool
 }
 
 func newLintOptions() *lintOptions {
@@ -523,9 +492,7 @@ func newLintOptions() *lintOptions {
 }
 
 type breakingOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
-	// TODO: remove this as part of publicly releasing lint/breaking plugins
-	pluginEnabled  bool
+	pluginConfigs  []bufconfig.PluginConfig
 	excludeImports bool
 }
 
@@ -535,8 +502,6 @@ func newBreakingOptions() *breakingOptions {
 
 type configuredRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
-	// TODO: remove this as part of publicly releasing lint/breaking plugins
-	pluginEnabled bool
 }
 
 func newConfiguredRulesOptions() *configuredRulesOptions {
@@ -545,8 +510,6 @@ func newConfiguredRulesOptions() *configuredRulesOptions {
 
 type allRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
-	// TODO: remove this as part of publicly releasing lint/breaking plugins
-	pluginEnabled bool
 }
 
 func newAllRulesOptions() *allRulesOptions {
@@ -555,8 +518,6 @@ func newAllRulesOptions() *allRulesOptions {
 
 type allCategoriesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
-	// TODO: remove this as part of publicly releasing lint/breaking plugins
-	pluginEnabled bool
 }
 
 func newAllCategoriesOptions() *allCategoriesOptions {
@@ -599,26 +560,4 @@ func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) 
 
 func (p *pluginConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
 	allCategoriesOptions.pluginConfigs = append(allCategoriesOptions.pluginConfigs, p.pluginConfigs...)
-}
-
-type pluginsEnabledOption struct{}
-
-func (pluginsEnabledOption) applyToLint(lintOptions *lintOptions) {
-	lintOptions.pluginEnabled = true
-}
-
-func (pluginsEnabledOption) applyToBreaking(breakingOptions *breakingOptions) {
-	breakingOptions.pluginEnabled = true
-}
-
-func (pluginsEnabledOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
-	configuredRulesOptions.pluginEnabled = true
-}
-
-func (pluginsEnabledOption) applyToAllRules(allRulesOptions *allRulesOptions) {
-	allRulesOptions.pluginEnabled = true
-}
-
-func (pluginsEnabledOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
-	allCategoriesOptions.pluginEnabled = true
 }

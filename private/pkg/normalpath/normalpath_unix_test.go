@@ -230,8 +230,8 @@ func TestStripComponents(t *testing.T) {
 	testStripComponents(t, 5, "", false, "foo/bar/baz/bat")
 }
 
-func testStripComponents(t *testing.T, count int, expected string, expectedOK bool, path string) {
-	actual, ok := StripComponents(path, uint32(count))
+func testStripComponents(t *testing.T, count uint32, expected string, expectedOK bool, path string) {
+	actual, ok := StripComponents(path, count)
 	assert.Equal(t, expectedOK, ok)
 	assert.Equal(t, expected, actual)
 }
