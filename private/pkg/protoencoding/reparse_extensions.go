@@ -64,7 +64,7 @@ func ReparseExtensions(resolver Resolver, reflectMessage protoreflect.Message) e
 	}
 	var err error
 	reflectMessage.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		err = reparseInField(resolver, fieldDescriptor, value, ReparseExtensions)
+		err = reparseInField(resolver, fieldDescriptor, value)
 		return err == nil
 	})
 	return err
@@ -74,7 +74,6 @@ func reparseInField(
 	resolver Resolver,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	value protoreflect.Value,
-	reparse func(resolver Resolver, reflectMessage protoreflect.Message) error,
 ) error {
 	if fieldDescriptor.IsMap() {
 		valDesc := fieldDescriptor.MapValue()
@@ -84,7 +83,7 @@ func reparseInField(
 		}
 		var err error
 		value.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
-			err = reparse(resolver, v.Message())
+			err = ReparseExtensions(resolver, v.Message())
 			return err == nil
 		})
 		return err
@@ -96,11 +95,11 @@ func reparseInField(
 	if fieldDescriptor.IsList() {
 		list := value.List()
 		for i := 0; i < list.Len(); i++ {
-			if err := reparse(resolver, list.Get(i).Message()); err != nil {
+			if err := ReparseExtensions(resolver, list.Get(i).Message()); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	return reparse(resolver, value.Message())
+	return ReparseExtensions(resolver, value.Message())
 }
