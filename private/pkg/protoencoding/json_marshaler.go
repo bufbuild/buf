@@ -28,6 +28,9 @@ type jsonMarshaler struct {
 }
 
 func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	jsonMarshaler := &jsonMarshaler{
 		resolver: resolver,
 	}

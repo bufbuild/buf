@@ -24,6 +24,9 @@ type txtpbMarshaler struct {
 }
 
 func newTxtpbMarshaler(resolver Resolver) Marshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	return &txtpbMarshaler{
 		resolver: resolver,
 	}

@@ -23,6 +23,9 @@ type wireUnmarshaler struct {
 }
 
 func newWireUnmarshaler(resolver Resolver) Unmarshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	return &wireUnmarshaler{
 		resolver: resolver,
 	}

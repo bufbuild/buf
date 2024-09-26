@@ -28,6 +28,9 @@ type yamlMarshaler struct {
 }
 
 func newYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	yamlMarshaler := &yamlMarshaler{
 		resolver: resolver,
 	}
