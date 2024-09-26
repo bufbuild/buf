@@ -22,6 +22,8 @@ import (
 // ReparseUnrecognized uses the given resolver to parse any unrecognized fields in the
 // given reflectMessage. It does so recursively, resolving any unrecognized fields in
 // nested messages.
+//
+// Deprecated: Use ReparseExtensions instead.
 func ReparseUnrecognized(resolver Resolver, reflectMessage protoreflect.Message) error {
 	if resolver == nil {
 		return nil
@@ -39,38 +41,8 @@ func ReparseUnrecognized(resolver Resolver, reflectMessage protoreflect.Message)
 	}
 	var err error
 	reflectMessage.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		err = reparseUnrecognizedInField(resolver, fieldDescriptor, value)
+		err = reparseInField(resolver, fieldDescriptor, value, ReparseUnrecognized)
 		return err == nil
 	})
 	return err
-}
-
-func reparseUnrecognizedInField(resolver Resolver, fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) error {
-	if fieldDescriptor.IsMap() {
-		valDesc := fieldDescriptor.MapValue()
-		if valDesc.Kind() != protoreflect.MessageKind && valDesc.Kind() != protoreflect.GroupKind {
-			// nothing to reparse
-			return nil
-		}
-		var err error
-		value.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
-			err = ReparseUnrecognized(resolver, v.Message())
-			return err == nil
-		})
-		return err
-	}
-	if fieldDescriptor.Kind() != protoreflect.MessageKind && fieldDescriptor.Kind() != protoreflect.GroupKind {
-		// nothing to reparse
-		return nil
-	}
-	if fieldDescriptor.IsList() {
-		list := value.List()
-		for i := 0; i < list.Len(); i++ {
-			if err := ReparseUnrecognized(resolver, list.Get(i).Message()); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	return ReparseUnrecognized(resolver, value.Message())
 }
