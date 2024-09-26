@@ -19,11 +19,10 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -33,8 +32,8 @@ const (
 func checkAndRegisterPredefinedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	extension bufprotosource.Field,
-	extensionTypesToPopulate *protoregistry.Types,
 	fileIsImport bool,
+	extensionResolver protoencoding.Resolver,
 ) error {
 	extensionDescriptor, err := extension.AsDescriptor()
 	if err != nil {
@@ -54,7 +53,7 @@ func checkAndRegisterPredefinedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	predefinedConstraints := resolveExt[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined)
+	predefinedConstraints := resolveExt[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
 	if predefinedConstraints == nil {
 		return nil
 	}
@@ -105,7 +104,7 @@ func checkAndRegisterPredefinedRuleExtension(
 			_ string, _ ...interface{}) {
 		}
 	}
-	allCELExpressionsCompile := checkCEL(
+	checkCEL(
 		celEnv,
 		predefinedConstraints.GetCel(),
 		"extension field",
@@ -121,10 +120,5 @@ func checkAndRegisterPredefinedRuleExtension(
 			)
 		},
 	)
-	if allCELExpressionsCompile {
-		if err := extensionTypesToPopulate.RegisterExtension(dynamicpb.NewExtensionType(extensionDescriptor)); err != nil {
-			return err
-		}
-	}
 	return nil
 }

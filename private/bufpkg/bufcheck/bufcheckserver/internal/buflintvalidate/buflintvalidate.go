@@ -17,30 +17,23 @@ package buflintvalidate
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/protovalidate-go/resolver"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 // https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
 const disabledFieldNumberInMesageConstraints = 1
 
-// ExtensionTypeResolver is an extension resolver, the same type as the Resolver in proto.UnmarshalOptions.
-type ExtensionTypeResolver interface {
-	FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error)
-	FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error)
-}
-
 // CheckAndRegisterPredefinedRuleExtension checks whether an extension extending a protovalidate rule
-// is valid, checking that all of its CEL expressionus compile. If so, the extension type is added to
+// is valid, checking that all of its CEL expressionus compile. If so, the extension type is appended to
 // the extension types passed in.
 func CheckAndRegisterPredefinedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	extensionTypesToPopulate *protoregistry.Types,
 	fileIsImport bool,
+	extensionResolver protoencoding.Resolver,
 ) error {
-	return checkAndRegisterPredefinedRuleExtension(addAnnotationFunc, field, extensionTypesToPopulate, fileIsImport)
+	return checkAndRegisterPredefinedRuleExtension(addAnnotationFunc, field, fileIsImport, extensionResolver)
 }
 
 // CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.
@@ -82,7 +75,7 @@ func CheckMessage(
 func CheckField(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	extensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver protoencoding.Resolver,
 ) error {
 	return checkField(addAnnotationFunc, field, extensionTypeResolver)
 }

@@ -16,6 +16,7 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/google/cel-go/cel"
 	"google.golang.org/protobuf/proto"
@@ -44,12 +45,14 @@ func (r *constraintsResolverForTargetField) ResolveOneofConstraints(desc protore
 	return nil
 }
 
-// This function is copied directly from protovalidate-go.
+// This function is copied directly from protovalidate-go, except refactored to use protoencoding
+// for marshalling and unmarshalling.
 //
 // This resolves the given extension and returns the constraints for the extension.
 func resolveExt[C proto.Message](
 	options proto.Message,
 	extType protoreflect.ExtensionType,
+	resolver protoencoding.Resolver,
 ) (constraints C) {
 	num := extType.TypeDescriptor().Number()
 	var msg proto.Message
@@ -69,36 +72,10 @@ func resolveExt[C proto.Message](
 	}
 
 	constraints, _ = constraints.ProtoReflect().New().Interface().(C)
-	b, _ := proto.Marshal(msg)
-	_ = proto.Unmarshal(b, constraints)
+	// TODO: handle marhsal/unmarshaling errors, wtf.
+	b, _ := protoencoding.NewWireMarshaler().Marshal(msg)
+	_ = protoencoding.NewWireUnmarshaler(resolver).Unmarshal(b, constraints)
 	return constraints
-}
-
-// This function is copied from protovalidate-go, with the only difference being that types
-// are based as parameters.
-//
-// reparseUnrecognized checks if there are unknown extensions on the protoreflect message.
-// If so, then it attempts to use the provided extension resolver to unmarshal the unknown
-// extension. Setting proto.UnmarshalOptions.Merge to "true" does not reset reflectMessage.Interface()
-// and allows us to unmarshal directly to reflectMessage.Interface() additively.
-func reparseUnrecognized(
-	reflectMessage protoreflect.Message,
-	extensionTypeResolver ExtensionTypeResolver,
-) error {
-	unknown := reflectMessage.GetUnknown()
-	if len(unknown) > 0 {
-		// We can call reflectMessage.SetUnknown to nil optimistically because if we fail to
-		// unmarshal, we will simply return the error.
-		reflectMessage.SetUnknown(nil)
-		options := proto.UnmarshalOptions{
-			Resolver: extensionTypeResolver,
-			Merge:    true,
-		}
-		if err := options.Unmarshal(unknown, reflectMessage.Interface()); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func celTypeForStandardRuleMessageDescriptor(

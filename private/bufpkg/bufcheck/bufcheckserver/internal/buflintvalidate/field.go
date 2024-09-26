@@ -23,6 +23,7 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/bufbuild/protovalidate-go/resolver"
@@ -156,7 +157,7 @@ var (
 func checkField(
 	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	field bufprotosource.Field,
-	extensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver protoencoding.Resolver,
 ) error {
 	fieldDescriptor, err := field.AsDescriptor()
 	if err != nil {
@@ -192,7 +193,7 @@ func checkConstraintsForField(
 	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	expectRepeatedRule bool,
-	extensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver protoencoding.Resolver,
 ) error {
 	if fieldConstraints == nil {
 		return nil
@@ -418,7 +419,7 @@ func checkRepeatedRules(
 	repeatedRules *validate.RepeatedRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
-	extensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver protoencoding.Resolver,
 ) error {
 	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
@@ -469,7 +470,7 @@ func checkMapRules(
 	mapRules *validate.MapRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
-	extensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver protoencoding.Resolver,
 ) error {
 	if !fieldDescriptor.IsMap() {
 		baseAdder.addForPathf(
@@ -764,9 +765,9 @@ func checkExampleValues(
 	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	exampleValues []protoreflect.Value,
-	extensionTypeResolver ExtensionTypeResolver,
+	extensionTypeResolver protoencoding.Resolver,
 ) error {
-	if err := reparseUnrecognized(typeRulesMessage, extensionTypeResolver); err != nil {
+	if err := protoencoding.ReparseExtensions(extensionTypeResolver, typeRulesMessage); err != nil {
 		return err
 	}
 	hasConstraints := len(fieldConstraints.GetCel()) > 0

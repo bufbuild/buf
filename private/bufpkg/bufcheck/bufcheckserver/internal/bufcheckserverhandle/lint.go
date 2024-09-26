@@ -27,11 +27,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -962,9 +963,17 @@ func handleLintProtovalidate(
 			args...,
 		)
 	}
-	// Predefined rules are checked first because predefined rules from all files, are added
-	// to an extension resolver and used to resolve rules when checking fields.
-	extensionTypesFromRequest := new(protoregistry.Types)
+	extensionResolver, err := protoencoding.NewResolver(
+		slicesext.Map(
+			request.ProtosourceFiles(),
+			func(protosourceFile bufprotosource.File) protodescriptor.FileDescriptor {
+				return protosourceFile.FileDescriptor()
+			},
+		)...,
+	)
+	if err != nil {
+		return err
+	}
 	// This for-loop checks that predefined rules have cel expressions that compile and adds
 	// the ones that compile to the extension resolver, as a side effect. These types are relied
 	// on to check the example values for fields.
@@ -979,8 +988,8 @@ func handleLintProtovalidate(
 					if err := buflintvalidate.CheckAndRegisterPredefinedRuleExtension(
 						addAnnotationFunc,
 						extension,
-						extensionTypesFromRequest,
 						file.IsImport(),
+						extensionResolver,
 					); err != nil {
 						return err
 					}
@@ -995,8 +1004,8 @@ func handleLintProtovalidate(
 			if err := buflintvalidate.CheckAndRegisterPredefinedRuleExtension(
 				addAnnotationFunc,
 				extension,
-				extensionTypesFromRequest,
 				file.IsImport(),
+				extensionResolver,
 			); err != nil {
 				return err
 			}
@@ -1014,7 +1023,6 @@ func handleLintProtovalidate(
 		}).Handle(ctx, nil, nil); err != nil {
 		return err
 	}
-	// At this point the extension types are already populated.
 	if err := bufcheckserverutil.NewLintFieldRuleHandler(
 		func(
 			// The responseWriter is being passed in through the shared addAnnotationFunc, so we
@@ -1023,7 +1031,7 @@ func handleLintProtovalidate(
 			_ bufcheckserverutil.Request,
 			field bufprotosource.Field,
 		) error {
-			return buflintvalidate.CheckField(addAnnotationFunc, field, extensionTypesFromRequest)
+			return buflintvalidate.CheckField(addAnnotationFunc, field, extensionResolver)
 		}).Handle(ctx, nil, nil); err != nil {
 		return err
 	}
