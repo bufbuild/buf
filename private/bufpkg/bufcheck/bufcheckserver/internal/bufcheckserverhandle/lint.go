@@ -963,6 +963,9 @@ func handleLintProtovalidate(
 			args...,
 		)
 	}
+	// We create a new extension resolver using all of the files from the request, including
+	// import files. This is because there can be a case where a non-import file uses a predefined
+	// rule from an imported file.
 	extensionResolver, err := protoencoding.NewResolver(
 		slicesext.Map(
 			request.ProtosourceFiles(),
@@ -974,68 +977,35 @@ func handleLintProtovalidate(
 	if err != nil {
 		return err
 	}
-	// This for-loop checks that predefined rules have cel expressions that compile and adds
-	// the ones that compile to the extension resolver, as a side effect. These types are relied
-	// on to check the example values for fields.
-	for _, file := range request.ProtosourceFiles() {
-		// We check all predefined rules for all files and add them to the extension resolver
-		// if they compile, regardless if the file is an import or not. This is because a non-import
-		// file may use a predefined rule from an import file.
-		// However, we only add check annotations for non-import files.
-		if err := bufprotosource.ForEachMessage(
-			func(message bufprotosource.Message) error {
-				for _, extension := range message.Extensions() {
-					if err := buflintvalidate.CheckAndRegisterPredefinedRuleExtension(
-						addAnnotationFunc,
-						extension,
-						file.IsImport(),
-						extensionResolver,
-					); err != nil {
-						return err
-					}
-				}
-				return nil
-			},
-			file,
-		); err != nil {
-			return err
-		}
-		for _, extension := range file.Extensions() {
-			if err := buflintvalidate.CheckAndRegisterPredefinedRuleExtension(
-				addAnnotationFunc,
-				extension,
-				file.IsImport(),
-				extensionResolver,
-			); err != nil {
-				return err
-			}
-		}
-	}
+	// However, we only want to check non-import files, so we can use NewLintMessageRuleHandler
+	// and NewLintFieldRuleHandler utils to check messages and fields respectively.
 	if err := bufcheckserverutil.NewLintMessageRuleHandler(
 		func(
-			// The responseWriter is being passed in through the shared addAnnotationFunc, so we
-			// do not pass in responseWriter and request again. This should be addressed in a refactor.
 			_ bufcheckserverutil.ResponseWriter,
 			_ bufcheckserverutil.Request,
 			message bufprotosource.Message,
 		) error {
 			return buflintvalidate.CheckMessage(addAnnotationFunc, message)
-		}).Handle(ctx, nil, nil); err != nil {
+		},
+		// The responseWriter is being passed in through the shared addAnnotationFunc, so we
+		// do not pass in responseWriter again. This should be addressed in a refactor.
+	).Handle(ctx, nil, request); err != nil {
 		return err
 	}
-	if err := bufcheckserverutil.NewLintFieldRuleHandler(
+	return bufcheckserverutil.NewLintFieldRuleHandler(
 		func(
-			// The responseWriter is being passed in through the shared addAnnotationFunc, so we
-			// do not pass in responseWriter and request again. This should be addressed in a refactor.
 			_ bufcheckserverutil.ResponseWriter,
 			_ bufcheckserverutil.Request,
 			field bufprotosource.Field,
 		) error {
+			if err := buflintvalidate.CheckPredefinedRuleExtension(addAnnotationFunc, field, extensionResolver); err != nil {
+				return err
+			}
 			return buflintvalidate.CheckField(addAnnotationFunc, field, extensionResolver)
-		}).Handle(ctx, nil, nil); err != nil {
-		return err
-	}
-	return nil
+		},
+		// The responseWriter is being passed in through the shared addAnnotationFunc, so we
+		// do not pass in responseWriter again. This should be addressed in a refactor.
+	).Handle(ctx, nil, request)
 }
 
 // HandleLintRPCNoClientStreaming is a handle function.

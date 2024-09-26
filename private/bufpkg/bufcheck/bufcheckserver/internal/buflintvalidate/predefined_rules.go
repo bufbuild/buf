@@ -29,10 +29,9 @@ const (
 	celFieldNumberPath = int32(1)
 )
 
-func checkAndRegisterPredefinedRuleExtension(
+func checkPredefinedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	extension bufprotosource.Field,
-	fileIsImport bool,
 	extensionResolver protoencoding.Resolver,
 ) error {
 	extensionDescriptor, err := extension.AsDescriptor()
@@ -93,16 +92,6 @@ func checkAndRegisterPredefinedRuleExtension(
 	)
 	if err != nil {
 		return err
-	}
-	// If the file is an import file, we only want to check that the CEL expression compiles,
-	// but we do not want to produce file annotations, so we set the addAnnotationFunc to a nop.
-	if fileIsImport {
-		addAnnotationFunc = func(
-			_ bufprotosource.Descriptor,
-			_ bufprotosource.Location,
-			_ []bufprotosource.Location,
-			_ string, _ ...interface{}) {
-		}
 	}
 	checkCEL(
 		celEnv,
