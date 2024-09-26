@@ -38,7 +38,7 @@ func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshal
 }
 
 func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
-	if err := ReparseUnrecognized(m.resolver, message.ProtoReflect()); err != nil {
+	if err := ReparseExtensions(m.resolver, message.ProtoReflect()); err != nil {
 		return nil, err
 	}
 	options := protojson.MarshalOptions{

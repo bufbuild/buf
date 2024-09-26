@@ -38,7 +38,7 @@ func newYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshal
 }
 
 func (m *yamlMarshaler) Marshal(message proto.Message) ([]byte, error) {
-	if err := ReparseUnrecognized(m.resolver, message.ProtoReflect()); err != nil {
+	if err := ReparseExtensions(m.resolver, message.ProtoReflect()); err != nil {
 		return nil, err
 	}
 	options := protoyaml.MarshalOptions{
