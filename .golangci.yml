@@ -110,6 +110,11 @@ issues:
       path: private/buf/bufcli/env.go
       text: "G101:"
     - linters:
+        - gosec
+      # G404 checks for use of the ordinary non-CPRNG.
+      path: private/buf/buflsp/progress.go
+      text: "G404:"
+    - linters:
         - containedctx
       # Type must implement an interface whose methods do not accept context. But this
       # implementation makes RPC calls, which need a context. So we allow creator of the
