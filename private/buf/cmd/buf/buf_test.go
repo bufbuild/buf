@@ -40,6 +40,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
@@ -47,7 +48,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -4352,7 +4352,7 @@ func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFi
 	buffer := bytes.NewBuffer(nil)
 	testRun(t, expectedExitCode, nil, buffer, append([]string{"build", "-o", "-"}, buildArgs...)...)
 	protoImage := &imagev1.Image{}
-	err := proto.Unmarshal(buffer.Bytes(), protoImage)
+	err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(buffer.Bytes(), protoImage)
 	require.NoError(t, err)
 	image, err := bufimage.NewImageForProto(protoImage)
 	require.NoError(t, err)

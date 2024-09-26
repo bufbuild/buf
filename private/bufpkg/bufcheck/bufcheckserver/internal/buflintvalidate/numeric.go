@@ -17,7 +17,7 @@ package buflintvalidate
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -165,12 +165,12 @@ func getNumericPointerFromValue[
 }
 
 func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, string, error) {
-	bytes, err := proto.Marshal(value.Message().Interface())
+	bytes, err := protoencoding.NewWireMarshaler().Marshal(value.Message().Interface())
 	if err != nil {
 		return nil, "", err
 	}
 	timestamp := &timestamppb.Timestamp{}
-	err = proto.Unmarshal(bytes, timestamp)
+	err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(bytes, timestamp)
 	if err != nil {
 		return nil, "", err
 	}
@@ -182,12 +182,12 @@ func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, st
 }
 
 func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, string, error) {
-	bytes, err := proto.Marshal(value.Message().Interface())
+	bytes, err := protoencoding.NewWireMarshaler().Marshal(value.Message().Interface())
 	if err != nil {
 		return nil, "", err
 	}
 	duration := &durationpb.Duration{}
-	err = proto.Unmarshal(bytes, duration)
+	err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(bytes, duration)
 	if err != nil {
 		return nil, "", err
 	}

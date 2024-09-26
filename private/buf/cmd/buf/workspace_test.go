@@ -30,11 +30,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestWorkspaceDir(t *testing.T) {
@@ -1727,7 +1727,7 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		)...,
 	)
 	outputImage := &imagev1.Image{}
-	require.NoError(t, proto.Unmarshal(stdout.Bytes(), outputImage))
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(stdout.Bytes(), outputImage))
 
 	filesToCheck := slicesext.ToStructMap(slicesext.MapKeysToSlice(expectedFilePathToInfo))
 
