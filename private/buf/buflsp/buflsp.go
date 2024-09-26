@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -59,7 +58,7 @@ func Serve(
 	}
 
 	tracer := tracing.NewTracer(container.Tracer())
-	checkClient, err := bufcheck.NewClient(container.Logger(), tracer, pluginrpcutil.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+	checkClient, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
 	if err != nil {
 		return nil, err
 	}

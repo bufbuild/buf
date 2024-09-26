@@ -568,7 +568,6 @@ func (f *file) RunLints(ctx context.Context) bool {
 		lintConfig,
 		image,
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPluginsEnabled(),
 	)
 
 	if err == nil {
