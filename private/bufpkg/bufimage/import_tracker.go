@@ -212,8 +212,7 @@ func (t *importTracker) findUsedImportsInMessageValue(file *imagev1.ImageFile, m
 		// process Any messages that might be nested inside this one
 		value := msg.Get(valueField).Bytes()
 		nestedMessage := msgType.New()
-		err = proto.UnmarshalOptions{Resolver: t.resolver}.Unmarshal(value, nestedMessage.Interface())
-		if err != nil {
+		if err := protoencoding.NewWireUnmarshaler(t.resolver).Unmarshal(value, nestedMessage.Interface()); err != nil {
 			// bytes are not valid; skip it
 			return
 		}
