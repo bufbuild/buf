@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,7 @@ func TestStripBufExtensionField(t *testing.T) {
 			},
 		},
 	}
-	dataToBeStripped, err := proto.Marshal(file)
+	dataToBeStripped, err := protoencoding.NewWireMarshaler().Marshal(file)
 	require.NoError(t, err)
 
 	otherData := protowire.AppendTag(nil, 122, protowire.BytesType)
@@ -164,11 +165,11 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	require.Equal(t, otherData, []byte(protoImageFile.ProtoReflect().GetUnknown()))
 
 	// now round-trip it back through
-	imageFileBytes, err := proto.Marshal(protoImageFile)
+	imageFileBytes, err := protoencoding.NewWireMarshaler().Marshal(protoImageFile)
 	require.NoError(t, err)
 
 	roundTrippedFileDescriptor := &descriptorpb.FileDescriptorProto{}
-	err = proto.Unmarshal(imageFileBytes, roundTrippedFileDescriptor)
+	err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(imageFileBytes, roundTrippedFileDescriptor)
 	require.NoError(t, err)
 	// unrecognized now includes image file's buf extension
 	require.Greater(t, len(roundTrippedFileDescriptor.ProtoReflect().GetUnknown()), len(otherData))
@@ -199,11 +200,11 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 
 	// double-check via round-trip, to make sure resulting image file equals the input
 	// (to verify that the original unknown bytes byf extension didn't interfere)
-	imageFileBytes, err = proto.Marshal(protoImageFile)
+	imageFileBytes, err = protoencoding.NewWireMarshaler().Marshal(protoImageFile)
 	require.NoError(t, err)
 
 	roundTrippedImageFile := &imagev1.ImageFile{}
-	err = proto.Unmarshal(imageFileBytes, roundTrippedImageFile)
+	err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(imageFileBytes, roundTrippedImageFile)
 	require.NoError(t, err)
 
 	diff := cmp.Diff(protoImageFile, roundTrippedImageFile, protocmp.Transform())

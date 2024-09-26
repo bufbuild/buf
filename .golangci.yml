@@ -21,6 +21,15 @@ linters-settings:
       - '^log\.'
       - '^print$'
       - '^println$'
+      # Use private/pkg/protoencoding Marshalers and Unmarshalers
+      - '^proto.Marshal$'
+      - '^proto.Unmarshal$'
+      - '^proto.MarshalOptions$'
+      - '^proto.UnmarshalOptions$'
+      - '^protojson.Marshal$'
+      - '^protojson.Unmarshal$'
+      - '^protojson.MarshalOptions$'
+      - '^protojson.UnmarshalOptions$'
   govet:
     enable:
       - nilness
@@ -342,6 +351,28 @@ issues:
       # to set the source path for the location, this operation should be safe.
       path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/cel.go
       text: "G115:"
+    # No obvious deprecated replacement.
+    - linters:
+        - staticcheck
+      path: private/pkg/protoencoding/reparse_extensions_test.go
+      text: "SA1019:"
+    # Allow marshal and unmarshal functions in protoencoding only
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "proto.Marshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "proto.Unmarshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "protojson.Marshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "protojson.Unmarshal"
     - linters:
         - gosec
       # This checks the cel constraints for predefined rules from an Image, and converts loop indices to int32

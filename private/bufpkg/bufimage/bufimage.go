@@ -675,7 +675,7 @@ type newImageForProtoOptions struct {
 }
 
 func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolver, computeUnusedImports bool) error {
-	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
+	if err := protoencoding.ReparseExtensions(resolver, protoImage.ProtoReflect()); err != nil {
 		return fmt.Errorf("could not reparse image: %v", err)
 	}
 	if computeUnusedImports {
