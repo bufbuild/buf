@@ -22,14 +22,10 @@ linters-settings:
       - '^print$'
       - '^println$'
       # Use private/pkg/protoencoding Marshalers and Unmarshalers
-      - '^proto.Marshal$'
-      - '^proto.Unmarshal$'
-      - '^proto.MarshalOptions$'
-      - '^proto.UnmarshalOptions$'
-      - '^protojson.Marshal$'
-      - '^protojson.Unmarshal$'
-      - '^protojson.MarshalOptions$'
-      - '^protojson.UnmarshalOptions$'
+      - '^(proto|prototext|protojson|protoyaml).Marshal$'
+      - '^(proto|prototext|protojson|protoyaml).Unmarshal$'
+      - '^(proto|prototext|protojson|protoyaml).MarshalOptions$'
+      - '^(proto|prototext|protojson|protoyaml).UnmarshalOptions$'
   govet:
     enable:
       - nilness
@@ -378,3 +374,19 @@ issues:
       - forbidigo
       path: private/pkg/protoencoding
       text: "protojson.Unmarshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "protoyaml.Marshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "protoyaml.Unmarshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "prototext.Marshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "prototext.Unmarshal"
