@@ -12,30 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protoencoding
+// Generated. DO NOT EDIT.
 
-import (
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
-)
+package refcount
 
-type txtpbMarshaler struct {
-	resolver Resolver
-}
-
-func newTxtpbMarshaler(resolver Resolver) Marshaler {
-	if resolver == nil {
-		resolver = EmptyResolver
-	}
-	return &txtpbMarshaler{
-		resolver: resolver,
-	}
-}
-
-func (m *txtpbMarshaler) Marshal(message proto.Message) ([]byte, error) {
-	options := prototext.MarshalOptions{
-		Resolver: m.resolver,
-		Indent:   "  ",
-	}
-	return options.Marshal(message)
-}
+import _ "github.com/bufbuild/buf/private/usage"

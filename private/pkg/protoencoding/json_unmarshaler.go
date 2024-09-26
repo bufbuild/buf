@@ -25,6 +25,9 @@ type jsonUnmarshaler struct {
 }
 
 func newJSONUnmarshaler(resolver Resolver, options ...JSONUnmarshalerOption) Unmarshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	jsonUnmarshaler := &jsonUnmarshaler{
 		resolver: resolver,
 	}

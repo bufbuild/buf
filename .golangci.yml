@@ -22,14 +22,10 @@ linters-settings:
       - '^print$'
       - '^println$'
       # Use private/pkg/protoencoding Marshalers and Unmarshalers
-      - '^proto.Marshal$'
-      - '^proto.Unmarshal$'
-      - '^proto.MarshalOptions$'
-      - '^proto.UnmarshalOptions$'
-      - '^protojson.Marshal$'
-      - '^protojson.Unmarshal$'
-      - '^protojson.MarshalOptions$'
-      - '^protojson.UnmarshalOptions$'
+      - '^(proto|prototext|protojson|protoyaml).Marshal$'
+      - '^(proto|prototext|protojson|protoyaml).Unmarshal$'
+      - '^(proto|prototext|protojson|protoyaml).MarshalOptions$'
+      - '^(proto|prototext|protojson|protoyaml).UnmarshalOptions$'
   govet:
     enable:
       - nilness
@@ -109,6 +105,31 @@ issues:
       # trip this off.
       path: private/buf/bufcli/env.go
       text: "G101:"
+    - linters:
+        - gosec
+      # G404 checks for use of the ordinary non-CPRNG.
+      path: private/buf/buflsp/progress.go
+      text: "G404:"
+    - linters:
+        - gosec
+      # G115 checks for use of truncating conversions.
+      path: private/buf/buflsp/file.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # G115 checks for use of truncating conversions.
+      path: private/buf/buflsp/report.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # G115 checks for use of truncating conversions.
+      path: private/buf/buflsp/server.go
+      text: "G115:"
+    - linters:
+        - gosec
+      # G115 checks for use of truncating conversions.
+      path: private/buf/buflsp/symbol.go
+      text: "G115:"
     - linters:
         - containedctx
       # Type must implement an interface whose methods do not accept context. But this
@@ -373,6 +394,22 @@ issues:
       - forbidigo
       path: private/pkg/protoencoding
       text: "protojson.Unmarshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "protoyaml.Marshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "protoyaml.Unmarshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "prototext.Marshal"
+    - linters:
+      - forbidigo
+      path: private/pkg/protoencoding
+      text: "prototext.Unmarshal"
     - linters:
         - gosec
       # This checks the cel constraints for predefined rules from an Image, and converts loop indices to int32

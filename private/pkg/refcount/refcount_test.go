@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protoencoding
+package refcount
 
 import (
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type txtpbMarshaler struct {
-	resolver Resolver
-}
+func TestMap(t *testing.T) {
+	t.Parallel()
 
-func newTxtpbMarshaler(resolver Resolver) Marshaler {
-	if resolver == nil {
-		resolver = EmptyResolver
-	}
-	return &txtpbMarshaler{
-		resolver: resolver,
-	}
-}
+	table := &Map[string, int]{}
 
-func (m *txtpbMarshaler) Marshal(message proto.Message) ([]byte, error) {
-	options := prototext.MarshalOptions{
-		Resolver: m.resolver,
-		Indent:   "  ",
-	}
-	return options.Marshal(message)
+	value, found := table.Insert("foo")
+	assert.Equal(t, *value, 0)
+	assert.Equal(t, found, false)
+	*value = 42
+
+	value, found = table.Insert("foo")
+	assert.Equal(t, *value, 42)
+	assert.Equal(t, found, true)
+
+	assert.Equal(t, *table.Get("foo"), 42)
+	assert.Nil(t, table.Get("bar"))
+
+	assert.Nil(t, table.Delete("foo"))
+	assert.Equal(t, *table.Delete("foo"), 42)
 }

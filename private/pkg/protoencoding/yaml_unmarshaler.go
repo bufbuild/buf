@@ -26,6 +26,9 @@ type yamlUnmarshaler struct {
 }
 
 func newYAMLUnmarshaler(resolver Resolver, options ...YAMLUnmarshalerOption) Unmarshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	result := &yamlUnmarshaler{
 		resolver: resolver,
 	}

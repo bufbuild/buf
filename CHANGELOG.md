@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add new experimental LSP support under `buf beta lsp`.
 
 ## [v1.42.0] - 2024-09-18
 

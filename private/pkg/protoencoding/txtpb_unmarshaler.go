@@ -24,6 +24,9 @@ type txtpbUnmarshaler struct {
 }
 
 func newTxtpbUnmarshaler(resolver Resolver) Unmarshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	return &txtpbUnmarshaler{
 		resolver: resolver,
 	}
