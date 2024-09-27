@@ -142,4 +142,15 @@ message StringTest {
     (buf.validate.field).string.not_contains = "bar_foo",
     (buf.validate.field).string.prefix = "foo"
   ];
+  string examples = 32 [
+    (buf.validate.field).string.max_len = 20,
+    (buf.validate.field).string.max_bytes = 32,
+    (buf.validate.field).string.prefix = "foo",
+    (buf.validate.field).string.not_in = "foo_1",
+    (buf.validate.field).string.not_in = "foo_2",
+    (buf.validate.field).string.example = "foo_8", // valid
+    (buf.validate.field).string.example = "afoo_8", // invalid
+    (buf.validate.field).string.example = "foofoofoo", // valid
+    (buf.validate.field).string.example = "bfoo" // invalid
+  ];
 }

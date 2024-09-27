@@ -30,4 +30,16 @@ message BytesTest {
     (buf.validate.field).bytes.len = 1,
     (buf.validate.field).bytes.pattern = "["
   ];
+  bytes valid_example = 9 [
+    (buf.validate.field).bytes.prefix = "ÀÀÀÀÀ",
+    (buf.validate.field).bytes.example = "ÀÀÀÀÀÇÇÇÇÇÇÇÇÅÅÅÅÅÅÅÅ"
+  ];
+  bytes valid_and_invalid_example = 10 [
+    (buf.validate.field).bytes.prefix = "ÀÀÀÀÀ",
+    (buf.validate.field).bytes.max_len = 17,
+    // valid
+    (buf.validate.field).bytes.example = "ÀÀÀÀÀÀÀÀ",
+    // invalid, fails one of the rules
+    (buf.validate.field).bytes.example = "ÀÀÀÀÀÇÇÇÇÇÇÇÇÅÅÅÅÅÅÅÅ"
+  ];
 }

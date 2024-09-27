@@ -58,8 +58,6 @@ func CheckMessage(
 // For a set of rules to be valid, it must
 //  1. permit _some_ value and all example values, if any
 //  2. have a type compatible with the field it validates.
-//
-// This also checks all predefined rule extensions fields to ensure they compile.
 func CheckField(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
@@ -69,6 +67,7 @@ func CheckField(
 	return checkField(addAnnotationFunc, field, extensionTypeResolver)
 }
 
+// CheckPredefinedRuleExtension checks that a predefined extension is valid, and any CEL expressions compile.
 func CheckPredefinedRuleExtension(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),

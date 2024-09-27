@@ -795,18 +795,28 @@ func checkExampleValues(
 	// and validate this message instance with protovalidate and filter the structured
 	// errors by field name to determine whether this example value fails rules defined
 	// on the same field.
-	v, err := protovalidate.New(
-		protovalidate.WithStandardConstraintInterceptor(
-			func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
-				// Pass a constraint resolver interceptor so that constraints on other
-				// fields are not looked at by the validator.
-				return &constraintsResolverForTargetField{
-					StandardConstraintResolver: res,
-					targetField:                fieldDescriptor,
-				}
-			},
-		),
-	)
+	//
+	// Pass a constraint resolver interceptor so that constraints on other
+	// fields are not looked at by the validator.
+	constraintInterceptor := func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
+		return &constraintsResolverForTargetField{
+			StandardConstraintResolver: res,
+			targetField:                fieldDescriptor,
+		}
+	}
+	// For map fields, we want to resolve the constraints on the parentMapFieldDescriptor rather
+	// than the MapEntry.
+	if parentMapFieldDescriptor != nil {
+		constraintInterceptor = func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
+			// Pass a constraint resolver interceptor so that constraints on other
+			// fields are not looked at by the validator.
+			return &constraintsResolverForTargetField{
+				StandardConstraintResolver: res,
+				targetField:                parentMapFieldDescriptor,
+			}
+		}
+	}
+	validator, err := protovalidate.New(protovalidate.WithStandardConstraintInterceptor(constraintInterceptor))
 	if err != nil {
 		return err
 	}
@@ -878,10 +888,92 @@ func checkExampleValues(
 				return syserror.Newf("expected key or value as sythetic field name for map entry's field name, got %q", fieldDescriptor.Name())
 			}
 			messageToValidate.Set(parentMapFieldDescriptor, protoreflect.ValueOfMap(mapEntry))
+		case fieldDescriptor.Enum() != nil:
+			// We need to handle enum examples in a special way, since enum examples are set as
+			// int32, but we need to set it to the enum value to the field.
+			// So we cast exampleValue to an int32 and check that cast first before attempting
+			// to set it to the message field. This is because messageToValidate.Set will panic
+			// if an invalid type is attempted to be set.
+			exampleInt32, ok := exampleValue.Interface().(int32)
+			if !ok {
+				return syserror.Newf("expected enum example value to be int32 for field %q, got %T type instead", fieldDescriptor.FullName(), exampleValue)
+			}
+			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOf(protoreflect.EnumNumber(exampleInt32)))
+		case fieldDescriptor.Message() != nil:
+			// We need to handle the case where the field is a wrapper type. We set the value directly base on the wrapper type.
+			switch string(fieldDescriptor.Message().FullName()) {
+			case string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.FloatValue{Value: exampleValue.Interface().(float32)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.DoubleValue{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.DoubleValue{Value: exampleValue.Interface().(float64)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.Int32Value{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.Int32Value{Value: exampleValue.Interface().(int32)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.Int64Value{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.Int64Value{Value: exampleValue.Interface().(int64)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.UInt32Value{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.UInt32Value{Value: exampleValue.Interface().(uint32)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.UInt64Value{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.UInt64Value{Value: exampleValue.Interface().(uint64)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.BoolValue{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.BoolValue{Value: exampleValue.Interface().(bool)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.StringValue{Value: exampleValue.Interface().(string)}).ProtoReflect(),
+					),
+				)
+			case string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()):
+				messageToValidate.Set(
+					fieldDescriptor,
+					protoreflect.ValueOf(
+						(&wrapperspb.BytesValue{Value: exampleValue.Interface().([]byte)}).ProtoReflect(),
+					),
+				)
+			default:
+				// In the case where it is not a wrapper type (e.g. google.protobuf.Timestamp), we just set the example
+				// value directly.
+				messageToValidate.Set(fieldDescriptor, exampleValue)
+			}
 		default:
 			messageToValidate.Set(fieldDescriptor, exampleValue)
 		}
-		err := v.Validate(messageToValidate)
+		err := validator.Validate(messageToValidate)
 		if err == nil {
 			continue
 		}
