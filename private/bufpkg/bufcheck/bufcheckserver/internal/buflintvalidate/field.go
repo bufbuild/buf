@@ -903,66 +903,102 @@ func checkExampleValues(
 			// We need to handle the case where the field is a wrapper type. We set the value directly base on the wrapper type.
 			switch string(fieldDescriptor.Message().FullName()) {
 			case string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueFloat, ok := exampleValue.Interface().(float32)
+				if !ok {
+					return syserror.Newf("unexpected type found for float wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.FloatValue{Value: exampleValue.Interface().(float32)}).ProtoReflect(),
+						(&wrapperspb.FloatValue{Value: exampleValueFloat}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.DoubleValue{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueDouble, ok := exampleValue.Interface().(float64)
+				if !ok {
+					return syserror.Newf("unexpected type found for double wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.DoubleValue{Value: exampleValue.Interface().(float64)}).ProtoReflect(),
+						(&wrapperspb.DoubleValue{Value: exampleValueDouble}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.Int32Value{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueInt32, ok := exampleValue.Interface().(int32)
+				if !ok {
+					return syserror.Newf("unexpected type found for int32 wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.Int32Value{Value: exampleValue.Interface().(int32)}).ProtoReflect(),
+						(&wrapperspb.Int32Value{Value: exampleValueInt32}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.Int64Value{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueInt64, ok := exampleValue.Interface().(int64)
+				if !ok {
+					return syserror.Newf("unexpected type found for int64 wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.Int64Value{Value: exampleValue.Interface().(int64)}).ProtoReflect(),
+						(&wrapperspb.Int64Value{Value: exampleValueInt64}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.UInt32Value{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueUInt32, ok := exampleValue.Interface().(uint32)
+				if !ok {
+					return syserror.Newf("unexpected type found for uint32 wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.UInt32Value{Value: exampleValue.Interface().(uint32)}).ProtoReflect(),
+						(&wrapperspb.UInt32Value{Value: exampleValueUInt32}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.UInt64Value{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueUInt64, ok := exampleValue.Interface().(uint64)
+				if !ok {
+					return syserror.Newf("unexpected type found for uint32 wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.UInt64Value{Value: exampleValue.Interface().(uint64)}).ProtoReflect(),
+						(&wrapperspb.UInt64Value{Value: exampleValueUInt64}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.BoolValue{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueBool, ok := exampleValue.Interface().(bool)
+				if !ok {
+					return syserror.Newf("unexpected type found for bool wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.BoolValue{Value: exampleValue.Interface().(bool)}).ProtoReflect(),
+						(&wrapperspb.BoolValue{Value: exampleValueBool}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueString, ok := exampleValue.Interface().(string)
+				if !ok {
+					return syserror.Newf("unexpected type found for string wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.StringValue{Value: exampleValue.Interface().(string)}).ProtoReflect(),
+						(&wrapperspb.StringValue{Value: exampleValueString}).ProtoReflect(),
 					),
 				)
 			case string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()):
+				exampleValueBytes, ok := exampleValue.Interface().([]byte)
+				if !ok {
+					return syserror.Newf("unexpected type found for bytes wrapper type %T", exampleValue.Interface())
+				}
 				messageToValidate.Set(
 					fieldDescriptor,
 					protoreflect.ValueOf(
-						(&wrapperspb.BytesValue{Value: exampleValue.Interface().([]byte)}).ProtoReflect(),
+						(&wrapperspb.BytesValue{Value: exampleValueBytes}).ProtoReflect(),
 					),
 				)
 			default:
