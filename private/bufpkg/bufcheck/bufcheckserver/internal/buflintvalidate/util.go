@@ -15,6 +15,8 @@
 package buflintvalidate
 
 import (
+	"fmt"
+
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/protovalidate-go"
@@ -46,14 +48,14 @@ func (r *constraintsResolverForTargetField) ResolveOneofConstraints(desc protore
 }
 
 // This function is copied directly from protovalidate-go, except refactored to use protoencoding
-// for marshalling and unmarshalling.
+// for marshalling and unmarshalling. We also added error handling for marshal/unmarshal.
 //
 // This resolves the given extension and returns the constraints for the extension.
 func resolveExt[C proto.Message](
 	options proto.Message,
 	extType protoreflect.ExtensionType,
 	resolver protoencoding.Resolver,
-) (constraints C) {
+) (constraints C, retErr error) {
 	num := extType.TypeDescriptor().Number()
 	var msg proto.Message
 
@@ -66,16 +68,20 @@ func resolveExt[C proto.Message](
 	})
 
 	if msg == nil {
-		return constraints
+		return constraints, nil
 	} else if m, ok := msg.(C); ok {
-		return m
+		return m, nil
 	}
-
-	constraints, _ = constraints.ProtoReflect().New().Interface().(C)
-	// TODO: handle marhsal/unmarshaling errors, wtf.
-	b, _ := protoencoding.NewWireMarshaler().Marshal(msg)
-	_ = protoencoding.NewWireUnmarshaler(resolver).Unmarshal(b, constraints)
-	return constraints
+	var ok bool
+	constraints, ok = constraints.ProtoReflect().New().Interface().(C)
+	if !ok {
+		return constraints, fmt.Errorf("unexpected type for constraints %T", constraints)
+	}
+	b, err := protoencoding.NewWireMarshaler().Marshal(msg)
+	if err != nil {
+		return constraints, err
+	}
+	return constraints, protoencoding.NewWireUnmarshaler(resolver).Unmarshal(b, constraints)
 }
 
 func celTypeForStandardRuleMessageDescriptor(
