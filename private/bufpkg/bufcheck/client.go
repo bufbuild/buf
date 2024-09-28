@@ -57,15 +57,15 @@ func newClient(
 		option(clientOptions)
 	}
 	// We want to keep our check.Clients static for caching instead of creating them on every lint and breaking call.
-	v1beta1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCacheRulesAndCategories())
+	v1beta1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Beta1Spec, check.ClientWithCaching())
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
-	v1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCacheRulesAndCategories())
+	v1DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V1Spec, check.ClientWithCaching())
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
-	v2DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCacheRulesAndCategories())
+	v2DefaultCheckClient, err := check.NewClientForSpec(bufcheckserver.V2Spec, check.ClientWithCaching())
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
@@ -333,7 +333,7 @@ func (c *client) getMultiClient(
 				// FormatBinary is the default, but we're just being explicit here.
 				pluginrpc.ClientWithFormat(pluginrpc.FormatBinary),
 			),
-			check.ClientWithCacheRulesAndCategories(),
+			check.ClientWithCaching(),
 		)
 		checkClientSpecs = append(
 			checkClientSpecs,
