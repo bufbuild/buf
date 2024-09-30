@@ -199,11 +199,6 @@ func newHandlerOptions() *handlerOptions {
 	return &handlerOptions{}
 }
 
-// FindPluginPath returns the path to the specific plugin specified by pluginName.
-func FindPluginPath(pluginName string) (string, error) {
-	return unsafeLookPath(pluginName)
-}
-
 // unsafeLookPath is a wrapper around exec.LookPath that restores the original
 // pre-Go 1.19 behavior of resolving queries that would use relative PATH
 // entries. We consider it acceptable for the use case of locating plugins.

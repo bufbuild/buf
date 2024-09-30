@@ -16,11 +16,12 @@ package bufcheck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"sync"
 
-	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -131,7 +132,7 @@ func (r *wasmRunner) loadPlugin(ctx context.Context) (bufwasm.Plugin, error) {
 		path = r.programName
 	} else {
 		var err error
-		path, err = bufprotopluginexec.FindPluginPath(r.programName)
+		path, err = unsafeLookPath(r.programName)
 		if err != nil {
 			return nil, fmt.Errorf("could not find plugin %q in PATH: %v", r.programName, err)
 		}
@@ -149,4 +150,17 @@ func (r *wasmRunner) loadPlugin(ctx context.Context) (bufwasm.Plugin, error) {
 	// will benefit from the cached plugin. This is only safe as the
 	// runner is limited to the CLI.
 	return plugin, nil
+}
+
+// unsafeLookPath is a wrapper around exec.LookPath that restores the original
+// pre-Go 1.19 behavior of resolving queries that would use relative PATH
+// entries. We consider it acceptable for the use case of locating plugins.
+//
+// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
+func unsafeLookPath(file string) (string, error) {
+	path, err := exec.LookPath(file)
+	if errors.Is(err, exec.ErrDot) {
+		err = nil
+	}
+	return path, err
 }
