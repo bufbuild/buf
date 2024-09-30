@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"buf.build/go/spdx"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
-	"github.com/bufbuild/buf/private/gen/data/dataspdx"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
@@ -66,8 +66,8 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	}
 	spdxLicenseID := externalConfig.SPDXLicenseID
 	if spdxLicenseID != "" {
-		if licenseInfo, ok := dataspdx.GetLicenseInfo(spdxLicenseID); ok {
-			spdxLicenseID = licenseInfo.ID()
+		if license, ok := spdx.LicenseForID(spdxLicenseID); ok {
+			spdxLicenseID = license.ID
 		} else {
 			return nil, fmt.Errorf("unknown SPDX License ID %q", spdxLicenseID)
 		}
