@@ -1220,7 +1220,7 @@ func TestRunLintCustomPlugins(t *testing.T) {
 	)
 }
 
-func TestRunLintCustomWASMPlugins(t *testing.T) {
+func TestRunLintCustomWasmPlugins(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
@@ -1263,7 +1263,7 @@ func testLintWithOptions(
 	wasmRuntime bool,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for WASM runtime
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for Wasm runtime
 	defer cancel()
 
 	baseDirPath := filepath.Join("testdata", "lint")
@@ -1325,7 +1325,7 @@ func testLintWithOptions(
 		wasmRuntime, err := bufwasm.NewRuntime(ctx)
 		require.NoError(t, err)
 		t.Cleanup(func() { assert.NoError(t, wasmRuntime.Release(ctx)) })
-		runnerProviderOptions = append(runnerProviderOptions, bufcheck.RunnerProviderWithWASMRuntime(wasmRuntime))
+		runnerProviderOptions = append(runnerProviderOptions, bufcheck.RunnerProviderWithWasmRuntime(wasmRuntime))
 	}
 	client, err := bufcheck.NewClient(
 		zap.NewNop(),

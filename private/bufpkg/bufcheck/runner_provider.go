@@ -56,11 +56,11 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 			path[0],
 			path[1:]...,
 		), nil
-	case bufconfig.PluginConfigTypeLocalWASM:
+	case bufconfig.PluginConfigTypeLocalWasm:
 		if r.wasmRuntime == nil {
 			return nil, syserror.Newf("wasm runtime is required for local wasm plugins")
 		}
-		return newWASMRunner(
+		return newWasmRunner(
 			r.wasmRuntime,
 			pluginConfig.Name(),
 		), nil
@@ -79,7 +79,7 @@ func newRunnerProviderOptions() *runnerProviderOptions {
 	}
 }
 
-// wasmRunner is a runner that loads a WASM plugin.
+// wasmRunner is a runner that loads a Wasm plugin.
 type wasmRunner struct {
 	programName string
 	wasmRuntime bufwasm.Runtime
@@ -89,7 +89,7 @@ type wasmRunner struct {
 	pluginErr error
 }
 
-// newWASMRunner returns a new pluginrpc.Runner for the WASM binary on a
+// newWasmRunner returns a new pluginrpc.Runner for the Wasm binary on a
 // bufwasm.Runtime and program name. This runner is only suitable for use with
 // short-lived programs, compiled plugins lifetime is tied to the runtime.
 //
@@ -98,7 +98,7 @@ type wasmRunner struct {
 // directory and file to find the program. This is similar to exec.LookPath
 // but does not require the file to be executable. This is only safe for use
 // in the CLI, as it is not safe to use in a server environment.
-func newWASMRunner(
+func newWasmRunner(
 	runtime bufwasm.Runtime,
 	programName string,
 ) *wasmRunner {

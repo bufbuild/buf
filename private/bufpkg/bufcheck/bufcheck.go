@@ -182,9 +182,9 @@ func NewRunnerProvider(
 // RunnerProviderOption is an option for NewRunnerProvider.
 type RunnerProviderOption func(*runnerProviderOptions)
 
-// RunnerProviderWithWASMRuntime returns a new RunnerProviderOption that
-// specifies a WASM runtime. This is required for local WASM plugins.
-func RunnerProviderWithWASMRuntime(wasmRuntime bufwasm.Runtime) RunnerProviderOption {
+// RunnerProviderWithWasmRuntime returns a new RunnerProviderOption that
+// specifies a Wasm runtime. This is required for local Wasm plugins.
+func RunnerProviderWithWasmRuntime(wasmRuntime bufwasm.Runtime) RunnerProviderOption {
 	return func(runnerProviderOptions *runnerProviderOptions) {
 		runnerProviderOptions.wasmRuntime = wasmRuntime
 	}

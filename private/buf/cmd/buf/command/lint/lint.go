@@ -153,7 +153,7 @@ func run(
 			tracer,
 			bufcheck.NewRunnerProvider(
 				command.NewRunner(),
-				bufcheck.RunnerProviderWithWASMRuntime(wasmRuntime),
+				bufcheck.RunnerProviderWithWasmRuntime(wasmRuntime),
 			),
 			bufcheck.ClientWithStderr(container.Stderr()),
 		)

@@ -26,8 +26,8 @@ import (
 const (
 	// PluginConfigTypeLocal is the local plugin config type.
 	PluginConfigTypeLocal PluginConfigType = iota + 1
-	// PluginConfigTypeLocalWASM is the local WASM plugin config type.
-	PluginConfigTypeLocalWASM
+	// PluginConfigTypeLocalWasm is the local Wasm plugin config type.
+	PluginConfigTypeLocalWasm
 )
 
 // PluginConfigType is a generate plugin configuration type.
@@ -65,13 +65,13 @@ func NewLocalPluginConfig(
 	)
 }
 
-// NewLocalWASMPluginConfig returns a new PluginConfig for a local WASM plugin.
-func NewLocalWASMPluginConfig(
+// NewLocalWasmPluginConfig returns a new PluginConfig for a local Wasm plugin.
+func NewLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
 	path []string,
 ) (PluginConfig, error) {
-	return newLocalWASMPluginConfig(
+	return newLocalWasmPluginConfig(
 		name,
 		options,
 	)
@@ -101,7 +101,7 @@ func newPluginConfigForExternalV2(
 		options[key] = value
 	}
 	// Differentiate between local and remote plugins.
-	// Local plugins are specified as a path to a binary or a WASM file.
+	// Local plugins are specified as a path to a binary or a Wasm file.
 	// Remote plugins are specified as a module reference.
 	// Paths with more than one element are assumed to be local plugin commands.
 	// This heuristic is based on the buffetch heuristics for inputs.
@@ -116,9 +116,9 @@ func newPluginConfigForExternalV2(
 		if _, err := bufmodule.ParseModuleRef(name); err == nil {
 			return nil, syserror.Newf("remote plugins are not yet supported")
 		}
-		// WASM plugins are suffixed with .wasm. Otherwise, it's a binary.
+		// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
 		if strings.HasSuffix(name, ".wasm") {
-			return newLocalWASMPluginConfig(
+			return newLocalWasmPluginConfig(
 				name,
 				options,
 			)
@@ -147,12 +147,12 @@ func newLocalPluginConfig(
 	}, nil
 }
 
-func newLocalWASMPluginConfig(
+func newLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
 ) (*pluginConfig, error) {
 	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeLocalWASM,
+		pluginConfigType: PluginConfigTypeLocalWasm,
 		name:             name,
 		options:          options,
 	}, nil

@@ -40,6 +40,6 @@ go install ./cmd/buf \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
-GOOS=wasip1 GOARCH=wasm go build -o $(go env -json | jq -r .GOBIN)/buf-plugin-suffix.wasm \
+GOOS=wasip1 GOARCH=wasm go build -o $(go env -json | jq -r .GOPATH)/bin/buf-plugin-suffix.wasm \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix
 go test ./...

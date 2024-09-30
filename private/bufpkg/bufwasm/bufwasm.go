@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufwasm provides a WASM runtime for plugins.
+// Package bufwasm provides a Wasm runtime for plugins.
 package bufwasm
 
 import (
@@ -21,7 +21,7 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
-// Plugin is a WASM module.
+// Plugin is a Wasm module.
 //
 // It is safe to use this plugin concurrently. Ensure that you call [Release]
 // when you are done with the plugin.
@@ -35,7 +35,7 @@ type Plugin interface {
 	Release(ctx context.Context) error
 }
 
-// Runtime is a WASM runtime.
+// Runtime is a Wasm runtime.
 //
 // It is safe to use this runtime concurrently. Ensure that you call [Release]
 // when you are done with the runtime. All plugins created by this runtime will
@@ -44,12 +44,12 @@ type Runtime interface {
 	// Compile compiles the given module into a [Plugin].
 	//
 	// The plugin is not validated to conform to the pluginrpc protocol.
-	Compile(ctx context.Context, pluginName string, pluginWASM []byte) (Plugin, error)
+	Compile(ctx context.Context, pluginName string, pluginWasm []byte) (Plugin, error)
 	// Release releases all resources held by the runtime.
 	Release(ctx context.Context) error
 }
 
-// NewRuntime creates a new WASM runtime.
+// NewRuntime creates a new Wasm runtime.
 func NewRuntime(ctx context.Context, options ...RuntimeOption) (Runtime, error) {
 	return newRuntime(ctx, options...)
 }

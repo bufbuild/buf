@@ -72,7 +72,7 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 func (r *runtime) Compile(ctx context.Context, name string, module []byte) (Plugin, error) {
 	if name == "" {
 		// The plugin is required to be named. We cannot use the name
-		// from the WASM binary as this is not guaranteed to be set and
+		// from the Wasm binary as this is not guaranteed to be set and
 		// may conflict with the provided name.
 		return nil, fmt.Errorf("name is empty")
 	}
