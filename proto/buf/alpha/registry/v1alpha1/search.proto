@@ -21,6 +21,7 @@ import "buf/alpha/registry/v1alpha1/plugin_curation.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 enum SearchFilter {
@@ -63,7 +64,10 @@ message RepositorySearchResult {
   // The visibility of the repository.
   Visibility visibility = 4;
   bool deprecated = 5;
-  RepositoryMetadata repository_metadata = 6;
+  // The SPDX license ID of the latest main commit in the repository.
+  string latest_spdx_license_id = 6;
+  // The verification status of the owner of the repository.
+  VerificationStatus owner_verification_status = 7;
 }
 
 message OrganizationSearchResult {
@@ -92,11 +96,14 @@ message CuratedPluginSearchResult {
   // who is the owner of this plugin.
   string owner = 3;
   bool deprecated = 4;
+  // The description of the plugin and it's functionality.
   string description = 5;
+  // The registry type of the plugin.
   PluginRegistryType registry_type = 6;
-  RegistryConfig registry_config = 7;
-  repeated PluginLanguage output_languages = 8;
-  google.protobuf.Timestamp create_time = 9;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 7;
+  // The plugins creation timestamp.
+  google.protobuf.Timestamp create_time = 8;
 }
 
 message ModuleElementSearchResult {
