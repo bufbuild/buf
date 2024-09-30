@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.43.0] - 2024-09-30
 
 - Add new experimental LSP support under `buf beta lsp`.
@@ -1264,6 +1268,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.43.0...HEAD
 [v1.43.0]: https://github.com/bufbuild/buf/compare/v1.42.0...v1.43.0
 [v1.42.0]: https://github.com/bufbuild/buf/compare/v1.41.0...v1.42.0
 [v1.41.0]: https://github.com/bufbuild/buf/compare/v1.40.1...v1.41.0
