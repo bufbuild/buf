@@ -745,6 +745,20 @@ func TestRunProtovalidate(t *testing.T) {
 	)
 }
 
+func TestRunProtovalidatePredefinedRules(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"protovalidate_predefined",
+		"buf.testing/lint/proto",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 14, 44, 18, 4, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 43, 5, 43, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 43, 5, 43, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 44, 5, 44, 64, "PROTOVALIDATE"),
+	)
+}
+
 func TestRunRPCNoStreaming(t *testing.T) {
 	t.Parallel()
 	testLint(

@@ -148,6 +148,9 @@ bufgeneratebuflinttestdata:
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output private/bufpkg/bufcheck/testdata/lint/protovalidate_predefined/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgeneratego \
