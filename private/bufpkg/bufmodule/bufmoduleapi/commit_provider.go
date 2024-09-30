@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

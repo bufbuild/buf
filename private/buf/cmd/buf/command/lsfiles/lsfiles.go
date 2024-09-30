@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 )
 
@@ -265,7 +266,7 @@ func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalIma
 		module = moduleFullName.String()
 	}
 	var commit string
-	if commitID := imageFileInfo.CommitID(); !commitID.IsNil() {
+	if commitID := imageFileInfo.CommitID(); commitID != uuid.Nil {
 		commit = uuidutil.ToDashless(commitID)
 	}
 	return &externalImageFileInfo{

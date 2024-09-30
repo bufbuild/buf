@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -43,7 +43,7 @@ type ModuleKey interface {
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
-	// Always present, that is CommitID().IsNil() will always be false.
+	// Always present, that is CommitID() == uuid.Nil will always be false.
 	CommitID() uuid.UUID
 	// Digest returns the Module digest.
 	//
@@ -127,7 +127,7 @@ func newModuleKey(
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
 	}
-	if commitID.IsNil() {
+	if commitID == uuid.Nil {
 		return nil, errors.New("empty commitID when constructing ModuleKey")
 	}
 	return newModuleKeyNoValidate(moduleFullName, commitID, getDigest), nil

@@ -17,7 +17,7 @@ package bufcheckserverutil
 import (
 	"buf.build/go/bufplugin/descriptor"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 type inputFile struct {

@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // Module presents a BSR module.
@@ -83,7 +83,7 @@ type Module interface {
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
-	// May be empty, that is CommitID().IsNil() may be true.
+	// May be empty, that is CommitID() == uuid.Nil may be true.
 	// Callers should not rely on this value being present.
 	//
 	// If ModuleFullName is nil, this will always be empty.
@@ -279,7 +279,7 @@ func newModule(
 	if !isLocal && moduleFullName == nil {
 		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
 	}
-	if moduleFullName == nil && !commitID.IsNil() {
+	if moduleFullName == nil && commitID != uuid.Nil {
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
 	}
 

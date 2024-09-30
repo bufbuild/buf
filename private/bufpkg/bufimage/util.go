@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/bufbuild/protoplugin/protopluginutil"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -302,7 +303,7 @@ func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.Fi
 
 func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) {
 	var protoCommitID string
-	if !imageFile.CommitID().IsNil() {
+	if imageFile.CommitID() != uuid.Nil {
 		protoCommitID = uuidutil.ToDashless(imageFile.CommitID())
 	}
 	return fileDescriptorProtoToProtoImageFile(

@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"go.uber.org/multierr"
 )
 
@@ -318,7 +318,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 	for _, option := range options {
 		option(localModuleOptions)
 	}
-	if localModuleOptions.moduleFullName == nil && !localModuleOptions.commitID.IsNil() {
+	if localModuleOptions.moduleFullName == nil && localModuleOptions.commitID != uuid.Nil {
 		return b.addError(syserror.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
 	}
 	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {

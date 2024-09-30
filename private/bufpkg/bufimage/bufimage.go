@@ -34,7 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -57,7 +57,7 @@ type ImageFileInfo interface {
 	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
 	// if the CommitID was known..
 	//
-	// May be empty, that is CommitID().IsNil() may be true. Callers should not rely on this
+	// May be empty, that is CommitID() == uuid.Nil may be true. Callers should not rely on this
 	// value being present. If ModuleFullName is nil, this will always be empty.
 	CommitID() uuid.UUID
 	// Imports returns the imports for this ImageFile.

@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
