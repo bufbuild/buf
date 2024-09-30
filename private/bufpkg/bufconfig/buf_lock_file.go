@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 const (
@@ -457,7 +457,7 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 	switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
 		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
-			if depModuleKey.CommitID().IsNil() {
+			if depModuleKey.CommitID() == uuid.Nil {
 				// This is a system error.
 				return syserror.Newf(
 					"%s lock files require commits, however we did not have a commit for module %q",

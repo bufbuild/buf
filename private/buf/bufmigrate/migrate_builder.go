@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )

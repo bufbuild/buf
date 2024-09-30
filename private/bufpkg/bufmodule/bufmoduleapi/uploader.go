@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -494,7 +495,7 @@ func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 		return nil, syserror.Newf("expected module name for remote module dependency %q", remoteDep.OpaqueID())
 	}
 	depCommitID := remoteDep.CommitID()
-	if depCommitID.IsNil() {
+	if depCommitID == uuid.Nil {
 		return nil, syserror.Newf("did not have a commit ID for a remote module dependency %q", remoteDep.OpaqueID())
 	}
 	return &modulev1beta1.UploadRequest_DepRef{

@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"github.com/jhump/protoreflect/v2/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

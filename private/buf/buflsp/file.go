@@ -38,7 +38,7 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
