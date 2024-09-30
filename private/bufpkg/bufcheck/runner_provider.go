@@ -18,10 +18,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -124,9 +123,18 @@ func (r *wasmRunner) loadPluginOnce(ctx context.Context) (bufwasm.Plugin, error)
 }
 
 func (r *wasmRunner) loadPlugin(ctx context.Context) (bufwasm.Plugin, error) {
-	path, err := lookPath(r.programName)
-	if err != nil {
-		return nil, fmt.Errorf("could not find plugin %q in PATH: %v", r.programName, err)
+	// Find the plugin path. We use the same logic as exec.LookPath, but we do
+	// not require the file to be executable. So check the local directory
+	// first before checking the PATH.
+	var path string
+	if fileInfo, err := os.Stat(r.programName); err == nil && !fileInfo.IsDir() {
+		path = r.programName
+	} else {
+		var err error
+		path, err = bufprotopluginexec.FindPluginPath(r.programName)
+		if err != nil {
+			return nil, fmt.Errorf("could not find plugin %q in PATH: %v", r.programName, err)
+		}
 	}
 	wasmModule, err := os.ReadFile(path)
 	if err != nil {
@@ -141,44 +149,4 @@ func (r *wasmRunner) loadPlugin(ctx context.Context) (bufwasm.Plugin, error) {
 	// will benefit from the cached plugin. This is only safe as the
 	// runner is limited to the CLI.
 	return plugin, nil
-}
-
-// lookPath looks for a wasm file in the PATH, not only an executable. This
-// doesn't use exec.LookPath to avoid requiring an executable bit.
-func lookPath(file string) (string, error) {
-	// First, check in the current directory.
-	if ok, err := findFile(file); err != nil {
-		return "", err
-	} else if ok {
-		return file, nil
-	}
-	// If the file has a path separator, fail early.
-	if strings.Contains(file, string(os.PathSeparator)) {
-		return "", os.ErrNotExist
-	}
-	path := os.Getenv("PATH")
-	for _, dir := range filepath.SplitList(path) {
-		if dir == "" {
-			// Unix shell semantics: path element "" means "."
-			dir = "."
-		}
-		path := filepath.Join(dir, file)
-		if ok, err := findFile(path); err != nil {
-			return "", err
-		} else if ok {
-			return path, nil
-		}
-	}
-	return "", os.ErrNotExist
-}
-
-func findFile(file string) (bool, error) {
-	d, err := os.Stat(file)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return !d.Mode().IsDir(), nil
 }
