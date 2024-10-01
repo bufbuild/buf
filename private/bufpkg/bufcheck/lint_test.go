@@ -654,7 +654,8 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 50, 5, 50, 57, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 53, 5, 53, 50, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 56, 41, 56, 80, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "map.proto", 69, 5, 69, 53, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 70, 5, 70, 53, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 71, 5, 71, 77, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 20, 3, 20, 49, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 27, 5, 27, 51, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 20, 5, 20, 42, "PROTOVALIDATE"),
@@ -756,6 +757,7 @@ func TestRunProtovalidatePredefinedRules(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "test.proto", 43, 5, 43, 57, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "test.proto", 43, 5, 43, 57, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "test.proto", 44, 5, 44, 64, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 60, 5, 60, 43, "PROTOVALIDATE"),
 	)
 }
 

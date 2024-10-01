@@ -51,13 +51,12 @@ message TestPredefinedStringRules {
   ];
 }
 
-// TODO: fixing
-// message TestInt32Rules {
-//   optional int32 test = 1 [
-//     (buf.validate.field).int32.lt = 5,
-//     (buf.validate.field).int32.(abs_not_in) = 1,
-//     (buf.validate.field).int32.(abs_not_in) = -2,
-//     (buf.validate.field).int32.example = 3,
-//     (buf.validate.field).int32.example = 2
-//   ];
-// }
+message TestInt32Rules {
+  optional int32 test = 1 [
+    (buf.validate.field).int32.lt = 5,
+    (buf.validate.field).int32.(custom.abs_not_in) = 1,
+    (buf.validate.field).int32.(custom.abs_not_in) = -2,
+    (buf.validate.field).int32.example = 3,
+    (buf.validate.field).int32.example = 2
+  ];
+}

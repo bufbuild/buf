@@ -20,7 +20,7 @@ extend buf.validate.StringRules {
 extend buf.validate.Int32Rules {
   repeated int32 abs_not_in = 1800 [(buf.validate.predefined).cel = {
     id: "int32.abs_not_in"
-    expression: "this in rule || this in rule.map(n, -n)"
+    expression: "!(this in rule || this in rule.map(n, -n))"
     message: "value must be in absolute value of list"
   }];
 }
