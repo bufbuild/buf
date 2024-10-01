@@ -94,10 +94,9 @@ type wasmRunner struct {
 // short-lived programs, compiled plugins lifetime is tied to the runtime.
 //
 // The program name should be the name of the program as it appears in the
-// plugin config. The runner will call os.GetEnv("PATH") with os.Stat on each
-// directory and file to find the program. This is similar to exec.LookPath
-// but does not require the file to be executable. This is only safe for use
-// in the CLI, as it is not safe to use in a server environment.
+// plugin config. The runner will check the current directory and fallback to
+// exec.LookPath to find the program in the PATH. This is only safe for use in
+// the CLI, as it is not safe to use in a server environment.
 func newWasmRunner(
 	runtime bufwasm.Runtime,
 	programName string,
