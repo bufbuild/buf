@@ -24,6 +24,7 @@ import (
 	"buf.build/go/bufplugin/check/checkutil"
 	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -185,7 +186,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 	client, err := newClient(
 		zaptest.NewLogger(t),
 		tracing.NopTracer,
-		NewRunnerProvider(command.NewRunner()),
+		bufpluginrunner.NewRunnerProvider(command.NewRunner()),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
@@ -279,7 +280,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 	client, err := newClient(
 		zaptest.NewLogger(t),
 		tracing.NopTracer,
-		NewRunnerProvider(command.NewRunner()),
+		bufpluginrunner.NewRunnerProvider(command.NewRunner()),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(

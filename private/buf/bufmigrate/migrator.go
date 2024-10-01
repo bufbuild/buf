@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -712,7 +713,7 @@ func equivalentCheckConfigInV2(
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
 	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(logger, tracer, bufcheck.NewRunnerProvider(runner))
+	client, err := bufcheck.NewClient(logger, tracer, bufpluginrunner.NewRunnerProvider(runner))
 	if err != nil {
 		return nil, err
 	}

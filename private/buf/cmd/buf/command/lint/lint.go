@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -151,9 +152,9 @@ func run(
 		client, err := bufcheck.NewClient(
 			container.Logger(),
 			tracer,
-			bufcheck.NewRunnerProvider(
+			bufpluginrunner.NewRunnerProvider(
 				command.NewRunner(),
-				bufcheck.RunnerProviderWithWasmRuntime(wasmRuntime),
+				bufpluginrunner.RunnerProviderWithWasmRuntime(wasmRuntime),
 			),
 			bufcheck.ClientWithStderr(container.Stderr()),
 		)

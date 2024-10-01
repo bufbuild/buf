@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
@@ -1349,7 +1350,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
 			// Do not need any custom lint/breaking plugins here.
-			client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, bufcheck.NewRunnerProvider(command.NewRunner()))
+			client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, bufpluginrunner.NewRunnerProvider(command.NewRunner()))
 			require.NoError(t, err)
 			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
 			require.NoError(t, err)

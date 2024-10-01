@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
@@ -100,7 +101,12 @@ func handle(
 	}
 	// The protoc plugins do not support custom lint/breaking change plugins for now.
 	tracer := tracing.NewTracer(container.Tracer())
-	client, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(pluginEnv.Stderr))
+	client, err := bufcheck.NewClient(
+		container.Logger(),
+		tracer,
+		bufpluginrunner.NewRunnerProvider(command.NewRunner()),
+		bufcheck.ClientWithStderr(pluginEnv.Stderr),
+	)
 	if err != nil {
 		return err
 	}

@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -1320,17 +1321,17 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	var runnerProviderOptions []bufcheck.RunnerProviderOption
+	var runnerProviderOptions []bufpluginrunner.RunnerProviderOption
 	if wasmRuntime {
 		wasmRuntime, err := bufwasm.NewRuntime(ctx)
 		require.NoError(t, err)
 		t.Cleanup(func() { assert.NoError(t, wasmRuntime.Release(ctx)) })
-		runnerProviderOptions = append(runnerProviderOptions, bufcheck.RunnerProviderWithWasmRuntime(wasmRuntime))
+		runnerProviderOptions = append(runnerProviderOptions, bufpluginrunner.RunnerProviderWithWasmRuntime(wasmRuntime))
 	}
 	client, err := bufcheck.NewClient(
 		zap.NewNop(),
 		tracing.NopTracer,
-		bufcheck.NewRunnerProvider(command.NewRunner(), runnerProviderOptions...),
+		bufpluginrunner.NewRunnerProvider(command.NewRunner(), runnerProviderOptions...),
 	)
 	require.NoError(t, err)
 	err = client.Lint(

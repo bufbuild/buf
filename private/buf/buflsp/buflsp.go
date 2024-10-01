@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -61,7 +62,7 @@ func Serve(
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
 		tracer,
-		bufcheck.NewRunnerProvider(command.NewRunner()),
+		bufpluginrunner.NewRunnerProvider(command.NewRunner()),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {
