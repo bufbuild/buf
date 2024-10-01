@@ -30,7 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -420,7 +420,7 @@ func addModuleDataToModuleSetBuilder(
 			return err
 		}
 		commitID := moduleData.CommitID
-		if commitID.IsNil() {
+		if commitID == uuid.Nil {
 			commitID, err = uuidutil.New()
 			if err != nil {
 				return err

@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // DigestForCommitID resolves the commit ID by calling the CommitService to get

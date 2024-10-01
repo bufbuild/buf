@@ -24,7 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"go.uber.org/multierr"
 )
 
@@ -159,7 +159,7 @@ func (p *parserAccessorHandler) addPath(
 	if moduleFullName != nil {
 		p.pathToModuleFullName[path] = moduleFullName
 	}
-	if !commitID.IsNil() {
+	if commitID != uuid.Nil {
 		p.pathToCommitID[path] = commitID
 	}
 	return nil

@@ -32,7 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )

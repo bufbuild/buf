@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
@@ -299,7 +299,7 @@ func newModuleSet(
 			bucketIDToModule[bucketID] = module
 		}
 		commitID := module.CommitID()
-		if !commitID.IsNil() {
+		if commitID != uuid.Nil {
 			if _, ok := commitIDToModule[commitID]; ok {
 				// This should never happen.
 				return nil, syserror.Newf("duplicate CommitID %q when constructing ModuleSet", uuidutil.ToDashless(commitID))

@@ -14,7 +14,7 @@
 
 package bufmodule
 
-import "github.com/gofrs/uuid/v5"
+import "github.com/google/uuid"
 
 // RegistryCommitID is the pair of a Commit ID with the registry the commit belongs to.
 //
