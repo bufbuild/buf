@@ -52,7 +52,7 @@ func checkPredefinedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	predefinedConstraints, err := resolveExt[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
+	predefinedConstraints, err := resolveExtension[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
 	if err != nil {
 		return err
 	}

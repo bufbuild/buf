@@ -767,6 +767,9 @@ func checkExampleValues(
 	exampleValues []protoreflect.Value,
 	extensionTypeResolver protoencoding.Resolver,
 ) error {
+	// We need to reparse the extensions here to ensure that we are capturing constraints from
+	// predefined rules that may be from imported files here. This is to ensure that example
+	// values adhere to all constraints.
 	if err := protoencoding.ReparseExtensions(extensionTypeResolver, typeRulesMessage); err != nil {
 		return err
 	}

@@ -39,11 +39,11 @@ func (r *constraintsResolverForTargetField) ResolveFieldConstraints(desc protore
 	return r.StandardConstraintResolver.ResolveFieldConstraints(desc)
 }
 
-func (r *constraintsResolverForTargetField) ResolveMessageConstraints(desc protoreflect.MessageDescriptor) *validate.MessageConstraints {
+func (*constraintsResolverForTargetField) ResolveMessageConstraints(protoreflect.MessageDescriptor) *validate.MessageConstraints {
 	return nil
 }
 
-func (r *constraintsResolverForTargetField) ResolveOneofConstraints(desc protoreflect.OneofDescriptor) *validate.OneofConstraints {
+func (*constraintsResolverForTargetField) ResolveOneofConstraints(protoreflect.OneofDescriptor) *validate.OneofConstraints {
 	return nil
 }
 
@@ -51,25 +51,25 @@ func (r *constraintsResolverForTargetField) ResolveOneofConstraints(desc protore
 // for marshalling and unmarshalling. We also added error handling for marshal/unmarshal.
 //
 // This resolves the given extension and returns the constraints for the extension.
-func resolveExt[C proto.Message](
+func resolveExtension[C proto.Message](
 	options proto.Message,
 	extType protoreflect.ExtensionType,
 	resolver protoencoding.Resolver,
 ) (constraints C, retErr error) {
 	num := extType.TypeDescriptor().Number()
-	var msg proto.Message
+	var message proto.Message
 
 	proto.RangeExtensions(options, func(typ protoreflect.ExtensionType, i interface{}) bool {
 		if num != typ.TypeDescriptor().Number() {
 			return true
 		}
-		msg, _ = i.(proto.Message)
+		message, _ = i.(proto.Message)
 		return false
 	})
 
-	if msg == nil {
+	if message == nil {
 		return constraints, nil
-	} else if m, ok := msg.(C); ok {
+	} else if m, ok := message.(C); ok {
 		return m, nil
 	}
 	var ok bool
@@ -77,7 +77,7 @@ func resolveExt[C proto.Message](
 	if !ok {
 		return constraints, fmt.Errorf("unexpected type for constraints %T", constraints)
 	}
-	b, err := protoencoding.NewWireMarshaler().Marshal(msg)
+	b, err := protoencoding.NewWireMarshaler().Marshal(message)
 	if err != nil {
 		return constraints, err
 	}
