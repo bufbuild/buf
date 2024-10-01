@@ -83,10 +83,10 @@ func newRunnerProviderOptions() *runnerProviderOptions {
 type wasmRunner struct {
 	programName string
 	wasmRuntime bufwasm.Runtime
-	// Once protects plugin and pluginErr.
-	once      sync.Once
-	plugin    bufwasm.Plugin
-	pluginErr error
+	// Once protects compiledModule and compiledModuleErr.
+	once              sync.Once
+	compiledModule    bufwasm.CompiledModule
+	compiledModuleErr error
 }
 
 // newWasmRunner returns a new pluginrpc.Runner for the Wasm binary on a
@@ -108,21 +108,21 @@ func newWasmRunner(
 }
 
 func (r *wasmRunner) Run(ctx context.Context, env pluginrpc.Env) (retErr error) {
-	plugin, err := r.loadPluginOnce(ctx)
+	compiledModule, err := r.loadCompiledModuleOnce(ctx)
 	if err != nil {
 		return err
 	}
-	return plugin.Run(ctx, env)
+	return compiledModule.Run(ctx, env)
 }
 
-func (r *wasmRunner) loadPluginOnce(ctx context.Context) (bufwasm.Plugin, error) {
+func (r *wasmRunner) loadCompiledModuleOnce(ctx context.Context) (bufwasm.CompiledModule, error) {
 	r.once.Do(func() {
-		r.plugin, r.pluginErr = r.loadPlugin(ctx)
+		r.compiledModule, r.compiledModuleErr = r.loadCompiledModule(ctx)
 	})
-	return r.plugin, r.pluginErr
+	return r.compiledModule, r.compiledModuleErr
 }
 
-func (r *wasmRunner) loadPlugin(ctx context.Context) (bufwasm.Plugin, error) {
+func (r *wasmRunner) loadCompiledModule(ctx context.Context) (bufwasm.CompiledModule, error) {
 	// Find the plugin path. We use the same logic as exec.LookPath, but we do
 	// not require the file to be executable. So check the local directory
 	// first before checking the PATH.
@@ -140,15 +140,15 @@ func (r *wasmRunner) loadPlugin(ctx context.Context) (bufwasm.Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Compile and run, releasing the plugin at the end.
-	plugin, err := r.wasmRuntime.Compile(ctx, r.programName, wasmModule)
+	// Compile and run, releasing the compiledModule at the end.
+	compiledModule, err := r.wasmRuntime.Compile(ctx, r.programName, wasmModule)
 	if err != nil {
 		return nil, err
 	}
 	// This plugin is never released, so subsequent calls to this function
 	// will benefit from the cached plugin. This is only safe as the
 	// runner is limited to the CLI.
-	return plugin, nil
+	return compiledModule, nil
 }
 
 // unsafeLookPath is a wrapper around exec.LookPath that restores the original

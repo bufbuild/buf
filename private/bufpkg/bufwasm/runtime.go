@@ -69,23 +69,23 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	}, nil
 }
 
-func (r *runtime) Compile(ctx context.Context, name string, module []byte) (Plugin, error) {
-	if name == "" {
+func (r *runtime) Compile(ctx context.Context, pluginName string, pluginWasm []byte) (CompiledModule, error) {
+	if pluginName == "" {
 		// The plugin is required to be named. We cannot use the name
 		// from the Wasm binary as this is not guaranteed to be set and
 		// may conflict with the provided name.
 		return nil, fmt.Errorf("name is empty")
 	}
-	// Compile the module. This operation is hashed on module by the wazero
-	// runtime.
-	compiledModule, err := r.runtime.CompileModule(ctx, module)
+	// Compile the WebAssembly. This operation is hashed on pluginWasm
+	// bytes by the wazero runtime.
+	compiledModulePlugin, err := r.runtime.CompileModule(ctx, pluginWasm)
 	if err != nil {
 		return nil, err
 	}
-	return &plugin{
-		name:           name,
+	return &compiledModule{
+		pluginName:     pluginName,
 		runtime:        r.runtime,
-		compiledModule: compiledModule,
+		compiledModule: compiledModulePlugin,
 	}, nil
 }
 
@@ -121,7 +121,7 @@ type unimplementedRuntime struct{}
 
 var _ Runtime = unimplementedRuntime{}
 
-func (unimplementedRuntime) Compile(ctx context.Context, name string, module []byte) (Plugin, error) {
+func (unimplementedRuntime) Compile(ctx context.Context, name string, moduleBytes []byte) (CompiledModule, error) {
 	return nil, syserror.Newf("not implemented")
 }
 func (unimplementedRuntime) Release(ctx context.Context) error {

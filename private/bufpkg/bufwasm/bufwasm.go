@@ -21,17 +21,17 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
-// Plugin is a Wasm module.
+// CompiledModule is a Wasm module ready to be run.
 //
-// It is safe to use this plugin concurrently. Ensure that you call [Release]
-// when you are done with the plugin.
+// It is safe to use this module concurrently. Ensure that you call [Release]
+// to free resources associated with the module.
 //
 // Memory is limited by the runtime. To restrict CPU usage, cancel the context.
-type Plugin interface {
+type CompiledModule interface {
 	pluginrpc.Runner
-	// Name returns the name of the plugin.
-	Name() string
-	// Release releases all resources held by the plugin.
+	// PluginName returns the name of the plugin.
+	PluginName() string
+	// Release releases all resources held by the compiled module.
 	Release(ctx context.Context) error
 }
 
@@ -41,10 +41,8 @@ type Plugin interface {
 // when you are done with the runtime. All plugins created by this runtime will
 // be invalidated when [Release] is called.
 type Runtime interface {
-	// Compile compiles the given module into a [Plugin].
-	//
-	// The plugin is not validated to conform to the pluginrpc protocol.
-	Compile(ctx context.Context, pluginName string, pluginWasm []byte) (Plugin, error)
+	// Compile compiles the given Wasm module bytes into a [CompiledModule].
+	Compile(ctx context.Context, pluginName string, pluginWasm []byte) (CompiledModule, error)
 	// Release releases all resources held by the runtime.
 	Release(ctx context.Context) error
 }

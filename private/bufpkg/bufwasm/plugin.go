@@ -22,19 +22,19 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
-type plugin struct {
-	name           string
+type compiledModule struct {
+	pluginName     string
 	runtime        wazero.Runtime
 	compiledModule wazero.CompiledModule
 }
 
-var _ Plugin = (*plugin)(nil)
+var _ CompiledModule = (*compiledModule)(nil)
 
-func (p *plugin) Name() string {
-	return p.name
+func (p *compiledModule) PluginName() string {
+	return p.pluginName
 }
 
-func (p *plugin) Run(ctx context.Context, env pluginrpc.Env) error {
+func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
 	// Create a new module config with the given environment.
 	config := wazero.NewModuleConfig().
 		WithStdin(env.Stdin).
@@ -49,7 +49,7 @@ func (p *plugin) Run(ctx context.Context, env pluginrpc.Env) error {
 		// Use an empty name to allow for multiple instances of the same module.
 		// See [wazero.ModuleConfig.WithName].
 		config.WithName("").WithArgs(
-			append([]string{p.name}, env.Args...)...,
+			append([]string{p.pluginName}, env.Args...)...,
 		),
 	)
 	if err != nil {
@@ -61,6 +61,6 @@ func (p *plugin) Run(ctx context.Context, env pluginrpc.Env) error {
 	return nil
 }
 
-func (p *plugin) Release(ctx context.Context) error {
+func (p *compiledModule) Release(ctx context.Context) error {
 	return p.compiledModule.Close(ctx)
 }
