@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- Add support for custom WebAssembly plugins for lint and breaking changes plugins. Use the `.wasm` file extension to specify a WebAssembly plugin.
+- Add support for a WebAssembly (Wasm) runtime for custom lint and breaking changes plugins. Use the
+  `.wasm` file extension to specify a path to a Wasm plugin.
 
 ## [v1.43.0] - 2024-09-30
 
