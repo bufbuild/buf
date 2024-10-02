@@ -57,10 +57,11 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	}
 
 	// Create the wazero.RuntimeConfig with enforceable limits. Limits are
-	// enforced through the two mechanisms:
+	// enforced through the Wasm sandbox. The following limits are set:
 	//  - Memory limit: The maximum memory size in pages.
-	//  - Close on context done: The runtime is closed when the context is
-	//    done.
+	//  - CPU limit: The runtime stops work on context done.
+	//  - Access limit: All system interfaces are stubbed. No network,
+	//    disk, etc.
 	// See wazero.NewRuntimeConfig for more details.
 	wazeroRuntimeConfig := wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2).
