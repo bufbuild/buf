@@ -85,14 +85,13 @@ func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModul
 	if err != nil {
 		return nil, err
 	}
-	// Compile and run, releasing the compiledModule at the end.
+	// Compile the module. This plugin is never released, so subsequent
+	// calls to this function will benefit from the cached plugin. This is
+	// only safe as the runner is limited to the CLI.
 	compiledModule, err := r.wasmRuntime.Compile(ctx, r.programName, moduleWasm)
 	if err != nil {
 		return nil, err
 	}
-	// This plugin is never released, so subsequent calls to this function
-	// will benefit from the cached plugin. This is only safe as the
-	// runner is limited to the CLI.
 	return compiledModule, nil
 }
 
