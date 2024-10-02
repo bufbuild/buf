@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufwasm
+package wasm
 
 import _ "github.com/bufbuild/buf/private/usage"

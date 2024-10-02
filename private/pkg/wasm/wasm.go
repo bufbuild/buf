@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufwasm provides a Wasm runtime for plugins.
-package bufwasm
+// Package wasm provides a Wasm runtime for plugins.
+package wasm
 
 import (
 	"context"
