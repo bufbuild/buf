@@ -195,7 +195,9 @@ func lsRun(
 	if err != nil {
 		return err
 	}
-	defer func() { retErr = multierr.Append(retErr, wasmRuntime.Release(ctx)) }()
+	defer func() {
+		retErr = multierr.Append(retErr, wasmRuntime.Release(ctx))
+	}()
 	tracer := tracing.NewTracer(container.Tracer())
 	client, err := bufcheck.NewClient(
 		container.Logger(),

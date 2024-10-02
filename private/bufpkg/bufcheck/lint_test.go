@@ -1315,6 +1315,9 @@ func testLintWithOptions(
 	require.NotNil(t, lintConfig)
 	wasmRuntime, err := wasm.NewRuntime(ctx)
 	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, wasmRuntime.Release(ctx))
+	})
 	client, err := bufcheck.NewClient(
 		zap.NewNop(),
 		tracing.NopTracer,

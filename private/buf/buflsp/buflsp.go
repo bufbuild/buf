@@ -22,21 +22,16 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/buf/private/pkg/wasm"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -47,6 +42,7 @@ func Serve(
 	ctx context.Context,
 	container appext.Container,
 	controller bufctl.Controller,
+	checkClient bufcheck.Client,
 	stream jsonrpc2.Stream,
 ) (_ jsonrpc2.Conn, retErr error) {
 	// The LSP protocol deals with absolute filesystem paths. This requires us to
@@ -61,26 +57,6 @@ func Serve(
 		return nil, err
 	}
 
-	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
-	if err != nil {
-		return nil, err
-	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
-	if err != nil {
-		return nil, err
-	}
-	defer func() { retErr = multierr.Append(retErr, wasmRuntime.Release(ctx)) }()
-	tracer := tracing.NewTracer(container.Tracer())
-	checkClient, err := bufcheck.NewClient(
-		container.Logger(),
-		tracer,
-		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasmRuntime),
-		bufcheck.ClientWithStderr(container.Stderr()),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
 		conn: conn,
@@ -89,7 +65,7 @@ func Serve(
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
-		tracer:      tracer,
+		tracer:      tracing.NewTracer(container.Tracer()),
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,

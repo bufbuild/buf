@@ -217,7 +217,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	defer func() { retErr = multierr.Append(retErr, wasmRuntime.Release(ctx)) }()
+	defer func() {
+		retErr = multierr.Append(retErr, wasmRuntime.Release(ctx))
+	}()
 	tracer := tracing.NewTracer(container.Tracer())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
