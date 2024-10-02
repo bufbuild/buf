@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for custom WebAssembly plugins for lint and breaking changes plugins. Use the `.wasm` file extension to specify a WebAssembly plugin.
 
 ## [v1.43.0] - 2024-09-30
 
