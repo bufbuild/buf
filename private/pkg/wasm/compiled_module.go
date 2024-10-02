@@ -38,13 +38,14 @@ func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
 		// See wazero.ModuleConfig.WithName.
 		WithName("").
 		// Use the program name as the first argument to replicate the
-		// behavior of os.Exec. See wazero.ModuleConfig.WithArgs.
+		// behavior of os.Exec.
+		// See wazero.ModuleConfig.WithArgs.
 		WithArgs(append([]string{p.moduleName}, env.Args...)...)
 
 	// Instantiate the Wasm module into the runtime. This effectively runs
 	// the Wasm module. Only the effect of instantiating the module is used,
 	// the module is closed immediately after running to free up resources.
-	// See: https://github.com/tetratelabs/wazero/issues/985
+	// See https://github.com/tetratelabs/wazero/issues/985.
 	wazeroModule, err := p.runtime.InstantiateModule(
 		ctx,
 		p.compiledModule,

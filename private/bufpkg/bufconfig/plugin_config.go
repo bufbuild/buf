@@ -154,7 +154,7 @@ func newLocalWasmPluginConfig(
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
-	if !strings.HasSuffix(path[0], ".wasm") {
+	if filepath.Ext(path[0]) != ".wasm" {
 		return nil, fmt.Errorf("must specify a path to the plugin, and the first path argument must end with .wasm")
 	}
 	return &pluginConfig{
