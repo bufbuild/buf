@@ -27,7 +27,7 @@ import (
 // resources held by the CompiledModule. All CompiledModules created by the
 // same Runtime will be invalidated when the Runtime is released.
 //
-// Memory is limited by the runtime. To restrict CPU usage, cancel the context.
+// Memory is limited by the Runtime. To restrict CPU usage, cancel the context.
 type CompiledModule interface {
 	pluginrpc.Runner
 	// Close releases all resources held by the compiled module.
@@ -46,7 +46,7 @@ type Runtime interface {
 	Close(ctx context.Context) error
 }
 
-// NewRuntime creates a new Wasm runtime.
+// NewRuntime creates a new Wasm Runtime.
 func NewRuntime(ctx context.Context, options ...RuntimeOption) (Runtime, error) {
 	return newRuntime(ctx, options...)
 }
@@ -68,7 +68,7 @@ func WithMaxMemoryBytes(maxMemoryBytes uint32) RuntimeOption {
 //
 // The cache directory is used to store compiled Wasm modules. This can be used
 // to speed up subsequent runs of the same module. The internal cache structure
-// and versioning is handled by the runtime.
+// and versioning is handled by the Runtime.
 //
 // This option is only safe use in CLI environments.
 func WithLocalCacheDir(cacheDir string) RuntimeOption {
