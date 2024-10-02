@@ -16,9 +16,9 @@ package bufconfig
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -69,10 +69,12 @@ func NewLocalPluginConfig(
 func NewLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
+	path []string,
 ) (PluginConfig, error) {
 	return newLocalWasmPluginConfig(
 		name,
 		options,
+		path,
 	)
 }
 
@@ -144,11 +146,11 @@ func newLocalWasmPluginConfig(
 	options map[string]any,
 	path []string,
 ) (*pluginConfig, error) {
-	if len(path) != 0 {
+	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
-	if programName := path[0]; !strings.HasSuffix(programName, ".wasm") {
-		return nil, errors.New("Wasm plugin name must end with .wasm")
+	if !strings.HasSuffix(path[0], ".wasm") {
+		return nil, fmt.Errorf("must specify a path to the plugin, and the first path argument must end with .wasm")
 	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeLocalWasm,
