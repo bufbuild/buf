@@ -68,6 +68,8 @@ message RepositorySearchResult {
   string latest_spdx_license_id = 6;
   // The verification status of the owner of the repository.
   VerificationStatus owner_verification_status = 7;
+  // The commit time of the latest main commit in the repository.
+  google.protobuf.Timestamp latest_commit_time = 8;
 }
 
 message OrganizationSearchResult {
