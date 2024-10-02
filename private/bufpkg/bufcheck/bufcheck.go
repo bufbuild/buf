@@ -166,7 +166,7 @@ type RunnerProviderFunc func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Run
 
 // NewRunner implements RunnerProvider.
 //
-// RunnerProvider selects the correct runner based on the PluginConfig.Type.
+// RunnerProvider selects the correct Runner based on the PluginConfig.Type.
 func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 	return r(pluginConfig)
 }
@@ -176,7 +176,7 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
 //
-// The RunnerProvider selects the correct runner based on the PluginConfig.Type.
+// The RunnerProvider selects the correct Runner based on the PluginConfig.Type.
 // The supported types are:
 //   - bufconfig.PluginConfigTypeLocal
 //   - bufconfig.PluginConfigTypeLocalWasm

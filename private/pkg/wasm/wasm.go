@@ -51,16 +51,14 @@ func NewRuntime(ctx context.Context, options ...RuntimeOption) (Runtime, error) 
 	return newRuntime(ctx, options...)
 }
 
-// RuntimeOption is an option for NewRuntime.
-type RuntimeOption interface {
-	apply(*runtimeConfig)
-}
+// RuntimeOption is an option for Runtime.
+type RuntimeOption func(*runtimeOptions)
 
 // WithMaxMemoryBytes sets the maximum memory size in bytes.
 func WithMaxMemoryBytes(maxMemoryBytes uint32) RuntimeOption {
-	return runtimeOptionFunc(func(cfg *runtimeConfig) {
-		cfg.maxMemoryBytes = maxMemoryBytes
-	})
+	return func(runtimeOptions *runtimeOptions) {
+		runtimeOptions.maxMemoryBytes = maxMemoryBytes
+	}
 }
 
 // WithLocalCacheDir sets the local cache directory.
@@ -71,9 +69,9 @@ func WithMaxMemoryBytes(maxMemoryBytes uint32) RuntimeOption {
 //
 // This option is only safe use in CLI environments.
 func WithLocalCacheDir(cacheDir string) RuntimeOption {
-	return runtimeOptionFunc(func(cfg *runtimeConfig) {
-		cfg.cacheDir = cacheDir
-	})
+	return func(runtimeOptions *runtimeOptions) {
+		runtimeOptions.cacheDir = cacheDir
+	}
 }
 
 // UnimplementedRuntime is an unimplemented Runtime.

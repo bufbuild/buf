@@ -40,31 +40,35 @@ type runtime struct {
 var _ Runtime = (*runtime)(nil)
 
 func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error) {
-	var cfg runtimeConfig
-	for _, opt := range options {
-		opt.apply(&cfg)
+	runtimeOptions := newRuntimeOptions()
+	for _, option := range options {
+		option(runtimeOptions)
 	}
 	// Create the runtime config with enforceable limits.
 	runtimeConfig := wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2).
 		WithCloseOnContextDone(true).
-		WithMemoryLimitPages(cfg.getMaxMemoryBytes() / wasmPageSize)
+		WithMemoryLimitPages(runtimeOptions.getMaxMemoryBytes() / wasmPageSize)
 	var cache wazero.CompilationCache
-	if cfg.cacheDir != "" {
+	if runtimeOptions.cacheDir != "" {
 		var err error
-		cache, err = wazero.NewCompilationCacheWithDir(cfg.cacheDir)
+		cache, err = wazero.NewCompilationCacheWithDir(runtimeOptions.cacheDir)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create compilation cache: %w", err)
 		}
 		runtimeConfig = runtimeConfig.WithCompilationCache(cache)
 	}
-	r := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
+	wazeroRuntime := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
 
-	// Init wasi.
-	wasi_snapshot_preview1.MustInstantiate(ctx, r)
+	// Init WASI preview1 APIs. This is required to support the pluginrpc
+	// protocol. The closer method is not required as the instantiated
+	// module is never required to be unloaded.
+	if _, err := wasi_snapshot_preview1.Instantiate(ctx, wazeroRuntime); err != nil {
+		return nil, fmt.Errorf("failed to instantiate WASI snapshot preview1: %w", err)
+	}
 
 	return &runtime{
-		runtime: r,
+		runtime: wazeroRuntime,
 		cache:   cache,
 	}, nil
 }
@@ -99,29 +103,23 @@ func (r *runtime) Release(ctx context.Context) error {
 	return err
 }
 
-type runtimeConfig struct {
+type runtimeOptions struct {
 	maxMemoryBytes uint32
 	cacheDir       string
 }
 
-func (r *runtimeConfig) getMaxMemoryBytes() uint32 {
+func newRuntimeOptions() *runtimeOptions {
+	return &runtimeOptions{}
+}
+
+func (r *runtimeOptions) getMaxMemoryBytes() uint32 {
 	if r.maxMemoryBytes == 0 {
 		return defaultMaxMemoryBytes
 	}
 	return r.maxMemoryBytes
 }
 
-type runtimeOptionFunc func(*runtimeConfig)
-
-func (f runtimeOptionFunc) apply(cfg *runtimeConfig) {
-	f(cfg)
-}
-
-var _ RuntimeOption = runtimeOptionFunc(nil)
-
 type unimplementedRuntime struct{}
-
-var _ Runtime = unimplementedRuntime{}
 
 func (unimplementedRuntime) Compile(ctx context.Context, name string, moduleBytes []byte) (CompiledModule, error) {
 	return nil, syserror.Newf("not implemented")
