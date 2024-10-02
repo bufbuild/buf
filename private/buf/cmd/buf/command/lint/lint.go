@@ -134,11 +134,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	pluginCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
 	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(pluginCacheDir))
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
 	if err != nil {
 		return err
 	}

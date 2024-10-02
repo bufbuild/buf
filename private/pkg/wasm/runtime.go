@@ -76,8 +76,10 @@ func (r *runtime) Compile(ctx context.Context, moduleName string, moduleWasm []b
 		// may conflict with the provided name.
 		return nil, fmt.Errorf("name is empty")
 	}
-	// Compile the WebAssembly. This operation is hashed on pluginWasm
-	// bytes by the wazero runtime.
+	// Compile the WebAssembly. This operation is hashed on the module
+	// bytes and the runtime configuration. The compiled module is
+	// cached in memory and on disk if an optional cache directory is
+	// provided.
 	compiledModulePlugin, err := r.runtime.CompileModule(ctx, moduleWasm)
 	if err != nil {
 		return nil, err

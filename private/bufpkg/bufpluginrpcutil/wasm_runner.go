@@ -81,12 +81,12 @@ func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModul
 			return nil, fmt.Errorf("could not find plugin %q in PATH: %v", r.programName, err)
 		}
 	}
-	wasmModule, err := os.ReadFile(path)
+	moduleWasm, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 	// Compile and run, releasing the compiledModule at the end.
-	compiledModule, err := r.wasmRuntime.Compile(ctx, r.programName, wasmModule)
+	compiledModule, err := r.wasmRuntime.Compile(ctx, r.programName, moduleWasm)
 	if err != nil {
 		return nil, err
 	}

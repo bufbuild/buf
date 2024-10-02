@@ -66,6 +66,10 @@ func NewLocalPluginConfig(
 }
 
 // NewLocalWasmPluginConfig returns a new PluginConfig for a local Wasm plugin.
+//
+// The first path argument is the path to the Wasm plugin and must end with .wasm.
+// The remaining path arguments are the arguments to the Wasm plugin. These are passed
+// to the Wasm plugin as command line arguments.
 func NewLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
