@@ -182,8 +182,8 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 //   - bufconfig.PluginConfigTypeLocalWasm
 //
 // If the PluginConfig.Type is not supported, an error is returned.
-func NewRunnerProvider(delegate command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
-	return newRunnerProvider(delegate, wasmRuntime)
+func NewRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
+	return newRunnerProvider(commandRunner, wasmRuntime)
 }
 
 // NewClient returns a new Client.

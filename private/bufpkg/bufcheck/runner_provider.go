@@ -24,14 +24,14 @@ import (
 )
 
 type runnerProvider struct {
-	delegate    command.Runner
-	wasmRuntime wasm.Runtime
+	commandRunner command.Runner
+	wasmRuntime   wasm.Runtime
 }
 
-func newRunnerProvider(delegate command.Runner, wasmRuntime wasm.Runtime) *runnerProvider {
+func newRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) *runnerProvider {
 	return &runnerProvider{
-		delegate:    delegate,
-		wasmRuntime: wasmRuntime,
+		commandRunner: commandRunner,
+		wasmRuntime:   wasmRuntime,
 	}
 }
 
@@ -40,7 +40,7 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 	case bufconfig.PluginConfigTypeLocal:
 		path := pluginConfig.Path()
 		return pluginrpcutil.NewRunner(
-			r.delegate,
+			r.commandRunner,
 			// We know that Path is of at least length 1.
 			path[0],
 			path[1:]...,
