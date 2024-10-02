@@ -29,22 +29,24 @@ type compiledModule struct {
 }
 
 func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
-	// Create a new module moduleConfig with the given environment.
-	moduleConfig := wazero.NewModuleConfig().
+	// Create a new module wazeroModuleConfig with the given environment.
+	wazeroModuleConfig := wazero.NewModuleConfig().
 		WithStdin(env.Stdin).
 		WithStdout(env.Stdout).
-		WithStderr(env.Stderr)
+		WithStderr(env.Stderr).
+		// Use an empty name to allow for multiple instances of the same module.
+		// See wazero.ModuleConfig.WithName.
+		WithName("").
+		// Use the program name as the first argument to replicate the
+		// behavior of os.Exec. See wazero.ModuleConfig.WithArgs.
+		WithArgs(append([]string{p.moduleName}, env.Args...)...)
 
 	// Instantiate the guest wasm module into the same runtime.
 	// See: https://github.com/tetratelabs/wazero/issues/985
 	wazeroModule, err := p.runtime.InstantiateModule(
 		ctx,
 		p.compiledModule,
-		// Use an empty name to allow for multiple instances of the same module.
-		// See wazero.ModuleConfig.WithName.
-		moduleConfig.WithName("").WithArgs(
-			append([]string{p.moduleName}, env.Args...)...,
-		),
+		wazeroModuleConfig,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate module: %w", err)

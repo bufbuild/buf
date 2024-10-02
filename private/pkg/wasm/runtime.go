@@ -43,20 +43,20 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 		option(runtimeOptions)
 	}
 	// Create the runtime config with enforceable limits.
-	runtimeConfig := wazero.NewRuntimeConfig().
+	wazeroRuntimeConfig := wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2).
 		WithCloseOnContextDone(true).
 		WithMemoryLimitPages(runtimeOptions.getMaxMemoryBytes() / wasmPageSize)
-	var compilationCache wazero.CompilationCache
+	var wazeroCompilationCache wazero.CompilationCache
 	if runtimeOptions.cacheDir != "" {
 		var err error
-		compilationCache, err = wazero.NewCompilationCacheWithDir(runtimeOptions.cacheDir)
+		wazeroCompilationCache, err = wazero.NewCompilationCacheWithDir(runtimeOptions.cacheDir)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create compilation cache: %w", err)
 		}
-		runtimeConfig = runtimeConfig.WithCompilationCache(compilationCache)
+		wazeroRuntimeConfig = wazeroRuntimeConfig.WithCompilationCache(wazeroCompilationCache)
 	}
-	wazeroRuntime := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
+	wazeroRuntime := wazero.NewRuntimeWithConfig(ctx, wazeroRuntimeConfig)
 
 	// Init WASI preview1 APIs. This is required to support the pluginrpc
 	// protocol. The returned closer method is discarded as the
@@ -66,7 +66,7 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	}
 	return &runtime{
 		runtime:          wazeroRuntime,
-		compilationCache: compilationCache,
+		compilationCache: wazeroCompilationCache,
 	}, nil
 }
 
