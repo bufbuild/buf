@@ -31,8 +31,10 @@ type wasmRunner struct {
 	wasmRuntime wasm.Runtime
 	programName string
 	programArgs []string
-	// Once protects compiledModule and compiledModuleErr.
-	once              sync.Once
+	// lock protects compiledModule and compiledModuleErr. Store called as
+	// a boolean to avoid nil comparison.
+	lock              sync.RWMutex
+	called            bool
 	compiledModule    wasm.CompiledModule
 	compiledModuleErr error
 }
@@ -61,9 +63,18 @@ func (r *wasmRunner) Run(ctx context.Context, env pluginrpc.Env) (retErr error) 
 }
 
 func (r *wasmRunner) loadCompiledModuleOnce(ctx context.Context) (wasm.CompiledModule, error) {
-	r.once.Do(func() {
+	r.lock.RLock()
+	if r.called {
+		r.lock.RUnlock()
+		return r.compiledModule, r.compiledModuleErr
+	}
+	r.lock.RUnlock()
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	if !r.called {
 		r.compiledModule, r.compiledModuleErr = r.loadCompiledModule(ctx)
-	})
+		r.called = true
+	}
 	return r.compiledModule, r.compiledModuleErr
 }
 
