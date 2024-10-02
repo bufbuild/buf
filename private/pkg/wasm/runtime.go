@@ -69,8 +69,8 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	}, nil
 }
 
-func (r *runtime) Compile(ctx context.Context, pluginName string, pluginWasm []byte) (CompiledModule, error) {
-	if pluginName == "" {
+func (r *runtime) Compile(ctx context.Context, moduleName string, moduleWasm []byte) (CompiledModule, error) {
+	if moduleName == "" {
 		// The plugin is required to be named. We cannot use the name
 		// from the Wasm binary as this is not guaranteed to be set and
 		// may conflict with the provided name.
@@ -78,12 +78,12 @@ func (r *runtime) Compile(ctx context.Context, pluginName string, pluginWasm []b
 	}
 	// Compile the WebAssembly. This operation is hashed on pluginWasm
 	// bytes by the wazero runtime.
-	compiledModulePlugin, err := r.runtime.CompileModule(ctx, pluginWasm)
+	compiledModulePlugin, err := r.runtime.CompileModule(ctx, moduleWasm)
 	if err != nil {
 		return nil, err
 	}
 	return &compiledModule{
-		pluginName:     pluginName,
+		moduleName:     moduleName,
 		runtime:        r.runtime,
 		compiledModule: compiledModulePlugin,
 	}, nil

@@ -23,16 +23,12 @@ import (
 )
 
 type compiledModule struct {
-	pluginName     string
+	moduleName     string
 	runtime        wazero.Runtime
 	compiledModule wazero.CompiledModule
 }
 
 var _ CompiledModule = (*compiledModule)(nil)
-
-func (p *compiledModule) PluginName() string {
-	return p.pluginName
-}
 
 func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
 	// Create a new module config with the given environment.
@@ -47,9 +43,9 @@ func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
 		ctx,
 		p.compiledModule,
 		// Use an empty name to allow for multiple instances of the same module.
-		// See [wazero.ModuleConfig.WithName].
+		// See wazero.ModuleConfig.WithName.
 		config.WithName("").WithArgs(
-			append([]string{p.pluginName}, env.Args...)...,
+			append([]string{p.moduleName}, env.Args...)...,
 		),
 	)
 	if err != nil {

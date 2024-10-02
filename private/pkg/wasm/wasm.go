@@ -23,27 +23,26 @@ import (
 
 // CompiledModule is a Wasm module ready to be run.
 //
-// It is safe to use this module concurrently. Ensure that you call [Release]
-// to free resources associated with the module.
+// It is safe to use this module concurrently. When done, call Release to free
+// resources held by the CompiledModule. All CompiledModules created by the
+// same Runtime will be invalidated when the Runtime is released.
 //
 // Memory is limited by the runtime. To restrict CPU usage, cancel the context.
 type CompiledModule interface {
 	pluginrpc.Runner
-	// PluginName returns the name of the plugin.
-	PluginName() string
 	// Release releases all resources held by the compiled module.
 	Release(ctx context.Context) error
 }
 
 // Runtime is a Wasm runtime.
 //
-// It is safe to use this runtime concurrently. Ensure that you call [Release]
-// when you are done with the runtime. All plugins created by this runtime will
-// be invalidated when [Release] is called.
+// It is safe to use this runtime concurrently. Release must be called when done
+// with the runtime to free resources. All CompiledModules created by the same
+// Runtime will be invalidated when the Runtime is released.
 type Runtime interface {
-	// Compile compiles the given Wasm module bytes into a [CompiledModule].
-	Compile(ctx context.Context, pluginName string, pluginWasm []byte) (CompiledModule, error)
-	// Release releases all resources held by the runtime.
+	// Compile compiles the given Wasm module bytes into a CompiledModule.
+	Compile(ctx context.Context, moduleName string, moduleWasm []byte) (CompiledModule, error)
+	// Release releases all resources held by the Runtime.
 	Release(ctx context.Context) error
 }
 
@@ -52,7 +51,7 @@ func NewRuntime(ctx context.Context, options ...RuntimeOption) (Runtime, error) 
 	return newRuntime(ctx, options...)
 }
 
-// RuntimeOption is an option for [NewRuntime].
+// RuntimeOption is an option for NewRuntime.
 type RuntimeOption interface {
 	apply(*runtimeConfig)
 }

@@ -99,24 +99,14 @@ func newPluginConfigForExternalV2(
 		}
 		options[key] = value
 	}
-	// Differentiate between local and remote plugins.
-	// Local plugins are specified as a path to a binary or a Wasm file.
-	// Remote plugins are specified as a module reference.
-	// Paths with more than one element are assumed to be local plugin commands.
-	// This heuristic is based on the buffetch heuristics for inputs.
+	// TODO: differentiate between local and remote in the future
+	// Use the same heuristic that we do for dir vs module in buffetch
 	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Plugin)
 	if err != nil {
 		return nil, err
 	}
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
-	}
-	if len(path) == 1 {
-		// TODO: Parse as a module reference to fail early if we find
-		// a remote plugin reference. This syntax is subject to change.
-		if _, err := bufmodule.ParseModuleRef(path[0]); err == nil {
-			return nil, errors.New("remote plugins are not yet supported")
-		}
 	}
 	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
 	if strings.HasSuffix(path[0], ".wasm") {
