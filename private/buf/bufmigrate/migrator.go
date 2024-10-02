@@ -26,13 +26,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -712,8 +713,8 @@ func equivalentCheckConfigInV2(
 	checkConfig bufconfig.CheckConfig,
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
-	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(logger, tracer, bufpluginrunner.NewRunnerProvider(runner))
+	// TODO: If we ever need v3, then we will have to deal with this.w
+	client, err := bufcheck.NewClient(logger, tracer, bufpluginrpcutil.NewRunnerProvider(runner, wasm.UnimplementedRuntime))
 	if err != nil {
 		return nil, err
 	}

@@ -12,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufpluginrunner
+package bufpluginrpcutil
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
+
+// NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
+func NewRunner(delegate command.Runner, programName string, programArgs ...string) pluginrpc.Runner {
+	return newRunner(delegate, programName, programArgs...)
+}
+
+// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and plugin name.
+func NewWasmRunner(wasmRuntime wasm.Runtime, pluginName string) pluginrpc.Runner {
+	return newWasmRunner(wasmRuntime, pluginName)
+}
 
 // RunnerProvider provides pluginrpc.Runners for a given plugin config.
 type RunnerProvider interface {
@@ -27,22 +37,6 @@ type RunnerProvider interface {
 }
 
 // NewRunnerProvider returns a new RunnerProvider for the command.Runner.
-//
-// This implementation should only be used for local applications.
-func NewRunnerProvider(
-	delegate command.Runner,
-	options ...RunnerProviderOption,
-) RunnerProvider {
-	return newRunnerProvider(delegate, options...)
-}
-
-// RunnerProviderOption is an option for NewRunnerProvider.
-type RunnerProviderOption func(*runnerProviderOptions)
-
-// RunnerProviderWithWasmRuntime returns a new RunnerProviderOption that
-// specifies a Wasm runtime. This is required for local Wasm plugins.
-func RunnerProviderWithWasmRuntime(wasmRuntime bufwasm.Runtime) RunnerProviderOption {
-	return func(runnerProviderOptions *runnerProviderOptions) {
-		runnerProviderOptions.wasmRuntime = wasmRuntime
-	}
+func NewRunnerProvider(delegate command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
+	return newRunnerProvider(delegate, wasmRuntime)
 }

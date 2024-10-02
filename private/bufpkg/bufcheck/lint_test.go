@@ -27,11 +27,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -513,7 +513,6 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			require.NoError(t, err)
 			return newImage
 		},
-		false,
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
@@ -596,8 +595,7 @@ func TestRunProtovalidate(t *testing.T) {
 		t,
 		"protovalidate",
 		"buf.testing/lint/protovalidate",
-		nil,   // no image modification
-		false, // no wasm runtime
+		nil,
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 18, 51, 18, 84, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 19, 31, 19, 69, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 20, 50, 20, 88, "PROTOVALIDATE"),
@@ -1030,8 +1028,7 @@ func TestRunV2WorkspaceIgnores(t *testing.T) {
 		t,
 		"v2/ignores",
 		"ignores1",
-		nil,   // no image modification
-		false, // no wasm runtime
+		nil,
 		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
@@ -1055,8 +1052,7 @@ func TestRunV2WorkspaceIgnores(t *testing.T) {
 		t,
 		"v2/ignores",
 		"ignores2",
-		nil,   // no image modification
-		false, // no wasm runtime
+		nil,
 		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
@@ -1068,8 +1064,7 @@ func TestRunV2WorkspaceIgnores(t *testing.T) {
 		t,
 		"v2/ignores",
 		"ignores3",
-		nil,   // no image modification
-		false, // no wasm runtime
+		nil,
 		bufanalysistesting.NewFileAnnotation(t, "bar3/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
@@ -1230,8 +1225,7 @@ func TestRunLintCustomWasmPlugins(t *testing.T) {
 		t,
 		"custom_wasm_plugins",
 		"",
-		nil,  // no image modification
-		true, // wasm runtime
+		nil,
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
@@ -1250,7 +1244,6 @@ func testLint(
 		relDirPath,
 		"",
 		nil,
-		false,
 		expectedFileAnnotations...,
 	)
 }
@@ -1261,7 +1254,6 @@ func testLintWithOptions(
 	// only set if in workspace
 	moduleFullNameString string,
 	imageModifier func(bufimage.Image) bufimage.Image,
-	wasmRuntime bool,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for Wasm runtime
@@ -1321,17 +1313,12 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	var runnerProviderOptions []bufpluginrunner.RunnerProviderOption
-	if wasmRuntime {
-		wasmRuntime, err := bufwasm.NewRuntime(ctx)
-		require.NoError(t, err)
-		t.Cleanup(func() { assert.NoError(t, wasmRuntime.Release(ctx)) })
-		runnerProviderOptions = append(runnerProviderOptions, bufpluginrunner.RunnerProviderWithWasmRuntime(wasmRuntime))
-	}
+	wasmRuntime, err := wasm.NewRuntime(ctx)
+	require.NoError(t, err)
 	client, err := bufcheck.NewClient(
 		zap.NewNop(),
 		tracing.NopTracer,
-		bufpluginrunner.NewRunnerProvider(command.NewRunner(), runnerProviderOptions...),
+		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 	)
 	require.NoError(t, err)
 	err = client.Lint(

@@ -35,7 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
@@ -46,6 +46,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -1350,7 +1351,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
 			// Do not need any custom lint/breaking plugins here.
-			client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, bufpluginrunner.NewRunnerProvider(command.NewRunner()))
+			client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
 			require.NoError(t, err)
 			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
 			require.NoError(t, err)

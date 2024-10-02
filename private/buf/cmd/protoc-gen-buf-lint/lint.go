@@ -27,12 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protoplugin"
 )
 
@@ -104,7 +105,7 @@ func handle(
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		tracer,
-		bufpluginrunner.NewRunnerProvider(command.NewRunner()),
+		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(pluginEnv.Stderr),
 	)
 	if err != nil {

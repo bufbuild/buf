@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufpluginrunner
+package bufpluginrpcutil
 
 import (
 	"context"
@@ -22,75 +22,22 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
-	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
-
-type runnerProvider struct {
-	delegate    command.Runner
-	wasmRuntime bufwasm.Runtime
-}
-
-func newRunnerProvider(delegate command.Runner, options ...RunnerProviderOption) *runnerProvider {
-	runnerProviderOptions := newRunnerProviderOptions()
-	for _, option := range options {
-		option(runnerProviderOptions)
-	}
-	return &runnerProvider{
-		delegate:    delegate,
-		wasmRuntime: runnerProviderOptions.wasmRuntime,
-	}
-}
-
-func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
-	switch pluginConfig.Type() {
-	case bufconfig.PluginConfigTypeLocal:
-		path := pluginConfig.Path()
-		return pluginrpcutil.NewRunner(
-			r.delegate,
-			// We know that Path is of at least length 1.
-			path[0],
-			path[1:]...,
-		), nil
-	case bufconfig.PluginConfigTypeLocalWasm:
-		if r.wasmRuntime == nil {
-			return nil, syserror.Newf("wasm runtime is required for local wasm plugins")
-		}
-		return newWasmRunner(
-			r.wasmRuntime,
-			pluginConfig.Name(),
-		), nil
-	default:
-		return nil, syserror.Newf("unsupported plugin type: %v", pluginConfig.Type())
-	}
-}
-
-type runnerProviderOptions struct {
-	wasmRuntime bufwasm.Runtime
-}
-
-func newRunnerProviderOptions() *runnerProviderOptions {
-	return &runnerProviderOptions{
-		wasmRuntime: bufwasm.UnimplementedRuntime,
-	}
-}
 
 // wasmRunner is a runner that loads a Wasm plugin.
 type wasmRunner struct {
 	programName string
-	wasmRuntime bufwasm.Runtime
+	wasmRuntime wasm.Runtime
 	// Once protects compiledModule and compiledModuleErr.
 	once              sync.Once
-	compiledModule    bufwasm.CompiledModule
+	compiledModule    wasm.CompiledModule
 	compiledModuleErr error
 }
 
 // newWasmRunner returns a new pluginrpc.Runner for the Wasm binary on a
-// bufwasm.Runtime and program name. This runner is only suitable for use with
+// wasm.Runtime and program name. This runner is only suitable for use with
 // short-lived programs, compiled plugins lifetime is tied to the runtime.
 //
 // The program name should be the name of the program as it appears in the
@@ -98,7 +45,7 @@ type wasmRunner struct {
 // exec.LookPath to find the program in the PATH. This is only safe for use in
 // the CLI, as it is not safe to use in a server environment.
 func newWasmRunner(
-	runtime bufwasm.Runtime,
+	runtime wasm.Runtime,
 	programName string,
 ) *wasmRunner {
 	return &wasmRunner{
@@ -115,14 +62,14 @@ func (r *wasmRunner) Run(ctx context.Context, env pluginrpc.Env) (retErr error) 
 	return compiledModule.Run(ctx, env)
 }
 
-func (r *wasmRunner) loadCompiledModuleOnce(ctx context.Context) (bufwasm.CompiledModule, error) {
+func (r *wasmRunner) loadCompiledModuleOnce(ctx context.Context) (wasm.CompiledModule, error) {
 	r.once.Do(func() {
 		r.compiledModule, r.compiledModuleErr = r.loadCompiledModule(ctx)
 	})
 	return r.compiledModule, r.compiledModuleErr
 }
 
-func (r *wasmRunner) loadCompiledModule(ctx context.Context) (bufwasm.CompiledModule, error) {
+func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModule, error) {
 	// Find the plugin path. We use the same logic as exec.LookPath, but we do
 	// not require the file to be executable. So check the local directory
 	// first before checking the PATH.

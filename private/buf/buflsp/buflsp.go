@@ -22,18 +22,21 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -45,7 +48,7 @@ func Serve(
 	container appext.Container,
 	controller bufctl.Controller,
 	stream jsonrpc2.Stream,
-) (jsonrpc2.Conn, error) {
+) (_ jsonrpc2.Conn, retErr error) {
 	// The LSP protocol deals with absolute filesystem paths. This requires us to
 	// bypass the bucket API completely, so we create a bucket pointing at the filesystem
 	// root.
@@ -57,12 +60,21 @@ func Serve(
 	if err != nil {
 		return nil, err
 	}
+	pluginCacheDir, err := bufcli.CreatePluginCacheDir(container)
+	if err != nil {
+		return nil, err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(pluginCacheDir))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { retErr = multierr.Append(retErr, wasmRuntime.Release(ctx)) }()
 
 	tracer := tracing.NewTracer(container.Tracer())
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
 		tracer,
-		bufpluginrunner.NewRunnerProvider(command.NewRunner()),
+		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

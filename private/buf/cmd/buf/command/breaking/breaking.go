@@ -25,14 +25,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrunner"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 )
@@ -213,7 +213,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	wasmRuntime, err := bufwasm.NewRuntime(ctx, bufwasm.WithLocalCacheDir(pluginCacheDir))
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(pluginCacheDir))
 	if err != nil {
 		return err
 	}
@@ -224,10 +224,7 @@ func run(
 		client, err := bufcheck.NewClient(
 			container.Logger(),
 			tracer,
-			bufpluginrunner.NewRunnerProvider(
-				command.NewRunner(),
-				bufpluginrunner.RunnerProviderWithWasmRuntime(wasmRuntime),
-			),
+			bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 			bufcheck.ClientWithStderr(container.Stderr()),
 		)
 		if err != nil {
