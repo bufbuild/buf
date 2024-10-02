@@ -25,7 +25,7 @@ import (
 //
 // It is safe to use this module concurrently. When done, call Close to free
 // resources held by the CompiledModule. All CompiledModules created by the
-// same Runtime will be invalidated when the Runtime is released.
+// same Runtime will be invalidated when the Runtime is closed.
 //
 // Memory is limited by the Runtime. To restrict CPU usage, cancel the context.
 type CompiledModule interface {
@@ -38,7 +38,7 @@ type CompiledModule interface {
 //
 // It is safe to use the Runtime concurrently. Close must be called when done
 // with the Runtime to free resources. All CompiledModules created by the same
-// Runtime will be invalidated when the Runtime is released.
+// Runtime will be invalidated when the Runtime is closed.
 type Runtime interface {
 	// Compile compiles the given Wasm module bytes into a CompiledModule.
 	Compile(ctx context.Context, moduleName string, moduleWasm []byte) (CompiledModule, error)
