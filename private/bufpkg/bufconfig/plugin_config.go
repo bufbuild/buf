@@ -17,6 +17,7 @@ package bufconfig
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -115,7 +116,7 @@ func newPluginConfigForExternalV2(
 		return nil, errors.New("must specify a path to the plugin")
 	}
 	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
-	if strings.HasSuffix(path[0], ".wasm") {
+	if filepath.Ext(path[0]) == ".wasm" {
 		return newLocalWasmPluginConfig(
 			strings.Join(path, " "),
 			options,
