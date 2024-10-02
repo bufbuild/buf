@@ -95,7 +95,7 @@ func (r *runtime) Compile(ctx context.Context, moduleName string, moduleWasm []b
 	}, nil
 }
 
-func (r *runtime) Release(ctx context.Context) error {
+func (r *runtime) Close(ctx context.Context) error {
 	err := r.runtime.Close(ctx)
 	if r.cache != nil {
 		err = multierr.Append(err, r.cache.Close(ctx))

@@ -23,27 +23,27 @@ import (
 
 // CompiledModule is a Wasm module ready to be run.
 //
-// It is safe to use this module concurrently. When done, call Release to free
+// It is safe to use this module concurrently. When done, call Close to free
 // resources held by the CompiledModule. All CompiledModules created by the
 // same Runtime will be invalidated when the Runtime is released.
 //
 // Memory is limited by the runtime. To restrict CPU usage, cancel the context.
 type CompiledModule interface {
 	pluginrpc.Runner
-	// Release releases all resources held by the compiled module.
-	Release(ctx context.Context) error
+	// Close releases all resources held by the compiled module.
+	Close(ctx context.Context) error
 }
 
 // Runtime is a Wasm runtime.
 //
-// It is safe to use the Runtime concurrently. Release must be called when done
+// It is safe to use the Runtime concurrently. Close must be called when done
 // with the Runtime to free resources. All CompiledModules created by the same
 // Runtime will be invalidated when the Runtime is released.
 type Runtime interface {
 	// Compile compiles the given Wasm module bytes into a CompiledModule.
 	Compile(ctx context.Context, moduleName string, moduleWasm []byte) (CompiledModule, error)
-	// Release releases all resources held by the Runtime.
-	Release(ctx context.Context) error
+	// Close releases all resources held by the Runtime.
+	Close(ctx context.Context) error
 }
 
 // NewRuntime creates a new Wasm runtime.

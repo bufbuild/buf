@@ -104,7 +104,7 @@ func run(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, wasmRuntime.Release(ctx))
+		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
 	}()
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),

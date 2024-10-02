@@ -57,6 +57,6 @@ func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
 	return nil
 }
 
-func (p *compiledModule) Release(ctx context.Context) error {
+func (p *compiledModule) Close(ctx context.Context) error {
 	return p.compiledModule.Close(ctx)
 }
