@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // CommitKey provides identifying information for a Commit when calling the CommitProvider.
@@ -38,7 +38,7 @@ type CommitKey interface {
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
-	// Always present, that is CommitID().IsNil() will always be false.
+	// Always present, that is CommitID() == uuid.Nil will always be false.
 	CommitID() uuid.UUID
 	// DigestType returns the DigestType of the Commit.
 	//
@@ -102,7 +102,7 @@ func newCommitKey(
 	if registry == "" {
 		return nil, errors.New("empty registry when constructing CommitKey")
 	}
-	if commitID.IsNil() {
+	if commitID == uuid.Nil {
 		return nil, errors.New("empty commitID when constructing CommitKey")
 	}
 	if _, ok := digestTypeToString[digestType]; !ok {

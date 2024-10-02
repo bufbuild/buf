@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 )
 
@@ -225,7 +226,7 @@ func moduleFullNameOrOpaqueID(module bufmodule.Module) string {
 // dashlessCommitIDStringForModule returns the dashless UUID for the commit. If no commit
 // is set, we return an empty string.
 func dashlessCommitIDStringForModule(module bufmodule.Module) string {
-	if commitID := module.CommitID(); !commitID.IsNil() {
+	if commitID := module.CommitID(); commitID != uuid.Nil {
 		return uuidutil.ToDashless(commitID)
 	}
 	return ""

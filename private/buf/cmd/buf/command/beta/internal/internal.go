@@ -66,11 +66,7 @@ func run(
 	flags *flags,
 	spec *check.Spec,
 ) error {
-	checkServiceHandler, err := check.NewCheckServiceHandler(spec)
-	if err != nil {
-		return err
-	}
-	server, err := check.NewCheckServiceServer(checkServiceHandler)
+	server, err := check.NewServer(spec)
 	if err != nil {
 		return err
 	}

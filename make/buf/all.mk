@@ -13,8 +13,7 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
-	private/pkg/licenseheader/cmd/license-header \
-	private/pkg/spdx/cmd/spdx-go-data
+	private/pkg/licenseheader/cmd/license-header
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
@@ -84,13 +83,10 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
+godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
-	rm -rf private/gen/data/dataspdx
-	mkdir -p private/gen/data/dataspdx
-	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
 ifdef LEGACY_FEDERATION_FILE_PATH
 	rm -rf private/gen/data/datalegacyfederation
 	mkdir -p private/gen/data/datalegacyfederation

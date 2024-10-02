@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -238,7 +238,7 @@ func (m *DigestMismatchError) Error() string {
 	if m.ModuleFullName != nil {
 		_, _ = builder.WriteString(` for "`)
 		_, _ = builder.WriteString(m.ModuleFullName.String())
-		if !m.CommitID.IsNil() {
+		if m.CommitID != uuid.Nil {
 			_, _ = builder.WriteString(`:`)
 			_, _ = builder.WriteString(uuidutil.ToDashless(m.CommitID))
 		}
