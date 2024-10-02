@@ -28,8 +28,6 @@ type compiledModule struct {
 	compiledModule wazero.CompiledModule
 }
 
-var _ CompiledModule = (*compiledModule)(nil)
-
 func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
 	// Create a new module moduleConfig with the given environment.
 	moduleConfig := wazero.NewModuleConfig().

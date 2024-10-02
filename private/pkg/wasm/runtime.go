@@ -37,8 +37,6 @@ type runtime struct {
 	compilationCache wazero.CompilationCache
 }
 
-var _ Runtime = (*runtime)(nil)
-
 func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error) {
 	runtimeOptions := newRuntimeOptions()
 	for _, option := range options {
@@ -83,14 +81,14 @@ func (r *runtime) Compile(ctx context.Context, moduleName string, moduleWasm []b
 	// bytes and the runtime configuration. The compiled module is
 	// cached in memory and on disk if an optional cache directory is
 	// provided.
-	compiledModulePlugin, err := r.runtime.CompileModule(ctx, moduleWasm)
+	wazeroCompiledModule, err := r.runtime.CompileModule(ctx, moduleWasm)
 	if err != nil {
 		return nil, err
 	}
 	return &compiledModule{
 		moduleName:     moduleName,
 		runtime:        r.runtime,
-		compiledModule: compiledModulePlugin,
+		compiledModule: wazeroCompiledModule,
 	}, nil
 }
 
@@ -123,6 +121,6 @@ type unimplementedRuntime struct{}
 func (unimplementedRuntime) Compile(ctx context.Context, name string, moduleBytes []byte) (CompiledModule, error) {
 	return nil, syserror.Newf("not implemented")
 }
-func (unimplementedRuntime) Release(ctx context.Context) error {
+func (unimplementedRuntime) Close(ctx context.Context) error {
 	return nil
 }
