@@ -134,7 +134,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	pluginCacheDir, err := bufcli.CreatePluginCacheDir(container)
+	pluginCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
 	}

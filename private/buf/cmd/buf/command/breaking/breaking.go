@@ -209,7 +209,7 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
-	pluginCacheDir, err := bufcli.CreatePluginCacheDir(container)
+	pluginCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
 	}

@@ -103,10 +103,11 @@ var (
 	//
 	// Normalized.
 	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "modulelocks")
-	// v3CachePluginsRelDirPath is the relative path to the plugins cache directory in its newest iteration.
+	// v3CacheWasmRuntimeRelDirPath is the relative path to the Wasm runtime cache directory in its newest iteration.
+	// This directory is used to store the Wasm runtime cache. This is an implementation specific cache and opaque outside of the runtime.
 	//
 	// Normalized.
-	v3CachePluginsRelDirPath = normalpath.Join("v3", "plugins")
+	v3CacheWasmRuntimeRelDirPath = normalpath.Join("v3", "wasmruntime")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -139,14 +140,16 @@ func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, er
 	)
 }
 
-// CreatePluginCacheDir creates the cache directory for plugins.
+// CreateWasmRuntimeCacheDir creates the cache directory for the Wasm runtime.
 //
-// This is used by the [bufwasm.WithLocalCacheDir] option.
-func CreatePluginCacheDir(container appext.Container) (string, error) {
-	if err := createCacheDir(container.CacheDirPath(), v3CachePluginsRelDirPath); err != nil {
+// This is used by the Wasm runtime to cache compiled Wasm plugins. This is an
+// implementation specific cache and opaque outside of the runtime. The runtime
+// will manage the cache versioning. It is safe to clear this cache directory.
+func CreateWasmRuntimeCacheDir(container appext.Container) (string, error) {
+	if err := createCacheDir(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath); err != nil {
 		return "", err
 	}
-	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CachePluginsRelDirPath)
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath)
 	return fullCacheDirPath, nil
 }
 
