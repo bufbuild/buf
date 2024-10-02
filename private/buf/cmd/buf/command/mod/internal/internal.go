@@ -177,7 +177,8 @@ func lsRun(
 	// BufYAMLFiles <=v1 never had plugins.
 	tracer := tracing.NewTracer(container.Tracer())
 	client, err := bufcheck.NewClient(
-		container.Logger(), tracer,
+		container.Logger(),
+		tracer,
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)

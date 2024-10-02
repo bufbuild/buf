@@ -28,7 +28,7 @@ import (
 )
 
 type wasmRunner struct {
-	wasmRuntime wasm.Runtime
+	delegate    wasm.Runtime
 	programName string
 	programArgs []string
 	// lock protects compiledModule and compiledModuleErr. Store called as
@@ -40,12 +40,12 @@ type wasmRunner struct {
 }
 
 func newWasmRunner(
-	runtime wasm.Runtime,
+	delegate wasm.Runtime,
 	programName string,
 	programArgs ...string,
 ) *wasmRunner {
 	return &wasmRunner{
-		wasmRuntime: runtime,
+		delegate:    delegate,
 		programName: programName,
 		programArgs: programArgs,
 	}
@@ -94,12 +94,12 @@ func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModul
 	}
 	moduleWasm, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not read plugin %q: %v", r.programName, err)
 	}
 	// Compile the module. This plugin is never released, so subsequent
 	// calls to this function will benefit from the cached plugin. This is
 	// only safe as the runner is limited to the CLI.
-	compiledModule, err := r.wasmRuntime.Compile(ctx, r.programName, moduleWasm)
+	compiledModule, err := r.delegate.Compile(ctx, r.programName, moduleWasm)
 	if err != nil {
 		return nil, err
 	}

@@ -28,6 +28,6 @@ func NewRunner(delegate command.Runner, programName string, programArgs ...strin
 // NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.
 //
 // This runner is used for local Wasm plugins. The program name is the path to the Wasm file.
-func NewWasmRunner(wasmRuntime wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
-	return newWasmRunner(wasmRuntime, programName, programArgs...)
+func NewWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
+	return newWasmRunner(delegate, programName, programArgs...)
 }
