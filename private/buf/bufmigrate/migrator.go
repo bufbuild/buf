@@ -713,7 +713,7 @@ func equivalentCheckConfigInV2(
 	checkConfig bufconfig.CheckConfig,
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
-	// TODO: If we ever need v3, then we will have to deal with this.w
+	// TODO: If we ever need v3, then we will have to deal with this.
 	client, err := bufcheck.NewClient(logger, tracer, bufpluginrpcutil.NewRunnerProvider(runner, wasm.UnimplementedRuntime))
 	if err != nil {
 		return nil, err

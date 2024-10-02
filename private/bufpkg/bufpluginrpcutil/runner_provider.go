@@ -50,6 +50,6 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 			pluginConfig.Name(),
 		), nil
 	default:
-		return nil, syserror.Newf("unsupported plugin type: %v", pluginConfig.Type())
+		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())
 	}
 }

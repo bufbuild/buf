@@ -31,7 +31,7 @@ func NewWasmRunner(wasmRuntime wasm.Runtime, pluginName string) pluginrpc.Runner
 	return newWasmRunner(wasmRuntime, pluginName)
 }
 
-// RunnerProvider provides pluginrpc.Runners for a given plugin config.
+// RunnerProvider provides pluginrpc.Runners for a given PluginConfig.
 type RunnerProvider interface {
 	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 }

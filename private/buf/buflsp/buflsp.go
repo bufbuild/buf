@@ -60,6 +60,7 @@ func Serve(
 	if err != nil {
 		return nil, err
 	}
+
 	pluginCacheDir, err := bufcli.CreatePluginCacheDir(container)
 	if err != nil {
 		return nil, err
@@ -69,7 +70,6 @@ func Serve(
 		return nil, err
 	}
 	defer func() { retErr = multierr.Append(retErr, wasmRuntime.Release(ctx)) }()
-
 	tracer := tracing.NewTracer(container.Tracer())
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
