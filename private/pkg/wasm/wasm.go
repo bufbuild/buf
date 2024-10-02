@@ -55,6 +55,9 @@ func NewRuntime(ctx context.Context, options ...RuntimeOption) (Runtime, error) 
 type RuntimeOption func(*runtimeOptions)
 
 // WithMaxMemoryBytes sets the maximum memory size in bytes.
+//
+// The maximuim memory size is limited to 4 GiB. The default is 512 MiB. Sizes
+// less then the page size (64 KiB) are truncated.
 func WithMaxMemoryBytes(maxMemoryBytes uint32) RuntimeOption {
 	return func(runtimeOptions *runtimeOptions) {
 		runtimeOptions.maxMemoryBytes = maxMemoryBytes

@@ -42,6 +42,17 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	for _, option := range options {
 		option(runtimeOptions)
 	}
+	if runtimeOptions.maxMemoryBytes == 0 {
+		return nil, fmt.Errorf("Wasm max memory bytes must be greater than 0")
+	}
+	// The maximum memory size is limited to 4 GiB. Sizes less than the page
+	// size (64 KiB) are truncated. memoryLimitPages is guaranteed to be
+	// below 2^16 as the maxium uint32 value is 2^32 - 1.
+	memoryLimitPages := runtimeOptions.maxMemoryBytes / wasmPageSize
+	if memoryLimitPages == 0 {
+		return nil, fmt.Errorf("Wasm max memory bytes %d is too small", runtimeOptions.maxMemoryBytes)
+	}
+
 	// Create the wazero.RuntimeConfig with enforceable limits. Limits are
 	// enforced through the two mechanisms:
 	//  - Memory limit: The maximum memory size in pages.
@@ -51,7 +62,7 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	wazeroRuntimeConfig := wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2).
 		WithCloseOnContextDone(true).
-		WithMemoryLimitPages(runtimeOptions.getMaxMemoryBytes() / wasmPageSize)
+		WithMemoryLimitPages(memoryLimitPages)
 	var wazeroCompilationCache wazero.CompilationCache
 	if runtimeOptions.cacheDir != "" {
 		var err error
@@ -111,14 +122,9 @@ type runtimeOptions struct {
 }
 
 func newRuntimeOptions() *runtimeOptions {
-	return &runtimeOptions{}
-}
-
-func (r *runtimeOptions) getMaxMemoryBytes() uint32 {
-	if r.maxMemoryBytes == 0 {
-		return defaultMaxMemoryBytes
+	return &runtimeOptions{
+		maxMemoryBytes: defaultMaxMemoryBytes,
 	}
-	return r.maxMemoryBytes
 }
 
 type unimplementedRuntime struct{}
