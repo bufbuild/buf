@@ -75,7 +75,7 @@ type runnerProviderOptions struct {
 
 func newRunnerProviderOptions() *runnerProviderOptions {
 	return &runnerProviderOptions{
-		wasmRuntime: bufwasm.NewUnimplementedRuntime(),
+		wasmRuntime: bufwasm.UnimplementedRuntime,
 	}
 }
 

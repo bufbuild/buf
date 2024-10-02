@@ -73,7 +73,5 @@ func WithLocalCacheDir(cacheDir string) RuntimeOption {
 	})
 }
 
-// NewUnimplementedRuntime returns a new unimplemented Runtime.
-func NewUnimplementedRuntime() Runtime {
-	return unimplementedRuntime{}
-}
+// UnimplementedRuntime returns a new unimplemented Runtime.
+var UnimplementedRuntime = unimplementedRuntime{}
