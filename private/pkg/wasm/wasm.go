@@ -65,6 +65,10 @@ func WithMaxMemoryBytes(maxMemoryBytes uint32) RuntimeOption {
 
 // WithLocalCacheDir sets the local cache directory.
 //
+// The cache directory is used to store compiled Wasm modules. This can be used
+// to speed up subsequent runs of the same module. The internal cache structure
+// and versioning is handled by the runtime.
+//
 // This option is only safe use in CLI environments.
 func WithLocalCacheDir(cacheDir string) RuntimeOption {
 	return runtimeOptionFunc(func(cfg *runtimeConfig) {
