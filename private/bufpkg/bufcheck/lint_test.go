@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -1321,7 +1320,7 @@ func testLintWithOptions(
 	client, err := bufcheck.NewClient(
 		zap.NewNop(),
 		tracing.NopTracer,
-		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 	)
 	require.NoError(t, err)
 	err = client.Lint(

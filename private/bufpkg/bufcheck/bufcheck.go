@@ -21,9 +21,11 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )
@@ -163,8 +165,25 @@ type RunnerProvider interface {
 type RunnerProviderFunc func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
+//
+// RunnerProvider selects the correct runner based on the PluginConfig.Type.
 func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 	return r(pluginConfig)
+}
+
+// NewRunnerProvider returns a new RunnerProvider for the command.Runner and wasm.Runtime.
+//
+// This implementation should only be used for local applications. It is safe to
+// use concurrently.
+//
+// The RunnerProvider selects the correct runner based on the PluginConfig.Type.
+// The supported types are:
+//   - bufconfig.PluginConfigTypeLocal
+//   - bufconfig.PluginConfigTypeLocalWasm
+//
+// If the PluginConfig.Type is not supported, an error is returned.
+func NewRunnerProvider(delegate command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
+	return newRunnerProvider(delegate, wasmRuntime)
 }
 
 // NewClient returns a new Client.

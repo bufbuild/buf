@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufpluginrpcutil
+package bufcheck
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
@@ -38,7 +39,7 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 	switch pluginConfig.Type() {
 	case bufconfig.PluginConfigTypeLocal:
 		path := pluginConfig.Path()
-		return newRunner(
+		return pluginrpcutil.NewRunner(
 			r.delegate,
 			// We know that Path is of at least length 1.
 			path[0],
@@ -46,7 +47,7 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 		), nil
 	case bufconfig.PluginConfigTypeLocalWasm:
 		path := pluginConfig.Path()
-		return newWasmRunner(
+		return pluginrpcutil.NewWasmRunner(
 			r.wasmRuntime,
 			// We know that Path is of at least length 1.
 			path[0],

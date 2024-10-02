@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -179,7 +178,7 @@ func lsRun(
 	tracer := tracing.NewTracer(container.Tracer())
 	client, err := bufcheck.NewClient(
 		container.Logger(), tracer,
-		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
+		bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

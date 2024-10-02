@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
@@ -105,7 +104,7 @@ func handle(
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		tracer,
-		bufpluginrpcutil.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
+		bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(pluginEnv.Stderr),
 	)
 	if err != nil {

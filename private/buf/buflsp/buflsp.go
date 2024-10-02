@@ -44,7 +44,7 @@ func Serve(
 	controller bufctl.Controller,
 	checkClient bufcheck.Client,
 	stream jsonrpc2.Stream,
-) (_ jsonrpc2.Conn, retErr error) {
+) (jsonrpc2.Conn, error) {
 	// The LSP protocol deals with absolute filesystem paths. This requires us to
 	// bypass the bucket API completely, so we create a bucket pointing at the filesystem
 	// root.
