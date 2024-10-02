@@ -61,7 +61,7 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 	//  - Memory limit: The maximum memory size in pages.
 	//  - CPU limit: The runtime stops work on context done.
 	//  - Access limit: All system interfaces are stubbed. No network,
-	//    disk, etc.
+	//    disk, clock, etc.
 	// See wazero.NewRuntimeConfig for more details.
 	wazeroRuntimeConfig := wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2).

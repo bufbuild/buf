@@ -96,9 +96,9 @@ func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModul
 	if err != nil {
 		return nil, fmt.Errorf("could not read plugin %q: %v", r.programName, err)
 	}
-	// Compile the module. This plugin is never released, so subsequent
-	// calls to this function will benefit from the cached plugin. This is
-	// only safe as the runner is limited to the CLI.
+	// Compile the module. This CompiledModule is never released, so
+	// subsequent calls to this function will benefit from the cached
+	// module. This is only safe as the runner is limited to the CLI.
 	compiledModule, err := r.delegate.Compile(ctx, r.programName, moduleWasm)
 	if err != nil {
 		return nil, err
