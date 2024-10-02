@@ -36,8 +36,8 @@ type CompiledModule interface {
 
 // Runtime is a Wasm runtime.
 //
-// It is safe to use this runtime concurrently. Release must be called when done
-// with the runtime to free resources. All CompiledModules created by the same
+// It is safe to use the Runtime concurrently. Release must be called when done
+// with the Runtime to free resources. All CompiledModules created by the same
 // Runtime will be invalidated when the Runtime is released.
 type Runtime interface {
 	// Compile compiles the given Wasm module bytes into a CompiledModule.
@@ -72,5 +72,5 @@ func WithLocalCacheDir(cacheDir string) RuntimeOption {
 	})
 }
 
-// UnimplementedRuntime returns a new unimplemented Runtime.
+// UnimplementedRuntime is an unimplemented Runtime.
 var UnimplementedRuntime = unimplementedRuntime{}
