@@ -20,37 +20,32 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
 
-// wasmRunner is a runner that loads a Wasm plugin.
 type wasmRunner struct {
-	programName string
 	wasmRuntime wasm.Runtime
+	programName string
+	programArgs []string
 	// Once protects compiledModule and compiledModuleErr.
 	once              sync.Once
 	compiledModule    wasm.CompiledModule
 	compiledModuleErr error
 }
 
-// newWasmRunner returns a new pluginrpc.Runner for the Wasm binary on a
-// wasm.Runtime and program name. This runner is only suitable for use with
-// short-lived programs, compiled plugins lifetime is tied to the runtime.
-//
-// The program name should be the name of the program as it appears in the
-// plugin config. The runner will check the current directory and fallback to
-// exec.LookPath to find the program in the PATH. This is only safe for use in
-// the CLI, as it is not safe to use in a server environment.
 func newWasmRunner(
 	runtime wasm.Runtime,
 	programName string,
+	programArgs ...string,
 ) *wasmRunner {
 	return &wasmRunner{
-		programName: programName,
 		wasmRuntime: runtime,
+		programName: programName,
+		programArgs: programArgs,
 	}
 }
 
@@ -58,6 +53,9 @@ func (r *wasmRunner) Run(ctx context.Context, env pluginrpc.Env) (retErr error) 
 	compiledModule, err := r.loadCompiledModuleOnce(ctx)
 	if err != nil {
 		return err
+	}
+	if len(r.programArgs) > 0 {
+		env.Args = append(slices.Clone(r.programArgs), env.Args...)
 	}
 	return compiledModule.Run(ctx, env)
 }

@@ -45,9 +45,12 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 			path[1:]...,
 		), nil
 	case bufconfig.PluginConfigTypeLocalWasm:
+		path := pluginConfig.Path()
 		return newWasmRunner(
 			r.wasmRuntime,
-			pluginConfig.Name(),
+			// We know that Path is of at least length 1.
+			path[0],
+			path[1:]...,
 		), nil
 	default:
 		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())

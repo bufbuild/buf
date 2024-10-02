@@ -26,27 +26,31 @@ func NewRunner(delegate command.Runner, programName string, programArgs ...strin
 	return newRunner(delegate, programName, programArgs...)
 }
 
-// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and plugin name.
-func NewWasmRunner(wasmRuntime wasm.Runtime, pluginName string) pluginrpc.Runner {
-	return newWasmRunner(wasmRuntime, pluginName)
+// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.
+//
+// This runner is used for local Wasm plugins. The program name is the path to the Wasm file.
+func NewWasmRunner(wasmRuntime wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
+	return newWasmRunner(wasmRuntime, programName, programArgs...)
 }
 
-// RunnerProvider provides pluginrpc.Runners for a given PluginConfig.
+// RunnerProvider provides pluginrpc.Runners for the PluginConfig.
 //
-// The PluginConfig provides the configuration for a plugin. The PluginConfig
-// must be of type bufconfig.PluginConfigTypeLocal or bufconfig.PluginConfigTypeLocalWasm.
-// If the PluginConfig is of type bufconfig.PluginConfigTypeLocal, the path
-// must be of length at least 1. If the PluginConfig is of type
-// bufconfig.PluginConfigTypeLocalWasm, the name must be non-empty. If the
-// PluginConfig is of any other type, an error will be returned.
+// RunnerProvider selects the correct runner based on the PluginConfig.Type.
 type RunnerProvider interface {
 	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 }
 
-// NewRunnerProvider returns a new RunnerProvider for the command.Runner.
+// NewRunnerProvider returns a new RunnerProvider for the command.Runner and wasm.Runtime.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
+//
+// The RunnerProvider selects the correct runner based on the PluginConfig.Type.
+// The supported types are:
+//   - bufconfig.PluginConfigTypeLocal
+//   - bufconfig.PluginConfigTypeLocalWasm
+//
+// If the PluginConfig.Type is not supported, an error is returned.
 func NewRunnerProvider(delegate command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
 	return newRunnerProvider(delegate, wasmRuntime)
 }

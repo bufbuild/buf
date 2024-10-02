@@ -69,7 +69,6 @@ func NewLocalPluginConfig(
 func NewLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
-	path []string,
 ) (PluginConfig, error) {
 	return newLocalWasmPluginConfig(
 		name,
@@ -109,20 +108,23 @@ func newPluginConfigForExternalV2(
 	if err != nil {
 		return nil, err
 	}
+	if len(path) == 0 {
+		return nil, errors.New("must specify a path to the plugin")
+	}
 	if len(path) == 1 {
-		name := path[0]
 		// TODO: Parse as a module reference to fail early if we find
 		// a remote plugin reference. This syntax is subject to change.
-		if _, err := bufmodule.ParseModuleRef(name); err == nil {
-			return nil, syserror.Newf("remote plugins are not yet supported")
+		if _, err := bufmodule.ParseModuleRef(path[0]); err == nil {
+			return nil, errors.New("remote plugins are not yet supported")
 		}
-		// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
-		if strings.HasSuffix(name, ".wasm") {
-			return newLocalWasmPluginConfig(
-				name,
-				options,
-			)
-		}
+	}
+	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
+	if strings.HasSuffix(path[0], ".wasm") {
+		return newLocalWasmPluginConfig(
+			strings.Join(path, " "),
+			options,
+			path,
+		)
 	}
 	return newLocalPluginConfig(
 		strings.Join(path, " "),
@@ -150,11 +152,19 @@ func newLocalPluginConfig(
 func newLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
+	path []string,
 ) (*pluginConfig, error) {
+	if len(path) != 0 {
+		return nil, errors.New("must specify a path to the plugin")
+	}
+	if programName := path[0]; !strings.HasSuffix(programName, ".wasm") {
+		return nil, errors.New("Wasm plugin name must end with .wasm")
+	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeLocalWasm,
 		name:             name,
 		options:          options,
+		path:             path,
 	}, nil
 }
 

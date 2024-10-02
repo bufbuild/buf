@@ -144,7 +144,7 @@ func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, er
 //
 // This is used by the Wasm runtime to cache compiled Wasm plugins. This is an
 // implementation specific cache and opaque outside of the runtime. The runtime
-// will manage the cache versioning. It is safe to clear this cache directory.
+// will manage the cache versioning itself within this directory.
 func CreateWasmRuntimeCacheDir(container appext.Container) (string, error) {
 	if err := createCacheDir(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath); err != nil {
 		return "", err
