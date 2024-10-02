@@ -112,6 +112,21 @@ enum DotnetTargetFramework {
   DOTNET_TARGET_FRAMEWORK_NET_8_0 = 13;
 }
 
+// The collection a Plugin belongs to. These collections help organize plugins based on their
+// functionality or ecosystem.
+enum PluginCollection {
+  PLUGIN_COLLECTION_UNSPECIFIED = 0;
+  // PLUGIN_COLLECTION_PROTOBUF is the collection for Protobuf plugins. These are the base types
+  // other plugins are built on.
+  PLUGIN_COLLECTION_PROTOBUF = 1;
+  // PLUGIN_COLLECTION_CONNECT is the collection for Connect plugins.
+  PLUGIN_COLLECTION_CONNECT = 2;
+  // PLUGIN_COLLECTION_GRPC is the collection for gRPC plugins.
+  PLUGIN_COLLECTION_GRPC = 3;
+  // PLUGIN_COLLECTION_OPENAPI is the collection for OpenAPI plugins.
+  PLUGIN_COLLECTION_OPENAPI = 4;
+}
+
 // GoConfig is the configuration for a Go plugin.
 message GoConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
@@ -373,6 +388,10 @@ message CuratedPlugin {
   string deprecation_message = 20;
   // The URL leading to the integration guide of the plugin, if available.
   string integration_guide_url = 21;
+  // The configurable documentation of the Plugin.
+  string doc = 22;
+  // The collections the Plugin belongs to.
+  repeated PluginCollection collections = 23;
 }
 
 // PluginCurationService manages curated plugins.
