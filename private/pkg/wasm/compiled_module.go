@@ -31,27 +31,27 @@ type compiledModule struct {
 var _ CompiledModule = (*compiledModule)(nil)
 
 func (p *compiledModule) Run(ctx context.Context, env pluginrpc.Env) error {
-	// Create a new module config with the given environment.
-	config := wazero.NewModuleConfig().
+	// Create a new module moduleConfig with the given environment.
+	moduleConfig := wazero.NewModuleConfig().
 		WithStdin(env.Stdin).
 		WithStdout(env.Stdout).
 		WithStderr(env.Stderr)
 
 	// Instantiate the guest wasm module into the same runtime.
 	// See: https://github.com/tetratelabs/wazero/issues/985
-	mod, err := p.runtime.InstantiateModule(
+	wazeroModule, err := p.runtime.InstantiateModule(
 		ctx,
 		p.compiledModule,
 		// Use an empty name to allow for multiple instances of the same module.
 		// See wazero.ModuleConfig.WithName.
-		config.WithName("").WithArgs(
+		moduleConfig.WithName("").WithArgs(
 			append([]string{p.moduleName}, env.Args...)...,
 		),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate module: %w", err)
 	}
-	if err := mod.Close(ctx); err != nil {
+	if err := wazeroModule.Close(ctx); err != nil {
 		return fmt.Errorf("failed to close module: %w", err)
 	}
 	return nil

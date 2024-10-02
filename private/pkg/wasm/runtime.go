@@ -33,8 +33,8 @@ const (
 )
 
 type runtime struct {
-	runtime wazero.Runtime
-	cache   wazero.CompilationCache
+	runtime          wazero.Runtime
+	compilationCache wazero.CompilationCache
 }
 
 var _ Runtime = (*runtime)(nil)
@@ -49,27 +49,26 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 		WithCoreFeatures(api.CoreFeaturesV2).
 		WithCloseOnContextDone(true).
 		WithMemoryLimitPages(runtimeOptions.getMaxMemoryBytes() / wasmPageSize)
-	var cache wazero.CompilationCache
+	var compilationCache wazero.CompilationCache
 	if runtimeOptions.cacheDir != "" {
 		var err error
-		cache, err = wazero.NewCompilationCacheWithDir(runtimeOptions.cacheDir)
+		compilationCache, err = wazero.NewCompilationCacheWithDir(runtimeOptions.cacheDir)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create compilation cache: %w", err)
 		}
-		runtimeConfig = runtimeConfig.WithCompilationCache(cache)
+		runtimeConfig = runtimeConfig.WithCompilationCache(compilationCache)
 	}
 	wazeroRuntime := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
 
 	// Init WASI preview1 APIs. This is required to support the pluginrpc
-	// protocol. The closer method is not required as the instantiated
-	// module is never required to be unloaded.
+	// protocol. The returned closer method is discarded as the
+	// instantiated module is never required to be unloaded.
 	if _, err := wasi_snapshot_preview1.Instantiate(ctx, wazeroRuntime); err != nil {
 		return nil, fmt.Errorf("failed to instantiate WASI snapshot preview1: %w", err)
 	}
-
 	return &runtime{
-		runtime: wazeroRuntime,
-		cache:   cache,
+		runtime:          wazeroRuntime,
+		compilationCache: compilationCache,
 	}, nil
 }
 
@@ -97,8 +96,8 @@ func (r *runtime) Compile(ctx context.Context, moduleName string, moduleWasm []b
 
 func (r *runtime) Close(ctx context.Context) error {
 	err := r.runtime.Close(ctx)
-	if r.cache != nil {
-		err = multierr.Append(err, r.cache.Close(ctx))
+	if r.compilationCache != nil {
+		err = multierr.Append(err, r.compilationCache.Close(ctx))
 	}
 	return err
 }
