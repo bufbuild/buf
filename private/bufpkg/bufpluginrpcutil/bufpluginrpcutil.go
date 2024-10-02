@@ -32,11 +32,21 @@ func NewWasmRunner(wasmRuntime wasm.Runtime, pluginName string) pluginrpc.Runner
 }
 
 // RunnerProvider provides pluginrpc.Runners for a given PluginConfig.
+//
+// The PluginConfig provides the configuration for a plugin. The PluginConfig
+// must be of type bufconfig.PluginConfigTypeLocal or bufconfig.PluginConfigTypeLocalWasm.
+// If the PluginConfig is of type bufconfig.PluginConfigTypeLocal, the path
+// must be of length at least 1. If the PluginConfig is of type
+// bufconfig.PluginConfigTypeLocalWasm, the name must be non-empty. If the
+// PluginConfig is of any other type, an error will be returned.
 type RunnerProvider interface {
 	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 }
 
 // NewRunnerProvider returns a new RunnerProvider for the command.Runner.
+//
+// This implementation should only be used for local applications. It is safe to
+// use concurrently.
 func NewRunnerProvider(delegate command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
 	return newRunnerProvider(delegate, wasmRuntime)
 }
