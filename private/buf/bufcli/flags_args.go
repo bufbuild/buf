@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -297,6 +298,21 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (modulev1.Mod
 		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
 	case "":
 		return modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s", visibility)
+	}
+}
+
+// VisibilityFlagToPluginVisibilityAllowUnspecified parses the given string as a pluginv1.PluginVisibility
+// where an empty string will be parsed as unspecified.
+func VisibilityFlagToPluginVisibilityAllowUnspecified(visibility string) (pluginv1beta1.PluginVisibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PRIVATE, nil
+	case "":
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED, nil
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}

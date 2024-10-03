@@ -18,6 +18,7 @@ import (
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1/modulev1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1/ownerv1connect"
+	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/plugin/v1beta1/pluginv1beta1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
@@ -136,6 +137,21 @@ type V1Beta1UploadServiceClientProvider interface {
 	V1Beta1UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient
 }
 
+// PluginV1Beta1UploadServiceClientProvider provides UploadServiceClients for plugins.
+type PluginV1Beta1UploadServiceClientProvider interface {
+	PluginV1Beta1UploadServiceClient(registry string) pluginv1beta1connect.UploadServiceClient
+}
+
+// PluginV1Beta1PluginServiceClientProvider provides PluginServiceClients for plugins.
+type PluginV1Beta1PluginServiceClientProvider interface {
+	PluginV1Beta1PluginServiceClient(registry string) pluginv1beta1connect.PluginServiceClient
+}
+
+// PluginV1Beta1DownloadServiceClientProvider provides DownloadServiceClients for plugins.
+type PluginV1Beta1DownloadServiceClientProvider interface {
+	PluginV1Beta1DownloadServiceClient(registry string) pluginv1beta1connect.DownloadServiceClient
+}
+
 // ClientProvider provides API clients for BSR services.
 type ClientProvider interface {
 	V1CommitServiceClientProvider
@@ -154,6 +170,9 @@ type ClientProvider interface {
 	V1Beta1LabelServiceClientProvider
 	V1Beta1ModuleServiceClientProvider
 	V1Beta1UploadServiceClientProvider
+	PluginV1Beta1UploadServiceClientProvider
+	PluginV1Beta1DownloadServiceClientProvider
+	PluginV1Beta1PluginServiceClientProvider
 }
 
 // NewClientProvider returns a new ClientProvider.
@@ -301,6 +320,30 @@ func (c *clientProvider) V1Beta1UploadServiceClient(registry string) modulev1bet
 	)
 }
 
+func (c *clientProvider) PluginV1Beta1UploadServiceClient(registry string) pluginv1beta1connect.UploadServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		pluginv1beta1connect.NewUploadServiceClient,
+	)
+}
+
+func (c *clientProvider) PluginV1Beta1DownloadServiceClient(registry string) pluginv1beta1connect.DownloadServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		pluginv1beta1connect.NewDownloadServiceClient,
+	)
+}
+
+func (c *clientProvider) PluginV1Beta1PluginServiceClient(registry string) pluginv1beta1connect.PluginServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		pluginv1beta1connect.NewPluginServiceClient,
+	)
+}
+
 type nopClientProvider struct{}
 
 func (nopClientProvider) V1CommitServiceClient(registry string) modulev1connect.CommitServiceClient {
@@ -365,4 +408,16 @@ func (nopClientProvider) V1Beta1ModuleServiceClient(registry string) modulev1bet
 
 func (nopClientProvider) V1Beta1UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient {
 	return modulev1beta1connect.UnimplementedUploadServiceHandler{}
+}
+
+func (nopClientProvider) PluginV1Beta1UploadServiceClient(registry string) pluginv1beta1connect.UploadServiceClient {
+	return pluginv1beta1connect.UnimplementedUploadServiceHandler{}
+}
+
+func (nopClientProvider) PluginV1Beta1DownloadServiceClient(registry string) pluginv1beta1connect.DownloadServiceClient {
+	return pluginv1beta1connect.UnimplementedDownloadServiceHandler{}
+}
+
+func (nopClientProvider) PluginV1Beta1PluginServiceClient(registry string) pluginv1beta1connect.PluginServiceClient {
+	return pluginv1beta1connect.UnimplementedPluginServiceHandler{}
 }

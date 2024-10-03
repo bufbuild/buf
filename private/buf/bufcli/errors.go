@@ -54,6 +54,12 @@ func NewLabelNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a label named %q already exists", name)
 }
 
+// NewPluginNameAlreadyExistsError informs the user that a plugin
+// with that name already exists.
+func NewPluginNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a plugin named %q already exists", name)
+}
+
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
