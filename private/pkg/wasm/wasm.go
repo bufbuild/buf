@@ -21,6 +21,9 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
+// UnimplementedRuntime is an unimplemented Runtime.
+var UnimplementedRuntime = unimplementedRuntime{}
+
 // CompiledModule is a Wasm module ready to be run.
 //
 // It is safe to use this module concurrently. When done, call Close to free
@@ -76,6 +79,3 @@ func WithLocalCacheDir(cacheDir string) RuntimeOption {
 		runtimeOptions.cacheDir = cacheDir
 	}
 }
-
-// UnimplementedRuntime is an unimplemented Runtime.
-var UnimplementedRuntime = unimplementedRuntime{}
