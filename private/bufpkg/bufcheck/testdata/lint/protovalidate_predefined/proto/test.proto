@@ -1,0 +1,62 @@
+syntax = "proto2";
+
+package test;
+
+import "buf/validate/validate.proto";
+import "import.proto";
+
+extend buf.validate.StringRules {
+   optional string special_prefix = 1801 [(buf.validate.predefined).cel = {
+    id: "string.special_prefix"
+    expression: "!this.startsWith('_' + rule) ? \'value does not have prefix `%s`\'.format(['_' + rule]) : \'\'"
+  }];
+
+  optional string another_bad_rule = 1902 [(buf.validate.predefined).cel = {
+    id: "string.another_bad_rule"
+    expression: "bad"
+    message: "this rule does not compile"
+  }];
+}
+
+message TestPredefinedStringRules {
+  // valid
+  optional string all_rules_valid = 1 [
+    (buf.validate.field).string.max_len = 20,
+    // imported
+    (buf.validate.field).string.(custom.special_suffix) = "suffix",
+    (buf.validate.field).string.(special_prefix) = "prefix"
+  ];
+  optional string all_rules_valid_with_all_valid_examples = 2 [
+    (buf.validate.field).string.max_len = 50,
+    (buf.validate.field).string.(custom.special_suffix) = "suffix",
+    (buf.validate.field).string.(special_prefix) = "prefix",
+    (buf.validate.field).string.example = "_prefix_foo_foo_suffix_",
+    (buf.validate.field).string.example = "_prefixfoofoosuffix_"
+  ];
+  optional string all_rules_valid_with_examples = 3 [
+    (buf.validate.field).string.max_len = 50,
+    (buf.validate.field).string.(custom.special_suffix) = "suffix",
+    (buf.validate.field).string.(special_prefix) = "prefix",
+    // valid
+    (buf.validate.field).string.example = "_prefix_foo_foo_suffix_",
+    // invalid
+    (buf.validate.field).string.example = "fail_example",
+    (buf.validate.field).string.example = "_prefix_fail_suffix"
+  ];
+  optional string invalid_predefined_rule = 4 [
+    (buf.validate.field).string.max_len = 5,
+    (buf.validate.field).string.(custom.bad_rule) = "suffix",
+    (buf.validate.field).string.example = "ah",
+    (buf.validate.field).string.example = "too_long"
+  ];
+}
+
+message TestInt32Rules {
+  optional int32 test = 1 [
+    (buf.validate.field).int32.lt = 5,
+    (buf.validate.field).int32.(custom.abs_not_in) = 1,
+    (buf.validate.field).int32.(custom.abs_not_in) = -2,
+    (buf.validate.field).int32.example = 3,
+    (buf.validate.field).int32.example = 2
+  ];
+}

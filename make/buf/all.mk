@@ -42,7 +42,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
-PROTOVALIDATE_VERSION := v0.7.1
+PROTOVALIDATE_VERSION := v0.8.1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
@@ -144,6 +144,9 @@ bufgeneratebuflinttestdata:
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output private/bufpkg/bufcheck/testdata/lint/protovalidate_predefined/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgeneratego \

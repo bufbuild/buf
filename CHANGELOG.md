@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update the `PROTOVALIDATE` lint rule to check example field options. Examples will be checked that
+  they satisfy the field constraints, and are only present if constraints are present.
+- Update the `PROTOVALIDATE` lint rule to check predefined rules. Predefined rules will be checked
+  that they compile.
 
 ## [v1.43.0] - 2024-09-30
 

@@ -53,4 +53,15 @@ message RepeatedTest {
   int32 wrong_type = 17 [(buf.validate.field).repeated.items.int64.lt = 1];
   // non repeated
   repeated int32 non_repeated_rule = 18 [(buf.validate.field).int32.gt = 10];
+  repeated string valid_example = 19 [
+    (buf.validate.field).repeated.items.string.min_len = 1,
+    (buf.validate.field).repeated.items.string.max_len = 10,
+    (buf.validate.field).repeated.items.string.example = "proto"
+  ];
+  repeated string invalid_example = 20 [
+    (buf.validate.field).repeated.items.string.min_len = 3,
+    (buf.validate.field).repeated.items.string.max_len = 10,
+    (buf.validate.field).repeated.items.string.example = "proto", // valid
+    (buf.validate.field).repeated.items.string.example = "pr"
+  ];
 }

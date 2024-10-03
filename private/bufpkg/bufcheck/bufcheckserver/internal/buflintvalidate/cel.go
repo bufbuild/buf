@@ -109,6 +109,7 @@ func checkCELForField(
 	return nil
 }
 
+// Returns true only if all cel expressions compile
 func checkCEL(
 	celEnv *cel.Env,
 	celConstraints []*validate.Constraint,
@@ -116,7 +117,8 @@ func checkCEL(
 	parentNameCapitalized string,
 	celName string,
 	add func(int, string, ...interface{}),
-) {
+) bool {
+	allCelExpressionsCompile := true
 	idToConstraintIndices := make(map[string][]int, len(celConstraints))
 	for i, celConstraint := range celConstraints {
 		if celID := celConstraint.GetId(); celID != "" {
@@ -142,7 +144,7 @@ func checkCEL(
 		} else {
 			add(i, "%s has an empty %s.id. IDs should always be specified.", parentNameCapitalized, celName)
 		}
-		if celConstraint.GetExpression() == "" {
+		if len(strings.TrimSpace(celConstraint.GetExpression())) == 0 {
 			add(i, "%s has an empty %s.expression. Expressions should always be specified.", parentNameCapitalized, celName)
 			continue
 		}
@@ -179,6 +181,7 @@ func checkCEL(
 			)
 		}
 		if compileIssues.Err() != nil {
+			allCelExpressionsCompile = false
 			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
 				add(
 					i,
@@ -204,6 +207,7 @@ func checkCEL(
 			)
 		}
 	}
+	return allCelExpressionsCompile
 }
 
 // this depends on the undocumented behavior of cel-go's error message

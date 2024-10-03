@@ -410,3 +410,9 @@ issues:
       - forbidigo
       path: private/pkg/protoencoding
       text: "prototext.Unmarshal"
+    - linters:
+        - gosec
+      # This checks the cel constraints for predefined rules from an Image, and converts loop indices to int32
+      # to set the source path for the location, this operation should be safe.
+      path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/predefined_rules.go
+      text: "G115:"
