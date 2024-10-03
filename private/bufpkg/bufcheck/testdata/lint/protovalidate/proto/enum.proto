@@ -27,4 +27,12 @@ message EnumTest {
     // const should be the only field
     (buf.validate.field).enum.const = 2
   ];
+  TestEnum valid_example = 6 [
+    (buf.validate.field).enum.defined_only = true,
+    (buf.validate.field).enum.example = 1
+  ];
+  TestEnum invalid_example = 7 [
+    (buf.validate.field).enum.defined_only = true,
+    (buf.validate.field).enum.example = 4
+  ];
 }

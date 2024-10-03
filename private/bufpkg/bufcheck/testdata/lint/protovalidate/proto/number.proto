@@ -7,7 +7,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-message Int32Test {
+message IntTest {
   // valid
   int32 no_protovalidate_option = 1;
   // valid
@@ -148,5 +148,155 @@ message Int32Test {
   int32 valid_range_gt_greater_than_lt = 42 [
     (buf.validate.field).int32.lt = 9,
     (buf.validate.field).int32.gt = 10
+  ];
+  // examples
+  double valid_double_example = 50 [
+    (buf.validate.field).double.lt = 10,
+    (buf.validate.field).double.example = 9
+  ];
+  double invalid_double_example = 51 [
+    (buf.validate.field).double.lt = 10,
+    (buf.validate.field).double.gt = 5,
+    (buf.validate.field).double.example = 1
+  ];
+  fixed32 valid_fixed32_example = 52 [
+    (buf.validate.field).fixed32.lt = 10,
+    (buf.validate.field).fixed32.gt = 5,
+    (buf.validate.field).fixed32.example = 9
+  ];
+  fixed32 invalid_fixed32_example = 53 [
+    (buf.validate.field).fixed32.lt = 10,
+    (buf.validate.field).fixed32.gt = 5,
+    (buf.validate.field).fixed32.example = 1
+  ];
+  fixed64 valid_fixed64_example = 54 [
+    (buf.validate.field).fixed64.lt = 10,
+    (buf.validate.field).fixed64.gt = 5,
+    (buf.validate.field).fixed64.example = 9
+  ];
+  fixed64 invalid_fixed64_example = 55 [
+    (buf.validate.field).fixed64.lt = 10,
+    (buf.validate.field).fixed64.gt = 5,
+    (buf.validate.field).fixed64.example = 1
+  ];
+  int32 valid_int32_example = 56 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 9
+  ];
+  int32 invalid_int32_example = 57 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 1
+  ];
+  int64 valid_int64_example = 58 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 9
+  ];
+  int64 invalid_int64_example = 59 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 1
+  ];
+  sfixed32 valid_sfixed32_example = 60 [
+    (buf.validate.field).sfixed32.lt = 10,
+    (buf.validate.field).sfixed32.gt = 5,
+    (buf.validate.field).sfixed32.example = 9
+  ];
+  sfixed32 invalid_sfixed32_example = 61 [
+    (buf.validate.field).sfixed32.lt = 10,
+    (buf.validate.field).sfixed32.gt = 5,
+    (buf.validate.field).sfixed32.example = 1
+  ];
+  sfixed64 valid_sfixed64_example = 64 [
+    (buf.validate.field).sfixed64.lt = 10,
+    (buf.validate.field).sfixed64.gt = 5,
+    (buf.validate.field).sfixed64.example = 9
+  ];
+  sfixed64 invalid_sfixed64_example = 65 [
+    (buf.validate.field).sfixed64.lt = 10,
+    (buf.validate.field).sfixed64.gt = 5,
+    (buf.validate.field).sfixed64.example = 1
+  ];
+  sint32 valid_sint32_example = 68 [
+    (buf.validate.field).sint32.lt = 10,
+    (buf.validate.field).sint32.gt = 5,
+    (buf.validate.field).sint32.example = 9
+  ];
+  sint32 invalid_sint32_example = 69 [
+    (buf.validate.field).sint32.lt = 10,
+    (buf.validate.field).sint32.gt = 5,
+    (buf.validate.field).sint32.example = 1
+  ];
+  sint64 valid_sint64_example = 72 [
+    (buf.validate.field).sint64.lt = 10,
+    (buf.validate.field).sint64.gt = 5,
+    (buf.validate.field).sint64.example = 9
+  ];
+  sint64 invalid_sint64_example = 73 [
+    (buf.validate.field).sint64.lt = 10,
+    (buf.validate.field).sint64.gt = 5,
+    (buf.validate.field).sint64.example = 1
+  ];
+  uint32 valid_uint32_example = 74 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 9
+  ];
+  uint32 invalid_uint32_example = 75 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 1
+  ];
+  uint64 valid_uint64_example = 76 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 9
+  ];
+  uint64 invalid_uint64_example = 77 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 1
+  ];
+  google.protobuf.Int64Value valid_wkt_int64_example = 66 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 9
+  ];
+  google.protobuf.Int64Value invalid_wkt_int64_example = 67 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 1
+  ];
+  google.protobuf.Int32Value valid_wkt_int32_example = 70 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 9
+  ];
+  google.protobuf.Int32Value invalid_wkt_int32_example = 71 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 1
+  ];
+  google.protobuf.UInt32Value valid_wkt_uint32_example = 62 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 9
+  ];
+  google.protobuf.UInt32Value invalid_wkt_uint32_example = 63 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 1
+  ];
+  google.protobuf.UInt64Value valid_wkt_uint64_example = 78 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 9
+  ];
+  google.protobuf.UInt64Value invalid_wkt_uint64_example = 79 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 1
   ];
 }

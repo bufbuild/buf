@@ -18,4 +18,12 @@ message BoolTest {
   google.protobuf.BoolValue mismatch_wrapper = 8 [(buf.validate.field).int32.lt = 1];
   string string_mismatch = 9 [(buf.validate.field).bool.const = true];
   google.protobuf.Int32Value wrong_wrapper = 10 [(buf.validate.field).bool.const = true];
+  bool valid_example = 4 [
+    (buf.validate.field).bool.const = true,
+    (buf.validate.field).bool.example = true
+  ];
+  bool invalid_example = 5 [
+    (buf.validate.field).bool.const = true,
+    (buf.validate.field).bool.example = false
+  ];
 }

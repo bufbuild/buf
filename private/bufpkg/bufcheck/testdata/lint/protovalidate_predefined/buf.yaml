@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: proto
+    name: buf.testing/lint/proto
+    lint:
+      use:
+        - PROTOVALIDATE
+  - path: import
+  - path: vendor/protovalidate

@@ -129,4 +129,32 @@ message DurationTest {
       nanos: 854775429
     }
   ];
+  google.protobuf.Duration valid_example = 20 [
+    (buf.validate.field).duration.lt = {
+      seconds: 17,
+      nanos: 25
+    },
+    (buf.validate.field).duration.gt = {
+      seconds: 5,
+      nanos: 1
+    },
+    (buf.validate.field).duration.example = {
+      seconds: 7,
+      nanos: 3
+    }
+  ];
+  google.protobuf.Duration invalid_example = 21 [
+    (buf.validate.field).duration.lt = {
+      seconds: 17,
+      nanos: 25
+    },
+    (buf.validate.field).duration.gt = {
+      seconds: 5,
+      nanos: 1
+    },
+    (buf.validate.field).duration.example = {
+      seconds: 2,
+      nanos: 3
+    }
+  ];
 }

@@ -27,6 +27,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -935,17 +937,18 @@ func handleLintPackageVersionSuffix(
 }
 
 // HandleLintProtovalidate is a handle function.
-var HandleLintProtovalidate = bufcheckserverutil.NewMultiHandler(
-	// NOTE: Oneofs also have protovalidate support, but they only have a "required" field, so nothing to lint.
-	bufcheckserverutil.NewLintMessageRuleHandler(handleLintMessageProtovalidate),
-	bufcheckserverutil.NewLintFieldRuleHandler(handleLintFieldProtovalidate),
-)
+var HandleLintProtovalidate = bufcheckserverutil.NewRuleHandler(handleLintProtovalidate)
 
-func handleLintMessageProtovalidate(
+// handleLintProtovalidate runs checks all predefined rules, message rules, and field rules.
+//
+// NOTE: Oneofs also have protovalidate support, but they only have a "required" field, so nothing to lint.
+func handleLintProtovalidate(
+	ctx context.Context,
 	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	message bufprotosource.Message,
+	request bufcheckserverutil.Request,
 ) error {
+	// TODO: addAnnotationFunc is used to set add annotations to responseWriter. A follow-up
+	// will be made to refactor the code so we no longer need this.
 	addAnnotationFunc := func(
 		_ bufprotosource.Descriptor,
 		location bufprotosource.Location,
@@ -960,29 +963,49 @@ func handleLintMessageProtovalidate(
 			args...,
 		)
 	}
-	return buflintvalidate.CheckMessage(addAnnotationFunc, message)
-}
-
-func handleLintFieldProtovalidate(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	field bufprotosource.Field,
-) error {
-	addAnnotationFunc := func(
-		_ bufprotosource.Descriptor,
-		location bufprotosource.Location,
-		_ []bufprotosource.Location,
-		format string,
-		args ...interface{},
-	) {
-		responseWriter.AddProtosourceAnnotation(
-			location,
-			nil,
-			format,
-			args...,
-		)
+	// We create a new extension resolver using all of the files from the request, including
+	// import files. This is because there can be a case where a non-import file uses a predefined
+	// rule from an imported file.
+	extensionResolver, err := protoencoding.NewResolver(
+		slicesext.Map(
+			request.ProtosourceFiles(),
+			func(protosourceFile bufprotosource.File) protodescriptor.FileDescriptor {
+				return protosourceFile.FileDescriptor()
+			},
+		)...,
+	)
+	if err != nil {
+		return err
 	}
-	return buflintvalidate.CheckField(addAnnotationFunc, field)
+	// However, we only want to check non-import files, so we can use NewLintMessageRuleHandler
+	// and NewLintFieldRuleHandler utils to check messages and fields respectively.
+	if err := bufcheckserverutil.NewLintMessageRuleHandler(
+		func(
+			_ bufcheckserverutil.ResponseWriter,
+			_ bufcheckserverutil.Request,
+			message bufprotosource.Message,
+		) error {
+			return buflintvalidate.CheckMessage(addAnnotationFunc, message)
+		},
+		// The responseWriter is being passed in through the shared addAnnotationFunc, so we
+		// do not pass in responseWriter again. This should be addressed in a refactor.
+	).Handle(ctx, nil, request); err != nil {
+		return err
+	}
+	return bufcheckserverutil.NewLintFieldRuleHandler(
+		func(
+			_ bufcheckserverutil.ResponseWriter,
+			_ bufcheckserverutil.Request,
+			field bufprotosource.Field,
+		) error {
+			if err := buflintvalidate.CheckPredefinedRuleExtension(addAnnotationFunc, field, extensionResolver); err != nil {
+				return err
+			}
+			return buflintvalidate.CheckField(addAnnotationFunc, field, extensionResolver)
+		},
+		// The responseWriter is being passed in through the shared addAnnotationFunc, so we
+		// do not pass in responseWriter again. This should be addressed in a refactor.
+	).Handle(ctx, nil, request)
 }
 
 // HandleLintRPCNoClientStreaming is a handle function.

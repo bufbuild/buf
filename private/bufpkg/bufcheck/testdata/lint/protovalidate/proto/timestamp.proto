@@ -163,6 +163,34 @@ message TimestampTest {
       nanos: 1
     }
   ];
+  google.protobuf.Timestamp valid_example = 19 [
+    (buf.validate.field).timestamp.gt = {
+      seconds: 5,
+      nanos: 2
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: 5,
+      nanos: 0
+    },
+    (buf.validate.field).timestamp.example = {
+      seconds: 4,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Timestamp invalid_example = 20 [
+    (buf.validate.field).timestamp.gt = {
+      seconds: 5,
+      nanos: 2
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: 5,
+      nanos: 0
+    },
+    (buf.validate.field).timestamp.example = {
+      seconds: 5,
+      nanos: 17
+    }
+  ];
 }
 
 message NotTimestamp {}
