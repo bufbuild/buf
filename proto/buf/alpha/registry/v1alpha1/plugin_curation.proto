@@ -373,6 +373,16 @@ message CuratedPlugin {
   string deprecation_message = 20;
   // The URL leading to the integration guide of the plugin, if available.
   string integration_guide_url = 21;
+  // The configurable documentation of the Plugin.
+  string doc = 22;
+  // The collections the Plugin belongs to.
+  repeated PluginCollection collections = 23;
+}
+
+// Plugin collections group related plugins, organizing them by functionality or ecosystem.
+message PluginCollection {
+  // The name of the collection.
+  string name = 1;
 }
 
 // PluginCurationService manages curated plugins.
