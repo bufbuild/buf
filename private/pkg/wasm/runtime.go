@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -129,13 +128,4 @@ func newRuntimeOptions() *runtimeOptions {
 	return &runtimeOptions{
 		maxMemoryBytes: defaultMaxMemoryBytes,
 	}
-}
-
-type unimplementedRuntime struct{}
-
-func (unimplementedRuntime) Compile(ctx context.Context, name string, moduleBytes []byte) (CompiledModule, error) {
-	return nil, syserror.Newf("not implemented")
-}
-func (unimplementedRuntime) Close(ctx context.Context) error {
-	return nil
 }
