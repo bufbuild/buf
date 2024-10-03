@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
@@ -1686,19 +1687,12 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-
-	zipCloser, err := zipBucket.Put(
+	require.NoError(t, storage.PutPath(
 		context.Background(),
+		zipBucket,
 		archiveName,
-	)
-	require.NoError(t, err)
-	t.Cleanup(
-		func() {
-			require.NoError(t, zipCloser.Close())
-		},
-	)
-	_, err = zipCloser.Write(buffer.Bytes())
-	require.NoError(t, err)
+		buffer.Bytes(),
+	))
 	return zipDir
 }
 
