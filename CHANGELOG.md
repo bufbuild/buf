@@ -6,6 +6,8 @@
   they satisfy the field constraints, and are only present if constraints are present.
 - Update the `PROTOVALIDATE` lint rule to check predefined rules. Predefined rules will be checked
   that they compile.
+- Add support for a WebAssembly (Wasm) runtime for custom lint and breaking changes plugins. Use the
+  `.wasm` file extension to specify a path to a Wasm plugin.
 
 ## [v1.43.0] - 2024-09-30
 

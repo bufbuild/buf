@@ -16,6 +16,8 @@ package bufconfig
 
 import (
 	"errors"
+	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -25,6 +27,8 @@ import (
 const (
 	// PluginConfigTypeLocal is the local plugin config type.
 	PluginConfigTypeLocal PluginConfigType = iota + 1
+	// PluginConfigTypeLocalWasm is the local Wasm plugin config type.
+	PluginConfigTypeLocalWasm
 )
 
 // PluginConfigType is a generate plugin configuration type.
@@ -62,6 +66,23 @@ func NewLocalPluginConfig(
 	)
 }
 
+// NewLocalWasmPluginConfig returns a new PluginConfig for a local Wasm plugin.
+//
+// The first path argument is the path to the Wasm plugin and must end with .wasm.
+// The remaining path arguments are the arguments to the Wasm plugin. These are passed
+// to the Wasm plugin as command line arguments.
+func NewLocalWasmPluginConfig(
+	name string,
+	options map[string]any,
+	path []string,
+) (PluginConfig, error) {
+	return newLocalWasmPluginConfig(
+		name,
+		options,
+		path,
+	)
+}
+
 // *** PRIVATE ***
 
 type pluginConfig struct {
@@ -91,6 +112,17 @@ func newPluginConfigForExternalV2(
 	if err != nil {
 		return nil, err
 	}
+	if len(path) == 0 {
+		return nil, errors.New("must specify a path to the plugin")
+	}
+	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
+	if filepath.Ext(path[0]) == ".wasm" {
+		return newLocalWasmPluginConfig(
+			strings.Join(path, " "),
+			options,
+			path,
+		)
+	}
 	return newLocalPluginConfig(
 		strings.Join(path, " "),
 		options,
@@ -108,6 +140,25 @@ func newLocalPluginConfig(
 	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeLocal,
+		name:             name,
+		options:          options,
+		path:             path,
+	}, nil
+}
+
+func newLocalWasmPluginConfig(
+	name string,
+	options map[string]any,
+	path []string,
+) (*pluginConfig, error) {
+	if len(path) == 0 {
+		return nil, errors.New("must specify a path to the plugin")
+	}
+	if filepath.Ext(path[0]) != ".wasm" {
+		return nil, fmt.Errorf("must specify a path to the plugin, and the first path argument must end with .wasm")
+	}
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeLocalWasm,
 		name:             name,
 		options:          options,
 		path:             path,

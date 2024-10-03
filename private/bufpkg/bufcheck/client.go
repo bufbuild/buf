@@ -340,7 +340,7 @@ func (c *client) getMultiClient(
 			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
 		)
 	}
-	return newMultiClient(c.logger, checkClientSpecs), nil
+	return newMultiClient(c.logger, c.tracer, checkClientSpecs), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(

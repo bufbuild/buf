@@ -31,7 +31,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -145,7 +147,7 @@ func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) error {
+) (retErr error) {
 	if err := bufcli.ValidateRequiredFlag(againstFlagName, flags.Against); err != nil {
 		return err
 	}
@@ -206,10 +208,26 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
+	}()
 	tracer := tracing.NewTracer(container.Tracer())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+		client, err := bufcheck.NewClient(
+			container.Logger(),
+			tracer,
+			bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+			bufcheck.ClientWithStderr(container.Stderr()),
+		)
 		if err != nil {
 			return err
 		}

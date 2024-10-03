@@ -25,11 +25,16 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -77,7 +82,7 @@ func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) error {
+) (retErr error) {
 	bufcli.WarnBetaCommand(ctx, container)
 
 	transport, err := dial(container, flags)
@@ -90,7 +95,28 @@ func run(
 		return err
 	}
 
-	conn, err := buflsp.Serve(ctx, container, controller, jsonrpc2.NewStream(transport))
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
+	}()
+	checkClient, err := bufcheck.NewClient(
+		container.Logger(),
+		tracing.NewTracer(container.Tracer()),
+		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+		bufcheck.ClientWithStderr(container.Stderr()),
+	)
+	if err != nil {
+		return err
+	}
+
+	conn, err := buflsp.Serve(ctx, container, controller, checkClient, jsonrpc2.NewStream(transport))
 	if err != nil {
 		return err
 	}

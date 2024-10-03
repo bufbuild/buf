@@ -24,17 +24,21 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
 type multiClient struct {
 	logger           *zap.Logger
+	tracer           tracing.Tracer
 	checkClientSpecs []*checkClientSpec
 }
 
-func newMultiClient(logger *zap.Logger, checkClientSpecs []*checkClientSpec) *multiClient {
+func newMultiClient(logger *zap.Logger, tracer tracing.Tracer, checkClientSpecs []*checkClientSpec) *multiClient {
 	return &multiClient{
 		logger:           logger,
+		tracer:           tracer,
 		checkClientSpecs: checkClientSpecs,
 	}
 }
@@ -93,7 +97,15 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		}
 		jobs = append(
 			jobs,
-			func(ctx context.Context) error {
+			func(ctx context.Context) (retErr error) {
+				ctx, span := c.tracer.Start(
+					ctx,
+					tracing.WithErr(&retErr),
+					tracing.WithAttributes(
+						attribute.Key("plugin").String(delegate.PluginName),
+					),
+				)
+				defer span.End()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
 					if delegate.PluginName == "" {
@@ -148,6 +160,8 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	retChunkedCategoryIDs [][]string,
 	retErr error,
 ) {
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
 	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {

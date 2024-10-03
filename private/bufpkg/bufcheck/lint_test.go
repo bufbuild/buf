@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -1253,6 +1254,24 @@ func TestRunLintCustomPlugins(t *testing.T) {
 	)
 }
 
+func TestRunLintCustomWasmPlugins(t *testing.T) {
+	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	testLintWithOptions(
+		t,
+		"custom_wasm_plugins",
+		"",
+		nil,
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES"),
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,
@@ -1275,7 +1294,7 @@ func testLintWithOptions(
 	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for Wasm runtime
 	defer cancel()
 
 	baseDirPath := filepath.Join("testdata", "lint")
@@ -1332,7 +1351,16 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, bufcheck.NewRunnerProvider(command.NewRunner()))
+	wasmRuntime, err := wasm.NewRuntime(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, wasmRuntime.Close(ctx))
+	})
+	client, err := bufcheck.NewClient(
+		zap.NewNop(),
+		tracing.NopTracer,
+		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+	)
 	require.NoError(t, err)
 	err = client.Lint(
 		ctx,

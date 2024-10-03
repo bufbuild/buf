@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unix || wasip1 || js
+// Generated. DO NOT EDIT.
 
-package usage
+package wasm
 
-const testSuffix = ".test"
+import _ "github.com/bufbuild/buf/private/usage"

@@ -16,10 +16,18 @@ package pluginrpcutil
 
 import (
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
 
 // NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
 func NewRunner(delegate command.Runner, programName string, programArgs ...string) pluginrpc.Runner {
 	return newRunner(delegate, programName, programArgs...)
+}
+
+// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.
+//
+// This runner is used for local Wasm plugins. The program name is the path to the Wasm file.
+func NewWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
+	return newWasmRunner(delegate, programName, programArgs...)
 }

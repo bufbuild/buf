@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -43,6 +42,7 @@ func Serve(
 	ctx context.Context,
 	container appext.Container,
 	controller bufctl.Controller,
+	checkClient bufcheck.Client,
 	stream jsonrpc2.Stream,
 ) (jsonrpc2.Conn, error) {
 	// The LSP protocol deals with absolute filesystem paths. This requires us to
@@ -57,12 +57,6 @@ func Serve(
 		return nil, err
 	}
 
-	tracer := tracing.NewTracer(container.Tracer())
-	checkClient, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
-	if err != nil {
-		return nil, err
-	}
-
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
 		conn: conn,
@@ -71,7 +65,7 @@ func Serve(
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
-		tracer:      tracer,
+		tracer:      tracing.NewTracer(container.Tracer()),
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,

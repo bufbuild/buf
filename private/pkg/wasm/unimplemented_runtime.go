@@ -12,8 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unix || wasip1 || js
+package wasm
 
-package usage
+import (
+	"context"
 
-const testSuffix = ".test"
+	"github.com/bufbuild/buf/private/pkg/syserror"
+)
+
+type unimplementedRuntime struct{}
+
+func (unimplementedRuntime) Compile(ctx context.Context, name string, moduleBytes []byte) (CompiledModule, error) {
+	return nil, syserror.Newf("not implemented")
+}
+
+func (unimplementedRuntime) Close(ctx context.Context) error {
+	return nil
+}

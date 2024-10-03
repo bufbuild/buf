@@ -32,7 +32,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -149,7 +151,7 @@ func lsRun(
 	flags *flags,
 	commandName string,
 	ruleType check.RuleType,
-) error {
+) (retErr error) {
 	if flags.ConfiguredOnly {
 		if flags.Version != "" {
 			return appcmd.NewInvalidArgumentErrorf("--%s cannot be specified if --%s is specified", versionFlagName, configFlagName)
@@ -184,8 +186,24 @@ func lsRun(
 			return err
 		}
 	}
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
+	}()
 	tracer := tracing.NewTracer(container.Tracer())
-	client, err := bufcheck.NewClient(container.Logger(), tracer, bufcheck.NewRunnerProvider(command.NewRunner()), bufcheck.ClientWithStderr(container.Stderr()))
+	client, err := bufcheck.NewClient(
+		container.Logger(),
+		tracer,
+		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+		bufcheck.ClientWithStderr(container.Stderr()),
+	)
 	if err != nil {
 		return err
 	}

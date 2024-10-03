@@ -22,10 +22,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )
@@ -165,26 +165,25 @@ type RunnerProvider interface {
 type RunnerProviderFunc func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
+//
+// RunnerProvider selects the correct Runner based on the type of pluginConfig.
 func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 	return r(pluginConfig)
 }
 
-// NewRunnerProvider returns a new RunnerProvider for the command.Runner.
-func NewRunnerProvider(delegate command.Runner) RunnerProvider {
-	return RunnerProviderFunc(
-		func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
-			if pluginConfig.Type() != bufconfig.PluginConfigTypeLocal {
-				return nil, syserror.New("only local plugins are supported")
-			}
-			path := pluginConfig.Path()
-			return pluginrpcutil.NewRunner(
-				delegate,
-				// We know that Path is of at least length 1.
-				path[0],
-				path[1:]...,
-			), nil
-		},
-	)
+// NewRunnerProvider returns a new RunnerProvider for the command.Runner and wasm.Runtime.
+//
+// This implementation should only be used for local applications. It is safe to
+// use concurrently.
+//
+// The RunnerProvider selects the correct Runner based on the PluginConfigType.
+// The supported types are:
+//   - bufconfig.PluginConfigTypeLocal
+//   - bufconfig.PluginConfigTypeLocalWasm
+//
+// If the PluginConfigType is not supported, an error is returned.
+func NewRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
+	return newRunnerProvider(commandRunner, wasmRuntime)
 }
 
 // NewClient returns a new Client.
