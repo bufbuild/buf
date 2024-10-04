@@ -20,11 +20,11 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -98,6 +98,10 @@ type lsp struct {
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
 
+	wktBucket storage.ReadBucket
+
+	lock sync.Mutex
+
 	// These are atomics, because they are read often and written to
 	// almost never, but potentially concurrently. Having them side-by-side
 	// is fine; they are almost never written to so false sharing is not a
@@ -109,42 +113,23 @@ type lsp struct {
 // init performs *actual* initialization of the server. This is called by Initialize().
 //
 // It may only be called once for a given server.
-func (l *lsp) init(params *protocol.InitializeParams) error {
+func (l *lsp) init(ctx context.Context, params *protocol.InitializeParams) error {
 	if l.initParams.Load() != nil {
 		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
 	}
 	l.initParams.Store(params)
+
+	wktBucket, err := l.controller.GetWKTBucket(ctx)
+	if err != nil {
+		return err
+	}
+	l.wktBucket = wktBucket
 
 	// TODO: set up logging. We need to forward everything from server.logger through to
 	// the client, if tracing is turned on. The right way to do this is with an extra
 	// goroutine and some channels.
 
 	return nil
-}
-
-// findImportable finds all files that can potentially be imported by the proto file at
-// uri. This returns a map from potential Protobuf import path to the URI of the file it would import.
-//
-// Note that this performs no validation on these files, because those files might be open in the
-// editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
-// more.
-func (l *lsp) findImportable(
-	ctx context.Context,
-	uri protocol.URI,
-) (map[string]bufimage.ImageFileInfo, error) {
-	fileInfos, err := l.controller.GetImportableImageFileInfos(ctx, uri.Filename())
-	if err != nil {
-		return nil, err
-	}
-
-	imports := make(map[string]bufimage.ImageFileInfo)
-	for _, fileInfo := range fileInfos {
-		imports[fileInfo.Path()] = fileInfo
-	}
-
-	l.logger.Sugar().Debugf("found imports for %q: %#v", uri, imports)
-
-	return imports, nil
 }
 
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
@@ -164,9 +149,6 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			zap.String("method", req.Method()),
 			zap.ByteString("params", req.Params()),
 		)
-
-		ctx = withRequestID(ctx)
-
 		replier := l.wrapReplier(reply, req)
 
 		// Verify that the server has been initialized if this isn't the initialization
@@ -175,6 +157,8 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			return replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
 		}
 
+		l.lock.Lock()
+		defer l.lock.Unlock()
 		return actual(ctx, replier, req)
 	}
 }

@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/ast"
@@ -79,7 +78,7 @@ func (s *server) Initialize(
 	ctx context.Context,
 	params *protocol.InitializeParams,
 ) (*protocol.InitializeResult, error) {
-	if err := s.init(params); err != nil {
+	if err := s.init(ctx, params); err != nil {
 		return nil, err
 	}
 
@@ -173,7 +172,7 @@ func (s *server) DidOpen(
 ) error {
 	file := s.fileManager.Open(ctx, params.TextDocument.URI)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
-	go file.Refresh(context.WithoutCancel(ctx))
+	file.Refresh(context.WithoutCancel(ctx))
 	return nil
 }
 
@@ -190,7 +189,7 @@ func (s *server) DidChange(
 	}
 
 	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
-	go file.Refresh(context.WithoutCancel(ctx))
+	file.Refresh(context.WithoutCancel(ctx))
 	return nil
 }
 
@@ -207,9 +206,6 @@ func (s *server) Formatting(
 
 	// Currently we have no way to honor any of the parameters.
 	_ = params
-
-	file.lock.Lock(ctx)
-	defer file.lock.Unlock(ctx)
 	if file.fileNode == nil {
 		return nil, nil
 	}
@@ -322,23 +318,12 @@ func (s *server) SemanticTokensFull(
 	progress.Begin(ctx, "Processing Tokens")
 	defer progress.Done(ctx)
 
-	var symbols []*symbol
-	for {
-		file.lock.Lock(ctx)
-		symbols = file.symbols
-		file.lock.Unlock(ctx)
-		if symbols != nil {
-			break
-		}
-		time.Sleep(1 * time.Millisecond)
-	}
-
 	var (
 		encoded           []uint32
 		prevLine, prevCol uint32
 	)
-	for i, symbol := range symbols {
-		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(symbols)), float64(i)/float64(len(symbols)))
+	for i, symbol := range file.symbols {
+		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(file.symbols)), float64(i)/float64(len(file.symbols)))
 
 		var semanticType uint32
 
