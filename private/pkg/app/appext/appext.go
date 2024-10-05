@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/spf13/pflag"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -91,16 +90,6 @@ func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
 	return newLoggerContainer(logger)
 }
 
-// TracerContainer provides a trace.Tracer based on the application name.
-type TracerContainer interface {
-	Tracer() trace.Tracer
-}
-
-// NewTracerContainer returns a new TracerContainer for the application name.
-func NewTracerContainer(appName string) TracerContainer {
-	return newTracerContainer(appName)
-}
-
 // VerboseContainer provides a verbose.Printer.
 type VerboseContainer interface {
 	// VerboseEnabled returns true if verbose mode is enabled.
@@ -119,7 +108,6 @@ type Container interface {
 	app.Container
 	NameContainer
 	LoggerContainer
-	TracerContainer
 	VerboseContainer
 }
 

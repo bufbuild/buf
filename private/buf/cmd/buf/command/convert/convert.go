@@ -196,7 +196,7 @@ func run(
 			var wktErr error
 			schemaImage, wktErr = wellKnownTypeImage(
 				ctx,
-				tracing.NewTracer(container.Tracer()),
+				tracing.NewTracerForName(container.AppName()),
 				flags.Type,
 			)
 			if wktErr != nil {

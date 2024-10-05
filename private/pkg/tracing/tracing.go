@@ -18,6 +18,7 @@ import (
 	"context"
 	"runtime"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -36,6 +37,11 @@ type Tracer interface {
 // NewTracer returns a new Tracer.
 func NewTracer(otelTracer trace.Tracer) Tracer {
 	return newTracer(otelTracer)
+}
+
+// NewTracerForName returns a new Tracer using otel.Tracer(name).
+func NewTracerForName(name string) Tracer {
+	return newTracer(otel.Tracer(name))
 }
 
 // StartOption is an option for Start.

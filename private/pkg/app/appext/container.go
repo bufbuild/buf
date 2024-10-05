@@ -24,7 +24,6 @@ type container struct {
 	app.Container
 	NameContainer
 	LoggerContainer
-	TracerContainer
 	VerboseContainer
 }
 
@@ -42,7 +41,6 @@ func newContainer(
 		Container:        baseContainer,
 		NameContainer:    nameContainer,
 		LoggerContainer:  newLoggerContainer(logger),
-		TracerContainer:  newTracerContainer(appName),
 		VerboseContainer: newVerboseContainer(verbosePrinter),
 	}, nil
 }

@@ -90,7 +90,7 @@ func run(
 ) (retErr error) {
 	runner := command.NewRunner()
 	logger := container.Logger()
-	tracer := tracing.NewTracer(container.Tracer())
+	tracer := tracing.NewTracerForName(container.AppName())
 	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 

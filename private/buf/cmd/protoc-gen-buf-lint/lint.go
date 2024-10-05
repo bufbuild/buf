@@ -100,7 +100,7 @@ func handle(
 		return err
 	}
 	// The protoc plugins do not support custom lint/breaking change plugins for now.
-	tracer := tracing.NewTracer(container.Tracer())
+	tracer := tracing.NewTracerForName(container.AppName())
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		tracer,

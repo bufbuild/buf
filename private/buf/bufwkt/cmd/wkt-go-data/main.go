@@ -181,7 +181,7 @@ func getProtosourceFiles(
 ) ([]bufprotosource.File, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
-		tracing.NewTracer(container.Tracer()),
+		tracing.NewTracerForName(container.AppName()),
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
 	).AddLocalModule(
@@ -195,7 +195,7 @@ func getProtosourceFiles(
 	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NewTracer(container.Tracer()),
+		tracing.NewTracerForName(container.AppName()),
 		module,
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

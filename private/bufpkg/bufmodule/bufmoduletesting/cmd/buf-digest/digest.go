@@ -101,7 +101,7 @@ func run(
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
 	}
-	tracer := tracing.NewTracer(container.Tracer())
+	tracer := tracing.NewTracerForName(container.AppName())
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	storageosProvider := storageos.NewProvider()
 	for _, dirPath := range dirPaths {

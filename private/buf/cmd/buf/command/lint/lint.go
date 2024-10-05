@@ -144,7 +144,7 @@ func run(
 	defer func() {
 		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
 	}()
-	tracer := tracing.NewTracer(container.Tracer())
+	tracer := tracing.NewTracerForName(container.AppName())
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
