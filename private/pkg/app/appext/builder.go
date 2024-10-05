@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
@@ -34,7 +33,6 @@ import (
 type builder struct {
 	appName string
 
-	verbose   bool
 	debug     bool
 	noWarn    bool
 	logFormat string
@@ -67,7 +65,6 @@ func newBuilder(appName string, options ...BuilderOption) *builder {
 }
 
 func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
-	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Turn on verbose mode")
 	flagSet.BoolVar(&b.debug, "debug", false, "Turn on debug logging")
 	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json]")
 	if b.defaultTimeout > 0 {
@@ -90,6 +87,11 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	_ = flagSet.MarkHidden("no-warn")
 	flagSet.IntVar(&b.parallelism, "parallelism", 0, "Manually control the parallelism")
 	_ = flagSet.MarkHidden("parallelism")
+
+	// We used to have this as a global flag, so we still need to not error when it is called.
+	var verbose bool
+	flagSet.BoolVarP(&verbose, "verbose", "v", false, "")
+	_ = flagSet.MarkHidden("verbose")
 }
 
 func (b *builder) NewRunFunc(
@@ -120,8 +122,7 @@ func (b *builder) run(
 	defer func() {
 		retErr = multierr.Append(retErr, logger.Sync())
 	}()
-	verbosePrinter := verbose.NewPrinterForFlagValue(appContainer.Stderr(), b.appName, b.verbose)
-	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
+	container, err := newContainer(appContainer, b.appName, logger)
 	if err != nil {
 		return err
 	}

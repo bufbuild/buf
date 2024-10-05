@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
 )
@@ -103,7 +102,6 @@ func NewAppextContainerForPluginEnv(
 		appContainer,
 		appName,
 		logger,
-		verbose.NopPrinter,
 	)
 }
 
