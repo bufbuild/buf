@@ -17,17 +17,15 @@ package appext
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type builder struct {
@@ -49,9 +47,7 @@ type builder struct {
 
 	defaultTimeout time.Duration
 
-	// 0 is InfoLevel in zap
-	defaultLogLevel zapcore.Level
-	interceptors    []Interceptor
+	interceptors []Interceptor
 }
 
 func newBuilder(appName string, options ...BuilderOption) *builder {
@@ -111,17 +107,14 @@ func (b *builder) run(
 	appContainer app.Container,
 	f func(context.Context, Container) error,
 ) (retErr error) {
-	logLevel, err := getLogLevel(b.defaultLogLevel, b.debug, b.noWarn)
+	logLevelString, err := getLogLevelString(b.debug, b.noWarn)
 	if err != nil {
 		return err
 	}
-	logger, err := zaputil.NewLoggerForFlagValues(appContainer.Stderr(), logLevel, b.logFormat)
+	logger, err := slogutil.NewLoggerForFlagValues(appContainer.Stderr(), logLevelString, b.logFormat)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, logger.Sync())
-	}()
 	container, err := newContainer(appContainer, b.appName, logger)
 	if err != nil {
 		return err
@@ -141,6 +134,7 @@ func (b *builder) run(
 		return f(ctx, container)
 	}
 	return runProfile(
+		ctx,
 		logger,
 		b.profilePath,
 		b.profileType,
@@ -154,7 +148,8 @@ func (b *builder) run(
 
 // runProfile profiles the function.
 func runProfile(
-	logger *zap.Logger,
+	ctx context.Context,
+	logger *slog.Logger,
 	profilePath string,
 	profileType string,
 	profileLoops int,
@@ -168,7 +163,7 @@ func runProfile(
 			return err
 		}
 	}
-	logger.Debug("profile", zap.String("path", profilePath))
+	logger.DebugContext(ctx, "profile", slog.String("path", profilePath))
 	if profileType == "" {
 		profileType = "cpu"
 	}
@@ -204,7 +199,7 @@ func runProfile(
 	return nil
 }
 
-func getLogLevel(defaultLogLevel zapcore.Level, debugFlag bool, noWarnFlag bool) (string, error) {
+func getLogLevelString(debugFlag bool, noWarnFlag bool) (string, error) {
 	if debugFlag && noWarnFlag {
 		return "", fmt.Errorf("cannot set both --debug and --no-warn")
 	}
@@ -214,7 +209,7 @@ func getLogLevel(defaultLogLevel zapcore.Level, debugFlag bool, noWarnFlag bool)
 	if debugFlag {
 		return "debug", nil
 	}
-	return defaultLogLevel.String(), nil
+	return "info", nil
 }
 
 // chainInterceptors consolidates the given interceptors into one.

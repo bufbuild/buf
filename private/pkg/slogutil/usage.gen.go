@@ -12,32 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appext
+// Generated. DO NOT EDIT.
 
-import (
-	"log/slog"
+package slogutil
 
-	"github.com/bufbuild/buf/private/pkg/app"
-)
-
-type container struct {
-	app.Container
-	NameContainer
-	LoggerContainer
-}
-
-func newContainer(
-	baseContainer app.Container,
-	appName string,
-	logger *slog.Logger,
-) (*container, error) {
-	nameContainer, err := newNameContainer(baseContainer, appName)
-	if err != nil {
-		return nil, err
-	}
-	return &container{
-		Container:       baseContainer,
-		NameContainer:   nameContainer,
-		LoggerContainer: newLoggerContainer(logger),
-	}, nil
-}
+import _ "github.com/bufbuild/buf/private/usage"

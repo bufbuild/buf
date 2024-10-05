@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -27,8 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -79,13 +78,13 @@ func NewNameContainer(envContainer app.EnvContainer, appName string) (NameContai
 	return newNameContainer(envContainer, appName)
 }
 
-// LoggerContainer provides a *zap.Logger.
+// LoggerContainer provides a *slog.Logger.
 type LoggerContainer interface {
-	Logger() *zap.Logger
+	Logger() *slog.Logger
 }
 
 // NewLoggerContainer returns a new LoggerContainer.
-func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
+func NewLoggerContainer(logger *slog.Logger) LoggerContainer {
 	return newLoggerContainer(logger)
 }
 
@@ -100,7 +99,7 @@ type Container interface {
 func NewContainer(
 	baseContainer app.Container,
 	appName string,
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) (Container, error) {
 	return newContainer(
 		baseContainer,
@@ -142,13 +141,6 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	return func(builder *builder) {
 		builder.interceptors = append(builder.interceptors, interceptor)
-	}
-}
-
-// BuilderWithDefaultLogLevel adds the given default log level.
-func BuilderWithDefaultLogLevel(defaultLogLevel zapcore.Level) BuilderOption {
-	return func(builder *builder) {
-		builder.defaultLogLevel = defaultLogLevel
 	}
 }
 
