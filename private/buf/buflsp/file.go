@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/ioext"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/linker"
@@ -40,7 +40,6 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
-	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -256,9 +255,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
 func (f *file) PublishDiagnostics(ctx context.Context) {
-	ctx, span := f.lsp.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
-	defer span.End()
+	defer zaputil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
 
 	f.lock.Lock(ctx)
 	defer f.lock.Unlock(ctx)
@@ -318,9 +315,7 @@ func (f *file) FindModule(ctx context.Context) {
 
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
-	ctx, span := f.lsp.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
-	defer span.End()
+	defer zaputil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
 
 	unlock := f.lock.Lock(ctx)
 	defer unlock()
@@ -611,9 +606,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 // IndexSymbols processes the AST of a file and generates symbols for each symbol in
 // the document.
 func (f *file) IndexSymbols(ctx context.Context) {
-	_, span := f.lsp.tracer.Start(ctx,
-		tracing.WithAttributes(attribute.String("uri", string(f.uri))))
-	defer span.End()
+	defer zaputil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
 
 	unlock := f.lock.Lock(ctx)
 	defer unlock()

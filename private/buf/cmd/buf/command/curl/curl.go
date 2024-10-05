@@ -40,7 +40,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -1013,7 +1012,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	// Add a WKT resolver to the end of the end of the list. This is used
 	// for printing a WKT encoded in a "google.protobuf.Any" type as JSON.
-	wktResolver, err := bufcurl.NewWKTResolver(ctx, tracing.NewTracerForName(container.AppName()))
+	wktResolver, err := bufcurl.NewWKTResolver(ctx, container.Logger())
 	if err != nil {
 		return err
 	}

@@ -37,7 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -45,7 +44,6 @@ import (
 
 type generator struct {
 	logger              *zap.Logger
-	tracer              tracing.Tracer
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufprotopluginexec.Generator
 	clientConfig        *connectclient.Config
@@ -53,16 +51,14 @@ type generator struct {
 
 func newGenerator(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:              logger,
-		tracer:              tracer,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
+		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, storageosProvider, runner),
 		clientConfig:        clientConfig,
 	}
 }

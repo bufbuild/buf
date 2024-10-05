@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
@@ -189,11 +188,10 @@ func NewRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) R
 // NewClient returns a new Client.
 func NewClient(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (Client, error) {
-	return newClient(logger, tracer, runnerProvider, options...)
+	return newClient(logger, runnerProvider, options...)
 }
 
 // ClientOption is an option for a new Client.

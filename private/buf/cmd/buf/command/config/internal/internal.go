@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -197,10 +196,8 @@ func lsRun(
 	defer func() {
 		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
 	}()
-	tracer := tracing.NewTracerForName(container.AppName())
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		tracer,
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)

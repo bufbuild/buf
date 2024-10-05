@@ -28,10 +28,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
-	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -65,7 +64,6 @@ func Serve(
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
-		tracer:      tracing.NewTracerForName(container.AppName()),
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,
@@ -92,7 +90,6 @@ type lsp struct {
 	client protocol.Client
 
 	logger      *zap.Logger
-	tracer      tracing.Tracer
 	controller  bufctl.Controller
 	checkClient bufcheck.Client
 	rootBucket  storage.ReadBucket
@@ -152,18 +149,7 @@ func (l *lsp) findImportable(
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
 	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		ctx, span := l.tracer.Start(
-			ctx,
-			tracing.WithErr(&retErr),
-			tracing.WithAttributes(attribute.String("method", req.Method())),
-		)
-		defer span.End()
-
-		l.logger.Debug(
-			"processing request",
-			zap.String("method", req.Method()),
-			zap.ByteString("params", req.Params()),
-		)
+		defer zaputil.DebugProfile(l.logger, zap.String("method", req.Method()), zap.ByteString("params", req.Params()))()
 
 		ctx = withRequestID(ctx)
 

@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/observabilityzap"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
@@ -51,8 +50,6 @@ type builder struct {
 	timeout time.Duration
 
 	defaultTimeout time.Duration
-
-	tracing bool
 
 	// 0 is InfoLevel in zap
 	defaultLogLevel zapcore.Level
@@ -139,14 +136,6 @@ func (b *builder) run(
 		defer cancel()
 	}
 
-	if b.tracing {
-		tracerProvider, closer := observabilityzap.Start(logger)
-		defer func() {
-			retErr = multierr.Append(retErr, closer.Close())
-		}()
-		_, span := tracerProvider.Tracer(b.appName).Start(ctx, "command")
-		defer span.End()
-	}
 	if !b.profile {
 		return f(ctx, container)
 	}

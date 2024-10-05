@@ -18,11 +18,30 @@ package zaputil
 import (
 	"fmt"
 	"io"
+	"runtime"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+// DebugProfile will result in the function's elapsed time being printed as a debug log line.
+func DebugProfile(logger *zap.Logger, extraFields ...zap.Field) func() {
+	message := getRuntimeFrame(2).Function
+	start := time.Now()
+	return func() {
+		logger.Debug(
+			message,
+			append(
+				[]zap.Field{
+					zap.Duration("duration", time.Since(start)),
+				},
+				extraFields...,
+			)...,
+		)
+	}
+}
 
 // NewLogger returns a new Logger.
 func NewLogger(
@@ -98,4 +117,22 @@ func getZapEncoder(format string) (zapcore.Encoder, error) {
 	default:
 		return nil, fmt.Errorf("unknown log format [text,color,json]: %q", format)
 	}
+}
+
+func getRuntimeFrame(skipFrames int) runtime.Frame {
+	targetFrameIndex := skipFrames + 2
+	programCounters := make([]uintptr, targetFrameIndex+2)
+	n := runtime.Callers(0, programCounters)
+	var frame runtime.Frame
+	if n > 0 {
+		frames := runtime.CallersFrames(programCounters[:n])
+		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
+			var frameCandidate runtime.Frame
+			frameCandidate, more = frames.Next()
+			if frameIndex == targetFrameIndex {
+				frame = frameCandidate
+			}
+		}
+	}
+	return frame
 }

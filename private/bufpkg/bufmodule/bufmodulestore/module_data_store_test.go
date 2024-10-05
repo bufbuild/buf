@@ -16,7 +16,6 @@ package bufmodulestore
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -27,9 +26,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap"
 )
 
 func TestModuleDataStoreBasicDir(t *testing.T) {
@@ -74,7 +72,7 @@ func testModuleDataStore(
 	tar bool,
 ) {
 	ctx := context.Background()
-	logger := zaputil.NewLogger(os.Stderr, zapcore.DebugLevel, zaputil.NewTextEncoder())
+	logger := zap.NewNop()
 	moduleDataStore := NewModuleDataStore(logger, bucket, filelocker, moduleDataStoreOptions...)
 	moduleKeys, moduleDatas := testGetModuleKeysAndModuleDatas(t, ctx)
 	foundModuleDatas, notFoundModuleKeys, err := moduleDataStore.GetModuleDatasForModuleKeys(

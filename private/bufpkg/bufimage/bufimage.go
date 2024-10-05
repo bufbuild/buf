@@ -32,9 +32,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -270,7 +270,7 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // those returned by [bufmodule.GetTargetFileInfos].
 func BuildImage(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *zap.Logger,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	options ...BuildImageOption,
 ) (Image, error) {
@@ -280,7 +280,7 @@ func BuildImage(
 	}
 	return buildImage(
 		ctx,
-		tracer,
+		logger,
 		moduleReadBucket,
 		buildImageOptions.excludeSourceCodeInfo,
 		buildImageOptions.noParallelism,

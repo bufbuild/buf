@@ -23,28 +23,28 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
-	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
+	logger     *zap.Logger
 	runner     command.Runner
-	tracer     tracing.Tracer
 	pluginPath string
 	pluginArgs []string
 }
 
 func newBinaryHandler(
+	logger *zap.Logger,
 	runner command.Runner,
-	tracer tracing.Tracer,
 	pluginPath string,
 	pluginArgs []string,
 ) *binaryHandler {
 	return &binaryHandler{
+		logger:     logger,
 		runner:     runner,
-		tracer:     tracer,
 		pluginPath: pluginPath,
 		pluginArgs: pluginArgs,
 	}
@@ -56,14 +56,7 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	ctx, span := h.tracer.Start(
-		ctx,
-		tracing.WithErr(&retErr),
-		tracing.WithAttributes(
-			attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
-		),
-	)
-	defer span.End()
+	defer zaputil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginPath)))()
 
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {

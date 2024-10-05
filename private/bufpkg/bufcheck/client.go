@@ -33,14 +33,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )
 
 type client struct {
 	logger                          *zap.Logger
-	tracer                          tracing.Tracer
 	runnerProvider                  RunnerProvider
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
@@ -48,7 +47,6 @@ type client struct {
 
 func newClient(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (*client, error) {
@@ -72,7 +70,6 @@ func newClient(
 
 	return &client{
 		logger:         logger,
-		tracer:         tracer,
 		runnerProvider: runnerProvider,
 		stderr:         clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
@@ -88,9 +85,8 @@ func (c *client) Lint(
 	lintConfig bufconfig.LintConfig,
 	image bufimage.Image,
 	options ...LintOption,
-) (retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) error {
+	defer zaputil.DebugProfile(c.logger)()
 
 	if lintConfig.Disabled() {
 		return nil
@@ -148,9 +144,8 @@ func (c *client) Breaking(
 	image bufimage.Image,
 	againstImage bufimage.Image,
 	options ...BreakingOption,
-) (retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) error {
+	defer zaputil.DebugProfile(c.logger)()
 
 	if breakingConfig.Disabled() {
 		return nil
@@ -218,9 +213,8 @@ func (c *client) ConfiguredRules(
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
-) (_ []Rule, retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) ([]Rule, error) {
+	defer zaputil.DebugProfile(c.logger)()
 
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
@@ -248,9 +242,8 @@ func (c *client) AllRules(
 	ruleType check.RuleType,
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
-) (_ []Rule, retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) ([]Rule, error) {
+	defer zaputil.DebugProfile(c.logger)()
 
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
@@ -267,9 +260,8 @@ func (c *client) AllCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
-) (_ []Category, retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) ([]Category, error) {
+	defer zaputil.DebugProfile(c.logger)()
 
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {
@@ -340,7 +332,7 @@ func (c *client) getMultiClient(
 			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
 		)
 	}
-	return newMultiClient(c.logger, c.tracer, checkClientSpecs), nil
+	return newMultiClient(c.logger, checkClientSpecs), nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
