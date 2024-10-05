@@ -16,7 +16,6 @@ package appext
 
 import (
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
 )
 
@@ -24,23 +23,20 @@ type container struct {
 	app.Container
 	NameContainer
 	LoggerContainer
-	VerboseContainer
 }
 
 func newContainer(
 	baseContainer app.Container,
 	appName string,
 	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
 ) (*container, error) {
 	nameContainer, err := newNameContainer(baseContainer, appName)
 	if err != nil {
 		return nil, err
 	}
 	return &container{
-		Container:        baseContainer,
-		NameContainer:    nameContainer,
-		LoggerContainer:  newLoggerContainer(logger),
-		VerboseContainer: newVerboseContainer(verbosePrinter),
+		Container:       baseContainer,
+		NameContainer:   nameContainer,
+		LoggerContainer: newLoggerContainer(logger),
 	}, nil
 }

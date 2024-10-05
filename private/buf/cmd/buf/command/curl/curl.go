@@ -99,6 +99,9 @@ const (
 	outputFlagName       = "output"
 	outputFlagShortName  = "o"
 	emitDefaultsFlagName = "emit-defaults"
+
+	verboseFlagName      = "verbose"
+	verboseFlagShortName = "v"
 )
 
 // NewCommand returns a new Command.
@@ -236,6 +239,8 @@ type flags struct {
 	// Output options
 	Output       string
 	EmitDefaults bool
+
+	Verbose bool
 
 	// so we can inquire about which flags present on command-line
 	// TODO: ideally we'd use cobra directly instead of having the appcmd wrapper,
@@ -519,6 +524,14 @@ provided via stdin as a file descriptor set or image`,
 		false,
 		`Emit default values for JSON-encoded responses.`,
 	)
+
+	flagSet.BoolVarP(
+		&f.Verbose,
+		verboseFlagName,
+		verboseFlagShortName,
+		false,
+		"Turn on verbose mode",
+	)
 }
 
 func (f *flags) validate(hasURL, isSecure bool) error {
@@ -648,10 +661,8 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 
 func (f *flags) determineCredentials(
 	ctx context.Context,
-	container interface {
-		app.Container
-		appext.VerboseContainer
-	},
+	container app.Container,
+	verbosePrinter verbose.Printer,
 	host string,
 ) (string, error) {
 	if f.User != "" {
@@ -687,7 +698,7 @@ func (f *flags) determineCredentials(
 	if _, err := os.Stat(netrcFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			// This mirrors the behavior of curl when a netrc file does not exist ¯\_(ツ)_/¯
-			container.VerbosePrinter().Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
+			verbosePrinter.Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
 			return "", nil
 		}
 		if !strings.Contains(err.Error(), netrcFile) {
@@ -702,7 +713,7 @@ func (f *flags) determineCredentials(
 	}
 	if machine == nil {
 		// no creds found for this host
-		container.VerbosePrinter().Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
+		verbosePrinter.Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
 		return "", nil
 	}
 	username := machine.Login()
@@ -868,6 +879,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		return err
 	}
 
+	var verbosePrinter verbose.Printer = verbose.NopPrinter
+	if f.Verbose {
+		verbosePrinter = verbose.NewPrinter(container.Stderr(), container.AppName())
+	}
+
 	var clientOptions []connect.ClientOption
 	switch f.Protocol {
 	case connect.ProtocolGRPC:
@@ -881,7 +897,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		// in an end-of-stream message for streaming calls. So this interceptor
 		// will print the trailers for streaming calls when the response stream
 		// is drained.
-		clientOptions = append(clientOptions, connect.WithInterceptors(bufcurl.TraceTrailersInterceptor(container.VerbosePrinter())))
+		clientOptions = append(clientOptions, connect.WithInterceptors(bufcurl.TraceTrailersInterceptor(verbosePrinter)))
 	}
 
 	dataSource := "(argument)"
@@ -910,7 +926,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	var basicCreds *string
 	if len(requestHeaders.Values("authorization")) == 0 {
-		creds, err := f.determineCredentials(ctx, container, host)
+		creds, err := f.determineCredentials(ctx, container, verbosePrinter, host)
 		if err != nil {
 			return err
 		}
@@ -950,11 +966,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			// This shouldn't be possible since we check in flags.validate, but just in case
 			return nil, errors.New("URL positional argument is missing")
 		}
-		roundTripper, err := makeHTTPRoundTripper(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		roundTripper, err := makeHTTPRoundTripper(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), verbosePrinter)
 		if err != nil {
 			return nil, err
 		}
-		return bufcurl.NewVerboseHTTPClient(roundTripper, container.VerbosePrinter()), nil
+		return bufcurl.NewVerboseHTTPClient(roundTripper, verbosePrinter), nil
 	})
 
 	output := container.Stdout()
@@ -976,7 +992,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			if basicCreds != nil {
 				creds = *basicCreds
 			} else {
-				if creds, err = f.determineCredentials(ctx, container, host); err != nil {
+				if creds, err = f.determineCredentials(ctx, container, verbosePrinter, host); err != nil {
 					return err
 				}
 			}
@@ -995,7 +1011,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, container.VerbosePrinter())
+		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, verbosePrinter)
 		defer closeRes()
 		resolvers = append(resolvers, res)
 	}
@@ -1064,7 +1080,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		invoker := bufcurl.NewInvoker(container, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, urlArg, output)
+		invoker := bufcurl.NewInvoker(container, verbosePrinter, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, urlArg, output)
 		return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
 	}
 }
