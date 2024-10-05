@@ -65,7 +65,7 @@ func Serve(
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
-		tracer:      tracing.NewTracer(container.Tracer()),
+		tracer:      tracing.NewTracerForName(container.AppName()),
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,

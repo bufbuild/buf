@@ -542,7 +542,7 @@ func run(
 	}
 	return bufgen.NewGenerator(
 		logger,
-		tracing.NewTracer(container.Tracer()),
+		tracing.NewTracerForName(container.AppName()),
 		storageosProvider,
 		command.NewRunner(),
 		clientConfig,

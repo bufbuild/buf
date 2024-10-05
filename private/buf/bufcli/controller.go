@@ -52,7 +52,7 @@ func NewController(
 	}
 	return bufctl.NewController(
 		container.Logger(),
-		tracing.NewTracer(container.Tracer()),
+		tracing.NewTracerForName(container.AppName()),
 		container,
 		newGraphProvider(container, clientProvider),
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),

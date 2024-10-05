@@ -128,7 +128,7 @@ func run(
 	}
 	migrator := bufmigrate.NewMigrator(
 		container.Logger(),
-		tracing.NewTracer(container.Tracer()),
+		tracing.NewTracerForName(container.AppName()),
 		runner,
 		moduleKeyProvider,
 		commitProvider,

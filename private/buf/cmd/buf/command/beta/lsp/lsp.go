@@ -108,7 +108,7 @@ func run(
 	}()
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
-		tracing.NewTracer(container.Tracer()),
+		tracing.NewTracerForName(container.AppName()),
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)

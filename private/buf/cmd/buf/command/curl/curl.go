@@ -1013,7 +1013,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	// Add a WKT resolver to the end of the end of the list. This is used
 	// for printing a WKT encoded in a "google.protobuf.Any" type as JSON.
-	wktResolver, err := bufcurl.NewWKTResolver(ctx, tracing.NewTracer(container.Tracer()))
+	wktResolver, err := bufcurl.NewWKTResolver(ctx, tracing.NewTracerForName(container.AppName()))
 	if err != nil {
 		return err
 	}

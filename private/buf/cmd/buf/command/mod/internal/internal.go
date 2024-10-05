@@ -175,7 +175,7 @@ func lsRun(
 		return fmt.Errorf(`"buf mod %s" does not work for v2 buf.yaml files, use "buf config %s" instead`, commandName, commandName)
 	}
 	// BufYAMLFiles <=v1 never had plugins.
-	tracer := tracing.NewTracer(container.Tracer())
+	tracer := tracing.NewTracerForName(container.AppName())
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		tracer,
