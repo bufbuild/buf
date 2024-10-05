@@ -155,13 +155,6 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 	}
 }
 
-// BuilderWithTracing enables zap tracing for the builder.
-func BuilderWithTracing() BuilderOption {
-	return func(builder *builder) {
-		builder.tracing = true
-	}
-}
-
 // BuilderWithInterceptor adds the given interceptor for all run functions.
 func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	return func(builder *builder) {

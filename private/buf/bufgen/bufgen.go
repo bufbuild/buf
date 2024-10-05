@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -88,7 +87,6 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	// Pass a clientConfig instead of a CodeGenerationServiceClient because the
@@ -98,7 +96,6 @@ func NewGenerator(
 ) Generator {
 	return newGenerator(
 		logger,
-		tracer,
 		storageosProvider,
 		runner,
 		clientConfig,

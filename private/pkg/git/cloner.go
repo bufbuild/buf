@@ -27,15 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.opentelemetry.io/otel/codes"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type cloner struct {
 	logger            *zap.Logger
-	tracer            tracing.Tracer
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	options           ClonerOptions
@@ -43,14 +41,12 @@ type cloner struct {
 
 func newCloner(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	options ClonerOptions,
 ) *cloner {
 	return &cloner{
 		logger:            logger,
-		tracer:            tracer,
 		storageosProvider: storageosProvider,
 		runner:            runner,
 		options:           options,
@@ -65,8 +61,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+	defer zaputil.DebugProfile(c.logger)()
 
 	var err error
 	switch {
@@ -80,18 +75,13 @@ func (c *cloner) CloneToBucket(
 	}
 
 	if depth == 0 {
-		err := errors.New("depth must be > 0")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return errors.New("depth must be > 0")
 	}
 
 	depthArg := strconv.Itoa(int(depth))
 
 	baseDir, err := tmp.NewDir()
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {

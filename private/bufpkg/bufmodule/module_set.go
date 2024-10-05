@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 )
@@ -246,7 +245,6 @@ func ModuleSetToDAGWithRemoteOnly() ModuleSetToDAGOption {
 // moduleSet
 
 type moduleSet struct {
-	tracer                       tracing.Tracer
 	modules                      []Module
 	moduleFullNameStringToModule map[string]Module
 	opaqueIDToModule             map[string]Module
@@ -261,7 +259,6 @@ type moduleSet struct {
 }
 
 func newModuleSet(
-	tracer tracing.Tracer,
 	modules []Module,
 ) (*moduleSet, error) {
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
@@ -308,7 +305,6 @@ func newModuleSet(
 		}
 	}
 	moduleSet := &moduleSet{
-		tracer:                       tracer,
 		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
@@ -358,7 +354,7 @@ func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) 
 		}
 		modules[i] = module
 	}
-	return newModuleSet(m.tracer, modules)
+	return newModuleSet(modules)
 }
 
 // This should only be used by Modules and FileInfos.

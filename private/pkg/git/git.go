@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -103,12 +102,11 @@ type CloneToBucketOptions struct {
 // NewCloner returns a new Cloner.
 func NewCloner(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	options ClonerOptions,
 ) Cloner {
-	return newCloner(logger, tracer, storageosProvider, runner, options)
+	return newCloner(logger, storageosProvider, runner, options)
 }
 
 // ClonerOptions are options for a new Cloner.

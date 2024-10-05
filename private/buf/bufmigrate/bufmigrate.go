@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -78,14 +77,12 @@ type Migrator interface {
 // NewMigrator returns a new Migrator.
 func NewMigrator(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	runner command.Runner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) Migrator {
 	return newMigrator(
 		logger,
-		tracer,
 		runner,
 		moduleKeyProvider,
 		commitProvider,

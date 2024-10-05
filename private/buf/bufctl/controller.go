@@ -46,7 +46,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protovalidate-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -133,7 +132,6 @@ type Controller interface {
 
 func NewController(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
@@ -147,7 +145,6 @@ func NewController(
 ) (Controller, error) {
 	return newController(
 		logger,
-		tracer,
 		container,
 		graphProvider,
 		moduleKeyProvider,
@@ -170,7 +167,6 @@ func NewController(
 // deal in the global variables.
 type controller struct {
 	logger             *zap.Logger
-	tracer             tracing.Tracer
 	container          app.EnvStdioContainer
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
@@ -193,7 +189,6 @@ type controller struct {
 
 func newController(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
@@ -207,7 +202,6 @@ func newController(
 ) (*controller, error) {
 	controller := &controller{
 		logger:             logger,
-		tracer:             tracer,
 		container:          container,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
@@ -230,7 +224,6 @@ func newController(
 		httpauthAuthenticator,
 		git.NewCloner(
 			logger,
-			tracer,
 			controller.storageosProvider,
 			controller.commandRunner,
 			gitClonerOptions,
@@ -240,14 +233,12 @@ func newController(
 	controller.buffetchWriter = buffetch.NewWriter(logger)
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
 		logger,
-		tracer,
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
 	)
 	controller.workspaceDepManagerProvider = bufworkspace.NewWorkspaceDepManagerProvider(
 		logger,
-		tracer,
 	)
 	return controller, nil
 }
@@ -1005,7 +996,7 @@ func (c *controller) buildImage(
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		c.tracer,
+		c.logger,
 		moduleReadBucket,
 		options...,
 	)

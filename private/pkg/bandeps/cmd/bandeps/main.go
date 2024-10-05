@@ -46,7 +46,6 @@ func newCommand() *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(timeout),
-		appext.BuilderWithTracing(),
 	)
 	flags := newFlags()
 	return &appcmd.Command{

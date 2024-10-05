@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/google/uuid"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -36,7 +35,6 @@ import (
 
 type migrateBuilder struct {
 	logger             *zap.Logger
-	tracer             tracing.Tracer
 	runner             command.Runner
 	commitProvider     bufmodule.CommitProvider
 	bucket             storage.ReadBucket
@@ -57,7 +55,6 @@ type migrateBuilder struct {
 
 func newMigrateBuilder(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	runner command.Runner,
 	commitProvider bufmodule.CommitProvider,
 	bucket storage.ReadBucket,
@@ -65,7 +62,6 @@ func newMigrateBuilder(
 ) *migrateBuilder {
 	return &migrateBuilder{
 		logger:                           logger,
-		tracer:                           tracer,
 		runner:                           runner,
 		commitProvider:                   commitProvider,
 		bucket:                           bucket,
@@ -272,11 +268,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			if err != nil {
 				return err
 			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.LintConfig())
+			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, m.runner, moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.BreakingConfig())
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, m.runner, moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
@@ -308,11 +304,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
-		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.LintConfig())
+		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, m.runner, moduleConfig.LintConfig())
 		if err != nil {
 			return err
 		}
-		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, m.tracer, m.runner, moduleConfig.BreakingConfig())
+		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, m.runner, moduleConfig.BreakingConfig())
 		if err != nil {
 			return err
 		}

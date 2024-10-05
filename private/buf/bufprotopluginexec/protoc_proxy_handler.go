@@ -31,35 +31,35 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
-	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type protocProxyHandler struct {
+	logger            *zap.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
-	tracer            tracing.Tracer
 	protocPath        string
 	protocExtraArgs   []string
 	pluginName        string
 }
 
 func newProtocProxyHandler(
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	tracer tracing.Tracer,
 	protocPath string,
 	protocExtraArgs []string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
+		logger:            logger,
 		storageosProvider: storageosProvider,
 		runner:            runner,
-		tracer:            tracer,
 		protocPath:        protocPath,
 		protocExtraArgs:   protocExtraArgs,
 		pluginName:        pluginName,
@@ -72,14 +72,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	ctx, span := h.tracer.Start(
-		ctx,
-		tracing.WithErr(&retErr),
-		tracing.WithAttributes(
-			attribute.Key("plugin").String(filepath.Base(h.pluginName)),
-		),
-	)
-	defer span.End()
+	defer zaputil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginName)))()
 
 	// We should send the complete FileDescriptorSet with source-retention options to --descriptor_set_in.
 	//

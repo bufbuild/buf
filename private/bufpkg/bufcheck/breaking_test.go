@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1312,7 +1311,6 @@ func testBreaking(
 
 	workspaceProvider := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
-		tracing.NopTracer,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
@@ -1332,14 +1330,14 @@ func testBreaking(
 
 	previousImage, err := bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		zap.NewNop(),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
 	)
 	require.NoError(t, err)
 
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		zap.NewNop(),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
@@ -1348,7 +1346,7 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheck.NewClient(zap.NewNop(), tracing.NopTracer, bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
+	client, err := bufcheck.NewClient(zap.NewNop(), bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,
