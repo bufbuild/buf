@@ -35,7 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slogutil"
+	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 
@@ -89,7 +89,7 @@ func run(
 ) (retErr error) {
 	runner := command.NewRunner()
 	logger := container.Logger()
-	defer slogutil.DebugProfile(logger)()
+	defer slogbuild.DebugProfile(logger)()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -173,7 +173,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				defer slogutil.DebugProfile(logger)()
+				defer slogbuild.DebugProfile(logger)()
 				images, err = bufimage.ImageByDir(image)
 				return err
 			}

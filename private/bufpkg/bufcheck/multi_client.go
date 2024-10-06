@@ -25,7 +25,7 @@ import (
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogutil"
+	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 
@@ -96,7 +96,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
-				defer slogutil.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
+				defer slogbuild.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
 					if delegate.PluginName == "" {
@@ -151,7 +151,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	retChunkedCategoryIDs [][]string,
 	retErr error,
 ) {
-	defer slogutil.DebugProfile(c.logger)()
+	defer slogbuild.DebugProfile(c.logger)()
 	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {

@@ -26,7 +26,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slogutil"
+	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -62,7 +62,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	defer slogutil.DebugProfile(c.logger)()
+	defer slogbuild.DebugProfile(c.logger)()
 
 	var err error
 	switch {

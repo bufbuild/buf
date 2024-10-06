@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/slogutil"
+	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
@@ -111,7 +111,7 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
-	logger, err := slogutil.NewLoggerForFlagValues(appContainer.Stderr(), logLevelString, b.logFormat)
+	logger, err := slogbuild.NewLoggerForFlagValues(appContainer.Stderr(), logLevelString, b.logFormat)
 	if err != nil {
 		return err
 	}

@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slogutil"
+	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -57,7 +57,7 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	defer slogutil.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
+	defer slogbuild.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
 
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {
