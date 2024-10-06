@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 func rulesConfigForCheckConfig(
@@ -48,7 +47,7 @@ func rulesConfigForCheckConfig(
 }
 
 func logRulesConfig(logger *slog.Logger, rulesConfig *rulesConfig) {
-	logger.Debug("rulesConfig", zap.Strings("ruleIDs", rulesConfig.RuleIDs))
+	logger.Debug("rulesConfig", slog.Any("ruleIDs", rulesConfig.RuleIDs))
 	if len(rulesConfig.RuleIDs) == 0 {
 		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured.")
 	}

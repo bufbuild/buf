@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"slices"
 	"strings"
@@ -40,7 +41,6 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -255,7 +255,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
 func (f *file) PublishDiagnostics(ctx context.Context) {
-	defer slogutil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
+	defer slogutil.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	f.lock.Lock(ctx)
 	defer f.lock.Unlock(ctx)
@@ -278,7 +278,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 func (f *file) FindModule(ctx context.Context) {
 	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
 	if err != nil {
-		f.lsp.logger.Warn("could not load workspace", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slog.Any("error", err))
 		return
 	}
 
@@ -297,7 +297,7 @@ func (f *file) FindModule(ctx context.Context) {
 		}
 	}
 	if module == nil {
-		f.lsp.logger.Sugar().Warnf("could not find module for %q", f.uri)
+		f.lsp.logger.Warn(fmt.Sprintf("could not find module for %q", f.uri))
 	}
 
 	// Determine if this is the WKT module. We do so by checking if this module contains
@@ -315,7 +315,7 @@ func (f *file) FindModule(ctx context.Context) {
 
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
-	defer slogutil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
+	defer slogutil.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	unlock := f.lock.Lock(ctx)
 	defer unlock()
@@ -520,13 +520,13 @@ func (f *file) BuildImage(ctx context.Context) {
 	}
 
 	if err != nil {
-		f.lsp.logger.Warn("could not build image", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slog.Any("error", err))
 		return
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
-		f.lsp.logger.Warn("could not build image", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slog.Any("error", err))
 		return
 	}
 
@@ -572,7 +572,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 
 	var annotations bufanalysis.FileAnnotationSet
 	if !errors.As(err, &annotations) {
-		f.lsp.logger.Warn("error while linting", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("error while linting", slog.String("uri", string(f.uri)), slog.Any("error", err))
 		return false
 	}
 
@@ -606,7 +606,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 // IndexSymbols processes the AST of a file and generates symbols for each symbol in
 // the document.
 func (f *file) IndexSymbols(ctx context.Context) {
-	defer slogutil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
+	defer slogutil.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	unlock := f.lock.Lock(ctx)
 	defer unlock()
@@ -656,7 +656,7 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	}
 
 	symbol := f.symbols[idx]
-	f.lsp.logger.Debug("found symbol", zap.Object("symbol", symbol))
+	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 
 	// Check that cursor is before the end of the symbol.
 	if comparePositions(symbol.Range().End, cursor) <= 0 {

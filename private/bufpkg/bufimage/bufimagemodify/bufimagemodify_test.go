@@ -25,10 +25,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagetesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -811,7 +811,7 @@ func testGetImageFromDirs(
 	}
 	image, err := bufimage.BuildImage(
 		context.Background(),
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

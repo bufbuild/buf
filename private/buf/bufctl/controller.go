@@ -50,7 +50,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -1018,10 +1017,11 @@ func (c *controller) buildTargetImageWithConfigs(
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
 	for _, module := range modules {
-		c.logger.Debug(
+		c.logger.DebugContext(
+			ctx,
 			"building image for target module",
-			zap.String("moduleOpaqueID", module.OpaqueID()),
-			zap.String("moduleDescription", module.Description()),
+			slog.String("moduleOpaqueID", module.OpaqueID()),
+			slog.String("moduleDescription", module.Description()),
 		)
 		opaqueID := module.OpaqueID()
 		// We need to make sure that all dependencies are non-targets, so that they

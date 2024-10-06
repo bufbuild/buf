@@ -26,8 +26,6 @@ import (
 	"slices"
 	"strings"
 
-	"log/slog/zapcore"
-
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
@@ -165,9 +163,10 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 		if kind.seeTypeOf != nil {
 			ref, ok := kind.seeTypeOf.kind.(*reference)
 			if !ok || ref.file == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"unexpected unresolved or non-reference symbol for seeTypeOf",
-					zap.Object("symbol", s))
+					slog.Any("symbol", s))
 				return
 			}
 
@@ -179,10 +178,11 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// Find the definition that contains the type we want.
 			def, node := kind.seeTypeOf.Definition(ctx)
 			if def == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"could not resolve dependent symbol definition",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf))
 				return
 			}
 
@@ -190,11 +190,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// TODO: Support more exotic field types.
 			field, ok := node.(*ast.FieldNode)
 			if !ok {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx
 					"dependent symbol definition was not a field",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf),
-					zap.Object("def", def))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf),
+					slog.Any("def", def))
 				return
 			}
 
@@ -206,11 +207,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 				Character: uint32(info.Start().Col) - 1,
 			})
 			if ty == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"dependent symbol's field type didn't resolve",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf),
-					zap.Object("def", def))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf),
+					slog.Any("def", def))
 				return
 			}
 
@@ -220,12 +222,13 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// when we go to hover over the symbol.
 			ref, ok = ty.kind.(*reference)
 			if !ok || ty.file == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"dependent symbol's field type didn't resolve to a reference",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf),
-					zap.Object("def", def),
-					zap.Object("resolved", ty))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf),
+					slog.Any("def", def),
+					slog.Any("resolved", ty))
 				return
 			}
 

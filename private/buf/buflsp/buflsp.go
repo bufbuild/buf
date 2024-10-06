@@ -28,12 +28,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
 )
 
 // Serve spawns a new LSP server, listening on the given stream.
@@ -63,7 +63,7 @@ func Serve(
 		conn: conn,
 		client: protocol.ClientDispatcher(
 			&connWrapper{Conn: conn, logger: container.Logger()},
-			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
+			slogext.NopLogger, // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
 		controller:  controller,
@@ -151,7 +151,7 @@ func (l *lsp) findImportable(
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
 	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		defer slogutil.DebugProfile(l.logger, zap.String("method", req.Method()), zap.ByteString("params", req.Params()))()
+		defer slogutil.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
 
 		ctx = withRequestID(ctx)
 

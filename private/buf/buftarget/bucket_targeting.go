@@ -21,7 +21,6 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 // BucketTargeting provides targeting information for the bucket based on any controlling
@@ -192,10 +191,11 @@ func mapControllingWorkspaceAndPath(
 			return nil, "", err
 		}
 		if controllingWorkspace != nil {
-			logger.Debug(
+			logger.DebugContext(
+				ctx,
 				"buffetch termination found",
-				zap.String("curDirPath", curDirPath),
-				zap.String("path", path),
+				slog.String("curDirPath", curDirPath),
+				slog.String("path", path),
 			)
 			subDirPath, err := normalpath.Rel(curDirPath, path)
 			if err != nil {
@@ -208,9 +208,10 @@ func mapControllingWorkspaceAndPath(
 		}
 		curDirPath = normalpath.Dir(curDirPath)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch no termination found",
-		zap.String("path", path),
+		slog.String("path", path),
 	)
 	// No controlling workspace is found, we simply return the input dir
 	return nil, path, nil

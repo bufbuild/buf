@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
 var externalCommitVersion = "v1"
@@ -157,10 +156,11 @@ func (p *commitStore) getCommitForCommitKey(
 	path := getCommitStoreFilePath(commitKey)
 	data, err := storage.ReadPath(ctx, bucket, path)
 	p.logDebugCommitKey(
+		ctx,
 		commitKey,
 		"commit store get file",
-		zap.Bool("found", err == nil),
-		zap.Error(err),
+		slog.Bool("found", err == nil),
+		slog.Any("error", err),
 	)
 	if err != nil {
 		return nil, err
@@ -257,9 +257,10 @@ func (p *commitStore) putCommit(
 func (p *commitStore) getReadWriteBucketForDir(commitKey bufmodule.CommitKey) storage.ReadWriteBucket {
 	dirPath := getCommitStoreDirPath(commitKey)
 	p.logDebugCommitKey(
+		ctx,
 		commitKey,
 		"commit store dir read write bucket",
-		zap.String("dirPath", dirPath),
+		slog.String("dirPath", dirPath),
 	)
 	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 }
@@ -273,25 +274,27 @@ func (p *commitStore) deleteInvalidCommitFile(
 	invalidErr error,
 ) error {
 	p.logDebugCommitKey(
+		ctx,
 		commitKey,
 		fmt.Sprintf("commit store %s commit file", invalidReason),
-		zap.Error(invalidErr),
+		slog.Any("error", invalidErr),
 	)
 	// Attempt to delete file as it is missing information.
 	if err := bucket.Delete(ctx, path); err != nil {
 		// Otherwise ignore error.
 		p.logDebugCommitKey(
+			ctx,
 			commitKey,
 			fmt.Sprintf("commit store could not delete %s commit file", invalidReason),
-			zap.Error(err),
+			slog.Any("error", err),
 		)
 	}
 	// This will act as if the file is not found
 	return &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 }
 
-func (p *commitStore) logDebugCommitKey(commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
-	logDebugCommitKey(p.logger, commitKey, message, fields...)
+func (p *commitStore) logDebugCommitKey(ctx context.Context, commitKey bufmodule.CommitKey, message string, fields ...any) {
+	logDebugCommitKey(ctx, p.logger, commitKey, message, fields...)
 }
 
 // Returns the directory path within the store for the Commit.

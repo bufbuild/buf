@@ -16,6 +16,7 @@ package depupdate
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -27,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -118,9 +118,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"all deps",
-		zap.Strings("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
+		slog.Any("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
 	)
 
 	// Store the existing buf.lock data.

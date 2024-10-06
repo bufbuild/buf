@@ -29,13 +29,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/google/uuid"
 	"github.com/jhump/protoreflect/v2/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -176,7 +176,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -211,7 +211,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -246,7 +246,7 @@ func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, opti
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
@@ -258,7 +258,7 @@ func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, opti
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
+	bucket, image, err := getImage(ctx, slogext.NopLogger, testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -322,7 +322,7 @@ func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket s
 
 func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), "testdata/sourcecodeinfo")
+	bucket, image, err := getImage(ctx, slogext.NopLogger, "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, []string{typename}, opts...)

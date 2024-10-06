@@ -85,9 +85,10 @@ func newWorkspaceTargeting(
 		return nil, err
 	}
 	if overrideBufYAMLFile != nil {
-		logger.Debug(
+		logger.DebugContext(
+			ctx,
 			"targeting workspace with config override",
-			zap.String("subDirPath", bucketTargeting.SubDirPath()),
+			slog.String("subDirPath", bucketTargeting.SubDirPath()),
 		)
 		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
@@ -118,9 +119,10 @@ func newWorkspaceTargeting(
 	if controllingWorkspace := bucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
 		// This is a v2 workspace.
 		if controllingWorkspace.BufYAMLFile() != nil {
-			logger.Debug(
+			logger.DebugContext(
+				ctx,
 				"targeting workspace based on v2 buf.yaml",
-				zap.String("subDirPath", bucketTargeting.SubDirPath()),
+				slog.String("subDirPath", bucketTargeting.SubDirPath()),
 			)
 			return v2WorkspaceTargeting(
 				ctx,
@@ -146,9 +148,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 				}
 				// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
 				// the workspace entirely, and just act as if the buf.work.yaml did not exist.
-				logger.Debug(
+				logger.DebugContext(
+					ctx,
 					"targeting workspace, ignoring v1 buf.work.yaml, just building on module at target",
-					zap.String("subDirPath", bucketTargeting.SubDirPath()),
+					slog.String("subDirPath", bucketTargeting.SubDirPath()),
 				)
 				return v1WorkspaceTargeting(
 					ctx,
@@ -169,9 +172,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 			)
 		}
 	}
-	logger.Debug(
+	logger.DebugContext(
+		cxt
 		"targeting workspace with no found buf.work.yaml or v2 buf.yaml",
-		zap.String("subDirPath", bucketTargeting.SubDirPath()),
+		slog.String("subDirPath", bucketTargeting.SubDirPath()),
 	)
 	// We did not find any buf.work.yaml or v2 buf.yaml, we invoke fallback logic.
 	return fallbackWorkspaceTargeting(
@@ -765,10 +769,11 @@ func checkForControllingWorkspaceOrV1Module(
 				return nil, err
 			}
 			if controllingWorkspace != nil {
-				logger.Debug(
+				logger.DebugContext(
+					ctx
 					"buffetch termination found",
-					zap.String("curDirPath", curDirPath),
-					zap.String("path", path),
+					slog.String("curDirPath", curDirPath),
+					slog.String("path", path),
 				)
 				return controllingWorkspace, nil
 			}
@@ -789,9 +794,10 @@ func checkForControllingWorkspaceOrV1Module(
 		}
 		curDirPath = normalpath.Dir(curDirPath)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch no termination found",
-		zap.String("path", path),
+		slog.String("path", path),
 	)
 	return fallbackV1Module, nil
 }

@@ -36,7 +36,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/bufbuild/protoplugin"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -74,7 +73,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	defer slogutil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginName)))()
+	defer slogutil.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginName)))()
 
 	// We should send the complete FileDescriptorSet with source-retention options to --descriptor_set_in.
 	//

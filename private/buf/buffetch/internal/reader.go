@@ -44,7 +44,6 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type reader struct {
@@ -612,10 +611,11 @@ func getReadBucketCloserForBucket(
 			storage.MapOnPrefix(bucketPath),
 		)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch creating new bucket",
-		zap.String("bucketPath", bucketPath),
-		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
+		slog.String("bucketPath", bucketPath),
+		slog.Any("targetPaths", bucketTargeting.TargetPaths()),
 	)
 	readBucketCloser := newReadBucketCloser(inputBucket, bucketTargeting)
 	return readBucketCloser, bucketTargeting, nil

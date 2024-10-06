@@ -20,8 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"log/slog/zaptest"
-
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -30,11 +28,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 // Hint on how to get these:
@@ -1307,7 +1305,7 @@ func testLintWithOptions(
 	require.NoError(t, err)
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		zaptest.NewLogger(t),
+		slogext.NopLogger,
 		readWriteBucket,
 		".", // the bucket is rooted at the input
 		nil,
@@ -1316,7 +1314,7 @@ func testLintWithOptions(
 	)
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceProvider(
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
@@ -1340,7 +1338,7 @@ func testLintWithOptions(
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		slogext.NopLogger,
 		moduleReadBucket,
 	)
 	require.NoError(t, err)
@@ -1356,7 +1354,7 @@ func testLintWithOptions(
 		require.NoError(t, wasmRuntime.Close(ctx))
 	})
 	client, err := bufcheck.NewClient(
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 	)
 	require.NoError(t, err)

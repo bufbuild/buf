@@ -15,38 +15,38 @@
 package bufmodulestore
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
-func logDebugModuleKey(logger *slog.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
-		checkedEntry.Write(
-			append(
-				[]zap.Field{
-					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
-					zap.String("commitID", uuidutil.ToDashless(moduleKey.CommitID())),
-				},
-				fields...,
-			)...,
-		)
-	}
+func logDebugModuleKey(ctx context.Context, logger *slog.Logger, moduleKey bufmodule.ModuleKey, message string, fields any) {
+	logger.DebugContext(
+		ctx,
+		message,
+		append(
+			[]any{
+				slog.String("moduleFullName", moduleKey.ModuleFullName().String()),
+				slog.String("commitID", uuidutil.ToDashless(moduleKey.CommitID())),
+			},
+			fields...,
+		)...,
+	)
 }
 
-func logDebugCommitKey(logger *slog.Logger, commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
-	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
-		checkedEntry.Write(
-			append(
-				[]zap.Field{
-					zap.String("digestType", commitKey.DigestType().String()),
-					zap.String("registry", commitKey.Registry()),
-					zap.String("commitID", uuidutil.ToDashless(commitKey.CommitID())),
-				},
-				fields...,
-			)...,
-		)
-	}
+func logDebugCommitKey(ctx context.Context, logger *slog.Logger, commitKey bufmodule.CommitKey, message string, fields ...any) {
+	logger.DebugContext(
+		ctx,
+		message,
+		append(
+			[]any{
+				slog.String("digestType", commitKey.DigestType().String()),
+				slog.String("registry", commitKey.Registry()),
+				slog.String("commitID", uuidutil.ToDashless(commitKey.CommitID())),
+			},
+			fields...,
+		)...,
+	)
 }

@@ -21,8 +21,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestNewFiles(t *testing.T) {
@@ -31,7 +31,7 @@ func TestNewFiles(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		context.Background(),
-		zap.NewNop(),
+		slogext.NopLogger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
 	require.NoError(t, err)

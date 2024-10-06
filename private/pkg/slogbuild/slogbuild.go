@@ -12,36 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package slogutil implements utilities for slog.
-package slogutil
+// Package slogbuild builds slog.Loggers based on flags.
+package slogbuild
 
 import (
 	"fmt"
 	"io"
 	"log/slog"
-	"runtime"
 	"strings"
-	"time"
 
 	"github.com/lmittmann/tint"
 )
-
-// DebugProfile will result in the function's elapsed time being printed as a debug log line.
-func DebugProfile(logger *slog.Logger, extraFields ...any) func() {
-	message := getRuntimeFrame(2).Function
-	start := time.Now()
-	return func() {
-		logger.Debug(
-			message,
-			append(
-				[]any{
-					slog.Duration("duration", time.Since(start)),
-				},
-				extraFields...,
-			)...,
-		)
-	}
-}
 
 // NewLoggerForFlagValues returns a new Logger for the given level and format strings.
 //
@@ -87,22 +68,4 @@ func getHandler(writer io.Writer, level slog.Level, formatString string) (slog.H
 	default:
 		return nil, fmt.Errorf("unknown log format [text,color,json]: %q", formatString)
 	}
-}
-
-func getRuntimeFrame(skipFrames int) runtime.Frame {
-	targetFrameIndex := skipFrames + 2
-	programCounters := make([]uintptr, targetFrameIndex+2)
-	n := runtime.Callers(0, programCounters)
-	var frame runtime.Frame
-	if n > 0 {
-		frames := runtime.CallersFrames(programCounters[:n])
-		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
-			var frameCandidate runtime.Frame
-			frameCandidate, more = frames.Next()
-			if frameIndex == targetFrameIndex {
-				frame = frameCandidate
-			}
-		}
-	}
-	return frame
 }

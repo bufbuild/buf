@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"go.uber.org/zap"
 )
 
 type state struct {
@@ -115,7 +114,7 @@ func (s *state) packagesForPackageExpression(
 ) (map[string]struct{}, error) {
 	defer func() {
 		// not worrying about locks
-		s.logger.Debug("cache", zap.Int("calls", s.calls), zap.Int("hits", s.cacheHits))
+		s.logger.DebugContext(ctx, "cache", slog.Int("calls", s.calls), slog.Int("hits", s.cacheHits))
 	}()
 
 	s.packageExpressionToPackagesLock.RLock(packageExpression)
@@ -170,7 +169,7 @@ func (s *state) depsForPackage(
 ) (map[string]struct{}, error) {
 	defer func() {
 		// not worrying about locks
-		s.logger.Debug("cache", zap.Int("calls", s.calls), zap.Int("hits", s.cacheHits))
+		s.logger.DebugContext(ctx, "cache", slog.Int("calls", s.calls), slog.Int("hits", s.cacheHits))
 	}()
 
 	s.packageToDepsLock.RLock(pkg)

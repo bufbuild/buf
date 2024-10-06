@@ -24,9 +24,9 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestRoundTripBin(t *testing.T) {
@@ -102,7 +102,7 @@ func testRoundTripLocalFile(
 	expectedFormat string,
 	expectedCompressionType internal.CompressionType,
 ) {
-	logger := zap.NewNop()
+	logger := slogext.NopLogger
 	refParser := newRefParser(logger)
 	reader := testNewFetchReader(logger)
 	writer := testNewFetchWriter(logger)

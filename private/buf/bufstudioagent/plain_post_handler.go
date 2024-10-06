@@ -203,7 +203,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		i.Logger.Warn(
 			"non_connect_unary_error",
-			zap.Error(err),
+			slog.Any("error", err),
 		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return

@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/zap"
 )
 
 type multiClient struct {
@@ -80,7 +79,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		// request with no rule IDs will be made to the delegate client, and default rules will
 		// be called.
 		if len(requestDelegateRuleIDs) == 0 {
-			c.logger.Debug("skipping delegate client", zap.String("pluginName", delegate.PluginName))
+			c.logger.DebugContext(ctx, "skipping delegate client", slog.String("pluginName", delegate.PluginName))
 			continue
 		}
 		delegateRequest, err := check.NewRequest(
@@ -97,7 +96,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
-				defer slogutil.DebugProfile(c.logger, zap.String("plugin", delegate.PluginName))()
+				defer slogutil.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
 					if delegate.PluginName == "" {

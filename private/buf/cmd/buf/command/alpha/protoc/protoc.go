@@ -18,9 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
-
-	"log/slog/zapcore"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -38,7 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 // NewCommand returns a new Command.
@@ -103,12 +101,12 @@ func run(
 		return fmt.Errorf("cannot call --%s and plugins at the same time", outputFlagName)
 	}
 
-	if checkedEntry := logger.Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
-		checkedEntry.Write(
-			zap.Any("flags", env.flags),
-			zap.Any("plugins", env.PluginNameToPluginInfo),
-		)
-	}
+	logger.DebugContext(
+		ctx,
+		"env",
+		slog.Any("flags", env.flags),
+		slog.Any("plugins", env.PluginNameToPluginInfo),
+	)
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(

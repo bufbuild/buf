@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestNewModuleSetForProtoc(t *testing.T) {
@@ -30,7 +30,7 @@ func TestNewModuleSetForProtoc(t *testing.T) {
 
 	moduleSet, err := NewModuleSetForProtoc(
 		ctx,
-		zap.NewNop(),
+		slogext.NopLogger,
 		storageos.NewProvider(),
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",

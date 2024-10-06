@@ -22,18 +22,16 @@ import (
 	"testing"
 	"time"
 
-	"log/slog/zaptest"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {
@@ -44,10 +42,10 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 
 	cacheProvider := newCommitProvider(
-		zap.NewNop(),
+		slogext.NopLogger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			zap.NewNop(),
+			slogext.NopLogger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -108,10 +106,10 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	cacheProvider := newCommitProvider(
-		zap.NewNop(),
+		slogext.NopLogger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			zap.NewNop(),
+			slogext.NopLogger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -169,10 +167,10 @@ func TestModuleDataProviderBasic(t *testing.T) {
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 
 	cacheProvider := newModuleDataProvider(
-		zap.NewNop(),
+		slogext.NopLogger,
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
-			zap.NewNop(),
+			slogext.NopLogger,
 			storagemem.NewReadWriteBucket(),
 			filelock.NewNopLocker(),
 		),
@@ -230,7 +228,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
-	logger := zaptest.NewLogger(t, zaptest.Level(zap.InfoLevel))
+	logger := slogext.NopLogger
 
 	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))

@@ -36,7 +36,6 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -136,11 +135,11 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 				continue
 			}
 			if !strings.HasPrefix(loadedImageID, "sha256:") {
-				d.logger.Warn("Unsupported image digest", zap.String("imageID", loadedImageID))
+				d.logger.Warn("Unsupported image digest", slog.String("imageID", loadedImageID))
 				continue
 			}
 			if err := imagev1.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
-				d.logger.Warn("Invalid image id", zap.String("imageID", loadedImageID))
+				d.logger.Warn("Invalid image id", slog.String("imageID", loadedImageID))
 				continue
 			}
 			imageID = loadedImageID
@@ -187,7 +186,7 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	var imageDigest string
 	pushScanner := bufio.NewScanner(pushReader)
 	for pushScanner.Scan() {
-		d.logger.Debug(pushScanner.Text())
+		d.logger.DebugContext(ctx, pushScanner.Text())
 		var message jsonmessage.JSONMessage
 		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil {
 			if message.Error != nil {
@@ -202,7 +201,7 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	if len(imageDigest) == 0 {
 		return nil, fmt.Errorf("failed to determine image digest after push")
 	}
-	d.logger.Debug("docker image digest", zap.String("imageDigest", imageDigest))
+	d.logger.DebugContext(ctx, "docker image digest", slog.String("imageDigest", imageDigest))
 	return &PushResponse{Digest: imageDigest}, nil
 }
 

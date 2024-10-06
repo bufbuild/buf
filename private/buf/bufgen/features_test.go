@@ -18,15 +18,12 @@ import (
 	"math"
 	"testing"
 
-	"log/slog/zapcore"
-	"log/slog/zaptest/observer"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -174,9 +171,8 @@ func testCheckRequiredFeatures(
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
-	observed, logs := observer.New(zapcore.WarnLevel)
 	err := checkRequiredFeatures(
-		zap.New(observed),
+		slogext.NopLogger,
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
