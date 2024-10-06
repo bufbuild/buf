@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
@@ -36,6 +37,7 @@ func newCommand() *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
+		appext.BuilderWithLoggerProvider(slogapp.NewLogger),
 	)
 	flags := newFlags()
 	return &appcmd.Command{

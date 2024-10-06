@@ -12,28 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package zapbuild builds zap Loggers.
-package zapbuild
+// Package zapapp builds zap.Loggers.
+package zapapp
 
 import (
 	"fmt"
 	"io"
-	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 // NewCoreForFlagValues returns a new Core for the given level and format strings.
-//
-// The level can be [debug,info,warn,error]. The default is info.
-// The format can be [text,color,json]. The default is color.
-func NewCoreForFlagValues(writer io.Writer, levelString string, formatString string) (zapcore.Core, error) {
-	level, err := getLevel(levelString)
+func NewCore(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogFormat) (zapcore.Core, error) {
+	level, err := getLevel(logLevel)
 	if err != nil {
 		return nil, err
 	}
-	encoder, err := getEncoder(formatString)
+	encoder, err := getEncoder(logFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -44,33 +41,31 @@ func NewCoreForFlagValues(writer io.Writer, levelString string, formatString str
 	), nil
 }
 
-func getLevel(levelString string) (zapcore.Level, error) {
-	levelString = strings.TrimSpace(strings.ToLower(levelString))
-	switch levelString {
-	case "debug":
+func getLevel(logLevel appext.LogLevel) (zapcore.Level, error) {
+	switch logLevel {
+	case appext.LogLevelDebug:
 		return zapcore.DebugLevel, nil
-	case "info", "":
+	case appext.LogLevelInfo:
 		return zapcore.InfoLevel, nil
-	case "warn":
+	case appext.LogLevelWarn:
 		return zapcore.WarnLevel, nil
-	case "error":
+	case appext.LogLevelError:
 		return zapcore.ErrorLevel, nil
 	default:
-		return 0, fmt.Errorf("unknown log level [debug,info,warn,error]: %q", levelString)
+		return 0, fmt.Errorf("unknown appext.LogLevel: %v", logLevel)
 	}
 }
 
-func getEncoder(formatString string) (zapcore.Encoder, error) {
-	formatString = strings.TrimSpace(strings.ToLower(formatString))
-	switch formatString {
-	case "text":
+func getEncoder(logFormat appext.LogFormat) (zapcore.Encoder, error) {
+	switch logFormat {
+	case appext.LogFormatText:
 		return newTextEncoder(), nil
-	case "color", "":
+	case appext.LogFormatColor:
 		return newColortextEncoder(), nil
-	case "json":
+	case appext.LogFormatJSON:
 		return newJSONEncoder(), nil
 	default:
-		return nil, fmt.Errorf("unknown log format [text,color,json]: %q", formatString)
+		return nil, fmt.Errorf("unknown appext.LogFormat: %v", logFormat)
 	}
 }
 

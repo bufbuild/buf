@@ -20,7 +20,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,11 +31,7 @@ func NewLogger(t testing.TB, options ...LoggerOption) *slog.Logger {
 	for _, option := range options {
 		option(loggerOptions)
 	}
-	// It's weird that we are going from slog.Level to string, and then within
-	// slogbuild we are going from string to slog.Level, but there's no real reason
-	// to clean this up at this exact point until we understand our slog call
-	// patterns a bit more.
-	logger, err := slogbuild.NewLoggerForFlagValues(os.Stderr, loggerOptions.level.String(), "text")
+	logger, err := slogapp.NewLogger(os.Stderr, loggerOptions.logLevel, appext.LogFormatText)
 	require.NoError(t, err)
 	return logger
 }
@@ -42,23 +39,23 @@ func NewLogger(t testing.TB, options ...LoggerOption) *slog.Logger {
 // LoggerOption is an option for a new testing Logger.
 type LoggerOption func(*loggerOptions)
 
-// WithLevel specifies the Level to use for the Logger.
+// WithLogLevel specifies the LogLevel to use for the Logger.
 //
-// The default is slog.LevelDebug.
-func WithLevel(level slog.Level) LoggerOption {
+// The default is appext.LogLevelDebug.
+func WithLogLevel(logLevel appext.LogLevel) LoggerOption {
 	return func(loggerOptions *loggerOptions) {
-		loggerOptions.level = level
+		loggerOptions.logLevel = logLevel
 	}
 }
 
 // *** PRIVATE ***
 
 type loggerOptions struct {
-	level slog.Level
+	logLevel appext.LogLevel
 }
 
 func newLoggerOptions() *loggerOptions {
 	return &loggerOptions{
-		level: slog.LevelDebug,
+		logLevel: appext.LogLevelDebug,
 	}
 }

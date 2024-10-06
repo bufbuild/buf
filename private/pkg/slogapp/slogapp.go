@@ -12,8 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+// Package slogapp builds slog.Loggers.
+package slogapp
 
-package slogbuild
+import (
+	"io"
+	"log/slog"
 
-import _ "github.com/bufbuild/buf/private/usage"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/zapapp"
+	"go.uber.org/zap/exp/zapslog"
+)
+
+// NewLogger returns a new Logger for the given level and format.
+func NewLogger(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogFormat) (*slog.Logger, error) {
+	core, err := zapapp.NewCore(writer, logLevel, logFormat)
+	if err != nil {
+		return nil, err
+	}
+	return slog.New(zapslog.NewHandler(core)), nil
+}

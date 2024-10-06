@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package zapbuild
+package zapapp
 
 import _ "github.com/bufbuild/buf/private/usage"

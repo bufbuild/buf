@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/bandeps"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/spf13/pflag"
 )
 
@@ -46,6 +47,7 @@ func newCommand() *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(timeout),
+		appext.BuilderWithLoggerProvider(slogapp.NewLogger),
 	)
 	flags := newFlags()
 	return &appcmd.Command{

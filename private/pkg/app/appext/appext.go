@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"os"
@@ -141,6 +142,18 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	return func(builder *builder) {
 		builder.interceptors = append(builder.interceptors, interceptor)
+	}
+}
+
+// LoggerProvider provides new Loggers.
+type LoggerProvider func(io.Writer, LogLevel, LogFormat) (*slog.Logger, error)
+
+// BuilderWithLoggerProvider overrides the default LoggerProvider.
+//
+// The default is to use slogbuild.
+func BuilderWithLoggerProvider(loggerProvider LoggerProvider) BuilderOption {
+	return func(builder *builder) {
+		builder.loggerProvider = loggerProvider
 	}
 }
 

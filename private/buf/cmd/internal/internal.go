@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/protoplugin"
 )
 
@@ -79,18 +79,22 @@ func GetModuleConfigForProtocPlugin(
 
 // NewAppextContainerForPluginEnv creates a new appext.Container for the PluginEnv.
 //
-// This isu sed bt the protoc plugins.
+// This is used by the protoc plugins.
 func NewAppextContainerForPluginEnv(
 	pluginEnv protoplugin.PluginEnv,
 	appName string,
-	logLevel string,
-	logFormat string,
+	logLevelString string,
+	logFormatString string,
 ) (appext.Container, error) {
-	logger, err := slogbuild.NewLoggerForFlagValues(
-		pluginEnv.Stderr,
-		logLevel,
-		logFormat,
-	)
+	logLevel, err := appext.ParseLogLevel(logLevelString)
+	if err != nil {
+		return nil, err
+	}
+	logFormat, err := appext.ParseLogFormat(logFormatString)
+	if err != nil {
+		return nil, err
+	}
+	logger, err := slogapp.NewLogger(pluginEnv.Stderr, logLevel, logFormat)
 	if err != nil {
 		return nil, err
 	}

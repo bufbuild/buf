@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/shake256"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/spf13/pflag"
 )
 
@@ -41,7 +42,10 @@ func main() {
 
 func newCommand() *appcmd.Command {
 	flags := newFlags()
-	builder := appext.NewBuilder(programName)
+	builder := appext.NewBuilder(
+		programName,
+		appext.BuilderWithLoggerProvider(slogapp.NewLogger),
+	)
 	return &appcmd.Command{
 		Use:   programName,
 		Short: "Send a newline-separated file via stdin",

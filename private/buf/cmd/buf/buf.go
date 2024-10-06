@@ -90,6 +90,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -106,6 +107,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
 		appext.BuilderWithInterceptor(newErrorInterceptor()),
+		appext.BuilderWithLoggerProvider(slogapp.NewLogger),
 	)
 	return &appcmd.Command{
 		Use:                 name,

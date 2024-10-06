@@ -17,12 +17,12 @@ package appext
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
@@ -47,12 +47,14 @@ type builder struct {
 
 	defaultTimeout time.Duration
 
-	interceptors []Interceptor
+	interceptors   []Interceptor
+	loggerProvider LoggerProvider
 }
 
 func newBuilder(appName string, options ...BuilderOption) *builder {
 	builder := &builder{
-		appName: appName,
+		appName:        appName,
+		loggerProvider: newLogger,
 	}
 	for _, option := range options {
 		option(builder)
@@ -107,11 +109,15 @@ func (b *builder) run(
 	appContainer app.Container,
 	f func(context.Context, Container) error,
 ) (retErr error) {
-	logLevelString, err := getLogLevelString(b.debug, b.noWarn)
+	logLevel, err := getLogLevel(b.debug, b.noWarn)
 	if err != nil {
 		return err
 	}
-	logger, err := slogbuild.NewLoggerForFlagValues(appContainer.Stderr(), logLevelString, b.logFormat)
+	logFormat, err := ParseLogFormat(b.logFormat)
+	if err != nil {
+		return err
+	}
+	logger, err := b.loggerProvider(appContainer.Stderr(), logLevel, logFormat)
 	if err != nil {
 		return err
 	}
@@ -199,17 +205,28 @@ func runProfile(
 	return nil
 }
 
-func getLogLevelString(debugFlag bool, noWarnFlag bool) (string, error) {
+func getLogLevel(debugFlag bool, noWarnFlag bool) (LogLevel, error) {
 	if debugFlag && noWarnFlag {
-		return "", fmt.Errorf("cannot set both --debug and --no-warn")
+		return 0, fmt.Errorf("cannot set both --debug and --no-warn")
 	}
 	if noWarnFlag {
-		return "error", nil
+		return LogLevelError, nil
 	}
 	if debugFlag {
-		return "debug", nil
+		return LogLevelDebug, nil
 	}
-	return "info", nil
+	return LogLevelInfo, nil
+}
+
+func newLogger(writer io.Writer, logLevel LogLevel, logFormat LogFormat) (*slog.Logger, error) {
+	switch logFormat {
+	case LogFormatText, LogFormatColor:
+		return slog.New(slog.NewTextHandler(writer, &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
+	case LogFormatJSON:
+		return slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
+	default:
+		return nil, fmt.Errorf("unknown appext.LogFormat: %v", logFormat)
+	}
 }
 
 // chainInterceptors consolidates the given interceptors into one.
