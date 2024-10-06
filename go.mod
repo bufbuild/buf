@@ -28,7 +28,6 @@ require (
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
 	github.com/klauspost/compress v1.17.10
 	github.com/klauspost/pgzip v1.2.6
-	github.com/lmittmann/tint v1.0.5
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/profile v1.7.0
 	github.com/quic-go/quic-go v0.47.0
@@ -42,6 +41,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
+	go.uber.org/zap/exp v0.1.1-0.20240913022758-ede8e1888f83
 	golang.org/x/crypto v0.27.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/mod v0.21.0

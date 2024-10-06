@@ -16,12 +16,11 @@
 package slogbuild
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
-	"strings"
 
-	"github.com/lmittmann/tint"
+	"github.com/bufbuild/buf/private/pkg/zapbuild"
+	"go.uber.org/zap/exp/zapslog"
 )
 
 // NewLoggerForFlagValues returns a new Logger for the given level and format strings.
@@ -29,43 +28,47 @@ import (
 // The level can be [debug,info,warn,error]. The default is info.
 // The format can be [text,color,json]. The default is color.
 func NewLoggerForFlagValues(writer io.Writer, levelString string, formatString string) (*slog.Logger, error) {
-	level, err := getLevel(levelString)
+	//level, err := getLevel(levelString)
+	//if err != nil {
+	//return nil, err
+	//}
+	//handler, err := getHandler(writer, level, formatString)
+	//if err != nil {
+	//return nil, err
+	//}
+	core, err := zapbuild.NewCoreForFlagValues(writer, levelString, formatString)
 	if err != nil {
 		return nil, err
 	}
-	handler, err := getHandler(writer, level, formatString)
-	if err != nil {
-		return nil, err
-	}
-	return slog.New(handler), nil
+	return slog.New(zapslog.NewHandler(core)), nil
 }
 
-func getLevel(levelString string) (slog.Level, error) {
-	levelString = strings.TrimSpace(strings.ToLower(levelString))
-	switch levelString {
-	case "debug":
-		return slog.LevelDebug, nil
-	case "info", "":
-		return slog.LevelInfo, nil
-	case "warn":
-		return slog.LevelWarn, nil
-	case "error":
-		return slog.LevelError, nil
-	default:
-		return 0, fmt.Errorf("unknown log level [debug,info,warn,error]: %q", levelString)
-	}
-}
+//func getLevel(levelString string) (slog.Level, error) {
+//levelString = strings.TrimSpace(strings.ToLower(levelString))
+//switch levelString {
+//case "debug":
+//return slog.LevelDebug, nil
+//case "info", "":
+//return slog.LevelInfo, nil
+//case "warn":
+//return slog.LevelWarn, nil
+//case "error":
+//return slog.LevelError, nil
+//default:
+//return 0, fmt.Errorf("unknown log level [debug,info,warn,error]: %q", levelString)
+//}
+//}
 
-func getHandler(writer io.Writer, level slog.Level, formatString string) (slog.Handler, error) {
-	formatString = strings.TrimSpace(strings.ToLower(formatString))
-	switch formatString {
-	case "text":
-		return slog.NewTextHandler(writer, &slog.HandlerOptions{Level: level}), nil
-	case "color", "":
-		return tint.NewHandler(writer, &tint.Options{Level: level}), nil
-	case "json":
-		return slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: level}), nil
-	default:
-		return nil, fmt.Errorf("unknown log format [text,color,json]: %q", formatString)
-	}
-}
+//func getHandler(writer io.Writer, level slog.Level, formatString string) (slog.Handler, error) {
+//formatString = strings.TrimSpace(strings.ToLower(formatString))
+//switch formatString {
+//case "text":
+//return slog.NewTextHandler(writer, &slog.HandlerOptions{Level: level}), nil
+//case "color", "":
+//return tint.NewHandler(writer, &tint.Options{Level: level}), nil
+//case "json":
+//return slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: level}), nil
+//default:
+//return nil, fmt.Errorf("unknown log format [text,color,json]: %q", formatString)
+//}
+//}
