@@ -332,59 +332,6 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	}
 }
 
-func (s *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
-	enc.AddString("file", s.file.uri.Filename())
-
-	// zapPos converts an ast.SourcePos into a zap marshaller.
-	zapPos := func(pos ast.SourcePos) zapcore.ObjectMarshalerFunc {
-		return func(enc zapcore.ObjectEncoder) error {
-			enc.AddInt("offset", pos.Offset)
-			enc.AddInt("line", pos.Line)
-			enc.AddInt("col", pos.Col)
-			return nil
-		}
-	}
-
-	err = enc.AddObject("start", zapPos(s.info.Start()))
-	if err != nil {
-		return err
-	}
-
-	err = enc.AddObject("end", zapPos(s.info.End()))
-	if err != nil {
-		return err
-	}
-
-	switch kind := s.kind.(type) {
-	case *builtin:
-		enc.AddString("builtin", kind.name)
-
-	case *import_:
-		if kind.file != nil {
-			enc.AddString("imports", kind.file.uri.Filename())
-		}
-
-	case *definition:
-		enc.AddString("defines", strings.Join(kind.path, "."))
-
-	case *reference:
-		if kind.file != nil {
-			enc.AddString("imports", kind.file.uri.Filename())
-		}
-		if kind.path != nil {
-			enc.AddString("references", strings.Join(kind.path, "."))
-		}
-		if kind.seeTypeOf != nil {
-			err = enc.AddObject("see_type_of", kind.seeTypeOf)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 // FormatDocs finds appropriate  documentation for the given s and constructs a Markdown
 // string for showing to the client.
 //
