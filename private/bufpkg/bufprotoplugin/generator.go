@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/app"

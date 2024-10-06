@@ -20,9 +20,8 @@ package bufgen
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"log/slog"
+	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"

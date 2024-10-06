@@ -16,9 +16,8 @@ package bufmodulecache
 
 import (
 	"context"
-	"sync/atomic"
-
 	"log/slog"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"

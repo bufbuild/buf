@@ -16,10 +16,9 @@ package bufcheck
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
-
-	"log/slog"
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"

@@ -17,9 +17,8 @@ package githubtesting
 
 import (
 	"context"
-	"net/http"
-
 	"log/slog"
+	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )

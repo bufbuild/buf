@@ -16,7 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"

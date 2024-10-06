@@ -18,12 +18,11 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"math"
 	"slices"
 	"sort"
 	"strings"
-
-	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"

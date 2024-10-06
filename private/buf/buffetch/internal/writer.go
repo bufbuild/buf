@@ -20,9 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-
 	"log/slog"
+	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"

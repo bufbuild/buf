@@ -17,7 +17,6 @@ package internal
 import (
 	"context"
 	"fmt"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"

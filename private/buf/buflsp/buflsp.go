@@ -20,9 +20,8 @@ package buflsp
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
-
 	"log/slog"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"

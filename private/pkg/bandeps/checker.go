@@ -16,9 +16,8 @@ package bandeps
 
 import (
 	"context"
-	"sync"
-
 	"log/slog"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"

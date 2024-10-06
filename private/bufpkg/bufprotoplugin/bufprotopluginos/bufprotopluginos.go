@@ -18,7 +18,6 @@ package bufprotopluginos
 import (
 	"context"
 	"io"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"

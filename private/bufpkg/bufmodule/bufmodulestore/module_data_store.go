@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"

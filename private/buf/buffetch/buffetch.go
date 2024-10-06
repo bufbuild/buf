@@ -19,9 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
-
 	"log/slog"
+	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/buf/buftarget"

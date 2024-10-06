@@ -19,9 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"path/filepath"
-
 	"log/slog"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"

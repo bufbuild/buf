@@ -17,9 +17,8 @@ package protoc
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"log/slog"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"

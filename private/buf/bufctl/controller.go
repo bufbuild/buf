@@ -20,10 +20,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"sort"
-
-	"log/slog"
 
 	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/buf/buffetch"

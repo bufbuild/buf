@@ -17,10 +17,9 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
-
-	"log/slog"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"

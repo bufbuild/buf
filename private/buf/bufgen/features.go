@@ -16,10 +16,9 @@ package bufgen
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
-
-	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"

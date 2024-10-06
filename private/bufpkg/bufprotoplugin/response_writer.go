@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"

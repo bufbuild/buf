@@ -20,9 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"time"
-
 	"log/slog"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"

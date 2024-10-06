@@ -16,11 +16,10 @@ package internal
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
-
-	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"

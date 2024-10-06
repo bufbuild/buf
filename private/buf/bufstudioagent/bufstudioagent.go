@@ -16,9 +16,8 @@ package bufstudioagent
 
 import (
 	"crypto/tls"
-	"net/http"
-
 	"log/slog"
+	"net/http"
 
 	"github.com/rs/cors"
 )

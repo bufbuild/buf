@@ -18,9 +18,8 @@ package bufprotoc
 import (
 	"context"
 	"fmt"
-	"sort"
-
 	"log/slog"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"

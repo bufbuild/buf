@@ -17,9 +17,8 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
-	"sort"
-
 	"log/slog"
+	"sort"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"

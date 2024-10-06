@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"

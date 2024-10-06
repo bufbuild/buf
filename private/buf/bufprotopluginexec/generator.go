@@ -16,7 +16,6 @@ package bufprotopluginexec
 
 import (
 	"context"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"

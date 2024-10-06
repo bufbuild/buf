@@ -18,9 +18,8 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"path/filepath"
-
 	"log/slog"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"

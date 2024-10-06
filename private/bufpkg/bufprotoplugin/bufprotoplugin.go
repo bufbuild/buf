@@ -22,9 +22,8 @@ package bufprotoplugin
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-
 	"log/slog"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"

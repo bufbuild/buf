@@ -18,9 +18,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
-
 	"log/slog"
+	"strings"
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/descriptor"

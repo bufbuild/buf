@@ -16,9 +16,8 @@ package bufmodule
 
 import (
 	"context"
-	"sync/atomic"
-
 	"log/slog"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"

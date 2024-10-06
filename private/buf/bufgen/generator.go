@@ -18,9 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
-
 	"log/slog"
+	"path/filepath"
 
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"

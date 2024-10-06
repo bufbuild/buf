@@ -22,9 +22,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os/exec"
-
 	"log/slog"
+	"os/exec"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"

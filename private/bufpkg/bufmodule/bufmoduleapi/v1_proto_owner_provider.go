@@ -17,7 +17,6 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
-
 	"log/slog"
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"

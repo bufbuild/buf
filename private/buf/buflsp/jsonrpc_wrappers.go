@@ -19,7 +19,6 @@ package buflsp
 
 import (
 	"context"
-
 	"log/slog"
 
 	"go.lsp.dev/jsonrpc2"

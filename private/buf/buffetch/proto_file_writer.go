@@ -17,7 +17,6 @@ package buffetch
 import (
 	"context"
 	"io"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"

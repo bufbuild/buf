@@ -16,7 +16,6 @@ package bufworkspace
 
 import (
 	"context"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"

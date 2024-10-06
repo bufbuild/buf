@@ -17,11 +17,10 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
-
-	"log/slog"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/net/http2"

@@ -16,7 +16,6 @@ package buftarget
 
 import (
 	"context"
-
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"

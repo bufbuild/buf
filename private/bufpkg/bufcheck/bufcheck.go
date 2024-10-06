@@ -17,7 +17,6 @@ package bufcheck
 import (
 	"context"
 	"io"
-
 	"log/slog"
 
 	"buf.build/go/bufplugin/check"
