@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -244,7 +245,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleKey,
 		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
 		slog.Bool("found", err == nil),
-		slog.Any("error", err),
+		slogext.ErrorAttr(err),
 	)
 	if err != nil {
 		return nil, err
@@ -396,7 +397,7 @@ func (p *moduleDataStore) putModuleData(
 			moduleKey,
 			fmt.Sprintf("module data store put read check %s", externalModuleDataFileName),
 			slog.Bool("found", err == nil),
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
@@ -443,7 +444,7 @@ func (p *moduleDataStore) putModuleData(
 			moduleKey,
 			fmt.Sprintf("module data store put check %s", externalModuleDataFileName),
 			slog.Bool("found", err == nil),
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err

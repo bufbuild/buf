@@ -30,6 +30,7 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 )
@@ -201,7 +202,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		i.Logger.Warn(
 			"non_connect_unary_error",
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
@@ -252,7 +253,7 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 			"write_error",
 			slog.Int("expected_bytes", len(responseB64Bytes)),
 			slog.Int("actual_bytes", n),
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 	}
 }

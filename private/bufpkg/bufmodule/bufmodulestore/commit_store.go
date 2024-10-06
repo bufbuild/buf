@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -159,7 +160,7 @@ func (p *commitStore) getCommitForCommitKey(
 		commitKey,
 		"commit store get file",
 		slog.Bool("found", err == nil),
-		slog.Any("error", err),
+		slogext.ErrorAttr(err),
 	)
 	if err != nil {
 		return nil, err
@@ -285,7 +286,7 @@ func (p *commitStore) deleteInvalidCommitFile(
 			ctx,
 			commitKey,
 			fmt.Sprintf("commit store could not delete %s commit file", invalidReason),
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 	}
 	// This will act as if the file is not found

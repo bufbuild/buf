@@ -278,7 +278,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 func (f *file) FindModule(ctx context.Context) {
 	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
 	if err != nil {
-		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slog.Any("error", err))
+		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
 
@@ -520,13 +520,13 @@ func (f *file) BuildImage(ctx context.Context) {
 	}
 
 	if err != nil {
-		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slog.Any("error", err))
+		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
-		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slog.Any("error", err))
+		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
 
@@ -572,7 +572,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 
 	var annotations bufanalysis.FileAnnotationSet
 	if !errors.As(err, &annotations) {
-		f.lsp.logger.Warn("error while linting", slog.String("uri", string(f.uri)), slog.Any("error", err))
+		f.lsp.logger.Warn("error while linting", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return false
 	}
 

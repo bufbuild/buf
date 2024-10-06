@@ -21,6 +21,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"go.lsp.dev/jsonrpc2"
 )
 
@@ -31,7 +32,7 @@ func (l *lsp) wrapReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2
 			l.logger.Warn(
 				"responding with error",
 				slog.String("method", req.Method()),
-				slog.Any("error", err),
+				slogext.ErrorAttr(err),
 			)
 		} else {
 			l.logger.Debug(
@@ -68,7 +69,7 @@ func (c *connWrapper) Call(
 		c.logger.Warn(
 			"call returned error",
 			slog.String("method", method),
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 	} else {
 		c.logger.Warn(
@@ -94,7 +95,7 @@ func (c *connWrapper) Notify(
 		c.logger.Warn(
 			"notify returned error",
 			slog.String("method", method),
-			slog.Any("error", err),
+			slogext.ErrorAttr(err),
 		)
 	} else {
 		c.logger.Warn(
