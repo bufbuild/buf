@@ -28,6 +28,7 @@ require (
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
 	github.com/klauspost/compress v1.17.10
 	github.com/klauspost/pgzip v1.2.6
+	github.com/lmittmann/tint v1.0.5
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/profile v1.7.0
 	github.com/quic-go/quic-go v0.47.0
@@ -85,7 +86,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/pprof v0.0.0-20240929191954-255acd752d31 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/lmittmann/tint v1.0.5 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
