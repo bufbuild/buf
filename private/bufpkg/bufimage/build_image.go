@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protocompile"
@@ -47,7 +47,7 @@ func buildImage(
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
 ) (Image, error) {
-	defer slogbuild.DebugProfile(logger)()
+	defer slogext.DebugProfile(logger)()
 
 	if !moduleReadBucket.ShouldBeSelfContained() {
 		return nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")

@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -114,7 +114,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	defer slogbuild.DebugProfile(w.logger)()
+	defer slogext.DebugProfile(w.logger)()
 
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
@@ -220,7 +220,7 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucketTargeting buftarget.BucketTargeting,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	defer slogbuild.DebugProfile(w.logger)()
+	defer slogext.DebugProfile(w.logger)()
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err

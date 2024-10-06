@@ -33,7 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"pluginrpc.com/pluginrpc"
@@ -87,7 +87,7 @@ func (c *client) Lint(
 	image bufimage.Image,
 	options ...LintOption,
 ) error {
-	defer slogbuild.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	if lintConfig.Disabled() {
 		return nil
@@ -146,7 +146,7 @@ func (c *client) Breaking(
 	againstImage bufimage.Image,
 	options ...BreakingOption,
 ) error {
-	defer slogbuild.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	if breakingConfig.Disabled() {
 		return nil
@@ -215,7 +215,7 @@ func (c *client) ConfiguredRules(
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
 ) ([]Rule, error) {
-	defer slogbuild.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
@@ -244,7 +244,7 @@ func (c *client) AllRules(
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
 ) ([]Rule, error) {
-	defer slogbuild.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
@@ -262,7 +262,7 @@ func (c *client) AllCategories(
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
 ) ([]Category, error) {
-	defer slogbuild.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {

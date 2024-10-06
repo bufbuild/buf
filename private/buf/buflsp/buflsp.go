@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
-	"github.com/bufbuild/buf/private/pkg/slogbuild"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.lsp.dev/jsonrpc2"
@@ -151,7 +150,7 @@ func (l *lsp) findImportable(
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
 	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		defer slogbuild.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
+		defer slogext.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
 
 		ctx = withRequestID(ctx)
 
