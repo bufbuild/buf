@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"log/slog"
-	"log/slog/zaptest"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -455,7 +454,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 	}
 	ctx := context.Background()
 	for _, benchmarkCase := range benchmarkCases {
-		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder, opts...)
+		_, image, err := getImage(ctx, slogext.NopLogger, benchmarkCase.folder, opts...)
 		require.NoError(b, err)
 		benchmarkCase.image = image
 	}

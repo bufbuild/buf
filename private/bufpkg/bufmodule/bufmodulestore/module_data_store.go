@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 var (

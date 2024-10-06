@@ -23,7 +23,6 @@ import (
 	"log/slog"
 
 	"go.lsp.dev/jsonrpc2"
-	"go.uber.org/zap"
 )
 
 // wrapReplier wraps a jsonrpc2.Replier, allowing us to inject logging and tracing and so on.
@@ -32,14 +31,14 @@ func (l *lsp) wrapReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2
 		if err != nil {
 			l.logger.Warn(
 				"responding with error",
-				zap.String("method", req.Method()),
-				zap.Error(err),
+				slog.String("method", req.Method()),
+				slog.Any("error", err),
 			)
 		} else {
 			l.logger.Debug(
 				"responding",
-				zap.String("method", req.Method()),
-				zap.Reflect("params", result),
+				slog.String("method", req.Method()),
+				slog.Any("params", result),
 			)
 		}
 
@@ -61,22 +60,22 @@ func (c *connWrapper) Call(
 	ctx context.Context, method string, params, result any) (id jsonrpc2.ID, err error) {
 	c.logger.Debug(
 		"call",
-		zap.String("method", method),
-		zap.Reflect("params", params),
+		slog.String("method", method),
+		slog.Any("params", params),
 	)
 
 	id, err = c.Conn.Call(ctx, method, params, result)
 	if err != nil {
 		c.logger.Warn(
 			"call returned error",
-			zap.String("method", method),
-			zap.Error(err),
+			slog.String("method", method),
+			slog.Any("error", err),
 		)
 	} else {
 		c.logger.Warn(
 			"call returned",
-			zap.String("method", method),
-			zap.Reflect("result", result),
+			slog.String("method", method),
+			slog.Any("result", result),
 		)
 	}
 
@@ -87,21 +86,21 @@ func (c *connWrapper) Notify(
 	ctx context.Context, method string, params any) error {
 	c.logger.Debug(
 		"notify",
-		zap.String("method", method),
-		zap.Reflect("params", params),
+		slog.String("method", method),
+		slog.Any("params", params),
 	)
 
 	err := c.Conn.Notify(ctx, method, params)
 	if err != nil {
 		c.logger.Warn(
 			"notify returned error",
-			zap.String("method", method),
-			zap.Error(err),
+			slog.String("method", method),
+			slog.Any("error", err),
 		)
 	} else {
 		c.logger.Warn(
 			"notify returned",
-			zap.String("method", method),
+			slog.String("method", method),
 		)
 	}
 

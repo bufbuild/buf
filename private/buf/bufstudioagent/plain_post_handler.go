@@ -31,7 +31,6 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 )
@@ -252,9 +251,9 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 	if n, err := w.Write(responseB64Bytes); n != len(responseB64Bytes) && err != nil {
 		i.Logger.Error(
 			"write_error",
-			zap.Int("expected_bytes", len(responseB64Bytes)),
-			zap.Int("actual_bytes", n),
-			zap.Error(err),
+			slog.Int("expected_bytes", len(responseB64Bytes)),
+			slog.Int("actual_bytes", n),
+			slog.Any("error", err),
 		)
 	}
 }
