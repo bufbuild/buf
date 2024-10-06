@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.uber.org/zap"
 )
 
 // Serve spawns a new LSP server, listening on the given stream.
@@ -62,7 +63,7 @@ func Serve(
 		conn: conn,
 		client: protocol.ClientDispatcher(
 			&connWrapper{Conn: conn, logger: container.Logger()},
-			slogext.NopLogger, // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
+			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		logger:      container.Logger(),
 		controller:  controller,
@@ -140,7 +141,7 @@ func (l *lsp) findImportable(
 		imports[fileInfo.Path()] = fileInfo
 	}
 
-	l.logger.Sugar().Debugf("found imports for %q: %#v", uri, imports)
+	l.logger.DebugContext(ctx, fmt.Sprintf("found imports for %q: %#v", uri, imports))
 
 	return imports, nil
 }

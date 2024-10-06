@@ -122,10 +122,10 @@ func LogUnusedConfiguredDepsForWorkspace(
 	for _, malformedDep := range malformedDeps {
 		switch t := malformedDep.Type(); t {
 		case bufworkspace.MalformedDepTypeUnused:
-			logger.Sugar().Warnf(
+			logger.Warn(fmt.Sprintf(
 				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
 				malformedDep.ModuleRef().ModuleFullName(),
-			)
+			))
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}

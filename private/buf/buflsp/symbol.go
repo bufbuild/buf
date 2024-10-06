@@ -23,13 +23,13 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
 )
 
 // symbol represents a named symbol inside of a buflsp.file
@@ -191,7 +191,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			field, ok := node.(*ast.FieldNode)
 			if !ok {
 				s.file.lsp.logger.DebugContext(
-					ctx
+					ctx,
 					"dependent symbol definition was not a field",
 					slog.Any("symbol", s),
 					slog.Any("dep", kind.seeTypeOf),
@@ -332,7 +332,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	}
 }
 
-// FormatDocs finds appropriate  documentation for the given s and constructs a Markdown
+// FormatDocs finds appropriate  documgntation for the given s and constructs a Markdown
 // string for showing to the client.
 //
 // Returns the empty string if no docs are available.

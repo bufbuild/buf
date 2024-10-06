@@ -94,7 +94,7 @@ func (g *generator) Generate(
 	}
 	if !config.GenerateManagedConfig().Enabled() {
 		if len(config.GenerateManagedConfig().Overrides()) != 0 || len(config.GenerateManagedConfig().Disables()) != 0 {
-			g.logger.Sugar().Warn("managed mode configs are set but are not enabled")
+			g.logger.Warn("managed mode configs are set but are not enabled")
 		}
 	}
 	for _, image := range images {

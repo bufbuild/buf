@@ -16,6 +16,7 @@ package depupdate
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -135,7 +136,7 @@ func run(
 		// This ensures we do not create an empty buf.lock when one did not exist in the first
 		// place and we do not need to go through the entire operation of updating non-existent
 		// deps and building the image for tamper-proofing.
-		logger.Sugar().Warnf("No configured dependencies were found to update in %q.", dirPath)
+		logger.Warn(fmt.Sprintf("No configured dependencies were found to update in %q.", dirPath))
 		return nil
 	}
 

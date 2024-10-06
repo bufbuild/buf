@@ -17,6 +17,7 @@ package bufmigrate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"sort"
@@ -96,13 +97,13 @@ func (m *migrator) logPaths(
 	bufGenYAMLFilePaths []string,
 ) {
 	if len(workspaceDirPaths) > 0 {
-		m.logger.Sugar().Debugf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n")))
 	}
 	if len(moduleDirPaths) > 0 {
-		m.logger.Sugar().Debugf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n")))
 	}
 	if len(bufGenYAMLFilePaths) > 0 {
-		m.logger.Sugar().Debugf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n")))
 	}
 }
 
