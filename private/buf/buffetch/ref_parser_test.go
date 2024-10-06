@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1392,7 +1392,7 @@ func testGetParsedRef(
 	expectedErr error,
 	value string,
 ) {
-	parsedRef, err := newRefParser(slogext.NopLogger).getParsedRef(
+	parsedRef, err := newRefParser(slogtestext.NewLogger(t)).getParsedRef(
 		context.Background(),
 		value,
 		allFormats,
@@ -1417,7 +1417,7 @@ func testGetParsedDirOrProtoFileRef(
 	expectedErr error,
 	value string,
 ) {
-	parsedRef, err := newDirOrProtoFileRefParser(slogext.NopLogger).getParsedRef(
+	parsedRef, err := newDirOrProtoFileRefParser(slogtestext.NewLogger(t)).getParsedRef(
 		context.Background(),
 		value,
 		dirOrProtoFileFormats,

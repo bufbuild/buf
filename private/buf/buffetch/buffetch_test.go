@@ -23,7 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
@@ -101,7 +101,7 @@ func testRoundTripLocalFile(
 	expectedFormat string,
 	expectedCompressionType internal.CompressionType,
 ) {
-	logger := slogext.NopLogger
+	logger := slogtestext.NewLogger(t)
 	refParser := newRefParser(logger)
 	reader := testNewFetchReader(logger)
 	writer := testNewFetchWriter(logger)

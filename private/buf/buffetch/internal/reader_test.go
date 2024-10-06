@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +36,7 @@ func TestGetReadBucketCloserForBucketNoTerminateFileName(t *testing.T) {
 	require.NoError(t, err)
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
 		nil, // no target paths
@@ -55,7 +55,7 @@ func TestGetReadBucketCloserTerminateFileName(t *testing.T) {
 	require.NoError(t, err)
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
 		nil, // no target paths
@@ -77,7 +77,7 @@ func TestGetReadBucketCloserForBucketNoSubDirPath(t *testing.T) {
 	require.NoError(t, err)
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storage.NopReadBucketCloser(inputBucket),
 		".",
 		nil, // no target paths
@@ -101,7 +101,7 @@ func TestGetReadBucketCloserForBucketAbs(t *testing.T) {
 	require.NoError(t, err)
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
 		nil, // no target paths
@@ -121,7 +121,7 @@ func TestGetReadWriteBucketForOSNoTerminateFileName(t *testing.T) {
 	ctx := context.Background()
 	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five",
 		nil, // no target paths
@@ -141,7 +141,7 @@ func TestGetReadWriteBucketForOSTerminateFileName(t *testing.T) {
 	ctx := context.Background()
 	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five",
 		nil, // no target paths
@@ -175,7 +175,7 @@ func TestGetReadWriteBucketForOSParentPwd(t *testing.T) {
 	}()
 	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"five",
 		nil, // no target paths
@@ -211,7 +211,7 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 	}()
 	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five"),
 		nil, // no target paths
@@ -234,7 +234,7 @@ func TestGetReadBucketCloserForOSProtoFileNoWorkspaceTerminateFileName(t *testin
 	ctx := context.Background()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
 		testNewTerminateAtFileNamesFunc("buf.yaml"),
@@ -255,7 +255,7 @@ func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
 	ctx := context.Background()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
@@ -290,7 +290,7 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 	}()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
@@ -327,7 +327,7 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 	}()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/proto/foo.proto"),
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
@@ -351,7 +351,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.
 	ctx := context.Background()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
@@ -383,7 +383,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 	}()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
@@ -421,7 +421,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 	}()
 	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"),
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),

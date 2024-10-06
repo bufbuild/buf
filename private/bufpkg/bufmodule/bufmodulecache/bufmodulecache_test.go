@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
@@ -39,12 +39,13 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 
 	cacheProvider := newCommitProvider(
-		slogext.NopLogger,
+		logger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			slogext.NopLogger,
+			logger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -101,14 +102,15 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 	commitKeys, err := slicesext.MapError(moduleKeys, bufmodule.ModuleKeyToCommitKey)
 	require.NoError(t, err)
 
 	cacheProvider := newCommitProvider(
-		slogext.NopLogger,
+		logger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			slogext.NopLogger,
+			logger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -164,12 +166,13 @@ func TestModuleDataProviderBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 
 	cacheProvider := newModuleDataProvider(
-		slogext.NopLogger,
+		logger,
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
-			slogext.NopLogger,
+			logger,
 			storagemem.NewReadWriteBucket(),
 			filelock.NewNopLocker(),
 		),
@@ -227,7 +230,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
-	logger := slogext.NopLogger
+	logger := slogtestext.NewLogger(t)
 
 	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))

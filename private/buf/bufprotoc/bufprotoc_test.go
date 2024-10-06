@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +30,7 @@ func TestNewModuleSetForProtoc(t *testing.T) {
 
 	moduleSet, err := NewModuleSetForProtoc(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",

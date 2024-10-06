@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/google/uuid"
@@ -174,7 +174,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -209,7 +209,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -244,7 +244,7 @@ func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, opti
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		slogext.NopLogger,
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
@@ -256,7 +256,7 @@ func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, opti
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, slogext.NopLogger, testdataDir, bufimage.WithExcludeSourceCodeInfo())
+	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -320,7 +320,7 @@ func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket s
 
 func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, slogext.NopLogger, "testdata/sourcecodeinfo")
+	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, []string{typename}, opts...)
@@ -453,7 +453,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 	}
 	ctx := context.Background()
 	for _, benchmarkCase := range benchmarkCases {
-		_, image, err := getImage(ctx, slogext.NopLogger, benchmarkCase.folder, opts...)
+		_, image, err := getImage(ctx, slogtestext.NewLogger(b), benchmarkCase.folder, opts...)
 		require.NoError(b, err)
 		benchmarkCase.image = image
 	}

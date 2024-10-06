@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/require"
@@ -66,7 +66,7 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bucket,
 		"finance/portfolio/proto",
 		nil,
@@ -160,7 +160,7 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 
 	bucketTargeting, err = buftarget.NewBucketTargeting(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bucket,
 		"common/money/proto",
 		[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
@@ -218,7 +218,7 @@ func TestUnusedDep(t *testing.T) {
 	require.NoError(t, err)
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bucket,
 		".",
 		nil,
@@ -268,7 +268,7 @@ func TestDuplicatePath(t *testing.T) {
 	require.NoError(t, err)
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bucket,
 		".",
 		nil,
@@ -317,7 +317,7 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	bsrProvider, err := bufmoduletesting.NewOmniProvider(testModuleDatas...)
 	require.NoError(t, err)
 	return NewWorkspaceProvider(
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		bsrProvider,
 		bsrProvider,
 		bsrProvider,

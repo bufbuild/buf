@@ -34,7 +34,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -131,7 +131,7 @@ func assertImageDigestFromStatusString(t *testing.T, status string, expectedDige
 
 func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
-	dockerClient, err := NewClient(slogext.NopLogger, "buf-cli-1.11.0", options...)
+	dockerClient, err := NewClient(slogtestext.NewLogger(t), "buf-cli-1.11.0", options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {

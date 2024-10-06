@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
@@ -1297,6 +1297,7 @@ func testLintWithOptions(
 
 	baseDirPath := filepath.Join("testdata", "lint")
 	dirPath := filepath.Join(baseDirPath, relDirPath)
+	logger := slogtestext.NewLogger(t)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
@@ -1305,7 +1306,7 @@ func testLintWithOptions(
 	require.NoError(t, err)
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		slogext.NopLogger,
+		logger,
 		readWriteBucket,
 		".", // the bucket is rooted at the input
 		nil,
@@ -1314,7 +1315,7 @@ func testLintWithOptions(
 	)
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceProvider(
-		slogext.NopLogger,
+		logger,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
@@ -1338,7 +1339,7 @@ func testLintWithOptions(
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		slogext.NopLogger,
+		logger,
 		moduleReadBucket,
 	)
 	require.NoError(t, err)
@@ -1354,7 +1355,7 @@ func testLintWithOptions(
 		require.NoError(t, wasmRuntime.Close(ctx))
 	})
 	client, err := bufcheck.NewClient(
-		slogext.NopLogger,
+		logger,
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 	)
 	require.NoError(t, err)

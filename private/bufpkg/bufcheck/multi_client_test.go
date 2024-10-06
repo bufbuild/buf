@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/require"
@@ -105,7 +105,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
 			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
 			newCheckClientSpec("buf-plugin-timestamp-suffix", timestampSuffixClient, emptyOptions),
@@ -165,7 +165,7 @@ func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
 	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
 			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
 			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
@@ -182,7 +182,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 	t.Parallel()
 
 	client, err := newClient(
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
 	)
 	require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 	emptyOptions, err := option.NewOptions(nil)
 	require.NoError(t, err)
 	multiClient := newMultiClient(
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
 			newCheckClientSpec("buf-plugin-1", client1, emptyOptions),
 			newCheckClientSpec("buf-plugin-2", client2, emptyOptions),
@@ -275,7 +275,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 	t.Parallel()
 
 	client, err := newClient(
-		slogext.NopLogger,
+		slogtestext.NewLogger(t),
 		NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
 	)
 	require.NoError(t, err)

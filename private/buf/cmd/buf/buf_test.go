@@ -42,7 +42,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -1349,7 +1349,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
 			// Do not need any custom lint/breaking plugins here.
-			client, err := bufcheck.NewClient(slogext.NopLogger, bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
+			client, err := bufcheck.NewClient(slogtestext.NewLogger(t), bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
 			require.NoError(t, err)
 			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
 			require.NoError(t, err)
