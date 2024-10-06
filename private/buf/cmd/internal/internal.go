@@ -102,11 +102,14 @@ func NewAppextContainerForPluginEnv(
 	if err != nil {
 		return nil, err
 	}
+	nameContainer, err := appext.NewNameContainer(appContainer, appName)
+	if err != nil {
+		return nil, err
+	}
 	return appext.NewContainer(
-		appContainer,
-		appName,
+		nameContainer,
 		logger,
-	)
+	), nil
 }
 
 type appContainer struct {

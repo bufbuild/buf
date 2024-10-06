@@ -17,7 +17,6 @@ package appext
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"time"
@@ -54,7 +53,7 @@ type builder struct {
 func newBuilder(appName string, options ...BuilderOption) *builder {
 	builder := &builder{
 		appName:        appName,
-		loggerProvider: newLogger,
+		loggerProvider: defaultLoggerProvider,
 	}
 	for _, option := range options {
 		option(builder)
@@ -117,14 +116,15 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
-	logger, err := b.loggerProvider(appContainer.Stderr(), logLevel, logFormat)
+	nameContainer, err := newNameContainer(appContainer, b.appName)
 	if err != nil {
 		return err
 	}
-	container, err := newContainer(appContainer, b.appName, logger)
+	logger, err := b.loggerProvider(nameContainer, logLevel, logFormat)
 	if err != nil {
 		return err
 	}
+	container := newContainer(nameContainer, logger)
 
 	if b.parallelism > 0 {
 		thread.SetParallelism(b.parallelism)
@@ -218,12 +218,12 @@ func getLogLevel(debugFlag bool, noWarnFlag bool) (LogLevel, error) {
 	return LogLevelInfo, nil
 }
 
-func newLogger(writer io.Writer, logLevel LogLevel, logFormat LogFormat) (*slog.Logger, error) {
+func defaultLoggerProvider(container NameContainer, logLevel LogLevel, logFormat LogFormat) (*slog.Logger, error) {
 	switch logFormat {
 	case LogFormatText, LogFormatColor:
-		return slog.New(slog.NewTextHandler(writer, &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
+		return slog.New(slog.NewTextHandler(container.Stderr(), &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
 	case LogFormatJSON:
-		return slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
+		return slog.New(slog.NewJSONHandler(container.Stderr(), &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
 	default:
 		return nil, fmt.Errorf("unknown appext.LogFormat: %v", logFormat)
 	}

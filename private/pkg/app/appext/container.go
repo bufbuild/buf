@@ -16,28 +16,19 @@ package appext
 
 import (
 	"log/slog"
-
-	"github.com/bufbuild/buf/private/pkg/app"
 )
 
 type container struct {
-	app.Container
 	NameContainer
 	LoggerContainer
 }
 
 func newContainer(
-	baseContainer app.Container,
-	appName string,
+	nameContainer NameContainer,
 	logger *slog.Logger,
-) (*container, error) {
-	nameContainer, err := newNameContainer(baseContainer, appName)
-	if err != nil {
-		return nil, err
-	}
+) *container {
 	return &container{
-		Container:       baseContainer,
 		NameContainer:   nameContainer,
 		LoggerContainer: newLoggerContainer(logger),
-	}, nil
+	}
 }

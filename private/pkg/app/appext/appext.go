@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net"
 	"os"
@@ -41,6 +40,8 @@ const (
 // Application name foo-bar translates to environment variable prefix FOO_BAR_, which is
 // used for the various functions that NameContainer provides.
 type NameContainer interface {
+	app.Container
+
 	// AppName is the application name.
 	//
 	// The name must be in [a-zA-Z0-9-_].
@@ -75,8 +76,8 @@ type NameContainer interface {
 // NewNameContainer returns a new NameContainer.
 //
 // The name must be in [a-zA-Z0-9-_].
-func NewNameContainer(envContainer app.EnvContainer, appName string) (NameContainer, error) {
-	return newNameContainer(envContainer, appName)
+func NewNameContainer(baseContainer app.Container, appName string) (NameContainer, error) {
+	return newNameContainer(baseContainer, appName)
 }
 
 // LoggerContainer provides a *slog.Logger.
@@ -91,20 +92,17 @@ func NewLoggerContainer(logger *slog.Logger) LoggerContainer {
 
 // Container contains not just the base app container, but all extended containers.
 type Container interface {
-	app.Container
 	NameContainer
 	LoggerContainer
 }
 
 // NewContainer returns a new Container.
 func NewContainer(
-	baseContainer app.Container,
-	appName string,
+	nameContainer NameContainer,
 	logger *slog.Logger,
-) (Container, error) {
+) Container {
 	return newContainer(
-		baseContainer,
-		appName,
+		nameContainer,
 		logger,
 	)
 }
@@ -146,7 +144,7 @@ func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 }
 
 // LoggerProvider provides new Loggers.
-type LoggerProvider func(io.Writer, LogLevel, LogFormat) (*slog.Logger, error)
+type LoggerProvider func(NameContainer, LogLevel, LogFormat) (*slog.Logger, error)
 
 // BuilderWithLoggerProvider overrides the default LoggerProvider.
 //

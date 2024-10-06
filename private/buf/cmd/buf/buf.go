@@ -107,7 +107,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
 		appext.BuilderWithInterceptor(newErrorInterceptor()),
-		appext.BuilderWithLoggerProvider(slogapp.NewLogger),
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
 	)
 	return &appcmd.Command{
 		Use:                 name,

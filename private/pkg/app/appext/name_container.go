@@ -26,8 +26,9 @@ import (
 )
 
 type nameContainer struct {
-	envContainer app.EnvContainer
-	appName      string
+	app.Container
+
+	appName string
 
 	configDirPath     string
 	configDirPathOnce sync.Once
@@ -40,13 +41,13 @@ type nameContainer struct {
 	portOnce          sync.Once
 }
 
-func newNameContainer(envContainer app.EnvContainer, appName string) (*nameContainer, error) {
+func newNameContainer(baseContainer app.Container, appName string) (*nameContainer, error) {
 	if err := validateAppName(appName); err != nil {
 		return nil, err
 	}
 	return &nameContainer{
-		envContainer: envContainer,
-		appName:      appName,
+		Container: baseContainer,
+		appName:   appName,
 	}, nil
 }
 
@@ -91,9 +92,9 @@ func (c *nameContainer) setPort() {
 }
 
 func (c *nameContainer) getDirPath(envSuffix string, getBaseDirPath func(app.EnvContainer) (string, error)) string {
-	dirPath := c.envContainer.Env(getAppNameEnvPrefix(c.appName) + envSuffix)
+	dirPath := c.Container.Env(getAppNameEnvPrefix(c.appName) + envSuffix)
 	if dirPath == "" {
-		baseDirPath, err := getBaseDirPath(c.envContainer)
+		baseDirPath, err := getBaseDirPath(c.Container)
 		if err == nil {
 			dirPath = filepath.Join(baseDirPath, c.appName)
 		}
@@ -102,9 +103,9 @@ func (c *nameContainer) getDirPath(envSuffix string, getBaseDirPath func(app.Env
 }
 
 func (c *nameContainer) getPort() (uint16, error) {
-	portString := c.envContainer.Env(getAppNameEnvPrefix(c.appName) + "PORT")
+	portString := c.Container.Env(getAppNameEnvPrefix(c.appName) + "PORT")
 	if portString == "" {
-		portString = c.envContainer.Env("PORT")
+		portString = c.Container.Env("PORT")
 		if portString == "" {
 			return 0, nil
 		}

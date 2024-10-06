@@ -24,6 +24,15 @@ import (
 	"go.uber.org/zap/exp/zapslog"
 )
 
+// LoggerProvider is an appext.LoggerProvider for use with appext.BuilderWithLoggerProvider.
+func LoggerProvider(container appext.NameContainer, logLevel appext.LogLevel, logFormat appext.LogFormat) (*slog.Logger, error) {
+	core, err := zapapp.NewCore(container.Stderr(), logLevel, logFormat)
+	if err != nil {
+		return nil, err
+	}
+	return slog.New(zapslog.NewHandler(core)), nil
+}
+
 // NewLogger returns a new Logger for the given level and format.
 func NewLogger(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogFormat) (*slog.Logger, error) {
 	core, err := zapapp.NewCore(writer, logLevel, logFormat)

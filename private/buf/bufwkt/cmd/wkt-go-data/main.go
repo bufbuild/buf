@@ -59,7 +59,7 @@ func newCommand() *appcmd.Command {
 	flags := newFlags()
 	builder := appext.NewBuilder(
 		programName,
-		appext.BuilderWithLoggerProvider(slogapp.NewLogger),
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
 	)
 	return &appcmd.Command{
 		Use:  fmt.Sprintf("%s path/to/google/protobuf/include", programName),
