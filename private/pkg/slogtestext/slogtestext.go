@@ -44,7 +44,7 @@ type LoggerOption func(*loggerOptions)
 
 // WithLevel specifies the Level to use for the Logger.
 //
-// The default is slog.LevelInfo.
+// The default is slog.LevelDebug.
 func WithLevel(level slog.Level) LoggerOption {
 	return func(loggerOptions *loggerOptions) {
 		loggerOptions.level = level
@@ -59,6 +59,6 @@ type loggerOptions struct {
 
 func newLoggerOptions() *loggerOptions {
 	return &loggerOptions{
-		level: slog.LevelInfo,
+		level: slog.LevelDebug,
 	}
 }
