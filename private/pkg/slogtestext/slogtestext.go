@@ -25,8 +25,40 @@ import (
 )
 
 // NewLogger returns a new Logger for testing.
-func NewLogger(t testing.TB) *slog.Logger {
-	logger, err := slogbuild.NewLoggerForFlagValues(os.Stderr, "info", "text")
+func NewLogger(t testing.TB, options ...LoggerOption) *slog.Logger {
+	loggerOptions := newLoggerOptions()
+	for _, option := range options {
+		option(loggerOptions)
+	}
+	// It's weird that we are going from slog.Level to string, and then within
+	// slogbuild we are going from string to slog.Level, but there's no real reason
+	// to clean this up at this exact point until we understand our slog call
+	// patterns a bit more.
+	logger, err := slogbuild.NewLoggerForFlagValues(os.Stderr, loggerOptions.level.String(), "text")
 	require.NoError(t, err)
 	return logger
+}
+
+// LoggerOption is an option for a new testing Logger.
+type LoggerOption func(*loggerOptions)
+
+// WithLevel specifies the Level to use for the Logger.
+//
+// The default is slog.LevelInfo.
+func WithLevel(level slog.Level) LoggerOption {
+	return func(loggerOptions *loggerOptions) {
+		loggerOptions.level = level
+	}
+}
+
+// *** PRIVATE ***
+
+type loggerOptions struct {
+	level slog.Level
+}
+
+func newLoggerOptions() *loggerOptions {
+	return &loggerOptions{
+		level: slog.LevelInfo,
+	}
 }
