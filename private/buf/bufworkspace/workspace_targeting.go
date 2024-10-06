@@ -172,7 +172,7 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 		}
 	}
 	logger.DebugContext(
-		cxt
+		ctx,
 		"targeting workspace with no found buf.work.yaml or v2 buf.yaml",
 		slog.String("subDirPath", bucketTargeting.SubDirPath()),
 	)
@@ -769,7 +769,7 @@ func checkForControllingWorkspaceOrV1Module(
 			}
 			if controllingWorkspace != nil {
 				logger.DebugContext(
-					ctx
+					ctx,
 					"buffetch termination found",
 					slog.String("curDirPath", curDirPath),
 					slog.String("path", path),

@@ -152,7 +152,7 @@ func (p *commitStore) getCommitForCommitKey(
 	// may be nil
 	expectedDigest bufmodule.Digest,
 ) (_ bufmodule.Commit, retErr error) {
-	bucket := p.getReadWriteBucketForDir(commitKey)
+	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
 	data, err := storage.ReadPath(ctx, bucket, path)
 	p.logDebugCommitKey(
@@ -235,7 +235,7 @@ func (p *commitStore) putCommit(
 	if err != nil {
 		return err
 	}
-	bucket := p.getReadWriteBucketForDir(commitKey)
+	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
 	externalCommit := externalCommit{
 		Version:    externalCommitVersion,
@@ -254,7 +254,7 @@ func (p *commitStore) putCommit(
 	return storage.PutPath(ctx, bucket, path, data, storage.PutWithAtomic())
 }
 
-func (p *commitStore) getReadWriteBucketForDir(commitKey bufmodule.CommitKey) storage.ReadWriteBucket {
+func (p *commitStore) getReadWriteBucketForDir(ctx context.Context, commitKey bufmodule.CommitKey) storage.ReadWriteBucket {
 	dirPath := getCommitStoreDirPath(commitKey)
 	p.logDebugCommitKey(
 		ctx,

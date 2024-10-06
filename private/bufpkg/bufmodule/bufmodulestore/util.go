@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
-func logDebugModuleKey(ctx context.Context, logger *slog.Logger, moduleKey bufmodule.ModuleKey, message string, fields any) {
+func logDebugModuleKey(ctx context.Context, logger *slog.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...any) {
 	logger.DebugContext(
 		ctx,
 		message,

@@ -241,7 +241,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// the module data.
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
-		ctx
+		ctx,
 		moduleKey,
 		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
 		slog.Bool("found", err == nil),
