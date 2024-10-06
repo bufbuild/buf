@@ -29,6 +29,16 @@ var (
 	NopHandler slog.Handler = nopHandler{}
 )
 
+// ErrorAttr returns a slog.Attr for the error.
+//
+// If err is nil, this returns slog.Attr{}.
+func ErrorAttr(err error) slog.Attr {
+	if err == nil {
+		return slog.Attr{}
+	}
+	return slog.Any("error", err)
+}
+
 // DebugProfile will result in the function's elapsed time being printed as a debug log line.
 func DebugProfile(logger *slog.Logger, extraFields ...any) func() {
 	message := getRuntimeFrame(2).Function
