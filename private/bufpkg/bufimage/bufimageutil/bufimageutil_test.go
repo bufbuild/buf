@@ -22,6 +22,9 @@ import (
 	"sort"
 	"testing"
 
+	"log/slog"
+	"log/slog/zaptest"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
@@ -33,7 +36,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -233,7 +235,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
+func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
 		return nil, nil, err

@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"log/slog"
+
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
@@ -35,7 +37,7 @@ import (
 
 // NewUploader returns a new Uploader for the given API client.
 func NewUploader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1ModuleServiceClientProvider
 		bufapi.V1UploadServiceClientProvider
@@ -65,7 +67,7 @@ func UploaderWithPublicRegistry(publicRegistry string) UploaderOption {
 // *** PRIVATE ***
 
 type uploader struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	clientProvider interface {
 		bufapi.V1ModuleServiceClientProvider
 		bufapi.V1UploadServiceClientProvider
@@ -75,7 +77,7 @@ type uploader struct {
 }
 
 func newUploader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1ModuleServiceClientProvider
 		bufapi.V1UploadServiceClientProvider

@@ -25,18 +25,19 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type responseWriter struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
 func newResponseWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *responseWriter {
 	return &responseWriter{
 		logger: logger,

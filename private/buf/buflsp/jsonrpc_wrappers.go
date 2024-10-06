@@ -20,6 +20,8 @@ package buflsp
 import (
 	"context"
 
+	"log/slog"
+
 	"go.lsp.dev/jsonrpc2"
 	"go.uber.org/zap"
 )
@@ -52,7 +54,7 @@ func (l *lsp) wrapReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2
 type connWrapper struct {
 	jsonrpc2.Conn
 
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
 func (c *connWrapper) Call(

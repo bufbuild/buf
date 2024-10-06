@@ -21,6 +21,8 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -72,7 +74,7 @@ type moduleBucketAndModuleTargeting struct {
 
 func newWorkspaceTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config *workspaceBucketConfig,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
@@ -397,7 +399,7 @@ func v1WorkspaceTargeting(
 // 3. In the case where we find nothing, we set the input as a v1 module in a v1 workspace.
 func fallbackWorkspaceTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config *workspaceBucketConfig,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
@@ -732,7 +734,7 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 // nice to be able to isolate this as fallback logic here.
 func checkForControllingWorkspaceOrV1Module(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	path string,
 	ignoreWorkspaceCheck bool,

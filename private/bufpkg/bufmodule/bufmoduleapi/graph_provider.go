@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"log/slog"
+
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
@@ -27,12 +29,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
 // NewGraphProvider returns a new GraphProvider for the given API client.
 func NewGraphProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1GraphServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider
@@ -74,7 +75,7 @@ func GraphProviderWithPublicRegistry(publicRegistry string) GraphProviderOption 
 // *** PRIVATE ***
 
 type graphProvider struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	clientProvider interface {
 		bufapi.V1GraphServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider
@@ -86,7 +87,7 @@ type graphProvider struct {
 }
 
 func newGraphProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1GraphServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider

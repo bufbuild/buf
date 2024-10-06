@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"log/slog/zaptest"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
@@ -32,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {

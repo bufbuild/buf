@@ -22,13 +22,15 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -89,7 +91,7 @@ type lsp struct {
 	conn   jsonrpc2.Conn
 	client protocol.Client
 
-	logger      *zap.Logger
+	logger      *slog.Logger
 	controller  bufctl.Controller
 	checkClient bufcheck.Client
 	rootBucket  storage.ReadBucket
@@ -149,7 +151,7 @@ func (l *lsp) findImportable(
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
 	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		defer zaputil.DebugProfile(l.logger, zap.String("method", req.Method()), zap.ByteString("params", req.Params()))()
+		defer slogutil.DebugProfile(l.logger, zap.String("method", req.Method()), zap.ByteString("params", req.Params()))()
 
 		ctx = withRequestID(ctx)
 

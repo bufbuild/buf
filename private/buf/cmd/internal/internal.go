@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/protoplugin"
 )
 
@@ -86,7 +86,7 @@ func NewAppextContainerForPluginEnv(
 	logLevel string,
 	logFormat string,
 ) (appext.Container, error) {
-	logger, err := zaputil.NewLoggerForFlagValues(
+	logger, err := slogutil.NewLoggerForFlagValues(
 		pluginEnv.Stderr,
 		logLevel,
 		logFormat,

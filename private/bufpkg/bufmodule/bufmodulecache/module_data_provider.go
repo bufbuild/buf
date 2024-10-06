@@ -17,17 +17,18 @@ package bufmodulecache
 import (
 	"context"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider that caches the results of the delegate.
 //
 // The ModuleDataStore is used as a cache.
 func NewModuleDataProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
 ) bufmodule.ModuleDataProvider {
@@ -41,7 +42,7 @@ type moduleDataProvider struct {
 }
 
 func newModuleDataProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
 ) *moduleDataProvider {

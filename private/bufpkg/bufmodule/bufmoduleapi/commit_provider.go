@@ -18,18 +18,19 @@ import (
 	"context"
 	"time"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // NewCommitProvider returns a new CommitProvider for the given API client.
 func NewCommitProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider
@@ -43,7 +44,7 @@ func NewCommitProvider(
 // *** PRIVATE ***
 
 type commitProvider struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider
@@ -53,7 +54,7 @@ type commitProvider struct {
 }
 
 func newCommitProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider

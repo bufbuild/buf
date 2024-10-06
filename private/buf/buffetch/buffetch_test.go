@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -133,7 +135,7 @@ func testRoundTripLocalFile(
 	require.Equal(t, string(expectedData), string(actualData))
 }
 
-func testNewFetchReader(logger *zap.Logger) internal.Reader {
+func testNewFetchReader(logger *slog.Logger) internal.Reader {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	return internal.NewReader(
 		logger,
@@ -142,7 +144,7 @@ func testNewFetchReader(logger *zap.Logger) internal.Reader {
 	)
 }
 
-func testNewFetchWriter(logger *zap.Logger) internal.Writer {
+func testNewFetchWriter(logger *slog.Logger) internal.Writer {
 	return internal.NewWriter(
 		logger,
 		internal.WithWriterLocal(),

@@ -22,6 +22,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/lmittmann/tint"
 )
 
 // DebugProfile will result in the function's elapsed time being printed as a debug log line.
@@ -79,8 +81,7 @@ func getHandler(writer io.Writer, level slog.Level, formatString string) (slog.H
 	case "text":
 		return slog.NewTextHandler(writer, &slog.HandlerOptions{Level: level}), nil
 	case "color", "":
-		// TODO
-		return slog.NewTextHandler(writer, &slog.HandlerOptions{Level: level}), nil
+		return tint.NewHandler(writer, &tint.Options{Level: level}), nil
 	case "json":
 		return slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: level}), nil
 	default:

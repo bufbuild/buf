@@ -19,11 +19,12 @@ import (
 	"sort"
 	"strings"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -87,7 +88,7 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 }
 
 func checkRequiredFeatures(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	required *requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
 	configs []bufconfig.GeneratePluginConfig,

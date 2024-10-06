@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	"log/slog/zapcore"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
@@ -34,10 +36,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // NewCommand returns a new Command.
@@ -90,7 +91,7 @@ func run(
 ) (retErr error) {
 	runner := command.NewRunner()
 	logger := container.Logger()
-	defer zaputil.DebugProfile(logger)()
+	defer slogutil.DebugProfile(logger)()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -174,7 +175,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				defer zaputil.DebugProfile(logger)()
+				defer slogutil.DebugProfile(logger)()
 				images, err = bufimage.ImageByDir(image)
 				return err
 			}

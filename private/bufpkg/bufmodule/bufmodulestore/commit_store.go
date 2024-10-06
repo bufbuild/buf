@@ -22,6 +22,8 @@ import (
 	"io/fs"
 	"time"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -62,7 +64,7 @@ type CommitStore interface {
 //
 // This is typically used to interact with a cache directory.
 func NewCommitStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 ) CommitStore {
 	return newCommitStore(logger, bucket)
@@ -71,12 +73,12 @@ func NewCommitStore(
 /// *** PRIVATE ***
 
 type commitStore struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	bucket storage.ReadWriteBucket
 }
 
 func newCommitStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 ) *commitStore {
 	return &commitStore{

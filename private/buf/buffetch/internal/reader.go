@@ -25,6 +25,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -46,7 +48,7 @@ import (
 )
 
 type reader struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 
 	localEnabled bool
@@ -64,7 +66,7 @@ type reader struct {
 }
 
 func newReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ReaderOption,
 ) *reader {
@@ -563,7 +565,7 @@ func getGitURL(gitRef GitRef) (string, error) {
 // Use for memory buckets i.e. archive and git.
 func getReadBucketCloserForBucket(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
 	targetPaths []string,
@@ -622,7 +624,7 @@ func getReadBucketCloserForBucket(
 // Use for directory-based buckets.
 func getReadWriteBucketForOS(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
 	targetPaths []string,
@@ -803,7 +805,7 @@ func getReadWriteBucketForOS(
 // Use for ProtoFileRefs.
 func getReadBucketCloserForOSProtoFile(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	protoFilePath string,
 	terminateFunc buftarget.TerminateFunc,

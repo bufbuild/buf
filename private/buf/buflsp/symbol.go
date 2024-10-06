@@ -26,11 +26,12 @@ import (
 	"slices"
 	"strings"
 
+	"log/slog/zapcore"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // symbol represents a named symbol inside of a buflsp.file

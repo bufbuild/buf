@@ -17,16 +17,17 @@ package bufmoduleapi
 import (
 	"context"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
 // NewModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
 func NewModuleKeyProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1Beta1CommitServiceClientProvider
@@ -38,7 +39,7 @@ func NewModuleKeyProvider(
 // *** PRIVATE ***
 
 type moduleKeyProvider struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1Beta1CommitServiceClientProvider
@@ -46,7 +47,7 @@ type moduleKeyProvider struct {
 }
 
 func newModuleKeyProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1Beta1CommitServiceClientProvider

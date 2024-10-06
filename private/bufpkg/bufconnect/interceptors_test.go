@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,7 +112,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
-	logger, err := zaputil.NewLoggerForFlagValues(&buf, "warn", "text")
+	logger, err := slogutil.NewLoggerForFlagValues(&buf, "warn", "text")
 	require.NoError(t, err)
 	// testing valid warning message
 	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -136,7 +136,7 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
-	logger, err := zaputil.NewLoggerForFlagValues(&buf, "warn", "text")
+	logger, err := slogutil.NewLoggerForFlagValues(&buf, "warn", "text")
 	require.NoError(t, err)
 	// testing valid warning message from error
 	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {

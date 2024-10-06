@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -28,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -42,7 +43,7 @@ Created-By: 1.6.0 (protoc)
 )
 
 type responseWriter struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	responseWriter    bufprotoplugin.ResponseWriter
 	// If set, create directories if they don't already exist.
@@ -71,7 +72,7 @@ type responseWriter struct {
 }
 
 func newResponseWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ResponseWriterOption,
 ) *responseWriter {

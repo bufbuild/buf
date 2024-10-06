@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"time"
 
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -103,7 +105,7 @@ func RunWithoutH2C() RunOption {
 // The Run function can be configured further by passing a variety of options.
 func Run(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	listener net.Listener,
 	handler http.Handler,
 	options ...RunOption,

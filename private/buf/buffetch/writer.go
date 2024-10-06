@@ -18,9 +18,10 @@ import (
 	"context"
 	"io"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.uber.org/zap"
 )
 
 type writer struct {
@@ -28,7 +29,7 @@ type writer struct {
 }
 
 func newWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *writer {
 	return &writer{
 		internalWriter: internal.NewWriter(

@@ -19,6 +19,8 @@ import (
 	"io"
 	"net/http"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -26,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 type reader struct {
@@ -34,7 +35,7 @@ type reader struct {
 }
 
 func newReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -62,7 +63,7 @@ func newReader(
 }
 
 func newMessageReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -83,7 +84,7 @@ func newMessageReader(
 }
 
 func newSourceReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -107,7 +108,7 @@ func newSourceReader(
 }
 
 func newDirReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 ) *reader {
 	return &reader{
@@ -120,7 +121,7 @@ func newDirReader(
 }
 
 func newModuleFetcher(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) *reader {

@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/fs"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -30,11 +32,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type migrateBuilder struct {
-	logger             *zap.Logger
+	logger             *slog.Logger
 	runner             command.Runner
 	commitProvider     bufmodule.CommitProvider
 	bucket             storage.ReadBucket
@@ -54,7 +55,7 @@ type migrateBuilder struct {
 }
 
 func newMigrateBuilder(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	commitProvider bufmodule.CommitProvider,
 	bucket storage.ReadBucket,

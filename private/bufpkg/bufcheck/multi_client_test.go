@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	"log/slog/zaptest"
+
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/check/checktest"
 	"buf.build/go/bufplugin/check/checkutil"
@@ -30,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

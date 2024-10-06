@@ -15,12 +15,14 @@
 package bufmodulestore
 
 import (
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
-func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
+func logDebugModuleKey(logger *slog.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
 	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
 		checkedEntry.Write(
 			append(
@@ -34,7 +36,7 @@ func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, messag
 	}
 }
 
-func logDebugCommitKey(logger *zap.Logger, commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
+func logDebugCommitKey(logger *slog.Logger, commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
 	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
 		checkedEntry.Write(
 			append(

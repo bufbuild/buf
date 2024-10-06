@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
 	"github.com/docker/docker/api/types"
 	imagetypes "github.com/docker/docker/api/types/image"
@@ -104,7 +106,7 @@ type InspectResponse struct {
 
 type dockerAPIClient struct {
 	cli        *client.Client
-	logger     *zap.Logger
+	logger     *slog.Logger
 	lock       sync.RWMutex // protects negotiated
 	negotiated bool
 }
@@ -276,7 +278,7 @@ func (d *dockerAPIClient) negotiateVersion(ctx context.Context) error {
 }
 
 // NewClient creates a new Client to use to build Docker plugins.
-func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (Client, error) {
+func NewClient(logger *slog.Logger, cliVersion string, options ...ClientOption) (Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger required")
 	}

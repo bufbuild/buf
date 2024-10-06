@@ -85,6 +85,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/pprof v0.0.0-20240929191954-255acd752d31 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/lmittmann/tint v1.0.5 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect

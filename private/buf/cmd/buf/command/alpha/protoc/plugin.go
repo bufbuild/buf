@@ -19,12 +19,13 @@ import (
 	"fmt"
 	"strings"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -43,7 +44,7 @@ func newPluginInfo() *pluginInfo {
 
 func executePlugin(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	container app.EnvStderrContainer,

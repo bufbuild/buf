@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"log/slog"
+
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -38,19 +40,18 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger              *zap.Logger
+	logger              *slog.Logger
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufprotopluginexec.Generator
 	clientConfig        *connectclient.Config
 }
 
 func newGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	clientConfig *connectclient.Config,

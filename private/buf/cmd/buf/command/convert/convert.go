@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -32,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 )
 
 const (
@@ -262,7 +263,7 @@ func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncodin
 // wellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
 func wellKnownTypeImage(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	wellKnownTypeName string,
 ) (bufimage.Image, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)

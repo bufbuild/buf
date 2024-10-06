@@ -26,6 +26,8 @@ import (
 	"net/textproto"
 	"net/url"
 
+	"log/slog"
+
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -50,7 +52,7 @@ const MaxMessageSizeBytesDefault = 1024 * 1024 * 5
 //
 // [1] https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).
 type plainPostHandler struct {
-	Logger              *zap.Logger
+	Logger              *slog.Logger
 	MaxMessageSizeBytes int64
 	B64Encoding         *base64.Encoding
 	TLSClient           *http.Client
@@ -60,7 +62,7 @@ type plainPostHandler struct {
 }
 
 func newPlainPostHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	disallowedHeaders map[string]struct{},
 	forwardHeaders map[string]string,
 	tlsClientConfig *tls.Config,

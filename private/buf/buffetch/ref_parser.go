@@ -22,20 +22,21 @@ import (
 	"path/filepath"
 	"strings"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 type refParser struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	fetchRefParser internal.RefParser
 }
 
-func newRefParser(logger *zap.Logger) *refParser {
+func newRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -89,7 +90,7 @@ func newRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) *refParser {
+func newMessageRefParser(logger *slog.Logger, options ...MessageRefParserOption) *refParser {
 	messageRefParserOptions := newMessageRefParserOptions()
 	for _, option := range options {
 		option(messageRefParserOptions)
@@ -128,7 +129,7 @@ func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) 
 	}
 }
 
-func newSourceRefParser(logger *zap.Logger) *refParser {
+func newSourceRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -156,7 +157,7 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newDirRefParser(logger *zap.Logger) *refParser {
+func newDirRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -167,7 +168,7 @@ func newDirRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newDirOrProtoFileRefParser(logger *zap.Logger) *refParser {
+func newDirOrProtoFileRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -179,7 +180,7 @@ func newDirOrProtoFileRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newModuleRefParser(logger *zap.Logger) *refParser {
+func newModuleRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -190,7 +191,7 @@ func newModuleRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
+func newSourceOrModuleRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(

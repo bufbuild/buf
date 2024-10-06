@@ -21,6 +21,8 @@ import (
 	"io/fs"
 	"testing"
 
+	"log/slog/zaptest"
+
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
@@ -32,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestBasicV1(t *testing.T) {

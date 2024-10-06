@@ -23,6 +23,8 @@ import (
 	"net/http"
 	"sort"
 
+	"log/slog"
+
 	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
@@ -131,7 +133,7 @@ type Controller interface {
 }
 
 func NewController(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	container app.EnvStdioContainer,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
@@ -166,7 +168,7 @@ func NewController(
 // it out again. The separation of concerns here is that the controller doesnt itself
 // deal in the global variables.
 type controller struct {
-	logger             *zap.Logger
+	logger             *slog.Logger
 	container          app.EnvStdioContainer
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
@@ -188,7 +190,7 @@ type controller struct {
 }
 
 func newController(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	container app.EnvStdioContainer,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,

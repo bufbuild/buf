@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
@@ -25,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // ModuleKeysAndTransitiveDepModuleKeysForModuleKeys gets the ModuleKeys for the
@@ -56,7 +57,7 @@ func ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 // Used by dep/mod prune.
 func Prune(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	controller bufctl.Controller,
 	// Contains all the Modules and their transitive dependencies based on the  buf.yaml.
 	//
@@ -112,7 +113,7 @@ func Prune(
 // dependencies as warnings to the user.
 func LogUnusedConfiguredDepsForWorkspace(
 	workspace bufworkspace.Workspace,
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) error {
 	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
 	if err != nil {

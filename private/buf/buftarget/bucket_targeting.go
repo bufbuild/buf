@@ -17,6 +17,8 @@ package buftarget
 import (
 	"context"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -52,7 +54,7 @@ type BucketTargeting interface {
 // Otherwise, the input dir, target paths, and target exclude paths are returned as-is.
 func NewBucketTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	subDirPath string,
 	targetPaths []string,
@@ -83,7 +85,7 @@ type bucketTargeting struct {
 
 func newBucketTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	subDirPath string,
 	targetPaths []string,
@@ -161,7 +163,7 @@ func (*bucketTargeting) isBucketTargeting() {}
 // controlling workspace and mapped path.
 func mapControllingWorkspaceAndPath(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	path string,
 	terminateFunc TerminateFunc,

@@ -23,15 +23,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogutil"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -40,7 +42,7 @@ import (
 )
 
 type protocProxyHandler struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	protocPath        string
@@ -49,7 +51,7 @@ type protocProxyHandler struct {
 }
 
 func newProtocProxyHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	protocPath string,
@@ -72,7 +74,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	defer zaputil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginName)))()
+	defer slogutil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginName)))()
 
 	// We should send the complete FileDescriptorSet with source-retention options to --descriptor_set_in.
 	//

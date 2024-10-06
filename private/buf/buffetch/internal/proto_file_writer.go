@@ -21,18 +21,19 @@ import (
 	"io"
 	"os"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"go.uber.org/zap"
 )
 
 type protoFileWriter struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
 func newProtoFileWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *protoFileWriter {
 	return &protoFileWriter{
 		logger: logger,

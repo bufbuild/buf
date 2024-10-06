@@ -18,6 +18,8 @@ import (
 	"context"
 	"sync"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -25,7 +27,7 @@ import (
 )
 
 type state struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	envStdioContainer app.EnvStdioContainer
 	runner            command.Runner
 	violationMap      map[string]Violation
@@ -41,7 +43,7 @@ type state struct {
 }
 
 func newState(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	envStdioContainer app.EnvStdioContainer,
 	runner command.Runner,
 ) *state {

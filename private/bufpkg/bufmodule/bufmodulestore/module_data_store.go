@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/fs"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/filelock"
@@ -78,7 +80,7 @@ type ModuleDataStore interface {
 //
 // This is typically used to interact with a cache directory.
 func NewModuleDataStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
@@ -102,7 +104,7 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	bucket storage.ReadWriteBucket
 	locker filelock.Locker
 
@@ -110,7 +112,7 @@ type moduleDataStore struct {
 }
 
 func newModuleDataStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 	locker filelock.Locker,
 	options ...ModuleDataStoreOption,

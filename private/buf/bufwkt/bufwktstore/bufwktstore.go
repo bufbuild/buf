@@ -17,9 +17,10 @@ package bufwktstore
 import (
 	"context"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 // Store provides disk-backed WKT buckets.
@@ -34,7 +35,7 @@ type Store interface {
 //
 // It is assumed that the Store has complete control of the bucket.
 func NewStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	bucket storage.ReadWriteBucket,
 ) Store {

@@ -19,8 +19,9 @@ import (
 	"context"
 	"net/http"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 // ArchiveReader reads GitHub archives.
@@ -46,7 +47,7 @@ type ArchiveReader interface {
 
 // NewArchiveReader returns a new ArchiveReader.
 func NewArchiveReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 ) ArchiveReader {

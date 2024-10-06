@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"sort"
 
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.uber.org/zap"
 )
 
 // NewModuleSetForProtoc returns a new ModuleSet for protoc -I dirPaths and filePaths.
@@ -38,7 +39,7 @@ import (
 // that is banned in protoc.
 func NewModuleSetForProtoc(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	includeDirPaths []string,
 	filePaths []string,
