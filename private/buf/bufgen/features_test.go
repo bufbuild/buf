@@ -15,12 +15,13 @@
 package bufgen
 
 import (
+	"bytes"
+	"log/slog"
 	"math"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -171,8 +172,10 @@ func testCheckRequiredFeatures(
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
+	buffer := bytes.NewBuffer(nil)
+	logger := slog.New(slog.NewTextHandler(buffer, &slog.HandlerOptions{}))
 	err := checkRequiredFeatures(
-		slogext.NopLogger,
+		logger,
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
@@ -189,10 +192,9 @@ func testCheckRequiredFeatures(
 		},
 	)
 	if expectedStdErr != "" {
-		require.NotEmpty(t, logs.All())
-		require.Equal(t, expectedStdErr, logs.All()[0].Message)
+		require.NotEmpty(t, buffer.String())
 	} else {
-		require.Empty(t, logs.All())
+		require.Empty(t, buffer.String())
 	}
 	if expectedErr != "" {
 		require.ErrorContains(t, err, expectedErr)
