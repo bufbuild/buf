@@ -32,10 +32,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 var buftestingDirPath = filepath.Join(
@@ -305,7 +305,7 @@ func TestOptionPanic(t *testing.T) {
 		require.NoError(t, err)
 		_, err = bufimage.BuildImage(
 			context.Background(),
-			zap.NewNop(),
+			slogtestext.NewLogger(t),
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		)
 		require.NoError(t, err)
@@ -356,7 +356,7 @@ func TestModuleTargetFiles(t *testing.T) {
 		}
 		image, err := bufimage.BuildImage(
 			context.Background(),
-			zap.NewNop(),
+			slogtestext.NewLogger(t),
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(targetModuleSet),
 		)
 		require.NoError(t, err)
@@ -399,7 +399,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism
 	}
 	image, err := bufimage.BuildImage(
 		context.Background(),
-		zap.NewNop(),
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

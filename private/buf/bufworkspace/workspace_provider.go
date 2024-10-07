@@ -19,18 +19,18 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // WorkspaceProvider provides Workspaces and UpdateableWorkspaces.
@@ -72,7 +72,7 @@ type WorkspaceProvider interface {
 
 // NewWorkspaceProvider returns a new WorkspaceProvider.
 func NewWorkspaceProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -88,14 +88,14 @@ func NewWorkspaceProvider(
 // *** PRIVATE ***
 
 type workspaceProvider struct {
-	logger             *zap.Logger
+	logger             *slog.Logger
 	graphProvider      bufmodule.GraphProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 	commitProvider     bufmodule.CommitProvider
 }
 
 func newWorkspaceProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -113,7 +113,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	defer zaputil.DebugProfile(w.logger)()
+	defer slogext.DebugProfile(w.logger)()
 
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
@@ -219,7 +219,7 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucketTargeting buftarget.BucketTargeting,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	defer zaputil.DebugProfile(w.logger)()
+	defer slogext.DebugProfile(w.logger)()
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err

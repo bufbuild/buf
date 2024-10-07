@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"os"
 	"sort"
 	"testing"
@@ -26,14 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/google/uuid"
 	"github.com/jhump/protoreflect/v2/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -174,7 +174,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -209,7 +209,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -233,7 +233,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
+func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
 		return nil, nil, err
@@ -244,7 +244,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
@@ -256,7 +256,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
+	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -320,7 +320,7 @@ func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket s
 
 func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), "testdata/sourcecodeinfo")
+	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, []string{typename}, opts...)
@@ -453,7 +453,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 	}
 	ctx := context.Background()
 	for _, benchmarkCase := range benchmarkCases {
-		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder, opts...)
+		_, image, err := getImage(ctx, slogtestext.NewLogger(b), benchmarkCase.folder, opts...)
 		require.NoError(b, err)
 		benchmarkCase.image = image
 	}

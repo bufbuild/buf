@@ -34,6 +34,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -41,7 +42,6 @@ import (
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -131,9 +131,7 @@ func assertImageDigestFromStatusString(t *testing.T, status string, expectedDige
 
 func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
-	logger, err := zap.NewDevelopment()
-	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := NewClient(logger, "buf-cli-1.11.0", options...)
+	dockerClient, err := NewClient(slogtestext.NewLogger(t), "buf-cli-1.11.0", options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {

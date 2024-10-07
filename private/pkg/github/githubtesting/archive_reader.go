@@ -18,6 +18,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"sync"
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 // since we are in testing, we care less about making sure this times out early
@@ -37,14 +37,14 @@ import (
 const filelockTimeout = 10 * time.Second
 
 type archiveReader struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	httpClient        *http.Client
 	lock              sync.Mutex
 }
 
 func newArchiveReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 ) *archiveReader {

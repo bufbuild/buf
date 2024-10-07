@@ -16,17 +16,17 @@ package bufmodulecache
 
 import (
 	"context"
+	"log/slog"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 type baseProvider[K any, V any] struct {
-	logger                   *zap.Logger
+	logger                   *slog.Logger
 	delegateGetValuesForKeys func(context.Context, []K) ([]V, error)
 	storeGetValuesForKeys    func(context.Context, []K) ([]V, []K, error)
 	storePutValues           func(context.Context, []V) error
@@ -38,7 +38,7 @@ type baseProvider[K any, V any] struct {
 }
 
 func newBaseProvider[K any, V any](
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegateGetValuesForKeys func(context.Context, []K) ([]V, error),
 	storeGetValuesForKeys func(context.Context, []K) ([]V, []K, error),
 	storePutValues func(context.Context, []V) error,

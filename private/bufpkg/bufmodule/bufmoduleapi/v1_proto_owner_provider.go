@@ -17,12 +17,12 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/cache"
-	"go.uber.org/zap"
 )
 
 // v1ProtoOwnerProvider provides a per-call provider of proto Modules.
@@ -30,13 +30,13 @@ import (
 // We don't want to persist these across calls - this could grow over time and this cache
 // isn't an LRU cache, and the information also may change over time.
 type v1ProtoOwnerProvider struct {
-	logger          *zap.Logger
+	logger          *slog.Logger
 	clientProvider  bufapi.V1OwnerServiceClientProvider
 	protoOwnerCache cache.Cache[string, *ownerv1.Owner]
 }
 
 func newV1ProtoOwnerProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider bufapi.V1OwnerServiceClientProvider,
 ) *v1ProtoOwnerProvider {
 	return &v1ProtoOwnerProvider{

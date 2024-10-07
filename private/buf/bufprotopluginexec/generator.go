@@ -16,23 +16,23 @@ package bufprotopluginexec
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
 }
 
 func newGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 ) *generator {

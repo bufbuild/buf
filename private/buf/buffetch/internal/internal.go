@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -29,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 const (
@@ -400,7 +400,7 @@ type RefParser interface {
 }
 
 // NewRefParser returns a new RefParser.
-func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
+func NewRefParser(logger *slog.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
@@ -462,7 +462,7 @@ type Reader interface {
 
 // NewReader returns a new Reader.
 func NewReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ReaderOption,
 ) Reader {
@@ -486,7 +486,7 @@ type Writer interface {
 
 // NewWriter returns a new Writer.
 func NewWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	options ...WriterOption,
 ) Writer {
 	return newWriter(
@@ -507,7 +507,7 @@ type ProtoFileWriter interface {
 
 // NewProtoWriter returns a new ProtoWriter.
 func NewProtoFileWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) ProtoFileWriter {
 	return newProtoFileWriter(
 		logger,

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -48,7 +49,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -305,8 +305,8 @@ func run(
 		// Plugin with the same image digest and metadata already exists
 		container.Logger().Info(
 			"plugin already exists",
-			zap.String("name", pluginConfig.Name.IdentityString()),
-			zap.String("digest", plugin.ContainerImageDigest()),
+			slog.String("name", pluginConfig.Name.IdentityString()),
+			slog.String("digest", plugin.ContainerImageDigest()),
 		)
 		curatedPlugin = latestPluginResp.Msg.Plugin
 	} else {

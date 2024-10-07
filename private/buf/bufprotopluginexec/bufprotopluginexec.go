@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os/exec"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -29,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -75,7 +75,7 @@ type Generator interface {
 
 // NewGenerator returns a new Generator.
 func NewGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 ) Generator {
@@ -112,7 +112,7 @@ func GenerateWithProtocPath(protocPath ...string) GenerateOption {
 //   - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
 //   - Else, this returns error.
 func NewHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	pluginName string,
@@ -180,7 +180,7 @@ func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
-func NewBinaryHandler(logger *zap.Logger, runner command.Runner, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
+func NewBinaryHandler(logger *slog.Logger, runner command.Runner, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err

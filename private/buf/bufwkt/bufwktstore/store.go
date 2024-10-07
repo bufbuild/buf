@@ -16,21 +16,21 @@ package bufwktstore
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 type store struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	runner command.Runner
 	bucket storage.ReadWriteBucket
 }
 
 func newStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	bucket storage.ReadWriteBucket,
 ) *store {

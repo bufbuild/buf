@@ -16,16 +16,16 @@ package bandeps
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"go.uber.org/zap"
 )
 
 type state struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	envStdioContainer app.EnvStdioContainer
 	runner            command.Runner
 	violationMap      map[string]Violation
@@ -41,7 +41,7 @@ type state struct {
 }
 
 func newState(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	envStdioContainer app.EnvStdioContainer,
 	runner command.Runner,
 ) *state {
@@ -113,7 +113,7 @@ func (s *state) packagesForPackageExpression(
 ) (map[string]struct{}, error) {
 	defer func() {
 		// not worrying about locks
-		s.logger.Debug("cache", zap.Int("calls", s.calls), zap.Int("hits", s.cacheHits))
+		s.logger.DebugContext(ctx, "cache", slog.Int("calls", s.calls), slog.Int("hits", s.cacheHits))
 	}()
 
 	s.packageExpressionToPackagesLock.RLock(packageExpression)
@@ -168,7 +168,7 @@ func (s *state) depsForPackage(
 ) (map[string]struct{}, error) {
 	defer func() {
 		// not worrying about locks
-		s.logger.Debug("cache", zap.Int("calls", s.calls), zap.Int("hits", s.cacheHits))
+		s.logger.DebugContext(ctx, "cache", slog.Int("calls", s.calls), slog.Int("hits", s.cacheHits))
 	}()
 
 	s.packageToDepsLock.RLock(pkg)

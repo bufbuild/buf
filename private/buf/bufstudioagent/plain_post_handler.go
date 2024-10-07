@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -29,7 +30,7 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.uber.org/zap"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 )
@@ -50,7 +51,7 @@ const MaxMessageSizeBytesDefault = 1024 * 1024 * 5
 //
 // [1] https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).
 type plainPostHandler struct {
-	Logger              *zap.Logger
+	Logger              *slog.Logger
 	MaxMessageSizeBytes int64
 	B64Encoding         *base64.Encoding
 	TLSClient           *http.Client
@@ -60,7 +61,7 @@ type plainPostHandler struct {
 }
 
 func newPlainPostHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	disallowedHeaders map[string]struct{},
 	forwardHeaders map[string]string,
 	tlsClientConfig *tls.Config,
@@ -201,7 +202,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		i.Logger.Warn(
 			"non_connect_unary_error",
-			zap.Error(err),
+			slogext.ErrorAttr(err),
 		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
@@ -250,9 +251,9 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 	if n, err := w.Write(responseB64Bytes); n != len(responseB64Bytes) && err != nil {
 		i.Logger.Error(
 			"write_error",
-			zap.Int("expected_bytes", len(responseB64Bytes)),
-			zap.Int("actual_bytes", n),
-			zap.Error(err),
+			slog.Int("expected_bytes", len(responseB64Bytes)),
+			slog.Int("actual_bytes", n),
+			slogext.ErrorAttr(err),
 		)
 	}
 }

@@ -17,10 +17,10 @@ package buffetch
 import (
 	"context"
 	"io"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.uber.org/zap"
 )
 
 type protoFileWriter struct {
@@ -28,7 +28,7 @@ type protoFileWriter struct {
 }
 
 func newProtoFileWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *protoFileWriter {
 	return &protoFileWriter{
 		internalProtoFileWriter: internal.NewProtoFileWriter(

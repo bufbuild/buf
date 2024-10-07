@@ -20,17 +20,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/klauspost/compress/zstd"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type writer struct {
-	logger *zap.Logger
+	logger *slog.Logger
 
 	// never set for now (no corresponding option)
 	httpEnabled  bool
@@ -39,7 +39,7 @@ type writer struct {
 }
 
 func newWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	options ...WriterOption,
 ) *writer {
 	writer := &writer{

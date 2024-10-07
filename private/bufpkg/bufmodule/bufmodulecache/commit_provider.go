@@ -16,18 +16,18 @@ package bufmodulecache
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // NewCommitProvider returns a new CommitProvider that caches the results of the delegate.
 //
 // The CommitStore is used as a cache.
 func NewCommitProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegate bufmodule.CommitProvider,
 	store bufmodulestore.CommitStore,
 ) bufmodule.CommitProvider {
@@ -42,7 +42,7 @@ type commitProvider struct {
 }
 
 func newCommitProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegate bufmodule.CommitProvider,
 	store bufmodulestore.CommitStore,
 ) *commitProvider {

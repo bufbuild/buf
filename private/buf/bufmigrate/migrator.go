@@ -17,8 +17,10 @@ package bufmigrate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -34,18 +36,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/google/uuid"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type migrator struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	runner            command.Runner
 	moduleKeyProvider bufmodule.ModuleKeyProvider
 	commitProvider    bufmodule.CommitProvider
 }
 
 func newMigrator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -95,13 +96,13 @@ func (m *migrator) logPaths(
 	bufGenYAMLFilePaths []string,
 ) {
 	if len(workspaceDirPaths) > 0 {
-		m.logger.Sugar().Debugf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n")))
 	}
 	if len(moduleDirPaths) > 0 {
-		m.logger.Sugar().Debugf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n")))
 	}
 	if len(bufGenYAMLFilePaths) > 0 {
-		m.logger.Sugar().Debugf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n")))
 	}
 }
 
@@ -645,7 +646,7 @@ func resolvedDeclaredAndLockedDependencies(
 
 func equivalentLintConfigInV2(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	lintConfig bufconfig.LintConfig,
 ) (bufconfig.LintConfig, error) {
@@ -672,7 +673,7 @@ func equivalentLintConfigInV2(
 
 func equivalentBreakingConfigInV2(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	breakingConfig bufconfig.BreakingConfig,
 ) (bufconfig.BreakingConfig, error) {
@@ -696,7 +697,7 @@ func equivalentBreakingConfigInV2(
 // list of rules and categories specified.
 func equivalentCheckConfigInV2(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,

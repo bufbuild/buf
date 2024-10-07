@@ -25,12 +25,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 var (
@@ -343,7 +343,7 @@ func newModuleSet(
 	// may be nil
 	commitIDToCreateTime map[uuid.UUID]time.Time,
 ) (bufmodule.ModuleSet, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), slogext.NopLogger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	for i, moduleData := range moduleDatas {
 		if err := addModuleDataToModuleSetBuilder(
 			moduleSetBuilder,

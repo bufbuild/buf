@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -27,8 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -41,6 +40,8 @@ const (
 // Application name foo-bar translates to environment variable prefix FOO_BAR_, which is
 // used for the various functions that NameContainer provides.
 type NameContainer interface {
+	app.Container
+
 	// AppName is the application name.
 	//
 	// The name must be in [a-zA-Z0-9-_].
@@ -75,36 +76,33 @@ type NameContainer interface {
 // NewNameContainer returns a new NameContainer.
 //
 // The name must be in [a-zA-Z0-9-_].
-func NewNameContainer(envContainer app.EnvContainer, appName string) (NameContainer, error) {
-	return newNameContainer(envContainer, appName)
+func NewNameContainer(baseContainer app.Container, appName string) (NameContainer, error) {
+	return newNameContainer(baseContainer, appName)
 }
 
-// LoggerContainer provides a *zap.Logger.
+// LoggerContainer provides a *slog.Logger.
 type LoggerContainer interface {
-	Logger() *zap.Logger
+	Logger() *slog.Logger
 }
 
 // NewLoggerContainer returns a new LoggerContainer.
-func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
+func NewLoggerContainer(logger *slog.Logger) LoggerContainer {
 	return newLoggerContainer(logger)
 }
 
 // Container contains not just the base app container, but all extended containers.
 type Container interface {
-	app.Container
 	NameContainer
 	LoggerContainer
 }
 
 // NewContainer returns a new Container.
 func NewContainer(
-	baseContainer app.Container,
-	appName string,
-	logger *zap.Logger,
-) (Container, error) {
+	nameContainer NameContainer,
+	logger *slog.Logger,
+) Container {
 	return newContainer(
-		baseContainer,
-		appName,
+		nameContainer,
 		logger,
 	)
 }
@@ -145,10 +143,15 @@ func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	}
 }
 
-// BuilderWithDefaultLogLevel adds the given default log level.
-func BuilderWithDefaultLogLevel(defaultLogLevel zapcore.Level) BuilderOption {
+// LoggerProvider provides new Loggers.
+type LoggerProvider func(NameContainer, LogLevel, LogFormat) (*slog.Logger, error)
+
+// BuilderWithLoggerProvider overrides the default LoggerProvider.
+//
+// The default is to use slogbuild.
+func BuilderWithLoggerProvider(loggerProvider LoggerProvider) BuilderOption {
 	return func(builder *builder) {
-		builder.defaultLogLevel = defaultLogLevel
+		builder.loggerProvider = loggerProvider
 	}
 }
 
@@ -164,7 +167,7 @@ func ReadConfig(container NameContainer, value interface{}) error {
 		if err != nil {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
 		}
-		if err := encoding.UnmarshalYAMLStrict(data, value); err != nil {
+		if err := encoding.UnmarshalYAMLNonStrict(data, value); err != nil {
 			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
 		}
 	}

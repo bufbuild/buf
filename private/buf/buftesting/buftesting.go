@@ -28,9 +28,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -49,7 +49,7 @@ var (
 	}
 	testStorageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	testArchiveReader     = githubtesting.NewArchiveReader(
-		zap.NewNop(),
+		slogext.NopLogger,
 		testStorageosProvider,
 		testHTTPClient,
 	)
@@ -135,7 +135,7 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 	// impact on our dependency tree.
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
-		zap.NewNop(),
+		slogext.NopLogger,
 		testStorageosProvider,
 		[]string{dirPath},
 		nil,

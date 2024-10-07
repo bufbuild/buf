@@ -29,12 +29,12 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestGitCloner(t *testing.T) {
@@ -305,7 +305,7 @@ func TestGitCloner(t *testing.T) {
 func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner, path string, depth uint32, name Name, recurseSubmodules bool) storage.ReadBucket {
 	t.Helper()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	cloner := NewCloner(zap.NewNop(), storageosProvider, runner, ClonerOptions{})
+	cloner := NewCloner(slogtestext.NewLogger(t), storageosProvider, runner, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 
