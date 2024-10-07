@@ -153,8 +153,8 @@ func CreateWasmRuntimeCacheDir(container appext.Container) (string, error) {
 	return fullCacheDirPath, nil
 }
 
-// newWKTStore returns a new bufwktstore.Store while creating the required cache directories.
-func newWKTStore(container appext.Container) (bufwktstore.Store, error) {
+// NewWKTStore returns a new bufwktstore.Store while creating the required cache directories.
+func NewWKTStore(container appext.Container) (bufwktstore.Store, error) {
 	if err := createCacheDir(container.CacheDirPath(), v3CacheWKTRelDirPath); err != nil {
 		return nil, err
 	}

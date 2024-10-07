@@ -44,7 +44,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -130,7 +129,6 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
-	GetWKTBucket(ctx context.Context) (storage.ReadBucket, error)
 }
 
 func NewController(
@@ -527,10 +525,6 @@ func (c *controller) GetImportableImageFileInfos(
 		},
 	)
 	return imageFileInfos, nil
-}
-
-func (c *controller) GetWKTBucket(ctx context.Context) (storage.ReadBucket, error) {
-	return c.wktStore.GetBucket(ctx)
 }
 
 func (c *controller) PutImage(

@@ -23,6 +23,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -57,6 +58,15 @@ func Serve(
 		return nil, err
 	}
 
+	wktStore, err := bufcli.NewWKTStore(container)
+	if err != nil {
+		return nil, err
+	}
+	wktBucket, err := wktStore.GetBucket(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
 		conn: conn,
@@ -69,6 +79,7 @@ func Serve(
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,
+		wktBucket:   wktBucket,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
@@ -113,17 +124,11 @@ type lsp struct {
 // init performs *actual* initialization of the server. This is called by Initialize().
 //
 // It may only be called once for a given server.
-func (l *lsp) init(ctx context.Context, params *protocol.InitializeParams) error {
+func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 	if l.initParams.Load() != nil {
 		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
 	}
 	l.initParams.Store(params)
-
-	wktBucket, err := l.controller.GetWKTBucket(ctx)
-	if err != nil {
-		return err
-	}
-	l.wktBucket = wktBucket
 
 	// TODO: set up logging. We need to forward everything from server.logger through to
 	// the client, if tracing is turned on. The right way to do this is with an extra
