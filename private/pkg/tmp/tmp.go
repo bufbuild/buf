@@ -98,7 +98,7 @@ func NewDir(ctx context.Context, options ...DirOption) (File, error) {
 	closer := func() error { return os.RemoveAll(absPath) }
 	go func() {
 		<-ctx.Done()
-		closer()
+		_ = closer()
 	}()
 	return newFile(closerFunc(closer), absPath), nil
 }
