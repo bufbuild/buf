@@ -105,8 +105,6 @@ func NewRootCommand(name string) *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
-		appext.BuilderWithTracing(),
-
 		appext.BuilderWithInterceptor(newErrorInterceptor()),
 	)
 	return &appcmd.Command{

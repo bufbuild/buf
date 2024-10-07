@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -45,7 +44,6 @@ func newPluginInfo() *pluginInfo {
 func executePlugin(
 	ctx context.Context,
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	container app.EnvStderrContainer,
@@ -55,7 +53,6 @@ func executePlugin(
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	generator := bufprotopluginexec.NewGenerator(
 		logger,
-		tracer,
 		storageosProvider,
 		runner,
 	)

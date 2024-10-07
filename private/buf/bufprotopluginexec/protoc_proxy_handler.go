@@ -31,35 +31,35 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
-	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type protocProxyHandler struct {
+	logger            *zap.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
-	tracer            tracing.Tracer
 	protocPath        string
 	protocExtraArgs   []string
 	pluginName        string
 }
 
 func newProtocProxyHandler(
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	tracer tracing.Tracer,
 	protocPath string,
 	protocExtraArgs []string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
+		logger:            logger,
 		storageosProvider: storageosProvider,
 		runner:            runner,
-		tracer:            tracer,
 		protocPath:        protocPath,
 		protocExtraArgs:   protocExtraArgs,
 		pluginName:        pluginName,
@@ -72,14 +72,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	ctx, span := h.tracer.Start(
-		ctx,
-		tracing.WithErr(&retErr),
-		tracing.WithAttributes(
-			attribute.Key("plugin").String(filepath.Base(h.pluginName)),
-		),
-	)
-	defer span.End()
+	defer zaputil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginName)))()
 
 	// We should send the complete FileDescriptorSet with source-retention options to --descriptor_set_in.
 	//
@@ -116,16 +109,16 @@ func (h *protocProxyHandler) Handle(
 	var tmpFile tmp.File
 	if descriptorFilePath == "" {
 		// since we have no stdin file (i.e. Windows), we're going to have to use a temporary file
-		tmpFile, err = tmp.NewFileWithData(fileDescriptorSetData)
+		tmpFile, err = tmp.NewFile(ctx, bytes.NewReader(fileDescriptorSetData))
 		if err != nil {
 			return err
 		}
 		defer func() {
 			retErr = multierr.Append(retErr, tmpFile.Close())
 		}()
-		descriptorFilePath = tmpFile.AbsPath()
+		descriptorFilePath = tmpFile.Path()
 	}
-	tmpDir, err := tmp.NewDir()
+	tmpDir, err := tmp.NewDir(ctx)
 	if err != nil {
 		return err
 	}
@@ -134,7 +127,7 @@ func (h *protocProxyHandler) Handle(
 	}()
 	args := slicesext.Concat(h.protocExtraArgs, []string{
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
-		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
+		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.Path()),
 	})
 	if getSetExperimentalAllowProto3OptionalFlag(protocVersion) {
 		args = append(
@@ -178,7 +171,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter.SetFeatureSupportsEditions(descriptorpb.Edition_EDITION_PROTO2, descriptorpb.Edition_EDITION_MAX)
 
 	// no need for symlinks here, and don't want to support
-	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
+	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.Path())
 	if err != nil {
 		return err
 	}

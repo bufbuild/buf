@@ -1446,17 +1446,17 @@ func RunTestSuite(
 		require.NoError(t, err)
 		require.False(t, isEmpty)
 
-		tmpDir, err := tmp.NewDir()
+		tmpDir, err := tmp.NewDir(ctx)
 		require.NoError(t, err)
-		readBucket, _ = newReadBucket(t, tmpDir.AbsPath(), defaultProvider)
+		readBucket, _ = newReadBucket(t, tmpDir.Path(), defaultProvider)
 		isEmpty, err = storage.IsEmpty(ctx, readBucket, "")
 		require.NoError(t, err)
 		require.True(t, isEmpty)
-		err = os.WriteFile(filepath.Join(tmpDir.AbsPath(), "foo.txt"), []byte("foo"), 0600)
+		err = os.WriteFile(filepath.Join(tmpDir.Path(), "foo.txt"), []byte("foo"), 0600)
 		require.NoError(t, err)
 		// need to make a new readBucket since the old one won't necessarily have the foo.txt
 		// file in it, ie in-memory buckets
-		readBucket, _ = newReadBucket(t, tmpDir.AbsPath(), defaultProvider)
+		readBucket, _ = newReadBucket(t, tmpDir.Path(), defaultProvider)
 		isEmpty, err = storage.IsEmpty(ctx, readBucket, "")
 		require.NoError(t, err)
 		require.False(t, isEmpty)

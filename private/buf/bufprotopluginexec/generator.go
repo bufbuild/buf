@@ -21,27 +21,23 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
 	logger            *zap.Logger
-	tracer            tracing.Tracer
 	storageosProvider storageos.Provider
 	runner            command.Runner
 }
 
 func newGenerator(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 ) *generator {
 	return &generator{
 		logger:            logger,
-		tracer:            tracer,
 		storageosProvider: storageosProvider,
 		runner:            runner,
 	}
@@ -63,9 +59,9 @@ func (g *generator) Generate(
 		HandlerWithProtocPath(generateOptions.protocPath...),
 	}
 	handler, err := NewHandler(
+		g.logger,
 		g.storageosProvider,
 		g.runner,
-		g.tracer,
 		pluginName,
 		handlerOptions...,
 	)

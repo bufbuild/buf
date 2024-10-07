@@ -326,8 +326,11 @@ func Main(ctx context.Context, f func(context.Context, Container) error) {
 // The run will be stopped on interrupt signal.
 // The exit code can be determined using GetExitCode.
 func Run(ctx context.Context, container Container, f func(context.Context, Container) error) error {
-	ctx, cancel := interrupt.WithCancel(ctx)
-	defer cancel()
+	ctx, cancel := interrupt.NotifyContext(ctx)
+	go func() {
+		<-ctx.Done()
+		cancel()
+	}()
 	if err := f(ctx, container); err != nil {
 		printError(container, err)
 		return err

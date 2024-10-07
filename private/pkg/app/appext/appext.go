@@ -26,9 +26,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/spf13/pflag"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -91,36 +89,11 @@ func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
 	return newLoggerContainer(logger)
 }
 
-// TracerContainer provides a trace.Tracer based on the application name.
-type TracerContainer interface {
-	Tracer() trace.Tracer
-}
-
-// NewTracerContainer returns a new TracerContainer for the application name.
-func NewTracerContainer(appName string) TracerContainer {
-	return newTracerContainer(appName)
-}
-
-// VerboseContainer provides a verbose.Printer.
-type VerboseContainer interface {
-	// VerboseEnabled returns true if verbose mode is enabled.
-	VerboseEnabled() bool
-	// VerbosePrinter returns a verbose.Printer to use for verbose printing.
-	VerbosePrinter() verbose.Printer
-}
-
-// NewVerboseContainer returns a new VerboseContainer.
-func NewVerboseContainer(verbosePrinter verbose.Printer) VerboseContainer {
-	return newVerboseContainer(verbosePrinter)
-}
-
 // Container contains not just the base app container, but all extended containers.
 type Container interface {
 	app.Container
 	NameContainer
 	LoggerContainer
-	TracerContainer
-	VerboseContainer
 }
 
 // NewContainer returns a new Container.
@@ -128,13 +101,11 @@ func NewContainer(
 	baseContainer app.Container,
 	appName string,
 	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
 ) (Container, error) {
 	return newContainer(
 		baseContainer,
 		appName,
 		logger,
-		verbosePrinter,
 	)
 }
 
@@ -164,13 +135,6 @@ type BuilderOption func(*builder)
 func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 	return func(builder *builder) {
 		builder.defaultTimeout = defaultTimeout
-	}
-}
-
-// BuilderWithTracing enables zap tracing for the builder.
-func BuilderWithTracing() BuilderOption {
-	return func(builder *builder) {
-		builder.tracing = true
 	}
 }
 

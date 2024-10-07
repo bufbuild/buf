@@ -27,12 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -40,13 +41,12 @@ import (
 
 func buildImage(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *zap.Logger,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
-) (_ Image, retErr error) {
-	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) (Image, error) {
+	defer zaputil.DebugProfile(logger)()
 
 	if !moduleReadBucket.ShouldBeSelfContained() {
 		return nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")

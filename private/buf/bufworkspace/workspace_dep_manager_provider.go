@@ -20,7 +20,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -50,11 +49,9 @@ type WorkspaceDepManagerProvider interface {
 // NewWorkspaceDepManagerProvider returns a new WorkspaceDepManagerProvider.
 func NewWorkspaceDepManagerProvider(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 ) WorkspaceDepManagerProvider {
 	return newWorkspaceDepManagerProvider(
 		logger,
-		tracer,
 	)
 }
 
@@ -62,16 +59,13 @@ func NewWorkspaceDepManagerProvider(
 
 type workspaceDepManagerProvider struct {
 	logger *zap.Logger
-	tracer tracing.Tracer
 }
 
 func newWorkspaceDepManagerProvider(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 ) *workspaceDepManagerProvider {
 	return &workspaceDepManagerProvider{
 		logger: logger,
-		tracer: tracer,
 	}
 }
 

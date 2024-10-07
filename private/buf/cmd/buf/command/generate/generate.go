@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -542,7 +541,6 @@ func run(
 	}
 	return bufgen.NewGenerator(
 		logger,
-		tracing.NewTracer(container.Tracer()),
 		storageosProvider,
 		command.NewRunner(),
 		clientConfig,

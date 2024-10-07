@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -46,7 +45,6 @@ func newCommand() *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
-		appext.BuilderWithTracing(),
 	)
 	flags := newFlags()
 	return &appcmd.Command{
@@ -101,8 +99,7 @@ func run(
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
 	}
-	tracer := tracing.NewTracer(container.Tracer())
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, container.Logger(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	storageosProvider := storageos.NewProvider()
 	for _, dirPath := range dirPaths {
 		bucket, err := storageosProvider.NewReadWriteBucket(dirPath)

@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -103,10 +103,10 @@ func (c *combinedResolver) ListServices() ([]protoreflect.FullName, error) {
 }
 
 // NewWKTResolver returns a Resolver that can resolve all well-known types.
-func NewWKTResolver(ctx context.Context, tracer tracing.Tracer) (Resolver, error) {
+func NewWKTResolver(ctx context.Context, logger *zap.Logger) (Resolver, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
-		tracer,
+		logger,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
 	).AddLocalModule(
@@ -120,7 +120,7 @@ func NewWKTResolver(ctx context.Context, tracer tracing.Tracer) (Resolver, error
 	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracer,
+		logger,
 		module,
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

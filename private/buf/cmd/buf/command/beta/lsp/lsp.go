@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
@@ -108,7 +107,6 @@ func run(
 	}()
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
-		tracing.NewTracer(container.Tracer()),
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)

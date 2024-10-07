@@ -35,7 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -90,9 +90,7 @@ func run(
 ) (retErr error) {
 	runner := command.NewRunner()
 	logger := container.Logger()
-	tracer := tracing.NewTracer(container.Tracer())
-	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+	defer zaputil.DebugProfile(logger)()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -114,7 +112,7 @@ func run(
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
-		tracer,
+		logger,
 		storageosProvider,
 		env.IncludeDirPaths,
 		env.FilePaths,
@@ -129,7 +127,7 @@ func run(
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracer,
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		buildOptions...,
 	)
@@ -176,8 +174,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				_, span := tracer.Start(ctx, tracing.WithErr(&retErr))
-				defer span.End()
+				defer zaputil.DebugProfile(logger)()
 				images, err = bufimage.ImageByDir(image)
 				return err
 			}
@@ -194,7 +191,6 @@ func run(
 			response, err := executePlugin(
 				ctx,
 				logger,
-				tracer,
 				storageosProvider,
 				runner,
 				container,

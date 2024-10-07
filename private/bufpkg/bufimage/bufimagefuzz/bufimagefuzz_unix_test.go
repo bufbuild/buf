@@ -33,9 +33,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -104,18 +104,18 @@ func TestCorpus(t *testing.T) {
 //}
 
 func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResult, retErr error) {
-	dir, err := tmp.NewDir()
+	dir, err := tmp.NewDir(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, dir.Close())
 	}()
-	if err := untxtar(data, dir.AbsPath()); err != nil {
+	if err := untxtar(data, dir.Path()); err != nil {
 		return nil, err
 	}
 
-	filePaths, err := buftesting.GetProtocFilePathsErr(ctx, dir.AbsPath(), 0)
+	filePaths, err := buftesting.GetProtocFilePathsErr(ctx, dir.Path(), 0)
 	if err != nil {
 		return nil, err
 	}
@@ -123,13 +123,13 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 	actualProtocFileDescriptorSet, protocErr := prototesting.GetProtocFileDescriptorSet(
 		ctx,
 		runner,
-		[]string{dir.AbsPath()},
+		[]string{dir.Path()},
 		filePaths,
 		false,
 		false,
 	)
 
-	image, bufErr := fuzzBuild(ctx, dir.AbsPath())
+	image, bufErr := fuzzBuild(ctx, dir.Path())
 	return newFuzzResult(
 		runner,
 		bufErr,
@@ -147,7 +147,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, error) {
 	}
 	return bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		zap.NewNop(),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

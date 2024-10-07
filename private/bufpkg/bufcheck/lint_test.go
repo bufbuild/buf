@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1317,7 +1316,6 @@ func testLintWithOptions(
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
-		tracing.NopTracer,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
@@ -1341,7 +1339,7 @@ func testLintWithOptions(
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		zap.NewNop(),
 		moduleReadBucket,
 	)
 	require.NoError(t, err)
@@ -1358,7 +1356,6 @@ func testLintWithOptions(
 	})
 	client, err := bufcheck.NewClient(
 		zap.NewNop(),
-		tracing.NopTracer,
 		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
 	)
 	require.NoError(t, err)

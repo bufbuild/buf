@@ -37,7 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -181,7 +180,7 @@ func getProtosourceFiles(
 ) ([]bufprotosource.File, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
-		tracing.NewTracer(container.Tracer()),
+		container.Logger(),
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
 	).AddLocalModule(
@@ -195,7 +194,7 @@ func getProtosourceFiles(
 	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NewTracer(container.Tracer()),
+		container.Logger(),
 		module,
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

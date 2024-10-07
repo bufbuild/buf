@@ -20,33 +20,10 @@ import (
 	"os/signal"
 )
 
-var signals = append(
-	[]os.Signal{
-		os.Interrupt,
-	},
-	extraSignals...,
-)
+var interruptSignals = append([]os.Signal{os.Interrupt}, extraSignals...)
 
-// WithCancel returns a context that is cancelled if interrupt signals are sent.
-func WithCancel(ctx context.Context) (context.Context, context.CancelFunc) {
-	signalC, closer := NewSignalChannel()
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		<-signalC
-		closer()
-		cancel()
-	}()
-	return ctx, cancel
-}
-
-// NewSignalChannel returns a new channel for interrupt signals.
-//
-// Call the returned function to cancel sending to this channel.
-func NewSignalChannel() (<-chan os.Signal, func()) {
-	signalC := make(chan os.Signal, 1)
-	signal.Notify(signalC, signals...)
-	return signalC, func() {
-		signal.Stop(signalC)
-		close(signalC)
-	}
+// NotifyContext returns a new [context.Context] from [signal.NotifyContext]
+// with the appropriate interrupt signals.
+func NotifyContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(ctx, interruptSignals...)
 }

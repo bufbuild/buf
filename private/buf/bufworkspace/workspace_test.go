@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
@@ -320,7 +319,6 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	require.NoError(t, err)
 	return NewWorkspaceProvider(
 		zap.NewNop(),
-		tracing.NopTracer,
 		bsrProvider,
 		bsrProvider,
 		bsrProvider,
