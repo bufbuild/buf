@@ -9,10 +9,11 @@
 [![Homebrew](https://img.shields.io/homebrew/v/buf)](https://github.com/bufbuild/homebrew-buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
+<a name="features"></a>
 The [`buf`][buf] CLI is the best tool for working with [Protocol Buffers][protobuf]. It provides:
 
 - A [linter][lint_usage] that enforces good API design choices and structure.
-- A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
+- A [breaking change detector][breaking_tutorial] that enforces compatibility at the source code or wire level.
 - A [generator][generate_usage] that invokes your plugins based on configurable [templates][templates].
 - A [formatter][format_usage] that formats your Protobuf files in accordance with industry standards.
 - Integration with the [Buf Schema Registry][bsr], including full dependency management.
@@ -53,7 +54,7 @@ buf --help
 
 For more comprehensive usage information, consult Buf's [documentation][docs], especially these guides:
 
-* [`buf breaking`][breaking_usage]
+* [`buf breaking`][breaking_tutorial]
 * [`buf build`][build_usage]
 * [`buf generate`][generate_usage]
 * [`buf lint`][lint_usage]
@@ -62,7 +63,7 @@ For more comprehensive usage information, consult Buf's [documentation][docs], e
 
 ## CLI breaking change policy
 
-We will never make breaking changes within a given major version of the CLI. Once `buf` reaches v1.0, you can expect no breaking changes until v2.0. But as we have no plans to ever release a v2.0, we will likely never break the `buf` CLI.
+We will never make breaking changes within a given major version of the CLI. After `buf` reached v1.0, you can expect no breaking changes until v2.0. But as we have no plans to ever release a v2.0, we will likely never break the `buf` CLI.
 
 > This breaking change policy does _not_ apply to commands behind the `buf beta` gate, and you should expect breaking changes to commands like `buf beta registry`. The policy does go into effect, however, when those commands or flags are elevated out of beta.
 
@@ -86,10 +87,10 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 
 * **Automatic file discovery**. Buf walks your file tree and builds your `.proto` files in accordance with your supplied [build configuration][build_config], which means that you no longer need to manually specify `--proto_paths`. You can still, however, specify `.proto` files manually through CLI flags in cases where file discovery needs to be disabled.
 * **Fine-grained rule configuration** for [linting][lint_rules] and [breaking changes][breaking_rules]. While we do have recommended defaults, you can always select the exact set of rules that your use case requires, with [40 lint rules][lint_rules] and [53 breaking change rules][breaking_rules] available.
-* **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON and, in the near future, JUnit output.
-* **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] but we plan to support other editors, such as Emacs and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, in the future.
+* **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON, MSVS, JUnit, and Github Actions output.
+* **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, but we plan to support other editors such as Emacs in the future.
 * **Universal Input targeting**. Buf enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [image][images] files.
-* **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][ide].
+* **Speed**. Buf's internal Protobuf [compiler] compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][ide].
 
 ## Next steps
 
@@ -107,51 +108,48 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 
 [badges_slack]: https://buf.build/links/slack
 [bash]: https://www.gnu.org/software/bash
-[binary]: https://docs.buf.build/installation#binary
-[breaking]: https://docs.buf.build/breaking
-[breaking_rules]: https://docs.buf.build/breaking/rules
-[breaking_usage]: https://docs.buf.build/breaking/usage
+[binary]: https://buf.build/docs/installation#binary
+[breaking]: https://buf.build/docs/breaking/overview
+[breaking_rules]: https://buf.build/docs/breaking/rules
+[breaking_tutorial]: https://buf.build/docs/breaking/tutorial
 [brew]: https://brew.sh
-[bsr]: https://docs.buf.build/bsr
+[bsr]: https://buf.build/docs/bsr/introduction
 [bsr_plugins]: https://buf.build/plugins
-[bsr_usage]: https://docs.buf.build/bsr/usage
+[bsr_usage]: https://buf.build/docs/bsr/module/dependency-management
 [buf]: https://buf.build
-[build_config]: https://docs.buf.build/build/usage/#configuration
-[build_usage]: https://docs.buf.build/build/usage
+[build_config]: https://buf.build/docs/build/usage/#key-concepts
+[build_usage]: https://buf.build/docs/build/usage
 [cli-tutorial]: https://buf.build/docs/tutorials/getting-started-with-buf-cli
-[compiler]: https://docs.buf.build/build/internal-compiler
-[contact]: https://docs.buf.build/contact
-[docker]: https://docs.buf.build/installation#use-the-docker-image
-[docs]: https://docs.buf.build
+[compiler]: https://buf.build/docs/reference/internal-compiler
+[docker]: https://buf.build/docs/installation#use-the-docker-image
+[docs]: https://buf.build/docs
 [email_dev]: mailto:dev@buf.build
 [email_info]: mailto:info@buf.build
-[filedescriptorset]: https://github.com/protocolbuffers/protobuf/blob/044c766fd4777713fef2d1a9a095e4308d770c68/src/google/protobuf/descriptor.proto#L57
 [features]: #features
 [fish]: https://fishshell.com
-[format_usage]: https://docs.buf.build/format/usage
-[generate_usage]: https://docs.buf.build/generate/usage
-[ide]: https://docs.buf.build/editor-integration
+[format_usage]: https://buf.build/docs/format/style
+[generate_usage]: https://buf.build/docs/generate/tutorial
+[ide]: https://buf.build/docs/editor-integration
 [idl]: https://en.wikipedia.org/wiki/Interface_description_language
-[images]: https://docs.buf.build/reference/images
-[inputs]: https://docs.buf.build/reference/inputs
-[install]: https://docs.buf.build/installation
-[jetbrains]: https://docs.buf.build/editor-integration#jetbrains-ides
-[lint]: https://docs.buf.build/lint
-[lint_rules]: https://docs.buf.build/lint/rules
-[lint_usage]: https://docs.buf.build/lint/usage
-[npm]: https://docs.buf.build/installation#npm
+[images]: https://buf.build/docs/reference/images
+[inputs]: https://buf.build/docs/reference/inputs
+[install]: https://buf.build/docs/installation
+[jetbrains]: https://buf.build/docs/editor-integration#jetbrains-ides
+[lint]: https://buf.build/docs/lint/overview
+[lint_rules]: https://buf.build/docs/lint/rules
+[lint_usage]: https://buf.build/docs/lint/tutorial
+[npm]: https://buf.build/docs/installation#npm
 [minisign]: https://github.com/jedisct1/minisign
 [powershell]: https://docs.microsoft.com/en-us/powershell
-[protobuf]: https://developers.google.com/protocol-buffers
-[pushing]: https://docs.buf.build/bsr/usage#push-a-module
-[releases]: https://docs.buf.build/installation#github-releases
+[protobuf]: https://protobuf.dev
+[pushing]: https://buf.build/docs/bsr/module/dependency-management#push-a-module
+[releases]: https://buf.build/docs/installation#github-releases
 [repo]: https://github.com/bufbuild/buf/
-[repositories]: https://docs.buf.build/bsr/overview#module
-[roadmap]: https://docs.buf.build/roadmap
-[source]: https://docs.buf.build/installation#from-source
-[tarball]: https://docs.buf.build/installation#tarball
-[templates]: https://docs.buf.build/configuration/v1/buf-gen-yaml
-[users]: https://docs.buf.build/bsr/user-management#organization-roles
-[verifying]: https://docs.buf.build/installation#verifying-a-release
-[windows]: https://docs.buf.build/installation#windows-support
+[repositories]: https://buf.build/docs/bsr/introduction#module
+[source]: https://buf.build/docs/installation#from-source
+[tarball]: https://buf.build/docs/installation#tarball
+[templates]: https://buf.build/docs/configuration/v1/buf-gen-yaml
+[users]: https://buf.build/docs/admin/manage-members
+[verifying]: https://buf.build/docs/installation#var-selection-github-verifying-a-release
+[windows]: https://buf.build/docs/installation#windows-support
 [zsh]: https://zsh.org
