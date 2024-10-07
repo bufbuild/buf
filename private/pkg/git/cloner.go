@@ -80,7 +80,7 @@ func (c *cloner) CloneToBucket(
 
 	depthArg := strconv.Itoa(int(depth))
 
-	baseDir, err := tmp.NewDir()
+	baseDir, err := tmp.NewDir(ctx)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (c *cloner) CloneToBucket(
 		command.RunWithArgs("init"),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		command.RunWithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
@@ -107,7 +107,7 @@ func (c *cloner) CloneToBucket(
 		command.RunWithArgs("remote", "add", "origin", url),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		command.RunWithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
@@ -148,7 +148,7 @@ func (c *cloner) CloneToBucket(
 		)...),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		command.RunWithDir(baseDir.Path()),
 	); err != nil {
 		// If the ref fetch failed, without a fallback, return the error.
 		if fallbackRef == "" {
@@ -170,7 +170,7 @@ func (c *cloner) CloneToBucket(
 			)...),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 			command.RunWithStderr(buffer),
-			command.RunWithDir(baseDir.AbsPath()),
+			command.RunWithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -185,7 +185,7 @@ func (c *cloner) CloneToBucket(
 		command.RunWithArgs("checkout", "--force", "FETCH_HEAD"),
 		command.RunWithEnv(app.EnvironMap(envContainer)),
 		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		command.RunWithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
@@ -199,7 +199,7 @@ func (c *cloner) CloneToBucket(
 			command.RunWithArgs("checkout", "--force", checkoutRef),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 			command.RunWithStderr(buffer),
-			command.RunWithDir(baseDir.AbsPath()),
+			command.RunWithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -222,14 +222,14 @@ func (c *cloner) CloneToBucket(
 			)...),
 			command.RunWithEnv(app.EnvironMap(envContainer)),
 			command.RunWithStderr(buffer),
-			command.RunWithDir(baseDir.AbsPath()),
+			command.RunWithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
 	}
 
 	// we do NOT want to read in symlinks
-	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(baseDir.AbsPath())
+	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(baseDir.Path())
 	if err != nil {
 		return err
 	}

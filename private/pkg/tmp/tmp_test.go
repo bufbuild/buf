@@ -15,9 +15,12 @@
 package tmp
 
 import (
+	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,26 +28,54 @@ import (
 
 func TestFile(t *testing.T) {
 	t.Parallel()
-	tmpFile, err := NewFileWithData([]byte("foo"))
+	ctx := context.Background()
+	tmpFile, err := NewFile(ctx, strings.NewReader("foo"))
 	require.NoError(t, err)
-	assert.True(t, filepath.IsAbs(tmpFile.AbsPath()))
-	data, err := os.ReadFile(tmpFile.AbsPath())
+	assert.True(t, filepath.IsAbs(tmpFile.Path()))
+	data, err := os.ReadFile(tmpFile.Path())
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", string(data))
 	assert.NoError(t, tmpFile.Close())
-	_, err = os.ReadFile(tmpFile.AbsPath())
+	_, err = os.ReadFile(tmpFile.Path())
+	assert.Error(t, err)
+}
+
+func TestFileCancel(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(context.Background())
+	tmpFile, err := NewFile(ctx, strings.NewReader("foo"))
+	require.NoError(t, err)
+	_, err = os.ReadFile(tmpFile.Path())
+	assert.NoError(t, err)
+	cancel()
+	time.Sleep(1 * time.Second)
+	_, err = os.ReadFile(tmpFile.Path())
 	assert.Error(t, err)
 }
 
 func TestDir(t *testing.T) {
 	t.Parallel()
-	tmpDir, err := NewDir()
+	ctx := context.Background()
+	tmpDir, err := NewDir(ctx)
 	require.NoError(t, err)
-	assert.True(t, filepath.IsAbs(tmpDir.AbsPath()))
-	fileInfo, err := os.Lstat(tmpDir.AbsPath())
+	assert.True(t, filepath.IsAbs(tmpDir.Path()))
+	fileInfo, err := os.Lstat(tmpDir.Path())
 	assert.NoError(t, err)
 	assert.True(t, fileInfo.IsDir())
 	assert.NoError(t, tmpDir.Close())
-	_, err = os.Lstat(tmpDir.AbsPath())
+	_, err = os.Lstat(tmpDir.Path())
+	assert.Error(t, err)
+}
+
+func TestDirCancel(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(context.Background())
+	tmpDir, err := NewDir(ctx)
+	require.NoError(t, err)
+	_, err = os.Lstat(tmpDir.Path())
+	assert.NoError(t, err)
+	cancel()
+	time.Sleep(1 * time.Second)
+	_, err = os.Lstat(tmpDir.Path())
 	assert.Error(t, err)
 }
