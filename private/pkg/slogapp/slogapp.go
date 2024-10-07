@@ -26,11 +26,7 @@ import (
 
 // LoggerProvider is an appext.LoggerProvider for use with appext.BuilderWithLoggerProvider.
 func LoggerProvider(container appext.NameContainer, logLevel appext.LogLevel, logFormat appext.LogFormat) (*slog.Logger, error) {
-	core, err := zapapp.NewCore(container.Stderr(), logLevel, logFormat)
-	if err != nil {
-		return nil, err
-	}
-	return slog.New(zapslog.NewHandler(core)), nil
+	return NewLogger(container.Stderr(), logLevel, logFormat)
 }
 
 // NewLogger returns a new Logger for the given level and format.
