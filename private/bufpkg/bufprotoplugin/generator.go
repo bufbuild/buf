@@ -18,21 +18,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger  *zap.Logger
+	logger  *slog.Logger
 	handler protoplugin.Handler
 }
 
 func newGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	handler protoplugin.Handler,
 ) *generator {
 	return &generator{

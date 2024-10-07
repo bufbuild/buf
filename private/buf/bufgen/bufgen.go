@@ -20,6 +20,7 @@ package bufgen
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 const (
@@ -86,7 +86,7 @@ type Generator interface {
 
 // NewGenerator returns a new Generator.
 func NewGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	// Pass a clientConfig instead of a CodeGenerationServiceClient because the

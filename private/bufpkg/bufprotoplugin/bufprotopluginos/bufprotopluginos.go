@@ -18,9 +18,9 @@ package bufprotopluginos
 import (
 	"context"
 	"io"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -45,7 +45,7 @@ type ResponseWriter interface {
 
 // NewResponseWriter returns a new ResponseWriter.
 func NewResponseWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ResponseWriterOption,
 ) ResponseWriter {

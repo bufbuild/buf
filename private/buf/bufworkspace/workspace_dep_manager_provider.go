@@ -16,11 +16,11 @@ package bufworkspace
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 // WorkspaceDepManagerProvider provides WorkspaceDepManagers.
@@ -48,7 +48,7 @@ type WorkspaceDepManagerProvider interface {
 
 // NewWorkspaceDepManagerProvider returns a new WorkspaceDepManagerProvider.
 func NewWorkspaceDepManagerProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) WorkspaceDepManagerProvider {
 	return newWorkspaceDepManagerProvider(
 		logger,
@@ -58,11 +58,11 @@ func NewWorkspaceDepManagerProvider(
 // *** PRIVATE ***
 
 type workspaceDepManagerProvider struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
 func newWorkspaceDepManagerProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *workspaceDepManagerProvider {
 	return &workspaceDepManagerProvider{
 		logger: logger,

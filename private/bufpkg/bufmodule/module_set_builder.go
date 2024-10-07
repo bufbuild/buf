@@ -16,16 +16,16 @@ package bufmodule
 
 import (
 	"context"
+	"log/slog"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/google/uuid"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 var (
@@ -114,7 +114,7 @@ type ModuleSetBuilder interface {
 // NewModuleSetBuilder returns a new ModuleSetBuilder.
 func NewModuleSetBuilder(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 ) ModuleSetBuilder {
@@ -128,7 +128,7 @@ func NewModuleSetBuilder(
 // All of the remote Module's transitive dependencies are automatically added as non-targets.
 func NewModuleSetForRemoteModule(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	graphProvider GraphProvider,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
@@ -280,7 +280,7 @@ func RemoteModuleWithTargetPaths(
 
 type moduleSetBuilder struct {
 	ctx                context.Context
-	logger             *zap.Logger
+	logger             *slog.Logger
 	moduleDataProvider ModuleDataProvider
 	commitProvider     CommitProvider
 
@@ -291,7 +291,7 @@ type moduleSetBuilder struct {
 
 func newModuleSetBuilder(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 ) *moduleSetBuilder {
@@ -405,7 +405,7 @@ func (b *moduleSetBuilder) AddRemoteModule(
 }
 
 func (b *moduleSetBuilder) Build() (ModuleSet, error) {
-	defer zaputil.DebugProfile(b.logger)()
+	defer slogext.DebugProfile(b.logger)()
 
 	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled

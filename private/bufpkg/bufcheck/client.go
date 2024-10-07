@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"strings"
 
 	"buf.build/go/bufplugin/check"
@@ -31,22 +32,21 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
-	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )
 
 type client struct {
-	logger                          *zap.Logger
+	logger                          *slog.Logger
 	runnerProvider                  RunnerProvider
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
 }
 
 func newClient(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (*client, error) {
@@ -86,7 +86,7 @@ func (c *client) Lint(
 	image bufimage.Image,
 	options ...LintOption,
 ) error {
-	defer zaputil.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	if lintConfig.Disabled() {
 		return nil
@@ -145,7 +145,7 @@ func (c *client) Breaking(
 	againstImage bufimage.Image,
 	options ...BreakingOption,
 ) error {
-	defer zaputil.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	if breakingConfig.Disabled() {
 		return nil
@@ -214,7 +214,7 @@ func (c *client) ConfiguredRules(
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
 ) ([]Rule, error) {
-	defer zaputil.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
@@ -243,7 +243,7 @@ func (c *client) AllRules(
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
 ) ([]Rule, error) {
-	defer zaputil.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
@@ -261,7 +261,7 @@ func (c *client) AllCategories(
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
 ) ([]Category, error) {
-	defer zaputil.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {

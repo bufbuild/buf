@@ -17,23 +17,23 @@ package bufcheck
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"sync"
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
-	"go.uber.org/zap"
 )
 
 type multiClient struct {
-	logger           *zap.Logger
+	logger           *slog.Logger
 	checkClientSpecs []*checkClientSpec
 }
 
-func newMultiClient(logger *zap.Logger, checkClientSpecs []*checkClientSpec) *multiClient {
+func newMultiClient(logger *slog.Logger, checkClientSpecs []*checkClientSpec) *multiClient {
 	return &multiClient{
 		logger:           logger,
 		checkClientSpecs: checkClientSpecs,
@@ -78,7 +78,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		// request with no rule IDs will be made to the delegate client, and default rules will
 		// be called.
 		if len(requestDelegateRuleIDs) == 0 {
-			c.logger.Debug("skipping delegate client", zap.String("pluginName", delegate.PluginName))
+			c.logger.DebugContext(ctx, "skipping delegate client", slog.String("pluginName", delegate.PluginName))
 			continue
 		}
 		delegateRequest, err := check.NewRequest(
@@ -95,7 +95,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
-				defer zaputil.DebugProfile(c.logger, zap.String("plugin", delegate.PluginName))()
+				defer slogext.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
 					if delegate.PluginName == "" {
@@ -150,7 +150,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	retChunkedCategoryIDs [][]string,
 	retErr error,
 ) {
-	defer zaputil.DebugProfile(c.logger)()
+	defer slogext.DebugProfile(c.logger)()
 	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {

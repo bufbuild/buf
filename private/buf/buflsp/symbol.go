@@ -23,14 +23,13 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // symbol represents a named symbol inside of a buflsp.file
@@ -164,9 +163,10 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 		if kind.seeTypeOf != nil {
 			ref, ok := kind.seeTypeOf.kind.(*reference)
 			if !ok || ref.file == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"unexpected unresolved or non-reference symbol for seeTypeOf",
-					zap.Object("symbol", s))
+					slog.Any("symbol", s))
 				return
 			}
 
@@ -178,10 +178,11 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// Find the definition that contains the type we want.
 			def, node := kind.seeTypeOf.Definition(ctx)
 			if def == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"could not resolve dependent symbol definition",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf))
 				return
 			}
 
@@ -189,11 +190,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// TODO: Support more exotic field types.
 			field, ok := node.(*ast.FieldNode)
 			if !ok {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"dependent symbol definition was not a field",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf),
-					zap.Object("def", def))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf),
+					slog.Any("def", def))
 				return
 			}
 
@@ -205,11 +207,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 				Character: uint32(info.Start().Col) - 1,
 			})
 			if ty == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"dependent symbol's field type didn't resolve",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf),
-					zap.Object("def", def))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf),
+					slog.Any("def", def))
 				return
 			}
 
@@ -219,12 +222,13 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// when we go to hover over the symbol.
 			ref, ok = ty.kind.(*reference)
 			if !ok || ty.file == nil {
-				s.file.lsp.logger.Debug(
+				s.file.lsp.logger.DebugContext(
+					ctx,
 					"dependent symbol's field type didn't resolve to a reference",
-					zap.Object("symbol", s),
-					zap.Object("dep", kind.seeTypeOf),
-					zap.Object("def", def),
-					zap.Object("resolved", ty))
+					slog.Any("symbol", s),
+					slog.Any("dep", kind.seeTypeOf),
+					slog.Any("def", def),
+					slog.Any("resolved", ty))
 				return
 			}
 
@@ -328,60 +332,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	}
 }
 
-func (s *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
-	enc.AddString("file", s.file.uri.Filename())
-
-	// zapPos converts an ast.SourcePos into a zap marshaller.
-	zapPos := func(pos ast.SourcePos) zapcore.ObjectMarshalerFunc {
-		return func(enc zapcore.ObjectEncoder) error {
-			enc.AddInt("offset", pos.Offset)
-			enc.AddInt("line", pos.Line)
-			enc.AddInt("col", pos.Col)
-			return nil
-		}
-	}
-
-	err = enc.AddObject("start", zapPos(s.info.Start()))
-	if err != nil {
-		return err
-	}
-
-	err = enc.AddObject("end", zapPos(s.info.End()))
-	if err != nil {
-		return err
-	}
-
-	switch kind := s.kind.(type) {
-	case *builtin:
-		enc.AddString("builtin", kind.name)
-
-	case *import_:
-		if kind.file != nil {
-			enc.AddString("imports", kind.file.uri.Filename())
-		}
-
-	case *definition:
-		enc.AddString("defines", strings.Join(kind.path, "."))
-
-	case *reference:
-		if kind.file != nil {
-			enc.AddString("imports", kind.file.uri.Filename())
-		}
-		if kind.path != nil {
-			enc.AddString("references", strings.Join(kind.path, "."))
-		}
-		if kind.seeTypeOf != nil {
-			err = enc.AddObject("see_type_of", kind.seeTypeOf)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// FormatDocs finds appropriate  documentation for the given s and constructs a Markdown
+// FormatDocs finds appropriate  documgntation for the given s and constructs a Markdown
 // string for showing to the client.
 //
 // Returns the empty string if no docs are available.

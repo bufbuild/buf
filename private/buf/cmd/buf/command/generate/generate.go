@@ -17,6 +17,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -34,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 )
 
 const (
@@ -581,7 +581,7 @@ func readBufGenYAMLFile(
 
 func getInputImages(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	controller bufctl.Controller,
 	inputSpecified string,
 	bufGenYAMLFile bufconfig.BufGenYAMLFile,

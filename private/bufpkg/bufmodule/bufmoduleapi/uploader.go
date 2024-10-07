@@ -17,6 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -30,12 +31,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // NewUploader returns a new Uploader for the given API client.
 func NewUploader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1ModuleServiceClientProvider
 		bufapi.V1UploadServiceClientProvider
@@ -65,7 +65,7 @@ func UploaderWithPublicRegistry(publicRegistry string) UploaderOption {
 // *** PRIVATE ***
 
 type uploader struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	clientProvider interface {
 		bufapi.V1ModuleServiceClientProvider
 		bufapi.V1UploadServiceClientProvider
@@ -75,7 +75,7 @@ type uploader struct {
 }
 
 func newUploader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1ModuleServiceClientProvider
 		bufapi.V1UploadServiceClientProvider
@@ -115,7 +115,7 @@ func (a *uploader) Upload(
 		if moduleName == nil {
 			moduleDescription := module.Description()
 			if uploadOptions.ExcludeUnnamed() {
-				a.logger.Warn("Excluding unnamed module", zap.String("module", moduleDescription))
+				a.logger.Warn("Excluding unnamed module", slog.String("module", moduleDescription))
 				return false, nil
 			}
 			return false, fmt.Errorf("a name must be specified in buf.yaml to push module: %s", moduleDescription)

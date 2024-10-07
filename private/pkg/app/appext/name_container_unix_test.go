@@ -115,7 +115,7 @@ func TestPort4(t *testing.T) {
 }
 
 func testPort(t *testing.T, appName string, env map[string]string, expected uint16) {
-	container, err := NewNameContainer(app.NewEnvContainer(env), appName)
+	container, err := NewNameContainer(testNewContainer(env), appName)
 	require.NoError(t, err)
 	port, err := container.Port()
 	require.NoError(t, err)
@@ -125,7 +125,7 @@ func testPort(t *testing.T, appName string, env map[string]string, expected uint
 func testRoundTrip(t *testing.T, appName string, env map[string]string, dirPath string) {
 	_, err := os.Lstat(filepath.Join(dirPath, configFileName))
 	require.Error(t, err)
-	container, err := NewNameContainer(app.NewEnvContainer(env), appName)
+	container, err := NewNameContainer(testNewContainer(env), appName)
 	require.NoError(t, err)
 	inputTestConfig := &testConfig{Bar: "one", Baz: "two"}
 	err = WriteConfig(container, inputTestConfig)
@@ -136,6 +136,10 @@ func testRoundTrip(t *testing.T, appName string, env map[string]string, dirPath 
 	err = ReadConfig(container, outputTestConfig)
 	require.NoError(t, err)
 	require.Equal(t, inputTestConfig, outputTestConfig)
+}
+
+func testNewContainer(env map[string]string) app.Container {
+	return app.NewContainer(env, nil, nil, nil, "test")
 }
 
 type testConfig struct {

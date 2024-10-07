@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -25,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // ModuleKeysAndTransitiveDepModuleKeysForModuleKeys gets the ModuleKeys for the
@@ -56,7 +56,7 @@ func ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 // Used by dep/mod prune.
 func Prune(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	controller bufctl.Controller,
 	// Contains all the Modules and their transitive dependencies based on the  buf.yaml.
 	//
@@ -112,7 +112,7 @@ func Prune(
 // dependencies as warnings to the user.
 func LogUnusedConfiguredDepsForWorkspace(
 	workspace bufworkspace.Workspace,
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) error {
 	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
 	if err != nil {
@@ -121,10 +121,10 @@ func LogUnusedConfiguredDepsForWorkspace(
 	for _, malformedDep := range malformedDeps {
 		switch t := malformedDep.Type(); t {
 		case bufworkspace.MalformedDepTypeUnused:
-			logger.Sugar().Warnf(
+			logger.Warn(fmt.Sprintf(
 				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
 				malformedDep.ModuleRef().ModuleFullName(),
-			)
+			))
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}

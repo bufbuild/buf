@@ -16,16 +16,16 @@ package bufstudioagent
 
 import (
 	"crypto/tls"
+	"log/slog"
 	"net/http"
 
 	"github.com/rs/cors"
-	"go.uber.org/zap"
 )
 
 // NewHandler creates a new handler that serves the invoke endpoints for the
 // agent.
 func NewHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	origin string,
 	tlsClientConfig *tls.Config,
 	disallowedHeaders map[string]struct{},

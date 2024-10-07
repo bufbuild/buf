@@ -16,20 +16,20 @@ package bandeps
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/zap"
 )
 
 type checker struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	runner command.Runner
 }
 
-func newChecker(logger *zap.Logger, runner command.Runner) *checker {
+func newChecker(logger *slog.Logger, runner command.Runner) *checker {
 	return &checker{
 		logger: logger,
 		runner: runner,

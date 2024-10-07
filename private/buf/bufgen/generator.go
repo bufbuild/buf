@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	connect "connectrpc.com/connect"
@@ -38,19 +39,18 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger              *zap.Logger
+	logger              *slog.Logger
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufprotopluginexec.Generator
 	clientConfig        *connectclient.Config
 }
 
 func newGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	clientConfig *connectclient.Config,
@@ -93,7 +93,7 @@ func (g *generator) Generate(
 	}
 	if !config.GenerateManagedConfig().Enabled() {
 		if len(config.GenerateManagedConfig().Overrides()) != 0 || len(config.GenerateManagedConfig().Disables()) != 0 {
-			g.logger.Sugar().Warn("managed mode configs are set but are not enabled")
+			g.logger.Warn("managed mode configs are set but are not enabled")
 		}
 	}
 	for _, image := range images {

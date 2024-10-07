@@ -22,12 +22,12 @@ package bufprotoplugin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -57,7 +57,7 @@ type Generator interface {
 
 // NewGenerator returns a new Generator.
 func NewGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	handler protoplugin.Handler,
 ) Generator {
 	return newGenerator(logger, handler)
@@ -81,7 +81,7 @@ type ResponseWriter interface {
 }
 
 // NewResponseWriter returns a new ResponseWriter.
-func NewResponseWriter(logger *zap.Logger) ResponseWriter {
+func NewResponseWriter(logger *slog.Logger) ResponseWriter {
 	return newResponseWriter(logger)
 }
 

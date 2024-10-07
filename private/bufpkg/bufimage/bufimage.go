@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"math"
 	"slices"
 	"sort"
@@ -34,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -270,7 +270,7 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // those returned by [bufmodule.GetTargetFileInfos].
 func BuildImage(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	options ...BuildImageOption,
 ) (Image, error) {

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
@@ -30,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.uber.org/zap"
 )
 
 const (
@@ -243,12 +243,12 @@ type RefParser interface {
 // NewRefParser returns a new RefParser.
 //
 // This defaults to dir or module.
-func NewRefParser(logger *zap.Logger) RefParser {
+func NewRefParser(logger *slog.Logger) RefParser {
 	return newRefParser(logger)
 }
 
 // NewMessageRefParser returns a new RefParser for messages only.
-func NewMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) MessageRefParser {
+func NewMessageRefParser(logger *slog.Logger, options ...MessageRefParserOption) MessageRefParser {
 	return newMessageRefParser(logger, options...)
 }
 
@@ -267,29 +267,29 @@ func MessageRefParserWithDefaultMessageEncoding(defaultMessageEncoding MessageEn
 // NewSourceRefParser returns a new RefParser for sources only.
 //
 // This defaults to dir.
-func NewSourceRefParser(logger *zap.Logger) SourceRefParser {
+func NewSourceRefParser(logger *slog.Logger) SourceRefParser {
 	return newSourceRefParser(logger)
 }
 
 // NewDirRefParser returns a new RefParser for dirs only.
-func NewDirRefParser(logger *zap.Logger) DirRefParser {
+func NewDirRefParser(logger *slog.Logger) DirRefParser {
 	return newDirRefParser(logger)
 }
 
 // NewDirOrProtoFileRefParser returns a new RefParser for dirs only.
-func NewDirOrProtoFileRefParser(logger *zap.Logger) DirOrProtoFileRefParser {
+func NewDirOrProtoFileRefParser(logger *slog.Logger) DirOrProtoFileRefParser {
 	return newDirOrProtoFileRefParser(logger)
 }
 
 // NewModuleRefParser returns a new RefParser for modules only.
-func NewModuleRefParser(logger *zap.Logger) ModuleRefParser {
+func NewModuleRefParser(logger *slog.Logger) ModuleRefParser {
 	return newModuleRefParser(logger)
 }
 
 // NewSourceOrModuleRefParser returns a new RefParser for sources or modules only.
 //
 // This defaults to dir or module.
-func NewSourceOrModuleRefParser(logger *zap.Logger) SourceOrModuleRefParser {
+func NewSourceOrModuleRefParser(logger *slog.Logger) SourceOrModuleRefParser {
 	return newSourceOrModuleRefParser(logger)
 }
 
@@ -423,7 +423,7 @@ type Reader interface {
 
 // NewReader returns a new Reader.
 func NewReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -442,7 +442,7 @@ func NewReader(
 
 // NewMessageReader returns a new MessageReader.
 func NewMessageReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -459,7 +459,7 @@ func NewMessageReader(
 
 // NewSourceReader returns a new SourceReader.
 func NewSourceReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -476,7 +476,7 @@ func NewSourceReader(
 
 // NewDirReader returns a new DirReader.
 func NewDirReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 ) DirReader {
 	return newDirReader(
@@ -487,7 +487,7 @@ func NewDirReader(
 
 // NewModuleFetcher returns a new ModuleFetcher.
 func NewModuleFetcher(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) ModuleFetcher {
@@ -510,7 +510,7 @@ type Writer interface {
 
 // NewWriter returns a new Writer.
 func NewWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) Writer {
 	return newWriter(
 		logger,
@@ -529,7 +529,7 @@ type ProtoFileWriter interface {
 
 // NewProtoFileWriter returns a new ProtoFileWriter.
 func NewProtoFileWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) ProtoFileWriter {
 	return newProtoFileWriter(
 		logger,

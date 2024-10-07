@@ -17,6 +17,7 @@ package bufcheck
 import (
 	"context"
 	"io"
+	"log/slog"
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -25,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
-	"go.uber.org/zap"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -187,7 +187,7 @@ func NewRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) R
 
 // NewClient returns a new Client.
 func NewClient(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (Client, error) {

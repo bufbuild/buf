@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 func rulesConfigForCheckConfig(
@@ -45,8 +45,8 @@ func rulesConfigForCheckConfig(
 	)
 }
 
-func logRulesConfig(logger *zap.Logger, rulesConfig *rulesConfig) {
-	logger.Debug("rulesConfig", zap.Strings("ruleIDs", rulesConfig.RuleIDs))
+func logRulesConfig(logger *slog.Logger, rulesConfig *rulesConfig) {
+	logger.Debug("rulesConfig", slog.Any("ruleIDs", rulesConfig.RuleIDs))
 	if len(rulesConfig.RuleIDs) == 0 {
 		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured.")
 	}
@@ -326,7 +326,7 @@ func newRulesConfig(
 
 // *** JUST USED WITHIN THIS FILE ***
 
-func warnReferencedDeprecatedIDs(logger *zap.Logger, rulesConfig *rulesConfig) {
+func warnReferencedDeprecatedIDs(logger *slog.Logger, rulesConfig *rulesConfig) {
 	warnReferencedDeprecatedIDsForIDType(
 		logger,
 		rulesConfig.ReferencedDeprecatedRuleIDToReplacementIDs,
@@ -341,7 +341,7 @@ func warnReferencedDeprecatedIDs(logger *zap.Logger, rulesConfig *rulesConfig) {
 	)
 }
 
-func warnUnusedPlugins(logger *zap.Logger, rulesConfig *rulesConfig) {
+func warnUnusedPlugins(logger *slog.Logger, rulesConfig *rulesConfig) {
 	if len(rulesConfig.UnusedPluginNameToRuleIDs) == 0 {
 		return
 	}
@@ -371,7 +371,7 @@ func warnUnusedPlugins(logger *zap.Logger, rulesConfig *rulesConfig) {
 }
 
 func warnReferencedDeprecatedIDsForIDType(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	referencedDeprecatedIDToReplacementIDs map[string]map[string]struct{},
 	capitalizedIDType string,
 	pluralIDType string,
