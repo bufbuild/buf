@@ -109,16 +109,16 @@ func (h *protocProxyHandler) Handle(
 	var tmpFile tmp.File
 	if descriptorFilePath == "" {
 		// since we have no stdin file (i.e. Windows), we're going to have to use a temporary file
-		tmpFile, err = tmp.NewFileWithData(fileDescriptorSetData)
+		tmpFile, err = tmp.NewFile(ctx, bytes.NewReader(fileDescriptorSetData))
 		if err != nil {
 			return err
 		}
 		defer func() {
 			retErr = multierr.Append(retErr, tmpFile.Close())
 		}()
-		descriptorFilePath = tmpFile.AbsPath()
+		descriptorFilePath = tmpFile.Path()
 	}
-	tmpDir, err := tmp.NewDir()
+	tmpDir, err := tmp.NewDir(ctx)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (h *protocProxyHandler) Handle(
 	}()
 	args := slicesext.Concat(h.protocExtraArgs, []string{
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
-		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
+		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.Path()),
 	})
 	if getSetExperimentalAllowProto3OptionalFlag(protocVersion) {
 		args = append(
@@ -171,7 +171,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter.SetFeatureSupportsEditions(descriptorpb.Edition_EDITION_PROTO2, descriptorpb.Edition_EDITION_MAX)
 
 	// no need for symlinks here, and don't want to support
-	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
+	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.Path())
 	if err != nil {
 		return err
 	}

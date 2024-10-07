@@ -18,31 +18,31 @@
 package tmp
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/interrupt"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
 )
 
-// File is a temporary file
+// File is a temporary file or directory.
 //
 // It must be closed when done.
 type File interface {
 	io.Closer
 
-	AbsPath() string
+	Path() string
 }
 
-// NewFileWithData returns a new temporary file with the given data.
+// NewFile returns a new temporary file with the data copied from the Reader.
 //
-// It must be closed when done.
-// This file will be deleted on interrupt signals.
+// It must be closed when done. This deletes this file.
+// This file will be automatically closed on context cancellation.
 //
 // Usage of this function requires eng approval - ask before using.
-func NewFileWithData(data []byte) (File, error) {
+func NewFile(ctx context.Context, reader io.Reader) (File, error) {
 	id, err := uuidutil.New()
 	if err != nil {
 		return nil, err
@@ -57,37 +57,27 @@ func NewFileWithData(data []byte) (File, error) {
 	if err != nil {
 		return nil, err
 	}
-	signalC, closer := interrupt.NewSignalChannel()
+	closer := func() error { return os.Remove(absPath) }
 	go func() {
-		<-signalC
-		_ = os.Remove(absPath)
+		<-ctx.Done()
+		_ = closer()
 	}()
-	_, err = file.Write(data)
+	_, err = io.Copy(file, reader)
 	err = multierr.Append(err, file.Close())
 	if err != nil {
-		err = multierr.Append(err, os.Remove(absPath))
-		closer()
+		err = multierr.Append(err, closer())
 		return nil, err
 	}
-	return newFile(absPath, closer), nil
-}
-
-// Dir is a temporary directory.
-//
-// It must be closed when done.
-type Dir interface {
-	io.Closer
-
-	AbsPath() string
+	return newFile(closerFunc(closer), absPath), nil
 }
 
 // NewDir returns a new temporary directory.
 //
-// It must be closed when done.
-// This file will be deleted on interrupt signals.
+// It must be closed when done. This deletes this directory and all its contents.
+// This directory will be automatically closed on context cancellation.
 //
 // Usage of this function requires eng approval - ask before using.
-func NewDir(options ...DirOption) (Dir, error) {
+func NewDir(ctx context.Context, options ...DirOption) (File, error) {
 	dirOptions := newDirOptions()
 	for _, option := range options {
 		option(dirOptions)
@@ -105,12 +95,12 @@ func NewDir(options ...DirOption) (Dir, error) {
 	if err != nil {
 		return nil, err
 	}
-	signalC, closer := interrupt.NewSignalChannel()
+	closer := func() error { return os.RemoveAll(absPath) }
 	go func() {
-		<-signalC
-		_ = os.RemoveAll(absPath)
+		<-ctx.Done()
+		closer()
 	}()
-	return newDir(absPath, closer), nil
+	return newFile(closerFunc(closer), absPath), nil
 }
 
 // DirOption is an option for NewDir.
@@ -127,47 +117,26 @@ func DirWithBasePath(basePath string) DirOption {
 }
 
 type file struct {
-	absPath string
-	closer  func()
+	io.Closer
+
+	path string
 }
 
-func newFile(absPath string, closer func()) *file {
+func newFile(closer io.Closer, path string) *file {
 	return &file{
-		absPath: absPath,
-		closer:  closer,
+		Closer: closer,
+		path:   path,
 	}
 }
 
-func (f *file) AbsPath() string {
-	return f.absPath
+func (f *file) Path() string {
+	return f.path
 }
 
-func (f *file) Close() error {
-	err := os.Remove(f.absPath)
-	f.closer()
-	return err
-}
+type closerFunc func() error
 
-type dir struct {
-	absPath string
-	closer  func()
-}
-
-func newDir(absPath string, closer func()) *dir {
-	return &dir{
-		absPath: absPath,
-		closer:  closer,
-	}
-}
-
-func (d *dir) AbsPath() string {
-	return d.absPath
-}
-
-func (d *dir) Close() error {
-	err := os.RemoveAll(d.absPath)
-	d.closer()
-	return err
+func (c closerFunc) Close() error {
+	return c()
 }
 
 type dirOptions struct {
