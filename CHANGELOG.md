@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-- Add `default_label_name`, which provides the name of the default label of a module to
-  the JSON output for `buf registry module info`.
+- Update `buf registry module info --format=json` to add `default_label_name, which provides the name
+  of the default label of a module.
 
 ## [v1.44.0] - 2024-10-03
 
