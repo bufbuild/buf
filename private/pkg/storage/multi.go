@@ -16,6 +16,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
@@ -79,9 +80,14 @@ func (m *multiReadBucket) Get(ctx context.Context, path string) (ReadObjectClose
 	if m.overlay {
 		// If overlay is enabled, attempt a Get operation against the first bucket. If the file is
 		// found, we avoid the potentially expensive Stat call.
-		if readObjectCloser, err := m.delegates[0].Get(ctx, path); err != nil && !IsNotExist(err) {
-			return nil, err
-		} else if readObjectCloser != nil {
+		readObjectCloser, err := m.delegates[0].Get(ctx, path)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+		} else {
+			// If we did find a ReadObjectCloser, return it, otherwise do the expensive logic to
+			// check every delegate.
 			return readObjectCloser, nil
 		}
 	}
