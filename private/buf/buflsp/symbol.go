@@ -420,6 +420,10 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		return ""
 	}
 
+	if def == nil {
+		return ""
+	}
+
 	pkg := "<empty>"
 	if pkgNode := def.file.packageNode; pkgNode != nil {
 		pkg = string(pkgNode.Name.AsIdentifier())

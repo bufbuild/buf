@@ -342,7 +342,21 @@ func (f *file) IndexImports(ctx context.Context) {
 			isLocal := fileInfo.LocalPath() == fileInfo.ExternalPath()
 			if !isLocal && imported.importablePathToObject == nil {
 				// If this is an external file, it will be in the cache and therefore
-				// finding imports via lsp.findImportable() will not be possible.
+				// finding imports via lsp.findImportable() will not work correctly:
+				// the bucket for the workspace found for a dependency will have
+				// truncated paths, and those workspace files will appear to be
+				// local rather than external. It is not clear that GetWorkspace
+				// is intended for use with files in the cache.
+				//
+				// However, we can just re-use this file's import map, because:
+				//
+				// 1. It was computed from a local file path and has not
+				//    truncated file paths, and contains this file and all of
+				//    its dependencies, or
+				//
+				// 2. it is the import map of some local file that depends on f
+				//    and which copied its import map into it here in a previous
+				//    step.
 				imported.importablePathToObject = f.importablePathToObject
 			}
 		}
@@ -638,6 +652,18 @@ func findImportable(
 	uri protocol.URI,
 	lsp *lsp,
 ) (map[string]storage.ObjectInfo, error) {
+	// This does not use Controller.GetImportableImageFileInfos because:
+	//
+	// 1. That function throws away Module/ModuleSet information, because it
+	//    converts the module contents into ImageFileInfos.
+	//
+	// 2. That function does not specify which of the files it returns are
+	//    well-known imports. Previously, we were making an educated guess about
+	//    which files were well-known, but this resulted in subtle classification
+	//    bugs.
+	//
+	// Doing the file walk here manually helps us retain some control over what
+	// data is discarded.
 	workspace, err := lsp.controller.GetWorkspace(ctx, uri.Filename())
 	if err != nil {
 		return nil, err
