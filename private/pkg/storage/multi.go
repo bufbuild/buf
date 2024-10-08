@@ -76,6 +76,13 @@ func newMultiReadBucket(
 }
 
 func (m *multiReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
+	if m.overlay {
+		// If overlay is enabled, attempt a Get operation against the first bucket. If the file is
+		// found, we avoid the potentially expensive Stat call.
+		if readObjectCloser, err := m.delegates[0].Get(ctx, path); err == nil && readObjectCloser != nil {
+			return readObjectCloser, nil
+		}
+	}
 	_, delegateIndex, err := m.getObjectInfoAndDelegateIndex(ctx, "read", path)
 	if err != nil {
 		return nil, err
