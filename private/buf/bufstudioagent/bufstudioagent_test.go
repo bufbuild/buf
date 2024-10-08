@@ -31,9 +31,10 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/proto"
@@ -61,7 +62,7 @@ func TestPlainPostHandlerH2C(t *testing.T) {
 func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 	agentServer := httptest.NewTLSServer(
 		NewHandler(
-			zaptest.NewLogger(t),
+			slogtestext.NewLogger(t),
 			"https://example.buf.build",
 			upstreamServer.TLS,
 			nil,
@@ -139,7 +140,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	agentServer := httptest.NewTLSServer(
 		NewHandler(
-			zaptest.NewLogger(t),
+			slogext.NopLogger,
 			"https://example.buf.build",
 			upstreamServer.TLS,
 			map[string]struct{}{"forbidden-header": {}},

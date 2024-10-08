@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
@@ -56,7 +57,10 @@ func main() {
 
 func newCommand() *appcmd.Command {
 	flags := newFlags()
-	builder := appext.NewBuilder(programName)
+	builder := appext.NewBuilder(
+		programName,
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
+	)
 	return &appcmd.Command{
 		Use:  fmt.Sprintf("%s path/to/google/protobuf/include", programName),
 		Args: appcmd.ExactArgs(1),

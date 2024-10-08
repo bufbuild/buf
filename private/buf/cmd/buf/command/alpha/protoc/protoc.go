@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -34,10 +35,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // NewCommand returns a new Command.
@@ -90,7 +89,7 @@ func run(
 ) (retErr error) {
 	runner := command.NewRunner()
 	logger := container.Logger()
-	defer zaputil.DebugProfile(logger)()
+	defer slogext.DebugProfile(logger)()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -102,12 +101,12 @@ func run(
 		return fmt.Errorf("cannot call --%s and plugins at the same time", outputFlagName)
 	}
 
-	if checkedEntry := logger.Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
-		checkedEntry.Write(
-			zap.Any("flags", env.flags),
-			zap.Any("plugins", env.PluginNameToPluginInfo),
-		)
-	}
+	logger.DebugContext(
+		ctx,
+		"env",
+		slog.Any("flags", env.flags),
+		slog.Any("plugins", env.PluginNameToPluginInfo),
+	)
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
@@ -174,7 +173,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				defer zaputil.DebugProfile(logger)()
+				defer slogext.DebugProfile(logger)()
 				images, err = bufimage.ImageByDir(image)
 				return err
 			}

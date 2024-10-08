@@ -226,13 +226,14 @@ func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFul
 // NewModuleEntity returns a new module entity to print.
 func NewModuleEntity(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) Entity {
 	return outputModule{
-		ID:         module.Id,
-		Remote:     moduleFullName.Registry(),
-		Owner:      moduleFullName.Owner(),
-		Name:       moduleFullName.Name(),
-		FullName:   moduleFullName.String(),
-		CreateTime: module.CreateTime.AsTime(),
-		State:      module.State.String(),
+		ID:               module.Id,
+		Remote:           moduleFullName.Registry(),
+		Owner:            moduleFullName.Owner(),
+		Name:             moduleFullName.Name(),
+		FullName:         moduleFullName.String(),
+		CreateTime:       module.CreateTime.AsTime(),
+		State:            module.State.String(),
+		DefaultLabelName: module.GetDefaultLabelName(),
 	}
 }
 
@@ -430,13 +431,14 @@ func (c outputCommit) fullName() string {
 }
 
 type outputModule struct {
-	ID         string    `json:"id,omitempty"`
-	Remote     string    `json:"remote,omitempty"`
-	Owner      string    `json:"owner,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	FullName   string    `json:"-" bufprint:"Name"`
-	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
-	State      string    `json:"state,omitempty"`
+	ID               string    `json:"id,omitempty"`
+	Remote           string    `json:"remote,omitempty"`
+	Owner            string    `json:"owner,omitempty"`
+	Name             string    `json:"name,omitempty"`
+	FullName         string    `json:"-" bufprint:"Name"`
+	CreateTime       time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	State            string    `json:"state,omitempty"`
+	DefaultLabelName string    `json:"default_label_name,omitempty"`
 }
 
 func (m outputModule) fullName() string {

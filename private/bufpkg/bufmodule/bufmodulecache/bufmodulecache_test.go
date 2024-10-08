@@ -16,7 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,12 +26,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {
@@ -41,12 +39,13 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 
 	cacheProvider := newCommitProvider(
-		zap.NewNop(),
+		logger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			zap.NewNop(),
+			logger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -103,14 +102,15 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 	commitKeys, err := slicesext.MapError(moduleKeys, bufmodule.ModuleKeyToCommitKey)
 	require.NoError(t, err)
 
 	cacheProvider := newCommitProvider(
-		zap.NewNop(),
+		logger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			zap.NewNop(),
+			logger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -166,12 +166,13 @@ func TestModuleDataProviderBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 
 	cacheProvider := newModuleDataProvider(
-		zap.NewNop(),
+		logger,
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
-			zap.NewNop(),
+			logger,
 			storagemem.NewReadWriteBucket(),
 			filelock.NewNopLocker(),
 		),
@@ -229,14 +230,13 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
-	logger := zaptest.NewLogger(t, zaptest.Level(zap.InfoLevel))
+	logger := slogtestext.NewLogger(t)
 
 	for i := 0; i < 20; i++ {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
 		jobs, err := slicesext.MapError(
 			[]int{0, 1, 2, 3, 4},
 			func(i int) (func(ctx context.Context) error, error) {
-				logger := logger.Named(fmt.Sprintf("job-%d", i))
 				bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
 				if err != nil {
 					return nil, err

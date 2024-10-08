@@ -15,19 +15,19 @@
 package appext
 
 import (
-	"go.uber.org/zap"
+	"log/slog"
 )
 
 type loggerContainer struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
-func newLoggerContainer(logger *zap.Logger) *loggerContainer {
+func newLoggerContainer(logger *slog.Logger) *loggerContainer {
 	return &loggerContainer{
 		logger: logger,
 	}
 }
 
-func (c *loggerContainer) Logger() *zap.Logger {
+func (c *loggerContainer) Logger() *slog.Logger {
 	return c.logger
 }

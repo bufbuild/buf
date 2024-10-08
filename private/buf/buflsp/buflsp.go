@@ -20,6 +20,7 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.lsp.dev/jsonrpc2"
@@ -99,7 +101,7 @@ type lsp struct {
 	conn   jsonrpc2.Conn
 	client protocol.Client
 
-	logger      *zap.Logger
+	logger      *slog.Logger
 	controller  bufctl.Controller
 	checkClient bufcheck.Client
 	rootBucket  storage.ReadBucket
@@ -138,11 +140,8 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
 	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		l.logger.Debug(
-			"processing request",
-			zap.String("method", req.Method()),
-			zap.ByteString("params", req.Params()),
-		)
+		defer slogext.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
+
 		replier := l.wrapReplier(reply, req)
 
 		// Verify that the server has been initialized if this isn't the initialization

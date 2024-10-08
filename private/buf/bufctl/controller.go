@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"sort"
 
@@ -48,7 +49,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -131,7 +131,7 @@ type Controller interface {
 }
 
 func NewController(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	container app.EnvStdioContainer,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
@@ -166,7 +166,7 @@ func NewController(
 // it out again. The separation of concerns here is that the controller doesnt itself
 // deal in the global variables.
 type controller struct {
-	logger             *zap.Logger
+	logger             *slog.Logger
 	container          app.EnvStdioContainer
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
@@ -188,7 +188,7 @@ type controller struct {
 }
 
 func newController(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	container app.EnvStdioContainer,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
@@ -1016,10 +1016,11 @@ func (c *controller) buildTargetImageWithConfigs(
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
 	for _, module := range modules {
-		c.logger.Debug(
+		c.logger.DebugContext(
+			ctx,
 			"building image for target module",
-			zap.String("moduleOpaqueID", module.OpaqueID()),
-			zap.String("moduleDescription", module.Description()),
+			slog.String("moduleOpaqueID", module.OpaqueID()),
+			slog.String("moduleDescription", module.Description()),
 		)
 		opaqueID := module.OpaqueID()
 		// We need to make sure that all dependencies are non-targets, so that they
@@ -1137,14 +1138,14 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 				continue
 			}
 			if _, ok := configuredModuleFullNameStringMap[moduleFullNameString]; !ok {
-				c.logger.Sugar().Warnf(
+				c.logger.Warn(fmt.Sprintf(
 					`File %q imports %q, which is not in your workspace or in the dependencies declared in your buf.yaml, but is found in transitive dependency %q.
 Declare %q in the deps key in your buf.yaml.`,
 					imageFile.Path(),
 					importPath,
 					moduleFullNameString,
 					moduleFullNameString,
-				)
+				))
 			}
 		}
 	}

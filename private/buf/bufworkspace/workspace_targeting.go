@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // workspaceTargeting figures out if we are working with a v1 or v2 workspace based on
@@ -72,7 +72,7 @@ type moduleBucketAndModuleTargeting struct {
 
 func newWorkspaceTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config *workspaceBucketConfig,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
@@ -83,9 +83,10 @@ func newWorkspaceTargeting(
 		return nil, err
 	}
 	if overrideBufYAMLFile != nil {
-		logger.Debug(
+		logger.DebugContext(
+			ctx,
 			"targeting workspace with config override",
-			zap.String("subDirPath", bucketTargeting.SubDirPath()),
+			slog.String("subDirPath", bucketTargeting.SubDirPath()),
 		)
 		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
@@ -116,9 +117,10 @@ func newWorkspaceTargeting(
 	if controllingWorkspace := bucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
 		// This is a v2 workspace.
 		if controllingWorkspace.BufYAMLFile() != nil {
-			logger.Debug(
+			logger.DebugContext(
+				ctx,
 				"targeting workspace based on v2 buf.yaml",
-				zap.String("subDirPath", bucketTargeting.SubDirPath()),
+				slog.String("subDirPath", bucketTargeting.SubDirPath()),
 			)
 			return v2WorkspaceTargeting(
 				ctx,
@@ -144,9 +146,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 				}
 				// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
 				// the workspace entirely, and just act as if the buf.work.yaml did not exist.
-				logger.Debug(
+				logger.DebugContext(
+					ctx,
 					"targeting workspace, ignoring v1 buf.work.yaml, just building on module at target",
-					zap.String("subDirPath", bucketTargeting.SubDirPath()),
+					slog.String("subDirPath", bucketTargeting.SubDirPath()),
 				)
 				return v1WorkspaceTargeting(
 					ctx,
@@ -167,9 +170,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 			)
 		}
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"targeting workspace with no found buf.work.yaml or v2 buf.yaml",
-		zap.String("subDirPath", bucketTargeting.SubDirPath()),
+		slog.String("subDirPath", bucketTargeting.SubDirPath()),
 	)
 	// We did not find any buf.work.yaml or v2 buf.yaml, we invoke fallback logic.
 	return fallbackWorkspaceTargeting(
@@ -397,7 +401,7 @@ func v1WorkspaceTargeting(
 // 3. In the case where we find nothing, we set the input as a v1 module in a v1 workspace.
 func fallbackWorkspaceTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config *workspaceBucketConfig,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
@@ -732,7 +736,7 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 // nice to be able to isolate this as fallback logic here.
 func checkForControllingWorkspaceOrV1Module(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	path string,
 	ignoreWorkspaceCheck bool,
@@ -763,10 +767,11 @@ func checkForControllingWorkspaceOrV1Module(
 				return nil, err
 			}
 			if controllingWorkspace != nil {
-				logger.Debug(
+				logger.DebugContext(
+					ctx,
 					"buffetch termination found",
-					zap.String("curDirPath", curDirPath),
-					zap.String("path", path),
+					slog.String("curDirPath", curDirPath),
+					slog.String("path", path),
 				)
 				return controllingWorkspace, nil
 			}
@@ -787,9 +792,10 @@ func checkForControllingWorkspaceOrV1Module(
 		}
 		curDirPath = normalpath.Dir(curDirPath)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch no termination found",
-		zap.String("path", path),
+		slog.String("path", path),
 	)
 	return fallbackV1Module, nil
 }

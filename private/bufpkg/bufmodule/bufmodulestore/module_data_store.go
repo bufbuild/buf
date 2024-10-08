@@ -19,18 +19,19 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 var (
@@ -78,7 +79,7 @@ type ModuleDataStore interface {
 //
 // This is typically used to interact with a cache directory.
 func NewModuleDataStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
@@ -102,7 +103,7 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	bucket storage.ReadWriteBucket
 	locker filelock.Locker
 
@@ -110,7 +111,7 @@ type moduleDataStore struct {
 }
 
 func newModuleDataStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
@@ -213,9 +214,10 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return nil, err
 		}
 		p.logDebugModuleKey(
+			ctx,
 			moduleKey,
 			"module data store dir read write bucket",
-			zap.String("dirPath", dirPath),
+			slog.String("dirPath", dirPath),
 		)
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
@@ -239,10 +241,11 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// the module data.
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
+		ctx,
 		moduleKey,
 		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
-		zap.Bool("found", err == nil),
-		zap.Error(err),
+		slog.Bool("found", err == nil),
+		slogext.ErrorAttr(err),
 	)
 	if err != nil {
 		return nil, err
@@ -366,9 +369,10 @@ func (p *moduleDataStore) putModuleData(
 			return err
 		}
 		p.logDebugModuleKey(
+			ctx,
 			moduleKey,
 			"module data store dir read write bucket",
-			zap.String("dirPath", dirPath),
+			slog.String("dirPath", dirPath),
 		)
 		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
@@ -389,10 +393,11 @@ func (p *moduleDataStore) putModuleData(
 		}()
 		data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 		p.logDebugModuleKey(
+			ctx,
 			moduleKey,
 			fmt.Sprintf("module data store put read check %s", externalModuleDataFileName),
-			zap.Bool("found", err == nil),
-			zap.Error(err),
+			slog.Bool("found", err == nil),
+			slogext.ErrorAttr(err),
 		)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
@@ -435,10 +440,11 @@ func (p *moduleDataStore) putModuleData(
 		// and we need to make sure no valid module data was written in the interim.
 		data, err = storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 		p.logDebugModuleKey(
+			ctx,
 			moduleKey,
 			fmt.Sprintf("module data store put check %s", externalModuleDataFileName),
-			zap.Bool("found", err == nil),
-			zap.Error(err),
+			slog.Bool("found", err == nil),
+			slogext.ErrorAttr(err),
 		)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
@@ -540,11 +546,12 @@ func (p *moduleDataStore) getReadBucketForTar(
 	}
 	defer func() {
 		p.logDebugModuleKey(
+			ctx,
 			moduleKey,
 			"module data store get tar read bucket",
-			zap.String("tarPath", tarPath),
-			zap.Bool("found", retErr == nil),
-			zap.Error(retErr),
+			slog.String("tarPath", tarPath),
+			slog.Bool("found", retErr == nil),
+			slog.Any("error", retErr),
 		)
 	}()
 	readObjectCloser, err := p.bucket.Get(ctx, tarPath)
@@ -576,11 +583,12 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 		}
 		defer func() {
 			p.logDebugModuleKey(
+				ctx,
 				moduleKey,
 				"module data store put tar to write bucket",
-				zap.String("tarPath", tarPath),
-				zap.Bool("found", retErr == nil),
-				zap.Error(retErr),
+				slog.String("tarPath", tarPath),
+				slog.Bool("found", retErr == nil),
+				slog.Any("error", retErr),
 			)
 		}()
 		writeObjectCloser, err := p.bucket.Put(
@@ -603,8 +611,8 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	}
 }
 
-func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	logDebugModuleKey(p.logger, moduleKey, message, fields...)
+func (p *moduleDataStore) logDebugModuleKey(ctx context.Context, moduleKey bufmodule.ModuleKey, message string, fields ...any) {
+	logDebugModuleKey(ctx, p.logger, moduleKey, message, fields...)
 }
 
 // Returns the module's path within the store if storing individual files.

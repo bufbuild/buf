@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"slices"
 	"strings"
@@ -31,8 +32,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/linker"
@@ -41,7 +42,6 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -108,7 +108,7 @@ func (f *file) Package() []string {
 
 // Reset clears all bookkeeping information on this file.
 func (f *file) Reset(ctx context.Context) {
-	f.lsp.logger.Sugar().Debugf("resetting file %v", f.uri)
+	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
 
 	f.fileNode = nil
 	f.packageNode = nil
@@ -155,7 +155,7 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.Reset(ctx)
 
-	f.lsp.logger.Sugar().Infof("new file version: %v, %v -> %v", f.uri, f.version, version)
+	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
 	f.text = text
 	f.hasText = true
@@ -204,7 +204,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 	report := report{}
 	handler := reporter.NewHandler(&report)
 
-	f.lsp.logger.Sugar().Infof("parsing AST for %v, %v", f.uri, f.version)
+	f.lsp.logger.Info(fmt.Sprintf("parsing AST for %v, %v", f.uri, f.version))
 	parsed, err := parser.Parse(f.uri.Filename(), strings.NewReader(f.text), handler)
 	if err == nil {
 		// Throw away the error. It doesn't contain anything not in the diagnostic array.
@@ -213,7 +213,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 	f.fileNode = parsed
 	f.diagnostics = report.diagnostics
-	f.lsp.logger.Sugar().Debugf("got %v diagnostic(s)", len(f.diagnostics))
+	f.lsp.logger.Debug(fmt.Sprintf("got %v diagnostic(s)", len(f.diagnostics)))
 
 	// Search for a potential package node.
 	if f.fileNode != nil {
@@ -230,7 +230,7 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
 func (f *file) PublishDiagnostics(ctx context.Context) {
-	defer zaputil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
+	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	if f.diagnostics == nil {
 		return
@@ -250,7 +250,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 func (f *file) FindModule(ctx context.Context) {
 	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
 	if err != nil {
-		f.lsp.logger.Warn("could not load workspace", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
 
@@ -269,7 +269,7 @@ func (f *file) FindModule(ctx context.Context) {
 		}
 	}
 	if module == nil {
-		f.lsp.logger.Sugar().Warnf("could not find module for %q", f.uri)
+		f.lsp.logger.Warn(fmt.Sprintf("could not find module for %q", f.uri))
 	}
 
 	// Determine if this is the WKT module. We do so by checking if this module contains
@@ -285,7 +285,7 @@ func (f *file) FindModule(ctx context.Context) {
 
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
-	defer zaputil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
+	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	if f.fileNode == nil || f.importToFile != nil {
 		return
@@ -293,7 +293,7 @@ func (f *file) IndexImports(ctx context.Context) {
 
 	importable, err := findImportable(ctx, f.uri, f.lsp)
 	if err != nil {
-		f.lsp.logger.Sugar().Warnf("could not compute importable files for %s: %s", f.uri, err)
+		f.lsp.logger.Warn(fmt.Sprintf("could not compute importable files for %s: %s", f.uri, err))
 		if f.importablePathToObject == nil {
 			return
 		}
@@ -323,14 +323,14 @@ func (f *file) IndexImports(ctx context.Context) {
 		name := node.Name.AsString()
 		fileInfo, ok := importable[name]
 		if !ok {
-			f.lsp.logger.Sugar().Warnf("could not find URI for import %q", name)
+			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", name))
 			continue
 		}
 
 		f.lsp.logger.Debug(
 			"mapped import -> path",
-			zap.String("import", name),
-			zap.String("path", fileInfo.LocalPath()),
+			slog.String("import", name),
+			slog.String("path", fileInfo.LocalPath()),
 		)
 
 		var imported *file
@@ -383,8 +383,8 @@ func (f *file) IndexImports(ctx context.Context) {
 
 	for _, file := range fileImports {
 		if err := file.ReadFromDisk(ctx); err != nil {
-			file.lsp.logger.Sugar().Warnf("could not load import import %q from disk: %w",
-				file.uri, err)
+			file.lsp.logger.Warn(fmt.Sprintf("could not load import import %q from disk: %s",
+				file.uri, err.Error()))
 			continue
 		}
 
@@ -467,7 +467,7 @@ func (f *file) BuildImage(ctx context.Context) {
 		for i := 0; i < imports.Len(); i++ {
 			dep := imports.Get(i).FileDescriptor
 			if dep == nil {
-				f.lsp.logger.Sugar().Warnf("found nil FileDescriptor for import %s", imports.Get(i).Path())
+				f.lsp.logger.Warn(fmt.Sprintf("found nil FileDescriptor for import %s", imports.Get(i).Path()))
 				continue
 			}
 
@@ -502,17 +502,17 @@ func (f *file) BuildImage(ctx context.Context) {
 		}
 
 		imageFiles = append(imageFiles, imageFile)
-		f.lsp.logger.Sugar().Debugf("added image file for %s", descriptor.Path())
+		f.lsp.logger.Debug(fmt.Sprintf("added image file for %s", descriptor.Path()))
 	}
 
 	if err != nil {
-		f.lsp.logger.Warn("could not build image", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
-		f.lsp.logger.Warn("could not build image", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
 
@@ -533,11 +533,11 @@ func (f *file) RunLints(ctx context.Context) bool {
 	image := f.image
 
 	if module == nil || image == nil {
-		f.lsp.logger.Sugar().Warnf("could not find image for %q", f.uri)
+		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
 		return false
 	}
 
-	f.lsp.logger.Sugar().Debugf("running lint for %q in %v", f.uri, module.ModuleFullName())
+	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.ModuleFullName()))
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(module.OpaqueID())
 	err := f.lsp.checkClient.Lint(
@@ -548,20 +548,20 @@ func (f *file) RunLints(ctx context.Context) bool {
 	)
 
 	if err == nil {
-		f.lsp.logger.Sugar().Warnf("lint generated no errors for %s", f.uri)
+		f.lsp.logger.Warn(fmt.Sprintf("lint generated no errors for %s", f.uri))
 		return false
 	}
 
 	var annotations bufanalysis.FileAnnotationSet
 	if !errors.As(err, &annotations) {
-		f.lsp.logger.Warn("error while linting", zap.String("uri", string(f.uri)), zap.Error(err))
+		f.lsp.logger.Warn("error while linting", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return false
 	}
 
-	f.lsp.logger.Sugar().Warnf("lint generated %d error(s) for %s", len(annotations.FileAnnotations()), f.uri)
+	f.lsp.logger.Warn(fmt.Sprintf("lint generated %d error(s) for %s", len(annotations.FileAnnotations()), f.uri))
 
 	for _, annotation := range annotations.FileAnnotations() {
-		f.lsp.logger.Sugar().Info(annotation.FileInfo().Path(), " ", annotation.FileInfo().ExternalPath())
+		f.lsp.logger.Info(annotation.FileInfo().Path(), " ", annotation.FileInfo().ExternalPath())
 
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
 			Range: protocol.Range{
@@ -586,7 +586,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 // IndexSymbols processes the AST of a file and generates symbols for each symbol in
 // the document.
 func (f *file) IndexSymbols(ctx context.Context) {
-	defer zaputil.DebugProfile(f.lsp.logger, zap.String("uri", string(f.uri)))()
+	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
 	// symbols unconditionally.
@@ -612,7 +612,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		symbol.ResolveCrossFile(ctx)
 	}
 
-	f.lsp.logger.Sugar().Debugf("symbol indexing complete %s", f.uri)
+	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
 }
 
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.
@@ -631,7 +631,7 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	}
 
 	symbol := f.symbols[idx]
-	f.lsp.logger.Debug("found symbol", zap.Object("symbol", symbol))
+	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 
 	// Check that cursor is before the end of the symbol.
 	if comparePositions(symbol.Range().End, cursor) <= 0 {
@@ -693,7 +693,7 @@ func findImportable(
 		return nil, err
 	}
 
-	lsp.logger.Sugar().Debugf("found imports for %q: %#v", uri, imports)
+	lsp.logger.Debug(fmt.Sprintf("found imports for %q: %#v", uri, imports))
 
 	return imports, nil
 }

@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,11 +26,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 type refParser struct {
-	logger                *zap.Logger
+	logger                *slog.Logger
 	rawRefProcessor       func(*RawRef) error
 	singleFormatToInfo    map[string]*singleFormatInfo
 	archiveFormatToInfo   map[string]*archiveFormatInfo
@@ -39,7 +39,7 @@ type refParser struct {
 	protoFileFormatToInfo map[string]*protoFileFormatInfo
 }
 
-func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
+func newRefParser(logger *slog.Logger, options ...RefParserOption) *refParser {
 	refParser := &refParser{
 		logger:                logger,
 		singleFormatToInfo:    make(map[string]*singleFormatInfo),

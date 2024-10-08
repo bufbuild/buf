@@ -16,12 +16,12 @@ package bufcurl
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -103,7 +103,7 @@ func (c *combinedResolver) ListServices() ([]protoreflect.FullName, error) {
 }
 
 // NewWKTResolver returns a Resolver that can resolve all well-known types.
-func NewWKTResolver(ctx context.Context, logger *zap.Logger) (Resolver, error) {
+func NewWKTResolver(ctx context.Context, logger *slog.Logger) (Resolver, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
 		logger,

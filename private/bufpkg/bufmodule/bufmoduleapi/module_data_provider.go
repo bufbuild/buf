@@ -17,6 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
@@ -27,14 +28,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider for the given API client.
 //
 // A warning is printed to the logger if a given Module is deprecated.
 func NewModuleDataProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1DownloadServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider
@@ -48,7 +48,7 @@ func NewModuleDataProvider(
 // *** PRIVATE ***
 
 type moduleDataProvider struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	clientProvider interface {
 		bufapi.V1DownloadServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider
@@ -58,7 +58,7 @@ type moduleDataProvider struct {
 }
 
 func newModuleDataProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	clientProvider interface {
 		bufapi.V1DownloadServiceClientProvider
 		bufapi.V1ModuleServiceClientProvider

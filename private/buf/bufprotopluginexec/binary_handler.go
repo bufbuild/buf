@@ -18,26 +18,26 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
-	logger     *zap.Logger
+	logger     *slog.Logger
 	runner     command.Runner
 	pluginPath string
 	pluginArgs []string
 }
 
 func newBinaryHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	runner command.Runner,
 	pluginPath string,
 	pluginArgs []string,
@@ -56,7 +56,7 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	defer zaputil.DebugProfile(h.logger, zap.String("plugin", filepath.Base(h.pluginPath)))()
+	defer slogext.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
 
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {

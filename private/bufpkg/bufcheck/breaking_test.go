@@ -31,12 +31,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
@@ -1270,7 +1269,7 @@ func testBreaking(
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	logger := zaptest.NewLogger(t)
+	logger := slogtestext.NewLogger(t)
 
 	baseDirPath := filepath.Join("testdata", "breaking", "current")
 	basePreviousDirPath := filepath.Join("testdata", "breaking", "previous")
@@ -1310,7 +1309,7 @@ func testBreaking(
 	require.NoError(t, err)
 
 	workspaceProvider := bufworkspace.NewWorkspaceProvider(
-		zap.NewNop(),
+		logger,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
@@ -1330,14 +1329,14 @@ func testBreaking(
 
 	previousImage, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
 	)
 	require.NoError(t, err)
 
 	image, err := bufimage.BuildImage(
 		ctx,
-		zap.NewNop(),
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
@@ -1346,7 +1345,7 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheck.NewClient(zap.NewNop(), bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
+	client, err := bufcheck.NewClient(logger, bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime))
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,
