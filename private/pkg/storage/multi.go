@@ -85,6 +85,7 @@ func (m *multiReadBucket) Get(ctx context.Context, path string) (ReadObjectClose
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
 			}
+			// Fallthrough to expensive logic to check every delegate.
 		} else {
 			// If we did find a ReadObjectCloser, return it, otherwise do the expensive logic to
 			// check every delegate.
