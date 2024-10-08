@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.45.0] - 2024-10-08
 
 - Update `buf registry module info --format=json` to add `default_label_name`, which provides the name
   of the default label of a module.
@@ -1278,7 +1278,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.44.0...HEAD
+[v1.45.0]: https://github.com/bufbuild/buf/compare/v1.44.0...v1.45.0
 [v1.44.0]: https://github.com/bufbuild/buf/compare/v1.43.0...v1.44.0
 [v1.43.0]: https://github.com/bufbuild/buf/compare/v1.42.0...v1.43.0
 [v1.42.0]: https://github.com/bufbuild/buf/compare/v1.41.0...v1.42.0
