@@ -297,7 +297,7 @@ func (f *file) IndexImports(ctx context.Context) {
 		if f.importablePathToObject == nil {
 			return
 		}
-	} else {
+	} else if f.importablePathToObject == nil {
 		f.importablePathToObject = importable
 	}
 
@@ -320,10 +320,31 @@ func (f *file) IndexImports(ctx context.Context) {
 			continue
 		}
 
+		// If this is an external file, it will be in the cache and therefore
+		// finding imports via lsp.findImportable() will not work correctly:
+		// the bucket for the workspace found for a dependency will have
+		// truncated paths, and those workspace files will appear to be
+		// local rather than external.
+		//
+		// Thus, we search for name and all of its path suffixes. This is not
+		// ideal but is our only option in this case.
+		var fileInfo storage.ObjectInfo
 		name := node.Name.AsString()
-		fileInfo, ok := importable[name]
-		if !ok {
-			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", name))
+		for {
+			fileInfo, ok = importable[name]
+			if ok {
+				break
+			}
+
+			idx := strings.Index(name, "/")
+			if idx == -1 {
+				break
+			}
+
+			name = name[idx+1:]
+		}
+		if fileInfo == nil {
+			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", node.Name.AsString()))
 			continue
 		}
 
@@ -338,27 +359,6 @@ func (f *file) IndexImports(ctx context.Context) {
 			imported = f
 		} else {
 			imported = f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
-
-			isLocal := fileInfo.LocalPath() == fileInfo.ExternalPath()
-			if !isLocal && imported.importablePathToObject == nil {
-				// If this is an external file, it will be in the cache and therefore
-				// finding imports via lsp.findImportable() will not work correctly:
-				// the bucket for the workspace found for a dependency will have
-				// truncated paths, and those workspace files will appear to be
-				// local rather than external. It is not clear that GetWorkspace
-				// is intended for use with files in the cache.
-				//
-				// However, we can just re-use this file's import map, because:
-				//
-				// 1. It was computed from a local file path and has not
-				//    truncated file paths, and contains this file and all of
-				//    its dependencies, or
-				//
-				// 2. it is the import map of some local file that depends on f
-				//    and which copied its import map into it here in a previous
-				//    step.
-				imported.importablePathToObject = f.importablePathToObject
-			}
 		}
 
 		imported.objectInfo = fileInfo
@@ -672,6 +672,7 @@ func findImportable(
 	imports := make(map[string]storage.ObjectInfo)
 	for _, module := range workspace.Modules() {
 		err = module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+
 			if fileInfo.FileType() != bufmodule.FileTypeProto {
 				return nil
 			}

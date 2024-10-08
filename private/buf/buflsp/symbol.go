@@ -332,58 +332,46 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	}
 }
 
-// func (s *symbol) MarshalLogObject(enc zapcore.ObjectEncoder) (err error) {
-// 	enc.AddString("file", s.file.uri.Filename())
+func (s *symbol) LogValue() slog.Value {
+	attrs := []slog.Attr{slog.String("file", s.file.uri.Filename())}
 
-// 	// zapPos converts an ast.SourcePos into a zap marshaller.
-// 	zapPos := func(pos ast.SourcePos) zapcore.ObjectMarshalerFunc {
-// 		return func(enc zapcore.ObjectEncoder) error {
-// 			enc.AddInt("offset", pos.Offset)
-// 			enc.AddInt("line", pos.Line)
-// 			enc.AddInt("col", pos.Col)
-// 			return nil
-// 		}
-// 	}
+	// pos converts an ast.SourcePos into a slog.Value.
+	pos := func(pos ast.SourcePos) slog.Value {
+		return slog.GroupValue(
+			slog.Int("line", pos.Line),
+			slog.Int("col", pos.Col),
+		)
+	}
 
-// 	err = enc.AddObject("start", zapPos(s.info.Start()))
-// 	if err != nil {
-// 		return err
-// 	}
+	attrs = append(attrs, slog.Any("start", pos(s.info.Start())))
+	attrs = append(attrs, slog.Any("end", pos(s.info.End())))
 
-// 	err = enc.AddObject("end", zapPos(s.info.End()))
-// 	if err != nil {
-// 		return err
-// 	}
+	switch kind := s.kind.(type) {
+	case *builtin:
+		attrs = append(attrs, slog.String("builtin", kind.name))
 
-// 	switch kind := s.kind.(type) {
-// 	case *builtin:
-// 		enc.AddString("builtin", kind.name)
+	case *import_:
+		if kind.file != nil {
+			attrs = append(attrs, slog.String("imports", kind.file.uri.Filename()))
+		}
 
-// 	case *import_:
-// 		if kind.file != nil {
-// 			enc.AddString("imports", kind.file.uri.Filename())
-// 		}
+	case *definition:
+		attrs = append(attrs, slog.String("defines", strings.Join(kind.path, ".")))
 
-// 	case *definition:
-// 		enc.AddString("defines", strings.Join(kind.path, "."))
+	case *reference:
+		if kind.file != nil {
+			attrs = append(attrs, slog.String("imports", kind.file.uri.Filename()))
+		}
+		if kind.path != nil {
+			attrs = append(attrs, slog.String("references", strings.Join(kind.path, ".")))
+		}
+		if kind.seeTypeOf != nil {
+			attrs = append(attrs, slog.Any("see_type_of", kind.seeTypeOf))
+		}
+	}
 
-// 	case *reference:
-// 		if kind.file != nil {
-// 			enc.AddString("imports", kind.file.uri.Filename())
-// 		}
-// 		if kind.path != nil {
-// 			enc.AddString("references", strings.Join(kind.path, "."))
-// 		}
-// 		if kind.seeTypeOf != nil {
-// 			err = enc.AddObject("see_type_of", kind.seeTypeOf)
-// 			if err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-
-// 	return nil
-// }
+	return slog.GroupValue(attrs...)
+}
 
 // FormatDocs finds appropriate documentation for the given s and constructs a Markdown
 // string for showing to the client.
