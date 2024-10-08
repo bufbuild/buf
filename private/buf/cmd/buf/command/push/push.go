@@ -177,14 +177,32 @@ If you set the --%s flag and/or --%s flag yourself, then the value(s) will be us
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
 	_ = flagSet.MarkHidden(tagFlagName)
 	_ = flagSet.MarkHidden(tagFlagShortName)
-	_ = flagSet.MarkDeprecated(tagFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(
+		tagFlagName,
+		fmt.Sprintf(
+			`%s Replace "buf push --tag <tag-name>" with "buf push --label <default-label-name> --label <label-name>" (<tag-name> and <label-name> are equivalent in this case).
+You can also use "buf registry commit add-label <remote/owner/module:commit> --label <label>" to add a label to an existing commit.`,
+			useLabelInstead,
+		),
+	)
 	_ = flagSet.MarkDeprecated(tagFlagShortName, useLabelInstead)
 	flagSet.StringVar(&f.Draft, draftFlagName, "", useLabelInstead)
 	_ = flagSet.MarkHidden(draftFlagName)
-	_ = flagSet.MarkDeprecated(draftFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(
+		draftFlagName,
+		fmt.Sprintf(
+			`%s Replace "buf push --draft <draft-name>" with "buf push --label <label-name>" (<draft-name> and <label-name> are equivalent in this case).`,
+			useLabelInstead,
+		),
+	)
 	flagSet.StringVar(&f.Branch, branchFlagName, "", useLabelInstead)
 	_ = flagSet.MarkHidden(branchFlagName)
-	_ = flagSet.MarkDeprecated(branchFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(branchFlagName,
+		fmt.Sprintf(
+			`%s Replace "buf push --branch <branch-name>" with "buf push --label <label-name>" (<branch-name> and <label-name> are equivalent in this case).`,
+			useLabelInstead,
+		),
+	)
 }
 
 func run(
