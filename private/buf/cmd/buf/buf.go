@@ -85,7 +85,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
-	"github.com/bufbuild/buf/private/bufpkg/bufcobra/command/webpages"
+	"github.com/bufbuild/buf/private/bufpkg/bufcobra/webpages"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -289,7 +289,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 		},
 		ModifyCobra: func(cobraCommand *cobra.Command) error {
-			return webpages.AddWebpagesCommand(cobraCommand)
+			return webpages.AddCommand(cobraCommand)
 		},
 	}
 }

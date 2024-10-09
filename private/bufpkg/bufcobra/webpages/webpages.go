@@ -33,9 +33,9 @@ const (
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
-// AddWebpagesCommand takes a cobra command and adds a webpages subcommand use to generate
+// AddCommand takes a cobra command and adds a webpages subcommand use to generate
 // markdown documentation for the given command.
-func AddWebpagesCommand(
+func AddCommand(
 	rootCobraCommand *cobra.Command,
 ) error {
 	rootCobraCommand.AddCommand(newCommand(rootCobraCommand))
