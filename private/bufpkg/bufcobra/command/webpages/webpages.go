@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appcmd
+package webpages
 
 import (
 	"bufio"
@@ -29,20 +29,84 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	webpagesConfigFlag = "config"
+	webpagesConfigFlag    = "config"
+	noFrontMatterFlagName = "no-front-matter"
 )
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
-type webpagesFlags struct {
-	Config string
+// AddWebpagesCommand takes a cobra command and adds a webpages subcommand use to generate
+// markdown documentation for the given command.
+func AddWebpagesCommand(
+	rootCobraCommand *cobra.Command,
+) error {
+	rootCobraCommand.AddCommand(newCommand(rootCobraCommand))
+	return nil
+}
+
+func newCommand(
+	rootCobraCommand *cobra.Command,
+) *cobra.Command {
+	command := &cobra.Command{
+		Use:    "webpages",
+		Hidden: true,
+		Short:  "Generate markdown files for CLI reference documentation.",
+		Long: fmt.Sprintf(`Generate markdown files for CLI reference documentation.
+
+By default, this generates Docusaurus compatible markdown files with front matter. For markdown
+files with only a header, use the --%s flag.`,
+			noFrontMatterFlagName,
+		),
+		Args: cobra.NoArgs,
+		RunE: func(command *cobra.Command, _ []string) error {
+			return run(command.Context(), command.Flags(), rootCobraCommand)
+		},
+	}
+	command.Flags().String(
+		webpagesConfigFlag,
+		"",
+		"Path to config file to use",
+	)
+	command.Flags().Bool(
+		noFrontMatterFlagName,
+		false,
+		"Do not generate front matter for the markdown. Instead only generate a H1 title",
+	)
+	return command
+}
+
+func run(
+	ctx context.Context,
+	flags *pflag.FlagSet,
+	rootCobraCommand *cobra.Command,
+) error {
+	// TODO: validate flags
+	configPath, err := flags.GetString(webpagesConfigFlag)
+	if err != nil {
+		return err
+	}
+	config, err := readConfig(configPath)
+	if err != nil {
+		return err
+	}
+	excludes := slicesext.ToStructMap(config.ExcludeCommands)
+	for _, command := range rootCobraCommand.Commands() {
+		if _, ok := excludes[command.CommandPath()]; ok {
+			command.Hidden = true
+		}
+	}
+	return generateMarkdownTree(
+		rootCobraCommand,
+		config,
+		config.OutputDir,
+	)
 }
 
 // webpagesConfig configures the doc generator, example config:
@@ -64,52 +128,6 @@ type webpagesConfig struct {
 	// if the command path is longer than this then the `cobra.Command.Name()` is used,
 	// otherwise `cobra.Command.CommandPath() is used.
 	SidebarPathThreshold int `yaml:"sidebar_path_threshold,omitempty"`
-}
-
-func newWebpagesFlags() *webpagesFlags {
-	return &webpagesFlags{}
-}
-
-func (f *webpagesFlags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Config,
-		webpagesConfigFlag,
-		"",
-		"Config file to use",
-	)
-}
-
-// newWebpagesCommand returns a "webpages" command that generates docusaurus markdown for cobra commands.
-// In the future this will need to be adapted to accept a Command when cobra.Command is removed.
-func newWebpagesCommand(
-	command *cobra.Command,
-) *Command {
-	flags := newWebpagesFlags()
-	return &Command{
-		Use:    "webpages",
-		Hidden: true,
-		Run: func(ctx context.Context, container app.Container) error {
-			cfg, err := readConfig(flags.Config)
-			if err != nil {
-				return err
-			}
-			excludes := make(map[string]bool)
-			for _, exclude := range cfg.ExcludeCommands {
-				excludes[exclude] = true
-			}
-			for _, cmd := range command.Commands() {
-				if excludes[cmd.CommandPath()] {
-					cmd.Hidden = true
-				}
-			}
-			return generateMarkdownTree(
-				command,
-				cfg,
-				cfg.OutputDir,
-			)
-		},
-		BindFlags: flags.Bind,
-	}
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.

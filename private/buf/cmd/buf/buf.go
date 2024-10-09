@@ -85,6 +85,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
+	"github.com/bufbuild/buf/private/bufpkg/bufcobra/command/webpages"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -92,6 +93,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 )
 
 // Main is the entrypoint to the buf CLI.
@@ -285,6 +287,9 @@ func NewRootCommand(name string) *appcmd.Command {
 					},
 				},
 			},
+		},
+		ModifyCobra: func(cobraCommand *cobra.Command) error {
+			return webpages.AddWebpagesCommand(cobraCommand)
 		},
 	}
 }
