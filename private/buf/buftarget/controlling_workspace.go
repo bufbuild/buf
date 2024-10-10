@@ -25,7 +25,7 @@ type ControllingWorkspace interface {
 	// buf.work.yaml or v2 buf.yaml workspace configuration is located.
 	Path() string
 	// Returns a buf.work.yaml file that was found for the controlling workspace.
-	// This is empty if we are retruning a buf.yaml.
+	// This is empty if we are returning a buf.yaml.
 	BufWorkYAMLFile() bufconfig.BufWorkYAMLFile
 	// Returns a buf.yaml that was found for the controlling workspace.
 	// This is empty if we are returning a buf.work.yaml.

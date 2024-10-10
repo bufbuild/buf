@@ -108,7 +108,7 @@ type PluginResponse struct {
 	PluginOut  string
 }
 
-// NewPluginResponse retruns a new *PluginResponse.
+// NewPluginResponse returns a new *PluginResponse.
 func NewPluginResponse(
 	response *pluginpb.CodeGeneratorResponse,
 	pluginName string,

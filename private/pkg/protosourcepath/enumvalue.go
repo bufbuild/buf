@@ -32,23 +32,25 @@ var (
 	}
 )
 
+// enumValues is the state when an element representing enum values in the source path was
+// parsed.
 func enumValues(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, enumValueNameTypeTag),
-			childAssociatedPath(sourcePath, i, enumValueNumberTypeTag),
+			childAssociatedPath(fullSourcePath, index, enumValueNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, enumValueNumberTypeTag),
 		)
 	}
-	if len(sourcePath) == i+1 {
+	if len(fullSourcePath) == index+1 {
 		// This does not extend beyond the enum value declaration, return associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
@@ -56,6 +58,8 @@ func enumValues(
 	return enumValue, associatedPaths, nil
 }
 
+// enumValue is the state when an element representing a specific child path of an enum was
+// parsed.
 func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// TODO: use slices.Contains in the future
 	if slicesext.ElementsContained(
@@ -67,7 +71,8 @@ func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 	}
 	switch token {
 	case enumValueOptionTypeTag:
-		// Return the entire path and then handle the option
+		// For options, we add the full path and then return the options state to validate
+		// the path.
 		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")

@@ -47,22 +47,23 @@ var (
 	}
 )
 
+// messages is the state when an element representing messages in the source path was parsed.
 func messages(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, messageNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, messageNameTypeTag),
 		)
 	}
-	if len(sourcePath) == i+1 {
+	if len(fullSourcePath) == index+1 {
 		// This does not extend beyond the message declaration, return associated paths and
 		// terminate here.
 		return nil, associatedPaths, nil
@@ -70,65 +71,89 @@ func messages(
 	return message, associatedPaths, nil
 }
 
-func message(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// message is the state when an element representing a specific child path of a message was parsed.
+func message(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case messageNameTypeTag:
 		// The path for message name has already been added, can terminate here immediately.
 		return nil, nil, nil
 	case mesasgeFieldsTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have field declaration without index")
+		// We check to make sure that the length of the source path contains at least the current
+		// token and an index. This is because all source paths for fields are expected
+		// to have indices.
+		if len(fullSourcePath) < index+2 {
+			return nil, nil, newInvalidSourcePathError(fullSourcePath, "cannot have field declaration without index")
 		}
 		return fields, nil, nil
 	case messageOneOfsTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have oneof declaration without index")
+		// We check to make sure that the length of the source path contains at least the current
+		// token and an index. This is because all source paths for oneofs are expected
+		// to have indices.
+		if len(fullSourcePath) < index+2 {
+			return nil, nil, newInvalidSourcePathError(fullSourcePath, "cannot have oneof declaration without index")
 		}
 		return oneOfs, nil, nil
 	case nestedMessagesTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have a nested message declaration without index")
+		// We check to make sure that the length of the source path contains at least the current
+		// token and an index. This is because all source paths for nested messages are expected
+		// to have indices.
+		if len(fullSourcePath) < index+2 {
+			return nil, nil, newInvalidSourcePathError(fullSourcePath, "cannot have a nested message declaration without index")
 		}
 		return messages, nil, nil
 	case nestedEnumsTypeTag:
-		if len(sourcePath) < i+2 {
-			return nil, nil, newInvalidSourcePathError(sourcePath, "cannot have a nested enum declaration without index")
+		// We check to make sure that the length of the source path contains at least the current
+		// token and an index. This is because all source paths for nested enums are expected
+		// to have indices.
+		if len(fullSourcePath) < index+2 {
+			return nil, nil, newInvalidSourcePathError(fullSourcePath, "cannot have a nested enum declaration without index")
 		}
 		return enums, nil, nil
 	case messageOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	case messageExtensionRangeTypeTag:
-		return extensionRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// For extension ranges, we add the full path and then return the extension ranges state
+		// to validate the path.
+		return extensionRanges, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	case messageExtensionsTypeTag:
-		return extensions, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// For extensions, we add the full path and then return the extensions state to
+		// validate the path.
+		return extensions, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	case messageReservedRangeTypeTag:
-		return reservedRanges, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// For reserved ranges, we add the full path and then return the reserved ranges state
+		// to validate the path.
+		return reservedRanges, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	case messageReservedNameTypeTag:
-		return reservedNames, []protoreflect.SourcePath{currentPath(sourcePath, i)}, nil
+		// For reserved names, we add the full path and then return the reserved names state to
+		// validate the path.
+		return reservedNames, []protoreflect.SourcePath{currentPath(fullSourcePath, index)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid message path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid message path")
 }
 
+// oneOfs is the state when an element representing oneofs in the source path was parsed.
 func oneOfs(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, messageOneOfNameTypeTag),
+			childAssociatedPath(fullSourcePath, index, messageOneOfNameTypeTag),
 		)
 	}
 	return oneOf, associatedPaths, nil
 }
 
-func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// oneOf is the state when an element representing a specific child path of a oneof was parsed.
+func oneOf(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// TODO: use slices.Contains in the future
 	if slicesext.ElementsContained(
 		terminalOneOfTokens,
@@ -139,36 +164,40 @@ func oneOf(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (stat
 	}
 	switch token {
 	case messageOneOfOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid one of path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid one of path")
 }
 
+// extensionRanges is the state when an element representing extension ranges in the source path was parsed.
 func extensionRanges(
 	_ int32,
-	sourcePath protoreflect.SourcePath,
-	i int,
+	fullSourcePath protoreflect.SourcePath,
+	index int,
 	excludeChildAssociatedPaths bool,
 ) (state, []protoreflect.SourcePath, error) {
 	associatedPaths := []protoreflect.SourcePath{
-		currentPath(sourcePath, i),
+		currentPath(fullSourcePath, index),
 	}
 	if !excludeChildAssociatedPaths {
 		associatedPaths = append(
 			associatedPaths,
-			childAssociatedPath(sourcePath, i, messageExtensionRangeStartTypeTag),
-			childAssociatedPath(sourcePath, i, messageExtensionRangeEndTypeTag),
+			childAssociatedPath(fullSourcePath, index, messageExtensionRangeStartTypeTag),
+			childAssociatedPath(fullSourcePath, index, messageExtensionRangeEndTypeTag),
 		)
 	}
-	if len(sourcePath) == i+1 {
+	if len(fullSourcePath) == index+1 {
 		// This does not extend beyond the declaration, return associated paths and terminate here.
 		return nil, associatedPaths, nil
 	}
 	return extensionRange, associatedPaths, nil
 }
 
-func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
+// extensionRange is the state when an element representing a specific child path of an
+// extension range was parsed.
+func extensionRange(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// TODO: use slices.Contains in the future
 	if slicesext.ElementsContained(
 		terminalExtensionRangeTokens,
@@ -179,8 +208,9 @@ func extensionRange(token int32, sourcePath protoreflect.SourcePath, i int, _ bo
 	}
 	switch token {
 	case messageExtensionRangeOptionTypeTag:
-		// Return the entire path and then handle the option
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		// For options, we add the full path and then return the options state to validate
+		// the path.
+		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
 	}
-	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid extension range path")
+	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid extension range path")
 }
