@@ -45,7 +45,7 @@ func NewController(
 	if err != nil {
 		return nil, err
 	}
-	wktStore, err := newWKTStore(container)
+	wktStore, err := NewWKTStore(container)
 	if err != nil {
 		return nil, err
 	}

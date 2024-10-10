@@ -28,7 +28,6 @@ import (
 type fileManager struct {
 	lsp       *lsp
 	uriToFile refcount.Map[protocol.URI, file]
-	mutexPool mutexPool
 }
 
 // newFiles creates a new file manager.
@@ -44,7 +43,6 @@ func (fm *fileManager) Open(ctx context.Context, uri protocol.URI) *file {
 	if !found {
 		file.lsp = fm.lsp
 		file.uri = uri
-		file.lock = fm.mutexPool.NewMutex()
 	}
 
 	return file
