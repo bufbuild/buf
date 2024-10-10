@@ -225,6 +225,26 @@ func run(
 			return err
 		}
 		cobraCommand.AddCommand(manpagesCobraCommand)
+		markdownCobraCommand, err := commandToCobra(
+			ctx,
+			container,
+			&Command{
+				Use:    "markdown",
+				Args:   ExactArgs(1),
+				Hidden: true,
+				Run: func(ctx context.Context, container app.Container) error {
+					return doc.GenMarkdownTree(
+						cobraCommand,
+						container.Arg(0),
+					)
+				},
+			},
+			&runErr,
+		)
+		if err != nil {
+			return err
+		}
+		cobraCommand.AddCommand(markdownCobraCommand)
 	}
 
 	// Apply any modifications specified by ModifyCobra
