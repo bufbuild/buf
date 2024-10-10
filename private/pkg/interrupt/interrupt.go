@@ -30,7 +30,7 @@ import (
 // In effect, this function is functionally equivalent to:
 //
 //	ctx, cancel := signal.NotifyContext(ctx, interrupt.Signals...)
-//	defer func() {
+//	go func() {
 //	  <-ctx.Done()
 //	  cancel()
 //	}()
@@ -45,7 +45,7 @@ import (
 //	}
 func Handle(ctx context.Context) context.Context {
 	ctx, cancel := signal.NotifyContext(ctx, Signals...)
-	defer func() {
+	go func() {
 		<-ctx.Done()
 		cancel()
 	}()
