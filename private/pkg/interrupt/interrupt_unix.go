@@ -21,9 +21,8 @@ import (
 	"syscall"
 )
 
-// extraSignals are signals beyond os.Interrupt that we want to be handled
-// as interrupts.
+// Signals are all interrupt signals.
 //
-// For unix-like platforms, this adds syscall.SIGTERM. No other signals
-// are added for other platforms.
-var extraSignals = []os.Signal{syscall.SIGTERM}
+// As opposed to os.Interrupt, this adds syscall.SIGTERM for unix-like platforms. For
+// other platforms, this is just os.Interrupt
+var Signals = []os.Signal{os.Interrupt, syscall.SIGTERM}
