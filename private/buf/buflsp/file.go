@@ -329,6 +329,7 @@ func (f *file) IndexImports(ctx context.Context) {
 		// Thus, we search for name and all of its path suffixes. This is not
 		// ideal but is our only option in this case.
 		var fileInfo storage.ObjectInfo
+		var pathWasTruncated bool
 		name := node.Name.AsString()
 		for {
 			fileInfo, ok = importable[name]
@@ -342,9 +343,19 @@ func (f *file) IndexImports(ctx context.Context) {
 			}
 
 			name = name[idx+1:]
+			pathWasTruncated = true
 		}
 		if fileInfo == nil {
 			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", node.Name.AsString()))
+			continue
+		}
+		if pathWasTruncated && !strings.HasSuffix(fileInfo.LocalPath(), node.Name.AsString()) {
+			// Verify that the file we found, with a potentially too-short path, does in fact have
+			// the "correct" full path as a prefix. E.g., suppose we import a/b/c.proto. We find
+			// c.proto in importable. Now, we look at the full local path, which we expect to be of
+			// the form /home/blah/.cache/blah/a/b/c.proto or similar. If it does not contain
+			// a/b/c.proto as a suffix, we didn't find our file.
+			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q, but found same-suffix path %q", node.Name.AsString(), fileInfo.LocalPath()))
 			continue
 		}
 
