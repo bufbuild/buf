@@ -66,8 +66,10 @@ type Command struct {
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
-	// ModifyCobra allows for any modifications on the Cobra command directly (e.g. sideloading
-	// a Cobra command).
+	// ModifyCobra will modify the underlying [cobra.Command] that is created from this [Command].
+	//
+	// This should be used sparingly. Almost all operations should be able to be performed
+	// by the fields of Command. However, ModifyCommand exists as a break-class feature.
 	ModifyCobra func(*cobra.Command) error
 	// Version the version of the command.
 	//

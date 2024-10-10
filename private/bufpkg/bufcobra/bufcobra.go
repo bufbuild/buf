@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webpages
+package bufcobra
 
 import (
 	"fmt"
@@ -33,20 +33,11 @@ const (
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
-// AddCommand takes a cobra command and adds a webpages subcommand use to generate
-// markdown documentation for the given command.
-func AddCommand(
-	rootCobraCommand *cobra.Command,
-) error {
-	rootCobraCommand.AddCommand(newCommand(rootCobraCommand))
-	return nil
-}
-
-func newCommand(
-	rootCobraCommand *cobra.Command,
-) *cobra.Command {
-	command := &cobra.Command{
-		Use:    "webpages",
+// NewWebpagesCommand returns a new [cobra.Command] that will generate markdown documentation
+// for the given [cobra.Command].
+func NewWebpagesCommand(name string, cobraCommand *cobra.Command) *cobra.Command {
+	webpagesCommand := &cobra.Command{
+		Use:    name,
 		Hidden: true,
 		Short:  "Generate markdown files for CLI reference documentation.",
 		Long: fmt.Sprintf(`Generate markdown files for CLI reference documentation.
@@ -57,25 +48,25 @@ files with Docusaurus compatible front matter, use --%s flag.`,
 		),
 		Args: cobra.NoArgs,
 		RunE: func(command *cobra.Command, _ []string) error {
-			return run(command.Flags(), rootCobraCommand)
+			return run(command.Flags(), cobraCommand)
 		},
 	}
-	command.Flags().String(
+	webpagesCommand.Flags().String(
 		webpagesConfigFlagName,
 		"",
 		"Path to config file to use",
 	)
-	command.Flags().Bool(
+	webpagesCommand.Flags().Bool(
 		includeFrontMatterFlagName,
 		false,
 		"Include Docusaurus compatible front matter in generated markdown.",
 	)
-	return command
+	return webpagesCommand
 }
 
 func run(
 	flags *pflag.FlagSet,
-	rootCobraCommand *cobra.Command,
+	cobraCommand *cobra.Command,
 ) error {
 	configPath, err := flags.GetString(webpagesConfigFlagName)
 	if err != nil {
@@ -88,7 +79,7 @@ func run(
 	}
 
 	excludes := slicesext.ToStructMap(config.ExcludeCommands)
-	for _, command := range rootCobraCommand.Commands() {
+	for _, command := range cobraCommand.Commands() {
 		if _, ok := excludes[command.CommandPath()]; ok {
 			command.Hidden = true
 		}
@@ -98,7 +89,7 @@ func run(
 		return err
 	}
 	return generateMarkdownTree(
-		rootCobraCommand,
+		cobraCommand,
 		config,
 		config.OutputDir,
 		includeFrontMatter,
