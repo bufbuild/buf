@@ -24,7 +24,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -41,6 +40,7 @@ import (
 // Returns a context for managing the server.
 func Serve(
 	ctx context.Context,
+	wktBucket storage.ReadBucket,
 	container appext.Container,
 	controller bufctl.Controller,
 	checkClient bufcheck.Client,
@@ -54,15 +54,6 @@ func Serve(
 		"/", // TODO: This is not correct for Windows.
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	wktStore, err := bufcli.NewWKTStore(container)
-	if err != nil {
-		return nil, err
-	}
-	wktBucket, err := wktStore.GetBucket(ctx)
 	if err != nil {
 		return nil, err
 	}

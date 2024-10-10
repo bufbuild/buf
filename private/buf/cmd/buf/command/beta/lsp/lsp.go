@@ -89,6 +89,15 @@ func run(
 		return err
 	}
 
+	wktStore, err := bufcli.NewWKTStore(container)
+	if err != nil {
+		return err
+	}
+	wktBucket, err := wktStore.GetBucket(ctx)
+	if err != nil {
+		return err
+	}
+
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
@@ -114,7 +123,7 @@ func run(
 		return err
 	}
 
-	conn, err := buflsp.Serve(ctx, container, controller, checkClient, jsonrpc2.NewStream(transport))
+	conn, err := buflsp.Serve(ctx, wktBucket, container, controller, checkClient, jsonrpc2.NewStream(transport))
 	if err != nil {
 		return err
 	}
