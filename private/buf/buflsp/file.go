@@ -683,7 +683,6 @@ func findImportable(
 	imports := make(map[string]storage.ObjectInfo)
 	for _, module := range workspace.Modules() {
 		err = module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
-
 			if fileInfo.FileType() != bufmodule.FileTypeProto {
 				return nil
 			}
