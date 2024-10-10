@@ -12,17 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unix
+// Generated. DO NOT EDIT.
 
-package interrupt
+package bufcobra
 
-import (
-	"os"
-	"syscall"
-)
-
-// Signals are all interrupt signals.
-//
-// As opposed to os.Interrupt, this adds syscall.SIGTERM for unix-like platforms. For
-// other platforms, this is just os.Interrupt
-var Signals = []os.Signal{os.Interrupt, syscall.SIGTERM}
+import _ "github.com/bufbuild/buf/private/usage"

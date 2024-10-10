@@ -1,186 +1,109 @@
 # `protosourcepath`
 
+`protosourcepath` is a simple package that takes a [Protobuf source path](source-path) and
+returns a list of associated source paths. A [Protobuf source path](source-path) is a
+[`SourceCodeInfo.Location`](location) path, which is an array of integers of a variable length
+that identifies a Protobuf definition. Each element of the source path represents a field
+number from a descriptor proto or an index, and they form a *path* from the [`FileDescriptorProto`](file-descriptor)
+to the definition itself. An index is needed for any `repeated` types on the descriptor proto,
+such as messages, enums, services, and extensions on [`FileDescriptorProto`](file-descriptor).
+
+For example, let's say we have the following source path:
+
+```
+[4, 0, 2, 0, 1]
+```
+
+This path represents `.message_type(0).field(0).name`, which is the name of field at index
+0 for the message at index 0. We can break down the source path by following the numbers,
+starting from `FileDescriptorProto`:
+
+- `4` is the field number of [`message_type` on `FileDescriptorProto`](message-types), which
+  is a repeated field representing message declarations in the file. `0` is the index of the
+  message for this path.
+- `2` is the field number of [`field` on `DescriptorProto`](field), which is a repeated field
+  representing field declarations of a message. `0` is the index of the field for this path.
+- `1` is the field number of [`name` on `FieldDescriptorProto`](field-name), which is a field
+  representing the name of field declarations.
+
+All source paths start from `FileDescriptorProto` and end at the Protobuf definition they
+are pointing to. More details on source paths can be found in [descriptor.proto](source-path).
+
+Source paths are useful because they can be used to retrieve the [`SourceCodeInfo`](source-code-info)
+of Protobuf definitions from their `FileDescriptorProto`'s. [`SourceCodeInfo`](source-code-info) provides
+location-based metadata of Protobuf definitions, including comments attached to the Protobuf
+definition, which we use to look for comment ignores for lint checks. And in the case of comment
+ignores, a list of associated paths would allow us to check "associated locations" as potential
+sites for defining a comment ignore (e.g. for a lint rule that checks fields, we want users to
+be able to define a comment ignore on a specific field, but also the message a field belongs
+to, since they could use that to ignore this rule for all fields for that message instead of
+defining individual comment ignores for each field).
+
+## Associated paths
+
+Associated paths are source paths that we consider "associated" with the given source path,
+which we define as parent paths or child paths.
+
+**Parent paths** are valid source paths to "complete" Protobuf declarations that are equal or "closer"
+to the `FileDescriptorProto` than the given source path. A "complete" Protobuf declaration starts
+from either the keyword (e.g. `message` or `enum`) or label/name (e.g. fields may or may not
+have a label, and enum values would start at the name) and terminates at the opening brace
+or semicolon respectively. For example, the path we looked at earlier, `[4, 0, 2, 0, 1]`, one of
+the parent paths would be `[4, 0, 2, 0]`, which is the complete field declaration of `message_type(0).field(0)`
+(which starts at the label of the field and terminates at the semicolon). Parent paths are
+always "complete" Protobuf declarations. The following is a breakdown of what we consider as parent paths:
+
+- For each top-level declaration (e.g. messages, enums, services, extensions, options), we consider the
+  complete declaration as a parent path. This means that a given path can be one of its parent paths,
+  (e.g. if the given path is `[4, 0, 2, 0]`, then `[4, 0, 2, 0]` would be considered one of
+  the parent paths).
+- For each nested declaration (e.g. field; enum values; options; nested messages, enums, and
+  extensions), we consider the complete declaration of the Protobuf definition as a parent path,
+  and the paths of the complete declarations of all parent types as parent paths (e.g. if the
+  given path is `[4, 0, 3, 2]`, which is a path to the complete declaration of a nested message,
+  then the path itself, `[4, 0, 3, 2]` is considered a parent path and `[4, 0]`, the path of the complete
+  declaration of the parent message is considered a parent path).
+- For each specific attribute (e.g. name, label, field number, enum value number, etc.), we consider the complete
+  declaration of the Protobuf definition as a parent path (as illustrated in the initial example,
+  `[4, 0, 2, 0, 1]`, given the path to a field name, the complete declaration of the field
+  and the complete declaration of the message would be considered parent paths).
+
+**Child paths** are valid source paths that are *not* complete Protobuf declarations that are
+equal or "closer" to the `FileDescriptorProto` than the given source path. Going back to our
+example path, `[4, 0, 2, 0, 1]`, a path to a field name, it would be considered its own child
+path, since it is not a complete Protobuf declaration, and other associated child paths would
+include the field number, label, type, and type name. In addition, the associated child paths
+of its parent type would also be considered associated child paths, in this case, the path
+to the message name.
+
+Details examples for associated paths can be found through the tests.
+
 ## API
 
-- A single function, `GetAssociatedSourcePaths` that takes a `protoreflect.SourcePath` and
-  the option to `excludeChildAssociatedPaths`, and returns a list of associated paths,
-  `[]protoreflect.SourcePath`:
+There is a single function, `GetAssociatedSourcePaths`, that takes a `protoreflect.SourcePath`
+and returns a list of associated paths.
 
 ```go
 func GetAssociatedSourcePaths(
 	sourcePath protoreflect.SourcePath,
-	excludeChildAssociatedPaths bool,
 ) ([]protoreflect.SourcePath, error)
 ```
 
-- We expect there always to be at least one associated path.
-- `excludeChildAssociatedPaths` will exclude all child paths and parent associated child
-  paths (explained below). This is useful since comments are usually only included on
-  complete/top-level declarations.
-    - If the provided `sourcePath` is not a top-level declaration, e.g. a path to message
-      name `[4, 0, 1]`, this path will not be considered an associated path when `excludeChildAssociatedPaths`
-      is set to `true`.
+We expect there always to be at least one associated path, the path itself.
 
-## Semantics
+## Future
 
-- All associated paths are based on:
-    - Parent paths
-    - Child paths
-- We do not consider all child paths as associated, only some.
-- Some “child paths” may actually be the associated child paths of the parent path.
-- For example, a path to a field definition, `[4, 0, 2, 0]` would have the following associated paths:
-    - `[4, 0, 2, 0]` the field definition
-    - `[4, 0]` the message definition (parent path)
-    - `[4, 0, 1]` the message name (parent associated child path)
-    - `[4, 0, 2, 0, 1]` the field name (child path)
-    - `[4, 0, 2, 0, 3]` the field number (child path)
-    - `[4, 0, 2, 0, 5]` the field type (child path)
-    - `[4, 0, 2, 0, 6]` the field type name (child path)
-    - `[4, 0, 2, 0, 4]` the field label (child path)
-- If `excludeChildAssociatedPaths` is set to `true` , then child paths and parent-associated child
-  paths would not be included. So for the example above, we could get:
-    - `[4, 0, 2, 0]` the field definition
-    - `[4, 0]` the message definition (parent path)
-- This does not do a validation on associated paths with existing spans, e.g. the example above,
-  there may not be a field label or field type name (such as the field declaration below):
+We are currently returning all associated source paths, but we have the option to exclude
+child paths/Protobuf declarations that are not complete, since our use-case is primarily to
+get comments, which should only be attached to complete Protobuf declarations. However, it
+is currently inexpensive to check all associated source paths, so we have not exposed that
+functionality on the exported function.
 
-```protobuf
-message Foo {
-	string id = 1;
-}
-```
-
-- This library/API does not care/know about spans — a path may have more than one span, e.g.
-
-```protobuf
-message Bar {
-  extend Foo {
-    repeated int32 bar = 5;
-    optional string barbar = 6;
-  }
-  extend Foo {
-    repeated int32 barbarbar = 7;
-  }
-}
-```
-
-- The path `[4, 0, 6]` would both have two spans, one with starting line 2, and the other
-  with starting line 6. This library does not parse span information, and it is up to the
-  caller to handle multiple spans.
-- The library does not differentiate whether a field is a part of a `oneof` declaration —
-  it is up to the caller to check `FieldDescriptorProto.oneof_index` and then check the
-  associated paths for the `oneof_decl`.
-- For options, the library will return the path itself and any associated parent paths —
-  even if it is not a known option from `descriptor.proto`. It only guarantees that an option
-  number is provided.
-- For `default_value`, which is specific to `proto2`, we do not return it as an associated
-  path of a field, but the library will return associated paths when provided with `default_value`.
-
-### Associations and Errors
-
-A table of declarations and their associated paths are available below. When `excludeChildAssociatedPaths`
-is set to `true`, then everything in the `child_associated_paths` column is excluded. The
-`parent_associated_paths` column may include the path itself.
-
-|                                                           |                                  | associated_paths                                                     |                                                                                                           |                                                        |
-|-----------------------------------------------------------|----------------------------------|----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
-| path                                                      |                                  | parent_associated_paths                                              | child_associated_paths                                                                                    | invalid_path_error                                     |
-| .package                                                  | [2]                              | [2]                                                                  |                                                                                                           |                                                        |
-| .dependency                                               | [3]                              |                                                                      |                                                                                                           | cannot have dependency declaration without index       |
-| .dependency[i]                                            | [3,i]                            | [3,i]                                                                |                                                                                                           |                                                        |
-| .syntax                                                   | [12]                             | [12]                                                                 |                                                                                                           |                                                        |
-| .edition                                                  | [14]                             | [14]                                                                 |                                                                                                           |                                                        |
-| .message_type                                             | [4]                              |                                                                      |                                                                                                           | cannot have message declaration without index          |
-| .message_type[i]                                          | [4, i]                           | [4, i]                                                               | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].name                                     | [4, i, 1]                        | [4,i]                                                                | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].field                                    | [4, i, 2]                        |                                                                      |                                                                                                           | cannot have field declaration without index            |
-| .message_type[i].field[j]                                 | [4, i, 2, j]                     | [4,i] [4, i, 2, j]                                                   | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].field[j].name                            | [4, i, 2, j, 1]                  | [4,i] [4, i, 2, j]                                                   | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].field[j].number                          | [4, i, 2, j, 3]                  | [4,i] [4, i, 2, j]                                                   | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].field[j].label                           | [4, i, 2, j, 4]                  | [4,i] [4, i, 2, j]                                                   | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].field[j].type                            | [4, i, 2, j, 5]                  | [4,i] [4, i, 2, j]                                                   | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].field[j].type_name                       | [4, i, 2, j, 6]                  | [4,i] [4, i, 2, j]                                                   | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].nested_type                              | [4, i, 3]                        |                                                                      |                                                                                                           | cannot have nested declaration without index           |
-| .message_type[i].nested_type[j]                           | [4, i, 3, j]                     | [4,i] [4, i, 3, j]                                                   | [4, i, 1] [4, i, 3, j, 1]                                                                                 |                                                        |
-| .message_type[i].nested_type[j].name                      | [4, i, 3, j, 1]                  | [4,i] [4, i, 3, j]                                                   | [4, i, 1] [4, i, 3, j, 1]                                                                                 |                                                        |
-| .message_type[i].enum_type                                | [4, i, 4]                        |                                                                      |                                                                                                           | cannot have nested enum declaration without index      |
-| .message_type[i].enum_type[j]                             | [4, i, 4, j]                     | [4,i] [4, i, 4, j]                                                   | [4, i, 1] [4, i, 4, j, 1]                                                                                 |                                                        |
-| .message_type[i].enum_type[j].name                        | [4, i, 4, j, 1]                  | [4,i] [4, i, 4, j]                                                   | [4, i, 1] [4, i, 4, j, 1]                                                                                 |                                                        |
-| .message_type[i].extension_range                          | [4, i, 5]                        | [4,i] [4, i, 5]                                                      | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].extension_range[j]                       | [4, i, 5, j]                     | [4,i] [4, i, 5] [4, i, 5, j]                                         | [4, i, 1] [4, i, 5, j, 1] [4, i, 5, j, 2]                                                                 |                                                        |
-| .message_type[i].extension_range[j].start                 | [4, i, 5, j, 1]                  | [4,i] [4, i, 5] [4, i, 5, j]                                         | [4, i, 1] [4, i, 5, j, 1] [4, i, 5, j, 2]                                                                 |                                                        |
-| .message_type[i].extension_range[j].end                   | [4, i, 5, j, 2]                  | [4,i] [4, i, 5] [4, i, 5, j]                                         | [4, i, 1] [4, i, 5, j, 1] [4, i, 5, j, 2]                                                                 |                                                        |
-| .message_type[i].oneof_decl                               | [4, i, 8]                        |                                                                      |                                                                                                           | cannot have oneof declaration without index            |
-| .message_type[i].oneof_decl[j]                            | [4, i, 8, j]                     | [4,i] [4, i, 8, j]                                                   | [4, i, 1] [4, i, 8, j, 1]                                                                                 |                                                        |
-| .message_type[i].oneof_decl[j].name                       | [4, i, 8, j, 1]                  | [4,i] [4, i, 8, j]                                                   | [4, i, 1] [4, i, 8, j, 1]                                                                                 |                                                        |
-| .message_type[i].extension                                | [4, i, 6]                        | [4,i] [4, i, 6]                                                      | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].extension[j]                             | [4, i, 6, j]                     | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].extension[j].extendee                    | [4, i, 6, j, 2]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].extension[j].name                        | [4, i, 6, j, 1]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].extension[j].number                      | [4, i, 6, j, 3]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].extension[j].label                       | [4, i, 6, j, 4]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].extension[j].type                        | [4, i, 6, j, 5]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].extension[j].type_name                   | [4, i, 6, j, 6]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6]           |                                                        |
-| .message_type[i].reserved_range                           | [4, i, 9]                        | [4,i] [4, i, 9]                                                      | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].reserved_range[j]                        | [4, i, 9, j]                     | [4,i] [4, i, 9] [4, i, 9, j]                                         | [4, i, 1] [4, i, 9, j, 1] [4, i, 9, j, 2]                                                                 |                                                        |
-| .message_type[i].reserved_range[j].start                  | [4, i, 9, j, 1]                  | [4,i] [4, i, 9] [4, i, 9, j]                                         | [4, i, 1] [4, i, 9, j, 1] [4, i, 9, j, 2]                                                                 |                                                        |
-| .message_type[i].reserved_range[j].end                    | [4, i, 9, j, 2]                  | [4,i] [4, i, 9] [4, i, 9, j]                                         | [4, i, 1] [4, i, 9, j, 1] [4, i, 9, j, 2]                                                                 |                                                        |
-| .message[i].reserved_name                                 | [4, i, 10]                       | [4, i] [4, i, 10]                                                    | [4, i, 1]                                                                                                 |                                                        |
-| .message[i].reserved_name[j]                              | [4, i, 10, j]                    | [4, i] [4, i, 10] [4, i, 10, j]                                      | [4, i, 1]                                                                                                 |                                                        |
-| .enum_type                                                | [5]                              |                                                                      |                                                                                                           | cannot have enum declaration without index             |
-| .enum_type[i]                                             | [5, i]                           | [5, i]                                                               | [5, i, 1]                                                                                                 |                                                        |
-| .enum_type[i].name                                        | [5, i, 1]                        | [5, i]                                                               | [5, i, 1]                                                                                                 |                                                        |
-| .enum_type[i].value                                       | [5, i, 2]                        |                                                                      |                                                                                                           | cannot have enum value declaration without index       |
-| .enum_type[i].value[j]                                    | [5, i, 2, j]                     | [5, i] [5, i, 2, j]                                                  | [5, i, 1] [5, i, 2, j, 1] [5, i, 2, j, 2]                                                                 |                                                        |
-| .enum_type[i].value[j].name                               | [5, i, 2, j, 1]                  | [5, i] [5, i, 2, j]                                                  | [5, i, 1] [5, i, 2, j, 1] [5, i, 2, j, 2]                                                                 |                                                        |
-| .enum_type[i].value[j].number                             | [5, i, 2, j, 2]                  | [5, i] [5, i, 2, j]                                                  | [5, i, 1] [5, i, 2, j, 1] [5, i, 2, j, 2]                                                                 |                                                        |
-| .enum_type[i].reserved_range                              | [5, i, 4]                        | [5, i] [5, i, 4]                                                     | [5, i, 1]                                                                                                 |                                                        |
-| .enum_type[i].reserved_range[j]                           | [5, i, 4, j]                     | [5, i] [5, i, 4] [5, i, 4, j]                                        | [5, i, 1] [5, i, 4, j, 1] [5, i, 4, j, 2]                                                                 |                                                        |
-| .enum_type[i].reserved_range[j].start                     | [5, i, 4, j, 1]                  | [5, i] [5, i, 4] [5, i, 4, j]                                        | [5, i, 1] [5, i, 4, j, 1] [5, i, 4, j, 2]                                                                 |                                                        |
-| .enum_type[i].reserved_range[j].end                       | [5, i, 4, j, 2]                  | [5, i] [5, i, 4] [5, i, 4, j]                                        | [5, i, 1] [5, i, 4, j, 1] [5, i, 4, j, 2]                                                                 |                                                        |
-| .enum_type[i].reserved_name                               | [5, i, 5]                        | [5, i] [5, i, 5]                                                     | [5, i, 1]                                                                                                 |                                                        |
-| .enum_type[i].reserved_name[j]                            | [5, i, 5, j]                     | [5, i] [5, i, 5] [5, i, 5, j]                                        | [5, i, 1]                                                                                                 |                                                        |
-| .extension                                                | [7]                              | [7]                                                                  |                                                                                                           |                                                        |
-| .extension[i]                                             | [7, i]                           | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extension[i].extendee                                    | [7, i, 2]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extension[i].name                                        | [7, i, 1]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extension[i].number                                      | [7, i, 3]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extension[i].label                                       | [7, i, 4]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extension[i].type                                        | [7, i, 5]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extension[i].type_name                                   | [7, i, 6]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .service                                                  | [6]                              |                                                                      |                                                                                                           | cannot have service declaration without an index       |
-| .service[i]                                               | [6, i]                           | [6, i]                                                               | [6, i, 1]                                                                                                 |                                                        |
-| .service[i].name                                          | [6, i, 1]                        | [6, i]                                                               | [6, i, 1]                                                                                                 |                                                        |
-| .service[i].method                                        |                                  |                                                                      |                                                                                                           | cannot have method declaration without an index        |
-| .service[i].method[j]                                     | [6, i, 2, j]                     | [6, i] [6, i, 2, j]                                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5] [6, i, 2, j, 6]                 |                                                        |
-| .service[i].method[j].name                                | [6, i, 2, j, 1]                  | [6, i] [6, i, 2, j]                                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5] [6, i, 2, j, 6]                 |                                                        |
-| .service[i].method[j].input_type                          | [6, i, 2, j, 2]                  | [6, i] [6, i, 2, j]                                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5] [6, i, 2, j, 6]                 |                                                        |
-| .service[i].method[j].output_type                         | [6, i, 2, j, 3]                  | [6, i] [6, i, 2, j]                                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5] [6, i, 2, j, 6]                 |                                                        |
-| .service[i].method[j].client_streaming                    | [6, i, 2, j, 5]                  | [6, i] [6, i, 2, j]                                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5] [6, i, 2, j, 6]                 |                                                        |
-| .service[i].method[j].server_streaming                    | [6, i, 2, j, 6]                  | [6, i] [6, i, 2, j]                                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5] [6, i, 2, j, 6]                 |                                                        |
-| .options                                                  | [8]                              | [8]                                                                  |                                                                                                           |                                                        |
-| .options.<option_name>                                    | [8, <option_number>]             | [8] [8, <option_number>]                                             |                                                                                                           |                                                        |
-| .message_type[i].options                                  | [4, i, 7]                        | [4, i] [4, i, 7]                                                     | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].options.<option_name>                    | [4, i, 7, <option_number>]       | [4, i] [4, i, 7] [4, i, 7, <option_number>]                          | [4, i, 1]                                                                                                 |                                                        |
-| .message_type[i].nested_type[j].options                   | [4, i, 3, j, 7]                  | [4, i] [4, i, 3, j]                                                  | [4, i, 1] [4, i, 3, j, 1]                                                                                 |                                                        |
-| .message_type[i].nested_type[j].options.<option_name>     | [4, i, 3, j, 7, <option_number>] | [4, i] [4, i, 3, j] [4, i, 3, j, 7, <option_number>]                 | [4, i, 1] [4, i, 3, j, 1]                                                                                 |                                                        |
-| .message_type[i].enum_type[j].options                     | [4, i, 4, j, 3]                  | [4, i] [4, i, 4, j]                                                  | [4, i, 1] [4, i, 4, 1]                                                                                    |                                                        |
-| .message_type[i].enum_type[j].options.<option_name>       | [4, i, 4, j, 3, <option_number>] | [4, i] [4, i, 4, j] [4, i, 4, j, 3, <option_number>]                 | [4, i, 1] [4, i, 4, 1]                                                                                    |                                                        |
-| .message_type[i].field[j].options                         | [4, i, 2, j, 8]                  | [4, i] [4, i, 2, j]                                                  | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .message_type[i].field[j].options.<option_name>           | [4, i, 2, j, 8, <option_number>] | [4, i] [4, i, 2, j] [4, i, 2, j, 8, <option_number>]                 | [4, i, 1] [4, i, 2, j, 1] [4, i, 2, j, 3] [4, i, 2, j, 4] [4, i, 2, j, 5] [4, i, 2, j, 6]                 |                                                        |
-| .mesasge_type[i].extension_range[j].options               | [4, i, 5, j, 3]                  | [4,i] [4, i, 5] [4, i, 5, j]                                         | [4, i, 1] [4, i, 5, j, 1] [4, i, 5, j, 2]                                                                 |                                                        |
-| .mesasge_type[i].extension_range[j].options.<option_name> | [4, i, 5, j, 3, <option_number>] | [4,i] [4, i, 5] [4, i, 5, j] [4, i, 5, j, 3, <option_number>]        | [4, i, 1] [4, i, 5, j, 1] [4, i, 5, j, 2]                                                                 |                                                        |
-| .message_type[i].oneof_decl[j].options                    | [4, i, 8, j, 2]                  | [4,i] [4, i, 8, j]                                                   | [4, i, 1] [4, i, 8, j, 1]                                                                                 |                                                        |
-| .mesage_type[i].oneof_decl[j].options.<option_name>       | [4, i, 8, j, 2, <option_number>] | [4,i] [4, i, 8, j] [4, i, 8, j, 2, <option_number>]                  | [4, i, 1] [4, i, 8, j, 1]                                                                                 |                                                        |
-| .message_type[i].extension[j].options                     | [4, i, 6, j, 8]                  | [4,i] [4, i, 6] [4, i, 6, j]                                         | [4, i, 1] [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6] |                                                        |
-| .message_type[i].extension[j].options.<option_name>       | [4, i, 6, j, 8, <option_number>] | [4,i] [4, i, 6] [4, i, 6, j] [4, i, 6, j, 8, <option_number>]        | [4, i, 1] [4, i, 6, j, 2] [4, i, 6, j, 1] [4, i, 6, j, 3] [4, i, 6, j, 4] [4, i, 6, j, 5] [4, i, 6, j, 6] |                                                        |
-| .extensions[i].options                                    | [7, i, 8]                        | [7] [7, i]                                                           | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .extensions[i].options.<option_name>                      | [7, i, 8, <option_number>]       | [7] [7, i] [7, i, 8, <option_number>]                                | [7, i, 2] [7, i, 1] [7, i, 3] [7, i, 4] [7, i, 5] [7, i, 6]                                               |                                                        |
-| .enum_type[i].options                                     | [5, i, 3]                        | [5, i] [5, i, 3]                                                     | [5, i, 1]                                                                                                 |                                                        |
-| .enum_type[i].options.<option_name>                       | [5, i, 3, <option_number>]       | [5, i] [5, i, 3] [5, i, 3, <option_number>]                          | [5, i, 1]                                                                                                 |                                                        |
-| .enum_type[i].value[j].options                            | [5, i, 2, j, 3]                  | [5, i] [5, i, 2, j] [5, i, 2, j, 3]                                  | [5, i, 1] [5, i, 2, j, 1] [5, i, 2, j, 2]                                                                 |                                                        |
-| .enum_type[i].value[j].options.<option_name>              | [5, i, 2, j, 3, <option_number>] | [5, i] [5, i, 2, j] [5, i, 2, j, 3] [5, i, 2, j, 3, <option_number>] | [5, i, 1] [5, i, 2, j, 1] [5, i, 2, j, 2]                                                                 |                                                        |
-| .service[i].options                                       | [6, i, 3]                        | [6, i] [6, i, 3]                                                     | [6, i, 1]                                                                                                 |                                                        |
-| .service[i].options.<option_name>                         | [6, i, 3, <option_number>]       | [6, i] [6, i, 3] [6, i, 3, <option_number>]                          | [6, i, 1]                                                                                                 |                                                        |
-| .service[i].method[j].options                             | [6, i, 2, j, 4]                  | [6, i] [6, i, 2, j] [6, i, 2, j, 4]                                  | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5]                                 |                                                        |
-| .service[i].method[j].options.<option_name>               | [6, i, 2, j, 4, <option_number>] | [6, i] [6, i, 2, j] [6, i, 2, j, 4] [6, i, 2, j, 4, <option_number>] | [6, i, 1] [6, i, 2, j, 1] [6, i, 2, j, 2] [6, i, 2, j, 3] [6, i, 2, j, 5]                                 |                                                        |
+[location]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L1174
+[source-path]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L1175-L1197
+[file-descriptor]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L97
+[message-types]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L110
+[field]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L137
+[field-name]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L268
+[source-code-info]: https://github.com/protocolbuffers/protobuf/blob/44e9777103aa864859c04159a7abc376c5a98210/src/google/protobuf/descriptor.proto#L1129
+[dfa]: https://en.wikipedia.org/wiki/Deterministic_finite_automaton
