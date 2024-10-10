@@ -16,14 +16,38 @@ package interrupt
 
 import (
 	"context"
-	"os"
 	"os/signal"
 )
 
-var interruptSignals = append([]os.Signal{os.Interrupt}, extraSignals...)
-
-// NotifyContext returns a new [context.Context] from [signal.NotifyContext]
-// with the appropriate interrupt signals.
-func NotifyContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	return signal.NotifyContext(ctx, interruptSignals...)
+// Handle returns a copy of the parent [context.Context] that is marked done
+// when an interrupt signal arrives or when the parent Context's Done channel
+// is closed, whichever happens first.
+//
+// Signal handling is unregistered automatically by this function when the
+// first interrupt signal arrives, which will restore the default interrupt
+// signal behavior of Go programs (to exit).
+//
+// In effect, this function is functionally equivalent to:
+//
+//	ctx, cancel := signal.NotifyContext(ctx, interrupt.Signals...)
+//	go func() {
+//	  <-ctx.Done()
+//	  cancel()
+//	}()
+//
+// Most programs should wrap their contexts using this function to enable interrupt
+// signal handling. The first interrupt signal will result in the context's Done
+// channel closing. The second interrupt signal will result in the program exiting.
+//
+//	func main() {
+//	  ctx := interrupt.Handle(context.Background())
+//	  ...
+//	}
+func Handle(ctx context.Context) context.Context {
+	ctx, cancel := signal.NotifyContext(ctx, Signals...)
+	go func() {
+		<-ctx.Done()
+		cancel()
+	}()
+	return ctx
 }
