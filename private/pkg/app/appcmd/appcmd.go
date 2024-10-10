@@ -66,6 +66,11 @@ type Command struct {
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
+	// ModifyCobra will modify the underlying [cobra.Command] that is created from this [Command].
+	//
+	// This should be used sparingly. Almost all operations should be able to be performed
+	// by the fields of Command. However, ModifyCommand exists as a break-class feature.
+	ModifyCobra func(*cobra.Command) error
 	// Version the version of the command.
 	//
 	// If this is specified, a flag --version will be added to the command
@@ -146,7 +151,7 @@ func run(
 	// commands.
 	cobraCommand.CompletionOptions.DisableDefaultCmd = true
 
-	// If the root command is not the only command, add a hidden manpages command
+	// If the root command is not the only command, add a hidden manpages command,
 	// and a visible completion command.
 	if len(command.SubCommands) > 0 {
 		shellCobraCommand, err := commandToCobra(
@@ -220,16 +225,13 @@ func run(
 			return err
 		}
 		cobraCommand.AddCommand(manpagesCobraCommand)
-		webpagesCobraCommand, err := commandToCobra(
-			ctx,
-			container,
-			newWebpagesCommand(cobraCommand),
-			&runErr,
-		)
-		if err != nil {
+	}
+
+	// Apply any modifications specified by ModifyCobra
+	if command.ModifyCobra != nil {
+		if err := command.ModifyCobra(cobraCommand); err != nil {
 			return err
 		}
-		cobraCommand.AddCommand(webpagesCobraCommand)
 	}
 
 	cobraCommand.SetOut(container.Stderr())
