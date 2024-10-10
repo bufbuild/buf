@@ -25,7 +25,7 @@ import (
 //
 // Signal handling is unregistered automatically by this function when the
 // first interrupt signal arrives, which will restore the default interrupt
-// signal behabior of Go programs (to exit).
+// signal behavior of Go programs (to exit).
 //
 // In effect, this function is functionally equivalent to:
 //
