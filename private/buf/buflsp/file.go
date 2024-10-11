@@ -169,7 +169,7 @@ func (f *file) Refresh(ctx context.Context) {
 	progress.Begin(ctx, "Indexing")
 
 	progress.Report(ctx, "Parsing AST", 1.0/6)
-	hasReport := f.RefreshAST(ctx)
+	f.RefreshAST(ctx)
 
 	progress.Report(ctx, "Indexing Imports", 2.0/6)
 	f.IndexImports(ctx)
@@ -179,15 +179,17 @@ func (f *file) Refresh(ctx context.Context) {
 
 	progress.Report(ctx, "Linking Descriptors", 4.0/6)
 	f.BuildImage(ctx)
-	hasReport = f.RunLints(ctx) || hasReport // Avoid short-circuit here.
+	f.RunLints(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)
 
 	progress.Done(ctx)
-	if hasReport {
-		f.PublishDiagnostics(ctx)
-	}
+
+	// NOTE: Diagnostics are published unconditionally. This is necessary even
+	// if we have zero diagnostics, so that the client correctly ticks over from
+	// n > 0 diagnostics to 0 diagnostics.
+	f.PublishDiagnostics(ctx)
 }
 
 // RefreshAST reparses the file and generates diagnostics if necessary.
