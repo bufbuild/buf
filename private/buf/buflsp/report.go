@@ -44,8 +44,15 @@ func (r *report) Warning(err reporter.ErrorWithPos) {
 	r.diagnostics = append(r.diagnostics, newDiagnostic(err, true))
 
 	if err.Unwrap() == parser.ErrNoSyntax {
+		if r.syntaxMissing == nil {
+			r.syntaxMissing = make(map[string]bool)
+		}
 		r.syntaxMissing[err.GetPosition().Filename] = true
 	} else if unusedImport, ok := err.Unwrap().(linker.ErrorUnusedImport); ok {
+		if r.pathToUnusedImports == nil {
+			r.pathToUnusedImports = make(map[string]map[string]bool)
+		}
+
 		path := err.GetPosition().Filename
 		unused, ok := r.pathToUnusedImports[path]
 		if !ok {
