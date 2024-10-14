@@ -5,8 +5,8 @@ go 1.22.0
 toolchain go1.23.2
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240928190436-5e8abcfd7a7e.2
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240920164238-5a7b106cbb87.2
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.35.1-20240928190436-5e8abcfd7a7e.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.1-20240717164558-a6c49f84cc0f.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20240925012807-1610ffa05635.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240925012807-1610ffa05635.2
 	buf.build/go/bufplugin v0.5.0
@@ -49,7 +49,7 @@ require (
 	golang.org/x/sync v0.8.0
 	golang.org/x/term v0.25.0
 	golang.org/x/tools v0.26.0
-	google.golang.org/protobuf v1.34.3-0.20240906163944-03df6c145d96
+	google.golang.org/protobuf v1.35.1
 	gopkg.in/yaml.v3 v3.0.1
 	pluginrpc.com/pluginrpc v0.5.0
 )
