@@ -2,10 +2,10 @@ buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240928190436-5e
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.34.2-20240928190436-5e8abcfd7a7e.2/go.mod h1:B+9TKHRYqoAUW57pLjhkLOnBCu0DQYMV+f7imQ9nXwI=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240920164238-5a7b106cbb87.2 h1:hl0FrmGlNpQZIGvU1/jDz0lsPDd0BhCE0QDRwPfLZcA=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240920164238-5a7b106cbb87.2/go.mod h1:ylS4c28ACSI59oJrOdW4pHS4n0Hw4TgSPHn8rpHl4Yw=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20240925012807-1610ffa05635.1 h1:p4A9QnhBrKjCquBt1mKqfO37QseLwgWqQp+Wb9ZjasE=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20240925012807-1610ffa05635.1/go.mod h1:7WtU+waNF+dyxDsuNaqmG3d0w3y2poNju8cvun1/jLs=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240925012807-1610ffa05635.2 h1:3sSS9z8k6zVe7rNNt9R6DN2fOFBVClEflmICIjbXwms=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20240925012807-1610ffa05635.2/go.mod h1:psseUmlKRo9v5LZJtR/aTpdTLuyp9o3X7rnLT87SZEo=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241007185750-f2282fe532fe.1 h1:tVBsEQVsOz3Xsoy90GOefAgn6siKtfFZxsst39/hJNU=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241007185750-f2282fe532fe.1/go.mod h1:of6bEOQJUQbBMVsPiLQiyD+yPRze0FClQv2u1CmgDdQ=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20241007185750-f2282fe532fe.2 h1:B9EMC8wt++YwOuvFnn12zqlfj7ceJoiUHYfCaAj3IIc=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.34.2-20241007185750-f2282fe532fe.2/go.mod h1:psseUmlKRo9v5LZJtR/aTpdTLuyp9o3X7rnLT87SZEo=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.34.2-20240828222655-5345c0a56177.2 h1:oSi+Adw4xvIjXrW8eY8QGR3sBdfWeY5HN/RefnRt52M=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.34.2-20240828222655-5345c0a56177.2/go.mod h1:GjH0gjlY/ns16X8d6eaXV2W+6IFwsO5Ly9WVnzyd1E0=
 buf.build/go/bufplugin v0.5.0 h1:pmK1AloAMp+4woH5hEisK9qVmDdLySzIKexUUVZLJ2Q=
