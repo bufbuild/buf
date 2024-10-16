@@ -54,6 +54,10 @@ func newProgressFromClient(lsp *lsp, params *protocol.WorkDoneProgressParams) *p
 	}
 }
 
+// Begin informs the client that this progress has begun. Must be called before
+// Report or Done are called.
+//
+// If p is nil, does nothing.
 func (p *progress) Begin(ctx context.Context, title string) {
 	if p == nil {
 		return
@@ -69,6 +73,9 @@ func (p *progress) Begin(ctx context.Context, title string) {
 	})
 }
 
+// Report updates the progress on the client.
+//
+// If p is nil, does nothing.
 func (p *progress) Report(ctx context.Context, message string, percent float64) {
 	if p == nil {
 		return
@@ -85,6 +92,10 @@ func (p *progress) Report(ctx context.Context, message string, percent float64) 
 	})
 }
 
+// Done completes the progress on the client, informing the client that it can
+// stop showing a progress bar.
+//
+// If p is nil, does nothing.
 func (p *progress) Done(ctx context.Context) {
 	if p == nil {
 		return
