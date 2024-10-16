@@ -17,6 +17,7 @@
 package buflsp
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -31,21 +32,45 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/ast"
-	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
-	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
-	"google.golang.org/protobuf/reflect/protoreflect"
+)
+
+const (
+	againstTrunk againstKind = iota + 1
+	againstHead
+	againstSaved
 )
 
 const descriptorPath = "google/protobuf/descriptor.proto"
+
+type againstKind int
+
+// againstKindFromString parses an againstKind from a config setting sent by
+// the client.
+//
+// Returns againstTrunk, false if the value is not recognized.
+func againstKindFromString(s string) (againstKind, bool) {
+	switch s {
+	// These values are the same as those present in the package.json for the
+	// VSCode client.
+	case "trunk":
+		return againstTrunk, true
+	case "head":
+		return againstHead, true
+	case "lastSaved":
+		return againstSaved, true
+	default:
+		return againstTrunk, false
+	}
+}
 
 // file is a file that has been opened by the client.
 //
@@ -60,20 +85,23 @@ type file struct {
 	// diagnostics or symbols an operating refers to.
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
-	// Always set false->true. Once true, never becomes false again.
 
 	workspace bufworkspace.Workspace
 	module    bufmodule.Module
 
+	againstKind     againstKind
+	gitRemote       string
+	gitRemoteBranch string
+
 	objectInfo             storage.ObjectInfo
 	importablePathToObject map[string]storage.ObjectInfo
 
-	fileNode     *ast.FileNode
-	packageNode  *ast.PackageNode
-	diagnostics  []protocol.Diagnostic
-	importToFile map[string]*file
-	symbols      []*symbol
-	image        bufimage.Image
+	fileNode            *ast.FileNode
+	packageNode         *ast.PackageNode
+	diagnostics         []protocol.Diagnostic
+	importToFile        map[string]*file
+	symbols             []*symbol
+	image, againstImage bufimage.Image
 }
 
 // IsWKT returns whether this file corresponds to a well-known type.
@@ -131,6 +159,15 @@ func (f *file) Close(ctx context.Context) {
 	f.lsp.fileManager.Close(ctx, f.uri)
 }
 
+// IsOpenInEditor returns whether this file was opened in the LSP client's
+// editor.
+//
+// Some files may be opened as dependencies, so we want to avoid doing extra
+// work like sending progress notifications.
+func (f *file) IsOpenInEditor() bool {
+	return f.version != -1 // See [file.ReadFromDisk].
+}
+
 // ReadFromDisk reads this file from disk if it has never had data loaded into it before.
 //
 // If it has been read from disk before, or has received updates from the LSP client, this
@@ -161,6 +198,107 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.hasText = true
 }
 
+// FetchSettings refreshes configuration settings for this file.
+//
+// This only needs to happen when the file is open or when the client signals
+// that configuration settings have changed.
+func (f *file) RefreshSettings(ctx context.Context) {
+	settings, err := f.lsp.client.Configuration(ctx, &protocol.ConfigurationParams{
+		Items: []protocol.ConfigurationItem{
+			{ScopeURI: f.uri, Section: "buf.against"},
+			{ScopeURI: f.uri, Section: "buf.gitRemote"},
+		},
+	})
+	if err != nil {
+		// We can throw the error away, since the handler logs it for us.
+		return
+	}
+
+	f.againstKind = getSetting(f, settings, "buf.against", 0, againstKindFromString)
+	f.gitRemote = getSetting(f, settings, "buf.gitRemote", 1, func(s string) (string, bool) { return s, true })
+
+	// Given the remote, we need to find the main branch. First, look up the
+	// remote.
+	remote, err := git.GetRemote(
+		ctx,
+		f.lsp.runner,
+		f.lsp.container,
+		normalpath.Dir(f.uri.Filename()),
+		f.gitRemote,
+	)
+	if errors.Is(err, git.ErrRemoteNotFound) {
+		// This is an invalid remote, so it means gitRemote should be
+		// interpreted as a local branch name instead.
+		f.gitRemoteBranch = f.gitRemote
+		f.gitRemote = ""
+		f.lsp.logger.Debug(
+			"found local branch",
+			slog.String("uri", string(f.uri)),
+			slog.String("ref", f.gitRemoteBranch),
+		)
+	} else if err != nil {
+		f.lsp.logger.Warn(
+			"failed to validate buf.gitRemote",
+			slog.String("uri", string(f.uri)),
+			slogext.ErrorAttr(err),
+		)
+		f.gitRemote = ""
+	} else {
+		f.gitRemoteBranch = remote.HEADBranch()
+
+		f.lsp.logger.Debug(
+			"found remote branch",
+			slog.String("uri", string(f.uri)),
+			slog.String("ref", f.gitRemote+"/"+f.gitRemoteBranch),
+		)
+	}
+}
+
+// getSetting is a helper that extracts a configuration setting from the return
+// value of [protocol.Client.Configuration].
+//
+// The parse function should convert the JSON value we get from the protocol
+// (such as a string), potentially performing validation, and returning a default
+// value on validation failure.
+func getSetting[T, U any](f *file, settings []any, name string, index int, parse func(T) (U, bool)) (value U) {
+	if len(settings) <= index {
+		f.lsp.logger.Warn(
+			"missing config setting",
+			slog.String("setting", name),
+			slog.String("uri", string(f.uri)),
+		)
+	}
+
+	if raw, ok := settings[index].(T); ok {
+		// For invalid settings, this will default to againstTrunk for us!
+		value, ok = parse(raw)
+		if !ok {
+			f.lsp.logger.Warn(
+				"invalid config setting",
+				slog.String("setting", name),
+				slog.String("uri", string(f.uri)),
+				slog.Any("raw", raw),
+			)
+		}
+	} else {
+		f.lsp.logger.Warn(
+			"invalid setting for buf.against",
+			slog.String("setting", name),
+			slog.String("uri", string(f.uri)),
+			slog.Any("raw", raw),
+		)
+	}
+
+	f.lsp.logger.Debug(
+		"parsed configuration setting",
+		slog.String("setting", name),
+		slog.String("uri", string(f.uri)),
+		slog.Any("value", value),
+	)
+
+	return value
+}
+
 // Refresh rebuilds all of a file's internal book-keeping.
 //
 // If deep is set, this will also load imports and refresh those, too.
@@ -174,12 +312,13 @@ func (f *file) Refresh(ctx context.Context) {
 	progress.Report(ctx, "Indexing Imports", 2.0/6)
 	f.IndexImports(ctx)
 
-	progress.Report(ctx, "Detecting Module", 3.0/6)
+	progress.Report(ctx, "Detecting Buf Module", 3.0/6)
 	f.FindModule(ctx)
 
-	progress.Report(ctx, "Linking Descriptors", 4.0/6)
-	f.BuildImage(ctx)
+	progress.Report(ctx, "Running Lints", 4.0/6)
+	f.BuildImages(ctx)
 	f.RunLints(ctx)
+	f.RunBreaking(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)
@@ -196,10 +335,6 @@ func (f *file) Refresh(ctx context.Context) {
 //
 // Returns whether a reparse was necessary.
 func (f *file) RefreshAST(ctx context.Context) bool {
-	if f.fileNode != nil {
-		return false
-	}
-
 	// NOTE: We intentionally do not use var report report here, because we need
 	// report to be non-nil when empty; this is because if it is nil, when calling
 	// PublishDiagnostics() below it will be serialized as JSON null.
@@ -407,132 +542,115 @@ func (f *file) IndexImports(ctx context.Context) {
 		// Parse the imported file and find all symbols in it, but do not
 		// index symbols in the import's imports, otherwise we will recursively
 		// index the universe and that would be quite slow.
-		file.RefreshAST(ctx)
+
+		if f.fileNode != nil {
+			file.RefreshAST(ctx)
+		}
 		file.IndexSymbols(ctx)
 	}
 }
 
-// BuildImage builds a Buf Image for this file. This does not use the controller to build
-// the image, because we need delicate control over the input files: namely, for the case
-// when we depend on a file that has been opened and modified in the editor.
+// newFileOpener returns a fileOpener for the context of this file.
+//
+// May return nil, if insufficient information is present to open the file.
+func (f *file) newFileOpener() fileOpener {
+	if f.importablePathToObject == nil {
+		return nil
+	}
+
+	return func(path string) (io.ReadCloser, error) {
+		var uri protocol.URI
+		fileInfo, ok := f.importablePathToObject[path]
+		if ok {
+			uri = protocol.URI("file://" + fileInfo.LocalPath())
+		} else {
+			uri = protocol.URI("file://" + path)
+		}
+
+		if file := f.Manager().Get(uri); file != nil {
+			return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
+		} else if !ok {
+			return nil, os.ErrNotExist
+		}
+
+		return os.Open(fileInfo.LocalPath())
+	}
+}
+
+// newAgainstFileOpener returns a fileOpener for building the --against file
+// for this file. In other words, this pulls files out of the git index, if
+// necessary.
+//
+// May return nil, if there is insufficient information to build an --against
+// file.
+func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
+	if !f.IsLocal() || f.importablePathToObject == nil || f.gitRemoteBranch == "" {
+		return nil
+	}
+
+	return func(path string) (io.ReadCloser, error) {
+		fileInfo, ok := f.importablePathToObject[path]
+		if !ok {
+			return nil, fmt.Errorf("failed to resolve import: %s", path)
+		}
+
+		readAtRef := func(ref string) ([]byte, error) {
+			return git.ReadFileAtRef(ctx, f.lsp.runner, f.lsp.container, fileInfo.LocalPath(), ref)
+		}
+
+		var (
+			data []byte
+			err  error
+		)
+		switch f.againstKind {
+		case againstTrunk:
+			if f.gitRemote == "" {
+				data, err = readAtRef(f.gitRemoteBranch)
+			} else {
+				data, err = readAtRef(f.gitRemote + "/" + f.gitRemoteBranch)
+			}
+		case againstHead:
+			data, err = readAtRef("HEAD")
+		}
+
+		if data == nil || errors.Is(err, git.ErrNotARepo) {
+			return os.Open(fileInfo.LocalPath())
+		}
+
+		return ioext.CompositeReadCloser(bytes.NewReader(data), ioext.NopCloser), err
+	}
+}
+
+// BuildImage build Buf Images for this file, to be used with linting
+// routines.
 //
 // This operation requires IndexImports().
-func (f *file) BuildImage(ctx context.Context) {
-	importable := f.importablePathToObject
-	fileInfo := f.objectInfo
-
-	if importable == nil || fileInfo == nil {
+func (f *file) BuildImages(ctx context.Context) {
+	if f.objectInfo == nil {
 		return
 	}
 
-	var report report
-	var symbols linker.Symbols
-	compiler := protocompile.Compiler{
-		SourceInfoMode: protocompile.SourceInfoExtraOptionLocations,
-		Resolver: &protocompile.SourceResolver{
-			Accessor: func(path string) (io.ReadCloser, error) {
-				var uri protocol.URI
-				fileInfo, ok := importable[path]
-				if ok {
-					uri = protocol.URI("file://" + fileInfo.LocalPath())
-				} else {
-					uri = protocol.URI("file://" + path)
-				}
-
-				if file := f.Manager().Get(uri); file != nil {
-					return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
-				} else if !ok {
-					return nil, os.ErrNotExist
-				}
-
-				return os.Open(fileInfo.LocalPath())
-			},
-		},
-		Symbols:  &symbols,
-		Reporter: &report,
-	}
-
-	compiled, err := compiler.Compile(ctx, fileInfo.Path())
-	if err != nil {
-		f.diagnostics = report.diagnostics
-	}
-	if compiled[0] == nil {
-		return
-	}
-
-	var imageFiles []bufimage.ImageFile
-	seen := map[string]bool{}
-
-	queue := []protoreflect.FileDescriptor{compiled[0]}
-	for len(queue) > 0 {
-		descriptor := queue[len(queue)-1]
-		queue = queue[:len(queue)-1]
-
-		if seen[descriptor.Path()] {
-			continue
+	if opener := f.newFileOpener(); opener != nil {
+		image, diagnostics := buildImage(ctx, f.objectInfo.Path(), f.lsp.logger, opener)
+		if len(diagnostics) > 0 {
+			f.diagnostics = diagnostics
 		}
-		seen[descriptor.Path()] = true
-
-		unused, ok := report.pathToUnusedImports[descriptor.Path()]
-		var unusedIndices []int32
-		if ok {
-			unusedIndices = make([]int32, 0, len(unused))
-		}
-
-		imports := descriptor.Imports()
-		for i := 0; i < imports.Len(); i++ {
-			dep := imports.Get(i).FileDescriptor
-			if dep == nil {
-				f.lsp.logger.Warn(fmt.Sprintf("found nil FileDescriptor for import %s", imports.Get(i).Path()))
-				continue
-			}
-
-			queue = append(queue, dep)
-
-			if unused != nil {
-				if _, ok := unused[dep.Path()]; ok {
-					unusedIndices = append(unusedIndices, int32(i))
-				}
-			}
-		}
-
-		descriptorProto := protoutil.ProtoFromFileDescriptor(descriptor)
-		if descriptorProto == nil {
-			err = fmt.Errorf("protoutil.ProtoFromFileDescriptor() returned nil for %q", descriptor.Path())
-			break
-		}
-
-		var imageFile bufimage.ImageFile
-		imageFile, err = bufimage.NewImageFile(
-			descriptorProto,
-			nil,
-			uuid.UUID{},
-			"",
-			descriptor.Path(),
-			descriptor.Path() != fileInfo.Path(),
-			report.syntaxMissing[descriptor.Path()],
-			unusedIndices,
-		)
-		if err != nil {
-			break
-		}
-
-		imageFiles = append(imageFiles, imageFile)
-		f.lsp.logger.Debug(fmt.Sprintf("added image file for %s", descriptor.Path()))
+		f.image = image
+	} else {
+		f.lsp.logger.Warn("not building image", slog.String("uri", string(f.uri)))
 	}
 
-	if err != nil {
-		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
-		return
-	}
+	if opener := f.newAgainstFileOpener(ctx); opener != nil {
+		// We explicitly throw the diagnostics away.
+		image, diagnostics := buildImage(ctx, f.objectInfo.Path(), f.lsp.logger, opener)
 
-	image, err := bufimage.NewImage(imageFiles)
-	if err != nil {
-		f.lsp.logger.Warn("could not build image", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
-		return
+		f.againstImage = image
+		if image == nil {
+			f.lsp.logger.Warn("failed to build --against image", slog.Any("diagnostics", diagnostics))
+		}
+	} else {
+		f.lsp.logger.Warn("not building --against image", slog.String("uri", string(f.uri)))
 	}
-
-	f.image = image
 }
 
 // RunLints runs linting on this file. Returns whether any lints failed.
@@ -544,41 +662,61 @@ func (f *file) RunLints(ctx context.Context) bool {
 		return false
 	}
 
-	workspace := f.workspace
-	module := f.module
-	image := f.image
-
-	if module == nil || image == nil {
+	if f.module == nil || f.image == nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
 		return false
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.ModuleFullName()))
-
-	lintConfig := workspace.GetLintConfigForOpaqueID(module.OpaqueID())
-	err := f.lsp.checkClient.Lint(
+	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, f.module.ModuleFullName()))
+	return f.appendLintErrors("buf breaking", f.lsp.checkClient.Lint(
 		ctx,
-		lintConfig,
-		image,
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-	)
+		f.workspace.GetLintConfigForOpaqueID(f.module.OpaqueID()),
+		f.image,
+		bufcheck.WithPluginConfigs(f.workspace.PluginConfigs()...),
+	))
+}
 
+// RunBreaking runs breaking lints on this file. Returns whether any lints failed.
+//
+// This operation requires BuildImage().
+func (f *file) RunBreaking(ctx context.Context) bool {
+	if f.IsWKT() {
+		// Well-known types are not linted.
+		return false
+	}
+
+	if f.module == nil || f.image == nil || f.againstImage == nil {
+		f.lsp.logger.Warn(fmt.Sprintf("could not find --against image for %q", f.uri))
+		return false
+	}
+
+	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, f.module.ModuleFullName()))
+	return f.appendLintErrors("buf breaking", f.lsp.checkClient.Breaking(
+		ctx,
+		f.workspace.GetBreakingConfigForOpaqueID(f.module.OpaqueID()),
+		f.image,
+		f.againstImage,
+		bufcheck.WithPluginConfigs(f.workspace.PluginConfigs()...),
+	))
+}
+
+func (f *file) appendLintErrors(source string, err error) bool {
 	if err == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("lint generated no errors for %s", f.uri))
+		f.lsp.logger.Debug(fmt.Sprintf("%s generated no errors for %s", source, f.uri))
 		return false
 	}
 
 	var annotations bufanalysis.FileAnnotationSet
 	if !errors.As(err, &annotations) {
-		f.lsp.logger.Warn("error while linting", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
+		f.lsp.logger.Warn(
+			"error while linting",
+			slog.String("uri", string(f.uri)),
+			slogext.ErrorAttr(err),
+		)
 		return false
 	}
 
-	f.lsp.logger.Warn(fmt.Sprintf("lint generated %d error(s) for %s", len(annotations.FileAnnotations()), f.uri))
-
 	for _, annotation := range annotations.FileAnnotations() {
-		f.lsp.logger.Info(annotation.FileInfo().Path(), " ", annotation.FileInfo().ExternalPath())
-
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
 			Range: protocol.Range{
 				Start: protocol.Position{
@@ -592,10 +730,11 @@ func (f *file) RunLints(ctx context.Context) bool {
 			},
 			Code:     annotation.Type(),
 			Severity: protocol.DiagnosticSeverityError,
-			Source:   "buf lint",
+			Source:   source,
 			Message:  annotation.Message(),
 		})
 	}
+
 	return true
 }
 
