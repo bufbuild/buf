@@ -21,7 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -46,6 +48,10 @@ var (
 	// ErrInvalidGitCheckout is returned from CheckDirectoryIsValidGitCheckout when the
 	// specified directory is not a valid git checkout.
 	ErrInvalidGitCheckout = errors.New("invalid git checkout")
+
+	// ErrNotARepo is returned from ReadFileAtRef when the given path does not
+	// point into a local repository.
+	ErrNotARepo = errors.New("not a git repository")
 )
 
 // Name is a name identifiable by git.
@@ -350,6 +356,67 @@ func GetRefsForGitCommitAndRemote(
 		}
 	}
 	return refs, nil
+}
+
+// ReadFileAtRef will read the file at path rolled back to the given ref, if
+// it exists at that ref.
+//
+// Specifically, this will take path, and find the associated .git directory
+// (and thus, repository root) associated with that path, if any. It will then
+// look up the commit corresponding to ref in that git directory, and within
+// that commit, the blob corresponding to that path (relative to the repository
+// root).
+func ReadFileAtRef(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	path, ref string,
+) ([]byte, error) {
+	orig := path
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find a directory with a .git directory.
+	dir := filepath.Dir(path)
+	for {
+		_, err := os.Stat(filepath.Join(dir, ".git"))
+		if err == nil {
+			break
+		} else if errors.Is(err, os.ErrNotExist) {
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				return nil, fmt.Errorf("could not find .git directory for %s: %w", orig, ErrNotARepo)
+			}
+			dir = parent
+		} else {
+			return nil, err
+		}
+	}
+
+	// This gives us the name of the blob we're looking for.
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Call git show to show us the file we want.
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs("--no-pager", "show", ref+":"+rel),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get text of file %s at ref %s: %w: %s", orig, ref, err, stderr.String())
+	}
+
+	return stdout.Bytes(), nil
 }
 
 func getAllTrimmedLinesFromBuffer(buffer *bytes.Buffer) []string {
