@@ -35,5 +35,5 @@ func NewLogger(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogF
 	if err != nil {
 		return nil, err
 	}
-	return slog.New(zapslog.NewHandler(core)), nil
+	return slog.New(zapslog.NewHandler(core, zapslog.AddStacktraceAt(slog.LevelError+1))), nil
 }
