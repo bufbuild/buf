@@ -206,7 +206,7 @@ func inner(
 		}
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
-		return errors.New("invalid token provided")
+		return fmt.Errorf("invalid token provided for %s", remote)
 	}
 	user := resp.Msg.User
 	if user == nil {
