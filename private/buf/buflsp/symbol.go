@@ -169,11 +169,6 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 				return
 			}
 
-			// Fully index the file this reference is in, if different from the current.
-			if s.file != ref.file {
-				ref.file.Refresh(ctx)
-			}
-
 			// Find the definition that contains the type we want.
 			def, node := kind.seeTypeOf.Definition(ctx)
 			if def == nil {
