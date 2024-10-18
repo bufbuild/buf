@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -65,11 +66,13 @@ func Serve(
 			&connWrapper{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
+		container:   container,
 		logger:      container.Logger(),
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,
 		wktBucket:   wktBucket,
+		runner:      command.NewRunner(),
 	}
 	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
@@ -89,14 +92,16 @@ func Serve(
 // Its handler methods are not defined in buflsp.go; they are defined in other files, grouped
 // according to the groupings in
 type lsp struct {
-	conn   jsonrpc2.Conn
-	client protocol.Client
+	conn      jsonrpc2.Conn
+	client    protocol.Client
+	container appext.Container
 
 	logger      *slog.Logger
 	controller  bufctl.Controller
 	checkClient bufcheck.Client
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
+	runner      command.Runner
 
 	wktBucket storage.ReadBucket
 
@@ -130,19 +135,47 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 // to inject debug logging, tracing, and timeouts to requests.
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
-	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		defer slogext.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
+	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
+		go func() {
+			// Although everything is behind one big lock, we need to run requests
+			// in their own goroutines; otherwise, if a request performs a call to the
+			// client, the single goroutine that actually handles sending to and
+			// from the client will deadlock.
+			//
+			// jsonrpc2 does not do a good job of documenting this limitation.
 
-		replier := l.wrapReplier(reply, req)
+			l.logger.Debug(
+				"handling request",
+				slog.String("method", req.Method()),
+				slog.Any("params", req.Params()),
+			)
+			defer slogext.DebugProfile(
+				l.logger,
+				slog.String("method", req.Method()),
+				slog.Any("params", req.Params()),
+			)()
 
-		// Verify that the server has been initialized if this isn't the initialization
-		// request.
-		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
-			return replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
-		}
+			replier := l.wrapReplier(reply, req)
 
-		l.lock.Lock()
-		defer l.lock.Unlock()
-		return actual(ctx, replier, req)
+			var err error
+			if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
+				// Verify that the server has been initialized if this isn't the initialization
+				// request.
+				err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+			} else {
+				l.lock.Lock()
+				err = actual(ctx, replier, req)
+				l.lock.Unlock()
+			}
+
+			if err != nil {
+				l.logger.Error(
+					"error while replying to request",
+					slog.String("method", req.Method()),
+					slogext.ErrorAttr(err),
+				)
+			}
+		}()
+		return nil
 	}
 }
