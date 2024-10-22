@@ -40,6 +40,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/whoami"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
@@ -243,6 +244,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
+							whoami.NewCommand("whoami", builder),
 							{
 								Use:   "webhook",
 								Short: "Manage webhooks for a repository on the Buf Schema Registry",
