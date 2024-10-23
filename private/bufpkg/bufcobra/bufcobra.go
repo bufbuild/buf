@@ -77,7 +77,6 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	excludes := slicesext.ToStructMap(config.ExcludeCommands)
 	for _, command := range cobraCommand.Commands() {
 		if _, ok := excludes[command.CommandPath()]; ok {
