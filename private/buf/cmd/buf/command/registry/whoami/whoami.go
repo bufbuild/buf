@@ -34,6 +34,8 @@ import (
 
 const (
 	formatFlagName = "format"
+
+	loginCommand = "buf registry login"
 )
 
 // NewCommand returns a new Command.
@@ -94,13 +96,17 @@ func run(
 	currentUserResponse, err := authnService.GetCurrentUser(ctx, connect.NewRequest(&registryv1alpha1.GetCurrentUserRequest{}))
 	if err != nil {
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnauthenticated {
-			return fmt.Errorf("Not currently logged in for %s", remote)
+			return fmt.Errorf("Not currently logged in for %s.", remote)
 		}
 		return err
 	}
 	user := currentUserResponse.Msg.User
 	if user == nil {
-		return errors.New("No user found for provided token")
+		return fmt.Errorf(
+			`No valid user found for login credentials. Run %q to refresh your credentials. If you have %s environment variable set, ensure that the token is not expired.`,
+			loginCommand,
+			bufconnect.TokenEnvKey,
+		)
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
