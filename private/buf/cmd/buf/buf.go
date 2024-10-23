@@ -40,7 +40,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/whoami"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
@@ -86,6 +85,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/whoami"
 	"github.com/bufbuild/buf/private/bufpkg/bufcobra"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -177,6 +177,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
+					whoami.NewCommand("whoami", builder),
 					registrycc.NewCommand("cc", builder, ``, false),
 					{
 						Use:   "commit",
@@ -244,7 +245,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
-							whoami.NewCommand("whoami", builder),
 							{
 								Use:   "webhook",
 								Short: "Manage webhooks for a repository on the Buf Schema Registry",

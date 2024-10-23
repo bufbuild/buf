@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add `buf beta registry whoami` command, which checks if you are logged in to the Buf Schema
+- Add `buf registry whoami` command, which checks if you are logged in to the Buf Schema
   Registry at a given domain.
 
 ## [v1.45.0] - 2024-10-08

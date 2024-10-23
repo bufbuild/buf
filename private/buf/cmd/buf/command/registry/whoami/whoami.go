@@ -21,6 +21,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -29,6 +30,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/spf13/pflag"
+)
+
+const (
+	formatFlagName = "format"
 )
 
 func NewCommand(
@@ -51,13 +56,22 @@ The <domain> argument will default to buf.build if not specified.`,
 	}
 }
 
-type flags struct{}
+type flags struct {
+	Format string
+}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSEt *pflag.FlagSet) {}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	)
+}
 
 func run(
 	ctx context.Context,
@@ -87,6 +101,22 @@ func run(
 	if user == nil {
 		return errors.New("No user found for provided token")
 	}
-	_, err = fmt.Fprintf(container.Stdout(), "Logged in as %s.\n", user.Username)
-	return err
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.WrapInvalidArgumentError(err)
+	}
+	// ParseFormat always expects a format that is either text or json, otherwise it returns
+	// an error, so do not need a default case for this switch.
+	switch format {
+	case bufprint.FormatText:
+		_, err = fmt.Fprintf(container.Stdout(), "Logged in as %s.\n", user.Username)
+		return err
+	case bufprint.FormatJSON:
+		return bufprint.PrintEntity(
+			container.Stdout(),
+			format,
+			bufprint.NewUserEntity(user),
+		)
+	}
+	return nil
 }
