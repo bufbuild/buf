@@ -152,10 +152,10 @@ func (h *protocProxyHandler) Handle(
 	if err := h.runner.Run(
 		ctx,
 		h.protocPath,
-		command.RunWithArgs(args...),
-		command.RunWithEnviron(pluginEnv.Environ),
-		command.RunWithStdin(stdin),
-		command.RunWithStderr(pluginEnv.Stderr),
+		execext.WithArgs(args...),
+		execext.WithEnviron(pluginEnv.Environ),
+		execext.WithStdin(stdin),
+		execext.WithStderr(pluginEnv.Stderr),
 	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
