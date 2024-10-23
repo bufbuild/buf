@@ -103,7 +103,7 @@ func run(
 	user := currentUserResponse.Msg.User
 	if user == nil {
 		return fmt.Errorf(
-			`No valid user found for login credentials. Run %q to refresh your credentials. If you have %s environment variable set, ensure that the token is not expired.`,
+			`No valid user found for login credentials. Run %q to refresh your credentials. If you have %s environment variable set, ensure that the token is valid.`,
 			loginCommand,
 			bufconnect.TokenEnvKey,
 		)
