@@ -36,6 +36,7 @@ const (
 	formatFlagName = "format"
 )
 
+// NewCommand returns a new Command.
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,

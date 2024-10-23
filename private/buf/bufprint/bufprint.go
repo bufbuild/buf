@@ -248,6 +248,7 @@ func NewOrganizationEntity(organization *ownerv1.Organization, remote string) En
 	}
 }
 
+// NewUserEntity returns a new user entity to print.
 func NewUserEntity(user *registryv1alpha1.User) Entity {
 	return outputUser{
 		Username: user.Username,
