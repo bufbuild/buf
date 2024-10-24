@@ -103,8 +103,9 @@ func run(
 	user := currentUserResponse.Msg.User
 	if user == nil {
 		return fmt.Errorf(
-			`No valid user found for login credentials. Run %q to refresh your credentials. If you have %s environment variable set, ensure that the token is valid.`,
-			loginCommand,
+			`No user is logged in to %s. Run %q to refresh your credentials. If you have the %s environment variable set, ensure that the token is valid.`,
+			remote,
+			loginCommandForRemote(remote),
 			bufconnect.TokenEnvKey,
 		)
 	}
@@ -126,4 +127,13 @@ func run(
 		)
 	}
 	return nil
+}
+
+// loginCommandForRemote returns the login command for the given remote,
+// the default remote is excluded in the command.
+func loginCommandForRemote(remote string) string {
+	if remote == bufconnect.DefaultRemote {
+		return loginCommand
+	}
+	return fmt.Sprintf("%s %s", loginCommand, remote)
 }
