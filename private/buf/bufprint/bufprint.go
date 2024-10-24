@@ -248,6 +248,15 @@ func NewOrganizationEntity(organization *ownerv1.Organization, remote string) En
 	}
 }
 
+// NewUserEntity returns a new user entity to print.
+func NewUserEntity(user *registryv1alpha1.User) Entity {
+	return outputUser{
+		Username: user.Username,
+		// We use the Username as the full name for the user when printing.
+		FullName: user.Username,
+	}
+}
+
 // CuratedPluginPrinter is a printer for curated plugins.
 type CuratedPluginPrinter interface {
 	PrintCuratedPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.CuratedPlugin) error
@@ -454,5 +463,14 @@ type outputOrganization struct {
 }
 
 func (o outputOrganization) fullName() string {
+	return o.FullName
+}
+
+type outputUser struct {
+	Username string `json:"username,omitempty"`
+	FullName string `json:"-" bufprint:"Name"`
+}
+
+func (o outputUser) fullName() string {
 	return o.FullName
 }
