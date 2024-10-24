@@ -46,8 +46,9 @@ type config struct {
 }
 
 func readConfigFromFile(path string) (*config, error) {
+	var webpagesConfig config
 	if path == "" {
-		return nil, nil
+		return &webpagesConfig, nil
 	}
 	file, err := os.Open(path)
 	if err != nil {
@@ -57,7 +58,6 @@ func readConfigFromFile(path string) (*config, error) {
 	if err != nil {
 		return nil, err
 	}
-	var webpagesConfig config
 	if err := yaml.Unmarshal(data, &webpagesConfig); err != nil {
 		return nil, err
 	}

@@ -1185,7 +1185,7 @@ func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) 
 		return nil, err
 	}
 	transport := &quic.Transport{Conn: udpConn}
-	roundTripper := &http3.RoundTripper{
+	roundTripper := &http3.Transport{
 		TLSClientConfig: tlsConfig,
 		QUICConfig:      quicCfg,
 		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {

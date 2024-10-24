@@ -295,7 +295,12 @@ func getSetting[T, U any](f *file, settings []any, name string, index int, parse
 //
 // If deep is set, this will also load imports and refresh those, too.
 func (f *file) Refresh(ctx context.Context) {
-	progress := newProgress(f.lsp)
+	var progress *progress
+	if f.IsOpenInEditor() {
+		// NOTE: Nil progress does nothing when methods are called. This helps
+		// minimize RPC spam from the client when indexing lots of files.
+		progress = newProgress(f.lsp)
+	}
 	progress.Begin(ctx, "Indexing")
 
 	progress.Report(ctx, "Parsing AST", 1.0/6)
@@ -359,6 +364,14 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
 func (f *file) PublishDiagnostics(ctx context.Context) {
+	if !f.IsOpenInEditor() {
+		// If the file does get opened by the editor, the server will call
+		// Refresh() and this function will retry sending diagnostics. Which is
+		// to say: returning here does not result in stale diagnostics on the
+		// client.
+		return
+	}
+
 	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	// NOTE: We need to avoid sending a JSON null here, so we replace it with
@@ -735,7 +748,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
-	// symbols unconditionally.
+	// symbols unconditionally. This is because if this file depends on a file
+	// that has since been modified, we may need to update references.
 	f.symbols = nil
 
 	// Generate new symbols.
@@ -752,7 +766,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		return diff
 	})
 
-	// Now we can drop the lock and search for cross-file references.
 	symbols := f.symbols
 	for _, symbol := range symbols {
 		symbol.ResolveCrossFile(ctx)
