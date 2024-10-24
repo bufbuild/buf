@@ -49,9 +49,10 @@ var (
 	// specified directory is not a valid git checkout.
 	ErrInvalidGitCheckout = errors.New("invalid git checkout")
 
-	// ErrNotARepo is returned from ReadFileAtRef when the given path does not
-	// point into a local repository.
-	ErrNotARepo = errors.New("not a git repository")
+	// ErrInvalidRef is returned from IsValidRef if the ref does not exist in the
+	// repository containing the given directory (or, if the directory is not
+	// a valid git checkout).
+	ErrInvalidRef = errors.New("invalid git ref")
 )
 
 // Name is a name identifiable by git.
@@ -358,6 +359,36 @@ func GetRefsForGitCommitAndRemote(
 	return refs, nil
 }
 
+// IsValidRef returns whether or not ref is a valid git ref for the git
+// repository that contains dir. Returns nil if the ref is valid.
+func IsValidRef(
+	ctx context.Context,
+	runner command.Runner,
+	envContainer app.EnvContainer,
+	dir, ref string,
+) error {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs("rev-parse", "--verify", ref),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+		command.RunWithDir(dir),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+	); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			if exitErr.ExitCode() == 128 {
+				return fmt.Errorf("could not find ref %s in %s: %w", ref, dir, ErrInvalidRef)
+			}
+		}
+		return err
+	}
+	return nil
+}
+
 // ReadFileAtRef will read the file at path rolled back to the given ref, if
 // it exists at that ref.
 //
@@ -387,7 +418,7 @@ func ReadFileAtRef(
 		} else if errors.Is(err, os.ErrNotExist) {
 			parent := filepath.Dir(dir)
 			if parent == dir {
-				return nil, fmt.Errorf("could not find .git directory for %s: %w", orig, ErrNotARepo)
+				return nil, fmt.Errorf("could not find .git directory for %s: %w", orig, ErrInvalidGitCheckout)
 			}
 			dir = parent
 		} else {

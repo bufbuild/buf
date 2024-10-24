@@ -43,14 +43,17 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-const (
-	againstTrunk againstKind = iota + 1
-	againstHead
-	againstSaved
-)
-
 const descriptorPath = "google/protobuf/descriptor.proto"
 
+const (
+	// Compare against the configured git branch.
+	againstGit againstKind = iota + 1
+	// Against the last saved file on disk (i.e. saved vs unsaved changes).
+	againstDisk
+)
+
+// againstKind is a strategy for selecting which version of a file to use as
+// --against for the purposes of breaking lints.
 type againstKind int
 
 // againstKindFromString parses an againstKind from a config setting sent by
@@ -61,14 +64,12 @@ func againstKindFromString(s string) (againstKind, bool) {
 	switch s {
 	// These values are the same as those present in the package.json for the
 	// VSCode client.
-	case "trunk":
-		return againstTrunk, true
-	case "head":
-		return againstHead, true
-	case "lastSaved":
-		return againstSaved, true
+	case "git":
+		return againstGit, true
+	case "disk":
+		return againstDisk, true
 	default:
-		return againstTrunk, false
+		return againstGit, false
 	}
 }
 
@@ -89,9 +90,8 @@ type file struct {
 	workspace bufworkspace.Workspace
 	module    bufmodule.Module
 
-	againstKind     againstKind
-	gitRemote       string
-	gitRemoteBranch string
+	againstKind   againstKind
+	againstGitRef string
 
 	objectInfo             storage.ObjectInfo
 	importablePathToObject map[string]storage.ObjectInfo
@@ -206,7 +206,7 @@ func (f *file) RefreshSettings(ctx context.Context) {
 	settings, err := f.lsp.client.Configuration(ctx, &protocol.ConfigurationParams{
 		Items: []protocol.ConfigurationItem{
 			{ScopeURI: f.uri, Section: "buf.against"},
-			{ScopeURI: f.uri, Section: "buf.gitRemote"},
+			{ScopeURI: f.uri, Section: "buf.againstGit"},
 		},
 	})
 	if err != nil {
@@ -215,42 +215,34 @@ func (f *file) RefreshSettings(ctx context.Context) {
 	}
 
 	f.againstKind = getSetting(f, settings, "buf.against", 0, againstKindFromString)
-	f.gitRemote = getSetting(f, settings, "buf.gitRemote", 1, func(s string) (string, bool) { return s, true })
+	f.againstGitRef = getSetting(f, settings, "buf.againstGit", 1, func(s string) (string, bool) { return s, true })
 
-	// Given the remote, we need to find the main branch. First, look up the
-	// remote.
-	remote, err := git.GetRemote(
-		ctx,
-		f.lsp.runner,
-		f.lsp.container,
-		normalpath.Dir(f.uri.Filename()),
-		f.gitRemote,
-	)
-	if errors.Is(err, git.ErrRemoteNotFound) {
-		// This is an invalid remote, so it means gitRemote should be
-		// interpreted as a local branch name instead.
-		f.gitRemoteBranch = f.gitRemote
-		f.gitRemote = ""
-		f.lsp.logger.Debug(
-			"found local branch",
-			slog.String("uri", string(f.uri)),
-			slog.String("ref", f.gitRemoteBranch),
+	switch f.againstKind {
+	case againstDisk:
+		f.againstGitRef = ""
+	case againstGit:
+		// Check to see if buf.againstGit is a valid ref.
+		err := git.IsValidRef(
+			ctx,
+			f.lsp.runner,
+			f.lsp.container,
+			normalpath.Dir(f.uri.Filename()),
+			f.againstGitRef,
 		)
-	} else if err != nil {
-		f.lsp.logger.Warn(
-			"failed to validate buf.gitRemote",
-			slog.String("uri", string(f.uri)),
-			slogext.ErrorAttr(err),
-		)
-		f.gitRemote = ""
-	} else {
-		f.gitRemoteBranch = remote.HEADBranch()
-
-		f.lsp.logger.Debug(
-			"found remote branch",
-			slog.String("uri", string(f.uri)),
-			slog.String("ref", f.gitRemote+"/"+f.gitRemoteBranch),
-		)
+		if err != nil {
+			f.lsp.logger.Warn(
+				"failed to validate buf.againstGit",
+				slog.String("uri", string(f.uri)),
+				slogext.ErrorAttr(err),
+			)
+			f.againstGitRef = ""
+		} else {
+			f.lsp.logger.Debug(
+				"found remote branch",
+				slog.String("uri", string(f.uri)),
+				slog.String("ref", f.againstGitRef),
+			)
+		}
 	}
 }
 
@@ -282,7 +274,7 @@ func getSetting[T, U any](f *file, settings []any, name string, index int, parse
 		}
 	} else {
 		f.lsp.logger.Warn(
-			"invalid setting for buf.against",
+			"invalid config setting",
 			slog.String("setting", name),
 			slog.String("uri", string(f.uri)),
 			slog.Any("raw", raw),
@@ -290,7 +282,7 @@ func getSetting[T, U any](f *file, settings []any, name string, index int, parse
 	}
 
 	f.lsp.logger.Debug(
-		"parsed configuration setting",
+		"parsed config setting",
 		slog.String("setting", name),
 		slog.String("uri", string(f.uri)),
 		slog.Any("value", value),
@@ -584,7 +576,11 @@ func (f *file) newFileOpener() fileOpener {
 // May return nil, if there is insufficient information to build an --against
 // file.
 func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
-	if !f.IsLocal() || f.importablePathToObject == nil || f.gitRemoteBranch == "" {
+	if !f.IsLocal() || f.importablePathToObject == nil {
+		return nil
+	}
+
+	if f.againstKind == againstGit && f.againstGitRef == "" {
 		return nil
 	}
 
@@ -594,26 +590,21 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 			return nil, fmt.Errorf("failed to resolve import: %s", path)
 		}
 
-		readAtRef := func(ref string) ([]byte, error) {
-			return git.ReadFileAtRef(ctx, f.lsp.runner, f.lsp.container, fileInfo.LocalPath(), ref)
-		}
-
 		var (
 			data []byte
 			err  error
 		)
-		switch f.againstKind {
-		case againstTrunk:
-			if f.gitRemote == "" {
-				data, err = readAtRef(f.gitRemoteBranch)
-			} else {
-				data, err = readAtRef(f.gitRemote + "/" + f.gitRemoteBranch)
-			}
-		case againstHead:
-			data, err = readAtRef("HEAD")
+		if f.againstGitRef != "" {
+			data, err = git.ReadFileAtRef(
+				ctx,
+				f.lsp.runner,
+				f.lsp.container,
+				fileInfo.LocalPath(),
+				f.againstGitRef,
+			)
 		}
 
-		if data == nil || errors.Is(err, git.ErrNotARepo) {
+		if data == nil || errors.Is(err, git.ErrInvalidGitCheckout) {
 			return os.Open(fileInfo.LocalPath())
 		}
 
@@ -621,7 +612,7 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 	}
 }
 
-// BuildImage build Buf Images for this file, to be used with linting
+// BuildImages builds Buf Images for this file, to be used with linting
 // routines.
 //
 // This operation requires IndexImports().
