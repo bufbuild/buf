@@ -493,24 +493,12 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	var printed bool
 	for _, comments := range allComments {
 		for i := 0; i < comments.Len(); i++ {
-			comment := comments.Index(i).RawText()
-
 			// The compiler does not currently provide comments without their
 			// delimited removed, so we have to do this ourselves.
-			if strings.HasPrefix(comment, "//") {
-				// NOTE: We do not trim the space here, because indentation is
-				// significant for Markdown code fences, and if every line
-				// starts with a space, Markdown will trim it for us, even off
-				// of code blocks.
-				comment = strings.TrimPrefix(comment, "//")
-			} else {
-				comment = strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
-			}
-
+			comment := formatComment(comments.Index(i).RawText())
 			if comment != "" {
 				printed = true
 			}
-
 			// No need to process Markdown in comment; this Just Works!
 			fmt.Fprintln(&tooltip, comment)
 		}
@@ -521,6 +509,41 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	}
 
 	return tooltip.String()
+}
+
+// formatComment takes a raw comment string and formats it by removing comment
+// delimiters and unnecessary whitespace. It handles both single-line (//) and
+// multi-line (/* */) comments.
+func formatComment(comment string) string {
+	comment = strings.TrimSpace(comment)
+
+	if strings.HasPrefix(comment, "//") {
+		// NOTE: We do not trim the space here, because indentation is
+		// significant for Markdown code fences, and if every line
+		// starts with a space, Markdown will trim it for us, even off
+		// of code blocks.
+		return strings.TrimPrefix(comment, "//")
+	}
+
+	if strings.HasPrefix(comment, "/*") && strings.HasSuffix(comment, "*/") {
+		comment = strings.Trim(comment, "/*")
+		// single-line
+		if !strings.Contains(comment, "\n") {
+			return strings.TrimSpace(comment)
+		}
+
+		lines := strings.Split(strings.TrimSpace(comment), "\n")
+		for i, line := range lines {
+			line = strings.TrimSpace(line)
+			line = strings.TrimLeft(line, "*")
+			line = strings.TrimPrefix(line, " ")
+			lines[i] = line
+		}
+
+		return strings.Join(lines, "\n")
+	}
+
+	return comment
 }
 
 // symbolWalker is an AST walker that generates the symbol table for a file in IndexSymbols().
