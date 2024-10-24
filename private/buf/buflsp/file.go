@@ -47,20 +47,20 @@ const descriptorPath = "google/protobuf/descriptor.proto"
 
 const (
 	// Compare against the configured git branch.
-	againstGit againstKind = iota + 1
+	againstGit againstStrategy = iota + 1
 	// Against the last saved file on disk (i.e. saved vs unsaved changes).
 	againstDisk
 )
 
-// againstKind is a strategy for selecting which version of a file to use as
+// againstStrategy is a strategy for selecting which version of a file to use as
 // --against for the purposes of breaking lints.
-type againstKind int
+type againstStrategy int
 
-// againstKindFromString parses an againstKind from a config setting sent by
+// againstFromString parses an againstKind from a config setting sent by
 // the client.
 //
 // Returns againstTrunk, false if the value is not recognized.
-func againstKindFromString(s string) (againstKind, bool) {
+func againstFromString(s string) (againstStrategy, bool) {
 	switch s {
 	// These values are the same as those present in the package.json for the
 	// VSCode client.
@@ -90,8 +90,8 @@ type file struct {
 	workspace bufworkspace.Workspace
 	module    bufmodule.Module
 
-	againstKind   againstKind
-	againstGitRef string
+	againstStrategy againstStrategy
+	againstGitRef   string
 
 	objectInfo             storage.ObjectInfo
 	importablePathToObject map[string]storage.ObjectInfo
@@ -205,8 +205,8 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 func (f *file) RefreshSettings(ctx context.Context) {
 	settings, err := f.lsp.client.Configuration(ctx, &protocol.ConfigurationParams{
 		Items: []protocol.ConfigurationItem{
-			{ScopeURI: f.uri, Section: "buf.against"},
-			{ScopeURI: f.uri, Section: "buf.againstGit"},
+			{ScopeURI: f.uri, Section: ConfigBreakingStrategy},
+			{ScopeURI: f.uri, Section: ConfigBreakingGitRef},
 		},
 	})
 	if err != nil {
@@ -214,10 +214,10 @@ func (f *file) RefreshSettings(ctx context.Context) {
 		return
 	}
 
-	f.againstKind = getSetting(f, settings, "buf.against", 0, againstKindFromString)
-	f.againstGitRef = getSetting(f, settings, "buf.againstGit", 1, func(s string) (string, bool) { return s, true })
+	f.againstStrategy = getSetting(f, settings, ConfigBreakingStrategy, 0, againstFromString)
+	f.againstGitRef = getSetting(f, settings, ConfigBreakingGitRef, 1, func(s string) (string, bool) { return s, true })
 
-	switch f.againstKind {
+	switch f.againstStrategy {
 	case againstDisk:
 		f.againstGitRef = ""
 	case againstGit:
@@ -593,7 +593,7 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 		return nil
 	}
 
-	if f.againstKind == againstGit && f.againstGitRef == "" {
+	if f.againstStrategy == againstGit && f.againstGitRef == "" {
 		return nil
 	}
 
