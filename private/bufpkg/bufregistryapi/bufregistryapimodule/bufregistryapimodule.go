@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufapi
+package bufregistryapimodule
 
 import (
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1/modulev1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1/ownerv1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
@@ -34,12 +33,6 @@ var (
 	NopV1ModuleServiceClientProvider V1ModuleServiceClientProvider = nopClientProvider{}
 	// NopV1UploadServiceClientProvider is a V1UploadServiceClientProvider that provides unimplemented services for testing.
 	NopV1UploadServiceClientProvider V1UploadServiceClientProvider = nopClientProvider{}
-	// NopV1OrganizationServiceClientProvider is a V1OrganizationServiceClientProvider that provides unimplemented services for testing.
-	NopV1OrganizationServiceClientProvider V1OrganizationServiceClientProvider = nopClientProvider{}
-	// NopV1OwnerServiceClientProvider is a V1OwnerServiceClientProvider that provides unimplemented services for testing.
-	NopV1OwnerServiceClientProvider V1OwnerServiceClientProvider = nopClientProvider{}
-	// NopV1UserServiceClientProvider is a V1UserServiceClientProvider that provides unimplemented services for testing.
-	NopV1UserServiceClientProvider V1UserServiceClientProvider = nopClientProvider{}
 	// NopV1Beta1CommitServiceClientProvider is a V1Beta1CommitServiceClientProvider that provides unimplemented services for testing.
 	NopV1Beta1CommitServiceClientProvider V1Beta1CommitServiceClientProvider = nopClientProvider{}
 	// NopV1Beta1DownloadServiceClientProvider is a V1Beta1DownloadServiceClientProvider that provides unimplemented services for testing.
@@ -91,21 +84,6 @@ type V1UploadServiceClientProvider interface {
 	V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient
 }
 
-// V1OrganizationServiceClientProvider provides OrganizationServiceClients.
-type V1OrganizationServiceClientProvider interface {
-	V1OrganizationServiceClient(registry string) ownerv1connect.OrganizationServiceClient
-}
-
-// V1OwnerServiceClientProvider provides OwnerServiceClients.
-type V1OwnerServiceClientProvider interface {
-	V1OwnerServiceClient(registry string) ownerv1connect.OwnerServiceClient
-}
-
-// V1UserServiceClientProvider provides UserServiceClients.
-type V1UserServiceClientProvider interface {
-	V1UserServiceClient(registry string) ownerv1connect.UserServiceClient
-}
-
 // V1Beta1CommitServiceClientProvider provides CommitServiceClients.
 type V1Beta1CommitServiceClientProvider interface {
 	V1Beta1CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient
@@ -145,9 +123,6 @@ type ClientProvider interface {
 	V1ModuleServiceClientProvider
 	V1ResourceServiceClientProvider
 	V1UploadServiceClientProvider
-	V1OrganizationServiceClientProvider
-	V1OwnerServiceClientProvider
-	V1UserServiceClientProvider
 	V1Beta1CommitServiceClientProvider
 	V1Beta1DownloadServiceClientProvider
 	V1Beta1GraphServiceClientProvider
@@ -229,30 +204,6 @@ func (c *clientProvider) V1UploadServiceClient(registry string) modulev1connect.
 	)
 }
 
-func (c *clientProvider) V1OrganizationServiceClient(registry string) ownerv1connect.OrganizationServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		ownerv1connect.NewOrganizationServiceClient,
-	)
-}
-
-func (c *clientProvider) V1OwnerServiceClient(registry string) ownerv1connect.OwnerServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		ownerv1connect.NewOwnerServiceClient,
-	)
-}
-
-func (c *clientProvider) V1UserServiceClient(registry string) ownerv1connect.UserServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		ownerv1connect.NewUserServiceClient,
-	)
-}
-
 func (c *clientProvider) V1Beta1CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
@@ -329,18 +280,6 @@ func (nopClientProvider) V1ResourceServiceClient(registry string) modulev1connec
 
 func (nopClientProvider) V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient {
 	return modulev1connect.UnimplementedUploadServiceHandler{}
-}
-
-func (nopClientProvider) V1OrganizationServiceClient(registry string) ownerv1connect.OrganizationServiceClient {
-	return ownerv1connect.UnimplementedOrganizationServiceHandler{}
-}
-
-func (nopClientProvider) V1OwnerServiceClient(registry string) ownerv1connect.OwnerServiceClient {
-	return ownerv1connect.UnimplementedOwnerServiceHandler{}
-}
-
-func (nopClientProvider) V1UserServiceClient(registry string) ownerv1connect.UserServiceClient {
-	return ownerv1connect.UnimplementedUserServiceHandler{}
 }
 
 func (nopClientProvider) V1Beta1CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient {

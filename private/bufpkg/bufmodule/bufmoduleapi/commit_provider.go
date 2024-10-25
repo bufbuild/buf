@@ -19,8 +19,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -30,12 +31,12 @@ import (
 // NewCommitProvider returns a new CommitProvider for the given API client.
 func NewCommitProvider(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 ) bufmodule.CommitProvider {
 	return newCommitProvider(logger, clientProvider)
 }
@@ -43,27 +44,28 @@ func NewCommitProvider(
 // *** PRIVATE ***
 
 type commitProvider struct {
-	logger         *slog.Logger
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	}
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider
 }
 
 func newCommitProvider(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 ) *commitProvider {
 	return &commitProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
+		ownerClientProvider:  ownerClientProvider,
 	}
 }
 
@@ -115,8 +117,8 @@ func (a *commitProvider) GetCommitsForCommitKeys(
 
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
-	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
+	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.ownerClientProvider)
 
 	registryToIndexedCommitKeys := slicesext.ToIndexedValuesMap(
 		commitKeys,
