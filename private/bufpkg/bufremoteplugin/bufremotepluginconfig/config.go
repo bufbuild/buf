@@ -83,6 +83,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		SPDXLicenseID:       spdxLicenseID,
 		LicenseURL:          externalConfig.LicenseURL,
 		IntegrationGuideURL: externalConfig.IntegrationGuideURL,
+		Deprecated:          externalConfig.Deprecated,
 	}, nil
 }
 

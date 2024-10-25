@@ -68,6 +68,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			SPDXLicenseID:       "Apache-2.0",
 			LicenseURL:          "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 			IntegrationGuideURL: "https://grpc.io/docs/languages/go/quickstart",
+			Deprecated:          true,
 		},
 		pluginConfig,
 	)
