@@ -7,8 +7,8 @@ toolchain go1.23.2
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.35.1-20241023225133-42bdb4b67625.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.1-20240920164238-5a7b106cbb87.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241007185750-f2282fe532fe.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.35.1-20241007185750-f2282fe532fe.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241025140216-aa40f2c93090.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.35.1-20241025140216-aa40f2c93090.1
 	buf.build/go/bufplugin v0.6.0
 	buf.build/go/protoyaml v0.2.0
 	buf.build/go/spdx v0.2.0
@@ -55,7 +55,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.34.2-20241007202033-cf42259fcbfc.2 // indirect
+	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.35.1-20241007202033-cf42259fcbfc.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.12.7 // indirect
