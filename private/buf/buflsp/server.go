@@ -215,9 +215,22 @@ func (s *server) Formatting(
 		return nil, err
 	}
 
+	nodeInfo := file.fileNode.NodeInfo(file.fileNode)
 	return []protocol.TextEdit{
 		{
-			Range:   infoToRange(file.fileNode.NodeInfo(file.fileNode)),
+			Range: protocol.Range{
+				// The formatter always returns the entire file; make sure we
+				// represent the edit as the entire range (which may not match up to
+				// the file's NodeInfo.Start()).
+				Start: protocol.Position{
+					Line:      0,
+					Character: 0,
+				},
+				End: protocol.Position{
+					Line:      uint32(nodeInfo.End().Line) - 1,
+					Character: uint32(nodeInfo.End().Col) - 1,
+				},
+			},
 			NewText: out.String(),
 		},
 	}, nil
