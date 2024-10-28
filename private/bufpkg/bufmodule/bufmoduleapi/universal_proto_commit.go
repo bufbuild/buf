@@ -70,7 +70,7 @@ func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit *modulev1beta1.Commit)
 
 func getUniversalProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
-	clientProvider interface {
+	moduleClientProvider interface {
 		bufregistryapimodule.V1CommitServiceClientProvider
 		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
@@ -78,7 +78,7 @@ func getUniversalProtoCommitForRegistryAndCommitID(
 	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (*universalProtoCommit, error) {
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []uuid.UUID{commitID}, digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, moduleClientProvider, registry, []uuid.UUID{commitID}, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func getUniversalProtoCommitForRegistryAndCommitID(
 
 func getUniversalProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider interface {
+	moduleClientProvider interface {
 		bufregistryapimodule.V1CommitServiceClientProvider
 		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
@@ -99,14 +99,14 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 	switch digestType {
 	case bufmodule.DigestTypeB4:
 		v1beta1ProtoResourceRefs := commitIDsToV1Beta1ProtoResourceRefs(commitIDs)
-		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
+		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
-		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
+		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 
 func getUniversalProtoCommitsForRegistryAndModuleRefs(
 	ctx context.Context,
-	clientProvider interface {
+	moduleClientProvider interface {
 		bufregistryapimodule.V1CommitServiceClientProvider
 		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
@@ -129,14 +129,14 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 	switch digestType {
 	case bufmodule.DigestTypeB4:
 		v1beta1ProtoResourceRefs := moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs)
-		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
+		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := moduleRefsToV1ProtoResourceRefs(moduleRefs)
-		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
+		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
@@ -148,11 +148,11 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 
 func getV1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufregistryapimodule.V1CommitServiceClientProvider,
+	moduleClientProvider bufregistryapimodule.V1CommitServiceClientProvider,
 	registry string,
 	v1ProtoResourceRefs []*modulev1.ResourceRef,
 ) ([]*modulev1.Commit, error) {
-	response, err := clientProvider.V1CommitServiceClient(registry).GetCommits(
+	response, err := moduleClientProvider.V1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetCommitsRequest{
@@ -172,7 +172,7 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 
 func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufregistryapimodule.V1Beta1CommitServiceClientProvider,
+	moduleClientProvider bufregistryapimodule.V1Beta1CommitServiceClientProvider,
 	registry string,
 	v1beta1ProtoResourceRefs []*modulev1beta1.ResourceRef,
 	digestType bufmodule.DigestType,
@@ -181,7 +181,7 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	if err != nil {
 		return nil, err
 	}
-	response, err := clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
+	response, err := moduleClientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{

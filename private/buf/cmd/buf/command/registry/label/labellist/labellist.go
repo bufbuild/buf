@@ -120,9 +120,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	clientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
+	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
 	moduleFullName := moduleRef.ModuleFullName()
-	labelServiceClient := clientProvider.V1LabelServiceClient(moduleFullName.Registry())
+	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleFullName.Registry())
 	order := modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_DESC
 	if flags.Reverse {
 		order = modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_ASC
