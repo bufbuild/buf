@@ -22,8 +22,8 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -71,8 +71,8 @@ func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit *modulev1beta1.Commit)
 func getUniversalProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
 	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	commitID uuid.UUID,
@@ -89,8 +89,8 @@ func getUniversalProtoCommitForRegistryAndCommitID(
 func getUniversalProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
 	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	commitIDs []uuid.UUID,
@@ -119,8 +119,8 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 func getUniversalProtoCommitsForRegistryAndModuleRefs(
 	ctx context.Context,
 	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	moduleRefs []bufmodule.ModuleRef,
@@ -148,7 +148,7 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 
 func getV1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufapi.V1CommitServiceClientProvider,
+	clientProvider bufregistryapimodule.V1CommitServiceClientProvider,
 	registry string,
 	v1ProtoResourceRefs []*modulev1.ResourceRef,
 ) ([]*modulev1.Commit, error) {
@@ -172,7 +172,7 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 
 func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufapi.V1Beta1CommitServiceClientProvider,
+	clientProvider bufregistryapimodule.V1Beta1CommitServiceClientProvider,
 	registry string,
 	v1beta1ProtoResourceRefs []*modulev1beta1.ResourceRef,
 	digestType bufmodule.DigestType,

@@ -16,8 +16,9 @@ package bufcli
 
 import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
@@ -36,12 +37,13 @@ func NewController(
 	if err != nil {
 		return nil, err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	moduleDataProvider, err := newModuleDataProvider(container, clientProvider)
+	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
+	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
+	moduleDataProvider, err := newModuleDataProvider(container, moduleClientProvider, ownerClientProvider)
 	if err != nil {
 		return nil, err
 	}
-	commitProvider, err := newCommitProvider(container, clientProvider)
+	commitProvider, err := newCommitProvider(container, moduleClientProvider, ownerClientProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +54,8 @@ func NewController(
 	return bufctl.NewController(
 		container.Logger(),
 		container,
-		newGraphProvider(container, clientProvider),
-		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
+		newGraphProvider(container, moduleClientProvider, ownerClientProvider),
+		bufmoduleapi.NewModuleKeyProvider(container.Logger(), moduleClientProvider),
 		moduleDataProvider,
 		commitProvider,
 		wktStore,

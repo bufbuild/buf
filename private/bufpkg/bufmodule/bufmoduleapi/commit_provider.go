@@ -38,7 +38,7 @@ func NewCommitProvider(
 	},
 	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 ) bufmodule.CommitProvider {
-	return newCommitProvider(logger, clientProvider)
+	return newCommitProvider(logger, moduleClientProvider, ownerClientProvider)
 }
 
 // *** PRIVATE ***
@@ -160,7 +160,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 		return nil, err
 	}
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.moduleClientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 		return nil, err
 	}
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedCommitKey)
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.moduleClientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}

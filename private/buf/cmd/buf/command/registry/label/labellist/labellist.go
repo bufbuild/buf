@@ -22,8 +22,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -120,7 +120,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
+	clientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
 	moduleFullName := moduleRef.ModuleFullName()
 	labelServiceClient := clientProvider.V1LabelServiceClient(moduleFullName.Registry())
 	order := modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_DESC

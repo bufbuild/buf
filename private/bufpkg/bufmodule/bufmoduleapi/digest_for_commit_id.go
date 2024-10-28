@@ -17,8 +17,8 @@ package bufmoduleapi
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/google/uuid"
 )
 
@@ -26,15 +26,15 @@ import (
 // the Digest for the Commit.
 func DigestForCommitID(
 	ctx context.Context,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (bufmodule.Digest, error) {
-	universalProtoCommit, err := getUniversalProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)
+	universalProtoCommit, err := getUniversalProtoCommitForRegistryAndCommitID(ctx, moduleClientProvider, registry, commitID, digestType)
 	if err != nil {
 		return nil, err
 	}

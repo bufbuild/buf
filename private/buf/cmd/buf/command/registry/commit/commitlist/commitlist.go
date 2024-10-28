@@ -22,8 +22,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -117,10 +117,10 @@ func run(
 		return err
 	}
 	registry := moduleRef.ModuleFullName().Registry()
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	commitServiceClient := clientProvider.V1CommitServiceClient(registry)
-	labelServiceClient := clientProvider.V1LabelServiceClient(registry)
-	resourceServiceClient := clientProvider.V1ResourceServiceClient(registry)
+	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
+	commitServiceClient := moduleClientProvider.V1CommitServiceClient(registry)
+	labelServiceClient := moduleClientProvider.V1LabelServiceClient(registry)
+	resourceServiceClient := moduleClientProvider.V1ResourceServiceClient(registry)
 	resourceResp, err := resourceServiceClient.GetResources(
 		ctx,
 		connect.NewRequest(

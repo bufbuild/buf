@@ -25,8 +25,8 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -36,14 +36,14 @@ import (
 // NewUploader returns a new Uploader for the given API client.
 func NewUploader(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1UploadServiceClientProvider
-		bufapi.V1Beta1UploadServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1UploadServiceClientProvider
+		bufregistryapimodule.V1Beta1UploadServiceClientProvider
 	},
 	options ...UploaderOption,
 ) bufmodule.Uploader {
-	return newUploader(logger, clientProvider, options...)
+	return newUploader(logger, moduleClientProvider, options...)
 }
 
 // UploaderOption is an option for a new Uploader.
@@ -65,28 +65,28 @@ func UploaderWithPublicRegistry(publicRegistry string) UploaderOption {
 // *** PRIVATE ***
 
 type uploader struct {
-	logger         *slog.Logger
-	clientProvider interface {
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1UploadServiceClientProvider
-		bufapi.V1Beta1UploadServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1UploadServiceClientProvider
+		bufregistryapimodule.V1Beta1UploadServiceClientProvider
 	}
 	publicRegistry string
 }
 
 func newUploader(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1UploadServiceClientProvider
-		bufapi.V1Beta1UploadServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1UploadServiceClientProvider
+		bufregistryapimodule.V1Beta1UploadServiceClientProvider
 	},
 	options ...UploaderOption,
 ) *uploader {
 	uploader := &uploader{
-		logger:         logger,
-		clientProvider: clientProvider,
-		publicRegistry: defaultPublicRegistry,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
+		publicRegistry:       defaultPublicRegistry,
 	}
 	for _, option := range options {
 		option(uploader)
@@ -281,7 +281,7 @@ func (a *uploader) Upload(
 	if len(remoteDepRegistries) > 0 && (len(remoteDepRegistries) > 1 || remoteDepRegistries[0] != primaryRegistry) {
 		// If we have dependencies on other registries, or we have multiple registries we depend on, we have
 		// to use legacy federation.
-		response, err := a.clientProvider.V1Beta1UploadServiceClient(primaryRegistry).Upload(
+		response, err := a.moduleClientProvider.V1Beta1UploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
 				&modulev1beta1.UploadRequest{
@@ -312,7 +312,7 @@ func (a *uploader) Upload(
 				return v1beta1ProtoDepRef.CommitId
 			},
 		)
-		response, err := a.clientProvider.V1UploadServiceClient(primaryRegistry).Upload(
+		response, err := a.moduleClientProvider.V1UploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
 				&modulev1.UploadRequest{
@@ -376,7 +376,7 @@ func (a *uploader) createContentModuleIfNotExist(
 	if err != nil {
 		return nil, err
 	}
-	response, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
+	response, err := a.moduleClientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.CreateModulesRequest{
@@ -421,7 +421,7 @@ func (a *uploader) validateContentModulesExist(
 	primaryRegistry string,
 	contentModules []bufmodule.Module,
 ) ([]*modulev1.Module, error) {
-	response, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
+	response, err := a.moduleClientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetModulesRequest{
