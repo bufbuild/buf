@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -54,15 +55,15 @@ func (c FileType) String() string {
 //
 // This reverses FileType.String().
 //
-// Returns an error of type *ParseError if thie string could not be parsed.
+// Returns an error of type *bufparse.ParseError if thie string could not be parsed.
 func ParseFileType(s string) (FileType, error) {
 	c, ok := stringToFileType[s]
 	if !ok {
-		return 0, &ParseError{
-			typeString: "module file type",
-			input:      s,
-			err:        fmt.Errorf("unknown type: %q", s),
-		}
+		return 0, bufparse.NewParseError(
+			"module file type",
+			s,
+			fmt.Errorf("unknown type: %q", s),
+		)
 	}
 	return c, nil
 }

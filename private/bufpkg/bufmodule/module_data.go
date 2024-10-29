@@ -85,8 +85,6 @@ func NewModuleData(
 
 // *** PRIVATE ***
 
-// moduleData
-
 type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)

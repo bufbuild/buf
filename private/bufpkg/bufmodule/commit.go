@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Commit represents a Commit on the BSR.
+// Commit represents a Commit for a Module on the BSR.
 type Commit interface {
 	// ModuleKey returns the ModuleKey for the Commit.
 	ModuleKey() ModuleKey
