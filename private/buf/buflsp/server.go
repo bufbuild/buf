@@ -215,20 +215,30 @@ func (s *server) Formatting(
 		return nil, err
 	}
 
-	nodeInfo := file.fileNode.NodeInfo(file.fileNode)
+	// XXX: The current compiler does not expose a span for the full file. Instead of
+	// potentially undershooting the correct span (which can cause comments at the
+	// start and end of the file to be duplicated), we instead manually count up the
+	// number of lines in the file. This is comparatively cheap, compared to sending the
+	// entire file over a domain socket.
+	var lastLine, lastLineStart int
+	for i := 0; i < len(file.text); i++ {
+		// NOTE: we are iterating over bytes, not runes.
+		if file.text[i] == '\n' {
+			lastLine++
+			lastLineStart = i + 1 // Skip the \n.
+		}
+	}
+	lastChar := len(file.text[lastLineStart:]) - 1 // Bytes, not runes!
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{
-				// The formatter always returns the entire file; make sure we
-				// represent the edit as the entire range (which may not match up to
-				// the file's NodeInfo.Start()).
 				Start: protocol.Position{
 					Line:      0,
 					Character: 0,
 				},
 				End: protocol.Position{
-					Line:      uint32(nodeInfo.End().Line) - 1,
-					Character: uint32(nodeInfo.End().Col) - 1,
+					Line:      uint32(lastLine),
+					Character: uint32(lastChar),
 				},
 			},
 			NewText: out.String(),
