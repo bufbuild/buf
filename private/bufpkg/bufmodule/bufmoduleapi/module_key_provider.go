@@ -18,8 +18,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
@@ -27,34 +27,34 @@ import (
 // NewModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
 func NewModuleKeyProvider(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 ) bufmodule.ModuleKeyProvider {
-	return newModuleKeyProvider(logger, clientProvider)
+	return newModuleKeyProvider(logger, moduleClientProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleKeyProvider struct {
-	logger         *slog.Logger
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	}
 }
 
 func newModuleKeyProvider(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 ) *moduleKeyProvider {
 	return &moduleKeyProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
 	}
 }
 
@@ -101,7 +101,7 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	indexedModuleRefs []slicesext.Indexed[bufmodule.ModuleRef],
 	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleKey], error) {
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.clientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.moduleClientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
 	if err != nil {
 		return nil, err
 	}
