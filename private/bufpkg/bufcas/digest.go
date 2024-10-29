@@ -59,7 +59,7 @@ func (d DigestType) String() string {
 //
 // This reverses DigestType.String().
 //
-// Returns an error of type *ParseError if thie string could not be parsed.
+// Returns an error of type *ParseError if the string could not be parsed.
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
