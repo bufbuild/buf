@@ -15,9 +15,9 @@
 package bufcli
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
@@ -27,12 +27,12 @@ func NewUploader(container appext.Container) (bufmodule.Uploader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newUploader(container, bufapi.NewClientProvider(clientConfig)), nil
+	return newUploader(container, bufregistryapimodule.NewClientProvider(clientConfig)), nil
 }
 
 func newUploader(
 	container appext.Container,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufregistryapimodule.ClientProvider,
 ) bufmodule.Uploader {
 	return bufmoduleapi.NewUploader(
 		container.Logger(),

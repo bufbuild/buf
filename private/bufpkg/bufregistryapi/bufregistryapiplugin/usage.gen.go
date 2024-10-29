@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufapi
+package bufregistryapiplugin
 
 import _ "github.com/bufbuild/buf/private/usage"

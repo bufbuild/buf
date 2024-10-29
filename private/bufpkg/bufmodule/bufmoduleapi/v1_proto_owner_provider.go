@@ -21,7 +21,7 @@ import (
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/cache"
 )
 
@@ -30,18 +30,18 @@ import (
 // We don't want to persist these across calls - this could grow over time and this cache
 // isn't an LRU cache, and the information also may change over time.
 type v1ProtoOwnerProvider struct {
-	logger          *slog.Logger
-	clientProvider  bufapi.V1OwnerServiceClientProvider
-	protoOwnerCache cache.Cache[string, *ownerv1.Owner]
+	logger              *slog.Logger
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider
+	protoOwnerCache     cache.Cache[string, *ownerv1.Owner]
 }
 
 func newV1ProtoOwnerProvider(
 	logger *slog.Logger,
-	clientProvider bufapi.V1OwnerServiceClientProvider,
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 ) *v1ProtoOwnerProvider {
 	return &v1ProtoOwnerProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
+		logger:              logger,
+		ownerClientProvider: ownerClientProvider,
 	}
 }
 
@@ -54,7 +54,7 @@ func (a *v1ProtoOwnerProvider) getV1ProtoOwnerForProtoOwnerID(
 	return a.protoOwnerCache.GetOrAdd(
 		registry+"/"+protoOwnerID,
 		func() (*ownerv1.Owner, error) {
-			response, err := a.clientProvider.V1OwnerServiceClient(registry).GetOwners(
+			response, err := a.ownerClientProvider.V1OwnerServiceClient(registry).GetOwners(
 				ctx,
 				connect.NewRequest(
 					&ownerv1.GetOwnersRequest{

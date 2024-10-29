@@ -21,8 +21,8 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/spf13/pflag"
@@ -75,7 +75,7 @@ func run(
 		return err
 	}
 	moduleFullName := moduleRef.ModuleFullName()
-	labelServiceClient := bufapi.NewClientProvider(clientConfig).V1LabelServiceClient(moduleFullName.Registry())
+	labelServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1LabelServiceClient(moduleFullName.Registry())
 	// UnarchiveLabelsResponse is empty.
 	if _, err := labelServiceClient.UnarchiveLabels(
 		ctx,
