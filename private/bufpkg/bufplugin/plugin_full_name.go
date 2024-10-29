@@ -48,7 +48,7 @@ func NewPluginFullName(
 
 // ParsePluginFullName parses a PluginFullName from a string in the form "registry/owner/name".
 func ParsePluginFullName(pluginFullNameString string) (PluginFullName, error) {
-	// parsePluginFullNameComponents returns *ParseErrors.
+	// parsePluginFullNameComponents returns ParseErrors.
 	registry, owner, name, err := parsePluginFullNameComponents(pluginFullNameString)
 	if err != nil {
 		return nil, err

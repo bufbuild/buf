@@ -54,7 +54,7 @@ func NewPluginRef(
 
 // ParsePluginRef parses a PluginRef from a string in the form "registry/owner/name[:ref]".
 func ParsePluginRef(pluginRefString string) (PluginRef, error) {
-	// Returns *ParseErrors.
+	// Returns ParseErrors.
 	registry, owner, name, ref, err := parsePluginRefComponents(pluginRefString)
 	if err != nil {
 		return nil, err

@@ -52,7 +52,7 @@ func NewModuleFullName(
 
 // ParseModuleFullName parses a ModuleFullName from a string in the form "registry/owner/name".
 func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
-	// parseModuleFullNameComponents returns *ParseErrors.
+	// parseModuleFullNameComponents returns ParseErrors.
 	registry, owner, name, err := parseModuleFullNameComponents(moduleFullNameString)
 	if err != nil {
 		return nil, err
