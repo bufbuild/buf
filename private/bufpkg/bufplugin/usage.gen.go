@@ -12,5 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufparse implements parsers for full names and references.
-package bufparse
+// Generated. DO NOT EDIT.
+
+package bufplugin
+
+import _ "github.com/bufbuild/buf/private/usage"

@@ -61,7 +61,7 @@ func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
 	if err != nil {
 		return nil, err
 	}
-	// We don't rely on constructors for ParseErrors.
+	// We don't rely on constructors for bufparse.ParseErrors.
 	return NewModuleRef(registry, owner, name, ref)
 }
 

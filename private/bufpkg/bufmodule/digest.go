@@ -76,7 +76,7 @@ func (d DigestType) String() string {
 //
 // This reverses DigestType.String().
 //
-// Returns an error of type *bufparse.ParseError if thie string could not be parsed.
+// Returns an error of type *bufparse.ParseError if the string could not be parsed.
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
@@ -97,6 +97,7 @@ type Digest interface {
 	fmt.Stringer
 
 	// Type returns the type of digest.
+	//
 	// Always a valid value.
 	Type() DigestType
 	// Value returns the digest value.
@@ -128,7 +129,7 @@ func NewDigest(digestType DigestType, bufcasDigest bufcas.Digest) (Digest, error
 // ParseDigest parses a Digest from its string representation.
 //
 // A Digest string is of the form typeString:hexValue.
-// The string is expected to be non-empty, If not, an error is treutned.
+// The string is expected to be non-empty, If not, an error is returned.
 //
 // This reverses Digest.String().
 func ParseDigest(s string) (Digest, error) {

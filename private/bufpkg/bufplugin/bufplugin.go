@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufparse implements parsers for full names and references.
-package bufparse
+// Package bufplugin implements types and functions for Buf plugins.
+package bufplugin

@@ -40,7 +40,7 @@ func ParseFullNameComponents(path string) (registry string, owner string, name s
 	return registry, owner, name, nil
 }
 
-// ParseRefComponents parses the registry, owner, name, and ref from a full name.
+// ParseRefComponents parses the registry, owner, name, and ref from a full name with a reference.
 func ParseRefComponents(path string) (registry string, owner string, name string, ref string, err error) {
 	// split by the first "/" to separate the registry and remaining part
 	slashSplit := strings.SplitN(path, "/", 2)
