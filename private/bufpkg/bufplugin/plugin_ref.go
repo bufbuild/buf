@@ -17,8 +17,6 @@ package bufplugin
 import (
 	"errors"
 	"fmt"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 // PluginRef is an unresolved reference to a Plugin.
@@ -56,12 +54,12 @@ func NewPluginRef(
 
 // ParsePluginRef parses a PluginRef from a string in the form "registry/owner/name[:ref]".
 func ParsePluginRef(pluginRefString string) (PluginRef, error) {
-	// Returns *bufparse.ParseErrors.
-	registry, owner, name, ref, err := bufparse.ParseRefComponents(pluginRefString)
+	// Returns *ParseErrors.
+	registry, owner, name, ref, err := parsePluginRefComponents(pluginRefString)
 	if err != nil {
 		return nil, err
 	}
-	// We don't rely on constructors for bufparse.ParseErrors.
+	// We don't rely on constructors for ParseErrors.
 	return NewPluginRef(registry, owner, name, ref)
 }
 

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/netext"
 )
 
@@ -49,10 +48,19 @@ func NewPluginFullName(
 
 // ParsePluginFullName parses a PluginFullName from a string in the form "registry/owner/name".
 func ParsePluginFullName(pluginFullNameString string) (PluginFullName, error) {
-	registry, owner, name, err := bufparse.ParseFullNameComponents(pluginFullNameString)
+	// parsePluginFullNameComponents returns *ParseErrors.
+	registry, owner, name, err := parsePluginFullNameComponents(pluginFullNameString)
 	if err != nil {
 		return nil, err
 	}
+	if err := validatePluginFullNameParameters(registry, owner, name); err != nil {
+		return nil, &ParseError{
+			typeString: "plugin name",
+			input:      pluginFullNameString,
+			err:        err,
+		}
+	}
+	// We don't rely on constructors for ParseErrors.
 	return newPluginFullName(registry, owner, name)
 }
 
@@ -69,7 +77,7 @@ func newPluginFullName(
 	owner string,
 	name string,
 ) (*pluginFullName, error) {
-	if err := validateModuleFullNameParameters(registry, owner, name); err != nil {
+	if err := validatePluginFullNameParameters(registry, owner, name); err != nil {
 		return nil, err
 	}
 	return &pluginFullName{
@@ -97,7 +105,7 @@ func (p *pluginFullName) String() string {
 
 func (*pluginFullName) isPluginFullName() {}
 
-func validateModuleFullNameParameters(
+func validatePluginFullNameParameters(
 	registry string,
 	owner string,
 	name string,

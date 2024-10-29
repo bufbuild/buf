@@ -15,7 +15,7 @@
 package bufmodule
 
 import (
-	"fmt"
+	"errors"
 )
 
 const (
@@ -31,6 +31,8 @@ const (
 type ModuleVisibility int
 
 // ParseModuleVisibility parses the ModuleVisibility from the string.
+//
+// Returns an error of type *ParseError if the string could not be parsed.
 func ParseModuleVisibility(s string) (ModuleVisibility, error) {
 	switch s {
 	case "public":
@@ -38,6 +40,10 @@ func ParseModuleVisibility(s string) (ModuleVisibility, error) {
 	case "private":
 		return ModuleVisibilityPrivate, nil
 	default:
-		return 0, fmt.Errorf("unknown ModuleVisibility: %q", s)
+		return 0, &ParseError{
+			typeString: "module visibility",
+			input:      s,
+			err:        errors.New(`must be either "public" or "private"`),
+		}
 	}
 }

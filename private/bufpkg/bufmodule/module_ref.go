@@ -17,8 +17,6 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 // ModuleRef is an unresolved reference to a Module.
@@ -56,12 +54,12 @@ func NewModuleRef(
 
 // ParseModuleRef parses a ModuleRef from a string in the form "registry/owner/name[:ref]".
 func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
-	// Returns *bufparse.ParseErrors.
-	registry, owner, name, ref, err := bufparse.ParseRefComponents(moduleRefString)
+	// Returns *ParseErrors.
+	registry, owner, name, ref, err := parseModuleRefComponents(moduleRefString)
 	if err != nil {
 		return nil, err
 	}
-	// We don't rely on constructors for bufparse.ParseErrors.
+	// We don't rely on constructors for ParseErrors.
 	return NewModuleRef(registry, owner, name, ref)
 }
 

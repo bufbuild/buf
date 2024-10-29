@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/netext"
 )
 
@@ -53,17 +52,17 @@ func NewModuleFullName(
 
 // ParseModuleFullName parses a ModuleFullName from a string in the form "registry/owner/name".
 func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
-	// bufparse.ParseFullNameComponents returns *bufparse.ParseErrors.
-	registry, owner, name, err := bufparse.ParseFullNameComponents(moduleFullNameString)
+	// parseModuleFullNameComponents returns *ParseErrors.
+	registry, owner, name, err := parseModuleFullNameComponents(moduleFullNameString)
 	if err != nil {
 		return nil, err
 	}
 	if err := validateModuleFullNameParameters(registry, owner, name); err != nil {
-		return nil, bufparse.NewParseError(
-			"module name",
-			moduleFullNameString,
-			err,
-		)
+		return nil, &ParseError{
+			typeString: "module name",
+			input:      moduleFullNameString,
+			err:        err,
+		}
 	}
 	// We don't rely on constructors for ParseErrors.
 	return NewModuleFullName(registry, owner, name)
