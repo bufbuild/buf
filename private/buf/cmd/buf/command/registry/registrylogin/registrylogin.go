@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/oauth2"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/pkg/browser"
 	"github.com/spf13/pflag"
@@ -210,7 +211,7 @@ func inner(
 	}
 	user := resp.Msg.User
 	if user == nil {
-		return errors.New("no user found for provided token")
+		return syserror.New("no user found for registry login token")
 	}
 	if err := netrc.PutMachines(
 		container,
