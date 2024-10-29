@@ -41,9 +41,6 @@ message Actor {
 // ResourceType is the type of the resource that was affected by the audited
 // event.
 enum ResourceType {
-  reserved 7;
-  reserved "RESOURCE_TYPE_PLUGIN";
-
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
@@ -52,13 +49,13 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
   RESOURCE_TYPE_REPOSITORY_LABEL = 12;
   RESOURCE_TYPE_SERVER = 13;
   RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
-  RESOURCE_TYPE_CHECK_PLUGIN = 15;
 }
 
 // Resource is the affected resource by the audited event.
@@ -89,8 +86,8 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
-  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
-  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_PLUGIN_CREATED = 13;
+  EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
   EVENT_TYPE_USER_CREATED = 15;
@@ -134,9 +131,6 @@ message EventMetadata {
 // what happened, when it happened, who did it, which resource was affected, and
 // more contextual information on the event.
 message Event {
-  reserved 19, 20;
-  reserved "plugin_created", "plugin_deleted";
-
   // Unique id of the audited event.
   string event_id = 1;
   // Type of the audited event. It specifies "what" happened.
@@ -164,6 +158,8 @@ message Event {
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadPluginCreated plugin_created = 19;
+    PayloadPluginDeleted plugin_deleted = 20;
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
@@ -191,8 +187,6 @@ message Event {
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
     PayloadDeviceAuthorizationGrantApproved device_authorization_grant_approved = 47;
     PayloadDeviceAuthorizationGrantDenied device_authorization_grant_denied = 48;
-    PayloadCheckPluginCreated check_plugin_created = 49;
-    PayloadCheckPluginDeleted check_plugin_deleted = 50;
   }
 }
 
@@ -365,6 +359,24 @@ message PayloadRepositoryDefaultBranchChanged {
   string new_default_branch = 4;
 }
 
+message PayloadPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+}
+
+message PayloadPluginDeleted {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+}
+
 message PayloadUserCreated {}
 
 message PayloadUserReactivated {}
@@ -503,18 +515,4 @@ message PayloadDeviceAuthorizationGrantApproved {
 message PayloadDeviceAuthorizationGrantDenied {
   // client_id is the id of the registered oauth2 client of the grant.
   string client_id = 1;
-}
-
-message PayloadCheckPluginCreated {
-  // owner_id is the id of the owner of the check plugin.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the check plugin.
-  string owner_name = 2;
-}
-
-message PayloadCheckPluginDeleted {
-  // owner_id is the id of the owner of the check plugin.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the check plugin.
-  string owner_name = 2;
 }
