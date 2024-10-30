@@ -19,6 +19,7 @@ import (
 	"io/fs"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 )
@@ -222,7 +223,7 @@ func (n *NoProtoFilesError) Error() string {
 // DigestMismatchError is the error returned if the Digest of a downloaded Module or Commit
 // does not match the expected digest in a buf.lock file.
 type DigestMismatchError struct {
-	ModuleFullName ModuleFullName
+	FullName       bufparse.FullName
 	CommitID       uuid.UUID
 	ExpectedDigest Digest
 	ActualDigest   Digest
@@ -235,9 +236,9 @@ func (m *DigestMismatchError) Error() string {
 	}
 	var builder strings.Builder
 	_, _ = builder.WriteString(`*** Digest verification failed`)
-	if m.ModuleFullName != nil {
+	if m.FullName != nil {
 		_, _ = builder.WriteString(` for "`)
-		_, _ = builder.WriteString(m.ModuleFullName.String())
+		_, _ = builder.WriteString(m.FullName.String())
 		if m.CommitID != uuid.Nil {
 			_, _ = builder.WriteString(`:`)
 			_, _ = builder.WriteString(uuidutil.ToDashless(m.CommitID))

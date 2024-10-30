@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/google/uuid"
@@ -33,7 +33,7 @@ import (
 func NewImageFile(
 	t testing.TB,
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commit uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -108,7 +108,7 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.FileDescriptorProto().GetName(),
 				imageFile.FileDescriptorProto().GetDependency()...,
 			),
-			imageFile.ModuleFullName(),
+			imageFile.FullName(),
 			imageFile.CommitID(),
 			imageFile.ExternalPath(),
 			imageFile.LocalPath(),

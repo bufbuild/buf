@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
@@ -57,8 +58,8 @@ type ModuleSetBuilder interface {
 	// The Bucket used to construct the module will only be read for .proto files,
 	// license file(s), and documentation file(s).
 	//
-	// The BucketID is required. If LocalModuleWithModuleFullName.* is used, the OpaqueID will
-	// use this ModuleFullName, otherwise the OpaqueID will be the BucketID.
+	// The BucketID is required. If LocalModuleWithFullName.* is used, the OpaqueID will
+	// use this FullName, otherwise the OpaqueID will be the BucketID.
 	//
 	// The dependencies of the Module are unknown, since bufmodule does not parse configuration,
 	// and therefore the dependencies of the Module are *not* automatically added to the ModuleSet.
@@ -78,7 +79,7 @@ type ModuleSetBuilder interface {
 	// The ModuleDataProvider given to the ModuleSetBuilder at construction time will be used to
 	// retrieve this Module.
 	//
-	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
+	// The resulting Module will not have a BucketID but will always have a FullName.
 	//
 	// The dependencies of the Module will are *not* automatically added to the ModuleSet.
 	// It is the caller's responsibility to add transitive dependencies.
@@ -158,18 +159,18 @@ func NewModuleSetForRemoteModule(
 // LocalModuleOption is an option for AddLocalModule.
 type LocalModuleOption func(*localModuleOptions)
 
-// LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName to the result Module.
+// LocalModuleWithFullName returns a new LocalModuleOption that adds the given FullName to the result Module.
 //
-// Use LocalModuleWithModuleFullNameAndCommitID if you'd also like to add a CommitID.
-func LocalModuleWithModuleFullName(moduleFullName ModuleFullName) LocalModuleOption {
+// Use LocalModuleWithFullNameAndCommitID if you'd also like to add a CommitID.
+func LocalModuleWithFullName(moduleFullName bufparse.FullName) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
 		localModuleOptions.moduleFullName = moduleFullName
 	}
 }
 
-// LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName and CommitID
+// LocalModuleWithFullName returns a new LocalModuleOption that adds the given FullName and CommitID
 // to the result Module.
-func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID uuid.UUID) LocalModuleOption {
+func LocalModuleWithFullNameAndCommitID(moduleFullName bufparse.FullName, commitID uuid.UUID) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
 		localModuleOptions.moduleFullName = moduleFullName
 		localModuleOptions.commitID = commitID
@@ -320,7 +321,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 		option(localModuleOptions)
 	}
 	if localModuleOptions.moduleFullName == nil && localModuleOptions.commitID != uuid.Nil {
-		return b.addError(syserror.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
+		return b.addError(syserror.New("cannot set commitID without FullName when calling AddLocalModule"))
 	}
 	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
 		return b.addError(syserror.Newf("cannot set TargetPaths for a non-target Module when calling AddLocalModule, bucketID=%q, targetPaths=%v, targetExcludePaths=%v", bucketID, localModuleOptions.targetPaths, localModuleOptions.targetExcludePaths))
@@ -447,7 +448,7 @@ func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
 func (*moduleSetBuilder) isModuleSetBuilder() {}
 
 type localModuleOptions struct {
-	moduleFullName      ModuleFullName
+	moduleFullName      bufparse.FullName
 	commitID            uuid.UUID
 	description         string
 	targetPaths         []string

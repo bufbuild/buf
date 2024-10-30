@@ -26,7 +26,7 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protostat"
@@ -199,7 +199,7 @@ func PrintEntity(writer io.Writer, format Format, entity Entity) error {
 }
 
 // NewLabelEntity returns a new label entity to print.
-func NewLabelEntity(label *modulev1.Label, moduleFullName bufmodule.ModuleFullName) Entity {
+func NewLabelEntity(label *modulev1.Label, moduleFullName bufparse.FullName) Entity {
 	var archiveTime *time.Time
 	if label.ArchiveTime != nil {
 		timeValue := label.ArchiveTime.AsTime()
@@ -215,7 +215,7 @@ func NewLabelEntity(label *modulev1.Label, moduleFullName bufmodule.ModuleFullNa
 }
 
 // NewCommitEntity returns a new commit entity to print.
-func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFullName) Entity {
+func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufparse.FullName) Entity {
 	return outputCommit{
 		Commit:         commit.Id,
 		CreateTime:     commit.CreateTime.AsTime(),
@@ -224,7 +224,7 @@ func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufmodule.ModuleFul
 }
 
 // NewModuleEntity returns a new module entity to print.
-func NewModuleEntity(module *modulev1.Module, moduleFullName bufmodule.ModuleFullName) Entity {
+func NewModuleEntity(module *modulev1.Module, moduleFullName bufparse.FullName) Entity {
 	return outputModule{
 		ID:               module.Id,
 		Remote:           moduleFullName.Registry(),
@@ -412,7 +412,7 @@ type outputLabel struct {
 	CreateTime  time.Time  `json:"create_time,omitempty" bufprint:"Create Time"`
 	ArchiveTime *time.Time `json:"archive_time,omitempty" bufprint:"Archive Time,omitempty"`
 
-	moduleFullName bufmodule.ModuleFullName
+	moduleFullName bufparse.FullName
 }
 
 func (l outputLabel) fullName() string {
@@ -423,7 +423,7 @@ type outputCommit struct {
 	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
 
-	moduleFullName bufmodule.ModuleFullName
+	moduleFullName bufparse.FullName
 }
 
 func (c outputCommit) fullName() string {

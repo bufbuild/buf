@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 var (
@@ -73,12 +73,12 @@ func NewModuleNotFoundError(name string) error {
 }
 
 // NewModuleRefNotFoundError informs the user that a ModuleRef does not exist.
-func NewModuleRefNotFoundError(moduleRef bufmodule.ModuleRef) error {
+func NewModuleRefNotFoundError(moduleRef bufparse.Ref) error {
 	return fmt.Errorf("%q does not exist", moduleRef)
 }
 
 // NewLabelNotFoundError informs the user that a ModuleRef does not exist as a label.
-func NewLabelNotFoundError(moduleRef bufmodule.ModuleRef) error {
+func NewLabelNotFoundError(moduleRef bufparse.Ref) error {
 	return fmt.Errorf("label %q does not exist", moduleRef)
 }
 

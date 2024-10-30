@@ -12,15 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugin
+package bufparse
 
-import (
-	"strings"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/google/uuid"
-)
+import "strings"
 
 // ParseError is an error that occurred during parsing.
 //
@@ -79,51 +73,4 @@ func (p *ParseError) Input() string {
 		return ""
 	}
 	return p.input
-}
-
-// DigestMismatchError is the error returned if the Digest of a downloaded Plugin or Commit
-// does not match the expected digest in a buf.lock file.
-type DigestMismatchError struct {
-	FullName       bufparse.FullName
-	CommitID       uuid.UUID
-	ExpectedDigest Digest
-	ActualDigest   Digest
-}
-
-// Error implements the error interface.
-func (m *DigestMismatchError) Error() string {
-	if m == nil {
-		return ""
-	}
-	var builder strings.Builder
-	_, _ = builder.WriteString(`*** Digest verification failed`)
-	if m.FullName != nil {
-		_, _ = builder.WriteString(` for "`)
-		_, _ = builder.WriteString(m.FullName.String())
-		if m.CommitID != uuid.Nil {
-			_, _ = builder.WriteString(`:`)
-			_, _ = builder.WriteString(uuidutil.ToDashless(m.CommitID))
-		}
-		_, _ = builder.WriteString(`"`)
-	}
-	_, _ = builder.WriteString(` ***`)
-	_, _ = builder.WriteString("\n")
-	if m.ExpectedDigest != nil && m.ActualDigest != nil {
-		_, _ = builder.WriteString("\t")
-		_, _ = builder.WriteString(`Expected digest (from buf.lock): "`)
-		_, _ = builder.WriteString(m.ExpectedDigest.String())
-		_, _ = builder.WriteString(`"`)
-		_, _ = builder.WriteString("\n")
-		_, _ = builder.WriteString("\t")
-		_, _ = builder.WriteString(`Actual digest: "`)
-		_, _ = builder.WriteString(m.ActualDigest.String())
-		_, _ = builder.WriteString(`"`)
-		_, _ = builder.WriteString("\n")
-	}
-	_, _ = builder.WriteString("\t")
-	_, _ = builder.WriteString(`This may be the result of a hand-edited or corrupted buf.lock file, a corrupted local cache, and/or an attack.`)
-	_, _ = builder.WriteString("\n")
-	_, _ = builder.WriteString("\t")
-	_, _ = builder.WriteString(`To clear your local cache, run "buf registry cc".`)
-	return builder.String()
 }

@@ -22,7 +22,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -104,7 +104,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
+	moduleRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -116,7 +116,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	registry := moduleRef.ModuleFullName().Registry()
+	registry := moduleRef.FullName().Registry()
 	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
 	commitServiceClient := moduleClientProvider.V1CommitServiceClient(registry)
 	labelServiceClient := moduleClientProvider.V1LabelServiceClient(registry)
@@ -129,8 +129,8 @@ func run(
 					{
 						Value: &modulev1.ResourceRef_Name_{
 							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
+								Owner:  moduleRef.FullName().Owner(),
+								Module: moduleRef.FullName().Name(),
 								Child: &modulev1.ResourceRef_Name_Ref{
 									Ref: moduleRef.Ref(),
 								},
@@ -159,7 +159,7 @@ func run(
 			format,
 			"",
 			"",
-			[]bufprint.Entity{bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName())},
+			[]bufprint.Entity{bufprint.NewCommitEntity(commit, moduleRef.FullName())},
 		)
 	}
 	if resource.GetModule() != nil {
@@ -177,8 +177,8 @@ func run(
 					ResourceRef: &modulev1.ResourceRef{
 						Value: &modulev1.ResourceRef_Name_{
 							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
+								Owner:  moduleRef.FullName().Owner(),
+								Module: moduleRef.FullName().Name(),
 							},
 						},
 					},
@@ -198,7 +198,7 @@ func run(
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
 			slicesext.Map(resp.Msg.Commits, func(commit *modulev1.Commit) bufprint.Entity {
-				return bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName())
+				return bufprint.NewCommitEntity(commit, moduleRef.FullName())
 			}),
 		)
 	}
@@ -221,8 +221,8 @@ func run(
 				LabelRef: &modulev1.LabelRef{
 					Value: &modulev1.LabelRef_Name_{
 						Name: &modulev1.LabelRef_Name{
-							Owner:  moduleRef.ModuleFullName().Owner(),
-							Module: moduleRef.ModuleFullName().Name(),
+							Owner:  moduleRef.FullName().Owner(),
+							Module: moduleRef.FullName().Name(),
 							Label:  moduleRef.Ref(),
 						},
 					},
@@ -250,7 +250,7 @@ func run(
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		slicesext.Map(commits, func(commit *modulev1.Commit) bufprint.Entity {
-			return bufprint.NewCommitEntity(commit, moduleRef.ModuleFullName())
+			return bufprint.NewCommitEntity(commit, moduleRef.FullName())
 		}),
 	)
 }

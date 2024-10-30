@@ -23,20 +23,21 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/google/uuid"
 	"go.uber.org/multierr"
 )
 
 type parserAccessorHandler struct {
-	ctx                  context.Context
-	moduleReadBucket     bufmodule.ModuleReadBucket
-	pathToExternalPath   map[string]string
-	pathToLocalPath      map[string]string
-	nonImportPaths       map[string]struct{}
-	pathToModuleFullName map[string]bufmodule.ModuleFullName
-	pathToCommitID       map[string]uuid.UUID
-	lock                 sync.RWMutex
+	ctx                context.Context
+	moduleReadBucket   bufmodule.ModuleReadBucket
+	pathToExternalPath map[string]string
+	pathToLocalPath    map[string]string
+	nonImportPaths     map[string]struct{}
+	pathToFullName     map[string]bufparse.FullName
+	pathToCommitID     map[string]uuid.UUID
+	lock               sync.RWMutex
 }
 
 func newParserAccessorHandler(
@@ -44,13 +45,13 @@ func newParserAccessorHandler(
 	moduleReadBucket bufmodule.ModuleReadBucket,
 ) *parserAccessorHandler {
 	return &parserAccessorHandler{
-		ctx:                  ctx,
-		moduleReadBucket:     moduleReadBucket,
-		pathToExternalPath:   make(map[string]string),
-		pathToLocalPath:      make(map[string]string),
-		nonImportPaths:       make(map[string]struct{}),
-		pathToModuleFullName: make(map[string]bufmodule.ModuleFullName),
-		pathToCommitID:       make(map[string]uuid.UUID),
+		ctx:                ctx,
+		moduleReadBucket:   moduleReadBucket,
+		pathToExternalPath: make(map[string]string),
+		pathToLocalPath:    make(map[string]string),
+		nonImportPaths:     make(map[string]struct{}),
+		pathToFullName:     make(map[string]bufparse.FullName),
+		pathToCommitID:     make(map[string]uuid.UUID),
 	}
 }
 
@@ -88,7 +89,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 		path,
 		moduleFile.ExternalPath(),
 		moduleFile.LocalPath(),
-		moduleFile.Module().ModuleFullName(),
+		moduleFile.Module().FullName(),
 		moduleFile.Module().CommitID(),
 	); err != nil {
 		return nil, err
@@ -115,11 +116,11 @@ func (p *parserAccessorHandler) LocalPath(path string) string {
 	return p.pathToLocalPath[path]
 }
 
-// ModuleFullName returns nil if not available.
-func (p *parserAccessorHandler) ModuleFullName(path string) bufmodule.ModuleFullName {
+// FullName returns nil if not available.
+func (p *parserAccessorHandler) FullName(path string) bufparse.FullName {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	return p.pathToModuleFullName[path] // nil is a valid value.
+	return p.pathToFullName[path] // nil is a valid value.
 }
 
 // CommitID returns empty if not available.
@@ -133,7 +134,7 @@ func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
 	localPath string,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 ) error {
 	p.lock.Lock()
@@ -157,7 +158,7 @@ func (p *parserAccessorHandler) addPath(
 		}
 	}
 	if moduleFullName != nil {
-		p.pathToModuleFullName[path] = moduleFullName
+		p.pathToFullName[path] = moduleFullName
 	}
 	if commitID != uuid.Nil {
 		p.pathToCommitID[path] = commitID

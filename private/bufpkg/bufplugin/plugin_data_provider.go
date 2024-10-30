@@ -30,7 +30,7 @@ type PluginDataProvider interface {
 	//
 	// Returned PluginDatas will be in the same order as the input PluginKeys.
 	//
-	// The input PluginKeys are expected to be unique by PluginFullName. The implementation
+	// The input PluginKeys are expected to be unique by FullName. The implementation
 	// may error if this is not the case.
 	//
 	// The input PluginKeys are expected to have the same DigestType. The implementation

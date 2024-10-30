@@ -96,7 +96,7 @@ func newPluginData(
 		}
 		if !DigestEqual(actualDigest, expectedDigest) {
 			return &DigestMismatchError{
-				PluginFullName: pluginKey.PluginFullName(),
+				FullName:       pluginKey.FullName(),
 				CommitID:       pluginKey.CommitID(),
 				ExpectedDigest: expectedDigest,
 				ActualDigest:   actualDigest,

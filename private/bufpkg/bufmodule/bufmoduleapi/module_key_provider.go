@@ -19,6 +19,7 @@ import (
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -60,13 +61,13 @@ func newModuleKeyProvider(
 
 func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
 	// Check unique.
 	if _, err := slicesext.ToUniqueValuesMapError(
 		moduleRefs,
-		func(moduleRef bufmodule.ModuleRef) (string, error) {
+		func(moduleRef bufparse.Ref) (string, error) {
 			return moduleRef.String(), nil
 		},
 	); err != nil {
@@ -75,8 +76,8 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 
 	registryToIndexedModuleRefs := slicesext.ToIndexedValuesMap(
 		moduleRefs,
-		func(moduleRef bufmodule.ModuleRef) string {
-			return moduleRef.ModuleFullName().Registry()
+		func(moduleRef bufparse.Ref) string {
+			return moduleRef.FullName().Registry()
 		},
 	)
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], 0, len(moduleRefs))
@@ -98,7 +99,7 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	ctx context.Context,
 	registry string,
-	indexedModuleRefs []slicesext.Indexed[bufmodule.ModuleRef],
+	indexedModuleRefs []slicesext.Indexed[bufparse.Ref],
 	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleKey], error) {
 	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.moduleClientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
@@ -114,7 +115,7 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 		}
 		moduleKey, err := bufmodule.NewModuleKey(
 			// Note we don't have to resolve owner_name and module_name since we already have them.
-			indexedModuleRefs[i].Value.ModuleFullName(),
+			indexedModuleRefs[i].Value.FullName(),
 			commitID,
 			func() (bufmodule.Digest, error) {
 				// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.

@@ -17,6 +17,8 @@ package bufplugin
 import (
 	"context"
 	"io/fs"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 var (
@@ -24,19 +26,19 @@ var (
 	NopPluginKeyProvider PluginKeyProvider = nopPluginKeyProvider{}
 )
 
-// PluginKeyProvider provides PluginKeys for PluginRefs.
+// PluginKeyProvider provides PluginKeys for bufparse.Refs.
 type PluginKeyProvider interface {
 	// GetPluginKeysForPluginRefs gets the PluginKets for the given PluginRefs.
 	//
 	// Returned PluginKeys will be in the same order as the input PluginRefs.
 	//
-	// The input PluginRefs are expected to be unique by PluginFullName. The implementation
+	// The input PluginRefs are expected to be unique by FullName. The implementation
 	// may error if this is not the case.
 	//
-	// If there is no error, the length of the PluginKeys returned will match the length of the PluginRefs.
+	// If there is no error, the length of the PluginKeys returned will match the length of the Refs.
 	// If there is an error, no PluginKeys will be returned.
 	// If any PluginRef is not found, an error with fs.ErrNotExist will be returned.
-	GetPluginKeysForPluginRefs(context.Context, []PluginRef, DigestType) ([]PluginKey, error)
+	GetPluginKeysForPluginRefs(context.Context, []bufparse.Ref, DigestType) ([]PluginKey, error)
 }
 
 // *** PRIVATE ***
@@ -45,7 +47,7 @@ type nopPluginKeyProvider struct{}
 
 func (nopPluginKeyProvider) GetPluginKeysForPluginRefs(
 	context.Context,
-	[]PluginRef,
+	[]bufparse.Ref,
 	DigestType,
 ) ([]PluginKey, error) {
 	return nil, fs.ErrNotExist

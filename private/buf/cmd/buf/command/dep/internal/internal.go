@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -33,7 +34,7 @@ import (
 func ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 	ctx context.Context,
 	container appext.Container,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
@@ -123,7 +124,7 @@ func LogUnusedConfiguredDepsForWorkspace(
 		case bufworkspace.MalformedDepTypeUnused:
 			logger.Warn(fmt.Sprintf(
 				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
-				malformedDep.ModuleRef().ModuleFullName(),
+				malformedDep.ModuleRef().FullName(),
 			))
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
@@ -166,16 +167,16 @@ func moduleKeysAndTransitiveDepModuleKeysForModuleKeys(
 //
 // See comment on Prune.
 func validateModuleKeysContains(containingModuleKeys []bufmodule.ModuleKey, moduleKeys []bufmodule.ModuleKey) error {
-	containingModuleFullNameStringToModuleKey, err := getModuleFullNameStringToModuleKey(containingModuleKeys)
+	containingFullNameStringToModuleKey, err := getFullNameStringToModuleKey(containingModuleKeys)
 	if err != nil {
 		return syserror.Newf("validateModuleKeysContains: containingModuleKeys: %w", err)
 	}
-	moduleFullNameStringToModuleKey, err := getModuleFullNameStringToModuleKey(moduleKeys)
+	moduleFullNameStringToModuleKey, err := getFullNameStringToModuleKey(moduleKeys)
 	if err != nil {
 		return syserror.Newf("validateModuleKeysContains: moduleKeys: %w", err)
 	}
 	for moduleFullNameString := range moduleFullNameStringToModuleKey {
-		if _, ok := containingModuleFullNameStringToModuleKey[moduleFullNameString]; !ok {
+		if _, ok := containingFullNameStringToModuleKey[moduleFullNameString]; !ok {
 			return fmt.Errorf(
 				`Module %s is detected to be a still-used dependency from your existing buf.lock, but is not a declared dependency in your buf.yaml deps, and is not a transitive dependency of any declared dependency. Add %s to your buf.yaml deps.`,
 				moduleFullNameString,
@@ -186,12 +187,12 @@ func validateModuleKeysContains(containingModuleKeys []bufmodule.ModuleKey, modu
 	return nil
 }
 
-// All ModuleKeys are expected to be unique by ModuleFullName.
-func getModuleFullNameStringToModuleKey(moduleKeys []bufmodule.ModuleKey) (map[string]bufmodule.ModuleKey, error) {
+// All ModuleKeys are expected to be unique by FullName.
+func getFullNameStringToModuleKey(moduleKeys []bufmodule.ModuleKey) (map[string]bufmodule.ModuleKey, error) {
 	return slicesext.ToUniqueValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().String()
+			return moduleKey.FullName().String()
 		},
 	)
 }

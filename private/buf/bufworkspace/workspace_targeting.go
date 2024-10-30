@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -53,7 +54,7 @@ type workspaceTargeting struct {
 type v1Targeting struct {
 	bucketIDToModuleConfig     map[string]bufconfig.ModuleConfig
 	moduleBucketsAndTargeting  []*moduleBucketAndModuleTargeting
-	allConfiguredDepModuleRefs []bufmodule.ModuleRef
+	allConfiguredDepModuleRefs []bufparse.Ref
 }
 
 type v2Targeting struct {
@@ -296,7 +297,7 @@ func v1WorkspaceTargeting(
 	// directories, and this is a system error - this should be verified before we reach this function.
 	var hadIsTentativelyTargetModule bool
 	var hadIsTargetModule bool
-	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
+	var allConfiguredDepModuleRefs []bufparse.Ref
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We use this to detect different refs across different files.
 	moduleFullNameStringToConfiguredDepModuleRefString := make(map[string]string)
@@ -312,15 +313,15 @@ func v1WorkspaceTargeting(
 			return nil, err
 		}
 		for _, configuredDepModuleRef := range configuredDepModuleRefs {
-			moduleFullNameString := configuredDepModuleRef.ModuleFullName().String()
+			moduleFullNameString := configuredDepModuleRef.FullName().String()
 			configuredDepModuleRefString := configuredDepModuleRef.String()
 			existingConfiguredDepModuleRefString, ok := moduleFullNameStringToConfiguredDepModuleRefString[moduleFullNameString]
 			if !ok {
-				// We haven't encountered a ModuleRef with this ModuleFullName yet, add it.
+				// We haven't encountered a ModuleRef with this FullName yet, add it.
 				allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRef)
 				moduleFullNameStringToConfiguredDepModuleRefString[moduleFullNameString] = configuredDepModuleRefString
 			} else if configuredDepModuleRefString != existingConfiguredDepModuleRefString {
-				// We encountered the same ModuleRef by ModuleFullName, but with a different Ref.
+				// We encountered the same ModuleRef by FullName, but with a different Ref.
 				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
 			}
 		}
@@ -698,7 +699,7 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 	bucket storage.ReadBucket,
 	moduleDirPath string,
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
-) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
+) (bufconfig.ModuleConfig, []bufparse.Ref, error) {
 	var bufYAMLFile bufconfig.BufYAMLFile
 	var err error
 	if overrideBufYAMLFile != nil {

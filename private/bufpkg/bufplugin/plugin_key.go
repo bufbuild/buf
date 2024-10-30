@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 )
@@ -32,10 +33,10 @@ type PluginKey interface {
 	// String returns "registry/owner/name:dashlessCommitID".
 	fmt.Stringer
 
-	// PluginFullName returns the full name of the Plugin.
+	// FullName returns the full name of the Plugin.
 	//
 	// Always present.
-	PluginFullName() PluginFullName
+	FullName() bufparse.FullName
 	// CommitID returns the ID of the Commit.
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
@@ -59,7 +60,7 @@ type PluginKey interface {
 // *not* validate the digest. If you need to validate the digset, call Digest() and evaluate
 // the returned error.
 func NewPluginKey(
-	pluginFullName PluginFullName,
+	pluginFullName bufparse.FullName,
 	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) (PluginKey, error) {
@@ -73,19 +74,19 @@ func NewPluginKey(
 // ** PRIVATE **
 
 type pluginKey struct {
-	pluginFullName PluginFullName
+	pluginFullName bufparse.FullName
 	commitID       uuid.UUID
 
 	getDigest func() (Digest, error)
 }
 
 func newPluginKey(
-	pluginFullName PluginFullName,
+	pluginFullName bufparse.FullName,
 	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) (*pluginKey, error) {
 	if pluginFullName == nil {
-		return nil, errors.New("nil PluginFullName when constructing PluginKey")
+		return nil, errors.New("nil FullName when constructing PluginKey")
 	}
 	if commitID == uuid.Nil {
 		return nil, errors.New("empty commitID when constructing PluginKey")
@@ -97,7 +98,7 @@ func newPluginKey(
 	}, nil
 }
 
-func (p *pluginKey) PluginFullName() PluginFullName {
+func (p *pluginKey) FullName() bufparse.FullName {
 	return p.pluginFullName
 }
 

@@ -12,70 +12,70 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package bufparse
 
 import (
 	"errors"
 	"fmt"
 )
 
-// ModuleRef is an unresolved reference to a Module.
-type ModuleRef interface {
+// Ref is an unresolved reference to a .
+type Ref interface {
 	// String returns "registry/owner/name[:ref]".
 	fmt.Stringer
 
-	// ModuleFullName returns the full name of the Module.
+	// FullName returns the full name of the .
 	//
 	// Always present.
-	ModuleFullName() ModuleFullName
-	// Ref returns the reference within the Module.
+	FullName() FullName
+	// Ref returns the reference within the .
 	//
 	// May be a label or dashless commitID.
 	//
-	// May be empty, in which case this references the commit of the default label of the Module.
+	// May be empty, in which case this references the commit of the default label of the .
 	Ref() string
 
-	isModuleRef()
+	isRef()
 }
 
-// NewModuleRef returns a new ModuleRef for the given compoonents.
-func NewModuleRef(
+// NewRef returns a new Ref for the given compoonents.
+func NewRef(
 	registry string,
 	owner string,
 	name string,
 	ref string,
-) (ModuleRef, error) {
-	moduleFullName, err := NewModuleFullName(registry, owner, name)
+) (Ref, error) {
+	moduleFullName, err := NewFullName(registry, owner, name)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleRef(moduleFullName, ref)
+	return newRef(moduleFullName, ref)
 }
 
-// ParseModuleRef parses a ModuleRef from a string in the form "registry/owner/name[:ref]".
-func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
+// ParseRef parses a Ref from a string in the form "registry/owner/name[:ref]".
+func ParseRef(moduleRefString string) (Ref, error) {
 	// Returns ParseErrors.
-	registry, owner, name, ref, err := parseModuleRefComponents(moduleRefString)
+	registry, owner, name, ref, err := parseRefComponents(moduleRefString)
 	if err != nil {
 		return nil, err
 	}
 	// We don't rely on constructors for ParseErrors.
-	return NewModuleRef(registry, owner, name, ref)
+	return NewRef(registry, owner, name, ref)
 }
 
 // *** PRIVATE ***
 
 type moduleRef struct {
-	moduleFullName ModuleFullName
+	moduleFullName FullName
 	ref            string
 }
 
-func newModuleRef(
-	moduleFullName ModuleFullName,
+func newRef(
+	moduleFullName FullName,
 	ref string,
 ) (*moduleRef, error) {
 	if moduleFullName == nil {
-		return nil, errors.New("nil ModuleFullName when constructing ModuleRef")
+		return nil, errors.New("nil FullName when constructing Ref")
 	}
 	return &moduleRef{
 		moduleFullName: moduleFullName,
@@ -83,7 +83,7 @@ func newModuleRef(
 	}, nil
 }
 
-func (m *moduleRef) ModuleFullName() ModuleFullName {
+func (m *moduleRef) FullName() FullName {
 	return m.moduleFullName
 }
 
@@ -98,4 +98,4 @@ func (m *moduleRef) String() string {
 	return m.moduleFullName.String() + ":" + m.ref
 }
 
-func (*moduleRef) isModuleRef() {}
+func (*moduleRef) isRef() {}

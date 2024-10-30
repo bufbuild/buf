@@ -28,6 +28,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -398,7 +399,7 @@ func (r *reader) getModuleKey(
 	}
 	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{moduleRef.ModuleRef()},
+		[]bufparse.Ref{moduleRef.ModuleRef()},
 		bufmodule.DigestTypeB5,
 	)
 	if err != nil {

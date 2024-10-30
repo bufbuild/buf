@@ -22,6 +22,7 @@ import (
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -476,7 +477,7 @@ func (p *moduleDataStore) putModuleData(
 			return err
 		}
 		externalModuleData.Deps[i] = externalModuleDataDep{
-			Name:   depModuleKey.ModuleFullName().String(),
+			Name:   depModuleKey.FullName().String(),
 			Commit: uuidutil.ToDashless(depModuleKey.CommitID()),
 			Digest: digest.String(),
 		}
@@ -627,9 +628,9 @@ func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	}
 	return normalpath.Join(
 		digest.Type().String(),
-		moduleKey.ModuleFullName().Registry(),
-		moduleKey.ModuleFullName().Owner(),
-		moduleKey.ModuleFullName().Name(),
+		moduleKey.FullName().Registry(),
+		moduleKey.FullName().Owner(),
+		moduleKey.FullName().Name(),
 		uuidutil.ToDashless(moduleKey.CommitID()),
 	), nil
 }
@@ -646,9 +647,9 @@ func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	}
 	return normalpath.Join(
 		digest.Type().String(),
-		moduleKey.ModuleFullName().Registry(),
-		moduleKey.ModuleFullName().Owner(),
-		moduleKey.ModuleFullName().Name(),
+		moduleKey.FullName().Registry(),
+		moduleKey.FullName().Owner(),
+		moduleKey.FullName().Name(),
 		uuidutil.ToDashless(moduleKey.CommitID())+".tar",
 	), nil
 }
@@ -657,7 +658,7 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 	if dep.Name == "" {
 		return nil, errors.New("no module name specified")
 	}
-	moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
+	moduleFullName, err := bufparse.ParseFullName(dep.Name)
 	if err != nil {
 		return nil, fmt.Errorf("invalid module name: %w", err)
 	}

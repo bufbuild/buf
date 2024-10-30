@@ -991,7 +991,7 @@ func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage
 	}
 	return bufimage.NewImageFile(
 		updatedFileDescriptor,
-		imageFile.ModuleFullName(),
+		imageFile.FullName(),
 		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.LocalPath(),

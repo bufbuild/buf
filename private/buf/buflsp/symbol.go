@@ -471,7 +471,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		if def.file.IsWKT() {
 			bsrHost = "buf.build/protocolbuffers/wellknowntypes"
 		} else if fileInfo, ok := def.file.objectInfo.(bufmodule.FileInfo); ok {
-			bsrHost = fileInfo.Module().ModuleFullName().String()
+			bsrHost = fileInfo.Module().FullName().String()
 		}
 		if hasAnchor {
 			bsrTooltip = pkg + "." + strings.Join(path, ".")

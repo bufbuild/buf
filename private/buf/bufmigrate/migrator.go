@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -325,9 +326,9 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	migrateBuilder *migrateBuilder,
 ) (bufconfig.BufYAMLFile, bufconfig.BufLockFile, error) {
 	// module full name --> the list of declared dependencies that are this module.
-	depModuleToDeclaredRefs := make(map[string][]bufmodule.ModuleRef)
+	depModuleToDeclaredRefs := make(map[string][]bufparse.Ref)
 	for _, declaredRef := range migrateBuilder.configuredDepModuleRefs {
-		moduleFullName := declaredRef.ModuleFullName().String()
+		moduleFullName := declaredRef.FullName().String()
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
 		if _, ok := migrateBuilder.moduleFullNameStringToParentPath[moduleFullName]; ok {
 			continue
@@ -337,7 +338,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	// module full name --> the list of lock entries that are this module.
 	depModuleToLockEntries := make(map[string][]bufmodule.ModuleKey)
 	for _, lockEntry := range migrateBuilder.depModuleKeys {
-		moduleFullName := lockEntry.ModuleFullName().String()
+		moduleFullName := lockEntry.FullName().String()
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
 		//
 		// We are only removing lock entries that are in the workspace. A lock entry
@@ -350,7 +351,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	// This will be set to false if the duplicate dependencies cannot be resolved locally.
 	areDependenciesResolved := true
 	for depModule, declaredRefs := range depModuleToDeclaredRefs {
-		refStringToRef := make(map[string]bufmodule.ModuleRef)
+		refStringToRef := make(map[string]bufparse.Ref)
 		for _, ref := range declaredRefs {
 			// Add ref even if ref.Ref() is empty. Therefore, slicesext.ToValuesMap is not used.
 			refStringToRef[ref.Ref()] = ref
@@ -378,7 +379,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		}
 	}
 	if areDependenciesResolved {
-		resolvedDeclaredRefs := make([]bufmodule.ModuleRef, 0, len(depModuleToDeclaredRefs))
+		resolvedDeclaredRefs := make([]bufparse.Ref, 0, len(depModuleToDeclaredRefs))
 		for _, depModuleRefs := range depModuleToDeclaredRefs {
 			// depModuleRefs is guaranteed to have length 1, because areDependenciesResolved is true.
 			resolvedDeclaredRefs = append(resolvedDeclaredRefs, depModuleRefs...)
@@ -460,7 +461,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 
 func (m *migrator) getModuleToRefToCommit(
 	ctx context.Context,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 ) (map[string]map[string]bufmodule.Commit, error) {
 	// The module refs that are collected by migrateBuilder is across all modules being
 	// migrated, so there may be duplicates. ModuleKeyProvider errors on duplicate module
@@ -468,7 +469,7 @@ func (m *migrator) getModuleToRefToCommit(
 	// so we deduplicate the module refs we are passing here.
 	moduleRefs = slicesext.DeduplicateAny(
 		moduleRefs,
-		func(moduleRef bufmodule.ModuleRef) string { return moduleRef.String() },
+		func(moduleRef bufparse.Ref) string { return moduleRef.String() },
 	)
 	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB5)
 	if err != nil {
@@ -487,7 +488,7 @@ func (m *migrator) getModuleToRefToCommit(
 		// of GetModuleKeysForModuleRefs and GetCommitsForModuleKeys.
 		commit := commits[i]
 
-		moduleFullName := moduleRef.ModuleFullName()
+		moduleFullName := moduleRef.FullName()
 		if moduleToRefToCommit[moduleFullName.String()] == nil {
 			moduleToRefToCommit[moduleFullName.String()] = make(map[string]bufmodule.Commit)
 		}
@@ -548,7 +549,7 @@ func (m *migrator) upgradeModuleKeysToB5(
 		b4IndexedModuleKeys,
 		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bufmodule.CommitKey, error) {
 			return bufmodule.NewCommitKey(
-				indexedModuleKey.Value.ModuleFullName().Registry(),
+				indexedModuleKey.Value.FullName().Registry(),
 				indexedModuleKey.Value.CommitID(),
 				bufmodule.DigestTypeB5,
 			)
@@ -566,7 +567,7 @@ func (m *migrator) upgradeModuleKeysToB5(
 		moduleKeyIndex := b4IndexedModuleKeys[i].Index
 		existingModuleKey := moduleKeys[moduleKeyIndex]
 		newModuleKey, err := bufmodule.NewModuleKey(
-			existingModuleKey.ModuleFullName(),
+			existingModuleKey.FullName(),
 			existingModuleKey.CommitID(),
 			commit.ModuleKey().Digest,
 		)
@@ -581,10 +582,10 @@ func (m *migrator) upgradeModuleKeysToB5(
 func resolvedDeclaredAndLockedDependencies(
 	moduleToRefToCommit map[string]map[string]bufmodule.Commit,
 	commitIDToCommit map[uuid.UUID]bufmodule.Commit,
-	moduleFullNameToDeclaredRefs map[string][]bufmodule.ModuleRef,
+	moduleFullNameToDeclaredRefs map[string][]bufparse.Ref,
 	moduleFullNameToLockKeys map[string][]bufmodule.ModuleKey,
-) ([]bufmodule.ModuleRef, []bufmodule.ModuleKey, error) {
-	depModuleFullNameToResolvedRef := make(map[string]bufmodule.ModuleRef)
+) ([]bufparse.Ref, []bufmodule.ModuleKey, error) {
+	depFullNameToResolvedRef := make(map[string]bufparse.Ref)
 	for moduleFullName, refs := range moduleFullNameToDeclaredRefs {
 		var errs []error
 		// There are multiple pinned versions of the same dependency, we use the latest one.
@@ -603,11 +604,11 @@ func resolvedDeclaredAndLockedDependencies(
 		if len(errs) > 0 {
 			return nil, nil, multierr.Combine(errs...)
 		}
-		depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
+		depFullNameToResolvedRef[moduleFullName] = refs[0]
 	}
 	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(moduleFullNameToLockKeys))
 	for moduleFullName, lockKeys := range moduleFullNameToLockKeys {
-		resolvedRef, ok := depModuleFullNameToResolvedRef[moduleFullName]
+		resolvedRef, ok := depFullNameToResolvedRef[moduleFullName]
 		if ok && resolvedRef.Ref() != "" {
 			// If we have already picked a pinned dependency ref for this dependency,
 			// we use that as the lock entry as well.
@@ -633,13 +634,13 @@ func resolvedDeclaredAndLockedDependencies(
 		}
 		resolvedDepModuleKeys = append(resolvedDepModuleKeys, lockKeys[0])
 	}
-	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depModuleFullNameToResolvedRef)
+	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depFullNameToResolvedRef)
 	// Sort the resolved dependencies for deterministic results.
 	sort.Slice(resolvedDeclaredDependencies, func(i, j int) bool {
-		return resolvedDeclaredDependencies[i].ModuleFullName().String() < resolvedDeclaredDependencies[j].ModuleFullName().String()
+		return resolvedDeclaredDependencies[i].FullName().String() < resolvedDeclaredDependencies[j].FullName().String()
 	})
 	sort.Slice(resolvedDepModuleKeys, func(i, j int) bool {
-		return resolvedDepModuleKeys[i].ModuleFullName().String() < resolvedDepModuleKeys[j].ModuleFullName().String()
+		return resolvedDepModuleKeys[i].FullName().String() < resolvedDepModuleKeys[j].FullName().String()
 	})
 	return resolvedDeclaredDependencies, resolvedDepModuleKeys, nil
 }
