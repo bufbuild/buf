@@ -36,6 +36,19 @@ type ParseError struct {
 	err error
 }
 
+// NewParseError returns a new ParseError.
+//
+// typeString is the user-consumable string representing of the type that was attempted to be parsed.
+// input is the input string that was attempted to be parsed.
+// err is the underlying error.
+func NewParseError(typeString string, input string, err error) *ParseError {
+	return &ParseError{
+		typeString: typeString,
+		input:      input,
+		err:        err,
+	}
+}
+
 // Error implements the error interface.
 func (p *ParseError) Error() string {
 	if p == nil {

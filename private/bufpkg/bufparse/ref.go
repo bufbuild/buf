@@ -53,6 +53,8 @@ func NewRef(
 }
 
 // ParseRef parses a Ref from a string in the form "registry/owner/name[:ref]".
+//
+// Returns an error of type *ParseError if the string could not be parsed.
 func ParseRef(refString string) (Ref, error) {
 	// Returns ParseErrors.
 	registry, owner, name, ref, err := parseRefComponents(refString)

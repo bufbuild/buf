@@ -51,6 +51,8 @@ func NewFullName(
 }
 
 // ParseFullName parses a FullName from a string in the form "registry/owner/name".
+//
+// Returns an error of type *ParseError if the string could not be parsed.
 func ParseFullName(fullNameString string) (FullName, error) {
 	// parseFullNameComponents returns ParseErrors.
 	registry, owner, name, err := parseFullNameComponents(fullNameString)
@@ -58,11 +60,11 @@ func ParseFullName(fullNameString string) (FullName, error) {
 		return nil, err
 	}
 	if err := validateFullNameParameters(registry, owner, name); err != nil {
-		return nil, &ParseError{
-			typeString: "full name",
-			input:      fullNameString,
-			err:        err,
-		}
+		return nil, NewParseError(
+			"full name",
+			fullNameString,
+			err,
+		)
 	}
 	// We don't rely on constructors for ParseErrors.
 	return NewFullName(registry, owner, name)

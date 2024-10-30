@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -62,27 +63,27 @@ func NewFileNode(path string, digest Digest) (FileNode, error) {
 func ParseFileNode(s string) (FileNode, error) {
 	split := strings.Split(s, "  ")
 	if len(split) != 2 {
-		return nil, &ParseError{
-			typeString: "file node",
-			input:      s,
-			err:        errors.New(`must in the form "digest[SP][SP]path"`),
-		}
+		return nil, bufparse.NewParseError(
+			"file node",
+			s,
+			errors.New(`must in the form "digest[SP][SP]path"`),
+		)
 	}
 	digest, err := ParseDigest(split[0])
 	if err != nil {
-		return nil, &ParseError{
-			typeString: "file node",
-			input:      s,
-			err:        err,
-		}
+		return nil, bufparse.NewParseError(
+			"file node",
+			s,
+			err,
+		)
 	}
 	path := split[1]
 	if err := validateFileNodeParameters(path, digest); err != nil {
-		return nil, &ParseError{
-			typeString: "file node",
-			input:      s,
-			err:        err,
-		}
+		return nil, bufparse.NewParseError(
+			"file node",
+			s,
+			err,
+		)
 	}
 	return newFileNode(path, digest), nil
 }
