@@ -19,7 +19,7 @@ import (
 	"fmt"
 )
 
-// Ref is an unresolved reference to a .
+// Ref is an unresolved reference to an entity.
 type Ref interface {
 	// String returns "registry/owner/name[:ref]".
 	fmt.Stringer
@@ -45,17 +45,17 @@ func NewRef(
 	name string,
 	ref string,
 ) (Ref, error) {
-	moduleFullName, err := NewFullName(registry, owner, name)
+	fullName, err := NewFullName(registry, owner, name)
 	if err != nil {
 		return nil, err
 	}
-	return newRef(moduleFullName, ref)
+	return newRef(fullName, ref)
 }
 
 // ParseRef parses a Ref from a string in the form "registry/owner/name[:ref]".
-func ParseRef(moduleRefString string) (Ref, error) {
+func ParseRef(refString string) (Ref, error) {
 	// Returns ParseErrors.
-	registry, owner, name, ref, err := parseRefComponents(moduleRefString)
+	registry, owner, name, ref, err := parseRefComponents(refString)
 	if err != nil {
 		return nil, err
 	}
@@ -65,37 +65,37 @@ func ParseRef(moduleRefString string) (Ref, error) {
 
 // *** PRIVATE ***
 
-type moduleRef struct {
-	moduleFullName FullName
-	ref            string
+type ref struct {
+	fullName  FullName
+	reference string
 }
 
 func newRef(
-	moduleFullName FullName,
-	ref string,
-) (*moduleRef, error) {
-	if moduleFullName == nil {
+	fullName FullName,
+	reference string,
+) (*ref, error) {
+	if fullName == nil {
 		return nil, errors.New("nil FullName when constructing Ref")
 	}
-	return &moduleRef{
-		moduleFullName: moduleFullName,
-		ref:            ref,
+	return &ref{
+		fullName:  fullName,
+		reference: reference,
 	}, nil
 }
 
-func (m *moduleRef) FullName() FullName {
-	return m.moduleFullName
+func (m *ref) FullName() FullName {
+	return m.fullName
 }
 
-func (m *moduleRef) Ref() string {
-	return m.ref
+func (m *ref) Ref() string {
+	return m.reference
 }
 
-func (m *moduleRef) String() string {
-	if m.ref == "" {
-		return m.moduleFullName.String()
+func (m *ref) String() string {
+	if m.reference == "" {
+		return m.fullName.String()
 	}
-	return m.moduleFullName.String() + ":" + m.ref
+	return m.fullName.String() + ":" + m.reference
 }
 
-func (*moduleRef) isRef() {}
+func (*ref) isRef() {}

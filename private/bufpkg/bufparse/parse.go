@@ -68,7 +68,7 @@ func parseRefComponents(path string) (registry string, owner string, name string
 
 func newInvalidFullNameStringError(s string) error {
 	return &ParseError{
-		typeString: "module name",
+		typeString: "full name",
 		input:      s,
 		err:        errors.New("must be in the form registry/owner/name"),
 	}
@@ -76,7 +76,7 @@ func newInvalidFullNameStringError(s string) error {
 
 func newInvalidRefStringError(s string) error {
 	return &ParseError{
-		typeString: "module reference",
+		typeString: "reference",
 		input:      s,
 		err:        errors.New("must be in the form registry/owner/name[:ref]"),
 	}

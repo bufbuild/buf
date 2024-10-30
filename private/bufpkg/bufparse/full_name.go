@@ -105,7 +105,7 @@ func FullNameStringToUniqueValue[T HasFullName, S ~[]T](values S) (map[string]T,
 		existingValue, ok := m[fullName.String()]
 		if ok {
 			return nil, fmt.Errorf(
-				"duplicate module names in input: %q, %q",
+				"duplicate full names in input: %q, %q",
 				existingValue.FullName().String(),
 				fullName.String(),
 			)
