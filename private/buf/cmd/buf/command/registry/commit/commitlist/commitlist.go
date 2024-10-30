@@ -143,7 +143,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(moduleRef)
 		}
 		return err
 	}
@@ -188,7 +188,7 @@ func run(
 		)
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
-				return bufcli.NewModuleRefNotFoundError(moduleRef)
+				return bufcli.NewRefNotFoundError(moduleRef)
 			}
 			return err
 		}
@@ -234,7 +234,7 @@ func run(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// This should be impossible since we just checked that the ref is a label.
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(moduleRef)
 		}
 		return err
 	}
