@@ -1,3 +1,22 @@
+// Copyright 2020-2024 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file defines all of the message handlers that involve symbols.
+//
+// In particular, this file handles semantic information in fileManager that have been
+// *opened by the editor*, and thus do not need references to Buf modules to find.
+// See imports.go for that part of the LSP.
 package buflsp
 
 import (
@@ -6,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_formatComment(t *testing.T) {
+func TestCommentToMarkdown(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -15,44 +34,68 @@ func Test_formatComment(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Single-line comment",
-			input:    "// This is a single-line comment",
-			expected: " This is a single-line comment",
+			name:     "single-line-comment",
+			input:    "// this is a single-line comment",
+			expected: " this is a single-line comment",
 		},
 		{
-			name:     "Multi-line comment",
-			input:    "/*\n This is a\n multi-line comment\n */",
-			expected: "This is a\nmulti-line comment",
+			name: "multi-line-comment",
+			input: `/*
+ this is a
+ multi-line comment
+*/`,
+			expected: `
+ this is a
+ multi-line comment
+`,
 		},
 		{
-			name:     "Multi-line comment with mixed indentation",
-			input:    "/*\n  * First line\n  * - Second line\n  *   - Third line\n */",
-			expected: "First line\n- Second line\n  - Third line",
+			name: "doxygen-style-comment",
+			input: `/**
+ * Documentation comment
+ * with asterisks
+ */`,
+			expected: ` Documentation comment
+ with asterisks`,
 		},
 		{
-			name:     "Multi-line comment with JavaDoc convention",
-			input:    "/** This is a\n   * multi-line comment\n   * with multi-asterisks */",
-			expected: "This is a\nmulti-line comment\nwith multi-asterisks",
+			name: "doxygen-mixed-indentation",
+			input: `/**
+ * First line
+ * - Second line
+ *   - Third line
+ */`,
+			expected: ` First line
+ - Second line
+   - Third line`,
 		},
 		{
-			name:     "Single-line multi-line comment",
-			input:    "/* Single-line multi-line comment */",
-			expected: "Single-line multi-line comment",
+			name:     "markdown-emphasis",
+			input:    "/*This is *important**/",
+			expected: "This is *important*",
 		},
 		{
-			name:     "Empty comment",
+			name:     "single-line-doxygen",
+			input:    "/** Single line doc comment */",
+			expected: "Single line doc comment",
+		},
+		{
+			name:     "empty-comment",
 			input:    "/**/",
 			expected: "",
 		},
+		{
+			name:     "only-space",
+			input:    "/* */",
+			expected: " ",
+		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			result := formatComment(tt.input)
-			if result != tt.expected {
-				assert.Equal(t, tt.input, result)
-			}
+			assert.Equal(t, test.expected, commentToMarkdown(test.input))
 		})
 	}
 }
