@@ -72,12 +72,12 @@ func NewModuleNotFoundError(name string) error {
 	return fmt.Errorf(`a module named %q does not exist, use "buf registry module create" to create one`, name)
 }
 
-// NewRefNotFoundError informs the user that a ModuleRef does not exist.
+// NewRefNotFoundError informs the user that a Ref does not exist.
 func NewRefNotFoundError(ref bufparse.Ref) error {
 	return fmt.Errorf("%q does not exist", ref)
 }
 
-// NewLabelNotFoundError informs the user that a ModuleRef does not exist as a label.
+// NewLabelNotFoundError informs the user that a Ref does not exist as a label.
 func NewLabelNotFoundError(ref bufparse.Ref) error {
 	return fmt.Errorf("label %q does not exist", ref)
 }
