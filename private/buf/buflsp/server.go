@@ -215,6 +215,12 @@ func (s *server) Formatting(
 		return nil, err
 	}
 
+	newText := out.String()
+	// Avoid formatting the file if text has not changed.
+	if newText == file.text {
+		return nil, nil
+	}
+
 	// XXX: The current compiler does not expose a span for the full file. Instead of
 	// potentially undershooting the correct span (which can cause comments at the
 	// start and end of the file to be duplicated), we instead manually count up the
@@ -241,7 +247,7 @@ func (s *server) Formatting(
 					Character: uint32(lastChar),
 				},
 			},
-			NewText: out.String(),
+			NewText: newText,
 		},
 	}, nil
 }
