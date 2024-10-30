@@ -17,8 +17,6 @@
 package buflsp
 
 import (
-	"fmt"
-
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
@@ -79,7 +77,8 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnosti
 		// essentially a bug that will result in worse diagnostics until fixed.
 		Range:    protocol.Range{Start: pos, End: pos},
 		Severity: protocol.DiagnosticSeverityError,
-		Message:  fmt.Sprintf("%s:%d:%d: %s", err.GetPosition().Filename, err.GetPosition().Line, err.GetPosition().Col, err.Unwrap().Error()),
+		Message:  err.Unwrap().Error(),
+		Source:   "buf",
 	}
 
 	if isWarning {
