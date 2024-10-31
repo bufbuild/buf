@@ -15,9 +15,9 @@
 package bufstyle
 
 import (
+	"errors"
 	"path/filepath"
 
-	"go.uber.org/multierr"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -81,12 +81,12 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 			}
 			absFilePath, err := filepath.Abs(position.Filename)
 			if err != nil {
-				reportErr = multierr.Append(reportErr, err)
+				reportErr = errors.Join(reportErr, err)
 				return
 			}
 			relFilePath, err := filepath.Rel(a.absRootDirPath, absFilePath)
 			if err != nil {
-				reportErr = multierr.Append(reportErr, err)
+				reportErr = errors.Join(reportErr, err)
 				return
 			}
 			if _, ok := relFilePaths[relFilePath]; !ok {

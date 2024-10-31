@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -27,7 +28,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -83,7 +83,7 @@ func applyInsertionPoint(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, targetReadObjectCloser.Close())
+		retErr = errors.Join(retErr, targetReadObjectCloser.Close())
 	}()
 	resultData, err := writeInsertionPoint(ctx, file, targetReadObjectCloser)
 	if err != nil {

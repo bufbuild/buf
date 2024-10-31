@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -141,7 +140,7 @@ func run(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {

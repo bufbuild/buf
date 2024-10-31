@@ -18,8 +18,6 @@ import (
 	"context"
 	"errors"
 	"os/exec"
-
-	"go.uber.org/multierr"
 )
 
 var errWaitAlreadyCalled = errors.New("wait already called on process")
@@ -64,6 +62,6 @@ func (p *process) Wait(ctx context.Context) error {
 		return errWaitAlreadyCalled
 	case <-ctx.Done():
 		// Timed out. Send a kill signal and release our handle to it.
-		return multierr.Combine(ctx.Err(), p.cmd.Process.Kill())
+		return errors.Join(ctx.Err(), p.cmd.Process.Kill())
 	}
 }

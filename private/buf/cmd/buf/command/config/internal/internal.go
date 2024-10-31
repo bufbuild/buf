@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -194,7 +193,7 @@ func lsRun(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 	client, err := bufcheck.NewClient(
 		container.Logger(),

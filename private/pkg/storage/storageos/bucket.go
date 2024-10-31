@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 	"go.uber.org/atomic"
-	"go.uber.org/multierr"
 )
 
 // errNotDir is the error returned if a path is not a directory.
@@ -393,13 +392,13 @@ func (w *writeObjectCloser) Close() error {
 	err := toStorageError(w.file.Close())
 	// This is an atomic write operation - we need to rename to the final path
 	if w.path != "" {
-		atomicWriteErr := multierr.Append(w.writeErr.Load(), err)
+		atomicWriteErr := errors.Join(w.writeErr.Load(), err)
 		// Failed during Write or Close - remove temporary file without rename
 		if atomicWriteErr != nil {
-			return toStorageError(multierr.Append(atomicWriteErr, os.Remove(w.file.Name())))
+			return toStorageError(errors.Join(atomicWriteErr, os.Remove(w.file.Name())))
 		}
 		if err := os.Rename(w.file.Name(), w.path); err != nil {
-			return toStorageError(multierr.Append(err, os.Remove(w.file.Name())))
+			return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
 		}
 	}
 	return err

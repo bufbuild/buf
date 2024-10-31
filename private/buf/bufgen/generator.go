@@ -38,7 +38,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -296,8 +295,12 @@ func (g *generator) execPlugins(
 		jobs,
 		thread.ParallelizeWithCancelOnFailure(),
 	); err != nil {
-		if errs := multierr.Errors(err); len(errs) > 0 {
-			return nil, errs[0]
+		// Handle errors joined with `errors.Join`, which is documented to fulfill this interface.
+		if unwrappableErr, ok := err.(interface{ Unwrap() []error }); ok {
+			errs := unwrappableErr.Unwrap()
+			if len(errs) > 0 {
+				return nil, errs[0]
+			}
 		}
 		return nil, err
 	}

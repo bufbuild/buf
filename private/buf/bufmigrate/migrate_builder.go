@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 )
 
 type migrateBuilder struct {
@@ -93,7 +92,7 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
+		retErr = errors.Join(retErr, file.Close())
 	}()
 	bufGenYAML, err := bufconfig.ReadBufGenYAMLFile(file)
 	if err != nil {

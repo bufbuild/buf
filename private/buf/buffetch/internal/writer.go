@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/klauspost/compress/zstd"
-	"go.uber.org/multierr"
 )
 
 type writer struct {
@@ -111,7 +110,7 @@ func (w *writer) putFileWriteCloser(
 	}
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, writeCloser.Close())
+			retErr = errors.Join(retErr, writeCloser.Close())
 		}
 	}()
 	if noFileCompression {

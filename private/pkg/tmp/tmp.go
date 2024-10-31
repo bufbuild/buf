@@ -19,12 +19,12 @@ package tmp
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/multierr"
 )
 
 // File is a temporary file or directory.
@@ -63,9 +63,9 @@ func NewFile(ctx context.Context, reader io.Reader) (File, error) {
 		_ = closer()
 	}()
 	_, err = io.Copy(file, reader)
-	err = multierr.Append(err, file.Close())
+	err = errors.Join(err, file.Close())
 	if err != nil {
-		err = multierr.Append(err, closer())
+		err = errors.Join(err, closer())
 		return nil, err
 	}
 	return newFile(closerFunc(closer), absPath), nil

@@ -17,6 +17,7 @@ package prototesting
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -30,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -54,10 +54,10 @@ func GetProtocFileDescriptorSet(
 	tempFilePath := tempFile.Name()
 	defer func() {
 		if err := tempFile.Close(); err != nil {
-			retErr = multierr.Append(retErr, err)
+			retErr = errors.Join(retErr, err)
 		}
 		if err := os.Remove(tempFilePath); err != nil {
-			retErr = multierr.Append(retErr, err)
+			retErr = errors.Join(retErr, err)
 		}
 	}()
 

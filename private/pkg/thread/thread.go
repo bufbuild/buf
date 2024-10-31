@@ -16,10 +16,9 @@ package thread
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
-
-	"go.uber.org/multierr"
 )
 
 var (
@@ -91,19 +90,19 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		select {
 		case <-ctx.Done():
 			stop = true
-			retErr = multierr.Append(retErr, ctx.Err())
+			retErr = errors.Join(retErr, ctx.Err())
 		case semaphoreC <- struct{}{}:
 			select {
 			case <-ctx.Done():
 				stop = true
-				retErr = multierr.Append(retErr, ctx.Err())
+				retErr = errors.Join(retErr, ctx.Err())
 			default:
 				job := job
 				wg.Add(1)
 				go func() {
 					if err := job(ctx); err != nil {
 						lock.Lock()
-						retErr = multierr.Append(retErr, err)
+						retErr = errors.Join(retErr, err)
 						lock.Unlock()
 						if cancel != nil {
 							cancel()
