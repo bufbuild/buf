@@ -322,7 +322,7 @@ func GetRefsForGitCommitAndRemote(
 		execext.WithStdout(stdout),
 		execext.WithStderr(stderr),
 		execext.WithDir(dir),
-		execext.WithEnv(app.EnvironMap(envContainer)),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get refs for remote %s: %w: %s", remote, err, stderr.String())
 	}

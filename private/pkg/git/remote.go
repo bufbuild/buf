@@ -167,7 +167,7 @@ func validateRemoteExists(
 		execext.WithStdout(stdout),
 		execext.WithStderr(stderr),
 		execext.WithDir(dir),
-		execext.WithEnv(app.EnvironMap(envContainer)),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
