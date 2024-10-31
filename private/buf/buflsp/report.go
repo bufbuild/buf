@@ -78,7 +78,7 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnosti
 		Range:    protocol.Range{Start: pos, End: pos},
 		Severity: protocol.DiagnosticSeverityError,
 		Message:  err.Unwrap().Error(),
-		Source:   "buf",
+		Source:   serverName,
 	}
 
 	if isWarning {

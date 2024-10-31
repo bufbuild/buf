@@ -29,6 +29,10 @@ import (
 )
 
 const (
+	serverName = "buf-lsp"
+)
+
+const (
 	semanticTypeType = iota
 	semanticTypeStruct
 	semanticTypeVariable
@@ -82,7 +86,7 @@ func (s *server) Initialize(
 		return nil, err
 	}
 
-	info := &protocol.ServerInfo{Name: "buf-lsp"}
+	info := &protocol.ServerInfo{Name: serverName}
 	if buildInfo, ok := debug.ReadBuildInfo(); ok {
 		info.Version = buildInfo.Main.Version
 	}
