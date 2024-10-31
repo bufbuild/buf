@@ -35,8 +35,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv2"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
+	betaplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	betapluginpush "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -81,6 +81,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugininfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -252,6 +256,16 @@ func NewRootCommand(name string) *appcmd.Command {
 							moduleupdate.NewCommand("update", builder),
 						},
 					},
+					{
+						Use:   "plugin",
+						Short: "Manage BSR plugins",
+						SubCommands: []*appcmd.Command{
+							plugincreate.NewCommand("create", builder),
+							plugininfo.NewCommand("info", builder),
+							plugindelete.NewCommand("delete", builder),
+							pluginupdate.NewCommand("update", builder),
+						},
+					},
 				},
 			},
 			{
@@ -282,8 +296,8 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "plugin",
 								Short: "Manage plugins on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
-									pluginpush.NewCommand("push", builder),
-									plugindelete.NewCommand("delete", builder),
+									betapluginpush.NewCommand("push", builder),
+									betaplugindelete.NewCommand("delete", builder),
 								},
 							},
 						},

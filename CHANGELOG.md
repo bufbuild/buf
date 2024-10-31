@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
 
 ## [v1.47.0] - 2024-11-13
 
