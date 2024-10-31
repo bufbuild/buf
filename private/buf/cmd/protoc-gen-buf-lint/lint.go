@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -101,7 +100,7 @@ func handle(
 	// The protoc plugins do not support custom lint/breaking change plugins for now.
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
+		bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(pluginEnv.Stderr),
 	)
 	if err != nil {

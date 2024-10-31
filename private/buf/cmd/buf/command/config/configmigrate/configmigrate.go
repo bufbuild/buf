@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
@@ -109,7 +108,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	runner := command.NewRunner()
 	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
 	if err != nil {
 		return err
@@ -127,7 +125,6 @@ func run(
 	}
 	migrator := bufmigrate.NewMigrator(
 		container.Logger(),
-		runner,
 		moduleKeyProvider,
 		commitProvider,
 	)
