@@ -295,13 +295,6 @@ func (g *generator) execPlugins(
 		jobs,
 		thread.ParallelizeWithCancelOnFailure(),
 	); err != nil {
-		// Handle errors joined with `errors.Join`, which is documented to fulfill this interface.
-		if unwrappableErr, ok := err.(interface{ Unwrap() []error }); ok {
-			errs := unwrappableErr.Unwrap()
-			if len(errs) > 0 {
-				return nil, errs[0]
-			}
-		}
 		return nil, err
 	}
 	if err := validateResponses(responses, pluginConfigs); err != nil {
