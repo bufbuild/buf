@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 )
 
 const (
@@ -123,17 +123,15 @@ func newRemote(
 
 func getRemote(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	name string,
 ) (*remote, error) {
-	if err := validateRemoteExists(ctx, runner, envContainer, dir, name); err != nil {
+	if err := validateRemoteExists(ctx, envContainer, dir, name); err != nil {
 		return nil, err
 	}
 	hostname, repositoryPath, err := getRemoteURLMetadata(
 		ctx,
-		runner,
 		envContainer,
 		dir,
 		name,
@@ -141,7 +139,7 @@ func getRemote(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get remote URL metadata: %w", err)
 	}
-	headBranch, err := getRemoteHEADBranch(ctx, runner, envContainer, dir, name)
+	headBranch, err := getRemoteHEADBranch(ctx, envContainer, dir, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get remote HEAD branch: %w", err)
 	}
@@ -156,21 +154,20 @@ func getRemote(
 
 func validateRemoteExists(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	name string,
 ) error {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("ls-remote", "--exit-code", name),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("ls-remote", "--exit-code", name),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -185,23 +182,22 @@ func validateRemoteExists(
 
 func getRemoteURLMetadata(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	remote string,
 ) (string, string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
 		// We use `git config --get remote.<remote>.url` instead of `git remote get-url
 		// since it is more specific to the checkout.
-		command.RunWithArgs("config", "--get", fmt.Sprintf("remote.%s.url", remote)),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("config", "--get", fmt.Sprintf("remote.%s.url", remote)),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", "", err
 	}
@@ -246,21 +242,20 @@ func parseSCPLikeURL(rawURL string) *url.URL {
 // environment for permissions.
 func getRemoteHEADBranch(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	remote string,
 ) (string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("remote", "show", remote),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("remote", "show", remote),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", err
 	}

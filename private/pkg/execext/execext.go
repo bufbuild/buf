@@ -94,7 +94,7 @@ func WithArgs(args ...string) RunStartOption {
 	return &argsOption{args: slices.Clone(args)}
 }
 
-// WithEnv returns a new option that sets the envment variables.
+// WithEnv returns a new option that sets the environment variables.
 //
 // The default is to use the single envment variable __EMPTY_ENV__=1 as we
 // cannot explicitly set an empty envment with the exec package.

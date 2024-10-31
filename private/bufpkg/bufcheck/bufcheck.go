@@ -22,7 +22,6 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -170,7 +169,7 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 	return r(pluginConfig)
 }
 
-// NewRunnerProvider returns a new RunnerProvider for the command.Runner and wasm.Runtime.
+// NewRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
@@ -181,8 +180,8 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 //   - bufconfig.PluginConfigTypeLocalWasm
 //
 // If the PluginConfigType is not supported, an error is returned.
-func NewRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) RunnerProvider {
-	return newRunnerProvider(commandRunner, wasmRuntime)
+func NewRunnerProvider(wasmRuntime wasm.Runtime) RunnerProvider {
+	return newRunnerProvider(wasmRuntime)
 }
 
 // NewClient returns a new Client.

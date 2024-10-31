@@ -23,7 +23,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -35,7 +34,6 @@ import (
 
 type migrateBuilder struct {
 	logger             *slog.Logger
-	runner             command.Runner
 	commitProvider     bufmodule.CommitProvider
 	bucket             storage.ReadBucket
 	destinationDirPath string
@@ -55,14 +53,12 @@ type migrateBuilder struct {
 
 func newMigrateBuilder(
 	logger *slog.Logger,
-	runner command.Runner,
 	commitProvider bufmodule.CommitProvider,
 	bucket storage.ReadBucket,
 	destinationDirPath string,
 ) *migrateBuilder {
 	return &migrateBuilder{
 		logger:                           logger,
-		runner:                           runner,
 		commitProvider:                   commitProvider,
 		bucket:                           bucket,
 		destinationDirPath:               destinationDirPath,
@@ -268,11 +264,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			if err != nil {
 				return err
 			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, m.runner, moduleConfig.LintConfig())
+			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, m.runner, moduleConfig.BreakingConfig())
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
@@ -304,11 +300,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
-		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, m.runner, moduleConfig.LintConfig())
+		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, moduleConfig.LintConfig())
 		if err != nil {
 			return err
 		}
-		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, m.runner, moduleConfig.BreakingConfig())
+		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, moduleConfig.BreakingConfig())
 		if err != nil {
 			return err
 		}
