@@ -16,10 +16,10 @@ package thread
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/atomic"
 )
 
 func TestParallelizeWithImmediateCancellation(t *testing.T) {
@@ -35,7 +35,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 		)
 		for i := 0; i < jobsToExecute; i++ {
 			jobs = append(jobs, func(_ context.Context) error {
-				executed.Inc()
+				executed.Add(1)
 				return nil
 			})
 		}
@@ -49,7 +49,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 		var jobs []func(context.Context) error
 		for i := 0; i < 10; i++ {
 			jobs = append(jobs, func(_ context.Context) error {
-				executed.Inc()
+				executed.Add(1)
 				return nil
 			})
 		}

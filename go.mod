@@ -38,7 +38,6 @@ require (
 	github.com/tetratelabs/wazero v1.8.1
 	go.lsp.dev/jsonrpc2 v0.10.0
 	go.lsp.dev/protocol v0.12.0
-	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
 	go.uber.org/zap/exp v0.3.0
 	golang.org/x/crypto v0.28.0

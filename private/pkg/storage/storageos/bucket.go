@@ -20,12 +20,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/filepathext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
-	"go.uber.org/atomic"
 )
 
 // errNotDir is the error returned if a path is not a directory.
@@ -359,7 +359,7 @@ type writeObjectCloser struct {
 	path string
 	// writeErr contains the first non-nil error caught by a call to Write.
 	// This is returned in Close for atomic writes to prevent writing an incomplete file.
-	writeErr atomic.Error
+	writeErr onceError
 }
 
 func newWriteObjectCloser(
@@ -375,7 +375,7 @@ func newWriteObjectCloser(
 func (w *writeObjectCloser) Write(p []byte) (int, error) {
 	n, err := w.file.Write(p)
 	if err != nil {
-		w.writeErr.CompareAndSwap(nil, err)
+		w.writeErr.Store(err)
 	}
 	return n, toStorageError(err)
 }
@@ -400,6 +400,25 @@ func (w *writeObjectCloser) Close() error {
 		if err := os.Rename(w.file.Name(), w.path); err != nil {
 			return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
 		}
+	}
+	return err
+}
+
+// onceError is an object that will only store an error once.
+type onceError struct {
+	err atomic.Value
+}
+
+// Store stores the err.
+func (e *onceError) Store(err error) {
+	e.err.CompareAndSwap(nil, err)
+}
+
+// Load loads the stored error.
+func (e *onceError) Load() error {
+	err, ok := e.err.Load().(error)
+	if !ok {
+		return nil
 	}
 	return err
 }

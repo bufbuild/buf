@@ -28,6 +28,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -38,7 +39,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 )
 
 const (
