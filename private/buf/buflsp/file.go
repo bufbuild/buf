@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/linker"
@@ -50,31 +51,8 @@ const descriptorPath = "google/protobuf/descriptor.proto"
 //
 // Mutating a file is thread-safe.
 type file struct {
-	// lsp and uri are not protected by file.lock; they are immutable after
-	// file creation!
 	lsp *lsp
 	uri protocol.URI
-
-	// All variables after this lock variables are protected by file.lock.
-	//
-	// NOTE: this package must NEVER attempt to acquire a lock on a file while
-	// holding a lock on another file. This guarantees that any concurrent operations
-	// on distinct files can always make forward progress, even if the information they
-	// have is incomplete. This trades off up-to-date accuracy for responsiveness.
-	//
-	// For example, suppose g1 locks a.proto, and then attempts to lock b.proto
-	// because it followed a pointer in importMap. However, in the meantime, g2
-	// has acquired b.proto's lock already, and attempts to acquire a lock to a.proto,
-	// again because of a pointer in importMap. This will deadlock, and it will
-	// deadlock in such a way that will be undetectable to the Go scheduler, so the
-	// LSP will hang forever.
-	//
-	// This seems like a contrived scenario, but it can happen if a user creates two
-	// mutually-recursive Protobuf files. Although this is not permitted by Protobuf,
-	// the LSP must handle this invalid state gracefully.
-	//
-	// This is enforced by mutex.go.
-	lock mutex
 
 	text string
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -84,19 +62,34 @@ type file struct {
 	hasText bool // Whether this file has ever had text read into it.
 	// Always set false->true. Once true, never becomes false again.
 
-	workspace     bufworkspace.Workspace
-	module        bufmodule.Module
-	imageFileInfo bufimage.ImageFileInfo
+	workspace bufworkspace.Workspace
+	module    bufmodule.Module
 
-	isWKT bool
+	objectInfo             storage.ObjectInfo
+	importablePathToObject map[string]storage.ObjectInfo
 
-	fileNode          *ast.FileNode
-	packageNode       *ast.PackageNode
-	diagnostics       []protocol.Diagnostic
-	importableToImage map[string]bufimage.ImageFileInfo
-	importToFile      map[string]*file
-	symbols           []*symbol
-	image             bufimage.Image
+	fileNode     *ast.FileNode
+	packageNode  *ast.PackageNode
+	diagnostics  []protocol.Diagnostic
+	importToFile map[string]*file
+	symbols      []*symbol
+	image        bufimage.Image
+}
+
+// IsWKT returns whether this file corresponds to a well-known type.
+func (f *file) IsWKT() bool {
+	_, ok := f.objectInfo.(wktObjectInfo)
+	return ok
+}
+
+// IsLocal returns whether this is a local file, i.e. a file that the editor
+// is editing and not something from e.g. the BSR.
+func (f *file) IsLocal() bool {
+	if f.objectInfo == nil {
+		return false
+	}
+
+	return f.objectInfo.LocalPath() == f.objectInfo.ExternalPath()
 }
 
 // Manager returns the file manager that owns this file.
@@ -117,26 +110,15 @@ func (f *file) Package() []string {
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
 
-	// Lock and unlock to acquire the import map, then nil everything out
-	// This map is never mutated after being created, so we only
-	// need to read the pointer.
-	//
-	// We need to lock and unlock because Close() will call Reset() on other
-	// files, and this will deadlock if cyclic imports exist.
-	f.lock.Lock(ctx)
-	imports := f.importToFile
-
 	f.fileNode = nil
 	f.packageNode = nil
 	f.diagnostics = nil
-	f.importableToImage = nil
+	f.importablePathToObject = nil
 	f.importToFile = nil
 	f.symbols = nil
 	f.image = nil
-	f.lock.Unlock(ctx)
 
-	// Close all imported files while file.mu is not held.
-	for _, imported := range imports {
+	for _, imported := range f.importToFile {
 		imported.Close(ctx)
 	}
 }
@@ -149,13 +131,20 @@ func (f *file) Close(ctx context.Context) {
 	f.lsp.fileManager.Close(ctx, f.uri)
 }
 
+// IsOpenInEditor returns whether this file was opened in the LSP client's
+// editor.
+//
+// Some files may be opened as dependencies, so we want to avoid doing extra
+// work like sending progress notifications.
+func (f *file) IsOpenInEditor() bool {
+	return f.version != -1 // See [file.ReadFromDisk].
+}
+
 // ReadFromDisk reads this file from disk if it has never had data loaded into it before.
 //
 // If it has been read from disk before, or has received updates from the LSP client, this
 // function returns nil.
 func (f *file) ReadFromDisk(ctx context.Context) (err error) {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 	if f.hasText {
 		return nil
 	}
@@ -175,9 +164,6 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.Reset(ctx)
 
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
-
 	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
 	f.text = text
@@ -188,11 +174,16 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 //
 // If deep is set, this will also load imports and refresh those, too.
 func (f *file) Refresh(ctx context.Context) {
-	progress := newProgress(f.lsp)
+	var progress *progress
+	if f.IsOpenInEditor() {
+		// NOTE: Nil progress does nothing when methods are called. This helps
+		// minimize RPC spam from the client when indexing lots of files.
+		progress = newProgress(f.lsp)
+	}
 	progress.Begin(ctx, "Indexing")
 
 	progress.Report(ctx, "Parsing AST", 1.0/6)
-	hasReport := f.RefreshAST(ctx)
+	f.RefreshAST(ctx)
 
 	progress.Report(ctx, "Indexing Imports", 2.0/6)
 	f.IndexImports(ctx)
@@ -202,23 +193,23 @@ func (f *file) Refresh(ctx context.Context) {
 
 	progress.Report(ctx, "Linking Descriptors", 4.0/6)
 	f.BuildImage(ctx)
-	hasReport = f.RunLints(ctx) || hasReport // Avoid short-circuit here.
+	f.RunLints(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)
 
 	progress.Done(ctx)
-	if hasReport {
-		f.PublishDiagnostics(ctx)
-	}
+
+	// NOTE: Diagnostics are published unconditionally. This is necessary even
+	// if we have zero diagnostics, so that the client correctly ticks over from
+	// n > 0 diagnostics to 0 diagnostics.
+	f.PublishDiagnostics(ctx)
 }
 
 // RefreshAST reparses the file and generates diagnostics if necessary.
 //
 // Returns whether a reparse was necessary.
 func (f *file) RefreshAST(ctx context.Context) bool {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
 	if f.fileNode != nil {
 		return false
 	}
@@ -255,13 +246,21 @@ func (f *file) RefreshAST(ctx context.Context) bool {
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
 func (f *file) PublishDiagnostics(ctx context.Context) {
+	if !f.IsOpenInEditor() {
+		// If the file does get opened by the editor, the server will call
+		// Refresh() and this function will retry sending diagnostics. Which is
+		// to say: returning here does not result in stale diagnostics on the
+		// client.
+		return
+	}
+
 	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
-
+	// NOTE: We need to avoid sending a JSON null here, so we replace it with
+	// a non-nil empty slice when the diagnostics slice is nil.
+	diagnostics := f.diagnostics
 	if f.diagnostics == nil {
-		return
+		diagnostics = []protocol.Diagnostic{}
 	}
 
 	// Publish the diagnostics. This error is automatically logged by the LSP framework.
@@ -270,7 +269,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
 		// This seems like a bug in the LSP protocol package.
 		Version:     uint32(f.version),
-		Diagnostics: f.diagnostics,
+		Diagnostics: diagnostics,
 	})
 }
 
@@ -307,39 +306,37 @@ func (f *file) FindModule(ctx context.Context) {
 		defer file.Close()
 	}
 
-	f.lock.Lock(ctx)
 	f.workspace = workspace
 	f.module = module
-	f.lock.Unlock(ctx)
 }
 
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
 	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
-	unlock := f.lock.Lock(ctx)
-	defer unlock()
-
 	if f.fileNode == nil || f.importToFile != nil {
 		return
 	}
 
-	importable, err := f.lsp.findImportable(ctx, f.uri)
+	importable, err := findImportable(ctx, f.uri, f.lsp)
 	if err != nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not compute importable files for %s: %s", f.uri, err))
-		return
+		if f.importablePathToObject == nil {
+			return
+		}
+	} else if f.importablePathToObject == nil {
+		f.importablePathToObject = importable
 	}
-	f.importableToImage = importable
 
 	// Find the FileInfo for this path. The crazy thing is that it may appear in importable
 	// multiple times, with different path lengths! We want to pick the one with the longest path
 	// length.
 	for _, fileInfo := range importable {
 		if fileInfo.LocalPath() == f.uri.Filename() {
-			if f.imageFileInfo != nil && len(f.imageFileInfo.Path()) > len(fileInfo.Path()) {
+			if f.objectInfo != nil && len(f.objectInfo.Path()) > len(fileInfo.Path()) {
 				continue
 			}
-			f.imageFileInfo = fileInfo
+			f.objectInfo = fileInfo
 		}
 	}
 
@@ -350,12 +347,50 @@ func (f *file) IndexImports(ctx context.Context) {
 			continue
 		}
 
+		// If this is an external file, it will be in the cache and therefore
+		// finding imports via lsp.findImportable() will not work correctly:
+		// the bucket for the workspace found for a dependency will have
+		// truncated paths, and those workspace files will appear to be
+		// local rather than external.
+		//
+		// Thus, we search for name and all of its path suffixes. This is not
+		// ideal but is our only option in this case.
+		var fileInfo storage.ObjectInfo
+		var pathWasTruncated bool
 		name := node.Name.AsString()
-		fileInfo, ok := importable[name]
-		if !ok {
-			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", name))
+		for {
+			fileInfo, ok = importable[name]
+			if ok {
+				break
+			}
+
+			idx := strings.Index(name, "/")
+			if idx == -1 {
+				break
+			}
+
+			name = name[idx+1:]
+			pathWasTruncated = true
+		}
+		if fileInfo == nil {
+			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", node.Name.AsString()))
 			continue
 		}
+		if pathWasTruncated && !strings.HasSuffix(fileInfo.LocalPath(), node.Name.AsString()) {
+			// Verify that the file we found, with a potentially too-short path, does in fact have
+			// the "correct" full path as a prefix. E.g., suppose we import a/b/c.proto. We find
+			// c.proto in importable. Now, we look at the full local path, which we expect to be of
+			// the form /home/blah/.cache/blah/a/b/c.proto or similar. If it does not contain
+			// a/b/c.proto as a suffix, we didn't find our file.
+			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q, but found same-suffix path %q", node.Name.AsString(), fileInfo.LocalPath()))
+			continue
+		}
+
+		f.lsp.logger.Debug(
+			"mapped import -> path",
+			slog.String("import", name),
+			slog.String("path", fileInfo.LocalPath()),
+		)
 
 		var imported *file
 		if fileInfo.LocalPath() == f.uri.Filename() {
@@ -364,8 +399,7 @@ func (f *file) IndexImports(ctx context.Context) {
 			imported = f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
 		}
 
-		imported.imageFileInfo = fileInfo
-		f.isWKT = strings.HasPrefix("google/protobuf/", fileInfo.Path())
+		imported.objectInfo = fileInfo
 		f.importToFile[node.Name.AsString()] = imported
 	}
 
@@ -377,19 +411,13 @@ func (f *file) IndexImports(ctx context.Context) {
 			f.importToFile[descriptorPath] = f
 		} else {
 			imported := f.Manager().Open(ctx, descriptorURI)
-			imported.imageFileInfo = descriptorFile
+			imported.objectInfo = descriptorFile
 			f.importToFile[descriptorPath] = imported
 		}
-		f.isWKT = true
 	}
 
 	// FIXME: This algorithm is not correct: it does not account for `import public`.
-
-	// Drop the lock after copying the pointer to the imports map. This
-	// particular map will not be mutated further, and since we're going to grab the lock of
-	// other files, we need to drop the currently held lock.
 	fileImports := f.importToFile
-	unlock()
 
 	for _, file := range fileImports {
 		if err := file.ReadFromDisk(ctx); err != nil {
@@ -412,10 +440,8 @@ func (f *file) IndexImports(ctx context.Context) {
 //
 // This operation requires IndexImports().
 func (f *file) BuildImage(ctx context.Context) {
-	f.lock.Lock(ctx)
-	importable := f.importableToImage
-	fileInfo := f.imageFileInfo
-	f.lock.Unlock(ctx)
+	importable := f.importablePathToObject
+	fileInfo := f.objectInfo
 
 	if importable == nil || fileInfo == nil {
 		return
@@ -450,9 +476,7 @@ func (f *file) BuildImage(ctx context.Context) {
 
 	compiled, err := compiler.Compile(ctx, fileInfo.Path())
 	if err != nil {
-		f.lock.Lock(ctx)
 		f.diagnostics = report.diagnostics
-		f.lock.Unlock(ctx)
 	}
 	if compiled[0] == nil {
 		return
@@ -530,25 +554,21 @@ func (f *file) BuildImage(ctx context.Context) {
 		return
 	}
 
-	f.lock.Lock(ctx)
 	f.image = image
-	f.lock.Unlock(ctx)
 }
 
 // RunLints runs linting on this file. Returns whether any lints failed.
 //
 // This operation requires BuildImage().
 func (f *file) RunLints(ctx context.Context) bool {
-	if f.isWKT {
+	if f.IsWKT() {
 		// Well-known types are not linted.
 		return false
 	}
 
-	f.lock.Lock(ctx)
 	workspace := f.workspace
 	module := f.module
 	image := f.image
-	f.lock.Unlock(ctx)
 
 	if module == nil || image == nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
@@ -578,8 +598,6 @@ func (f *file) RunLints(ctx context.Context) bool {
 
 	f.lsp.logger.Warn(fmt.Sprintf("lint generated %d error(s) for %s", len(annotations.FileAnnotations()), f.uri))
 
-	f.lock.Lock(ctx)
-	f.lock.Unlock(ctx)
 	for _, annotation := range annotations.FileAnnotations() {
 		f.lsp.logger.Info(annotation.FileInfo().Path(), " ", annotation.FileInfo().ExternalPath())
 
@@ -608,15 +626,15 @@ func (f *file) RunLints(ctx context.Context) bool {
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
-	unlock := f.lock.Lock(ctx)
-	defer unlock()
-
 	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
-	// symbols unconditionally.
+	// symbols unconditionally. This is because if this file depends on a file
+	// that has since been modified, we may need to update references.
 	f.symbols = nil
 
 	// Generate new symbols.
-	newWalker(f).Walk(f.fileNode, f.fileNode)
+	walker := newWalker(f)
+	walker.Walk(f.fileNode, f.fileNode)
+	f.symbols = walker.symbols
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
@@ -627,9 +645,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		return diff
 	})
 
-	// Now we can drop the lock and search for cross-file references.
 	symbols := f.symbols
-	unlock()
 	for _, symbol := range symbols {
 		symbol.ResolveCrossFile(ctx)
 	}
@@ -641,9 +657,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 //
 // Returns nil if no symbol is found.
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	f.lock.Lock(ctx)
-	defer f.lock.Unlock(ctx)
-
 	// Binary search for the symbol whose start is before or equal to cursor.
 	idx, found := slices.BinarySearchFunc(f.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
 		return comparePositions(sym.Range().Start, cursor)
@@ -664,4 +677,67 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	}
 
 	return symbol
+}
+
+// findImportable finds all files that can potentially be imported by the proto file at
+// uri. This returns a map from potential Protobuf import path to the URI of the file it would import.
+//
+// Note that this performs no validation on these files, because those files might be open in the
+// editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
+// more.
+func findImportable(
+	ctx context.Context,
+	uri protocol.URI,
+	lsp *lsp,
+) (map[string]storage.ObjectInfo, error) {
+	// This does not use Controller.GetImportableImageFileInfos because:
+	//
+	// 1. That function throws away Module/ModuleSet information, because it
+	//    converts the module contents into ImageFileInfos.
+	//
+	// 2. That function does not specify which of the files it returns are
+	//    well-known imports. Previously, we were making an educated guess about
+	//    which files were well-known, but this resulted in subtle classification
+	//    bugs.
+	//
+	// Doing the file walk here manually helps us retain some control over what
+	// data is discarded.
+	workspace, err := lsp.controller.GetWorkspace(ctx, uri.Filename())
+	if err != nil {
+		return nil, err
+	}
+
+	imports := make(map[string]storage.ObjectInfo)
+	for _, module := range workspace.Modules() {
+		err = module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if fileInfo.FileType() != bufmodule.FileTypeProto {
+				return nil
+			}
+
+			imports[fileInfo.Path()] = fileInfo
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = lsp.wktBucket.Walk(ctx, "", func(object storage.ObjectInfo) error {
+		imports[object.Path()] = wktObjectInfo{object}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	lsp.logger.Debug(fmt.Sprintf("found imports for %q: %#v", uri, imports))
+
+	return imports, nil
+}
+
+// wktObjectInfo is a concrete type to help us identify WKTs among the
+// importable files.
+type wktObjectInfo struct {
+	storage.ObjectInfo
 }

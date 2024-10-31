@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
+// Generated. DO NOT EDIT.
 
-// Version is the CLI version of buf.
-const Version = "1.46.1-dev"
+package whoami
+
+import _ "github.com/bufbuild/buf/private/usage"

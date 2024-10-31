@@ -345,6 +345,7 @@ func createCuratedPluginRequest(
 		LicenseUrl:           pluginConfig.LicenseURL,
 		Visibility:           visibility,
 		IntegrationGuideUrl:  pluginConfig.IntegrationGuideURL,
+		Deprecated:           pluginConfig.Deprecated,
 	}, nil
 }
 

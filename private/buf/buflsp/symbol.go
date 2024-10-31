@@ -27,6 +27,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
@@ -115,8 +116,6 @@ func (s *symbol) Definition(ctx context.Context) (*symbol, ast.Node) {
 			return nil, nil
 		}
 
-		kind.file.lock.Lock(ctx)
-		defer kind.file.lock.Unlock(ctx)
 		for _, symbol := range kind.file.symbols {
 			def, ok := symbol.kind.(*definition)
 			if ok && slices.Equal(kind.path, def.path) {
@@ -168,11 +167,6 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 					"unexpected unresolved or non-reference symbol for seeTypeOf",
 					slog.Any("symbol", s))
 				return
-			}
-
-			// Fully index the file this reference is in, if different from the current.
-			if s.file != ref.file {
-				ref.file.Refresh(ctx)
 			}
 
 			// Find the definition that contains the type we want.
@@ -272,22 +266,11 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 				return
 			}
 
-			// Make a copy of the import table pointer and then drop the lock,
-			// since searching inside of the imports will need to acquire other
-			// fileManager' locks.
-			s.file.lock.Lock(ctx)
+			// Look for a symbol with this exact path in descriptor proto.
 			descriptorProto := s.file.importToFile[descriptorPath]
-			s.file.lock.Unlock(ctx)
-
 			if descriptorProto == nil {
 				return
 			}
-
-			// Look for a symbol with this exact path in descriptor proto.
-
-			descriptorProto.lock.Lock(ctx)
-			defer descriptorProto.lock.Unlock(ctx)
-
 			var fieldSymbol *symbol
 			for _, symbol := range descriptorProto.symbols {
 				if def, ok := symbol.kind.(*definition); ok && slices.Equal(def.path, fieldPath) {
@@ -304,23 +287,35 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			return
 		}
 
-		// Make a copy of the import table pointer and then drop the lock,
-		// since searching inside of the imports will need to acquire other
-		// fileManager' locks.
-		s.file.lock.Lock(ctx)
-		imports := s.file.importToFile
-		s.file.lock.Unlock(ctx)
-
-		if imports == nil {
+		if s.file.importToFile == nil {
 			// Hopeless. We'll have to try again once we have imports!
 			return
 		}
 
-		for _, imported := range imports {
-			// Remove a leading pkg from components.
+		for _, imported := range s.file.importToFile {
+			// If necessary, refresh the file. Note that this cannot hit
+			// cycles, because fileNode will become non-nil after calling
+			// Refresh but before calling IndexSymbols.
+			if imported.fileNode == nil {
+				imported.Refresh(ctx)
+			}
+
+			// Need to check two paths; components on its own, and components
+			// with s.file's package prepended.
+
+			// First, try removing the imported file's package from components.
 			path, ok := slicesext.TrimPrefix(components, imported.Package())
 			if !ok {
-				continue
+				// If that doesn't work, try appending the importee's package.
+				// This is necessary because protobuf allows for partial package
+				// names to appear in references.
+				path, ok = slicesext.TrimPrefix(
+					slices.Concat(s.file.Package(), components),
+					imported.Package(),
+				)
+				if !ok {
+					continue
+				}
 			}
 
 			if findDeclByPath(imported.fileNode.Decls, path) != nil {
@@ -332,7 +327,48 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	}
 }
 
-// FormatDocs finds appropriate  documgntation for the given s and constructs a Markdown
+func (s *symbol) LogValue() slog.Value {
+	attrs := []slog.Attr{slog.String("file", s.file.uri.Filename())}
+
+	// pos converts an ast.SourcePos into a slog.Value.
+	pos := func(pos ast.SourcePos) slog.Value {
+		return slog.GroupValue(
+			slog.Int("line", pos.Line),
+			slog.Int("col", pos.Col),
+		)
+	}
+
+	attrs = append(attrs, slog.Any("start", pos(s.info.Start())))
+	attrs = append(attrs, slog.Any("end", pos(s.info.End())))
+
+	switch kind := s.kind.(type) {
+	case *builtin:
+		attrs = append(attrs, slog.String("builtin", kind.name))
+
+	case *import_:
+		if kind.file != nil {
+			attrs = append(attrs, slog.String("imports", kind.file.uri.Filename()))
+		}
+
+	case *definition:
+		attrs = append(attrs, slog.String("defines", strings.Join(kind.path, ".")))
+
+	case *reference:
+		if kind.file != nil {
+			attrs = append(attrs, slog.String("imports", kind.file.uri.Filename()))
+		}
+		if kind.path != nil {
+			attrs = append(attrs, slog.String("references", strings.Join(kind.path, ".")))
+		}
+		if kind.seeTypeOf != nil {
+			attrs = append(attrs, slog.Any("see_type_of", kind.seeTypeOf))
+		}
+	}
+
+	return slog.GroupValue(attrs...)
+}
+
+// FormatDocs finds appropriate documentation for the given s and constructs a Markdown
 // string for showing to the client.
 //
 // Returns the empty string if no docs are available.
@@ -368,6 +404,10 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		path = kind.path
 
 	default:
+		return ""
+	}
+
+	if def == nil {
 		return ""
 	}
 
@@ -413,19 +453,37 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		return tooltip.String()
 	}
 
-	if def.file.imageFileInfo != nil {
-		path := strings.Join(path, ".")
+	// Do not show BSR links for local files, because those may contain symbols
+	// that dop not exist remotely.
+	if def.file != nil && !def.file.IsLocal() {
+		// Classify this node by whether or not the BSR has an anchor for it.
+		// Extensions are special: they are grouped under an #extensions anchor.
+		var hasAnchor, isExtension bool
+		switch node := node.(type) {
+		case *ast.MessageNode, *ast.EnumNode, *ast.ServiceNode:
+			hasAnchor = true
+		case *ast.FieldNode:
+			isExtension = node.Extendee != nil
+			hasAnchor = isExtension
+		}
 
-		fmt.Fprintf(
-			&tooltip,
-			"[`%s.%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s.%s)\n\n",
-			pkg,
-			path,
-			def.file.imageFileInfo.ModuleFullName(),
-			pkg,
-			pkg,
-			path,
-		)
+		var bsrHost, bsrAnchor, bsrTooltip string
+		if def.file.IsWKT() {
+			bsrHost = "buf.build/protocolbuffers/wellknowntypes"
+		} else if fileInfo, ok := def.file.objectInfo.(bufmodule.FileInfo); ok {
+			bsrHost = fileInfo.Module().ModuleFullName().String()
+		}
+		if hasAnchor {
+			bsrTooltip = pkg + "." + strings.Join(path, ".")
+		} else {
+			bsrTooltip = pkg + "." + strings.Join(path[:len(path)-1], ".")
+		}
+		bsrAnchor = bsrTooltip
+		if isExtension {
+			bsrAnchor = "extensions"
+		}
+
+		fmt.Fprintf(&tooltip, "[`%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s)\n\n", bsrTooltip, bsrHost, pkg, bsrAnchor)
 	}
 
 	// Dump all of the comments into the tooltip. These will be rendered as Markdown automatically
@@ -440,9 +498,13 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 			// The compiler does not currently provide comments without their
 			// delimited removed, so we have to do this ourselves.
 			if strings.HasPrefix(comment, "//") {
-				comment = strings.TrimSpace(strings.TrimPrefix(comment, "//"))
+				// NOTE: We do not trim the space here, because indentation is
+				// significant for Markdown code fences, and if every line
+				// starts with a space, Markdown will trim it for us, even off
+				// of code blocks.
+				comment = strings.TrimPrefix(comment, "//")
 			} else {
-				comment = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/"))
+				comment = strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 			}
 
 			if comment != "" {
@@ -463,7 +525,8 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 
 // symbolWalker is an AST walker that generates the symbol table for a file in IndexSymbols().
 type symbolWalker struct {
-	file *file
+	file    *file
+	symbols []*symbol
 
 	// This is the set of *ast.MessageNode, *ast.EnumNode, and *ast.ServiceNode that
 	// we have traversed. They are used for same-file symbol resolution, and for constructing
@@ -613,7 +676,7 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 				}
 			} else {
 				// This depends on the type of the previous symbol.
-				prev := w.file.symbols[len(w.file.symbols)-1]
+				prev := w.symbols[len(w.symbols)-1]
 				next = w.newSymbol(part.Name)
 				next.kind = &reference{seeTypeOf: prev}
 			}
@@ -634,7 +697,7 @@ func (w *symbolWalker) newSymbol(name ast.Node) *symbol {
 		info: w.file.fileNode.NodeInfo(name),
 	}
 
-	w.file.symbols = append(w.file.symbols, symbol)
+	w.symbols = append(w.symbols, symbol)
 	return symbol
 }
 

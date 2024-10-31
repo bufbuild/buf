@@ -12,8 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package slogapp
 
-package bufapi
+import (
+	"encoding/json"
+	"strings"
+	"testing"
 
-import _ "github.com/bufbuild/buf/private/usage"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestNoStack(t *testing.T) {
+	t.Parallel()
+	var sb strings.Builder
+	logger, err := NewLogger(&sb, appext.LogLevelInfo, appext.LogFormatJSON)
+	require.NoError(t, err)
+	logger.Error("boom")
+	var logFields map[string]any
+	err = json.Unmarshal([]byte(sb.String()), &logFields)
+	require.NoError(t, err)
+	assert.NotContains(t, logFields, "stacktrace")
+}

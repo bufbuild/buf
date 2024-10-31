@@ -21,11 +21,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -40,6 +40,7 @@ import (
 // Returns a context for managing the server.
 func Serve(
 	ctx context.Context,
+	wktBucket storage.ReadBucket,
 	container appext.Container,
 	controller bufctl.Controller,
 	checkClient bufcheck.Client,
@@ -68,6 +69,7 @@ func Serve(
 		controller:  controller,
 		checkClient: checkClient,
 		rootBucket:  bucket,
+		wktBucket:   wktBucket,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
@@ -96,6 +98,10 @@ type lsp struct {
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
 
+	wktBucket storage.ReadBucket
+
+	lock sync.Mutex
+
 	// These are atomics, because they are read often and written to
 	// almost never, but potentially concurrently. Having them side-by-side
 	// is fine; they are almost never written to so false sharing is not a
@@ -107,7 +113,7 @@ type lsp struct {
 // init performs *actual* initialization of the server. This is called by Initialize().
 //
 // It may only be called once for a given server.
-func (l *lsp) init(params *protocol.InitializeParams) error {
+func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 	if l.initParams.Load() != nil {
 		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
 	}
@@ -120,39 +126,12 @@ func (l *lsp) init(params *protocol.InitializeParams) error {
 	return nil
 }
 
-// findImportable finds all files that can potentially be imported by the proto file at
-// uri. This returns a map from potential Protobuf import path to the URI of the file it would import.
-//
-// Note that this performs no validation on these files, because those files might be open in the
-// editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
-// more.
-func (l *lsp) findImportable(
-	ctx context.Context,
-	uri protocol.URI,
-) (map[string]bufimage.ImageFileInfo, error) {
-	fileInfos, err := l.controller.GetImportableImageFileInfos(ctx, uri.Filename())
-	if err != nil {
-		return nil, err
-	}
-
-	imports := make(map[string]bufimage.ImageFileInfo)
-	for _, fileInfo := range fileInfos {
-		imports[fileInfo.Path()] = fileInfo
-	}
-
-	l.logger.DebugContext(ctx, fmt.Sprintf("found imports for %q: %#v", uri, imports))
-
-	return imports, nil
-}
-
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
 // to inject debug logging, tracing, and timeouts to requests.
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
 	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
 		defer slogext.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
-
-		ctx = withRequestID(ctx)
 
 		replier := l.wrapReplier(reply, req)
 
@@ -162,6 +141,8 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			return replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
 		}
 
+		l.lock.Lock()
+		defer l.lock.Unlock()
 		return actual(ctx, replier, req)
 	}
 }
