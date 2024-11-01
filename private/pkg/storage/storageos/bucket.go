@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // errNotDir is the error returned if a path is not a directory.
@@ -416,9 +417,13 @@ func (e *onceError) Store(err error) {
 
 // Load loads the stored error.
 func (e *onceError) Load() error {
-	err, ok := e.err.Load().(error)
-	if !ok {
+	atomicValue := e.err.Load()
+	if atomicValue == nil {
 		return nil
+	}
+	err, ok := atomicValue.(error)
+	if !ok {
+		return syserror.Newf("expected error but got %T", atomicValue)
 	}
 	return err
 }
