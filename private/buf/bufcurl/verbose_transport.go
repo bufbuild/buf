@@ -24,10 +24,10 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"go.uber.org/atomic"
 )
 
 type skipUploadFinishedMessageKey struct{}
