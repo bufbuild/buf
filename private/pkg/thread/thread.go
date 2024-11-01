@@ -16,10 +16,9 @@ package thread
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
-
-	"go.uber.org/multierr"
 )
 
 var (
@@ -74,9 +73,14 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		defer cancel()
 	}
 	semaphoreC := make(chan struct{}, Parallelism()*multiplier)
-	var retErr error
-	var wg sync.WaitGroup
+	var errs []error
 	var lock sync.Mutex
+	addError := func(err error) {
+		lock.Lock()
+		errs = append(errs, err)
+		lock.Unlock()
+	}
+	var wg sync.WaitGroup
 	var stop bool
 	for _, job := range jobs {
 		if stop {
@@ -91,20 +95,18 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		select {
 		case <-ctx.Done():
 			stop = true
-			retErr = multierr.Append(retErr, ctx.Err())
+			addError(ctx.Err())
 		case semaphoreC <- struct{}{}:
 			select {
 			case <-ctx.Done():
 				stop = true
-				retErr = multierr.Append(retErr, ctx.Err())
+				addError(ctx.Err())
 			default:
 				job := job
 				wg.Add(1)
 				go func() {
 					if err := job(ctx); err != nil {
-						lock.Lock()
-						retErr = multierr.Append(retErr, err)
-						lock.Unlock()
+						addError(err)
 						if cancel != nil {
 							cancel()
 						}
@@ -117,7 +119,14 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		}
 	}
 	wg.Wait()
-	return retErr
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
+		return errors.Join(errs...)
+	}
 }
 
 // ParallelizeOption is an option to Parallelize.

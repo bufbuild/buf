@@ -16,6 +16,7 @@ package bufcheck
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -26,7 +27,6 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -119,7 +119,7 @@ func printRulesText(writer io.Writer, rules []Rule, categoriesFunc func(Rule) []
 
 	tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
 	defer func() {
-		retErr = multierr.Append(retErr, tabWriter.Flush())
+		retErr = errors.Join(retErr, tabWriter.Flush())
 	}()
 	writer = tabWriter
 

@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"go.uber.org/multierr"
 )
 
 type cloner struct {
@@ -82,7 +81,7 @@ func (c *cloner) CloneToBucket(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, baseDir.Close())
+		retErr = errors.Join(retErr, baseDir.Close())
 	}()
 
 	buffer := bytes.NewBuffer(nil)

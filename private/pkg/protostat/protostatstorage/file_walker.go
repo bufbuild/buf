@@ -16,10 +16,10 @@ package protostatstorage
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 type fileWalker struct {
@@ -45,7 +45,7 @@ func (f *fileWalker) Walk(ctx context.Context, fu func(io.Reader) error) error {
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, readObjectCloser.Close())
+				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
 			return fu(readObjectCloser)
 		},

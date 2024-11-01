@@ -42,7 +42,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
-	"go.uber.org/multierr"
 )
 
 type reader struct {
@@ -123,7 +122,7 @@ func (r *reader) GetReadBucketCloser(
 			if retReadBucketCloser != nil {
 				castReadBucketCloser, ok := retReadBucketCloser.(*readBucketCloser)
 				if !ok {
-					retErr = multierr.Append(
+					retErr = errors.Join(
 						retErr,
 						syserror.Newf("expected *readBucketCloser but got %T", retReadBucketCloser),
 					)
@@ -131,7 +130,7 @@ func (r *reader) GetReadBucketCloser(
 				}
 				var err error
 				retReadBucketCloser, err = castReadBucketCloser.copyToInMemory(ctx)
-				retErr = multierr.Append(retErr, err)
+				retErr = errors.Join(retErr, err)
 			}
 		}()
 	}
@@ -422,7 +421,7 @@ func (r *reader) getFileReadCloserAndSize(
 	}
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, readCloser.Close())
+			retErr = errors.Join(retErr, readCloser.Close())
 		}
 	}()
 	if keepFileCompression {
@@ -531,7 +530,7 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressedHTTP(
 	if response.StatusCode != http.StatusOK {
 		err := fmt.Errorf("got HTTP status code %d", response.StatusCode)
 		if response.Body != nil {
-			return nil, -1, multierr.Append(err, response.Body.Close())
+			return nil, -1, errors.Join(err, response.Body.Close())
 		}
 		return nil, -1, err
 	}

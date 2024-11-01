@@ -34,7 +34,6 @@ import (
 	imagev1 "github.com/docker/docker/image/v1"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -121,7 +120,7 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("docker load response body close error: %w", err))
+			retErr = errors.Join(retErr, fmt.Errorf("docker load response body close error: %w", err))
 		}
 	}()
 	imageID := ""
@@ -180,7 +179,7 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, pushReader.Close())
+		retErr = errors.Join(retErr, pushReader.Close())
 	}()
 	var imageDigest string
 	pushScanner := bufio.NewScanner(pushReader)

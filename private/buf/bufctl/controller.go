@@ -47,7 +47,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -562,7 +561,7 @@ func (c *controller) PutImage(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
+		retErr = errors.Join(retErr, writeCloser.Close())
 	}()
 	_, err = writeCloser.Write(data)
 	return err
@@ -692,7 +691,7 @@ func (c *controller) PutMessage(
 		return err
 	}
 	_, err = writeCloser.Write(data)
-	return multierr.Append(err, writeCloser.Close())
+	return errors.Join(err, writeCloser.Close())
 }
 
 func (c *controller) getImage(
@@ -799,7 +798,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readBucketCloser.Close())
+		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithProtoFileTargetPath(
@@ -839,7 +838,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readBucketCloser.Close())
+		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithConfigOverride(
@@ -915,7 +914,7 @@ func (c *controller) getImageForMessageRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
+		retErr = errors.Join(retErr, readCloser.Close())
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {

@@ -16,6 +16,7 @@ package bufprotopluginos
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -231,7 +231,7 @@ func (w *responseWriter) writeZip(
 			return err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, file.Close())
+			retErr = errors.Join(retErr, file.Close())
 		}()
 		// protoc does not compress.
 		return storagearchive.Zip(ctx, readWriteBucket, file, false)

@@ -19,6 +19,7 @@ package bufimagefuzz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -34,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/multierr"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -106,7 +106,7 @@ func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, dir.Close())
+		retErr = errors.Join(retErr, dir.Close())
 	}()
 	if err := untxtar(data, dir.Path()); err != nil {
 		return nil, err

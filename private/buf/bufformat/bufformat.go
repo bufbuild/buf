@@ -16,6 +16,7 @@ package bufformat
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -25,7 +26,6 @@ import (
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
-	"go.uber.org/multierr"
 )
 
 // FormatModuleSet formats and writes the target files into a read bucket.
@@ -56,7 +56,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, readObjectCloser.Close())
+				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
 			fileNode, err := parser.Parse(readObjectCloser.ExternalPath(), readObjectCloser, reporter.NewHandler(nil))
 			if err != nil {
@@ -67,7 +67,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, writeObjectCloser.Close())
+				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
 			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
 				return err

@@ -36,7 +36,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -371,7 +370,7 @@ func run(
 					return err
 				}
 				defer func() {
-					retErr = multierr.Append(retErr, file.Close())
+					retErr = errors.Join(retErr, file.Close())
 				}()
 				if _, err := file.ReadFrom(readObject); err != nil {
 					return err
@@ -437,7 +436,7 @@ func writeToProtoFile(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
+		retErr = errors.Join(retErr, writeCloser.Close())
 	}()
 	return storage.WalkReadObjects(
 		ctx,

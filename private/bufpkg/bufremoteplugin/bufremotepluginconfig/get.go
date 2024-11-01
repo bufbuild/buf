@@ -16,13 +16,13 @@ package bufremotepluginconfig
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.uber.org/multierr"
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options []ConfigOption) (_ *Config, retErr error) {
@@ -50,7 +50,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 			return nil, err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, readObjectCloser.Close())
+			retErr = errors.Join(retErr, readObjectCloser.Close())
 		}()
 		data, err := io.ReadAll(readObjectCloser)
 		if err != nil {

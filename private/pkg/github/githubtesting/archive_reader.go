@@ -17,6 +17,7 @@ package githubtesting
 import (
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
 )
 
 // since we are in testing, we care less about making sure this times out early
@@ -77,7 +77,7 @@ func (a *archiveReader) GetArchive(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, unlocker.Unlock())
+		retErr = errors.Join(retErr, unlocker.Unlock())
 	}()
 
 	// check if already exists, if so, do nothing
@@ -102,7 +102,7 @@ func (a *archiveReader) GetArchive(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
+		retErr = errors.Join(retErr, response.Body.Close())
 	}()
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
@@ -112,7 +112,7 @@ func (a *archiveReader) GetArchive(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, gzipReader.Close())
+		retErr = errors.Join(retErr, gzipReader.Close())
 	}()
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
 		return err

@@ -16,12 +16,12 @@ package wasm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -114,7 +114,7 @@ func (r *runtime) Compile(ctx context.Context, moduleName string, moduleWasm []b
 func (r *runtime) Close(ctx context.Context) error {
 	err := r.runtime.Close(ctx)
 	if r.compilationCache != nil {
-		err = multierr.Append(err, r.compilationCache.Close(ctx))
+		err = errors.Join(err, r.compilationCache.Close(ctx))
 	}
 	return err
 }

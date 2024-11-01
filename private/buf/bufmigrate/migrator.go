@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 )
 
 type migrator struct {
@@ -256,7 +255,7 @@ func (m *migrator) getOriginalAndAddedFileBuckets(
 			return nil, nil, err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			retErr = errors.Join(retErr, writeObjectCloser.Close())
 		}()
 		if err := bufconfig.WriteBufYAMLFile(writeObjectCloser, migratedBufYAMLFile); err != nil {
 			return nil, nil, err
@@ -279,7 +278,7 @@ func (m *migrator) getOriginalAndAddedFileBuckets(
 				return nil, nil, err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, writeObjectCloser.Close())
+				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
 			if err := bufconfig.WriteBufLockFile(writeObjectCloser, migratedBufLockFile); err != nil {
 				return nil, nil, err
@@ -303,7 +302,7 @@ func (m *migrator) getOriginalAndAddedFileBuckets(
 			return nil, nil, err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			retErr = errors.Join(retErr, writeObjectCloser.Close())
 		}()
 		if err := bufconfig.WriteBufGenYAMLFile(writeObjectCloser, migratedBufGenYAMLFile); err != nil {
 			return nil, nil, err
@@ -595,7 +594,7 @@ func resolvedDeclaredAndLockedDependencies(
 			return iTime.After(jTime)
 		})
 		if len(errs) > 0 {
-			return nil, nil, multierr.Combine(errs...)
+			return nil, nil, errors.Join(errs...)
 		}
 		depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
 	}
@@ -623,7 +622,7 @@ func resolvedDeclaredAndLockedDependencies(
 			return iTime.After(jTime)
 		})
 		if len(errs) > 0 {
-			return nil, nil, multierr.Combine(errs...)
+			return nil, nil, errors.Join(errs...)
 		}
 		resolvedDepModuleKeys = append(resolvedDepModuleKeys, lockKeys[0])
 	}

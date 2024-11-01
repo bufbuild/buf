@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -111,7 +110,7 @@ func (h *protocProxyHandler) Handle(
 			return err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, tmpFile.Close())
+			retErr = errors.Join(retErr, tmpFile.Close())
 		}()
 		descriptorFilePath = tmpFile.Path()
 	}
@@ -120,7 +119,7 @@ func (h *protocProxyHandler) Handle(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, tmpDir.Close())
+		retErr = errors.Join(retErr, tmpDir.Close())
 	}()
 	args := slicesext.Concat(h.protocExtraArgs, []string{
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),

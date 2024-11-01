@@ -17,6 +17,7 @@ package bufprint
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -32,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protostat"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -314,7 +314,7 @@ func WithTabWriter(
 ) (retErr error) {
 	tabWriter := newTabWriter(writer)
 	defer func() {
-		retErr = multierr.Append(retErr, tabWriter.Flush())
+		retErr = errors.Join(retErr, tabWriter.Flush())
 	}()
 	if err := tabWriter.Write(header...); err != nil {
 		return err
