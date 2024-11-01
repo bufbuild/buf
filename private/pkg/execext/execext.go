@@ -229,6 +229,15 @@ func (rs *runStartOptions) applyCmd(cmd *exec.Cmd) {
 	}
 	// If the user did not specify any stdin, we want to make sure
 	// the command has access to none, as the default is the default stdin.
+	//
+	// Note: This *should* be the same as just having cmd.Stdin = nil, given that
+	// exec.Cmd documents that Stdin has the same behavior as Stdout/Stderr, namely
+	// that os.DevNull is used. This has been the case for Stdin since at least 2014.
+	// However, way back when this package was first introduced, we set up the discardReader
+	// for some reason, and we can't remember why. We're terrified to change it, as there
+	// *may* have been some reason to do so. os.DevNull is actually just a string such
+	// as "/dev/null" on Unix systems, so how Golang actually handles this is somewhat
+	// unknown. Honestly, I might just want to change Stdout/Stderr to use a discardWriter.
 	if rs.stdin == nil {
 		cmd.Stdin = discardReader{}
 	} else {
