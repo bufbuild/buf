@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -176,7 +175,7 @@ func lsRun(
 	// BufYAMLFiles <=v1 never had plugins.
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(command.NewRunner(), wasm.UnimplementedRuntime),
+		bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

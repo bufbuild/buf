@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -289,7 +288,6 @@ func run(
 		return err
 	}
 
-	runner := command.NewRunner()
 	controller, err := bufcli.NewController(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
@@ -325,7 +323,6 @@ func run(
 	diffBuffer := bytes.NewBuffer(nil)
 	changedPaths, err := storage.DiffWithFilenames(
 		ctx,
-		runner,
 		diffBuffer,
 		originalReadBucket,
 		formattedReadBucket,

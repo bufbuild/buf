@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -1356,7 +1355,7 @@ func testLintWithOptions(
 	})
 	client, err := bufcheck.NewClient(
 		logger,
-		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+		bufcheck.NewRunnerProvider(wasmRuntime),
 	)
 	require.NoError(t, err)
 	err = client.Lint(

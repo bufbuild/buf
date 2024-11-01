@@ -15,14 +15,13 @@
 package pluginrpcutil
 
 import (
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
 
-// NewRunner returns a new pluginrpc.Runner for the command.Runner and program name.
-func NewRunner(delegate command.Runner, programName string, programArgs ...string) pluginrpc.Runner {
-	return newRunner(delegate, programName, programArgs...)
+// NewRunner returns a new pluginrpc.Runner for the program name.
+func NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
+	return newRunner(programName, programArgs...)
 }
 
 // NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.

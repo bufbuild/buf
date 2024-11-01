@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
+//go:build unix
 
-package command
+package execext
 
 import (
 	"context"
@@ -24,29 +23,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDoubleWait(t *testing.T) {
+func TestStartSimple(t *testing.T) {
 	t.Parallel()
 
-	runner := NewRunner()
-	process, err := runner.Start("echo")
-	require.NoError(t, err)
 	ctx := context.Background()
-	_ = process.Wait(ctx)
-	require.Equal(t, process.Wait(ctx), errWaitAlreadyCalled)
-}
-
-func TestNoDeadlock(t *testing.T) {
-	t.Parallel()
-
-	runner := NewRunner(RunnerWithParallelism(2))
 	processes := make([]Process, 4)
 	for i := 0; i < 4; i++ {
-		process, err := runner.Start("sleep", StartWithArgs("1"))
+		process, err := Start(ctx, "sleep", WithArgs("1"))
 		require.NoError(t, err)
 		processes[i] = process
 	}
-	ctx := context.Background()
 	for _, process := range processes {
-		require.NoError(t, process.Wait(ctx))
+		require.NoError(t, process.Wait())
 	}
+}
+
+func TestStartDoubleWait(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	process, err := Start(ctx, "echo")
+	require.NoError(t, err)
+	_ = process.Wait()
+	require.Equal(t, process.Wait(), errWaitAlreadyCalled)
 }

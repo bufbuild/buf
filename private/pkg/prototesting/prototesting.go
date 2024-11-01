@@ -26,8 +26,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,6 @@ import (
 // Only use for testing.
 func GetProtocFileDescriptorSet(
 	ctx context.Context,
-	runner command.Runner,
 	roots []string,
 	realFilePaths []string,
 	includeImports bool,
@@ -63,7 +62,6 @@ func GetProtocFileDescriptorSet(
 
 	if err := RunProtoc(
 		ctx,
-		runner,
 		roots,
 		realFilePaths,
 		includeImports,
@@ -99,8 +97,7 @@ func GetProtocFileDescriptorSet(
 // GetProtocVersion runs protoc --version with RunProtoc and returns the output sans the "libprotoc" prefix
 func GetProtocVersion(ctx context.Context) (string, error) {
 	var stdout bytes.Buffer
-	runner := command.NewRunner()
-	if err := RunProtoc(ctx, runner, nil, nil, false, false, nil, &stdout, "--version"); err != nil {
+	if err := RunProtoc(ctx, nil, nil, false, false, nil, &stdout, "--version"); err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(strings.TrimPrefix(stdout.String(), "libprotoc")), nil
@@ -109,7 +106,6 @@ func GetProtocVersion(ctx context.Context) (string, error) {
 // RunProtoc runs protoc.
 func RunProtoc(
 	ctx context.Context,
-	runner command.Runner,
 	roots []string,
 	realFilePaths []string,
 	includeImports bool,
@@ -146,13 +142,17 @@ func RunProtoc(
 	if stdout == nil {
 		stdout = stderr
 	}
-	if err := runner.Run(
+	environ := make([]string, 0, len(env))
+	for key, value := range env {
+		environ = append(environ, key+"="+value)
+	}
+	if err := execext.Run(
 		ctx,
 		protocBinPath,
-		command.RunWithArgs(args...),
-		command.RunWithEnv(env),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
+		execext.WithArgs(args...),
+		execext.WithEnv(environ),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
 	); err != nil {
 		return fmt.Errorf("%s returned error: %v %v", protocBinPath, err, stderr.String())
 	}
@@ -162,7 +162,6 @@ func RunProtoc(
 // DiffFileDescriptorSetsWire diffs the two FileDescriptorSets using proto.MarshalWire.
 func DiffFileDescriptorSetsWire(
 	ctx context.Context,
-	runner command.Runner,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 	oneName string,
@@ -176,7 +175,7 @@ func DiffFileDescriptorSetsWire(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(ctx, runner, oneData, twoData, oneName, twoName)
+	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName)
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +185,6 @@ func DiffFileDescriptorSetsWire(
 // DiffFileDescriptorSetsJSON diffs the two FileDescriptorSets using JSON.
 func DiffFileDescriptorSetsJSON(
 	ctx context.Context,
-	runner command.Runner,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 	oneName string,
@@ -208,7 +206,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(ctx, runner, oneData, twoData, oneName, twoName)
+	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName)
 	if err != nil {
 		return "", err
 	}
@@ -227,11 +225,10 @@ func DiffFileDescriptorSetsCompare(
 // JSON and compare.
 func AssertFileDescriptorSetsEqual(
 	t *testing.T,
-	runner command.Runner,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 ) {
-	diff, err := DiffFileDescriptorSetsJSON(context.Background(), runner, one, two, "buf", "protoc")
+	diff, err := DiffFileDescriptorSetsJSON(context.Background(), one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)

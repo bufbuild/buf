@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -45,7 +44,6 @@ func TestCorpus(t *testing.T) {
 	// To focus on just one test in the corpus, put its file name here. Don't forget to revert before committing.
 	focus := ""
 	ctx := context.Background()
-	runner := command.NewRunner()
 	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -59,7 +57,7 @@ func TestCorpus(t *testing.T) {
 		t.Run(info.Name(), func(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join("corpus", info.Name()))
 			require.NoError(t, err)
-			result, err := fuzz(ctx, runner, data)
+			result, err := fuzz(ctx, data)
 			require.NoError(t, err)
 			require.NoError(t, result.error(ctx))
 		})
@@ -94,8 +92,7 @@ func TestCorpus(t *testing.T) {
 //	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz
 //func Fuzz(data []byte) int {
 //ctx := context.Background()
-//runner := command.NewRunner()
-//result, err := fuzz(ctx, runner, data)
+//result, err := fuzz(ctx, data)
 //if err != nil {
 //// data was invalid in some way
 //return -1
@@ -103,7 +100,7 @@ func TestCorpus(t *testing.T) {
 //return result.panicOrN(ctx)
 //}
 
-func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResult, retErr error) {
+func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
 	dir, err := tmp.NewDir(ctx)
 	if err != nil {
 		return nil, err
@@ -122,7 +119,6 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 
 	actualProtocFileDescriptorSet, protocErr := prototesting.GetProtocFileDescriptorSet(
 		ctx,
-		runner,
 		[]string{dir.Path()},
 		filePaths,
 		false,
@@ -131,7 +127,6 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 
 	image, bufErr := fuzzBuild(ctx, dir.Path())
 	return newFuzzResult(
-		runner,
 		bufErr,
 		protocErr,
 		actualProtocFileDescriptorSet,
@@ -194,7 +189,6 @@ func untxtar(data []byte, destDirPath string) error {
 }
 
 type fuzzResult struct {
-	runner                        command.Runner
 	bufErr                        error
 	protocErr                     error
 	actualProtocFileDescriptorSet *descriptorpb.FileDescriptorSet
@@ -202,14 +196,12 @@ type fuzzResult struct {
 }
 
 func newFuzzResult(
-	runner command.Runner,
 	bufErr error,
 	protocErr error,
 	actualProtocFileDescriptorSet *descriptorpb.FileDescriptorSet,
 	image bufimage.Image,
 ) *fuzzResult {
 	return &fuzzResult{
-		runner:                        runner,
 		bufErr:                        bufErr,
 		protocErr:                     protocErr,
 		actualProtocFileDescriptorSet: actualProtocFileDescriptorSet,
@@ -246,7 +238,6 @@ func (f *fuzzResult) error(ctx context.Context) error {
 
 	diff, err := prototesting.DiffFileDescriptorSetsJSON(
 		ctx,
-		f.runner,
 		fileDescriptorSet,
 		f.actualProtocFileDescriptorSet,
 		"buf",

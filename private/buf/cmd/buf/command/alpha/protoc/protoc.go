@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -87,7 +86,6 @@ func run(
 	container appext.Container,
 	env *env,
 ) (retErr error) {
-	runner := command.NewRunner()
 	logger := container.Logger()
 	defer slogext.DebugProfile(logger)()
 
@@ -191,7 +189,6 @@ func run(
 				ctx,
 				logger,
 				storageosProvider,
-				runner,
 				container,
 				images,
 				pluginName,

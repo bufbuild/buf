@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -51,13 +50,12 @@ type generator struct {
 func newGenerator(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:              logger,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, storageosProvider, runner),
+		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, storageosProvider),
 		clientConfig:        clientConfig,
 	}
 }

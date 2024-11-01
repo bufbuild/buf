@@ -38,7 +38,6 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
@@ -177,7 +176,6 @@ type controller struct {
 	fileAnnotationsToStdout   bool
 	copyToInMemory            bool
 
-	commandRunner               command.Runner
 	storageosProvider           storageos.Provider
 	buffetchRefParser           buffetch.RefParser
 	buffetchReader              buffetch.Reader
@@ -213,7 +211,6 @@ func newController(
 	if err := validateFileAnnotationErrorFormat(controller.fileAnnotationErrorFormat); err != nil {
 		return nil, err
 	}
-	controller.commandRunner = command.NewRunner()
 	controller.storageosProvider = newStorageosProvider(controller.disableSymlinks)
 	controller.buffetchRefParser = buffetch.NewRefParser(logger)
 	controller.buffetchReader = buffetch.NewReader(
@@ -224,7 +221,6 @@ func newController(
 		git.NewCloner(
 			logger,
 			controller.storageosProvider,
-			controller.commandRunner,
 			gitClonerOptions,
 		),
 		moduleKeyProvider,

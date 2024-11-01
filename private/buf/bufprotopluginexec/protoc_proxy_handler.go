@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -41,7 +41,6 @@ import (
 type protocProxyHandler struct {
 	logger            *slog.Logger
 	storageosProvider storageos.Provider
-	runner            command.Runner
 	protocPath        string
 	protocExtraArgs   []string
 	pluginName        string
@@ -50,7 +49,6 @@ type protocProxyHandler struct {
 func newProtocProxyHandler(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	protocPath string,
 	protocExtraArgs []string,
 	pluginName string,
@@ -58,7 +56,6 @@ func newProtocProxyHandler(
 	return &protocProxyHandler{
 		logger:            logger,
 		storageosProvider: storageosProvider,
-		runner:            runner,
 		protocPath:        protocPath,
 		protocExtraArgs:   protocExtraArgs,
 		pluginName:        pluginName,
@@ -148,13 +145,13 @@ func (h *protocProxyHandler) Handle(
 	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
 		stdin = bytes.NewReader(fileDescriptorSetData)
 	}
-	if err := h.runner.Run(
+	if err := execext.Run(
 		ctx,
 		h.protocPath,
-		command.RunWithArgs(args...),
-		command.RunWithEnviron(pluginEnv.Environ),
-		command.RunWithStdin(stdin),
-		command.RunWithStderr(pluginEnv.Stderr),
+		execext.WithArgs(args...),
+		execext.WithEnv(pluginEnv.Environ),
+		execext.WithStdin(stdin),
+		execext.WithStderr(pluginEnv.Stderr),
 	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
@@ -194,12 +191,12 @@ func (h *protocProxyHandler) getProtocVersion(
 	pluginEnv protoplugin.PluginEnv,
 ) (*pluginpb.Version, error) {
 	stdoutBuffer := bytes.NewBuffer(nil)
-	if err := h.runner.Run(
+	if err := execext.Run(
 		ctx,
 		h.protocPath,
-		command.RunWithArgs(slicesext.Concat(h.protocExtraArgs, []string{"--version"})...),
-		command.RunWithEnviron(pluginEnv.Environ),
-		command.RunWithStdout(stdoutBuffer),
+		execext.WithArgs(slicesext.Concat(h.protocExtraArgs, []string{"--version"})...),
+		execext.WithEnv(pluginEnv.Environ),
+		execext.WithStdout(stdoutBuffer),
 	); err != nil {
 		// TODO: strip binary path as well?
 		return nil, handlePotentialTooManyFilesError(err)
