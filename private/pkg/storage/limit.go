@@ -41,6 +41,7 @@ type limitedWriteBucket struct {
 func newLimitedWriteBucket(bucket WriteBucket, limit int64) *limitedWriteBucket {
 	return &limitedWriteBucket{
 		WriteBucket: bucket,
+		currentSize: &atomic.Int64{},
 		limit:       limit,
 	}
 }
