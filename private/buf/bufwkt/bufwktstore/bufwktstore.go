@@ -18,7 +18,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -35,8 +34,7 @@ type Store interface {
 // It is assumed that the Store has complete control of the bucket.
 func NewStore(
 	logger *slog.Logger,
-	runner command.Runner,
 	bucket storage.ReadWriteBucket,
 ) Store {
-	return newStore(logger, runner, bucket)
+	return newStore(logger, bucket)
 }

@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -103,10 +103,9 @@ type CloneToBucketOptions struct {
 func NewCloner(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	options ClonerOptions,
 ) Cloner {
-	return newCloner(logger, storageosProvider, runner, options)
+	return newCloner(logger, storageosProvider, options)
 }
 
 // ClonerOptions are options for a new Cloner.
@@ -144,8 +143,8 @@ type Lister interface {
 }
 
 // NewLister returns a new Lister.
-func NewLister(runner command.Runner) Lister {
-	return newLister(runner)
+func NewLister() Lister {
+	return newLister()
 }
 
 // ListFilesAndUnstagedFilesOptions are options for ListFilesAndUnstagedFiles.
@@ -200,12 +199,11 @@ type Remote interface {
 // permissions.
 func GetRemote(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	name string,
 ) (Remote, error) {
-	return getRemote(ctx, runner, envContainer, dir, name)
+	return getRemote(ctx, envContainer, dir, name)
 }
 
 // CheckDirectoryIsValidGitCheckout runs a simple git rev-parse. In the case where the
@@ -214,20 +212,19 @@ func GetRemote(
 // ErrInvalidGitCheckout to the user.
 func CheckDirectoryIsValidGitCheckout(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 ) error {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("rev-parse"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("rev-parse"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -244,23 +241,22 @@ func CheckDirectoryIsValidGitCheckout(
 // changes from git based on the given directory.
 func CheckForUncommittedGitChanges(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 ) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	var modifiedFiles []string
-	envMap := app.EnvironMap(envContainer)
+	environ := app.Environ(envContainer)
 	// Unstaged changes
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("diff", "--name-only"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(envMap),
+		execext.WithArgs("diff", "--name-only"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(environ),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get unstaged changes: %w: %s", err, stderr.String())
 	}
@@ -269,14 +265,14 @@ func CheckForUncommittedGitChanges(
 	stdout = bytes.NewBuffer(nil)
 	stderr = bytes.NewBuffer(nil)
 	// Staged changes
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("diff", "--name-only", "--cached"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(envMap),
+		execext.WithArgs("diff", "--name-only", "--cached"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(environ),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get staged changes: %w: %s", err, stderr.String())
 	}
@@ -288,20 +284,19 @@ func CheckForUncommittedGitChanges(
 // GetCurrentHEADGitCommit returns the current HEAD commit based on the given directory.
 func GetCurrentHEADGitCommit(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 ) (string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("rev-parse", "HEAD"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("rev-parse", "HEAD"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", fmt.Errorf("failed to get current HEAD commit: %w: %s", err, stderr.String())
 	}
@@ -313,7 +308,6 @@ func GetCurrentHEADGitCommit(
 // passing the environment for permissions.
 func GetRefsForGitCommitAndRemote(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	remote string,
@@ -321,14 +315,14 @@ func GetRefsForGitCommitAndRemote(
 ) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("ls-remote", "--heads", "--tags", remote),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("ls-remote", "--heads", "--tags", remote),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get refs for remote %s: %w: %s", remote, err, stderr.String())
 	}

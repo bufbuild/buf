@@ -27,7 +27,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -77,9 +76,8 @@ type Generator interface {
 func NewGenerator(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 ) Generator {
-	return newGenerator(logger, storageosProvider, runner)
+	return newGenerator(logger, storageosProvider)
 }
 
 // GenerateOption is an option for Generate.
@@ -114,7 +112,6 @@ func GenerateWithProtocPath(protocPath ...string) GenerateOption {
 func NewHandler(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	pluginName string,
 	options ...HandlerOption,
 ) (protoplugin.Handler, error) {
@@ -126,11 +123,11 @@ func NewHandler(
 	// Initialize binary plugin handler when path is specified with optional args. Return
 	// on error as something is wrong with the supplied pluginPath option.
 	if len(handlerOptions.pluginPath) > 0 {
-		return NewBinaryHandler(logger, runner, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
+		return NewBinaryHandler(logger, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
 	}
 
 	// Initialize binary plugin handler based on plugin name.
-	if handler, err := NewBinaryHandler(logger, runner, "protoc-gen-"+pluginName, nil); err == nil {
+	if handler, err := NewBinaryHandler(logger, "protoc-gen-"+pluginName, nil); err == nil {
 		return handler, nil
 	}
 
@@ -145,7 +142,7 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newProtocProxyHandler(logger, storageosProvider, runner, protocPath, protocExtraArgs, pluginName), nil
+		return newProtocProxyHandler(logger, storageosProvider, protocPath, protocExtraArgs, pluginName), nil
 	}
 	return nil, fmt.Errorf(
 		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
@@ -180,12 +177,12 @@ func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
-func NewBinaryHandler(logger *slog.Logger, runner command.Runner, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
+func NewBinaryHandler(logger *slog.Logger, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err
 	}
-	return newBinaryHandler(logger, runner, pluginPath, pluginArgs), nil
+	return newBinaryHandler(logger, pluginPath, pluginArgs), nil
 }
 
 type handlerOptions struct {

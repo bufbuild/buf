@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -40,20 +39,17 @@ import (
 
 type migrator struct {
 	logger            *slog.Logger
-	runner            command.Runner
 	moduleKeyProvider bufmodule.ModuleKeyProvider
 	commitProvider    bufmodule.CommitProvider
 }
 
 func newMigrator(
 	logger *slog.Logger,
-	runner command.Runner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) *migrator {
 	return &migrator{
 		logger:            logger,
-		runner:            runner,
 		moduleKeyProvider: moduleKeyProvider,
 		commitProvider:    commitProvider,
 	}
@@ -140,7 +136,6 @@ func (m *migrator) getMigrateBuilder(
 	}
 	migrateBuilder := newMigrateBuilder(
 		m.logger,
-		m.runner,
 		m.commitProvider,
 		bucket,
 		destinationDirPath,
@@ -209,7 +204,6 @@ func (m *migrator) diff(
 	}
 	return storage.Diff(
 		ctx,
-		m.runner,
 		writer,
 		originalFileBucket,
 		addedFileBucket,
@@ -647,13 +641,11 @@ func resolvedDeclaredAndLockedDependencies(
 func equivalentLintConfigInV2(
 	ctx context.Context,
 	logger *slog.Logger,
-	runner command.Runner,
 	lintConfig bufconfig.LintConfig,
 ) (bufconfig.LintConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		ctx,
 		logger,
-		runner,
 		check.RuleTypeLint,
 		lintConfig,
 	)
@@ -674,13 +666,11 @@ func equivalentLintConfigInV2(
 func equivalentBreakingConfigInV2(
 	ctx context.Context,
 	logger *slog.Logger,
-	runner command.Runner,
 	breakingConfig bufconfig.BreakingConfig,
 ) (bufconfig.BreakingConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		ctx,
 		logger,
-		runner,
 		check.RuleTypeBreaking,
 		breakingConfig,
 	)
@@ -698,13 +688,12 @@ func equivalentBreakingConfigInV2(
 func equivalentCheckConfigInV2(
 	ctx context.Context,
 	logger *slog.Logger,
-	runner command.Runner,
 	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
 	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(logger, bufcheck.NewRunnerProvider(runner, wasm.UnimplementedRuntime))
+	client, err := bufcheck.NewClient(logger, bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime))
 	if err != nil {
 		return nil, err
 	}

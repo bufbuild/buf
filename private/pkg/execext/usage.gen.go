@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package command
+package execext
 
 import _ "github.com/bufbuild/buf/private/usage"

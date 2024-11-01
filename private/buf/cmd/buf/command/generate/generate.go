@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
@@ -542,7 +541,6 @@ func run(
 	return bufgen.NewGenerator(
 		logger,
 		storageosProvider,
-		command.NewRunner(),
 		clientConfig,
 	).Generate(
 		ctx,
