@@ -8,6 +8,7 @@
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
 [![Homebrew](https://img.shields.io/homebrew/v/buf)](https://github.com/bufbuild/homebrew-buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Buf%20Guru-006BFF)](https://gurubase.io/g/buf)
 
 <a name="features"></a>
 The [`buf`][buf] CLI is the best tool for working with [Protocol Buffers][protobuf]. It provides:
