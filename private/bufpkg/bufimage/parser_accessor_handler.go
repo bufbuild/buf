@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 )
 
 type parserAccessorHandler struct {
@@ -78,7 +77,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 	}
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, moduleFile.Close())
+			retErr = errors.Join(retErr, moduleFile.Close())
 		}
 	}()
 	if moduleFile.Path() != path {

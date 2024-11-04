@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -174,7 +173,6 @@ func NewWKTStore(container appext.Container) (bufwktstore.Store, error) {
 	}
 	return bufwktstore.NewStore(
 		container.Logger(),
-		command.NewRunner(),
 		cacheBucket,
 	), nil
 }

@@ -20,13 +20,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/filepathext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
-	"go.uber.org/atomic"
-	"go.uber.org/multierr"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // errNotDir is the error returned if a path is not a directory.
@@ -360,7 +360,7 @@ type writeObjectCloser struct {
 	path string
 	// writeErr contains the first non-nil error caught by a call to Write.
 	// This is returned in Close for atomic writes to prevent writing an incomplete file.
-	writeErr atomic.Error
+	writeErr onceError
 }
 
 func newWriteObjectCloser(
@@ -376,7 +376,7 @@ func newWriteObjectCloser(
 func (w *writeObjectCloser) Write(p []byte) (int, error) {
 	n, err := w.file.Write(p)
 	if err != nil {
-		w.writeErr.CompareAndSwap(nil, err)
+		w.writeErr.Store(err)
 	}
 	return n, toStorageError(err)
 }
@@ -393,14 +393,37 @@ func (w *writeObjectCloser) Close() error {
 	err := toStorageError(w.file.Close())
 	// This is an atomic write operation - we need to rename to the final path
 	if w.path != "" {
-		atomicWriteErr := multierr.Append(w.writeErr.Load(), err)
+		atomicWriteErr := errors.Join(w.writeErr.Load(), err)
 		// Failed during Write or Close - remove temporary file without rename
 		if atomicWriteErr != nil {
-			return toStorageError(multierr.Append(atomicWriteErr, os.Remove(w.file.Name())))
+			return toStorageError(errors.Join(atomicWriteErr, os.Remove(w.file.Name())))
 		}
 		if err := os.Rename(w.file.Name(), w.path); err != nil {
-			return toStorageError(multierr.Append(err, os.Remove(w.file.Name())))
+			return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
 		}
+	}
+	return err
+}
+
+// onceError is an object that will only store an error once.
+type onceError struct {
+	err atomic.Value
+}
+
+// Store stores the err.
+func (e *onceError) Store(err error) {
+	e.err.CompareAndSwap(nil, err)
+}
+
+// Load loads the stored error.
+func (e *onceError) Load() error {
+	atomicValue := e.err.Load()
+	if atomicValue == nil {
+		return nil
+	}
+	err, ok := atomicValue.(error)
+	if !ok {
+		return syserror.Newf("expected error but got %T", atomicValue)
 	}
 	return err
 }

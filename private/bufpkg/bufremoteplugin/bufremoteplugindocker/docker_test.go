@@ -33,7 +33,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
@@ -148,29 +148,28 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 		return "", err
 	}
 	imageName := fmt.Sprintf("%s:%s", pluginIdentity, stringid.GenerateRandomID())
-	cmd := command.NewRunner()
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	if err := cmd.Run(
+	if err := execext.Run(
 		context.Background(),
 		docker,
-		command.RunWithArgs("build", "-t", imageName, "."),
-		command.RunWithDir(filepath.Dir(dockerfilePath)),
-		command.RunWithStdout(os.Stdout),
-		command.RunWithStderr(os.Stderr),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("build", "-t", imageName, "."),
+		execext.WithDir(filepath.Dir(dockerfilePath)),
+		execext.WithStdout(os.Stdout),
+		execext.WithStderr(os.Stderr),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", err
 	}
 	t.Logf("created image: %s", imageName)
 	t.Cleanup(func() {
-		if err := cmd.Run(
+		if err := execext.Run(
 			context.Background(),
 			docker,
-			command.RunWithArgs("rmi", "--force", imageName),
-			command.RunWithDir(filepath.Dir(dockerfilePath)),
-			command.RunWithStdout(os.Stdout),
-			command.RunWithStderr(os.Stderr),
+			execext.WithArgs("rmi", "--force", imageName),
+			execext.WithDir(filepath.Dir(dockerfilePath)),
+			execext.WithStdout(os.Stdout),
+			execext.WithStderr(os.Stderr),
 		); err != nil {
 			t.Logf("failed to remove temporary docker image: %v", err)
 		}

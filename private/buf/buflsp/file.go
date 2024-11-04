@@ -614,7 +614,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 			},
 			Code:     annotation.Type(),
 			Severity: protocol.DiagnosticSeverityError,
-			Source:   "buf lint",
+			Source:   serverName,
 			Message:  annotation.Message(),
 		})
 	}

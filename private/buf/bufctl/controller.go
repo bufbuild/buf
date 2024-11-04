@@ -39,7 +39,6 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
@@ -49,7 +48,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -179,7 +177,6 @@ type controller struct {
 	fileAnnotationsToStdout   bool
 	copyToInMemory            bool
 
-	commandRunner               command.Runner
 	storageosProvider           storageos.Provider
 	buffetchRefParser           buffetch.RefParser
 	buffetchReader              buffetch.Reader
@@ -215,7 +212,6 @@ func newController(
 	if err := validateFileAnnotationErrorFormat(controller.fileAnnotationErrorFormat); err != nil {
 		return nil, err
 	}
-	controller.commandRunner = command.NewRunner()
 	controller.storageosProvider = newStorageosProvider(controller.disableSymlinks)
 	controller.buffetchRefParser = buffetch.NewRefParser(logger)
 	controller.buffetchReader = buffetch.NewReader(
@@ -226,7 +222,6 @@ func newController(
 		git.NewCloner(
 			logger,
 			controller.storageosProvider,
-			controller.commandRunner,
 			gitClonerOptions,
 		),
 		moduleKeyProvider,
@@ -567,7 +562,7 @@ func (c *controller) PutImage(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
+		retErr = errors.Join(retErr, writeCloser.Close())
 	}()
 	_, err = writeCloser.Write(data)
 	return err
@@ -697,7 +692,7 @@ func (c *controller) PutMessage(
 		return err
 	}
 	_, err = writeCloser.Write(data)
-	return multierr.Append(err, writeCloser.Close())
+	return errors.Join(err, writeCloser.Close())
 }
 
 func (c *controller) getImage(
@@ -804,7 +799,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readBucketCloser.Close())
+		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithProtoFileTargetPath(
@@ -844,7 +839,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readBucketCloser.Close())
+		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithConfigOverride(
@@ -920,7 +915,7 @@ func (c *controller) getImageForMessageRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
+		retErr = errors.Join(retErr, readCloser.Close())
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {

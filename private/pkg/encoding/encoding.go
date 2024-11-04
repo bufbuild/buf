@@ -23,7 +23,6 @@ import (
 	"io"
 	"strings"
 
-	"go.uber.org/multierr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -110,7 +109,7 @@ func UnmarshalJSONOrYAMLNonStrict(data []byte, v interface{}) error {
 	}
 	if jsonErr := UnmarshalJSONNonStrict(data, v); jsonErr != nil {
 		if yamlErr := UnmarshalYAMLNonStrict(data, v); yamlErr != nil {
-			return multierr.Append(jsonErr, yamlErr)
+			return errors.Join(jsonErr, yamlErr)
 		}
 	}
 	return nil
@@ -136,7 +135,7 @@ func MarshalYAML(v interface{}) (_ []byte, retErr error) {
 	buffer := bytes.NewBuffer(nil)
 	yamlEncoder := NewYAMLEncoder(buffer)
 	defer func() {
-		retErr = multierr.Append(retErr, yamlEncoder.Close())
+		retErr = errors.Join(retErr, yamlEncoder.Close())
 	}()
 	if err := yamlEncoder.Encode(v); err != nil {
 		return nil, err

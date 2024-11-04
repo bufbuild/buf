@@ -33,7 +33,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 )
 
 // Diff does a diff.
@@ -41,7 +41,6 @@ import (
 // Returns nil if no diff.
 func Diff(
 	ctx context.Context,
-	runner command.Runner,
 	b1 []byte,
 	b2 []byte,
 	filename1 string,
@@ -54,7 +53,6 @@ func Diff(
 	}
 	return doDiff(
 		ctx,
-		runner,
 		b1,
 		b2,
 		filename1,
@@ -83,7 +81,6 @@ func DiffWithSuppressTimestamps() DiffOption {
 
 func doDiff(
 	ctx context.Context,
-	runner command.Runner,
 	b1 []byte,
 	b2 []byte,
 	filename1 string,
@@ -117,12 +114,12 @@ func doDiff(
 	}
 
 	buffer := bytes.NewBuffer(nil)
-	err = runner.Run(
+	err = execext.Run(
 		ctx,
 		binaryPath,
-		command.RunWithArgs("-u", f1, f2),
-		command.RunWithStdout(buffer),
-		command.RunWithStderr(buffer),
+		execext.WithArgs("-u", f1, f2),
+		execext.WithStdout(buffer),
+		execext.WithStderr(buffer),
 	)
 	data := buffer.Bytes()
 	if len(data) > 0 {

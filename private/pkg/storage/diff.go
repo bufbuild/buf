@@ -22,7 +22,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
 )
 
@@ -101,13 +100,12 @@ func DiffWithTransform(
 // DiffBytes does a diff of the ReadBuckets.
 func DiffBytes(
 	ctx context.Context,
-	runner command.Runner,
 	one ReadBucket,
 	two ReadBucket,
 	options ...DiffOption,
 ) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := Diff(ctx, runner, buffer, one, two, options...); err != nil {
+	if err := Diff(ctx, buffer, one, two, options...); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
@@ -116,13 +114,12 @@ func DiffBytes(
 // Diff writes a diff of the ReadBuckets to the Writer.
 func Diff(
 	ctx context.Context,
-	runner command.Runner,
 	writer io.Writer,
 	one ReadBucket,
 	two ReadBucket,
 	options ...DiffOption,
 ) error {
-	_, err := DiffWithFilenames(ctx, runner, writer, one, two, options...)
+	_, err := DiffWithFilenames(ctx, writer, one, two, options...)
 	return err
 }
 
@@ -136,7 +133,6 @@ func Diff(
 // to change.
 func DiffWithFilenames(
 	ctx context.Context,
-	runner command.Runner,
 	writer io.Writer,
 	one ReadBucket,
 	two ReadBucket,
@@ -214,7 +210,6 @@ func DiffWithFilenames(
 		}
 		diffData, err := diff.Diff(
 			ctx,
-			runner,
 			oneData,
 			twoData,
 			oneDiffPath,
@@ -257,7 +252,6 @@ func DiffWithFilenames(
 			}
 			diffData, err := diff.Diff(
 				ctx,
-				runner,
 				nil,
 				twoData,
 				oneDiffPath,

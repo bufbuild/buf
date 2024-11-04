@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
@@ -219,20 +218,17 @@ func TestGoogleapis(t *testing.T) {
 
 func TestCompareCustomOptions1(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "customoptions1")
+	testCompare(t, "customoptions1")
 }
 
 func TestCompareProto3Optional1(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "proto3optional1")
+	testCompare(t, "proto3optional1")
 }
 
 func TestCompareTrailingComments(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "trailingcomments")
+	testCompare(t, "trailingcomments")
 }
 
 func TestCustomOptionsError1(t *testing.T) {
@@ -314,8 +310,7 @@ func TestOptionPanic(t *testing.T) {
 
 func TestCompareSemicolons(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "semicolons")
+	testCompare(t, "semicolons")
 }
 
 func TestModuleTargetFiles(t *testing.T) {
@@ -369,15 +364,15 @@ func TestModuleTargetFiles(t *testing.T) {
 	testTagetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b", "buf.build/foo/c")
 }
 
-func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
+func testCompare(t *testing.T, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath, false)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
-	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, runner, false, false, dirPath, filePaths)
-	prototesting.AssertFileDescriptorSetsEqual(t, runner, fileDescriptorSet, actualProtocFileDescriptorSet)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
+	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {

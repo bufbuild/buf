@@ -17,6 +17,7 @@ package bufprint
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -32,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protostat"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -248,6 +248,15 @@ func NewOrganizationEntity(organization *ownerv1.Organization, remote string) En
 	}
 }
 
+// NewUserEntity returns a new user entity to print.
+func NewUserEntity(user *registryv1alpha1.User) Entity {
+	return outputUser{
+		Username: user.Username,
+		// We use the Username as the full name for the user when printing.
+		FullName: user.Username,
+	}
+}
+
 // CuratedPluginPrinter is a printer for curated plugins.
 type CuratedPluginPrinter interface {
 	PrintCuratedPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.CuratedPlugin) error
@@ -305,7 +314,7 @@ func WithTabWriter(
 ) (retErr error) {
 	tabWriter := newTabWriter(writer)
 	defer func() {
-		retErr = multierr.Append(retErr, tabWriter.Flush())
+		retErr = errors.Join(retErr, tabWriter.Flush())
 	}()
 	if err := tabWriter.Write(header...); err != nil {
 		return err
@@ -454,5 +463,14 @@ type outputOrganization struct {
 }
 
 func (o outputOrganization) fullName() string {
+	return o.FullName
+}
+
+type outputUser struct {
+	Username string `json:"username,omitempty"`
+	FullName string `json:"-" bufprint:"Name"`
+}
+
+func (o outputUser) fullName() string {
 	return o.FullName
 }

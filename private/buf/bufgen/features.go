@@ -15,6 +15,7 @@
 package bufgen
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -23,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -194,7 +194,7 @@ func checkRequiredFeatures(
 			}
 		}
 	}
-	return multierr.Combine(errs...)
+	return errors.Join(errs...)
 }
 
 func featureName(feature pluginpb.CodeGeneratorResponse_Feature) string {

@@ -20,7 +20,6 @@ import (
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 )
 
 // Checker is a checker.
@@ -33,8 +32,8 @@ type Checker interface {
 	) ([]Violation, error)
 }
 
-func NewChecker(logger *slog.Logger, runner command.Runner) Checker {
-	return newChecker(logger, runner)
+func NewChecker(logger *slog.Logger) Checker {
+	return newChecker(logger)
 }
 
 // Violation is a violation.

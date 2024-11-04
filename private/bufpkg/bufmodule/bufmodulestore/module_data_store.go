@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/multierr"
 )
 
 var (
@@ -233,7 +232,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		defer func() {
 			// Release lock on the module data lock file.
 			if err := unlocker.Unlock(); err != nil {
-				retErr = multierr.Append(retErr, err)
+				retErr = errors.Join(retErr, err)
 			}
 		}()
 	}
@@ -361,7 +360,7 @@ func (p *moduleDataStore) putModuleData(
 		defer func() {
 			if retErr == nil {
 				// Only call the callback if we have had no error.
-				retErr = multierr.Append(retErr, callback(ctx))
+				retErr = errors.Join(retErr, callback(ctx))
 			}
 		}()
 	} else {
@@ -388,7 +387,7 @@ func (p *moduleDataStore) putModuleData(
 		defer func() {
 			if readUnlocker != nil {
 				if err := readUnlocker.Unlock(); err != nil {
-					retErr = multierr.Append(retErr, err)
+					retErr = errors.Join(retErr, err)
 				}
 			}
 		}()
@@ -432,7 +431,7 @@ func (p *moduleDataStore) putModuleData(
 		}
 		defer func() {
 			if err := unlocker.Unlock(); err != nil {
-				retErr = multierr.Append(retErr, err)
+				retErr = errors.Join(retErr, err)
 			}
 		}()
 		// Before we start writing module data to the cache, we first check to see if module.yaml
@@ -560,7 +559,7 @@ func (p *moduleDataStore) getReadBucketForTar(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObjectCloser.Close())
+		retErr = errors.Join(retErr, readObjectCloser.Close())
 	}()
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := storagearchive.Untar(
@@ -602,7 +601,7 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 			return err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			retErr = errors.Join(retErr, writeObjectCloser.Close())
 		}()
 		return storagearchive.Tar(
 			ctx,

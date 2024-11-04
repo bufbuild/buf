@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync/atomic"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 )
 
 var (
@@ -412,7 +412,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 		return nil, errBuildAlreadyCalled
 	}
 	if len(b.errs) > 0 {
-		return nil, multierr.Combine(b.errs...)
+		return nil, errors.Join(b.errs...)
 	}
 	if len(b.addedModules) == 0 {
 		// Allow an empty ModuleSet.

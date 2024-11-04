@@ -15,11 +15,11 @@
 package bufmodule
 
 import (
+	"errors"
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 )
 
 // protoFileTracker tracks if we found a .proto file for each Module tracked, and what the OpaqueIDs
@@ -131,8 +131,7 @@ func (t *protoFileTracker) validate() error {
 		for _, duplicateProtoPathError := range duplicateProtoPathErrors {
 			errs = append(errs, duplicateProtoPathError)
 		}
-		// multierr.Combine special-cases len(errs) == 1, so no need for us to do so.
-		return multierr.Combine(errs...)
+		return errors.Join(errs...)
 	}
 	return nil
 }

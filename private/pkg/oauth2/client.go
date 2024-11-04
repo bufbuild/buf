@@ -25,8 +25,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"go.uber.org/multierr"
 )
 
 const (
@@ -73,7 +71,7 @@ func (c *Client) RegisterDevice(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
+		retErr = errors.Join(retErr, response.Body.Close())
 	}()
 
 	payload := &struct {
@@ -111,7 +109,7 @@ func (c *Client) AuthorizeDevice(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
+		retErr = errors.Join(retErr, response.Body.Close())
 	}()
 
 	payload := &struct {
@@ -175,7 +173,7 @@ func (c *Client) AccessDeviceToken(
 			}{}
 			if err := parseJSONResponse(response, payload); err != nil {
 				if closeErr := response.Body.Close(); closeErr != nil {
-					err = multierr.Append(err, closeErr)
+					err = errors.Join(err, closeErr)
 				}
 				return nil, err
 			}

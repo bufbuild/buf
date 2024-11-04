@@ -24,12 +24,12 @@ package filepathext
 // https://github.com/golang/go/blob/master/LICENSE
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/osext"
-	"go.uber.org/multierr"
 )
 
 // RealClean does filepath.Clean and filepath.FromSlash,
@@ -182,7 +182,7 @@ func readDirNames(dirPath string) (_ []string, retErr error) {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
+		retErr = errors.Join(retErr, file.Close())
 	}()
 	dirNames, err := file.Readdirnames(-1)
 	if err != nil {

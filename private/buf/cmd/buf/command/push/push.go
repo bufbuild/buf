@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -456,31 +455,30 @@ func getGitMetadataUploadOptions(
 	if err != nil {
 		return nil, err
 	}
-	runner := command.NewRunner()
 	// validate that input is a dirRef and is a valid git checkout
-	if err := validateInputIsValidDirAndGitCheckout(ctx, runner, container, input); err != nil {
+	if err := validateInputIsValidDirAndGitCheckout(ctx, container, input); err != nil {
 		return nil, err
 	}
-	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, container, input)
+	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, container, input)
 	if err != nil {
 		return nil, err
 	}
 	if len(uncommittedFiles) > 0 {
 		return nil, fmt.Errorf("--%s requires that there are no uncommitted changes, uncommitted changes found in the following files: %v", gitMetadataFlagName, uncommittedFiles)
 	}
-	originRemote, err := git.GetRemote(ctx, runner, container, input, gitOriginRemote)
+	originRemote, err := git.GetRemote(ctx, container, input, gitOriginRemote)
 	if err != nil {
 		if errors.Is(err, git.ErrRemoteNotFound) {
 			return nil, appcmd.NewInvalidArgumentErrorf("remote %s must be present on Git checkout: %w", gitOriginRemote, err)
 		}
 		return nil, err
 	}
-	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, container, input)
+	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, container, input)
 	if err != nil {
 		return nil, err
 	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
-	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, container, input, currentGitCommit)
+	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, container, input, currentGitCommit)
 	if err != nil {
 		return nil, err
 	}
@@ -515,14 +513,13 @@ func getGitMetadataUploadOptions(
 
 func validateInputIsValidDirAndGitCheckout(
 	ctx context.Context,
-	runner command.Runner,
 	container appext.Container,
 	input string,
 ) error {
 	if _, err := buffetch.NewDirRefParser(container.Logger()).GetDirRef(ctx, input); err != nil {
 		return appcmd.NewInvalidArgumentErrorf("input %q is not a valid directory: %w", input, err)
 	}
-	if err := git.CheckDirectoryIsValidGitCheckout(ctx, runner, container, input); err != nil {
+	if err := git.CheckDirectoryIsValidGitCheckout(ctx, container, input); err != nil {
 		if errors.Is(err, git.ErrInvalidGitCheckout) {
 			return appcmd.NewInvalidArgumentErrorf("input %q is not a local Git repository checkout", input)
 		}
@@ -533,12 +530,11 @@ func validateInputIsValidDirAndGitCheckout(
 
 func getGitMetadataLabelsUploadOptions(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	input string,
 	gitCommitSha string,
 ) (bufmodule.UploadOption, error) {
-	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, envContainer, input, gitOriginRemote, gitCommitSha)
+	refs, err := git.GetRefsForGitCommitAndRemote(ctx, envContainer, input, gitOriginRemote, gitCommitSha)
 	if err != nil {
 		return nil, err
 	}

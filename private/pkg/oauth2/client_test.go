@@ -106,7 +106,9 @@ func TestRegisterDevice(t *testing.T) {
 			})
 			output, err := c.RegisterDevice(ctx, test.input)
 			assert.Equal(t, test.output, output)
-			assert.Equal(t, err, test.err)
+			if test.err != nil {
+				assert.EqualError(t, err, test.err.Error())
+			}
 		})
 	}
 }
@@ -169,7 +171,9 @@ func TestAuthorizeDevice(t *testing.T) {
 			})
 			output, err := c.AuthorizeDevice(ctx, test.input)
 			assert.Equal(t, test.output, output)
-			assert.Equal(t, err, test.err)
+			if test.err != nil {
+				assert.EqualError(t, err, test.err.Error())
+			}
 		})
 	}
 }

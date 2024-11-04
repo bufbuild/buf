@@ -48,7 +48,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -161,7 +160,7 @@ func run(
 		}
 		defer func() {
 			if err := os.RemoveAll(tmpDir); !os.IsNotExist(err) {
-				retErr = multierr.Append(retErr, err)
+				retErr = errors.Join(retErr, err)
 			}
 		}()
 		sourceBucket, err = storageProvider.NewReadWriteBucket(tmpDir)
@@ -198,7 +197,7 @@ func run(
 	}
 	defer func() {
 		if err := client.Close(); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("docker client close error: %w", err))
+			retErr = errors.Join(retErr, fmt.Errorf("docker client close error: %w", err))
 		}
 	}()
 	var imageID string
@@ -219,7 +218,7 @@ func run(
 		}
 		defer func() {
 			if err := image.Close(); err != nil && !errors.Is(err, storage.ErrClosed) {
-				retErr = multierr.Append(retErr, fmt.Errorf("docker image close error: %w", err))
+				retErr = errors.Join(retErr, fmt.Errorf("docker image close error: %w", err))
 			}
 		}()
 		imageID = loadResponse.ImageID
@@ -365,7 +364,7 @@ func pushImage(
 	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
 	defer func() {
 		if _, err := client.Delete(ctx, createdImage); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
+			retErr = errors.Join(retErr, fmt.Errorf("failed to delete image %q", createdImage))
 		}
 	}()
 	pushResponse, err := client.Push(ctx, createdImage, authConfig)
@@ -516,7 +515,7 @@ func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("plugin zip close error: %w", err))
+			retErr = errors.Join(retErr, fmt.Errorf("plugin zip close error: %w", err))
 		}
 	}()
 	return storagearchive.Unzip(ctx, f, size, bucket)

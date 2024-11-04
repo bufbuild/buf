@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -258,7 +257,6 @@ func testRunLint(
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
-	runner := command.NewRunner()
 	testRunHandlerFunc(
 		t,
 		protoplugin.HandlerFunc(
@@ -278,7 +276,6 @@ func testRunLint(
 		),
 		testBuildRequest(
 			t,
-			runner,
 			root,
 			realFilePaths,
 			parameter,
@@ -328,7 +325,6 @@ func testRunHandlerFunc(
 
 func testBuildRequest(
 	t *testing.T,
-	runner command.Runner,
 	root string,
 	realFilePaths []string,
 	parameter string,
@@ -336,7 +332,6 @@ func testBuildRequest(
 ) protoplugin.Request {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
-		runner,
 		[]string{root},
 		realFilePaths,
 		true,
