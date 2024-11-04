@@ -208,6 +208,12 @@ func (s *server) Formatting(
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
+	for _, diagnostic := range file.diagnostics {
+		if diagnostic.Severity == protocol.DiagnosticSeverityError {
+			return nil, fmt.Errorf("file contains errors")
+		}
+	}
+
 	// Currently we have no way to honor any of the parameters.
 	_ = params
 	if file.fileNode == nil {
