@@ -45,7 +45,13 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const descriptorPath = "google/protobuf/descriptor.proto"
+const (
+	descriptorPath = "google/protobuf/descriptor.proto"
+)
+
+var (
+	errFileInfoNoLocalPath = errors.New("file info has no local path")
+)
 
 // file is a file that has been opened by the client.
 //
@@ -702,12 +708,13 @@ func findImportable(
 	//
 	// Doing the file walk here manually helps us retain some control over what
 	// data is discarded.
-	workspace, err := lsp.controller.GetWorkspace(ctx, uri.Filename())
+	workspace, err := getWorkspaceWithLocalPaths(ctx, uri.Filename(), lsp)
 	if err != nil {
 		return nil, err
 	}
 
 	imports := make(map[string]storage.ObjectInfo)
+
 	for _, module := range workspace.Modules() {
 		err = module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
 			if fileInfo.FileType() != bufmodule.FileTypeProto {
@@ -734,6 +741,41 @@ func findImportable(
 	lsp.logger.Debug(fmt.Sprintf("found imports for %q: %#v", uri, imports))
 
 	return imports, nil
+}
+
+// getWorkspaceWithLocalPaths checks each proto file in a workspace and ensures they all have
+// a LocalPath. If not, then it refreshes the workspace. As outlined on [storage.ObjectInfo],
+// LocalPath will not always be present if the file did not originate from disk. If an import's
+// module data was fetched remotely, then it will not have a path on disk to the cache. By
+// refreshing the module, and rebuilding the workspace, we populate the module data from the cache.
+func getWorkspaceWithLocalPaths(ctx context.Context, fileName string, lsp *lsp) (bufworkspace.Workspace, error) {
+	workspace, err := lsp.controller.GetWorkspace(ctx, fileName)
+	if err != nil {
+		return nil, err
+	}
+	var refreshWorkspace bool
+	for _, module := range workspace.Modules() {
+		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if fileInfo.FileType() == bufmodule.FileTypeProto && fileInfo.LocalPath() == "" {
+				return fmt.Errorf("file %q no local path: %w", fileInfo.Path(), errFileInfoNoLocalPath)
+			}
+			return nil
+		}); err != nil {
+			if errors.Is(err, errFileInfoNoLocalPath) {
+				lsp.logger.Info(fmt.Sprintf("re-creating workspace: %v", err))
+				refreshWorkspace = true
+				break
+			}
+			return nil, err
+		}
+	}
+	if refreshWorkspace {
+		workspace, err = getWorkspaceWithLocalPaths(ctx, fileName, lsp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return workspace, nil
 }
 
 // wktObjectInfo is a concrete type to help us identify WKTs among the
