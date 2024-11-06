@@ -68,6 +68,10 @@ func NewCommand(
     # The valid values are v1beta1, v1 and v2.
     # Required.
     version: v2
+    # When clean is set to true, ddelete the directories, zip files, and/or jar files specified in the
+    # "out" field for all plugins before running code generation. Defaults to false.
+    # Optional.
+    clean: true
     # The plugins to run.
     # Required.
     plugins:
