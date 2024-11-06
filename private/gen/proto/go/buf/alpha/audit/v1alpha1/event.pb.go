@@ -2535,9 +2535,9 @@ type PayloadPluginCommitPushed struct {
 	OwnerName string `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
 	// plugin_id is the id of the plugin.
 	PluginId string `protobuf:"bytes,3,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	// repository_name is the name of the plugin.
+	// plugin_name is the name of the plugin.
 	PluginName string `protobuf:"bytes,4,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
-	// p1_digest is the plugin's p1 digest.
+	// p1_digest is the p1 digest of the pushed plugin commit.
 	P1Digest string `protobuf:"bytes,5,opt,name=p1_digest,json=p1Digest,proto3" json:"p1_digest,omitempty"`
 }
 

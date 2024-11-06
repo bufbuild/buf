@@ -385,9 +385,9 @@ message PayloadPluginCommitPushed {
   string owner_name = 2;
   // plugin_id is the id of the plugin.
   string plugin_id = 3;
-  // repository_name is the name of the plugin.
+  // plugin_name is the name of the plugin.
   string plugin_name = 4;
-  // p1_digest is the plugin's p1 digest.
+  // p1_digest is the p1 digest of the pushed plugin commit.
   string p1_digest = 5;
 }
 
