@@ -50,7 +50,7 @@ const (
 )
 
 var (
-	errFileInfoNoLocalPath = errors.New("file info has no local path")
+	errFileInfoNoLocalPath = errors.New("file has no local path on-disk")
 )
 
 // file is a file that has been opened by the client.
@@ -757,7 +757,7 @@ func getWorkspaceWithLocalPaths(ctx context.Context, fileName string, lsp *lsp) 
 	for _, module := range workspace.Modules() {
 		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
 			if fileInfo.FileType() == bufmodule.FileTypeProto && fileInfo.LocalPath() == "" {
-				return fmt.Errorf("file %q no local path: %w", fileInfo.Path(), errFileInfoNoLocalPath)
+				return fmt.Errorf("file %q: %w", fileInfo.Path(), errFileInfoNoLocalPath)
 			}
 			return nil
 		}); err != nil {
