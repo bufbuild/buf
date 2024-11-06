@@ -50,6 +50,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
   RESOURCE_TYPE_PLUGIN = 7;
+  RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
@@ -88,6 +89,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
   EVENT_TYPE_USER_CREATED = 15;
@@ -158,6 +160,7 @@ message Event {
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginCommitPushed plugin_commit_pushed = 49;
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
@@ -373,6 +376,19 @@ message PayloadPluginDeleted {
   string owner_name = 2;
   // plugin_type is the type of the plugin.
   string plugin_type = 3;
+}
+
+message PayloadPluginCommitPushed {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin.
+  string plugin_id = 3;
+  // repository_name is the name of the plugin.
+  string plugin_name = 4;
+  // p1_digest is the plugin's p1 digest.
+  string p1_digest = 5;
 }
 
 message PayloadUserCreated {}
