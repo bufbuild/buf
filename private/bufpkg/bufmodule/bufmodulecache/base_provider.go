@@ -83,7 +83,8 @@ func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]
 	// We are getting the values again so that we retrieve the values from the cache directly.
 	// This matters for ie ModuleDatas where the storage.Bucket attached will have local paths
 	// instead of empty local paths if read from the cache. We documment NewModuleDataProvider
-	// to return a ModuleDataProvider that will always have local paths for returned storage.Buckets.
+	// to return a ModuleDataProvider that will always have local paths for returned storage.Buckets,
+	// if the cache is an on-disk cache.
 	var delegateNotFoundKeys []K
 	delegateValues, delegateNotFoundKeys, err = p.storeGetValuesForKeys(ctx, notFoundKeys)
 	if err != nil {
