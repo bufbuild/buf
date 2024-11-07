@@ -101,9 +101,13 @@ for os in Darwin Linux Windows; do
       buf \
       protoc-gen-buf-breaking \
       protoc-gen-buf-lint; do
-      if [ "${arch}" == "armv7l" ]; then
-        CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") GOARM=7 \
-          go build -a -ldflags "-s -w" -trimpath -buildvcs=false -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
+      if [ "${arch}" == "armv7" ]; then
+        if [ "${os}" == "Linux" ]; then
+          CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") GOARM=7 \
+            go build -a -ldflags "-s -w" -trimpath -buildvcs=false -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
+        else
+          continue
+        fi 
       else
         CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") \
           go build -a -ldflags "-s -w" -trimpath -buildvcs=false -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
