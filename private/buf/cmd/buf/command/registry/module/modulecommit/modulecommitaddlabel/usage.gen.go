@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package commitinfo
+package modulecommitaddlabel
 
 import _ "github.com/bufbuild/buf/private/usage"

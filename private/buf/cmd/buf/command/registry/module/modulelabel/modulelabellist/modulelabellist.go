@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package labellist
+package modulelabellist
 
 import (
 	"context"
@@ -44,12 +44,14 @@ const (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/module[:ref]>",
-		Short: "List module labels",
-		Args:  appcmd.ExactArgs(1),
+		Use:        name + " <remote/owner/module[:ref]>",
+		Short:      "List module labels",
+		Args:       appcmd.ExactArgs(1),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

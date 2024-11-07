@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package labelarchive
+package modulecommitresolve
 
 import _ "github.com/bufbuild/buf/private/usage"
