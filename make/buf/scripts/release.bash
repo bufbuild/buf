@@ -27,7 +27,7 @@ goarch() {
     x86_64) echo amd64 ;;
     arm64) echo arm64 ;;
     aarch64) echo arm64 ;;
-    armv7l) echo arm ;;
+    armv7) echo arm ;;
     *) return 1 ;;
   esac
 }
