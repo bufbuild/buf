@@ -141,7 +141,10 @@ for os in Darwin Linux Windows; do
 done
 
 for os in Darwin Linux; do
-  for arch in x86_64 arm64 armv7l; do
+  for arch in x86_64 arm64 armv7; do
+    if [ "${arch}" == "armv7" ] && [ "${os}" != "Linux" ]; then
+      continue
+    fi
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
     fi
