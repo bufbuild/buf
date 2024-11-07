@@ -84,7 +84,7 @@ mkdir -p "${RELEASE_DIR}"
 cd "${RELEASE_DIR}"
 
 for os in Darwin Linux Windows; do
-  for arch in x86_64 arm64 armv7l; do
+  for arch in x86_64 arm64 armv7; do
     # our goal is to have the binaries be suffixed with $(uname -s)-$(uname -m)
     # on mac, this is arm64, on linux, this is aarch64, for historical reasons
     # this is a hacky way to not have to rewrite this loop (and others below)
