@@ -157,7 +157,7 @@ for os in Darwin Linux; do
 done
 
 for os in Windows; do
-  for arch in x86_64 arm64 armv7l; do
+  for arch in x86_64 arm64; do
     dir="${os}/${arch}/${BASE_NAME}"
     # "${os}/${arch}"
     zip_context_dir="$(dirname "${dir}")"
