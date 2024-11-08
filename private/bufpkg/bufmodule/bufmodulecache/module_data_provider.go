@@ -26,6 +26,8 @@ import (
 // NewModuleDataProvider returns a new ModuleDataProvider that caches the results of the delegate.
 //
 // The ModuleDataStore is used as a cache.
+//
+// All files in returned [storage.Bucket]s will have local paths if the cache is on-disk.
 func NewModuleDataProvider(
 	logger *slog.Logger,
 	delegate bufmodule.ModuleDataProvider,
