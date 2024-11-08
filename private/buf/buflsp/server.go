@@ -208,9 +208,11 @@ func (s *server) Formatting(
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
+  // We check the diagnostics on the file, if there are any build errors, we do not want
+  // to format an invalid AST, so we skip formatting and return an error for logging.
 	for _, diagnostic := range file.diagnostics {
 		if diagnostic.Severity == protocol.DiagnosticSeverityError {
-			return nil, fmt.Errorf("file contains errors")
+			return nil, fmt.Errorf("cannot format file %q: %s", file.uri.Filename(), diagnostic.Message)
 		}
 	}
 
