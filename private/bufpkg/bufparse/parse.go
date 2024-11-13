@@ -12,38 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package bufparse
 
 import (
 	"errors"
 	"strings"
 )
 
-func parseModuleFullNameComponents(path string) (registry string, owner string, name string, err error) {
+func parseFullNameComponents(path string) (registry string, owner string, name string, err error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 3 {
-		return "", "", "", newInvalidModuleFullNameStringError(path)
+		return "", "", "", newInvalidFullNameStringError(path)
 	}
 	registry = strings.TrimSpace(slashSplit[0])
 	if registry == "" {
-		return "", "", "", newInvalidModuleFullNameStringError(path)
+		return "", "", "", newInvalidFullNameStringError(path)
 	}
 	owner = strings.TrimSpace(slashSplit[1])
 	if owner == "" {
-		return "", "", "", newInvalidModuleFullNameStringError(path)
+		return "", "", "", newInvalidFullNameStringError(path)
 	}
 	name = strings.TrimSpace(slashSplit[2])
 	if name == "" {
-		return "", "", "", newInvalidModuleFullNameStringError(path)
+		return "", "", "", newInvalidFullNameStringError(path)
 	}
 	return registry, owner, name, nil
 }
 
-func parseModuleRefComponents(path string) (registry string, owner string, name string, ref string, err error) {
+func parseRefComponents(path string) (registry string, owner string, name string, ref string, err error) {
 	// split by the first "/" to separate the registry and remaining part
 	slashSplit := strings.SplitN(path, "/", 2)
 	if len(slashSplit) != 2 {
-		return "", "", "", "", newInvalidModuleRefStringError(path)
+		return "", "", "", "", newInvalidRefStringError(path)
 	}
 	registry, rest := slashSplit[0], slashSplit[1]
 	// split the remaining part by ":" to separate the reference
@@ -54,30 +54,30 @@ func parseModuleRefComponents(path string) (registry string, owner string, name 
 	case 2:
 		ref = strings.TrimSpace(colonSplit[1])
 		if ref == "" {
-			return "", "", "", "", newInvalidModuleRefStringError(path)
+			return "", "", "", "", newInvalidRefStringError(path)
 		}
 	default:
-		return "", "", "", "", newInvalidModuleRefStringError(path)
+		return "", "", "", "", newInvalidRefStringError(path)
 	}
-	registry, owner, name, err = parseModuleFullNameComponents(registry + "/" + colonSplit[0])
+	registry, owner, name, err = parseFullNameComponents(registry + "/" + colonSplit[0])
 	if err != nil {
-		return "", "", "", "", newInvalidModuleRefStringError(path)
+		return "", "", "", "", newInvalidRefStringError(path)
 	}
 	return registry, owner, name, ref, nil
 }
 
-func newInvalidModuleFullNameStringError(s string) error {
-	return &ParseError{
-		typeString: "module name",
-		input:      s,
-		err:        errors.New("must be in the form registry/owner/name"),
-	}
+func newInvalidFullNameStringError(s string) error {
+	return NewParseError(
+		"full name",
+		s,
+		errors.New("must be in the form registry/owner/name"),
+	)
 }
 
-func newInvalidModuleRefStringError(s string) error {
-	return &ParseError{
-		typeString: "module reference",
-		input:      s,
-		err:        errors.New("must be in the form registry/owner/name[:ref]"),
-	}
+func newInvalidRefStringError(s string) error {
+	return NewParseError(
+		"reference",
+		s,
+		errors.New("must be in the form registry/owner/name[:ref]"),
+	)
 }

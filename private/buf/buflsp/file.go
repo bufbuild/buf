@@ -575,7 +575,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 		return false
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.ModuleFullName()))
+	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.FullName()))
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(module.OpaqueID())
 	err := f.lsp.checkClient.Lint(

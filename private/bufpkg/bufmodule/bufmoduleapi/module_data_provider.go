@@ -22,6 +22,7 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -84,7 +85,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+	if _, err := bufparse.FullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +96,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().Registry()
+			return moduleKey.FullName().Registry()
 		},
 	)
 	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(moduleKeys))
@@ -168,7 +169,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 			sort.Slice(
 				depModuleKeys,
 				func(i int, j int) bool {
-					return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
+					return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
 				},
 			)
 
@@ -276,7 +277,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 		return err
 	}
 	if v1ProtoModule.State == modulev1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.FullName().String()))
 	}
 	return nil
 }

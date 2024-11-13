@@ -18,6 +18,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -43,7 +44,7 @@ type MalformedDep interface {
 	// ModuleRef is the module ref information of the malformed dep.
 	//
 	// Always present.
-	ModuleRef() bufmodule.ModuleRef
+	ModuleRef() bufparse.Ref
 	// Type is why this dep was malformed.
 	//
 	// Always present.
@@ -54,11 +55,11 @@ type MalformedDep interface {
 
 // MalformedDepsForWorkspace gets the MalformedDeps for the workspace.
 func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
-	localModuleFullNameStringMap := slicesext.ToStructMapOmitEmpty(
+	localFullNameStringMap := slicesext.ToStructMapOmitEmpty(
 		slicesext.Map(
 			bufmodule.ModuleSetLocalModules(workspace),
 			func(module bufmodule.Module) string {
-				if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+				if moduleFullName := module.FullName(); moduleFullName != nil {
 					return moduleFullName.String()
 				}
 				return ""
@@ -72,9 +73,9 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	moduleFullNameStringToRemoteDep, err := slicesext.ToUniqueValuesMapError(
 		remoteDeps,
 		func(remoteDep bufmodule.RemoteDep) (string, error) {
-			moduleFullName := remoteDep.ModuleFullName()
+			moduleFullName := remoteDep.FullName()
 			if moduleFullName == nil {
-				return "", syserror.Newf("ModuleFullName nil on remote Module dependency %q", remoteDep.OpaqueID())
+				return "", syserror.Newf("FullName nil on remote Module dependency %q", remoteDep.OpaqueID())
 			}
 			return moduleFullName.String(), nil
 		},
@@ -84,10 +85,10 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	}
 	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToUniqueValuesMapError(
 		workspace.ConfiguredDepModuleRefs(),
-		func(moduleRef bufmodule.ModuleRef) (string, error) {
-			moduleFullName := moduleRef.ModuleFullName()
+		func(moduleRef bufparse.Ref) (string, error) {
+			moduleFullName := moduleRef.FullName()
 			if moduleFullName == nil {
-				return "", syserror.New("ModuleFullName nil on ModuleRef")
+				return "", syserror.New("FullName nil on ModuleRef")
 			}
 			return moduleFullName.String(), nil
 		},
@@ -97,7 +98,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	}
 	var malformedDeps []MalformedDep
 	for moduleFullNameString, configuredDepModuleRef := range moduleFullNameStringToConfiguredDepModuleRef {
-		_, isLocalModule := localModuleFullNameStringMap[moduleFullNameString]
+		_, isLocalModule := localFullNameStringMap[moduleFullNameString]
 		_, isRemoteDep := moduleFullNameStringToRemoteDep[moduleFullNameString]
 		if !isRemoteDep && !isLocalModule {
 			// The module was in buf.yaml deps, but was not in the remote dep list after
@@ -115,8 +116,8 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	sort.Slice(
 		malformedDeps,
 		func(i int, j int) bool {
-			return malformedDeps[i].ModuleRef().ModuleFullName().String() <
-				malformedDeps[j].ModuleRef().ModuleFullName().String()
+			return malformedDeps[i].ModuleRef().FullName().String() <
+				malformedDeps[j].ModuleRef().FullName().String()
 		},
 	)
 	return malformedDeps, nil
@@ -125,12 +126,12 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 // *** PRIVATE ***
 
 type malformedDep struct {
-	moduleRef        bufmodule.ModuleRef
+	moduleRef        bufparse.Ref
 	malformedDepType MalformedDepType
 }
 
 func newMalformedDep(
-	moduleRef bufmodule.ModuleRef,
+	moduleRef bufparse.Ref,
 	malformedDepType MalformedDepType,
 ) *malformedDep {
 	return &malformedDep{
@@ -139,7 +140,7 @@ func newMalformedDep(
 	}
 }
 
-func (m *malformedDep) ModuleRef() bufmodule.ModuleRef {
+func (m *malformedDep) ModuleRef() bufparse.Ref {
 	return m.moduleRef
 }
 

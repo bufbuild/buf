@@ -20,7 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -89,7 +89,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufmodule.ParseModuleRef(flags.Module)
+	moduleRef, err := bufparse.ParseRef(flags.Module)
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -97,7 +97,7 @@ func run(
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	if pluginIdentity.Remote() != moduleRef.ModuleFullName().Registry() {
+	if pluginIdentity.Remote() != moduleRef.FullName().Registry() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same BSR instance")
 	}
 
@@ -107,12 +107,12 @@ func run(
 	}
 	pluginCurationServiceClient := connectclient.Make(
 		clientConfig,
-		moduleRef.ModuleFullName().Registry(),
+		moduleRef.FullName().Registry(),
 		registryv1alpha1connect.NewPluginCurationServiceClient,
 	)
 	resolveServiceClient := connectclient.Make(
 		clientConfig,
-		moduleRef.ModuleFullName().Registry(),
+		moduleRef.FullName().Registry(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
 	getLatestCuratedPluginResponse, err := pluginCurationServiceClient.GetLatestCuratedPlugin(
@@ -133,8 +133,8 @@ func run(
 		return fmt.Errorf("plugin %q is not associated with a package ecosystem", flags.Plugin)
 	}
 	moduleReference := &registryv1alpha1.LocalModuleReference{
-		Owner:      moduleRef.ModuleFullName().Owner(),
-		Repository: moduleRef.ModuleFullName().Name(),
+		Owner:      moduleRef.FullName().Owner(),
+		Repository: moduleRef.FullName().Name(),
 		Reference:  moduleRef.Ref(),
 	}
 	pluginReference := &registryv1alpha1.GetRemotePackageVersionPlugin{

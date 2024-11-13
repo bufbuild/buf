@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -143,7 +143,7 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	otherData = protowire.AppendFixed32(otherData, 23456)
 	fileDescriptor.ProtoReflect().SetUnknown(otherData)
 
-	moduleFullName, err := bufmodule.ParseModuleFullName("buf.build/foo/bar")
+	moduleFullName, err := bufparse.ParseFullName("buf.build/foo/bar")
 	require.NoError(t, err)
 	commitID, err := uuidutil.New()
 	require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 
 	// if we go back through an image file, we should strip out the
 	// buf extension unknown bytes but preserve the rest
-	moduleFullName, err = bufmodule.ParseModuleFullName("buf.build/abc/def")
+	moduleFullName, err = bufparse.ParseFullName("buf.build/abc/def")
 	require.NoError(t, err)
 	// NB: intentionally different metadata
 	commitID2, err := uuidutil.New()

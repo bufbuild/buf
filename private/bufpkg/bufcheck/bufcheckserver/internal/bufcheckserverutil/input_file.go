@@ -16,7 +16,7 @@ package bufcheckserverutil
 
 import (
 	"buf.build/go/bufplugin/descriptor"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/google/uuid"
 )
 
@@ -38,7 +38,7 @@ func (i *inputFile) ExternalPath() string {
 	return i.Path()
 }
 
-func (i *inputFile) ModuleFullName() bufmodule.ModuleFullName {
+func (i *inputFile) FullName() bufparse.FullName {
 	return nil
 }
 

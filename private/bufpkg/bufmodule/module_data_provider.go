@@ -30,7 +30,7 @@ type ModuleDataProvider interface {
 	//
 	// Returned ModuleDatas will be in the same order as the input ModuleKeys.
 	//
-	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
+	// The input ModuleKeys are expected to be unique by FullName. The implementation
 	// may error if this is not the case.
 	//
 	// The input ModuleKeys are expected to have the same DigestType. The implementation

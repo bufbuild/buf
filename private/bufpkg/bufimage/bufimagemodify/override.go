@@ -157,7 +157,7 @@ func stringOverrideFromConfig(
 		overrideOptions.suffix = ""
 	}
 	for _, overrideRule := range config.Overrides() {
-		if !fileMatchConfig(imageFile, overrideRule.Path(), overrideRule.ModuleFullName()) {
+		if !fileMatchConfig(imageFile, overrideRule.Path(), overrideRule.FullName()) {
 			continue
 		}
 		switch overrideRule.FileOption() {
@@ -210,7 +210,7 @@ func overrideFromConfig[T bool | descriptorpb.FileOptions_OptimizeMode](
 ) (*T, error) {
 	var override *T
 	for _, overrideRule := range config.Overrides() {
-		if !fileMatchConfig(imageFile, overrideRule.Path(), overrideRule.ModuleFullName()) {
+		if !fileMatchConfig(imageFile, overrideRule.Path(), overrideRule.FullName()) {
 			continue
 		}
 		if overrideRule.FileOption() != fileOption {
@@ -238,7 +238,7 @@ func isFileOptionDisabledForFile(
 		if disableRule.FieldOption() != bufconfig.FieldOptionUnspecified {
 			continue // FieldOption specified, not a matching rule.
 		}
-		if !fileMatchConfig(imageFile, disableRule.Path(), disableRule.ModuleFullName()) {
+		if !fileMatchConfig(imageFile, disableRule.Path(), disableRule.FullName()) {
 			continue
 		}
 		return true
@@ -249,12 +249,12 @@ func isFileOptionDisabledForFile(
 func fileMatchConfig(
 	imageFile bufimage.ImageFile,
 	requiredPath string,
-	requiredModuleFullName string,
+	requiredFullName string,
 ) bool {
 	if requiredPath != "" && !normalpath.EqualsOrContainsPath(requiredPath, imageFile.Path(), normalpath.Relative) {
 		return false
 	}
-	if requiredModuleFullName != "" && (imageFile.ModuleFullName() == nil || imageFile.ModuleFullName().String() != requiredModuleFullName) {
+	if requiredFullName != "" && (imageFile.FullName() == nil || imageFile.FullName().String() != requiredFullName) {
 		return false
 	}
 	return true

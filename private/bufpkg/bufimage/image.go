@@ -48,7 +48,7 @@ func newImage(files []ImageFile, reorder bool, resolver protoencoding.Resolver) 
 			return nil, fmt.Errorf("duplicate file: %s", path)
 		}
 		pathToImageFile[path] = file
-		if moduleFullName := file.ModuleFullName(); moduleFullName != nil {
+		if moduleFullName := file.FullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
 			existing, ok := moduleFullNameStringToCommitIDAndFilePath[moduleFullNameString]
 			if ok {

@@ -15,7 +15,7 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/google/uuid"
@@ -26,7 +26,7 @@ var _ ImageFile = &imageFile{}
 
 type imageFile struct {
 	fileDescriptorProto     *descriptorpb.FileDescriptorProto
-	moduleFullName          bufmodule.ModuleFullName
+	moduleFullName          bufparse.FullName
 	commitID                uuid.UUID
 	externalPath            string
 	localPath               string
@@ -37,7 +37,7 @@ type imageFile struct {
 
 func newImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -62,7 +62,7 @@ func newImageFile(
 
 func newImageFileNoValidate(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -103,7 +103,7 @@ func (f *imageFile) LocalPath() string {
 	return f.localPath
 }
 
-func (f *imageFile) ModuleFullName() bufmodule.ModuleFullName {
+func (f *imageFile) FullName() bufparse.FullName {
 	return f.moduleFullName
 }
 

@@ -240,9 +240,9 @@ func TestUnusedDep(t *testing.T) {
 	malformedDeps, err := MalformedDepsForWorkspace(workspace)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(malformedDeps))
-	require.Equal(t, "buf.testing/acme/date", malformedDeps[0].ModuleRef().ModuleFullName().String())
+	require.Equal(t, "buf.testing/acme/date", malformedDeps[0].ModuleRef().FullName().String())
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[0].Type())
-	require.Equal(t, "buf.testing/acme/extension", malformedDeps[1].ModuleRef().ModuleFullName().String())
+	require.Equal(t, "buf.testing/acme/extension", malformedDeps[1].ModuleRef().FullName().String())
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[1].Type())
 }
 

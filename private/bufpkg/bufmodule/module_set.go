@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -45,10 +46,10 @@ type ModuleSet interface {
 	// These will be sorted by OpaqueID.
 	Modules() []Module
 
-	// GetModuleForModuleFullName gets the Module for the ModuleFullName, if it exists.
+	// GetModuleForFullName gets the Module for the FullName, if it exists.
 	//
-	// Returns nil if there is no Module with the given ModuleFullName.
-	GetModuleForModuleFullName(moduleFullName ModuleFullName) Module
+	// Returns nil if there is no Module with the given FullName.
+	GetModuleForFullName(moduleFullName bufparse.FullName) Module
 	// GetModuleForOpaqueID gets the Module for the OpaqueID, if it exists.
 	//
 	// Returns nil if there is no Module with the given OpaqueID. However, as long
@@ -267,11 +268,11 @@ func newModuleSet(
 	bucketIDToModule := make(map[string]Module, len(modules))
 	commitIDToModule := make(map[uuid.UUID]Module, len(modules))
 	for _, module := range modules {
-		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+		if moduleFullName := module.FullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
 			if _, ok := moduleFullNameStringToModule[moduleFullNameString]; ok {
 				// This should never happen.
-				return nil, syserror.Newf("duplicate ModuleFullName %q when constructing ModuleSet", moduleFullNameString)
+				return nil, syserror.Newf("duplicate FullName %q when constructing ModuleSet", moduleFullNameString)
 			}
 			moduleFullNameStringToModule[moduleFullNameString] = module
 		}
@@ -323,7 +324,7 @@ func (m *moduleSet) Modules() []Module {
 	return c
 }
 
-func (m *moduleSet) GetModuleForModuleFullName(moduleFullName ModuleFullName) Module {
+func (m *moduleSet) GetModuleForFullName(moduleFullName bufparse.FullName) Module {
 	return m.moduleFullNameStringToModule[moduleFullName.String()]
 }
 

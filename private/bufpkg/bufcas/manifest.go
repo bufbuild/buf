@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 // Manifest is a set of FileNodes.
@@ -71,26 +73,28 @@ func NewManifest(fileNodes []FileNode) (Manifest, error) {
 // ParseManifest parses a Manifest from its string representation.
 //
 // This reverses Manifest.String().
+//
+// Returns an error of type *bufparse.ParseError if the string could not be parsed.
 func ParseManifest(s string) (Manifest, error) {
 	var fileNodes []FileNode
 	original := s
 	if len(s) > 0 {
 		if s[len(s)-1] != '\n' {
-			return nil, &ParseError{
-				typeString: "manifest",
-				input:      original,
-				err:        errors.New("did not end with newline"),
-			}
+			return nil, bufparse.NewParseError(
+				"manifest",
+				original,
+				errors.New("did not end with newline"),
+			)
 		}
 		s = s[:len(s)-1]
 		for i, line := range strings.Split(s, "\n") {
 			fileNode, err := ParseFileNode(line)
 			if err != nil {
-				return nil, &ParseError{
-					typeString: "manifest",
-					input:      original,
-					err:        fmt.Errorf("line %d: %w", i, err),
-				}
+				return nil, bufparse.NewParseError(
+					"manifest",
+					original,
+					fmt.Errorf("line %d: %w", i, err),
+				)
 			}
 			fileNodes = append(fileNodes, fileNode)
 		}
@@ -100,11 +104,11 @@ func ParseManifest(s string) (Manifest, error) {
 	// Validation occurs within getAndValidateManifestPathToFileNode, so we pass nil to that.
 	pathToFileNode, err := getAndValidateManifestPathToFileNode(fileNodes)
 	if err != nil {
-		return nil, &ParseError{
-			typeString: "manifest",
-			input:      original,
-			err:        err,
-		}
+		return nil, bufparse.NewParseError(
+			"manifest",
+			original,
+			err,
+		)
 	}
 	return newManifest(pathToFileNode), nil
 }
@@ -127,7 +131,8 @@ func ManifestToDigest(manifest Manifest) (Digest, error) {
 //
 // # The Blob is assumed to be non-nil
 //
-// This function returns ParseErrors since this is effectively parsing the blob.
+// This function returns an error of type *bufparse.ParseError since this is
+// effectively parsing the blob.
 func BlobToManifest(blob Blob) (Manifest, error) {
 	return ParseManifest(string(blob.Content()))
 }

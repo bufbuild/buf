@@ -47,7 +47,7 @@ func modifyJsType(
 		config.Overrides(),
 		func(override bufconfig.ManagedOverrideRule) bool {
 			return override.FieldOption() == bufconfig.FieldOptionJSType &&
-				fileMatchConfig(imageFile, override.Path(), override.ModuleFullName())
+				fileMatchConfig(imageFile, override.Path(), override.FullName())
 		},
 	)
 	// Unless specified, js type is not modified.
@@ -60,7 +60,7 @@ func modifyJsType(
 			return (disable.FieldOption() == bufconfig.FieldOptionJSType ||
 				(disable.FieldOption() == bufconfig.FieldOptionUnspecified &&
 					disable.FileOption() == bufconfig.FileOptionUnspecified)) &&
-				fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName())
+				fileMatchConfig(imageFile, disable.Path(), disable.FullName())
 		},
 	)
 	// If the entire file is disabled, skip.

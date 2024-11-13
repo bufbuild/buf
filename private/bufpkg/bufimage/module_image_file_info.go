@@ -16,6 +16,7 @@ package bufimage
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/google/uuid"
 )
 
@@ -29,8 +30,8 @@ func newModuleImageFileInfo(fileInfo bufmodule.FileInfo) *moduleImageFileInfo {
 	}
 }
 
-func (p *moduleImageFileInfo) ModuleFullName() bufmodule.ModuleFullName {
-	return p.FileInfo.Module().ModuleFullName()
+func (p *moduleImageFileInfo) FullName() bufparse.FullName {
+	return p.FileInfo.Module().FullName()
 }
 
 func (p *moduleImageFileInfo) CommitID() uuid.UUID {

@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
@@ -42,7 +43,7 @@ var (
 //
 // Exactly one of PathToData, Bucket, DirPath must be set.
 //
-// Name is the ModuleFullName string. When creating an OmniProvider, Name is required.
+// Name is the FullName string. When creating an OmniProvider, Name is required.
 //
 // CommitID is optional, but it must be unique across all ModuleDatas. If CommitID is not set,
 // a mock commitID is created if Name is set.
@@ -87,7 +88,7 @@ func NewOmniProvider(
 // NewModuleSet returns a new ModuleSet.
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
-// and when ModuleFullNames do not matter.
+// and when FullNames do not matter.
 //
 // Note the ModuleDatas must be self-contained, that is they only import from each other.
 func NewModuleSet(
@@ -99,7 +100,7 @@ func NewModuleSet(
 // NewModuleSetForDirPath returns a new ModuleSet for the directory path.
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
-// and when ModuleFullNames do not matter.
+// and when FullNames do not matter.
 //
 // Note that this Module cannot have any dependencies.
 func NewModuleSetForDirPath(
@@ -115,7 +116,7 @@ func NewModuleSetForDirPath(
 // NewModuleSetForPathToData returns a new ModuleSet for the path to data map.
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
-// and when ModuleFullNames do not matter.
+// and when FullNames do not matter.
 //
 // Note that this Module cannot have any dependencies.
 func NewModuleSetForPathToData(
@@ -131,7 +132,7 @@ func NewModuleSetForPathToData(
 // NewModuleSetForBucket returns a new ModuleSet for the Bucket.
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
-// and when ModuleFullNames do not matter.
+// and when FullNames do not matter.
 //
 // Note that this Module cannot have any dependencies.
 func NewModuleSetForBucket(
@@ -167,12 +168,12 @@ func newOmniProvider(
 
 func (o *omniProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
-		module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
+		module := o.GetModuleForFullName(moduleRef.FullName())
 		if module == nil {
 			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
 		}
@@ -195,7 +196,7 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 	if _, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys); err != nil {
 		return nil, err
 	}
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+	if _, err := bufparse.FullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
 	return slicesext.MapError(
@@ -280,7 +281,7 @@ func (o *omniProvider) GetGraphForModuleKeys(
 	}
 	modules := make([]bufmodule.Module, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
-		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+		module := o.GetModuleForFullName(moduleKey.FullName())
 		if module == nil {
 			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
 		}
@@ -298,7 +299,7 @@ func (o *omniProvider) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
-	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+	module := o.GetModuleForFullName(moduleKey.FullName())
 	if module == nil {
 		return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
 	}
@@ -415,7 +416,7 @@ func addModuleDataToModuleSetBuilder(
 	}
 	var localModuleOptions []bufmodule.LocalModuleOption
 	if moduleData.Name != "" {
-		moduleFullName, err := bufmodule.ParseModuleFullName(moduleData.Name)
+		moduleFullName, err := bufparse.ParseFullName(moduleData.Name)
 		if err != nil {
 			return err
 		}
@@ -434,7 +435,7 @@ func addModuleDataToModuleSetBuilder(
 			commitIDToCreateTime[commitID] = createTime
 		}
 		localModuleOptions = []bufmodule.LocalModuleOption{
-			bufmodule.LocalModuleWithModuleFullNameAndCommitID(moduleFullName, commitID),
+			bufmodule.LocalModuleWithFullNameAndCommitID(moduleFullName, commitID),
 		}
 	} else if requireName {
 		return errors.New("ModuleData.Name was required in this context")

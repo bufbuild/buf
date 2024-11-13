@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
@@ -158,13 +159,13 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			// If we have more than one ModuleConfig, find the ModuleConfig that matches the
 			// name from the ModuleKey. If none is found, just fall back to the default (ie do nothing here).
 			for _, moduleConfig := range moduleConfigs {
-				moduleFullName := moduleConfig.ModuleFullName()
+				moduleFullName := moduleConfig.FullName()
 				if moduleFullName == nil {
 					continue
 				}
-				if bufmodule.ModuleFullNameEqual(moduleFullName, moduleKey.ModuleFullName()) {
+				if bufparse.FullNameEqual(moduleFullName, moduleKey.FullName()) {
 					targetModuleConfig = moduleConfig
-					// We know that the ModuleConfigs are unique by ModuleFullName.
+					// We know that the ModuleConfigs are unique by FullName.
 					break
 				}
 			}
@@ -193,7 +194,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
 	for _, module := range moduleSet.Modules() {
-		if bufmodule.ModuleFullNameEqual(module.ModuleFullName(), moduleKey.ModuleFullName()) {
+		if bufparse.FullNameEqual(module.FullName(), moduleKey.FullName()) {
 			// Set the lint and breaking config for the single targeted Module.
 			opaqueIDToLintConfig[module.OpaqueID()] = targetModuleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = targetModuleConfig.BreakingConfig()
@@ -330,7 +331,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			mappedModuleBucket,
 			moduleBucketAndTargeting.bucketID,
 			moduleTargeting.isTargetModule,
-			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
+			bufmodule.LocalModuleWithFullName(moduleConfig.FullName()),
 			bufmodule.LocalModuleWithTargetPaths(
 				moduleTargeting.moduleTargetPaths,
 				moduleTargeting.moduleTargetExcludePaths,
@@ -434,7 +435,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			mappedModuleBucket,
 			moduleBucketAndTargeting.bucketID,
 			moduleTargeting.isTargetModule,
-			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
+			bufmodule.LocalModuleWithFullName(moduleConfig.FullName()),
 			bufmodule.LocalModuleWithTargetPaths(
 				moduleTargeting.moduleTargetPaths,
 				moduleTargeting.moduleTargetExcludePaths,
@@ -464,8 +465,8 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	moduleSet bufmodule.ModuleSet,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
 	pluginConfigs []bufconfig.PluginConfig,
-	// Expected to already be unique by ModuleFullName.
-	configuredDepModuleRefs []bufmodule.ModuleRef,
+	// Expected to already be unique by FullName.
+	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
 ) (*workspace, error) {
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)

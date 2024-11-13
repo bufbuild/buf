@@ -89,7 +89,7 @@ func (a *addedModule) IsTarget() bool {
 // OpaqueID returns the OpaqueID of the addedModule.
 func (a *addedModule) OpaqueID() string {
 	if a.remoteModuleKey != nil {
-		return a.remoteModuleKey.ModuleFullName().String()
+		return a.remoteModuleKey.FullName().String()
 	}
 	return a.localModule.OpaqueID()
 }
@@ -121,14 +121,14 @@ func (a *addedModule) ToModule(
 				return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
 			}
 			moduleData := moduleDatas[0]
-			if moduleData.ModuleKey().ModuleFullName() == nil {
-				return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
+			if moduleData.ModuleKey().FullName() == nil {
+				return nil, syserror.New("got nil FullName for a ModuleKey returned from a ModuleDataProvider")
 			}
-			if a.remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
+			if a.remoteModuleKey.FullName().String() != moduleData.ModuleKey().FullName().String() {
 				return nil, syserror.Newf(
-					"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
-					a.remoteModuleKey.ModuleFullName().String(),
-					moduleData.ModuleKey().ModuleFullName().String(),
+					"mismatched FullName from ModuleDataProvider: input %q, output %q",
+					a.remoteModuleKey.FullName().String(),
+					moduleData.ModuleKey().FullName().String(),
 				)
 			}
 			return moduleData, nil
@@ -255,7 +255,7 @@ func (a *addedModule) ToModule(
 	// To accomplish this, we need to take the dependencies of the declared ModuleKeys (ie what
 	// the Module actually says is in its buf.lock). This function enables us to do that for
 	// digest calculations. Within the Module, we say that if we get a remote Module, use the
-	// declared ModuleKeys instead of whatever Module we have resolved to for a given ModuleFullName.
+	// declared ModuleKeys instead of whatever Module we have resolved to for a given FullName.
 	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
 		moduleData, err := getModuleData()
 		if err != nil {
@@ -288,7 +288,7 @@ func (a *addedModule) ToModule(
 			// from B4 to B5 by using the commit provider.
 			commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
 			for i, declaredDepModuleKey := range declaredDepModuleKeys {
-				commitKey, err := NewCommitKey(declaredDepModuleKey.ModuleFullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
+				commitKey, err := NewCommitKey(declaredDepModuleKey.FullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
 				if err != nil {
 					return nil, err
 				}
@@ -316,7 +316,7 @@ func (a *addedModule) ToModule(
 		getBucket,
 		"",
 		"",
-		a.remoteModuleKey.ModuleFullName(),
+		a.remoteModuleKey.FullName(),
 		a.remoteModuleKey.CommitID(),
 		a.isTarget,
 		false,
@@ -343,9 +343,9 @@ func (a *addedModule) ToModule(
 //
 // When returned, all modules have unique opaqueIDs and Digests.
 //
-// Note: Modules with the same ModuleFullName will automatically have the same commit and Digest after this,
-// as there will be exactly one Module with a given ModuleFullName, given that an OpaqueID will be equal
-// for Modules with equal ModuleFullNames.
+// Note: Modules with the same FullName will automatically have the same commit and Digest after this,
+// as there will be exactly one Module with a given FullName, given that an OpaqueID will be equal
+// for Modules with equal FullNames.
 func getUniqueSortedAddedModulesByOpaqueID(
 	ctx context.Context,
 	commitProvider CommitProvider,
@@ -430,9 +430,9 @@ func selectAddedModuleForOpaqueIDIgnoreTargeting(
 // has already been taken into account.
 //
 // All addedModules are assumed to have the same OpaqueID, and therefore the same
-// ModuleFullName, since they are remote Modules. We validate this.
+// FullName, since they are remote Modules. We validate this.
 //
-// Note that there may be straight duplicates, ie two modules with the same ModuleFullName and CommitID! This
+// Note that there may be straight duplicates, ie two modules with the same FullName and CommitID! This
 // function deduplicates these.
 //
 // The ModuleKey with the latest create time is used.
@@ -456,13 +456,13 @@ func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 	if moduleFullNameStrings := slicesext.ToUniqueSorted(
 		slicesext.Map(
 			addedModules,
-			func(addedModule *addedModule) string { return addedModule.remoteModuleKey.ModuleFullName().String() },
+			func(addedModule *addedModule) string { return addedModule.remoteModuleKey.FullName().String() },
 		),
 	); len(moduleFullNameStrings) > 1 {
-		return nil, syserror.Newf("multiple ModuleFullNames detected in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting: %s", strings.Join(moduleFullNameStrings, ", "))
+		return nil, syserror.Newf("multiple FullNames detected in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting: %s", strings.Join(moduleFullNameStrings, ", "))
 	}
 
-	// We now know that we have >1 addedModules, and all of them have a remoteModuleKey, and all the remoteModuleKeys have the same ModuleFullName.
+	// We now know that we have >1 addedModules, and all of them have a remoteModuleKey, and all the remoteModuleKeys have the same FullName.
 
 	// Now, we deduplicate by commit ID. If we end up with a single Module, we return that, otherwise we select exactly one Module
 	// based on the create time of the corresponding commit ID.

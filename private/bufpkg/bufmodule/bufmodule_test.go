@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
@@ -92,19 +93,19 @@ func TestBasic(t *testing.T) {
 	//
 	// Remember, the bsrProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
-	moduleRefExtdep1, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
+	moduleRefExtdep1, err := bufparse.NewRef("buf.build", "foo", "extdep1", "")
 	require.NoError(t, err)
-	moduleRefExtdep2, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
+	moduleRefExtdep2, err := bufparse.NewRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
-	moduleRefExtdep3, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
+	moduleRefExtdep3, err := bufparse.NewRef("buf.build", "foo", "extdep3", "")
 	require.NoError(t, err)
-	moduleRefExtdep4, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep4", "")
+	moduleRefExtdep4, err := bufparse.NewRef("buf.build", "foo", "extdep4", "")
 	require.NoError(t, err)
-	moduleRefModule2, err := bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
+	moduleRefModule2, err := bufparse.NewRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{
+		[]bufparse.Ref{
 			moduleRefExtdep1,
 			moduleRefExtdep2,
 			moduleRefExtdep3,
@@ -138,7 +139,7 @@ func TestBasic(t *testing.T) {
 	//
 	// This module is also in the BSR, but we'll prefer the local sources when
 	// we do ModuleSetBuilder.Build().
-	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
+	moduleFullName, err := bufparse.NewFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
 	moduleSetBuilder.AddLocalModule(
 		testNewBucketForPathToData(
@@ -157,7 +158,7 @@ func TestBasic(t *testing.T) {
 		),
 		"path/to/module2",
 		true,
-		bufmodule.LocalModuleWithModuleFullName(moduleFullName),
+		bufmodule.LocalModuleWithFullName(moduleFullName),
 		// We're going to exclude the files in the foo directory from targeting,
 		// ie foo/module2_excluded.proto. This file will still be in the module,
 		// but will not be marked as a target.

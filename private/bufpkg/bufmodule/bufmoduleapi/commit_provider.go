@@ -84,7 +84,7 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().Registry()
+			return moduleKey.FullName().Registry()
 		},
 	)
 	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(moduleKeys))

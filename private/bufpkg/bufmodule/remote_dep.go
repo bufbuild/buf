@@ -28,7 +28,7 @@ import (
 // We don't care about targeting here - we want to know the remote dependencies for
 // purposes such as figuring out what dependencies are unused and can be pruned.
 type RemoteDep interface {
-	// All RemoteDeps will have a ModuleFullName, as they are remote.
+	// All RemoteDeps will have a FullName, as they are remote.
 	Module
 
 	// IsDirect returns true if the remote dependency is a direct dependency of a Module in the ModuleSet.
@@ -39,7 +39,7 @@ type RemoteDep interface {
 
 // RemoteDepsForModuleSet returns the remote dependencies of the local Modules in the ModuleSet.
 //
-// Sorted by ModuleFullName.
+// Sorted by FullName.
 //
 // TODO FUTURE: This needs a LOT of testing.
 func RemoteDepsForModuleSet(moduleSet ModuleSet) ([]RemoteDep, error) {
@@ -48,7 +48,7 @@ func RemoteDepsForModuleSet(moduleSet ModuleSet) ([]RemoteDep, error) {
 
 // RemoteDepsForModules returns the remote dependencies of the local Modules.
 //
-// Sorted by ModuleFullName.
+// Sorted by FullName.
 //
 // This is used in situations where we have already filtered a ModuleSet down to a specific
 // set of modules, such as in the Uploader. Generally, you want to use RemoteDepsForModuleSet.
@@ -59,7 +59,7 @@ func RemoteDepsForModuleSet(moduleSet ModuleSet) ([]RemoteDep, error) {
 // TODO FUTURE: This needs a LOT of testing.
 func RemoteDepsForModules(modules []Module) ([]RemoteDep, error) {
 	visitedOpaqueIDs := make(map[string]struct{})
-	remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal := make(map[string]struct{})
+	remoteDepFullNameStringsThatAreDirectDepsOfLocal := make(map[string]struct{})
 	var remoteDepModules []Module
 	for _, module := range modules {
 		if !module.IsLocal() {
@@ -73,13 +73,13 @@ func RemoteDepsForModules(modules []Module) ([]RemoteDep, error) {
 			if moduleDep.IsLocal() {
 				continue
 			}
-			moduleDepFullName := moduleDep.ModuleFullName()
+			moduleDepFullName := moduleDep.FullName()
 			if moduleDepFullName == nil {
 				// Just a sanity check.
-				return nil, syserror.New("remote module did not have a ModuleFullName")
+				return nil, syserror.New("remote module did not have a FullName")
 			}
 			if moduleDep.IsDirect() {
-				remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal[moduleDepFullName.String()] = struct{}{}
+				remoteDepFullNameStringsThatAreDirectDepsOfLocal[moduleDepFullName.String()] = struct{}{}
 			}
 			iRemoteDepModules, err := remoteDepsForModuleSetRec(
 				moduleDep,
@@ -93,12 +93,12 @@ func RemoteDepsForModules(modules []Module) ([]RemoteDep, error) {
 	}
 	remoteDeps := make([]RemoteDep, len(remoteDepModules))
 	for i, remoteDepModule := range remoteDepModules {
-		moduleFullName := remoteDepModule.ModuleFullName()
+		moduleFullName := remoteDepModule.FullName()
 		if moduleFullName == nil {
 			// Just a sanity check.
-			return nil, syserror.New("remote module did not have a ModuleFullName")
+			return nil, syserror.New("remote module did not have a FullName")
 		}
-		_, isDirect := remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal[moduleFullName.String()]
+		_, isDirect := remoteDepFullNameStringsThatAreDirectDepsOfLocal[moduleFullName.String()]
 		remoteDeps[i] = newRemoteDep(remoteDepModule, isDirect)
 	}
 	sort.Slice(
@@ -138,9 +138,9 @@ func remoteDepsForModuleSetRec(
 	if remoteModule.IsLocal() {
 		return nil, syserror.New("only pass remote modules to remoteDepsForModuleSetRec")
 	}
-	if remoteModule.ModuleFullName() == nil {
+	if remoteModule.FullName() == nil {
 		// Just a sanity check.
-		return nil, syserror.New("ModuleFullName is nil for a remote Module")
+		return nil, syserror.New("FullName is nil for a remote Module")
 	}
 	opaqueID := remoteModule.OpaqueID()
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
