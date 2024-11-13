@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package labelinfo
+package modulecommitlist
 
 import _ "github.com/bufbuild/buf/private/usage"

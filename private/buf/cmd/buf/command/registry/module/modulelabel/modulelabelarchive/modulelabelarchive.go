@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commitresolve
+package modulelabelarchive
 
 import (
 	"context"
@@ -21,27 +21,25 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
-
-// NewCommand returns a new Command
+// NewCommand returns a new Command.
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/repository[:ref]>",
-		Short: "Resolve commit from a reference",
-		Args:  appcmd.ExactArgs(1),
+		Use:        name + " <remote/owner/module:label>",
+		Short:      "Archive a module label",
+		Args:       appcmd.ExactArgs(1),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -52,7 +50,6 @@ func NewCommand(
 }
 
 type flags struct {
-	Format string
 }
 
 func newFlags() *flags {
@@ -60,67 +57,51 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
-	)
 }
 
 func run(
 	ctx context.Context,
 	container appext.Container,
-	flags *flags,
+	_ *flags,
 ) error {
 	moduleRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	format, err := bufprint.ParseFormat(flags.Format)
-	if err != nil {
-		return appcmd.WrapInvalidArgumentError(err)
+	labelName := moduleRef.Ref()
+	if labelName == "" {
+		return appcmd.NewInvalidArgumentError("label is required")
 	}
-
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	commitServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1CommitServiceClient(moduleRef.FullName().Registry())
-	resp, err := commitServiceClient.GetCommits(
+	moduleFullName := moduleRef.FullName()
+	labelServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1LabelServiceClient(moduleFullName.Registry())
+	// ArchiveLabelsResponse is empty.
+	if _, err := labelServiceClient.ArchiveLabels(
 		ctx,
 		connect.NewRequest(
-			&modulev1.GetCommitsRequest{
-				ResourceRefs: []*modulev1.ResourceRef{
+			&modulev1.ArchiveLabelsRequest{
+				LabelRefs: []*modulev1.LabelRef{
 					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.FullName().Owner(),
-								Module: moduleRef.FullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
-								},
+						Value: &modulev1.LabelRef_Name_{
+							Name: &modulev1.LabelRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
+								Label:  labelName,
 							},
 						},
 					},
 				},
 			},
 		),
-	)
-	if err != nil {
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRefNotFoundError(moduleRef)
+			return bufcli.NewLabelNotFoundError(moduleRef)
 		}
 		return err
 	}
-	commits := resp.Msg.Commits
-	if len(commits) != 1 {
-		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
-	}
-	commit := commits[0]
-	return bufprint.PrintNames(
-		container.Stdout(),
-		format,
-		bufprint.NewCommitEntity(commit, moduleRef.FullName()),
-	)
+	_, err = fmt.Fprintf(container.Stdout(), "Archived %s.\n", moduleRef)
+	return err
 }

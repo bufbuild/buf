@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package labelinfo
+package modulecommitaddlabel
 
 import (
 	"context"
@@ -26,22 +26,28 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
+const (
+	formatFlagName = "format"
+	labelsFlagName = "label"
+)
 
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/module:label>",
-		Short: "Show label information",
-		Args:  appcmd.ExactArgs(1),
+		Use:        name + " <remote/owner/module:commit> --label <label>",
+		Short:      "Add labels to a commit",
+		Args:       appcmd.ExactArgs(1),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -53,6 +59,7 @@ func NewCommand(
 
 type flags struct {
 	Format string
+	Labels []string
 }
 
 func newFlags() *flags {
@@ -66,6 +73,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
+	flagSet.StringSliceVar(
+		&f.Labels,
+		labelsFlagName,
+		nil,
+		"The labels to add to the commit. Must have at least one",
+	)
 }
 
 func run(
@@ -77,9 +90,16 @@ func run(
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	labelName := moduleRef.Ref()
-	if labelName == "" {
-		return appcmd.NewInvalidArgumentError("label is required")
+	if moduleRef.Ref() == "" {
+		return appcmd.NewInvalidArgumentError("commit is required")
+	}
+	commitID := moduleRef.Ref()
+	if _, err := uuidutil.FromDashless(commitID); err != nil {
+		return appcmd.NewInvalidArgumentErrorf("invalid commit: %w", err)
+	}
+	labels := flags.Labels
+	if len(labels) == 0 {
+		return appcmd.NewInvalidArgumentError("must create at least one label")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -90,39 +110,45 @@ func run(
 		return err
 	}
 	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	moduleFullName := moduleRef.FullName()
-	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleFullName.Registry())
-	resp, err := labelServiceClient.GetLabels(
-		ctx,
-		connect.NewRequest(
-			&modulev1.GetLabelsRequest{
-				LabelRefs: []*modulev1.LabelRef{
-					{
-						Value: &modulev1.LabelRef_Name_{
-							Name: &modulev1.LabelRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
-								Label:  labelName,
-							},
-						},
+	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleRef.FullName().Registry())
+	requestValues := slicesext.Map(labels, func(label string) *modulev1.CreateOrUpdateLabelsRequest_Value {
+		return &modulev1.CreateOrUpdateLabelsRequest_Value{
+			LabelRef: &modulev1.LabelRef{
+				Value: &modulev1.LabelRef_Name_{
+					Name: &modulev1.LabelRef_Name{
+						Owner:  moduleRef.FullName().Owner(),
+						Module: moduleRef.FullName().Name(),
+						Label:  label,
 					},
 				},
+			},
+			CommitId: commitID,
+		}
+	})
+	resp, err := labelServiceClient.CreateOrUpdateLabels(
+		ctx,
+		connect.NewRequest(
+			&modulev1.CreateOrUpdateLabelsRequest{
+				Values: requestValues,
 			},
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewLabelNotFoundError(moduleRef)
-		}
+		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or commit not found.
+		// It can also be a misformatted commit ID error.
 		return err
 	}
-	labels := resp.Msg.Labels
-	if len(labels) != 1 {
-		return syserror.Newf("expect 1 label from response, got %d", len(labels))
+	if format == bufprint.FormatText {
+		for _, label := range resp.Msg.Labels {
+			fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.FullName(), label.Name)
+		}
+		return nil
 	}
-	return bufprint.PrintEntity(
+	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		bufprint.NewLabelEntity(labels[0], moduleFullName),
+		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
+			return bufprint.NewLabelEntity(label, moduleRef.FullName())
+		})...,
 	)
 }

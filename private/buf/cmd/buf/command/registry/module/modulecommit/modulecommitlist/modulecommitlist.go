@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commitlist
+package modulecommitlist
 
 import (
 	"context"
@@ -44,6 +44,7 @@ const (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -54,7 +55,8 @@ For a commit reference, it lists the commit itself.
 For a label reference, it lists the current and past commits associated with this label.
 If no reference is specified, it lists all commits in this module.
 `,
-		Args: appcmd.ExactArgs(1),
+		Args:       appcmd.ExactArgs(1),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

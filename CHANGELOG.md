@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Move `buf registry commit` to `buf registry module commit`. Command
+  `buf registry commit` is now deprecated.
+- Move `buf registry label` to `buf registry module label`. Command
+  `buf registry label` is now deprecated.
 
 ## [v1.46.0] - 2024-10-29
 
