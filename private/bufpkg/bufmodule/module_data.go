@@ -85,8 +85,6 @@ func NewModuleData(
 
 // *** PRIVATE ***
 
-// moduleData
-
 type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
@@ -166,7 +164,7 @@ func newModuleData(
 			}
 			if !DigestEqual(expectedDigest, actualDigest) {
 				return &DigestMismatchError{
-					ModuleFullName: moduleKey.ModuleFullName(),
+					FullName:       moduleKey.FullName(),
 					CommitID:       moduleKey.CommitID(),
 					ExpectedDigest: expectedDigest,
 					ActualDigest:   actualDigest,

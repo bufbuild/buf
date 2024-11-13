@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/shake256"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -59,15 +60,15 @@ func (d DigestType) String() string {
 //
 // This reverses DigestType.String().
 //
-// Returns an error of type *ParseError if thie string could not be parsed.
+// Returns an error of type *bufparse.ParseError if the string could not be parsed.
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
-		return 0, &ParseError{
-			typeString: "digest type",
-			input:      s,
-			err:        fmt.Errorf("unknown type: %q", s),
-		}
+		return 0, bufparse.NewParseError(
+			"digest type",
+			s,
+			fmt.Errorf("unknown type: %q", s),
+		)
 	}
 	return d, nil
 }
@@ -158,6 +159,8 @@ func DigestWithDigestType(digestType DigestType) DigestOption {
 // The string is expected to be non-empty, If not, an error is treutned.
 //
 // This reverses Digest.String().
+//
+// Returns an error of type *bufparse.ParseError if the string could not be parsed.
 func ParseDigest(s string) (Digest, error) {
 	if s == "" {
 		// This should be considered a system error.
@@ -165,34 +168,34 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
-		return nil, &ParseError{
-			typeString: "digest",
-			input:      s,
-			err:        errors.New(`must in the form "digest_type:digest_hex_value"`),
-		}
+		return nil, bufparse.NewParseError(
+			"digest",
+			s,
+			errors.New(`must in the form "digest_type:digest_hex_value"`),
+		)
 	}
 	digestType, err := ParseDigestType(digestTypeString)
 	if err != nil {
-		return nil, &ParseError{
-			typeString: "digest",
-			input:      s,
-			err:        err,
-		}
+		return nil, bufparse.NewParseError(
+			"digest",
+			s,
+			err,
+		)
 	}
 	value, err := hex.DecodeString(hexValue)
 	if err != nil {
-		return nil, &ParseError{
-			typeString: "digest",
-			input:      s,
-			err:        errors.New(`could not parse hex: must in the form "digest_type:digest_hex_value"`),
-		}
+		return nil, bufparse.NewParseError(
+			"digest",
+			s,
+			errors.New(`could not parse hex: must in the form "digest_type:digest_hex_value"`),
+		)
 	}
 	if err := validateDigestParameters(digestType, value); err != nil {
-		return nil, &ParseError{
-			typeString: "digest",
-			input:      s,
-			err:        err,
-		}
+		return nil, bufparse.NewParseError(
+			"digest",
+			s,
+			err,
+		)
 	}
 	return newDigest(digestType, value), nil
 }
@@ -265,7 +268,7 @@ func validateDigestParameters(digestType DigestType, value []byte) error {
 		}
 	default:
 		// This is really always a system error, but little harm in including it here, even
-		// though it'll get converted into a ParseError in parse.
+		// though it'll get converted into a bufparse.ParseError in parse.
 		return syserror.Newf(`unknown digest type: %q`, digestType.String())
 	}
 	return nil

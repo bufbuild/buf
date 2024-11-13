@@ -204,7 +204,7 @@ func run(
 }
 
 func moduleToString(module bufmodule.Module) string {
-	if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+	if moduleFullName := module.FullName(); moduleFullName != nil {
 		commitID := dashlessCommitIDStringForModule(module)
 		if commitID != "" {
 			return moduleFullName.String() + ":" + commitID
@@ -214,10 +214,10 @@ func moduleToString(module bufmodule.Module) string {
 	return module.OpaqueID()
 }
 
-// moduleFullNameOrOpaqueID returns the ModuleFullName for a module if available, otherwise
+// moduleFullNameOrOpaqueID returns the FullName for a module if available, otherwise
 // it returns the OpaqueID.
 func moduleFullNameOrOpaqueID(module bufmodule.Module) string {
-	if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+	if moduleFullName := module.FullName(); moduleFullName != nil {
 		return moduleFullName.String()
 	}
 	return module.OpaqueID()
@@ -233,7 +233,7 @@ func dashlessCommitIDStringForModule(module bufmodule.Module) string {
 }
 
 type externalModule struct {
-	// ModuleFullName if remote, OpaqueID if no ModuleFullName
+	// FullName if remote, OpaqueID if no FullName
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// Dashless
 	Commit string           `json:"commit,omitempty" yaml:"commit,omitempty"`
@@ -249,8 +249,8 @@ func (e *externalModule) addDeps(
 	flags *flags,
 ) error {
 	for _, dep := range deps {
-		depModuleFullNameOrOpaqueID := moduleFullNameOrOpaqueID(dep)
-		depExternalModule, ok := moduleFullNameOrOpaqueIDToExternalModule[depModuleFullNameOrOpaqueID]
+		depFullNameOrOpaqueID := moduleFullNameOrOpaqueID(dep)
+		depExternalModule, ok := moduleFullNameOrOpaqueIDToExternalModule[depFullNameOrOpaqueID]
 		if ok {
 			// If this dependency has already been seen, we can simply update our current module
 			// and return early.
@@ -271,7 +271,7 @@ func (e *externalModule) addDeps(
 		if err := depExternalModule.addDeps(transitiveDeps, graph, moduleFullNameOrOpaqueIDToExternalModule, flags); err != nil {
 			return err
 		}
-		moduleFullNameOrOpaqueIDToExternalModule[depModuleFullNameOrOpaqueID] = depExternalModule
+		moduleFullNameOrOpaqueIDToExternalModule[depFullNameOrOpaqueID] = depExternalModule
 		e.Deps = append(e.Deps, depExternalModule)
 	}
 	return nil

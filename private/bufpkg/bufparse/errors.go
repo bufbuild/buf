@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcas
+package bufparse
 
-import (
-	"strings"
-)
+import "strings"
 
 // ParseError is an error that occurred during parsing.
 //
@@ -38,8 +36,24 @@ type ParseError struct {
 	err error
 }
 
+// NewParseError returns a new ParseError.
+//
+// typeString is the user-consumable string representing of the type that was attempted to be parsed.
+// input is the input string that was attempted to be parsed.
+// err is the underlying error.
+func NewParseError(typeString string, input string, err error) *ParseError {
+	return &ParseError{
+		typeString: typeString,
+		input:      input,
+		err:        err,
+	}
+}
+
 // Error implements the error interface.
 func (p *ParseError) Error() string {
+	if p == nil {
+		return ""
+	}
 	var builder strings.Builder
 	_, _ = builder.WriteString(`could not parse`)
 	if p.typeString != "" {
@@ -59,9 +73,17 @@ func (p *ParseError) Error() string {
 }
 
 // Unwrap returns the underlying error.
-func (p *ParseError) Unwrap() error { return p.err }
+func (p *ParseError) Unwrap() error {
+	if p == nil {
+		return nil
+	}
+	return p.err
+}
 
 // Input returns the input string that was attempted to be parsed.
 func (p *ParseError) Input() string {
+	if p == nil {
+		return ""
+	}
 	return p.input
 }

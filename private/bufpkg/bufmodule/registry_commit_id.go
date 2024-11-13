@@ -35,7 +35,7 @@ func NewRegistryCommitID(registry string, commitID uuid.UUID) RegistryCommitID {
 // ModuleKeyToRegistryCommitID converts the ModuleKey to a RegistryCommitID.
 func ModuleKeyToRegistryCommitID(moduleKey ModuleKey) RegistryCommitID {
 	return NewRegistryCommitID(
-		moduleKey.ModuleFullName().Registry(),
+		moduleKey.FullName().Registry(),
 		moduleKey.CommitID(),
 	)
 }

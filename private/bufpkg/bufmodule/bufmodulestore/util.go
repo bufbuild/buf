@@ -28,7 +28,7 @@ func logDebugModuleKey(ctx context.Context, logger *slog.Logger, moduleKey bufmo
 		message,
 		append(
 			[]any{
-				slog.String("moduleFullName", moduleKey.ModuleFullName().String()),
+				slog.String("moduleFullName", moduleKey.FullName().String()),
 				slog.String("commitID", uuidutil.ToDashless(moduleKey.CommitID())),
 			},
 			fields...,

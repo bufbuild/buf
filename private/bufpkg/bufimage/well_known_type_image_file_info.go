@@ -15,7 +15,7 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/google/uuid"
 )
@@ -38,7 +38,7 @@ func newWellKnownTypeImageFileInfo(
 	}
 }
 
-func (p *wellKnownTypeImageFileInfo) ModuleFullName() bufmodule.ModuleFullName {
+func (p *wellKnownTypeImageFileInfo) FullName() bufparse.FullName {
 	return nil
 }
 

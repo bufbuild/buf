@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -65,8 +66,8 @@ type BufLockFile interface {
 
 	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
 	//
-	// All ModuleKeys will have unique ModuleFullNames.
-	// ModuleKeys are sorted by ModuleFullName.
+	// All ModuleKeys will have unique FullNames.
+	// ModuleKeys are sorted by FullName.
 	//
 	// Files with FileVersionV1Beta1 or FileVersionV1 will only have ModuleKeys with Digests of DigestTypeB4,
 	// while Files with FileVersionV2 will only have ModuleKeys with Digests of DigestTypeB5.
@@ -190,7 +191,7 @@ func newBufLockFile(
 	objectData ObjectData,
 	depModuleKeys []bufmodule.ModuleKey,
 ) (*bufLockFile, error) {
-	if err := validateNoDuplicateModuleKeysByModuleFullName(depModuleKeys); err != nil {
+	if err := validateNoDuplicateModuleKeysByFullName(depModuleKeys); err != nil {
 		return nil, err
 	}
 	switch fileVersion {
@@ -210,7 +211,7 @@ func newBufLockFile(
 	sort.Slice(
 		depModuleKeys,
 		func(i int, j int) bool {
-			return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
+			return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
 		},
 	)
 	bufLockFile := &bufLockFile{
@@ -278,7 +279,7 @@ func readBufLockFile(
 			if dep.Repository == "" {
 				return nil, errors.New("repository missing")
 			}
-			moduleFullName, err := bufmodule.NewModuleFullName(
+			moduleFullName, err := bufparse.NewFullName(
 				dep.Remote,
 				dep.Owner,
 				dep.Repository,
@@ -326,7 +327,7 @@ func readBufLockFile(
 			if dep.Name == "" {
 				return nil, errors.New("no module name specified")
 			}
-			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
+			moduleFullName, err := bufparse.ParseFullName(dep.Name)
 			if err != nil {
 				return nil, fmt.Errorf("invalid module name: %w", err)
 			}
@@ -383,14 +384,14 @@ func writeBufLockFile(
 				return err
 			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV1Beta1V1{
-				Remote:     depModuleKey.ModuleFullName().Registry(),
-				Owner:      depModuleKey.ModuleFullName().Owner(),
-				Repository: depModuleKey.ModuleFullName().Name(),
+				Remote:     depModuleKey.FullName().Registry(),
+				Owner:      depModuleKey.FullName().Owner(),
+				Repository: depModuleKey.FullName().Name(),
 				Commit:     uuidutil.ToDashless(depModuleKey.CommitID()),
 				Digest:     digest.String(),
 			}
 		}
-		// No need to sort - depModuleKeys is already sorted by ModuleFullName
+		// No need to sort - depModuleKeys is already sorted by FullName
 		data, err := encoding.MarshalYAML(&externalBufLockFile)
 		if err != nil {
 			return err
@@ -409,12 +410,12 @@ func writeBufLockFile(
 				return err
 			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV2{
-				Name:   depModuleKey.ModuleFullName().String(),
+				Name:   depModuleKey.FullName().String(),
 				Commit: uuidutil.ToDashless(depModuleKey.CommitID()),
 				Digest: digest.String(),
 			}
 		}
-		// No need to sort - depModuleKeys is already sorted by ModuleFullName
+		// No need to sort - depModuleKeys is already sorted by FullName
 		data, err := encoding.MarshalYAML(&externalBufLockFile)
 		if err != nil {
 			return err
@@ -441,10 +442,10 @@ func getDeprecatedDigestTypeForExternalDigest(externalDigest string) string {
 	return ""
 }
 
-func validateNoDuplicateModuleKeysByModuleFullName(moduleKeys []bufmodule.ModuleKey) error {
+func validateNoDuplicateModuleKeysByFullName(moduleKeys []bufmodule.ModuleKey) error {
 	moduleFullNameStringMap := make(map[string]struct{})
 	for _, moduleKey := range moduleKeys {
-		moduleFullNameString := moduleKey.ModuleFullName().String()
+		moduleFullNameString := moduleKey.FullName().String()
 		if _, ok := moduleFullNameStringMap[moduleFullNameString]; ok {
 			return fmt.Errorf("duplicate module %q attempted to be added to lock file", moduleFullNameString)
 		}
@@ -462,7 +463,7 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 				return syserror.Newf(
 					"%s lock files require commits, however we did not have a commit for module %q",
 					fileVersion.String(),
-					depModuleKey.ModuleFullName().String(),
+					depModuleKey.FullName().String(),
 				)
 			}
 		}

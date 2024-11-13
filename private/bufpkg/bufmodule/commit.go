@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Commit represents a Commit on the BSR.
+// Commit represents a Commit for a Module on the BSR.
 type Commit interface {
 	// ModuleKey returns the ModuleKey for the Commit.
 	ModuleKey() ModuleKey
@@ -80,7 +80,7 @@ func newCommit(
 		// and call that, but we make a variable to reference the original ModuleKey just for constency.
 		originalModuleKey := moduleKey
 		moduleKey = newModuleKeyNoValidate(
-			originalModuleKey.ModuleFullName(),
+			originalModuleKey.FullName(),
 			originalModuleKey.CommitID(),
 			func() (Digest, error) {
 				moduleKeyDigest, err := originalModuleKey.Digest()
@@ -89,7 +89,7 @@ func newCommit(
 				}
 				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
 					return nil, &DigestMismatchError{
-						ModuleFullName: originalModuleKey.ModuleFullName(),
+						FullName:       originalModuleKey.FullName(),
 						CommitID:       originalModuleKey.CommitID(),
 						ExpectedDigest: commitOptions.expectedDigest,
 						ActualDigest:   moduleKeyDigest,

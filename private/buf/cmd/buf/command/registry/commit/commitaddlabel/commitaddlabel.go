@@ -22,7 +22,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -84,7 +84,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
+	moduleRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -108,14 +108,14 @@ func run(
 		return err
 	}
 	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleRef.ModuleFullName().Registry())
+	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleRef.FullName().Registry())
 	requestValues := slicesext.Map(labels, func(label string) *modulev1.CreateOrUpdateLabelsRequest_Value {
 		return &modulev1.CreateOrUpdateLabelsRequest_Value{
 			LabelRef: &modulev1.LabelRef{
 				Value: &modulev1.LabelRef_Name_{
 					Name: &modulev1.LabelRef_Name{
-						Owner:  moduleRef.ModuleFullName().Owner(),
-						Module: moduleRef.ModuleFullName().Name(),
+						Owner:  moduleRef.FullName().Owner(),
+						Module: moduleRef.FullName().Name(),
 						Label:  label,
 					},
 				},
@@ -138,7 +138,7 @@ func run(
 	}
 	if format == bufprint.FormatText {
 		for _, label := range resp.Msg.Labels {
-			fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.ModuleFullName(), label.Name)
+			fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.FullName(), label.Name)
 		}
 		return nil
 	}
@@ -146,7 +146,7 @@ func run(
 		container.Stdout(),
 		format,
 		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
-			return bufprint.NewLabelEntity(label, moduleRef.ModuleFullName())
+			return bufprint.NewLabelEntity(label, moduleRef.FullName())
 		})...,
 	)
 }

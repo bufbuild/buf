@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -223,7 +224,7 @@ func NewGitRef(
 // ModuleRef is a module reference.
 type ModuleRef interface {
 	Ref
-	ModuleRef() bufmodule.ModuleRef
+	ModuleRef() bufparse.Ref
 	moduleRef()
 }
 
@@ -375,7 +376,7 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleRef bufmodule.ModuleRef,
+	moduleRef bufparse.Ref,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,

@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
@@ -58,16 +58,16 @@ func NewGenerateManagedConfig(
 //     it means for all files/fields the specified options are not modified.
 //
 // A ManagedDisableRule is guaranteed to specify at least one of the two aspects.
-// i.e. At least one of Path, ModuleFullName, FieldName, FileOption and
+// i.e. At least one of Path, FullName, FieldName, FileOption and
 // FieldOption is not empty. A rule can disable all options for certain files/fields,
 // disable certains options for all files/fields, or disable certain options for
 // certain files/fields. To disable all options for all files/fields, turn off managed mode.
 type ManagedDisableRule interface {
 	// Path returns the file path, relative to its module, to disable managed mode for.
 	Path() string
-	// ModuleFullName returns the full name string of the module to disable
+	// FullName returns the full name string of the module to disable
 	// managed mode for.
-	ModuleFullName() string
+	FullName() string
 	// FieldName returns the fully qualified name for the field to disable managed
 	// mode for. This is guaranteed to be empty if FileOption is not empty.
 	FieldName() string
@@ -101,16 +101,16 @@ func NewManagedDisableRule(
 //
 //   - The options to modify. Exactly one of FileOption and FieldOption is not empty.
 //   - The value to modify these options with.
-//   - The files/fields for which the options are modified. If all of Path, ModuleFullName
+//   - The files/fields for which the options are modified. If all of Path, FullName
 //   - or FieldName are empty, all files/fields are modified. Otherwise, only
-//     file/fields that match the specified Path, ModuleFullName and FieldName
+//     file/fields that match the specified Path, FullName and FieldName
 //     is modified.
 type ManagedOverrideRule interface {
 	// Path is the file path, relative to its module, to disable managed mode for.
 	Path() string
-	// ModuleFullName is the full name string of the module to disable
+	// FullName is the full name string of the module to disable
 	// managed mode for.
-	ModuleFullName() string
+	FullName() string
 	// FieldName is the fully qualified name for the field to disable managed
 	// mode for. This is guaranteed to be empty is FileOption is not empty.
 	FieldName() string
@@ -531,7 +531,7 @@ func newManagedDisableRule(
 		}
 	}
 	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+		if _, err := bufparse.ParseFullName(moduleFullName); err != nil {
 			return nil, err
 		}
 	}
@@ -548,7 +548,7 @@ func (m *managedDisableRule) Path() string {
 	return m.path
 }
 
-func (m *managedDisableRule) ModuleFullName() string {
+func (m *managedDisableRule) FullName() string {
 	return m.moduleFullName
 }
 
@@ -594,7 +594,7 @@ func newFileOptionManagedOverrideRule(
 		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fileOption, err)
 	}
 	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+		if _, err := bufparse.ParseFullName(moduleFullName); err != nil {
 			return nil, fmt.Errorf("invalid module name for %v override: %w", fileOption, err)
 		}
 	}
@@ -631,7 +631,7 @@ func newFieldOptionManagedOverrideRule(
 		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fieldOption, err)
 	}
 	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+		if _, err := bufparse.ParseFullName(moduleFullName); err != nil {
 			return nil, fmt.Errorf("invalid module name for %v override: %w", fieldOption, err)
 		}
 	}
@@ -653,7 +653,7 @@ func (m *managedOverrideRule) Path() string {
 	return m.path
 }
 
-func (m *managedOverrideRule) ModuleFullName() string {
+func (m *managedOverrideRule) FullName() string {
 	return m.moduleFullName
 }
 
@@ -677,7 +677,7 @@ func (m *managedOverrideRule) isManagedOverrideRule() {}
 
 func disablesAndOverridesFromExceptAndOverrideV1(
 	exceptFileOption FileOption,
-	exceptModuleFullNames []string,
+	exceptFullNames []string,
 	overrideFileOption FileOption,
 	moduleFullNameToOverride map[string]string,
 ) ([]ManagedDisableRule, []ManagedOverrideRule, error) {
@@ -685,18 +685,18 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 		disables  []ManagedDisableRule
 		overrides []ManagedOverrideRule
 	)
-	seenExceptModuleFullNames := make(map[string]struct{}, len(exceptModuleFullNames))
-	for _, exceptModuleFullName := range exceptModuleFullNames {
-		if _, err := bufmodule.ParseModuleFullName(exceptModuleFullName); err != nil {
+	seenExceptFullNames := make(map[string]struct{}, len(exceptFullNames))
+	for _, exceptFullName := range exceptFullNames {
+		if _, err := bufparse.ParseFullName(exceptFullName); err != nil {
 			return nil, nil, err
 		}
-		if _, ok := seenExceptModuleFullNames[exceptModuleFullName]; ok {
-			return nil, nil, fmt.Errorf("%q is defined multiple times in except", exceptModuleFullName)
+		if _, ok := seenExceptFullNames[exceptFullName]; ok {
+			return nil, nil, fmt.Errorf("%q is defined multiple times in except", exceptFullName)
 		}
-		seenExceptModuleFullNames[exceptModuleFullName] = struct{}{}
+		seenExceptFullNames[exceptFullName] = struct{}{}
 		disable, err := newManagedDisableRule(
 			"",
-			exceptModuleFullName,
+			exceptFullName,
 			"",
 			exceptFileOption,
 			FieldOptionUnspecified,
@@ -707,19 +707,19 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 		disables = append(disables, disable)
 	}
 	// Sort by keys for deterministic order.
-	sortedModuleFullNames := slicesext.MapKeysToSortedSlice(moduleFullNameToOverride)
-	for _, overrideModuleFullName := range sortedModuleFullNames {
-		if _, err := bufmodule.ParseModuleFullName(overrideModuleFullName); err != nil {
+	sortedFullNames := slicesext.MapKeysToSortedSlice(moduleFullNameToOverride)
+	for _, overrideFullName := range sortedFullNames {
+		if _, err := bufparse.ParseFullName(overrideFullName); err != nil {
 			return nil, nil, err
 		}
-		if _, ok := seenExceptModuleFullNames[overrideModuleFullName]; ok {
-			return nil, nil, fmt.Errorf("override %q is already defined as an except", overrideModuleFullName)
+		if _, ok := seenExceptFullNames[overrideFullName]; ok {
+			return nil, nil, fmt.Errorf("override %q is already defined as an except", overrideFullName)
 		}
 		override, err := NewManagedOverrideRuleForFileOption(
 			"",
-			overrideModuleFullName,
+			overrideFullName,
 			overrideFileOption,
-			moduleFullNameToOverride[overrideModuleFullName],
+			moduleFullNameToOverride[overrideFullName],
 		)
 		if err != nil {
 			return nil, nil, err
@@ -791,7 +791,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 			externalManagedDisableConfigV2{
 				FileOption:  fileOptionName,
 				FieldOption: fieldOptionName,
-				Module:      disable.ModuleFullName(),
+				Module:      disable.FullName(),
 				Path:        disable.Path(),
 				Field:       disable.FieldName(),
 			},
@@ -816,7 +816,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 			externalManagedOverrideConfigV2{
 				FileOption:  fileOptionName,
 				FieldOption: fieldOptionName,
-				Module:      override.ModuleFullName(),
+				Module:      override.FullName(),
 				Path:        override.Path(),
 				Field:       override.FieldName(),
 				Value:       value,

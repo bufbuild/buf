@@ -18,6 +18,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -55,7 +56,7 @@ type Module interface {
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
 	// Modules commonly built from a ModuleSetBuilder.
 	//
-	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
+	// If two Modules have the same FullName, they will have the same OpaqueID.
 	OpaqueID() string
 	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
 	// with via ModuleSetProvider.
@@ -71,14 +72,14 @@ type Module interface {
 	//
 	// May be empty if a Module was not constructed with a Bucket via a ModuleSetProvider.
 	BucketID() string
-	// ModuleFullName returns the full name of the Module.
+	// FullName returns the full name of the Module.
 	//
 	// May be nil. Callers should not rely on this value being present.
 	// However, this is always present for remote Modules.
 	//
-	// At least one of ModuleFullName and BucketID will always be present. Use OpaqueID
+	// At least one of FullName and BucketID will always be present. Use OpaqueID
 	// as an always-present identifier.
-	ModuleFullName() ModuleFullName
+	FullName() bufparse.FullName
 	// CommitID returns the BSR ID of the Commit.
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
@@ -86,7 +87,7 @@ type Module interface {
 	// May be empty, that is CommitID() == uuid.Nil may be true.
 	// Callers should not rely on this value being present.
 	//
-	// If ModuleFullName is nil, this will always be empty.
+	// If FullName is nil, this will always be empty.
 	CommitID() uuid.UUID
 	// Description returns a human-readable description of the Module.
 	//
@@ -121,7 +122,7 @@ type Module interface {
 	// This list is pruned - only Modules that this Module actually depends on (either directly or transitively)
 	// via import statements within its .proto files will be returned.
 	//
-	// Dependencies with the same ModuleFullName will always have the same Commits and Digests.
+	// Dependencies with the same FullName will always have the same Commits and Digests.
 	//
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
@@ -159,7 +160,7 @@ type Module interface {
 	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
 	// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
 	//
-	// Remote Modules will always have ModuleFullNames.
+	// Remote Modules will always have FullNames.
 	IsLocal() bool
 
 	// V1Beta1OrV1BufYAMLObjectData returns the original source buf.yaml associated with this Module, if the
@@ -199,10 +200,10 @@ type Module interface {
 
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
-// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
+// The given Module must have a FullName and CommitID, otherwise this will return error.
 func ModuleToModuleKey(module Module, digestType DigestType) (ModuleKey, error) {
 	return newModuleKey(
-		module.ModuleFullName(),
+		module.FullName(),
 		module.CommitID(),
 		func() (Digest, error) {
 			return module.Digest(digestType)
@@ -233,7 +234,7 @@ type module struct {
 	getBucket                  func() (storage.ReadBucket, error)
 	bucketID                   string
 	description                string
-	moduleFullName             ModuleFullName
+	moduleFullName             bufparse.FullName
 	commitID                   uuid.UUID
 	isTarget                   bool
 	isLocal                    bool
@@ -254,7 +255,7 @@ func newModule(
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	description string,
-	moduleFullName ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	isTarget bool,
 	isLocal bool,
@@ -336,7 +337,7 @@ func newModule(
 func (m *module) OpaqueID() string {
 	// We know that one of bucketID and moduleFullName are present via construction.
 	//
-	// Prefer moduleFullName since modules with the same ModuleFullName should have the same OpaqueID.
+	// Prefer moduleFullName since modules with the same FullName should have the same OpaqueID.
 	if m.moduleFullName != nil {
 		return m.moduleFullName.String()
 	}
@@ -347,7 +348,7 @@ func (m *module) BucketID() string {
 	return m.bucketID
 }
 
-func (m *module) ModuleFullName() ModuleFullName {
+func (m *module) FullName() bufparse.FullName {
 	return m.moduleFullName
 }
 
@@ -465,7 +466,7 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 				}
 				moduleDepFullNames := make(map[string]struct{}, len(moduleDeps))
 				for _, dep := range moduleDeps {
-					fullName := dep.ModuleFullName()
+					fullName := dep.FullName()
 					if fullName == nil {
 						return nil, syserror.Newf("remote module dependencies should have full names")
 					}
@@ -473,7 +474,7 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 				}
 				prunedDepModuleKeys := make([]ModuleKey, 0, len(declaredDepModuleKeys))
 				for _, dep := range declaredDepModuleKeys {
-					if _, ok := moduleDepFullNames[dep.ModuleFullName().String()]; ok {
+					if _, ok := moduleDepFullNames[dep.FullName().String()]; ok {
 						prunedDepModuleKeys = append(prunedDepModuleKeys, dep)
 					}
 				}

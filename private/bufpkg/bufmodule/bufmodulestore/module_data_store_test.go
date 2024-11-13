@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -181,15 +182,15 @@ func testGetModuleKeysAndModuleDatas(t *testing.T, ctx context.Context) ([]bufmo
 		},
 	)
 	require.NoError(t, err)
-	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
+	moduleRefMod1, err := bufparse.NewRef("buf.build", "foo", "mod1", "")
 	require.NoError(t, err)
-	moduleRefMod2, err := bufmodule.NewModuleRef("buf.build", "foo", "mod2", "")
+	moduleRefMod2, err := bufparse.NewRef("buf.build", "foo", "mod2", "")
 	require.NoError(t, err)
-	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
+	moduleRefMod3, err := bufparse.NewRef("buf.build", "foo", "mod3", "")
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{
+		[]bufparse.Ref{
 			moduleRefMod1,
 			// Switching order on purpose.
 			moduleRefMod3,
@@ -234,7 +235,7 @@ func testRequireModuleKeyNamesEqual(t *testing.T, expected []string, actual []bu
 			slicesext.Map(
 				actual,
 				func(value bufmodule.ModuleKey) string {
-					return value.ModuleFullName().String()
+					return value.FullName().String()
 				},
 			),
 		)
@@ -251,7 +252,7 @@ func testRequireModuleDataNamesEqual(t *testing.T, expected []string, actual []b
 			slicesext.Map(
 				actual,
 				func(value bufmodule.ModuleData) string {
-					return value.ModuleKey().ModuleFullName().String()
+					return value.ModuleKey().FullName().String()
 				},
 			),
 		)

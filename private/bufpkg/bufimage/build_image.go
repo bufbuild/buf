@@ -346,7 +346,7 @@ func getImageFilesRec(
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
 	imageFile, err := NewImageFile(
 		fileDescriptorProto,
-		parserAccessorHandler.ModuleFullName(path),
+		parserAccessorHandler.FullName(path),
 		parserAccessorHandler.CommitID(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),

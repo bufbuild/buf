@@ -22,7 +22,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -104,7 +104,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
+	moduleRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -121,7 +121,7 @@ func run(
 		return err
 	}
 	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	moduleFullName := moduleRef.ModuleFullName()
+	moduleFullName := moduleRef.FullName()
 	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleFullName.Registry())
 	order := modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_DESC
 	if flags.Reverse {
@@ -151,7 +151,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleRefNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(moduleRef)
 		}
 		return err
 	}

@@ -75,7 +75,7 @@ func run(
 		if len(moduleConfigs) != 1 {
 			return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
 		}
-		moduleFullName := moduleConfigs[0].ModuleFullName()
+		moduleFullName := moduleConfigs[0].FullName()
 		if moduleFullName == nil {
 			return fmt.Errorf("%s/buf.yaml has no module name", dirPath)
 		}

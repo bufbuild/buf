@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datalegacyfederation"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -28,8 +29,8 @@ import (
 // we have way bigger problems than this hardcoded variable.
 const defaultPublicRegistry = "buf.build"
 
-type hasModuleFullName interface {
-	ModuleFullName() bufmodule.ModuleFullName
+type hasFullName interface {
+	FullName() bufparse.FullName
 }
 
 // getPrimarySecondaryRegistry returns the primary and secondary registry for a call that supports
@@ -45,7 +46,7 @@ type hasModuleFullName interface {
 // beyond a non-public registry depending on buf.build.
 //
 // This is used to support legacy federation.
-func getPrimarySecondaryRegistry[T hasModuleFullName](s []T, publicRegistry string) (string, string, error) {
+func getPrimarySecondaryRegistry[T hasFullName](s []T, publicRegistry string) (string, string, error) {
 	if len(s) == 0 {
 		return "", "", syserror.New("must have at least one value in getPrimarySecondaryRegistry")
 	}
@@ -71,7 +72,7 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T, publicRegistry stri
 	}
 }
 
-func isLegacyFederationAllowed[T hasModuleFullName](s []T, additionalLegacyFederationRegistry string) (bool, error) {
+func isLegacyFederationAllowed[T hasFullName](s []T, additionalLegacyFederationRegistry string) (bool, error) {
 	registries, err := getRegistries(s)
 	if err != nil {
 		return false, err
@@ -93,13 +94,13 @@ func isLegacyFederationAllowed[T hasModuleFullName](s []T, additionalLegacyFeder
 	return false, nil
 }
 
-func getRegistries[T hasModuleFullName](s []T) ([]string, error) {
+func getRegistries[T hasFullName](s []T) ([]string, error) {
 	registryMap, err := slicesext.ToValuesMapError(
 		s,
 		func(e T) (string, error) {
-			moduleFullName := e.ModuleFullName()
+			moduleFullName := e.FullName()
 			if moduleFullName == nil {
-				return "", syserror.Newf("no ModuleFullName for %v", e)
+				return "", syserror.Newf("no FullName for %v", e)
 			}
 			registry := moduleFullName.Registry()
 			if registry == "" {
@@ -123,7 +124,7 @@ func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (stri
 	}
 	var registry string
 	for _, module := range contentModules {
-		moduleFullName := module.ModuleFullName()
+		moduleFullName := module.FullName()
 		if moduleFullName == nil {
 			return "", syserror.Newf("expected module name for %s", module.Description())
 		}

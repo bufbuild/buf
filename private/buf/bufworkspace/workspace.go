@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
@@ -76,14 +77,14 @@ type Workspace interface {
 	//
 	// These come from buf.yaml files.
 	//
-	// The ModuleRefs in this list will be unique by ModuleFullName. If there are two ModuleRefs
-	// in the buf.yaml with the same ModuleFullName but different Refs, an error will be given
+	// The ModuleRefs in this list will be unique by FullName. If there are two ModuleRefs
+	// in the buf.yaml with the same FullName but different Refs, an error will be given
 	// at workspace constructions. For example, with v1 buf.yaml, this is a union of the deps in
 	// the buf.yaml files in the workspace. If different buf.yamls had different refs, an error
 	// will be returned - we have no way to resolve what the user intended.
 	//
 	// Sorted.
-	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
+	ConfiguredDepModuleRefs() []bufparse.Ref
 
 	// IsV2 signifies if this module was created from a v2 buf.yaml.
 	//
@@ -104,7 +105,7 @@ type workspace struct {
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	pluginConfigs            []bufconfig.PluginConfig
-	configuredDepModuleRefs  []bufmodule.ModuleRef
+	configuredDepModuleRefs  []bufparse.Ref
 
 	// If true, the workspace was created from v2 buf.yamls.
 	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls.
@@ -116,7 +117,7 @@ func newWorkspace(
 	opaqueIDToLintConfig map[string]bufconfig.LintConfig,
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
 	pluginConfigs []bufconfig.PluginConfig,
-	configuredDepModuleRefs []bufmodule.ModuleRef,
+	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
 ) *workspace {
 	return &workspace{
@@ -141,7 +142,7 @@ func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
 	return slicesext.Copy(w.pluginConfigs)
 }
 
-func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
+func (w *workspace) ConfiguredDepModuleRefs() []bufparse.Ref {
 	return slicesext.Copy(w.configuredDepModuleRefs)
 }
 

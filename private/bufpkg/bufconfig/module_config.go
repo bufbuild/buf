@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
@@ -68,7 +68,7 @@ func init() {
 // ModuleConfig is configuration for a specific Module.
 //
 // ModuleConfigs do not expose BucketID or OpaqueID, however DirPath is effectively BucketID,
-// and ModuleFullName -> fallback to DirPath effectively is OpaqueID. Given that it is up to
+// and FullName -> fallback to DirPath effectively is OpaqueID. Given that it is up to
 // the user of this package to decide what to do with these fields, we do not name DirPath as
 // BucketID, and we do not expose OpaqueID.
 type ModuleConfig interface {
@@ -80,10 +80,10 @@ type ModuleConfig interface {
 	// to the Workspace constructor to come up with a BucketID (likely the directory name
 	// within buf.work.yaml).
 	DirPath() string
-	// ModuleFullName returns the ModuleFullName for the Module, if available.
+	// FullName returns the FullName for the Module, if available.
 	//
 	// This may be nil.
-	ModuleFullName() bufmodule.ModuleFullName
+	FullName() bufparse.FullName
 	// RootToIncludes contains a map from root to the directories to include for that root.
 	// The keys in RootToIncludes are always the same as those in RooToExcludes.
 	//
@@ -152,7 +152,7 @@ type ModuleConfig interface {
 // NewModuleConfig returns a new ModuleConfig.
 func NewModuleConfig(
 	dirPath string,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	rootToIncludes map[string][]string,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
@@ -172,7 +172,7 @@ func NewModuleConfig(
 
 type moduleConfig struct {
 	dirPath        string
-	moduleFullName bufmodule.ModuleFullName
+	moduleFullName bufparse.FullName
 	rootToIncludes map[string][]string
 	rootToExcludes map[string][]string
 	lintConfig     LintConfig
@@ -182,7 +182,7 @@ type moduleConfig struct {
 // All validations are syserrors as we only ever read ModuleConfigs.
 func newModuleConfig(
 	dirPath string,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	rootToIncludes map[string][]string,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
@@ -252,7 +252,7 @@ func (m *moduleConfig) DirPath() string {
 	return m.dirPath
 }
 
-func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
+func (m *moduleConfig) FullName() bufparse.FullName {
 	return m.moduleFullName
 }
 

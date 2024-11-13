@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -71,7 +71,7 @@ type BufYAMLFile interface {
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
 	//
 	// This will always be non-empty.
-	// All ModuleConfigs will have unique ModuleFullNames, but not necessarily
+	// All ModuleConfigs will have unique FullNames, but not necessarily
 	// unique DirPaths.
 	//
 	// The module configs are sorted by DirPath. If two module configs have the
@@ -108,9 +108,9 @@ type BufYAMLFile interface {
 	//
 	// These come from buf.yaml files.
 	//
-	// The ModuleRefs in this list will be unique by ModuleFullName.
-	// Sorted by ModuleFullName.
-	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
+	// The ModuleRefs in this list will be unique by FullName.
+	// Sorted by FullName.
+	ConfiguredDepModuleRefs() []bufparse.Ref
 	//IncludeDocsLink specifies whether a top-level comment with a link to our public docs
 	// should be included at the top of the buf.yaml file.
 	IncludeDocsLink() bool
@@ -125,7 +125,7 @@ func NewBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
 	pluginConfigs []PluginConfig,
-	configuredDepModuleRefs []bufmodule.ModuleRef,
+	configuredDepModuleRefs []bufparse.Ref,
 	options ...BufYAMLFileOption,
 ) (BufYAMLFile, error) {
 	bufYAMLFileOptions := newBufYAMLFileOptions()
@@ -253,7 +253,7 @@ type bufYAMLFile struct {
 	topLevelLintConfig      LintConfig
 	topLevelBreakingConfig  BreakingConfig
 	pluginConfigs           []PluginConfig
-	configuredDepModuleRefs []bufmodule.ModuleRef
+	configuredDepModuleRefs []bufparse.Ref
 	includeDocsLink         bool
 }
 
@@ -264,7 +264,7 @@ func newBufYAMLFile(
 	topLevelLintConfig LintConfig,
 	topLevelBreakingConfig BreakingConfig,
 	pluginConfigs []PluginConfig,
-	configuredDepModuleRefs []bufmodule.ModuleRef,
+	configuredDepModuleRefs []bufparse.Ref,
 	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
@@ -290,10 +290,10 @@ func newBufYAMLFile(
 		}
 	}
 	// Zero values are not added to duplicates.
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleConfigs); err != nil {
+	if _, err := bufparse.FullNameStringToUniqueValue(moduleConfigs); err != nil {
 		return nil, err
 	}
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(configuredDepModuleRefs); err != nil {
+	if _, err := bufparse.FullNameStringToUniqueValue(configuredDepModuleRefs); err != nil {
 		return nil, err
 	}
 	// Since multiple module configs with the same DirPath are allowed in v2, we need a stable sort
@@ -308,8 +308,8 @@ func newBufYAMLFile(
 	sort.Slice(
 		configuredDepModuleRefs,
 		func(i int, j int) bool {
-			return configuredDepModuleRefs[i].ModuleFullName().String() <
-				configuredDepModuleRefs[j].ModuleFullName().String()
+			return configuredDepModuleRefs[i].FullName().String() <
+				configuredDepModuleRefs[j].FullName().String()
 		},
 	)
 	return &bufYAMLFile{
@@ -352,7 +352,7 @@ func (c *bufYAMLFile) PluginConfigs() []PluginConfig {
 	return c.pluginConfigs
 }
 
-func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
+func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufparse.Ref {
 	return slicesext.Copy(c.configuredDepModuleRefs)
 }
 
@@ -394,9 +394,9 @@ func readBufYAMLFile(
 		if fileVersion == FileVersionV1 && len(externalBufYAMLFile.Build.Roots) > 0 {
 			return nil, fmt.Errorf("build.roots cannot be set on version %v: %v", fileVersion, externalBufYAMLFile.Build.Roots)
 		}
-		var moduleFullName bufmodule.ModuleFullName
+		var moduleFullName bufparse.FullName
 		if externalBufYAMLFile.Name != "" {
-			moduleFullName, err = bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
+			moduleFullName, err = bufparse.ParseFullName(externalBufYAMLFile.Name)
 			if err != nil {
 				return nil, err
 			}
@@ -486,9 +486,9 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, fmt.Errorf("invalid module path: %w", err)
 			}
-			var moduleFullName bufmodule.ModuleFullName
+			var moduleFullName bufparse.FullName
 			if externalModule.Name != "" {
-				moduleFullName, err = bufmodule.ParseModuleFullName(externalModule.Name)
+				moduleFullName, err = bufparse.ParseFullName(externalModule.Name)
 				if err != nil {
 					return nil, err
 				}
@@ -689,11 +689,11 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// Already sorted.
 		externalBufYAMLFile.Deps = slicesext.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
-			func(moduleRef bufmodule.ModuleRef) string {
+			func(moduleRef bufparse.Ref) string {
 				return moduleRef.String()
 			},
 		)
-		if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+		if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
 			externalBufYAMLFile.Name = moduleFullName.String()
 		}
 		rootToExcludes := moduleConfig.RootToExcludes()
@@ -761,7 +761,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// Already sorted.
 		externalBufYAMLFile.Deps = slicesext.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
-			func(moduleRef bufmodule.ModuleRef) string {
+			func(moduleRef bufparse.Ref) string {
 				return moduleRef.String()
 			},
 		)
@@ -791,7 +791,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalModule := externalBufYAMLFileModuleV2{
 				Path: moduleDirPath,
 			}
-			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+			if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
 				externalModule.Name = moduleFullName.String()
 			}
 			rootToIncludes := moduleConfig.RootToIncludes()
@@ -963,10 +963,10 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 
 func getConfiguredDepModuleRefsForExternalDeps(
 	externalDeps []string,
-) ([]bufmodule.ModuleRef, error) {
-	configuredDepModuleRefs := make([]bufmodule.ModuleRef, len(externalDeps))
+) ([]bufparse.Ref, error) {
+	configuredDepModuleRefs := make([]bufparse.Ref, len(externalDeps))
 	for i, externalDep := range externalDeps {
-		moduleRef, err := bufmodule.ParseModuleRef(externalDep)
+		moduleRef, err := bufparse.ParseRef(externalDep)
 		if err != nil {
 			return nil, fmt.Errorf("invalid dep: %w", err)
 		}
