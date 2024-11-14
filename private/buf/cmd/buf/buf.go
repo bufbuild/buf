@@ -35,8 +35,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv2"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
+	betaplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	betapluginpush "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -62,6 +62,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitaddlabel"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitinfo"
@@ -169,6 +170,13 @@ func NewRootCommand(name string) *appcmd.Command {
 					modlslintrules.NewCommand("ls-lint-rules", builder),
 					// Deprecated and hidden.
 					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
+				},
+			},
+			{
+				Use:   "plugin",
+				Short: "Work with plugins",
+				SubCommands: []*appcmd.Command{
+					pluginpush.NewCommand("push", builder),
 				},
 			},
 			{
@@ -282,8 +290,8 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "plugin",
 								Short: "Manage plugins on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
-									pluginpush.NewCommand("push", builder),
-									plugindelete.NewCommand("delete", builder),
+									betapluginpush.NewCommand("push", builder),
+									betaplugindelete.NewCommand("delete", builder),
 								},
 							},
 						},

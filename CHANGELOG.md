@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
+  Only WebAssembly check plugins are supported at this time.
 
 ## [v1.47.2] - 2024-11-14
 
