@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.47.1] - 2024-11-14
 
 - Update the patch version to resolve NPM packaging issues. No command updates or user changes.
@@ -1294,6 +1298,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.47.1...HEAD
 [v1.47.1]: https://github.com/bufbuild/buf/compare/v1.47.0...v1.47.1
 [v1.47.0]: https://github.com/bufbuild/buf/compare/v1.46.0...v1.47.0
 [v1.46.0]: https://github.com/bufbuild/buf/compare/v1.45.0...v1.46.0
