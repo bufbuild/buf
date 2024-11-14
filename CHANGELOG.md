@@ -2,7 +2,7 @@
 
 ## [v1.47.2] - 2024-11-14
 
-- No changes yet.
+- Update the patch version to resolve NPM packaging issues. No command updates or user changes.
 
 ## [v1.47.1] - 2024-11-14
 
