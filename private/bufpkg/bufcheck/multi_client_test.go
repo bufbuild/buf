@@ -24,6 +24,7 @@ import (
 	"buf.build/go/bufplugin/check/checkutil"
 	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -182,7 +183,11 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 
 	client, err := newClient(
 		slogtestext.NewLogger(t),
-		NewRunnerProvider(wasm.UnimplementedRuntime),
+		NewRunnerProvider(
+			wasm.UnimplementedRuntime,
+			bufplugin.NopPluginKeyProvider,
+			bufplugin.NopPluginDataProvider,
+		),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
@@ -275,7 +280,11 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 
 	client, err := newClient(
 		slogtestext.NewLogger(t),
-		NewRunnerProvider(wasm.UnimplementedRuntime),
+		NewRunnerProvider(
+			wasm.UnimplementedRuntime,
+			bufplugin.NopPluginKeyProvider,
+			bufplugin.NopPluginDataProvider,
+		),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(

@@ -115,7 +115,11 @@ func run(
 	}()
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(wasmRuntime),
+		bufcheck.NewRunnerProvider(
+			wasmRuntime,
+			controller.PluginKeyProvider(),
+			controller.PluginDataProvider(),
+		),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
@@ -127,6 +128,8 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
+	PluginKeyProvider() bufplugin.PluginKeyProvider
+	PluginDataProvider() bufplugin.PluginDataProvider
 }
 
 func NewController(
@@ -136,6 +139,8 @@ func NewController(
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
 	wktStore bufwktstore.Store,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
@@ -149,6 +154,8 @@ func NewController(
 		moduleKeyProvider,
 		moduleDataProvider,
 		commitProvider,
+		pluginKeyProvider,
+		pluginDataProvider,
 		wktStore,
 		httpClient,
 		httpauthAuthenticator,
@@ -170,6 +177,8 @@ type controller struct {
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
+	pluginKeyProvider  bufplugin.PluginKeyProvider
+	pluginDataProvider bufplugin.PluginDataProvider
 	wktStore           bufwktstore.Store
 
 	disableSymlinks           bool
@@ -192,6 +201,8 @@ func newController(
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
 	wktStore bufwktstore.Store,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
@@ -204,6 +215,8 @@ func newController(
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
+		pluginKeyProvider:  pluginKeyProvider,
+		pluginDataProvider: pluginDataProvider,
 		wktStore:           wktStore,
 	}
 	for _, option := range options {
@@ -693,6 +706,14 @@ func (c *controller) PutMessage(
 	}
 	_, err = writeCloser.Write(data)
 	return errors.Join(err, writeCloser.Close())
+}
+
+func (c *controller) PluginKeyProvider() bufplugin.PluginKeyProvider {
+	return c.pluginKeyProvider
+}
+
+func (c *controller) PluginDataProvider() bufplugin.PluginDataProvider {
+	return c.pluginDataProvider
 }
 
 func (c *controller) getImage(

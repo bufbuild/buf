@@ -18,10 +18,13 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -39,11 +42,13 @@ type WorkspaceDepManager interface {
 	BufLockFileDigestType() bufmodule.DigestType
 	// ExisingBufLockFileDepModuleKeys returns the ModuleKeys from the buf.lock file.
 	ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error)
+	// ExistingBufLockFileRemotePluginKeys returns the PluginKeys from the buf.lock file.
+	ExistingBufLockFileRemotePluginKeys(ctx context.Context) ([]bufplugin.PluginKey, error)
 	// UpdateBufLockFile updates the lock file that backs the Workspace to contain exactly
-	// the given ModuleKeys.
+	// the given ModuleKeys and PluginKeys.
 	//
 	// If a buf.lock does not exist, one will be created.
-	UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error
+	UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey) error
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -56,6 +61,16 @@ type WorkspaceDepManager interface {
 	//
 	// Sorted.
 	ConfiguredDepModuleRefs(ctx context.Context) ([]bufparse.Ref, error)
+	// ConfiguredRemotePluginRefs returns the configured remote plugins of the Workspace as PluginRefs.
+	//
+	// These come from buf.yaml files.
+	//
+	// The PluginRefs in this list will be unique by FullName. If there are two PluginRefs
+	// in the buf.yaml with the same FullName but different Refs, an error will be given
+	// at workspace constructions.
+	//
+	// Sorted.
+	ConfiguredRemotePluginRefs(ctx context.Context) ([]bufparse.Ref, error)
 
 	isWorkspaceDepManager()
 }
@@ -110,12 +125,56 @@ func (w *workspaceDepManager) ConfiguredDepModuleRefs(ctx context.Context) ([]bu
 		}
 	case bufconfig.FileVersionV2:
 		if !w.isV2 {
-			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v12", w.targetSubDirPath, fileVersion)
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v2", w.targetSubDirPath, fileVersion)
 		}
 	default:
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 	return bufYAMLFile.ConfiguredDepModuleRefs(), nil
+}
+
+func (w *workspaceDepManager) ConfiguredRemotePluginRefs(ctx context.Context) ([]bufparse.Ref, error) {
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	if bufYAMLFile == nil {
+		return nil, nil
+	}
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		if w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v1beta1, v1", w.targetSubDirPath, fileVersion)
+		}
+		// Plugins are not supported in versions less than v2.
+		return nil, nil
+	case bufconfig.FileVersionV2:
+		if !w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v2", w.targetSubDirPath, fileVersion)
+		}
+	default:
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+	}
+	pluginRefs := slicesext.Filter(
+		slicesext.Map(
+			bufYAMLFile.PluginConfigs(),
+			func(value bufconfig.PluginConfig) bufparse.Ref {
+				return value.Ref()
+			},
+		),
+		func(value bufparse.Ref) bool {
+			return value != nil
+		},
+	)
+	sort.Slice(
+		pluginRefs,
+		func(i int, j int) bool {
+			return pluginRefs[i].FullName().String() < pluginRefs[j].FullName().String()
+		},
+	)
+	return pluginRefs, nil
 }
 
 func (w *workspaceDepManager) BufLockFileDigestType() bufmodule.DigestType {
@@ -136,11 +195,22 @@ func (w *workspaceDepManager) ExistingBufLockFileDepModuleKeys(ctx context.Conte
 	return bufLockFile.DepModuleKeys(), nil
 }
 
-func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error {
+func (w *workspaceDepManager) ExistingBufLockFileRemotePluginKeys(ctx context.Context) ([]bufplugin.PluginKey, error) {
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return bufLockFile.RemotePluginKeys(), nil
+}
+
+func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey) error {
 	var bufLockFile bufconfig.BufLockFile
 	var err error
 	if w.isV2 {
-		bufLockFile, err = bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys)
+		bufLockFile, err = bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys, remotePluginKeys)
 		if err != nil {
 			return err
 		}
@@ -154,7 +224,10 @@ func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKe
 		} else {
 			fileVersion = existingBufYAMLFile.FileVersion()
 		}
-		bufLockFile, err = bufconfig.NewBufLockFile(fileVersion, depModuleKeys)
+		if len(remotePluginKeys) > 0 {
+			return syserror.Newf("remote plugins are not supported for v1 buf.yaml files")
+		}
+		bufLockFile, err = bufconfig.NewBufLockFile(fileVersion, depModuleKeys, nil)
 		if err != nil {
 			return err
 		}

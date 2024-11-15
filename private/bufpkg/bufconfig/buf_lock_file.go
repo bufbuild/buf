@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -72,6 +73,14 @@ type BufLockFile interface {
 	// Files with FileVersionV1Beta1 or FileVersionV1 will only have ModuleKeys with Digests of DigestTypeB4,
 	// while Files with FileVersionV2 will only have ModuleKeys with Digests of DigestTypeB5.
 	DepModuleKeys() []bufmodule.ModuleKey
+	// RemotePluginKeys returns the PluginKeys representing the remote plugins as specified in the buf.lock file.
+	//
+	// All PluginKeys will have unique FullNames.
+	// PluginKeys are sorted by FullName.
+	//
+	// Files with FileVersionV1Beta1 or FileVersionV1 will not have PluginKeys.
+	// Only files with FileVersionV2 will have PluginKeys with Digests of DigestTypeP1.
+	RemotePluginKeys() []bufplugin.PluginKey
 
 	isBufLockFile()
 }
@@ -80,8 +89,8 @@ type BufLockFile interface {
 //
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateBufLockFileDigests().
-func NewBufLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (BufLockFile, error) {
-	return newBufLockFile(fileVersion, nil, depModuleKeys)
+func NewBufLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey, pluginKeys []bufplugin.PluginKey) (BufLockFile, error) {
+	return newBufLockFile(fileVersion, nil, depModuleKeys, pluginKeys)
 }
 
 // GetBufLockFileForPrefix gets the buf.lock file at the given bucket prefix.
@@ -181,15 +190,17 @@ func BufLockFileWithDigestResolver(
 // *** PRIVATE ***
 
 type bufLockFile struct {
-	fileVersion   FileVersion
-	objectData    ObjectData
-	depModuleKeys []bufmodule.ModuleKey
+	fileVersion      FileVersion
+	objectData       ObjectData
+	depModuleKeys    []bufmodule.ModuleKey
+	remotePluginKeys []bufplugin.PluginKey
 }
 
 func newBufLockFile(
 	fileVersion FileVersion,
 	objectData ObjectData,
 	depModuleKeys []bufmodule.ModuleKey,
+	remotePluginKeys []bufplugin.PluginKey,
 ) (*bufLockFile, error) {
 	if err := validateNoDuplicateModuleKeysByFullName(depModuleKeys); err != nil {
 		return nil, err
@@ -214,10 +225,18 @@ func newBufLockFile(
 			return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
 		},
 	)
+	remotePluginKeys = slicesext.Copy(remotePluginKeys)
+	sort.Slice(
+		remotePluginKeys,
+		func(i int, j int) bool {
+			return remotePluginKeys[i].FullName().String() < remotePluginKeys[j].FullName().String()
+		},
+	)
 	bufLockFile := &bufLockFile{
-		fileVersion:   fileVersion,
-		objectData:    objectData,
-		depModuleKeys: depModuleKeys,
+		fileVersion:      fileVersion,
+		objectData:       objectData,
+		depModuleKeys:    depModuleKeys,
+		remotePluginKeys: remotePluginKeys,
 	}
 	if err := validateV1AndV1Beta1DepsHaveCommits(bufLockFile); err != nil {
 		return nil, err
@@ -239,6 +258,10 @@ func (l *bufLockFile) ObjectData() ObjectData {
 
 func (l *bufLockFile) DepModuleKeys() []bufmodule.ModuleKey {
 	return l.depModuleKeys
+}
+
+func (l *bufLockFile) RemotePluginKeys() []bufplugin.PluginKey {
+	return l.remotePluginKeys
 }
 
 func (*bufLockFile) isBufLockFile() {}
@@ -315,7 +338,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, objectData, depModuleKeys)
+		return newBufLockFile(fileVersion, objectData, depModuleKeys, nil /* remotePluginKeys */)
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
@@ -357,7 +380,39 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, objectData, depModuleKeys)
+		remotePluginKeys := make([]bufplugin.PluginKey, len(externalBufLockFile.Plugins))
+		for i, plugin := range externalBufLockFile.Plugins {
+			plugin := plugin
+			if plugin.Name == "" {
+				return nil, errors.New("no plugin name specified")
+			}
+			pluginFullName, err := bufparse.ParseFullName(plugin.Name)
+			if err != nil {
+				return nil, fmt.Errorf("invalid plugin name: %w", err)
+			}
+			if plugin.Commit == "" {
+				return nil, fmt.Errorf("no commit specified for plugin %s", pluginFullName.String())
+			}
+			if plugin.Digest == "" {
+				return nil, fmt.Errorf("no digest specified for plugin %s", pluginFullName.String())
+			}
+			commitID, err := uuidutil.FromDashless(plugin.Commit)
+			if err != nil {
+				return nil, err
+			}
+			pluginKey, err := bufplugin.NewPluginKey(
+				pluginFullName,
+				commitID,
+				func() (bufplugin.Digest, error) {
+					return bufplugin.ParseDigest(plugin.Digest)
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			remotePluginKeys[i] = pluginKey
+		}
+		return newBufLockFile(fileVersion, objectData, depModuleKeys, remotePluginKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
@@ -400,9 +455,11 @@ func writeBufLockFile(
 		return err
 	case FileVersionV2:
 		depModuleKeys := bufLockFile.DepModuleKeys()
+		remotePluginKeys := bufLockFile.RemotePluginKeys()
 		externalBufLockFile := externalBufLockFileV2{
 			Version: fileVersion.String(),
 			Deps:    make([]externalBufLockFileDepV2, len(depModuleKeys)),
+			Plugins: make([]externalBufLockFileDepV2, len(remotePluginKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
 			digest, err := depModuleKey.Digest()
@@ -412,6 +469,17 @@ func writeBufLockFile(
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV2{
 				Name:   depModuleKey.FullName().String(),
 				Commit: uuidutil.ToDashless(depModuleKey.CommitID()),
+				Digest: digest.String(),
+			}
+		}
+		for i, remotePluginKey := range remotePluginKeys {
+			digest, err := remotePluginKey.Digest()
+			if err != nil {
+				return err
+			}
+			externalBufLockFile.Plugins[i] = externalBufLockFileDepV2{
+				Name:   remotePluginKey.FullName().String(),
+				Commit: uuidutil.ToDashless(remotePluginKey.CommitID()),
 				Digest: digest.String(),
 			}
 		}
@@ -524,6 +592,7 @@ type externalBufLockFileDepV1Beta1V1 struct {
 type externalBufLockFileV2 struct {
 	Version string                     `json:"version,omitempty" yaml:"version,omitempty"`
 	Deps    []externalBufLockFileDepV2 `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Plugins []externalBufLockFileDepV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 // externalBufLockFileDepV2 represents a single dep within a v2 buf.lock file.

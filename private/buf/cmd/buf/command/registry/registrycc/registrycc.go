@@ -65,7 +65,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	for _, cacheModuleRelDirPath := range bufcli.AllCacheModuleRelDirPaths {
+	for _, cacheModuleRelDirPath := range bufcli.AllCacheRelDirPaths {
 		dirPath := filepath.Join(container.CacheDirPath(), normalpath.Unnormalize(cacheModuleRelDirPath))
 		fileInfo, err := os.Stat(dirPath)
 		if err != nil {

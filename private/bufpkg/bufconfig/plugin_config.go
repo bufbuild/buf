@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -29,6 +30,8 @@ const (
 	PluginConfigTypeLocal PluginConfigType = iota + 1
 	// PluginConfigTypeLocalWasm is the local Wasm plugin config type.
 	PluginConfigTypeLocalWasm
+	// PluginConfigTypeRemote is the remote plugin config type.
+	PluginConfigTypeRemote
 )
 
 // PluginConfigType is a generate plugin configuration type.
@@ -49,6 +52,10 @@ type PluginConfig interface {
 	//
 	// This is not empty only when the plugin is local.
 	Path() []string
+	// Ref returns the plugin reference.
+	//
+	// This is only non-nil when the plugin is remote.
+	Ref() bufparse.Ref
 
 	isPluginConfig()
 }
@@ -90,6 +97,7 @@ type pluginConfig struct {
 	name             string
 	options          map[string]any
 	path             []string
+	ref              bufparse.Ref
 }
 
 func newPluginConfigForExternalV2(
@@ -106,14 +114,20 @@ func newPluginConfigForExternalV2(
 		}
 		options[key] = value
 	}
-	// TODO: differentiate between local and remote in the future
-	// Use the same heuristic that we do for dir vs module in buffetch
+	// Plugins are specified as a path, remote reference, or Wasm file.
 	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Plugin)
 	if err != nil {
 		return nil, err
 	}
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
+	}
+	// Remote plugins are specified as plugin references.
+	if pluginRef, err := bufparse.ParseRef(path[0]); err == nil {
+		return newRemotePluginConfig(
+			pluginRef,
+			options,
+		)
 	}
 	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
 	if filepath.Ext(path[0]) == ".wasm" {
@@ -165,6 +179,18 @@ func newLocalWasmPluginConfig(
 	}, nil
 }
 
+func newRemotePluginConfig(
+	pluginRef bufparse.Ref,
+	options map[string]any,
+) (*pluginConfig, error) {
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeRemote,
+		name:             pluginRef.FullName().Name(),
+		options:          options,
+		ref:              pluginRef,
+	}, nil
+}
+
 func (p *pluginConfig) Type() PluginConfigType {
 	return p.pluginConfigType
 }
@@ -179,6 +205,10 @@ func (p *pluginConfig) Options() map[string]any {
 
 func (p *pluginConfig) Path() []string {
 	return p.path
+}
+
+func (p *pluginConfig) Ref() bufparse.Ref {
+	return p.ref
 }
 
 func (p *pluginConfig) isPluginConfig() {}
