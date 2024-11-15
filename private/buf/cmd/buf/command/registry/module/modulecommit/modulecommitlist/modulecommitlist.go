@@ -261,7 +261,7 @@ func nextPageCommand(container appext.Container, flags *flags, nextPageToken str
 	if nextPageToken == "" {
 		return ""
 	}
-	command := fmt.Sprintf("buf registry commit list %s", container.Arg(0))
+	command := fmt.Sprintf("buf registry module commit list %s", container.Arg(0))
 	if flags.PageSize != defaultPageSize {
 		command = fmt.Sprintf("%s --%s %d", command, pageSizeFlagName, flags.PageSize)
 	}
