@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
@@ -67,7 +68,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -90,7 +91,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -132,7 +133,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -155,7 +156,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -195,7 +196,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		slicesext.Map(
 			moduleDatas,
 			func(moduleData bufmodule.ModuleData) string {
-				return moduleData.ModuleKey().ModuleFullName().String()
+				return moduleData.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -218,7 +219,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		slicesext.Map(
 			moduleDatas,
 			func(moduleData bufmodule.ModuleData) string {
-				return moduleData.ModuleKey().ModuleFullName().String()
+				return moduleData.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -312,15 +313,15 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 		},
 	)
 	require.NoError(t, err)
-	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
+	moduleRefMod1, err := bufparse.NewRef("buf.build", "foo", "mod1", "")
 	require.NoError(t, err)
-	moduleRefMod2, err := bufmodule.NewModuleRef("buf.build", "foo", "mod2", "")
+	moduleRefMod2, err := bufparse.NewRef("buf.build", "foo", "mod2", "")
 	require.NoError(t, err)
-	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
+	moduleRefMod3, err := bufparse.NewRef("buf.build", "foo", "mod3", "")
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{
+		[]bufparse.Ref{
 			moduleRefMod1,
 			// Switching order on purpose.
 			moduleRefMod3,

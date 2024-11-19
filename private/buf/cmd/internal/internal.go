@@ -58,7 +58,7 @@ func GetModuleConfigForProtocPlugin(
 		//
 		// If we have a v2 buf.yaml, users have to provide a module path or full name, otherwise
 		// we can't deduce what ModuleConfig to use.
-		if fullName := moduleConfig.ModuleFullName(); fullName != nil && fullName.String() == module {
+		if fullName := moduleConfig.FullName(); fullName != nil && fullName.String() == module {
 			// Can return here because BufYAMLFile guarantees that module full names are unique across
 			// its module configs.
 			return moduleConfig, nil

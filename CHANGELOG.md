@@ -4,6 +4,26 @@
 
 - No changes yet.
 
+## [v1.47.2] - 2024-11-14
+
+- Update the patch version to resolve NPM packaging issues. No command updates or user changes.
+
+## [v1.47.1] - 2024-11-14
+
+- Update the patch version to resolve NPM packaging issues. No command updates or user changes.
+
+## [v1.47.0] - 2024-11-13
+
+- Move `buf registry commit` to `buf registry module commit`. Command
+  `buf registry commit` is now deprecated.
+- Move `buf registry label` to `buf registry module label`. Command
+  `buf registry label` is now deprecated.
+
+## [v1.46.0] - 2024-10-29
+
+- Add `buf registry whoami` command, which checks if you are logged in to the Buf Schema
+  Registry at a given domain.
+
 ## [v1.45.0] - 2024-10-08
 
 - Update `buf registry module info --format=json` to add `default_label_name`, which provides the name
@@ -1282,7 +1302,11 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.45.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.47.2...HEAD
+[v1.47.2]: https://github.com/bufbuild/buf/compare/v1.47.1...v1.47.2
+[v1.47.1]: https://github.com/bufbuild/buf/compare/v1.47.0...v1.47.1
+[v1.47.0]: https://github.com/bufbuild/buf/compare/v1.46.0...v1.47.0
+[v1.46.0]: https://github.com/bufbuild/buf/compare/v1.45.0...v1.46.0
 [v1.45.0]: https://github.com/bufbuild/buf/compare/v1.44.0...v1.45.0
 [v1.44.0]: https://github.com/bufbuild/buf/compare/v1.43.0...v1.44.0
 [v1.43.0]: https://github.com/bufbuild/buf/compare/v1.42.0...v1.43.0

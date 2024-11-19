@@ -21,7 +21,7 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slogext"
@@ -31,20 +31,17 @@ import (
 
 type binaryHandler struct {
 	logger     *slog.Logger
-	runner     command.Runner
 	pluginPath string
 	pluginArgs []string
 }
 
 func newBinaryHandler(
 	logger *slog.Logger,
-	runner command.Runner,
 	pluginPath string,
 	pluginArgs []string,
 ) *binaryHandler {
 	return &binaryHandler{
 		logger:     logger,
-		runner:     runner,
 		pluginPath: pluginPath,
 		pluginArgs: pluginArgs,
 	}
@@ -64,16 +61,16 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(pluginEnv.Stderr, h.pluginPath)
-	runOptions := []command.RunOption{
-		command.RunWithEnviron(pluginEnv.Environ),
-		command.RunWithStdin(bytes.NewReader(requestData)),
-		command.RunWithStdout(responseBuffer),
-		command.RunWithStderr(stderrWriteCloser),
+	runOptions := []execext.RunOption{
+		execext.WithEnv(pluginEnv.Environ),
+		execext.WithStdin(bytes.NewReader(requestData)),
+		execext.WithStdout(responseBuffer),
+		execext.WithStderr(stderrWriteCloser),
 	}
 	if len(h.pluginArgs) > 0 {
-		runOptions = append(runOptions, command.RunWithArgs(h.pluginArgs...))
+		runOptions = append(runOptions, execext.WithArgs(h.pluginArgs...))
 	}
-	if err := h.runner.Run(
+	if err := execext.Run(
 		ctx,
 		h.pluginPath,
 		runOptions...,

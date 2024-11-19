@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/spf13/pflag"
@@ -124,9 +124,9 @@ func run(
 	}
 
 	fileVersion := bufconfig.FileVersionV2
-	var moduleFullName bufmodule.ModuleFullName
+	var moduleFullName bufparse.FullName
 	if container.NumArgs() > 0 {
-		moduleFullName, err = bufmodule.ParseModuleFullName(container.Arg(0))
+		moduleFullName, err = bufparse.ParseFullName(container.Arg(0))
 		if err != nil {
 			return err
 		}

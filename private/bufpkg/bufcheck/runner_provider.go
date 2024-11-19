@@ -16,7 +16,6 @@ package bufcheck
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -24,14 +23,12 @@ import (
 )
 
 type runnerProvider struct {
-	commandRunner command.Runner
-	wasmRuntime   wasm.Runtime
+	wasmRuntime wasm.Runtime
 }
 
-func newRunnerProvider(commandRunner command.Runner, wasmRuntime wasm.Runtime) *runnerProvider {
+func newRunnerProvider(wasmRuntime wasm.Runtime) *runnerProvider {
 	return &runnerProvider{
-		commandRunner: commandRunner,
-		wasmRuntime:   wasmRuntime,
+		wasmRuntime: wasmRuntime,
 	}
 }
 
@@ -40,7 +37,6 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 	case bufconfig.PluginConfigTypeLocal:
 		path := pluginConfig.Path()
 		return pluginrpcutil.NewRunner(
-			r.commandRunner,
 			// We know that Path is of at least length 1.
 			path[0],
 			path[1:]...,

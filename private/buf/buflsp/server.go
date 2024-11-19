@@ -29,6 +29,10 @@ import (
 )
 
 const (
+	serverName = "buf-lsp"
+)
+
+const (
 	semanticTypeType = iota
 	semanticTypeStruct
 	semanticTypeVariable
@@ -82,7 +86,7 @@ func (s *server) Initialize(
 		return nil, err
 	}
 
-	info := &protocol.ServerInfo{Name: "buf-lsp"}
+	info := &protocol.ServerInfo{Name: serverName}
 	if buildInfo, ok := debug.ReadBuildInfo(); ok {
 		info.Version = buildInfo.Main.Version
 	}
@@ -251,6 +255,18 @@ func (s *server) Formatting(
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
+	// We check the diagnostics on the file, if there are any build errors, we do not want
+	// to format an invalid AST, so we skip formatting and return an error for logging.
+	errorCount := 0
+	for _, diagnostic := range file.diagnostics {
+		if diagnostic.Severity == protocol.DiagnosticSeverityError {
+			errorCount += 1
+		}
+	}
+	if errorCount > 0 {
+		return nil, fmt.Errorf("cannot format file %q, %v error(s) found.", file.uri.Filename(), errorCount)
+	}
+
 	// Currently we have no way to honor any of the parameters.
 	_ = params
 	if file.fileNode == nil {
@@ -262,10 +278,39 @@ func (s *server) Formatting(
 		return nil, err
 	}
 
+	newText := out.String()
+	// Avoid formatting the file if text has not changed.
+	if newText == file.text {
+		return nil, nil
+	}
+
+	// XXX: The current compiler does not expose a span for the full file. Instead of
+	// potentially undershooting the correct span (which can cause comments at the
+	// start and end of the file to be duplicated), we instead manually count up the
+	// number of lines in the file. This is comparatively cheap, compared to sending the
+	// entire file over a domain socket.
+	var lastLine, lastLineStart int
+	for i := 0; i < len(file.text); i++ {
+		// NOTE: we are iterating over bytes, not runes.
+		if file.text[i] == '\n' {
+			lastLine++
+			lastLineStart = i + 1 // Skip the \n.
+		}
+	}
+	lastChar := len(file.text[lastLineStart:]) - 1 // Bytes, not runes!
 	return []protocol.TextEdit{
 		{
-			Range:   infoToRange(file.fileNode.NodeInfo(file.fileNode)),
-			NewText: out.String(),
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      0,
+					Character: 0,
+				},
+				End: protocol.Position{
+					Line:      uint32(lastLine),
+					Character: uint32(lastChar),
+				},
+			},
+			NewText: newText,
 		},
 	}, nil
 }

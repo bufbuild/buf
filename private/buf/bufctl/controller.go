@@ -33,12 +33,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
@@ -48,7 +48,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
-	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -178,7 +177,6 @@ type controller struct {
 	fileAnnotationsToStdout   bool
 	copyToInMemory            bool
 
-	commandRunner               command.Runner
 	storageosProvider           storageos.Provider
 	buffetchRefParser           buffetch.RefParser
 	buffetchReader              buffetch.Reader
@@ -214,7 +212,6 @@ func newController(
 	if err := validateFileAnnotationErrorFormat(controller.fileAnnotationErrorFormat); err != nil {
 		return nil, err
 	}
-	controller.commandRunner = command.NewRunner()
 	controller.storageosProvider = newStorageosProvider(controller.disableSymlinks)
 	controller.buffetchRefParser = buffetch.NewRefParser(logger)
 	controller.buffetchReader = buffetch.NewReader(
@@ -225,7 +222,6 @@ func newController(
 		git.NewCloner(
 			logger,
 			controller.storageosProvider,
-			controller.commandRunner,
 			gitClonerOptions,
 		),
 		moduleKeyProvider,
@@ -566,7 +562,7 @@ func (c *controller) PutImage(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
+		retErr = errors.Join(retErr, writeCloser.Close())
 	}()
 	_, err = writeCloser.Write(data)
 	return err
@@ -696,7 +692,7 @@ func (c *controller) PutMessage(
 		return err
 	}
 	_, err = writeCloser.Write(data)
-	return multierr.Append(err, writeCloser.Close())
+	return errors.Join(err, writeCloser.Close())
 }
 
 func (c *controller) getImage(
@@ -803,7 +799,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readBucketCloser.Close())
+		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithProtoFileTargetPath(
@@ -843,7 +839,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readBucketCloser.Close())
+		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithConfigOverride(
@@ -919,7 +915,7 @@ func (c *controller) getImageForMessageRef(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
+		retErr = errors.Join(retErr, readCloser.Close())
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {
@@ -1090,15 +1086,15 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	if slicesext.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
 		return nil
 	}
-	// Construct a struct map of all the ModuleFullName strings of the configured buf.yaml
+	// Construct a struct map of all the FullName strings of the configured buf.yaml
 	// Module dependencies, and the local Modules. These are considered OK to depend on
 	// for non-imports in the Image.
-	configuredModuleFullNameStrings, err := slicesext.MapError(
+	configuredFullNameStrings, err := slicesext.MapError(
 		workspace.ConfiguredDepModuleRefs(),
-		func(moduleRef bufmodule.ModuleRef) (string, error) {
-			moduleFullName := moduleRef.ModuleFullName()
+		func(moduleRef bufparse.Ref) (string, error) {
+			moduleFullName := moduleRef.FullName()
 			if moduleFullName == nil {
-				return "", syserror.New("ModuleFullName nil on ModuleRef")
+				return "", syserror.New("FullName nil on ModuleRef")
 			}
 			return moduleFullName.String(), nil
 		},
@@ -1106,23 +1102,23 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	if err != nil {
 		return err
 	}
-	configuredModuleFullNameStringMap := slicesext.ToStructMap(configuredModuleFullNameStrings)
+	configuredFullNameStringMap := slicesext.ToStructMap(configuredFullNameStrings)
 	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
-		if moduleFullName := localModule.ModuleFullName(); moduleFullName != nil {
-			configuredModuleFullNameStringMap[moduleFullName.String()] = struct{}{}
+		if moduleFullName := localModule.FullName(); moduleFullName != nil {
+			configuredFullNameStringMap[moduleFullName.String()] = struct{}{}
 		}
 	}
 
-	// Construct a map from Image file path -> ModuleFullName string.
+	// Construct a map from Image file path -> FullName string.
 	//
-	// If a given file in the Image did not have a ModuleFullName, it came from a local unnamed Module
+	// If a given file in the Image did not have a FullName, it came from a local unnamed Module
 	// in the Workspace, and we're safe to ignore it with respect to calculating the undeclared
 	// transitive imports.
-	pathToModuleFullNameString := make(map[string]string)
+	pathToFullNameString := make(map[string]string)
 	for _, imageFile := range image.Files() {
 		// If nil, this came from a local unnamed Module in the Workspace, and we're safe to ignore.
-		if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
-			pathToModuleFullNameString[imageFile.Path()] = moduleFullName.String()
+		if moduleFullName := imageFile.FullName(); moduleFullName != nil {
+			pathToFullNameString[imageFile.Path()] = moduleFullName.String()
 		}
 	}
 
@@ -1132,12 +1128,12 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 			continue
 		}
 		for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
-			moduleFullNameString, ok := pathToModuleFullNameString[importPath]
+			moduleFullNameString, ok := pathToFullNameString[importPath]
 			if !ok {
 				// The import was from a local unnamed Module in the Workspace.
 				continue
 			}
-			if _, ok := configuredModuleFullNameStringMap[moduleFullNameString]; !ok {
+			if _, ok := configuredFullNameStringMap[moduleFullNameString]; !ok {
 				c.logger.Warn(fmt.Sprintf(
 					`File %q imports %q, which is not in your workspace or in the dependencies declared in your buf.yaml, but is found in transitive dependency %q.
 Declare %q in the deps key in your buf.yaml.`,

@@ -21,8 +21,9 @@ import (
 	"sort"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -35,41 +36,41 @@ import (
 // A warning is printed to the logger if a given Module is deprecated.
 func NewModuleDataProvider(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	},
 	graphProvider bufmodule.GraphProvider,
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(logger, clientProvider, graphProvider)
+	return newModuleDataProvider(logger, moduleClientProvider, graphProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleDataProvider struct {
-	logger         *slog.Logger
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	}
 	graphProvider bufmodule.GraphProvider
 }
 
 func newModuleDataProvider(
 	logger *slog.Logger,
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	},
 	graphProvider bufmodule.GraphProvider,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
-		graphProvider:  graphProvider,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
+		graphProvider:        graphProvider,
 	}
 }
 
@@ -84,18 +85,18 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+	if _, err := bufparse.FullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
 
 	// We don't want to persist this across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
 
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().Registry()
+			return moduleKey.FullName().Registry()
 		},
 	)
 	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(moduleKeys))
@@ -168,7 +169,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 			sort.Slice(
 				depModuleKeys,
 				func(i int, j int) bool {
-					return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
+					return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
 				},
 			)
 
@@ -218,7 +219,7 @@ func (a *moduleDataProvider) getCommitIDToUniversalProtoContentForRegistryAndInd
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
 	universalProtoContents, err := getUniversalProtoContentsForRegistryAndCommitIDs(
 		ctx,
-		a.clientProvider,
+		a.moduleClientProvider,
 		registry,
 		commitIDs,
 		digestType,
@@ -276,7 +277,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 		return err
 	}
 	if v1ProtoModule.State == modulev1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.FullName().String()))
 	}
 	return nil
 }

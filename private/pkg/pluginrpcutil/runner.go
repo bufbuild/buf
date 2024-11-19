@@ -20,23 +20,20 @@ import (
 	"os/exec"
 	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"pluginrpc.com/pluginrpc"
 )
 
 type runner struct {
-	delegate    command.Runner
 	programName string
 	programArgs []string
 }
 
 func newRunner(
-	delegate command.Runner,
 	programName string,
 	programArgs ...string,
 ) *runner {
 	return &runner{
-		delegate:    delegate,
 		programName: programName,
 		programArgs: programArgs,
 	}
@@ -47,13 +44,13 @@ func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 	if len(r.programArgs) > 0 {
 		args = append(slices.Clone(r.programArgs), env.Args...)
 	}
-	if err := r.delegate.Run(
+	if err := execext.Run(
 		ctx,
 		r.programName,
-		command.RunWithArgs(args...),
-		command.RunWithStdin(env.Stdin),
-		command.RunWithStdout(env.Stdout),
-		command.RunWithStderr(env.Stderr),
+		execext.WithArgs(args...),
+		execext.WithStdin(env.Stdin),
+		execext.WithStdout(env.Stdout),
+		execext.WithStderr(env.Stderr),
 	); err != nil {
 		execExitError := &exec.ExitError{}
 		if errors.As(err, &execExitError) {

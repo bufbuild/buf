@@ -28,9 +28,9 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -39,7 +39,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 )
 
 const (
@@ -178,7 +177,6 @@ func RunTestSuite(
 	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_loop")
 	overlayDirPath := filepath.Join(storagetestingDirPath, "testdata", "overlay")
 	defaultProvider := storageos.NewProvider()
-	runner := command.NewRunner()
 
 	for _, prefix := range []string{
 		"",
@@ -1042,7 +1040,6 @@ func RunTestSuite(
 
 		diff, err := storage.DiffBytes(
 			context.Background(),
-			runner,
 			readBucketA,
 			readBucketB,
 			storage.DiffWithSuppressTimestamps(),

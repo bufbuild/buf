@@ -16,11 +16,11 @@ package bufcas
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 // FileSet is a pair of a Manifest and its associated BlobSet.
@@ -124,7 +124,7 @@ func PutFileSetToBucket(
 		}
 		blob := fileSet.BlobSet().GetBlob(fileNode.Digest())
 		if _, err := writeObjectCloser.Write(blob.Content()); err != nil {
-			return multierr.Append(err, writeObjectCloser.Close())
+			return errors.Join(err, writeObjectCloser.Close())
 		}
 		if err := writeObjectCloser.Close(); err != nil {
 			return err

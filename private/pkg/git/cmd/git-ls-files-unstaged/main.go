@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 )
 
@@ -31,7 +30,7 @@ func main() {
 }
 
 func run(ctx context.Context, container app.Container) error {
-	files, err := git.NewLister(command.NewRunner()).ListFilesAndUnstagedFiles(
+	files, err := git.NewLister().ListFilesAndUnstagedFiles(
 		ctx,
 		container,
 		git.ListFilesAndUnstagedFilesOptions{},

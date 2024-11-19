@@ -193,7 +193,7 @@ func getExternalModulesForBufWorkYAMLFile(
 				return nil, syserror.Newf("got BufYAMLFile at %q with FileVersion %v with ModuleConfig that had non-root DirPath %q", dirPath, bufYAMLFile.FileVersion(), moduleConfig.DirPath())
 			}
 			var name string
-			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+			if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
 				name = moduleFullName.String()
 			}
 			includes := slicesext.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
@@ -222,7 +222,7 @@ func getExternalModulesForBufYAMLFile(
 	externalModules := make([]*externalModule, len(moduleConfigs))
 	for i, moduleConfig := range moduleConfigs {
 		var name string
-		if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+		if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
 			name = moduleFullName.String()
 		}
 		dirPath := moduleConfig.DirPath()

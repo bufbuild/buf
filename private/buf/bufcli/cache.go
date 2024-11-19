@@ -22,13 +22,13 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -119,7 +119,10 @@ func NewModuleDataProvider(container appext.Container) (bufmodule.ModuleDataProv
 	}
 	return newModuleDataProvider(
 		container,
-		bufapi.NewClientProvider(
+		bufregistryapimodule.NewClientProvider(
+			clientConfig,
+		),
+		bufregistryapiowner.NewClientProvider(
 			clientConfig,
 		),
 	)
@@ -134,7 +137,10 @@ func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, er
 	}
 	return newCommitProvider(
 		container,
-		bufapi.NewClientProvider(
+		bufregistryapimodule.NewClientProvider(
+			clientConfig,
+		),
+		bufregistryapiowner.NewClientProvider(
 			clientConfig,
 		),
 	)
@@ -167,14 +173,14 @@ func NewWKTStore(container appext.Container) (bufwktstore.Store, error) {
 	}
 	return bufwktstore.NewStore(
 		container.Logger(),
-		command.NewRunner(),
 		cacheBucket,
 	), nil
 }
 
 func newModuleDataProvider(
 	container appext.Container,
-	clientProvider bufapi.ClientProvider,
+	moduleClientProvider bufregistryapimodule.ClientProvider,
+	ownerClientProvider bufregistryapiowner.ClientProvider,
 ) (bufmodule.ModuleDataProvider, error) {
 	if err := createCacheDir(container.CacheDirPath(), v3CacheModuleRelDirPath); err != nil {
 		return nil, err
@@ -182,8 +188,8 @@ func newModuleDataProvider(
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheModuleRelDirPath)
 	delegateModuleDataProvider := bufmoduleapi.NewModuleDataProvider(
 		container.Logger(),
-		clientProvider,
-		newGraphProvider(container, clientProvider),
+		moduleClientProvider,
+		newGraphProvider(container, moduleClientProvider, ownerClientProvider),
 	)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
@@ -211,13 +217,14 @@ func newModuleDataProvider(
 
 func newCommitProvider(
 	container appext.Container,
-	clientProvider bufapi.ClientProvider,
+	moduleClientProvider bufregistryapimodule.ClientProvider,
+	ownerClientProvider bufregistryapiowner.ClientProvider,
 ) (bufmodule.CommitProvider, error) {
 	if err := createCacheDir(container.CacheDirPath(), v3CacheCommitsRelDirPath); err != nil {
 		return nil, err
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheCommitsRelDirPath)
-	delegateReader := bufmoduleapi.NewCommitProvider(container.Logger(), clientProvider)
+	delegateReader := bufmoduleapi.NewCommitProvider(container.Logger(), moduleClientProvider, ownerClientProvider)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
 	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)

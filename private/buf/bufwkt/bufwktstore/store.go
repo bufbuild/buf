@@ -19,24 +19,20 @@ import (
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type store struct {
 	logger *slog.Logger
-	runner command.Runner
 	bucket storage.ReadWriteBucket
 }
 
 func newStore(
 	logger *slog.Logger,
-	runner command.Runner,
 	bucket storage.ReadWriteBucket,
 ) *store {
 	return &store{
 		logger: logger,
-		runner: runner,
 		bucket: bucket,
 	}
 }
@@ -53,7 +49,7 @@ func (s *store) GetBucket(ctx context.Context) (storage.ReadBucket, error) {
 			return nil, err
 		}
 	} else {
-		diff, err := storage.DiffBytes(ctx, s.runner, datawkt.ReadBucket, wktBucket)
+		diff, err := storage.DiffBytes(ctx, datawkt.ReadBucket, wktBucket)
 		if err != nil {
 			return nil, err
 		}

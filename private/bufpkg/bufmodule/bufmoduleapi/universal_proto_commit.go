@@ -22,8 +22,9 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -70,15 +71,15 @@ func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit *modulev1beta1.Commit)
 
 func getUniversalProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (*universalProtoCommit, error) {
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []uuid.UUID{commitID}, digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, moduleClientProvider, registry, []uuid.UUID{commitID}, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +89,9 @@ func getUniversalProtoCommitForRegistryAndCommitID(
 
 func getUniversalProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	commitIDs []uuid.UUID,
@@ -99,14 +100,14 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 	switch digestType {
 	case bufmodule.DigestTypeB4:
 		v1beta1ProtoResourceRefs := commitIDsToV1Beta1ProtoResourceRefs(commitIDs)
-		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
+		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
-		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
+		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
@@ -118,25 +119,25 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 
 func getUniversalProtoCommitsForRegistryAndModuleRefs(
 	ctx context.Context,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 	digestType bufmodule.DigestType,
 ) ([]*universalProtoCommit, error) {
 	switch digestType {
 	case bufmodule.DigestTypeB4:
 		v1beta1ProtoResourceRefs := moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs)
-		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
+		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := moduleRefsToV1ProtoResourceRefs(moduleRefs)
-		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
+		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
@@ -148,11 +149,11 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 
 func getV1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufapi.V1CommitServiceClientProvider,
+	moduleClientProvider bufregistryapimodule.V1CommitServiceClientProvider,
 	registry string,
 	v1ProtoResourceRefs []*modulev1.ResourceRef,
 ) ([]*modulev1.Commit, error) {
-	response, err := clientProvider.V1CommitServiceClient(registry).GetCommits(
+	response, err := moduleClientProvider.V1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetCommitsRequest{
@@ -172,7 +173,7 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 
 func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufapi.V1Beta1CommitServiceClientProvider,
+	moduleClientProvider bufregistryapimodule.V1Beta1CommitServiceClientProvider,
 	registry string,
 	v1beta1ProtoResourceRefs []*modulev1beta1.ResourceRef,
 	digestType bufmodule.DigestType,
@@ -181,7 +182,7 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	if err != nil {
 		return nil, err
 	}
-	response, err := clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
+	response, err := moduleClientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{

@@ -21,8 +21,8 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -54,7 +54,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {}
 
 func run(ctx context.Context, container appext.Container, flags *flags) error {
-	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	moduleFullName, err := bufparse.ParseFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -62,8 +62,8 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	if err != nil {
 		return err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	moduleServiceClient := clientProvider.V1ModuleServiceClient(moduleFullName.Registry())
+	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
+	moduleServiceClient := moduleClientProvider.V1ModuleServiceClient(moduleFullName.Registry())
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
 		&connect.Request[modulev1.UpdateModulesRequest]{

@@ -262,7 +262,7 @@ type externalImageFileInfo struct {
 
 func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalImageFileInfo {
 	var module string
-	if moduleFullName := imageFileInfo.ModuleFullName(); moduleFullName != nil {
+	if moduleFullName := imageFileInfo.FullName(); moduleFullName != nil {
 		module = moduleFullName.String()
 	}
 	var commit string

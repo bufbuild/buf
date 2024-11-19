@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -28,18 +27,15 @@ import (
 type generator struct {
 	logger            *slog.Logger
 	storageosProvider storageos.Provider
-	runner            command.Runner
 }
 
 func newGenerator(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 ) *generator {
 	return &generator{
 		logger:            logger,
 		storageosProvider: storageosProvider,
-		runner:            runner,
 	}
 }
 
@@ -61,7 +57,6 @@ func (g *generator) Generate(
 	handler, err := NewHandler(
 		g.logger,
 		g.storageosProvider,
-		g.runner,
 		pluginName,
 		handlerOptions...,
 	)

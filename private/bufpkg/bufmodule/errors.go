@@ -19,6 +19,7 @@ import (
 	"io/fs"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 )
@@ -74,65 +75,6 @@ func (i *ImportNotExistError) Unwrap() error {
 		return nil
 	}
 	return fs.ErrNotExist
-}
-
-// ParseError is an error that occurred during parsing.
-//
-// This is returned by all Parse.* functions in this package.
-type ParseError struct {
-	// typeString is the user-consumable string representing of the type that was attempted to be parsed.
-	//
-	// Users cannot rely on this data being structured.
-	// Examples: "digest", "digest type".
-	typeString string
-	// input is the input string that was attempted to be parsed.
-	input string
-	// err is the underlying error.
-	//
-	// Err may be a *ParseError itself.
-	//
-	// This is an error we may give back to the user, use pretty strings that should
-	// be read.
-	err error
-}
-
-// Error implements the error interface.
-func (p *ParseError) Error() string {
-	if p == nil {
-		return ""
-	}
-	var builder strings.Builder
-	_, _ = builder.WriteString(`could not parse`)
-	if p.typeString != "" {
-		_, _ = builder.WriteString(` `)
-		_, _ = builder.WriteString(p.typeString)
-	}
-	if p.input != "" {
-		_, _ = builder.WriteString(` "`)
-		_, _ = builder.WriteString(p.input)
-		_, _ = builder.WriteString(`"`)
-	}
-	if p.err != nil {
-		_, _ = builder.WriteString(`: `)
-		_, _ = builder.WriteString(p.err.Error())
-	}
-	return builder.String()
-}
-
-// Unwrap returns the underlying error.
-func (p *ParseError) Unwrap() error {
-	if p == nil {
-		return nil
-	}
-	return p.err
-}
-
-// Input returns the input string that was attempted to be parsed.
-func (p *ParseError) Input() string {
-	if p == nil {
-		return ""
-	}
-	return p.input
 }
 
 // ModuleCycleError is the error returned if a cycle is detected in module dependencies.
@@ -222,7 +164,7 @@ func (n *NoProtoFilesError) Error() string {
 // DigestMismatchError is the error returned if the Digest of a downloaded Module or Commit
 // does not match the expected digest in a buf.lock file.
 type DigestMismatchError struct {
-	ModuleFullName ModuleFullName
+	FullName       bufparse.FullName
 	CommitID       uuid.UUID
 	ExpectedDigest Digest
 	ActualDigest   Digest
@@ -235,9 +177,9 @@ func (m *DigestMismatchError) Error() string {
 	}
 	var builder strings.Builder
 	_, _ = builder.WriteString(`*** Digest verification failed`)
-	if m.ModuleFullName != nil {
+	if m.FullName != nil {
 		_, _ = builder.WriteString(` for "`)
-		_, _ = builder.WriteString(m.ModuleFullName.String())
+		_, _ = builder.WriteString(m.FullName.String())
 		if m.CommitID != uuid.Nil {
 			_, _ = builder.WriteString(`:`)
 			_, _ = builder.WriteString(uuidutil.ToDashless(m.CommitID))

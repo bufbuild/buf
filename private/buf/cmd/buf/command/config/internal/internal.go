@@ -26,14 +26,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -194,11 +192,11 @@ func lsRun(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, wasmRuntime.Close(ctx))
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(command.NewRunner(), wasmRuntime),
+		bufcheck.NewRunnerProvider(wasmRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

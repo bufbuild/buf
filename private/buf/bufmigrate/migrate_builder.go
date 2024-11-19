@@ -23,19 +23,17 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 )
 
 type migrateBuilder struct {
 	logger             *slog.Logger
-	runner             command.Runner
 	commitProvider     bufmodule.CommitProvider
 	bucket             storage.ReadBucket
 	destinationDirPath string
@@ -45,7 +43,7 @@ type migrateBuilder struct {
 	addedModuleDirPaths      map[string]struct{}
 
 	moduleConfigs                    []bufconfig.ModuleConfig
-	configuredDepModuleRefs          []bufmodule.ModuleRef
+	configuredDepModuleRefs          []bufparse.Ref
 	hasSeenBufLockFile               bool
 	depModuleKeys                    []bufmodule.ModuleKey
 	pathToMigratedBufGenYAMLFile     map[string]bufconfig.BufGenYAMLFile
@@ -55,14 +53,12 @@ type migrateBuilder struct {
 
 func newMigrateBuilder(
 	logger *slog.Logger,
-	runner command.Runner,
 	commitProvider bufmodule.CommitProvider,
 	bucket storage.ReadBucket,
 	destinationDirPath string,
 ) *migrateBuilder {
 	return &migrateBuilder{
 		logger:                           logger,
-		runner:                           runner,
 		commitProvider:                   commitProvider,
 		bucket:                           bucket,
 		destinationDirPath:               destinationDirPath,
@@ -93,7 +89,7 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
+		retErr = errors.Join(retErr, file.Close())
 	}()
 	bufGenYAML, err := bufconfig.ReadBufGenYAMLFile(file)
 	if err != nil {
@@ -244,7 +240,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAMLFile.ModuleConfigs()))
 		}
 		moduleConfig := bufYAMLFile.ModuleConfigs()[0]
-		moduleFullName := moduleConfig.ModuleFullName()
+		moduleFullName := moduleConfig.FullName()
 		// If a buf.yaml v1beta1 has a non-empty name and multiple roots, the
 		// resulting buf.yaml v2 should have these roots as module directories,
 		// but they should not share the same module name. Instead we just give
@@ -268,11 +264,11 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			if err != nil {
 				return err
 			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, m.runner, moduleConfig.LintConfig())
+			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, m.runner, moduleConfig.BreakingConfig())
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
@@ -304,17 +300,17 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
-		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, m.runner, moduleConfig.LintConfig())
+		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, moduleConfig.LintConfig())
 		if err != nil {
 			return err
 		}
-		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, m.runner, moduleConfig.BreakingConfig())
+		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, moduleConfig.BreakingConfig())
 		if err != nil {
 			return err
 		}
 		moduleConfig, err = bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
-			moduleConfig.ModuleFullName(),
+			moduleConfig.FullName(),
 			// We do not need to handle paths in rootToIncludes, rootToExcludes, lint or breaking config specially,
 			// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
 			moduleConfig.RootToIncludes(),
@@ -387,12 +383,12 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 
 func (m *migrateBuilder) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, parentPath string) error {
 	m.moduleConfigs = append(m.moduleConfigs, moduleConfig)
-	if moduleConfig.ModuleFullName() == nil {
+	if moduleConfig.FullName() == nil {
 		return nil
 	}
-	if file, ok := m.moduleFullNameStringToParentPath[moduleConfig.ModuleFullName().String()]; ok {
-		return fmt.Errorf("module %s is found in both %s and %s", moduleConfig.ModuleFullName(), file, parentPath)
+	if file, ok := m.moduleFullNameStringToParentPath[moduleConfig.FullName().String()]; ok {
+		return fmt.Errorf("module %s is found in both %s and %s", moduleConfig.FullName(), file, parentPath)
 	}
-	m.moduleFullNameStringToParentPath[moduleConfig.ModuleFullName().String()] = parentPath
+	m.moduleFullNameStringToParentPath[moduleConfig.FullName().String()] = parentPath
 	return nil
 }

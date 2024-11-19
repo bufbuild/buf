@@ -15,19 +15,19 @@
 package bandeps
 
 import (
+	"bytes"
 	"context"
 	"log/slog"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 type state struct {
 	logger            *slog.Logger
 	envStdioContainer app.EnvStdioContainer
-	runner            command.Runner
 	violationMap      map[string]Violation
 	// map from ./foo/bar/... to actual packages
 	packageExpressionToPackages     map[string]*packagesResult
@@ -43,12 +43,10 @@ type state struct {
 func newState(
 	logger *slog.Logger,
 	envStdioContainer app.EnvStdioContainer,
-	runner command.Runner,
 ) *state {
 	return &state{
 		logger:                          logger,
 		envStdioContainer:               envStdioContainer,
-		runner:                          runner,
 		violationMap:                    make(map[string]Violation),
 		packageExpressionToPackages:     make(map[string]*packagesResult),
 		packageExpressionToPackagesLock: newKeyRWLock(),
@@ -155,7 +153,7 @@ func (s *state) packagesForPackageExpressionUncached(
 	ctx context.Context,
 	packageExpression string,
 ) (map[string]struct{}, error) {
-	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, packageExpression)
+	data, err := s.runStdout(ctx, `go`, `list`, packageExpression)
 	if err != nil {
 		return nil, err
 	}
@@ -210,11 +208,27 @@ func (s *state) depsForPackageUncached(
 	ctx context.Context,
 	pkg string,
 ) (map[string]struct{}, error) {
-	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
+	data, err := s.runStdout(ctx, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
 	if err != nil {
 		return nil, err
 	}
 	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+}
+
+func (s *state) runStdout(ctx context.Context, name string, args ...string) ([]byte, error) {
+	buffer := bytes.NewBuffer(nil)
+	if err := execext.Run(
+		ctx,
+		name,
+		execext.WithArgs(args...),
+		execext.WithEnv(app.Environ(s.envStdioContainer)),
+		execext.WithStdin(s.envStdioContainer.Stdin()),
+		execext.WithStdout(buffer),
+		execext.WithStderr(s.envStdioContainer.Stderr()),
+	); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
 
 type packagesResult struct {

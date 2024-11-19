@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -88,7 +87,6 @@ type Generator interface {
 func NewGenerator(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	// Pass a clientConfig instead of a CodeGenerationServiceClient because the
 	// plugins' remotes/registries is not known at this time, and remotes/registries
 	// may be different for different plugins.
@@ -97,7 +95,6 @@ func NewGenerator(
 	return newGenerator(
 		logger,
 		storageosProvider,
-		runner,
 		clientConfig,
 	)
 }

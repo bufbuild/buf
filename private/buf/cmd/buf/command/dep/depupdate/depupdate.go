@@ -16,6 +16,7 @@ package depupdate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -148,7 +148,7 @@ func run(
 	// overlay the new buf.lock file in a union bucket.
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys))
+			retErr = errors.Join(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys))
 		}
 	}()
 	// Edit the buf.lock file with the unpruned dependencies.

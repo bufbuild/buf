@@ -41,9 +41,6 @@ message Actor {
 // ResourceType is the type of the resource that was affected by the audited
 // event.
 enum ResourceType {
-  reserved 7;
-  reserved "RESOURCE_TYPE_PLUGIN";
-
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
@@ -52,6 +49,8 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_PLUGIN = 7;
+  RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
@@ -88,8 +87,9 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
-  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
-  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_PLUGIN_CREATED = 13;
+  EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
   EVENT_TYPE_USER_CREATED = 15;
@@ -131,9 +131,6 @@ message EventMetadata {
 // what happened, when it happened, who did it, which resource was affected, and
 // more contextual information on the event.
 message Event {
-  reserved 19, 20;
-  reserved "plugin_created", "plugin_deleted";
-
   // Unique id of the audited event.
   string event_id = 1;
   // Type of the audited event. It specifies "what" happened.
@@ -161,6 +158,9 @@ message Event {
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadPluginCreated plugin_created = 19;
+    PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginCommitPushed plugin_commit_pushed = 49;
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
@@ -358,6 +358,37 @@ message PayloadRepositoryDefaultBranchChanged {
   string old_default_branch = 3;
   // new_default_branch is the new default branch of the repository.
   string new_default_branch = 4;
+}
+
+message PayloadPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+}
+
+message PayloadPluginDeleted {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+}
+
+message PayloadPluginCommitPushed {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin.
+  string plugin_name = 4;
+  // p1_digest is the p1 digest of the pushed plugin commit.
+  string p1_digest = 5;
 }
 
 message PayloadUserCreated {}

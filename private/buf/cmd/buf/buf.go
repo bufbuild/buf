@@ -63,18 +63,18 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitaddlabel"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitinfo"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/commit/commitresolve"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelarchive"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelinfo"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labellist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/label/labelunarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitaddlabel"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitresolve"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduledelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduledeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabellist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationcreate"
@@ -85,6 +85,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/whoami"
 	"github.com/bufbuild/buf/private/bufpkg/bufcobra"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -150,20 +151,20 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:        "mod",
-				Short:      `Manage Buf modules. All commands are deprecated and have moved to the "buf config", "buf dep", or "buf registry" subcommands.`,
-				Deprecated: `All commands are deprecated and have moved to the "buf config", "buf dep", or "buf registry" subcommands.`,
+				Short:      `Manage Buf modules, all commands are deprecated and have moved to the "buf config", "buf dep", or "buf registry" subcommands.`,
+				Deprecated: `all commands are deprecated and have moved to the "buf config", "buf dep", or "buf registry" subcommands.`,
 				Hidden:     true,
 				SubCommands: []*appcmd.Command{
 					// Deprecated and hidden.
-					configinit.NewCommand("init", builder, `use "buf config init" instead. However, "buf mod init" will continue to work.`, true, true),
+					configinit.NewCommand("init", builder, deprecatedMessage("buf config init", "buf mod init"), true, true),
 					// Deprecated and hidden.
-					depprune.NewCommand("prune", builder, `use "buf dep prune" instead. However, "buf mod update" will continue to work.`, true),
+					depprune.NewCommand("prune", builder, deprecatedMessage("buf dep prune", "buf mod update"), true),
 					// Deprecated and hidden.
-					depupdate.NewCommand("update", builder, `use "buf dep update" instead. However, "buf mod update" will continue to work.`, true),
+					depupdate.NewCommand("update", builder, deprecatedMessage("buf dep update", "buf mod update"), true),
 					// Deprecated and hidden.
 					modopen.NewCommand("open", builder),
 					// Deprecated and hidden.
-					registrycc.NewCommand("clear-cache", builder, `use "buf registry cc" instead. However, "buf mod clear-cache" will continue to work.`, true, "cc"),
+					registrycc.NewCommand("clear-cache", builder, deprecatedMessage("buf registry cc", "buf mod clear-cache"), true, "cc"),
 					// Deprecated and hidden.
 					modlslintrules.NewCommand("ls-lint-rules", builder),
 					// Deprecated and hidden.
@@ -176,15 +177,18 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
+					whoami.NewCommand("whoami", builder),
 					registrycc.NewCommand("cc", builder, ``, false),
 					{
-						Use:   "commit",
-						Short: "Manage a repository's commits",
+						Use:        "commit",
+						Short:      `Manage a module's commits, all commands are deprecated and have moved to the "buf registry module commit" subcommands`,
+						Deprecated: `all commands are deprecated and have moved to the "buf registry module commit" subcommands.`,
+						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							commitaddlabel.NewCommand("add-label", builder),
-							commitinfo.NewCommand("info", builder),
-							commitlist.NewCommand("list", builder),
-							commitresolve.NewCommand("resolve", builder),
+							modulecommitaddlabel.NewCommand("add-label", builder, deprecatedMessage("buf registry module commit add-label", "buf registry commit add-label")),
+							modulecommitinfo.NewCommand("info", builder, deprecatedMessage("buf registry module commit info", "buf registry commit info")),
+							modulecommitlist.NewCommand("list", builder, deprecatedMessage("buf registry module commit list", "buf registry commit list")),
+							modulecommitresolve.NewCommand("resolve", builder, deprecatedMessage("buf registry module commit resolve", "buf registry commit resolve")),
 						},
 					},
 					{
@@ -195,13 +199,15 @@ func NewRootCommand(name string) *appcmd.Command {
 						},
 					},
 					{
-						Use:   "label",
-						Short: "Manage a module's labels",
+						Use:        "label",
+						Short:      `Manage a module's labels, all commands are deprecated and have moved to the "buf registry module label" subcommands`,
+						Deprecated: `all commands are deprecated and have moved to the "buf registry module label" subcommands.`,
+						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							labelarchive.NewCommand("archive", builder),
-							labelinfo.NewCommand("info", builder),
-							labellist.NewCommand("list", builder),
-							labelunarchive.NewCommand("unarchive", builder),
+							modulelabelarchive.NewCommand("archive", builder, deprecatedMessage("buf registry module label archive", "buf registry label archive")),
+							modulelabelinfo.NewCommand("info", builder, deprecatedMessage("buf registry module label info", "buf registry label info")),
+							modulelabellist.NewCommand("list", builder, deprecatedMessage("buf registry module label list", "buf registry label list")),
+							modulelabelunarchive.NewCommand("unarchive", builder, deprecatedMessage("buf registry module label unarchive", "buf registry label unarchive")),
 						},
 					},
 					{
@@ -218,6 +224,26 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "module",
 						Short: "Manage BSR modules",
 						SubCommands: []*appcmd.Command{
+							{
+								Use:   "commit",
+								Short: "Manage a module's commits",
+								SubCommands: []*appcmd.Command{
+									modulecommitaddlabel.NewCommand("add-label", builder, ""),
+									modulecommitinfo.NewCommand("info", builder, ""),
+									modulecommitlist.NewCommand("list", builder, ""),
+									modulecommitresolve.NewCommand("resolve", builder, ""),
+								},
+							},
+							{
+								Use:   "label",
+								Short: "Manage a module's labels",
+								SubCommands: []*appcmd.Command{
+									modulelabelarchive.NewCommand("archive", builder, ""),
+									modulelabelinfo.NewCommand("info", builder, ""),
+									modulelabellist.NewCommand("list", builder, ""),
+									modulelabelunarchive.NewCommand("unarchive", builder, ""),
+								},
+							},
 							modulecreate.NewCommand("create", builder),
 							moduleinfo.NewCommand("info", builder),
 							moduledelete.NewCommand("delete", builder),
@@ -455,4 +481,12 @@ func isPossibleNewCLIOldBSRError(connectErr *connect.Error) bool {
 	default:
 		return false
 	}
+}
+
+// deprecatedMessage returns a message indicating that a command is deprecated.
+func deprecatedMessage(newCommand, oldCommand string) string {
+	return fmt.Sprintf(
+		`use "%s" instead. However, "%s" will continue to work.`,
+		newCommand, oldCommand,
+	)
 }

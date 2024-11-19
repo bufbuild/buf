@@ -197,7 +197,6 @@ func (f *file) RefreshSettings(ctx context.Context) {
 		// Check to see if the user setting is a valid Git ref.
 		err := git.IsValidRef(
 			ctx,
-			f.lsp.runner,
 			f.lsp.container,
 			normalpath.Dir(f.uri.Filename()),
 			f.againstGitRef,
@@ -583,7 +582,6 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 		if f.againstGitRef != "" {
 			data, err = git.ReadFileAtRef(
 				ctx,
-				f.lsp.runner,
 				f.lsp.container,
 				fileInfo.LocalPath(),
 				f.againstGitRef,
@@ -644,8 +642,8 @@ func (f *file) RunLints(ctx context.Context) bool {
 		return false
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, f.module.ModuleFullName()))
-	return f.appendLintErrors("buf breaking", f.lsp.checkClient.Lint(
+	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, f.module.FullName()))
+	return f.appendLintErrors("buf lint", f.lsp.checkClient.Lint(
 		ctx,
 		f.workspace.GetLintConfigForOpaqueID(f.module.OpaqueID()),
 		f.image,
@@ -667,7 +665,7 @@ func (f *file) RunBreaking(ctx context.Context) bool {
 		return false
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, f.module.ModuleFullName()))
+	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, f.module.FullName()))
 	return f.appendLintErrors("buf breaking", f.lsp.checkClient.Breaking(
 		ctx,
 		f.workspace.GetBreakingConfigForOpaqueID(f.module.OpaqueID()),

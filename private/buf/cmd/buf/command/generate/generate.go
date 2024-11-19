@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
@@ -69,6 +68,10 @@ func NewCommand(
     # The valid values are v1beta1, v1 and v2.
     # Required.
     version: v2
+    # When clean is set to true, delete the directories, zip files, and/or jar files specified in the
+    # "out" field for all plugins before running code generation. Defaults to false.
+    # Optional.
+    clean: true
     # The plugins to run.
     # Required.
     plugins:
@@ -542,7 +545,6 @@ func run(
 	return bufgen.NewGenerator(
 		logger,
 		storageosProvider,
-		command.NewRunner(),
 		clientConfig,
 	).Generate(
 		ctx,

@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -47,14 +48,14 @@ type WorkspaceDepManager interface {
 	//
 	// These come from buf.yaml files.
 	//
-	// The ModuleRefs in this list will be unique by ModuleFullName. If there are two ModuleRefs
-	// in the buf.yaml with the same ModuleFullName but different Refs, an error will be given
+	// The ModuleRefs in this list will be unique by FullName. If there are two ModuleRefs
+	// in the buf.yaml with the same FullName but different Refs, an error will be given
 	// at workspace constructions. For example, with v1 buf.yaml, this is a union of the deps in
 	// the buf.yaml files in the workspace. If different buf.yamls had different refs, an error
 	// will be returned - we have no way to resolve what the user intended.
 	//
 	// Sorted.
-	ConfiguredDepModuleRefs(ctx context.Context) ([]bufmodule.ModuleRef, error)
+	ConfiguredDepModuleRefs(ctx context.Context) ([]bufparse.Ref, error)
 
 	isWorkspaceDepManager()
 }
@@ -92,7 +93,7 @@ func newWorkspaceDepManager(
 	}
 }
 
-func (w *workspaceDepManager) ConfiguredDepModuleRefs(ctx context.Context) ([]bufmodule.ModuleRef, error) {
+func (w *workspaceDepManager) ConfiguredDepModuleRefs(ctx context.Context) ([]bufparse.Ref, error) {
 	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {

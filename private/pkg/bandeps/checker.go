@@ -20,19 +20,16 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 
 type checker struct {
 	logger *slog.Logger
-	runner command.Runner
 }
 
-func newChecker(logger *slog.Logger, runner command.Runner) *checker {
+func newChecker(logger *slog.Logger) *checker {
 	return &checker{
 		logger: logger,
-		runner: runner,
 	}
 }
 
@@ -41,7 +38,7 @@ func (c *checker) Check(
 	envStdioContainer app.EnvStdioContainer,
 	externalConfig ExternalConfig,
 ) ([]Violation, error) {
-	state := newState(c.logger, envStdioContainer, c.runner)
+	state := newState(c.logger, envStdioContainer)
 	if err := c.populateState(ctx, state, externalConfig); err != nil {
 		return nil, err
 	}

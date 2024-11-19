@@ -44,7 +44,6 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -952,7 +951,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	defer func() {
 		if dataReader != nil {
-			err = multierr.Append(err, dataReader.Close())
+			err = errors.Join(err, dataReader.Close())
 		}
 	}()
 

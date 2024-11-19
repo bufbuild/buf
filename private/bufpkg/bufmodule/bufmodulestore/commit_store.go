@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -189,7 +190,7 @@ func (p *commitStore) getCommitForCommitKey(
 		invalidReason = "mismatched digest type"
 		return nil, err
 	}
-	moduleFullName, err := bufmodule.NewModuleFullName(
+	moduleFullName, err := bufparse.NewFullName(
 		commitKey.Registry(),
 		externalCommit.Owner,
 		externalCommit.Module,
@@ -239,8 +240,8 @@ func (p *commitStore) putCommit(
 	path := getCommitStoreFilePath(commitKey)
 	externalCommit := externalCommit{
 		Version:    externalCommitVersion,
-		Owner:      moduleKey.ModuleFullName().Owner(),
-		Module:     moduleKey.ModuleFullName().Name(),
+		Owner:      moduleKey.FullName().Owner(),
+		Module:     moduleKey.FullName().Name(),
 		CreateTime: createTime,
 		Digest:     digest.String(),
 	}

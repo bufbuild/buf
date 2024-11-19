@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -72,7 +71,6 @@ func testFormatProto3(t *testing.T) {
 func testFormatNoDiff(t *testing.T, path string) {
 	t.Run(path, func(t *testing.T) {
 		ctx := context.Background()
-		runner := command.NewRunner()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
 		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
@@ -102,7 +100,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 						require.NoError(t, err)
 						expectedData, err := io.ReadAll(expectedFile)
 						require.NoError(t, err)
-						fileDiff, err := diff.Diff(ctx, runner, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
+						fileDiff, err := diff.Diff(ctx, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
 						require.NoError(t, err)
 						require.Empty(t, string(fileDiff))
 					})

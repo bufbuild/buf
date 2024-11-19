@@ -16,11 +16,11 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/multierr"
 )
 
 // Copy copies the bucket at from to the bucket at to.
@@ -79,7 +79,7 @@ func CopyReader(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	_, err = io.Copy(writeObjectCloser, reader)
 	return err
@@ -174,7 +174,7 @@ func copyPath(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(err, readObjectCloser.Close())
+		retErr = errors.Join(err, readObjectCloser.Close())
 	}()
 	return copyReadObject(ctx, readObjectCloser, to, toPath, copyExternalAndLocalPaths, atomic)
 }
@@ -196,7 +196,7 @@ func copyReadObject(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	if copyExternalAndLocalPaths {
 		if err := writeObjectCloser.SetExternalPath(readObject.ExternalPath()); err != nil {

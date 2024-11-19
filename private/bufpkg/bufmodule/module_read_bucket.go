@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protocompile/parser/fastscan"
-	"go.uber.org/multierr"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -607,7 +606,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 		return fastscan.Result{}, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObjectCloser.Close())
+		retErr = errors.Join(retErr, readObjectCloser.Close())
 	}()
 	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {

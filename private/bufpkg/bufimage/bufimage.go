@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -47,18 +48,18 @@ import (
 type ImageFileInfo interface {
 	storage.ObjectInfo
 
-	// ModuleFullName returns the full name of the Module that this ImageFile came from,
+	// FullName returns the full name of the Module that this ImageFile came from,
 	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message),
-	// and if the ModuleFullName was known.
+	// and if the FullName was known.
 	//
 	// May be nil. Callers should not rely on this value being present.
-	ModuleFullName() bufmodule.ModuleFullName
+	FullName() bufparse.FullName
 	// CommitID returns the BSR ID of the Commit of the Module that this ImageFile came from.
 	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
 	// if the CommitID was known..
 	//
 	// May be empty, that is CommitID() == uuid.Nil may be true. Callers should not rely on this
-	// value being present. If ModuleFullName is nil, this will always be empty.
+	// value being present. If FullName is nil, this will always be empty.
 	CommitID() uuid.UUID
 	// Imports returns the imports for this ImageFile.
 	Imports() ([]string, error)
@@ -182,7 +183,7 @@ type ImageFile interface {
 // TODO FUTURE: moduleFullName and commitID should be options since they are optional.
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -214,7 +215,7 @@ func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
 	// No need to validate as ImageFile is already validated.
 	return newImageFileNoValidate(
 		imageFile.FileDescriptorProto(),
-		imageFile.ModuleFullName(),
+		imageFile.FullName(),
 		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.LocalPath(),
@@ -231,7 +232,7 @@ type Image interface {
 	// This contains all files, including imports if available.
 	// The returned files are in correct DAG order.
 	//
-	// All files that have the same ModuleFullName will also have the same commit, or no commit.
+	// All files that have the same FullName will also have the same commit, or no commit.
 	// This is enforced at construction time.
 	Files() []ImageFile
 	// GetFile gets the file for the root relative file path.
@@ -337,7 +338,7 @@ func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
 	// The other attributes are already immutable, so we don't need to copy them.
 	return NewImageFile(
 		clonedDescriptor,
-		imageFile.ModuleFullName(),
+		imageFile.FullName(),
 		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.LocalPath(),
@@ -377,7 +378,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		var isImport bool
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
-		var moduleFullName bufmodule.ModuleFullName
+		var moduleFullName bufparse.FullName
 		var commitID uuid.UUID
 		var err error
 		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
@@ -386,7 +387,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 			unusedDependencyIndexes = protoImageFileExtension.GetUnusedDependency()
 			if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
 				if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
-					moduleFullName, err = bufmodule.NewModuleFullName(
+					moduleFullName, err = bufparse.NewFullName(
 						protoModuleName.GetRemote(),
 						protoModuleName.GetOwner(),
 						protoModuleName.GetRepository(),

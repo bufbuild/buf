@@ -81,6 +81,8 @@ type Config struct {
 	// IntegrationGuideURL is an optional attribute used to specify where
 	// the plugin integration guide can be found.
 	IntegrationGuideURL string
+	// Deprecated specifies whether the plugin is deprecated.
+	Deprecated bool
 }
 
 // RegistryConfig is the configuration for the registry of a plugin.
@@ -407,6 +409,7 @@ type ExternalConfig struct {
 	SPDXLicenseID       string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
 	LicenseURL          string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
 	IntegrationGuideURL string                 `json:"integration_guide_url,omitempty" yaml:"integration_guide_url,omitempty"`
+	Deprecated          bool                   `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.

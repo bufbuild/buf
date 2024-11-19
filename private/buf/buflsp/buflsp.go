@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -72,7 +71,6 @@ func Serve(
 		checkClient: checkClient,
 		rootBucket:  bucket,
 		wktBucket:   wktBucket,
-		runner:      command.NewRunner(),
 	}
 	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
@@ -101,7 +99,6 @@ type lsp struct {
 	checkClient bufcheck.Client
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
-	runner      command.Runner
 
 	wktBucket storage.ReadBucket
 

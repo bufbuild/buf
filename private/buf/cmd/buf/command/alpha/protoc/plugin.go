@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -45,7 +44,6 @@ func executePlugin(
 	ctx context.Context,
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,
@@ -54,7 +52,6 @@ func executePlugin(
 	generator := bufprotopluginexec.NewGenerator(
 		logger,
 		storageosProvider,
-		runner,
 	)
 	requests, err := bufimage.ImagesToCodeGeneratorRequests(
 		images,
