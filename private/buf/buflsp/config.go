@@ -28,10 +28,10 @@ const (
 	// - "git". Use a particular Git revision to find the against file.
 	//
 	// - "disk". Use the last-saved value on disk as the against file.
-	ConfigBreakingStrategy = "buf.check.breaking.againstStrategy"
+	ConfigBreakingStrategy = "buf.checks.breaking.againstStrategy"
 	// The Git revision to use for calculating the --against input for a
 	// breaking check when using the "git" strategy.
-	ConfigBreakingGitRef = "buf.check.breaking.againstGitRef"
+	ConfigBreakingGitRef = "buf.checks.breaking.againstGitRef"
 )
 
 const (

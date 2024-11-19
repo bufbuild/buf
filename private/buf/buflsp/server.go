@@ -264,7 +264,7 @@ func (s *server) Formatting(
 		}
 	}
 	if errorCount > 0 {
-		return nil, fmt.Errorf("cannot format file %q, %v error(s) found.", file.uri.Filename(), errorCount)
+		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), errorCount)
 	}
 
 	// Currently we have no way to honor any of the parameters.
