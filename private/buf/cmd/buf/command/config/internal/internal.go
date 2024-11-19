@@ -183,10 +183,6 @@ func lsRun(
 			return err
 		}
 	}
-	controller, err := bufcli.NewController(container)
-	if err != nil {
-		return err
-	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -200,11 +196,7 @@ func lsRun(
 	}()
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(
-			wasmRuntime,
-			controller.PluginKeyProvider(),
-			controller.PluginDataProvider(),
-		),
+		bufcheck.NewRunnerProvider(wasmRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

@@ -128,8 +128,6 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
-	PluginKeyProvider() bufplugin.PluginKeyProvider
-	PluginDataProvider() bufplugin.PluginDataProvider
 }
 
 func NewController(
@@ -706,14 +704,6 @@ func (c *controller) PutMessage(
 	}
 	_, err = writeCloser.Write(data)
 	return errors.Join(err, writeCloser.Close())
-}
-
-func (c *controller) PluginKeyProvider() bufplugin.PluginKeyProvider {
-	return c.pluginKeyProvider
-}
-
-func (c *controller) PluginDataProvider() bufplugin.PluginDataProvider {
-	return c.pluginDataProvider
 }
 
 func (c *controller) getImage(

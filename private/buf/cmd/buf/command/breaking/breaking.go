@@ -220,11 +220,7 @@ func run(
 	for i, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
 			container.Logger(),
-			bufcheck.NewRunnerProvider(
-				wasmRuntime,
-				controller.PluginKeyProvider(),
-				controller.PluginDataProvider(),
-			),
+			bufcheck.NewRunnerProvider(wasmRuntime),
 			bufcheck.ClientWithStderr(container.Stderr()),
 		)
 		if err != nil {
