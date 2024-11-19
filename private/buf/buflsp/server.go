@@ -174,7 +174,7 @@ func (s *server) Exit(ctx context.Context) error {
 	return s.lsp.conn.Close()
 }
 
-// DidChangeConfiguration is sent whenever the
+// DidChangeConfiguration is sent whenever the client changes its config settings.
 func (s *server) DidChangeConfiguration(
 	ctx context.Context,
 	params *protocol.DidChangeConfigurationParams,

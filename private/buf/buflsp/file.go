@@ -45,34 +45,6 @@ import (
 
 const descriptorPath = "google/protobuf/descriptor.proto"
 
-const (
-	// Compare against the configured git branch.
-	againstGit againstStrategy = iota + 1
-	// Against the last saved file on disk (i.e. saved vs unsaved changes).
-	againstDisk
-)
-
-// againstStrategy is a strategy for selecting which version of a file to use as
-// --against for the purposes of breaking lints.
-type againstStrategy int
-
-// againstFromString parses an againstKind from a config setting sent by
-// the client.
-//
-// Returns againstTrunk, false if the value is not recognized.
-func againstFromString(s string) (againstStrategy, bool) {
-	switch s {
-	// These values are the same as those present in the package.json for the
-	// VSCode client.
-	case "git":
-		return againstGit, true
-	case "disk":
-		return againstDisk, true
-	default:
-		return againstGit, false
-	}
-}
-
 // file is a file that has been opened by the client.
 //
 // Mutating a file is thread-safe.
@@ -214,14 +186,15 @@ func (f *file) RefreshSettings(ctx context.Context) {
 		return
 	}
 
-	f.againstStrategy = getSetting(f, settings, ConfigBreakingStrategy, 0, againstFromString)
+	// NOTE: indices here are those from the array in the call to Configuration above.
+	f.againstStrategy = getSetting(f, settings, ConfigBreakingStrategy, 0, parseAgainstStrategy)
 	f.againstGitRef = getSetting(f, settings, ConfigBreakingGitRef, 1, func(s string) (string, bool) { return s, true })
 
 	switch f.againstStrategy {
 	case againstDisk:
 		f.againstGitRef = ""
 	case againstGit:
-		// Check to see if buf.againstGit is a valid ref.
+		// Check to see if the user setting is a valid Git ref.
 		err := git.IsValidRef(
 			ctx,
 			f.lsp.runner,
@@ -312,7 +285,7 @@ func (f *file) Refresh(ctx context.Context) {
 	progress.Report(ctx, "Detecting Buf Module", 3.0/6)
 	f.FindModule(ctx)
 
-	progress.Report(ctx, "Running Lints", 4.0/6)
+	progress.Report(ctx, "Running Checks", 4.0/6)
 	f.BuildImages(ctx)
 	f.RunLints(ctx)
 	f.RunBreaking(ctx)
