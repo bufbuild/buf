@@ -408,6 +408,7 @@ func handleLintFieldNotRequired(
 			field.NameLocation(),
 			nil,
 			`Field named %q should not be required.`,
+			field.Name(),
 		)
 	}
 	return nil
