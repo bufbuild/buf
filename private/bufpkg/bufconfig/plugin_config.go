@@ -17,6 +17,7 @@ package bufconfig
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -124,10 +125,15 @@ func newPluginConfigForExternalV2(
 	}
 	// Remote plugins are specified as plugin references.
 	if pluginRef, err := bufparse.ParseRef(path[0]); err == nil {
-		return newRemotePluginConfig(
-			pluginRef,
-			options,
-		)
+		// Check if the local filepath exists, if it does presume its
+		// not a remote reference. Okay to use os.Stat instead of
+		// os.Lstat.
+		if _, err := os.Stat(path[0]); os.IsNotExist(err) {
+			return newRemotePluginConfig(
+				pluginRef,
+				options,
+			)
+		}
 	}
 	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
 	if filepath.Ext(path[0]) == ".wasm" {
