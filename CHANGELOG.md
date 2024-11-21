@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Breaking analysis support for `buf beta lsp`.
 
 ## [v1.47.2] - 2024-11-14
 
