@@ -672,7 +672,9 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 	case *ast.GroupNode:
 		def := w.newDef(node, node.Name)
 		w.newDef(node, node.Name)
-		w.newTag(node.Tag, def)
+		if node.Tag != nil {
+			w.newTag(node.Tag, def)
+		}
 		// TODO: also do the name of the generated field.
 		for _, decl := range node.Decls {
 			w.Walk(decl, node)
@@ -681,7 +683,9 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 	case *ast.FieldNode:
 		def := w.newDef(node, node.Name)
 		w.newRef(node.FldType)
-		w.newTag(node.Tag, def)
+		if node.Tag != nil {
+			w.newTag(node.Tag, def)
+		}
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
 				w.Walk(option, node)
@@ -692,7 +696,9 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 		def := w.newDef(node, node.Name)
 		w.newRef(node.MapType.KeyType)
 		w.newRef(node.MapType.ValueType)
-		w.newTag(node.Tag, def)
+		if node.Tag != nil {
+			w.newTag(node.Tag, def)
+		}
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
 				w.Walk(option, node)
@@ -717,7 +723,9 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 
 	case *ast.EnumValueNode:
 		def := w.newDef(node, node.Name)
-		w.newTag(node.Number, def)
+		if node.Number != nil {
+			w.newTag(node.Number, def)
+		}
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
 				w.Walk(option, node)
