@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 	"sync/atomic"
 
@@ -40,6 +41,7 @@ import (
 // Returns a context for managing the server.
 func Serve(
 	ctx context.Context,
+	hasWarranty bool,
 	wktBucket storage.ReadBucket,
 	container appext.Container,
 	controller bufctl.Controller,
@@ -65,6 +67,7 @@ func Serve(
 			&connWrapper{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
+		hasWarranty: hasWarranty,
 		logger:      container.Logger(),
 		controller:  controller,
 		checkClient: checkClient,
@@ -81,6 +84,27 @@ func Serve(
 
 // *** PRIVATE ***
 
+// Clients that we are willing to serve without the override flag.
+var knownClients = []string{
+	// VSCode and derivatives use env.appName as the LSP client name. This in
+	// turn is set from nameLong in product.json. See e.g.
+	// https://github.com/microsoft/vscode/blob/e1de2a458dfb770545489daf499131fd328924e7/src/vs/workbench/services/extensions/common/remoteExtensionHost.ts#L216
+
+	// Names from the official VSCode product.
+	"Visual Studio Code",
+	"Visual Studio Code - Insiders",
+
+	// https://github.com/microsoft/vscode/blob/e1de2a458dfb770545489daf499131fd328924e7/product.json#L3
+	"Code - OSS",
+
+	// https://github.com/VSCodium/vscodium/blob/8bcb412ec53f0232e373d9d04b50f804f090ea67/prepare_vscode.sh#L138
+	"VSCodium",
+	"VSCodium - Insiders",
+
+	// https://github.com/neovim/neovim/blob/9a681ad09e2add96d47bf3f39cca8029f3bf09df/runtime/lua/vim/lsp/client.lua#L539
+	"Neovim",
+}
+
 // lsp contains all of the LSP server's state. (I.e., it is the "god class" the protocol requires
 // that we implement).
 //
@@ -89,8 +113,9 @@ func Serve(
 // Its handler methods are not defined in buflsp.go; they are defined in other files, grouped
 // according to the groupings in
 type lsp struct {
-	conn   jsonrpc2.Conn
-	client protocol.Client
+	conn        jsonrpc2.Conn
+	client      protocol.Client
+	hasWarranty bool
 
 	logger      *slog.Logger
 	controller  bufctl.Controller
@@ -117,6 +142,25 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 	if l.initParams.Load() != nil {
 		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
 	}
+
+	if !slices.Contains(knownClients, params.ClientInfo.Name) {
+		if l.hasWarranty {
+			return fmt.Errorf(
+				"the Buf language server does not currently support %s %s; "+
+					"to override this (at risk of misbehavior), pass --break-warranty-seal",
+				params.ClientInfo.Name,
+				params.ClientInfo.Version,
+			)
+		}
+
+		l.logger.Warn(fmt.Sprintf(
+			"the Buf language server does not currently support %s %s; "+
+				"the warranty seal has been broken: misbehavior may not be considered a bug",
+			params.ClientInfo.Name,
+			params.ClientInfo.Version,
+		))
+	}
+
 	l.initParams.Store(params)
 
 	// TODO: set up logging. We need to forward everything from server.logger through to
