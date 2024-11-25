@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modulecommitlist
+package plugincommitlist
 
 import (
 	"context"
 	"fmt"
 
-	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -48,12 +48,12 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/module[:ref]>",
-		Short: "List modules commits",
-		Long: `This command lists commits in a module based on the reference specified.
+		Use:   name + " <remote/owner/plugin[:ref]>",
+		Short: "List plugins commits",
+		Long: `This command lists commits in a plugin based on the reference specified.
 For a commit reference, it lists the commit itself.
 For a label reference, it lists the current and past commits associated with this label.
-If no reference is specified, it lists all commits in this module.
+If no reference is specified, it lists all commits in this plugin.
 `,
 		Args:       appcmd.ExactArgs(1),
 		Deprecated: deprecated,
@@ -106,7 +106,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufparse.ParseRef(container.Arg(0))
+	pluginRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -118,23 +118,24 @@ func run(
 	if err != nil {
 		return err
 	}
-	registry := moduleRef.FullName().Registry()
-	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	commitServiceClient := moduleClientProvider.V1CommitServiceClient(registry)
-	labelServiceClient := moduleClientProvider.V1LabelServiceClient(registry)
-	resourceServiceClient := moduleClientProvider.V1ResourceServiceClient(registry)
+	registry := pluginRef.FullName().Registry()
+	pluginClientProvider := bufregistryapiplugin.NewClientProvider(clientConfig)
+	commitServiceClient := pluginClientProvider.V1Beta1CommitServiceClient(registry)
+	labelServiceClient := pluginClientProvider.V1Beta1LabelServiceClient(registry)
+	resourceServiceClient := pluginClientProvider.V1Beta1ResourceServiceClient(registry)
+
 	resourceResp, err := resourceServiceClient.GetResources(
 		ctx,
 		connect.NewRequest(
-			&modulev1.GetResourcesRequest{
-				ResourceRefs: []*modulev1.ResourceRef{
+			&pluginv1beta1.GetResourcesRequest{
+				ResourceRefs: []*pluginv1beta1.ResourceRef{
 					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.FullName().Owner(),
-								Module: moduleRef.FullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
+						Value: &pluginv1beta1.ResourceRef_Name_{
+							Name: &pluginv1beta1.ResourceRef_Name{
+								Owner:  pluginRef.FullName().Owner(),
+								Plugin: pluginRef.FullName().Name(),
+								Child: &pluginv1beta1.ResourceRef_Name_Ref{
+									Ref: pluginRef.Ref(),
 								},
 							},
 						},
@@ -145,7 +146,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRefNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(pluginRef)
 		}
 		return err
 	}
@@ -161,26 +162,26 @@ func run(
 			format,
 			"",
 			"",
-			[]bufprint.Entity{bufprint.NewModuleCommitEntity(commit, moduleRef.FullName())},
+			[]bufprint.Entity{bufprint.NewPluginCommitEntity(commit, pluginRef.FullName())},
 		)
 	}
-	if resource.GetModule() != nil {
-		// The ref is a module, ListCommits returns all the commits.
-		commitOrder := modulev1.ListCommitsRequest_ORDER_CREATE_TIME_DESC
+	if resource.GetPlugin() != nil {
+		// The ref is a plugin, ListCommits returns all the commits.
+		commitOrder := pluginv1beta1.ListCommitsRequest_ORDER_CREATE_TIME_DESC
 		if flags.Reverse {
-			commitOrder = modulev1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
+			commitOrder = pluginv1beta1.ListCommitsRequest_ORDER_CREATE_TIME_ASC
 		}
 		resp, err := commitServiceClient.ListCommits(
 			ctx,
 			connect.NewRequest(
-				&modulev1.ListCommitsRequest{
+				&pluginv1beta1.ListCommitsRequest{
 					PageSize:  flags.PageSize,
 					PageToken: flags.PageToken,
-					ResourceRef: &modulev1.ResourceRef{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.FullName().Owner(),
-								Module: moduleRef.FullName().Name(),
+					ResourceRef: &pluginv1beta1.ResourceRef{
+						Value: &pluginv1beta1.ResourceRef_Name_{
+							Name: &pluginv1beta1.ResourceRef_Name{
+								Owner:  pluginRef.FullName().Owner(),
+								Plugin: pluginRef.FullName().Name(),
 							},
 						},
 					},
@@ -190,7 +191,7 @@ func run(
 		)
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
-				return bufcli.NewRefNotFoundError(moduleRef)
+				return bufcli.NewRefNotFoundError(pluginRef)
 			}
 			return err
 		}
@@ -199,33 +200,33 @@ func run(
 			format,
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
-			slicesext.Map(resp.Msg.Commits, func(commit *modulev1.Commit) bufprint.Entity {
-				return bufprint.NewModuleCommitEntity(commit, moduleRef.FullName())
+			slicesext.Map(resp.Msg.Commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
+				return bufprint.NewPluginCommitEntity(commit, pluginRef.FullName())
 			}),
 		)
 	}
 	label := resource.GetLabel()
 	if label == nil {
 		// This should be impossible because getLabelOrCommitForRef would've returned an error.
-		return syserror.Newf("%s is neither a commit nor a label", moduleRef.String())
+		return syserror.Newf("%s is neither a commit nor a label", pluginRef.String())
 	}
 	// The ref is a label. Call ListLabelHistory to get all commits.
-	labelHistoryOrder := modulev1.ListLabelHistoryRequest_ORDER_DESC
+	labelHistoryOrder := pluginv1beta1.ListLabelHistoryRequest_ORDER_DESC
 	if flags.Reverse {
-		labelHistoryOrder = modulev1.ListLabelHistoryRequest_ORDER_ASC
+		labelHistoryOrder = pluginv1beta1.ListLabelHistoryRequest_ORDER_ASC
 	}
 	resp, err := labelServiceClient.ListLabelHistory(
 		ctx,
 		connect.NewRequest(
-			&modulev1.ListLabelHistoryRequest{
+			&pluginv1beta1.ListLabelHistoryRequest{
 				PageSize:  flags.PageSize,
 				PageToken: flags.PageToken,
-				LabelRef: &modulev1.LabelRef{
-					Value: &modulev1.LabelRef_Name_{
-						Name: &modulev1.LabelRef_Name{
-							Owner:  moduleRef.FullName().Owner(),
-							Module: moduleRef.FullName().Name(),
-							Label:  moduleRef.Ref(),
+				LabelRef: &pluginv1beta1.LabelRef{
+					Value: &pluginv1beta1.LabelRef_Name_{
+						Name: &pluginv1beta1.LabelRef_Name{
+							Owner:  pluginRef.FullName().Owner(),
+							Plugin: pluginRef.FullName().Name(),
+							Label:  pluginRef.Ref(),
 						},
 					},
 				},
@@ -236,13 +237,13 @@ func run(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// This should be impossible since we just checked that the ref is a label.
-			return bufcli.NewRefNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(pluginRef)
 		}
 		return err
 	}
 	commits := slicesext.Map(
 		resp.Msg.Values,
-		func(value *modulev1.ListLabelHistoryResponse_Value) *modulev1.Commit {
+		func(value *pluginv1beta1.ListLabelHistoryResponse_Value) *pluginv1beta1.Commit {
 			return value.Commit
 		},
 	)
@@ -251,8 +252,8 @@ func run(
 		format,
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
-		slicesext.Map(commits, func(commit *modulev1.Commit) bufprint.Entity {
-			return bufprint.NewModuleCommitEntity(commit, moduleRef.FullName())
+		slicesext.Map(commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
+			return bufprint.NewPluginCommitEntity(commit, pluginRef.FullName())
 		}),
 	)
 }
@@ -261,7 +262,7 @@ func nextPageCommand(container appext.Container, flags *flags, nextPageToken str
 	if nextPageToken == "" {
 		return ""
 	}
-	command := fmt.Sprintf("buf registry module commit list %s", container.Arg(0))
+	command := fmt.Sprintf("buf registry commit list %s", container.Arg(0))
 	if flags.PageSize != defaultPageSize {
 		command = fmt.Sprintf("%s --%s %d", command, pageSizeFlagName, flags.PageSize)
 	}

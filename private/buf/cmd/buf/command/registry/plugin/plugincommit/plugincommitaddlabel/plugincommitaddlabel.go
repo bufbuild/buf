@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modulecommitaddlabel
+package plugincommitaddlabel
 
 import (
 	"context"
 	"fmt"
 
-	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -36,7 +36,7 @@ const (
 	labelsFlagName = "label"
 )
 
-// NewCommand returns a new Command
+// NewCommand returns a new Command.
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
@@ -44,7 +44,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " <remote/owner/module:commit> --label <label>",
+		Use:        name + " <remote/owner/plugin:commit> --label <label>",
 		Short:      "Add labels to a commit",
 		Args:       appcmd.ExactArgs(1),
 		Deprecated: deprecated,
@@ -86,14 +86,14 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufparse.ParseRef(container.Arg(0))
+	pluginRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	if moduleRef.Ref() == "" {
+	if pluginRef.Ref() == "" {
 		return appcmd.NewInvalidArgumentError("commit is required")
 	}
-	commitID := moduleRef.Ref()
+	commitID := pluginRef.Ref()
 	if _, err := uuidutil.FromDashless(commitID); err != nil {
 		return appcmd.NewInvalidArgumentErrorf("invalid commit: %w", err)
 	}
@@ -109,15 +109,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleRef.FullName().Registry())
-	requestValues := slicesext.Map(labels, func(label string) *modulev1.CreateOrUpdateLabelsRequest_Value {
-		return &modulev1.CreateOrUpdateLabelsRequest_Value{
-			LabelRef: &modulev1.LabelRef{
-				Value: &modulev1.LabelRef_Name_{
-					Name: &modulev1.LabelRef_Name{
-						Owner:  moduleRef.FullName().Owner(),
-						Module: moduleRef.FullName().Name(),
+	pluginClientProvider := bufregistryapiplugin.NewClientProvider(clientConfig)
+	labelServiceClient := pluginClientProvider.V1Beta1LabelServiceClient(pluginRef.FullName().Registry())
+	requestValues := slicesext.Map(labels, func(label string) *pluginv1beta1.CreateOrUpdateLabelsRequest_Value {
+		return &pluginv1beta1.CreateOrUpdateLabelsRequest_Value{
+			LabelRef: &pluginv1beta1.LabelRef{
+				Value: &pluginv1beta1.LabelRef_Name_{
+					Name: &pluginv1beta1.LabelRef_Name{
+						Owner:  pluginRef.FullName().Owner(),
+						Plugin: pluginRef.FullName().Name(),
 						Label:  label,
 					},
 				},
@@ -128,27 +128,22 @@ func run(
 	resp, err := labelServiceClient.CreateOrUpdateLabels(
 		ctx,
 		connect.NewRequest(
-			&modulev1.CreateOrUpdateLabelsRequest{
+			&pluginv1beta1.CreateOrUpdateLabelsRequest{
 				Values: requestValues,
 			},
 		),
 	)
 	if err != nil {
-		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or commit not found.
-		// It can also be a misformatted commit ID error.
+		// Not explicitly handling error with connect.CodeNotFound as
+		// it can be Plugin or Commit not found error. May be caused by
+		// a misformatted ID.
 		return err
-	}
-	if format == bufprint.FormatText {
-		for _, label := range resp.Msg.Labels {
-			fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.FullName(), label.Name)
-		}
-		return nil
 	}
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
-			return bufprint.NewModuleLabelEntity(label, moduleRef.FullName())
+		slicesext.Map(resp.Msg.Labels, func(label *pluginv1beta1.Label) bufprint.Entity {
+			return bufprint.NewPluginLabelEntity(label, pluginRef.FullName())
 		})...,
 	)
 }

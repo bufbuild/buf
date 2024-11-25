@@ -199,8 +199,8 @@ func PrintEntity(writer io.Writer, format Format, entity Entity) error {
 	}
 }
 
-// NewLabelEntity returns a new label entity to print.
-func NewLabelEntity(label *modulev1.Label, moduleFullName bufparse.FullName) Entity {
+// NewModuleLabelEntity returns a new label entity to print.
+func NewModuleLabelEntity(label *modulev1.Label, moduleFullName bufparse.FullName) Entity {
 	var archiveTime *time.Time
 	if label.ArchiveTime != nil {
 		timeValue := label.ArchiveTime.AsTime()
@@ -211,16 +211,16 @@ func NewLabelEntity(label *modulev1.Label, moduleFullName bufparse.FullName) Ent
 		Commit:         label.CommitId,
 		CreateTime:     label.CreateTime.AsTime(),
 		ArchiveTime:    archiveTime,
-		moduleFullName: moduleFullName,
+		entityFullName: moduleFullName,
 	}
 }
 
-// NewCommitEntity returns a new commit entity to print.
-func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufparse.FullName) Entity {
+// NewModuleCommitEntity returns a new commit entity to print.
+func NewModuleCommitEntity(commit *modulev1.Commit, moduleFullName bufparse.FullName) Entity {
 	return outputCommit{
 		Commit:         commit.Id,
 		CreateTime:     commit.CreateTime.AsTime(),
-		moduleFullName: moduleFullName,
+		entityFullName: moduleFullName,
 	}
 }
 
@@ -258,6 +258,31 @@ func NewPluginEntity(plugin *pluginv1beta1.Plugin, pluginFullName bufparse.FullN
 		Name:       pluginFullName.Name(),
 		FullName:   pluginFullName.String(),
 		CreateTime: plugin.CreateTime.AsTime(),
+	}
+}
+
+// NewPluginLabelEntity returns a new label entity to print.
+func NewPluginLabelEntity(label *pluginv1beta1.Label, pluginFullName bufparse.FullName) Entity {
+	var archiveTime *time.Time
+	if label.ArchiveTime != nil {
+		timeValue := label.ArchiveTime.AsTime()
+		archiveTime = &timeValue
+	}
+	return outputLabel{
+		Name:           label.Name,
+		Commit:         label.CommitId,
+		CreateTime:     label.CreateTime.AsTime(),
+		ArchiveTime:    archiveTime,
+		entityFullName: pluginFullName,
+	}
+}
+
+// NewPluginCommitEntity returns a new commit entity to print.
+func NewPluginCommitEntity(commit *pluginv1beta1.Commit, moduleFullName bufparse.FullName) Entity {
+	return outputCommit{
+		Commit:         commit.Id,
+		CreateTime:     commit.CreateTime.AsTime(),
+		entityFullName: moduleFullName,
 	}
 }
 
@@ -434,22 +459,22 @@ type outputLabel struct {
 	CreateTime  time.Time  `json:"create_time,omitempty" bufprint:"Create Time"`
 	ArchiveTime *time.Time `json:"archive_time,omitempty" bufprint:"Archive Time,omitempty"`
 
-	moduleFullName bufparse.FullName
+	entityFullName bufparse.FullName
 }
 
 func (l outputLabel) fullName() string {
-	return fmt.Sprintf("%s:%s", l.moduleFullName.String(), l.Name)
+	return fmt.Sprintf("%s:%s", l.entityFullName.String(), l.Name)
 }
 
 type outputCommit struct {
 	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
 
-	moduleFullName bufparse.FullName
+	entityFullName bufparse.FullName
 }
 
 func (c outputCommit) fullName() string {
-	return fmt.Sprintf("%s:%s", c.moduleFullName.String(), c.Commit)
+	return fmt.Sprintf("%s:%s", c.entityFullName.String(), c.Commit)
 }
 
 type outputModule struct {

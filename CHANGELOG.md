@@ -4,6 +4,7 @@
 
 - Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
 - Breaking analysis support for `buf beta lsp`.
+- Add `buf registry plugin commit {add-label,info,list,resolve}` to manage BSR plugin commits.
 
 ## [v1.47.2] - 2024-11-14
 

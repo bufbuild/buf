@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modulelabelinfo
+package plugincommitresolve
 
 import (
 	"context"
 	"fmt"
 
-	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -40,8 +40,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " <remote/owner/module:label>",
-		Short:      "Show label information",
+		Use:        name + " <remote/owner/repository[:ref]>",
+		Short:      "Resolve commit from a reference",
 		Args:       appcmd.ExactArgs(1),
 		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
@@ -75,36 +75,33 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufparse.ParseRef(container.Arg(0))
+	pluginRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
-	}
-	labelName := moduleRef.Ref()
-	if labelName == "" {
-		return appcmd.NewInvalidArgumentError("label is required")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
+
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	moduleFullName := moduleRef.FullName()
-	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleFullName.Registry())
-	resp, err := labelServiceClient.GetLabels(
+	commitServiceClient := bufregistryapiplugin.NewClientProvider(clientConfig).V1Beta1CommitServiceClient(pluginRef.FullName().Registry())
+	resp, err := commitServiceClient.GetCommits(
 		ctx,
 		connect.NewRequest(
-			&modulev1.GetLabelsRequest{
-				LabelRefs: []*modulev1.LabelRef{
+			&pluginv1beta1.GetCommitsRequest{
+				ResourceRefs: []*pluginv1beta1.ResourceRef{
 					{
-						Value: &modulev1.LabelRef_Name_{
-							Name: &modulev1.LabelRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
-								Label:  labelName,
+						Value: &pluginv1beta1.ResourceRef_Name_{
+							Name: &pluginv1beta1.ResourceRef_Name{
+								Owner:  pluginRef.FullName().Owner(),
+								Plugin: pluginRef.FullName().Name(),
+								Child: &pluginv1beta1.ResourceRef_Name_Ref{
+									Ref: pluginRef.Ref(),
+								},
 							},
 						},
 					},
@@ -114,17 +111,18 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewLabelNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(pluginRef)
 		}
 		return err
 	}
-	labels := resp.Msg.Labels
-	if len(labels) != 1 {
-		return syserror.Newf("expect 1 label from response, got %d", len(labels))
+	commits := resp.Msg.Commits
+	if len(commits) != 1 {
+		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
 	}
-	return bufprint.PrintEntity(
+	commit := commits[0]
+	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		bufprint.NewModuleLabelEntity(labels[0], moduleFullName),
+		bufprint.NewPluginCommitEntity(commit, pluginRef.FullName()),
 	)
 }
