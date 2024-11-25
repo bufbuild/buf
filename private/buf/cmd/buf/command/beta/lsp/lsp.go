@@ -37,7 +37,8 @@ import (
 
 const (
 	// pipe is chosen because that's what the vscode LSP client expects.
-	pipeFlagName = "pipe"
+	pipeFlagName              = "pipe"
+	breakWarrantySealFlagName = "break-warranty-seal"
 )
 
 // NewCommand constructs the CLI command for executing the LSP.
@@ -59,6 +60,9 @@ func NewCommand(name string, builder appext.Builder) *appcmd.Command {
 type flags struct {
 	// A file path to a UNIX socket to use for IPC. If empty, stdio is used instead.
 	PipePath string
+
+	// Whether unknown clients are permitted to communicate with the LSP.
+	BreakWarrantySeal bool
 }
 
 // Bind sets up the CLI flags that the LSP needs.
@@ -68,6 +72,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		pipeFlagName,
 		"",
 		"path to a UNIX socket to listen on; uses stdio if not specified",
+	)
+	flagSet.BoolVar(
+		&f.BreakWarrantySeal,
+		breakWarrantySealFlagName,
+		false,
+		"override in-warranty checks; any misbehavior is working-as-intended",
 	)
 }
 
@@ -122,7 +132,7 @@ func run(
 		return err
 	}
 
-	conn, err := buflsp.Serve(ctx, wktBucket, container, controller, checkClient, jsonrpc2.NewStream(transport))
+	conn, err := buflsp.Serve(ctx, !flags.BreakWarrantySeal, wktBucket, container, controller, checkClient, jsonrpc2.NewStream(transport))
 	if err != nil {
 		return err
 	}
