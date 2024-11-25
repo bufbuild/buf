@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
+	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // symbol represents a named symbol inside of a buflsp.file
@@ -96,10 +97,16 @@ type builtin struct {
 	name string
 }
 
+type fieldTag struct {
+	tag ast.IntValueNode
+	def *symbol
+}
+
 func (*definition) isSymbolKind() {}
 func (*reference) isSymbolKind()  {}
 func (*import_) isSymbolKind()    {}
 func (*builtin) isSymbolKind()    {}
+func (*fieldTag) isSymbolKind()   {}
 
 // Range constructs an LSP protocol code range for this symbol.
 func (s *symbol) Range() protocol.Range {
@@ -403,6 +410,72 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		node = kind.node
 		path = kind.path
 
+	case *import_:
+		return fmt.Sprintf("```proto\n%s\n```", kind.file.text)
+
+	case *fieldTag:
+		var value uint64
+		if v, ok := kind.tag.AsInt64(); ok {
+			value = uint64(v)
+		} else {
+			value, _ = kind.tag.AsUint64()
+		}
+
+		plural := func(i int) string {
+			if i == 1 {
+				return ""
+			}
+			return "s"
+		}
+
+		var ty protowire.Type
+		var packed bool
+		// Only definition symbols are placed into the def field of fieldTag, so
+		// doing an unchecked assertion here is ok.
+		switch def := kind.def.kind.(*definition).node.(type) {
+		case *ast.EnumValueNode:
+			varint := protowire.AppendVarint(nil, value)
+			return fmt.Sprintf(
+				"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
+				value, value, varint, len(varint), plural(len(varint)),
+			)
+		case *ast.MapFieldNode:
+			ty = protowire.BytesType
+		case *ast.GroupNode:
+			ty = protowire.StartGroupType
+		case *ast.FieldNode:
+			switch def.FldType.AsIdentifier() {
+			case "bool", "int32", "int64", "uint32", "uint64", "sint32", "sint64":
+				ty = protowire.VarintType
+				packed = def.Label.Repeated
+			case "fixed32", "sfixed32", "float":
+				ty = protowire.Fixed32Type
+				packed = def.Label.Repeated
+			case "fixed64", "sfixed64", "double":
+				ty = protowire.Fixed64Type
+				packed = def.Label.Repeated
+			default:
+				ty = protowire.BytesType
+			}
+		}
+
+		// Don't use AppendTag because that wants to truncate value to int32.
+		varint := protowire.AppendVarint(nil, value<<3|uint64(ty))
+		doc := fmt.Sprintf(
+			"encoded (hex): `%X` (%d byte%s)",
+			varint, len(varint), plural(len(varint)),
+		)
+
+		if packed {
+			packed := protowire.AppendVarint(nil, value<<3|uint64(protowire.BytesType))
+			return doc + fmt.Sprintf(
+				"\n\npacked (hex): `%X` (%d byte%s)",
+				packed, len(packed), plural(len(varint)),
+			)
+		}
+
+		return doc
+
 	default:
 		return ""
 	}
@@ -597,15 +670,18 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 		}
 
 	case *ast.GroupNode:
+		def := w.newDef(node, node.Name)
 		w.newDef(node, node.Name)
+		w.newTag(node.Tag, def)
 		// TODO: also do the name of the generated field.
 		for _, decl := range node.Decls {
 			w.Walk(decl, node)
 		}
 
 	case *ast.FieldNode:
-		w.newDef(node, node.Name)
+		def := w.newDef(node, node.Name)
 		w.newRef(node.FldType)
+		w.newTag(node.Tag, def)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
 				w.Walk(option, node)
@@ -613,9 +689,10 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 		}
 
 	case *ast.MapFieldNode:
-		w.newDef(node, node.Name)
+		def := w.newDef(node, node.Name)
 		w.newRef(node.MapType.KeyType)
 		w.newRef(node.MapType.ValueType)
+		w.newTag(node.Tag, def)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
 				w.Walk(option, node)
@@ -639,7 +716,8 @@ func (w *symbolWalker) Walk(node, parent ast.Node) {
 		}
 
 	case *ast.EnumValueNode:
-		w.newDef(node, node.Name)
+		def := w.newDef(node, node.Name)
+		w.newTag(node.Number, def)
 		if node.Options != nil {
 			for _, option := range node.Options.Options {
 				w.Walk(option, node)
@@ -710,6 +788,15 @@ func (w *symbolWalker) newDef(node ast.Node, name *ast.IdentNode) *symbol {
 		node: node,
 		path: append(makeNestingPath(w.path), name.Val),
 	}
+	return symbol
+}
+
+// newTag creates a new symbol for a field tag, and adds it to the running list.
+//
+// Returns a new symbol for that tag.
+func (w *symbolWalker) newTag(tag ast.IntValueNode, def *symbol) *symbol {
+	symbol := w.newSymbol(tag)
+	symbol.kind = &fieldTag{tag, def}
 	return symbol
 }
 

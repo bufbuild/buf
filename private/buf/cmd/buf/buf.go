@@ -82,6 +82,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugininfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -258,6 +262,16 @@ func NewRootCommand(name string) *appcmd.Command {
 							moduledeprecate.NewCommand("deprecate", builder),
 							moduleundeprecate.NewCommand("undeprecate", builder),
 							moduleupdate.NewCommand("update", builder),
+						},
+					},
+					{
+						Use:   "plugin",
+						Short: "Manage BSR plugins",
+						SubCommands: []*appcmd.Command{
+							plugincreate.NewCommand("create", builder),
+							plugininfo.NewCommand("info", builder),
+							plugindelete.NewCommand("delete", builder),
+							pluginupdate.NewCommand("update", builder),
 						},
 					},
 				},

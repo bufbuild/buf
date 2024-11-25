@@ -54,6 +54,12 @@ func NewLabelNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a label named %q already exists", name)
 }
 
+// NewPluginNameAlreadyExistsError informs the user that a plugin
+// with that name already exists.
+func NewPluginNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a plugin named %q already exists", name)
+}
+
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
@@ -86,6 +92,12 @@ func NewLabelNotFoundError(ref bufparse.Ref) error {
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {
 	return fmt.Errorf("a token with ID %q does not exist", tokenID)
+}
+
+// NewPluginNotFoundError informs the user that a plugin with
+// that name does not exist.
+func NewPluginNotFoundError(name string) error {
+	return fmt.Errorf("a plugin named %q does not exist", name)
 }
 
 // NewInvalidRemoteError informs the user that the given remote is invalid.

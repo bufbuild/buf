@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
 - Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
   Only WebAssembly check plugins are supported at this time.
 
