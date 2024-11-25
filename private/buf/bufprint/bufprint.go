@@ -27,6 +27,7 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -248,6 +249,18 @@ func NewOrganizationEntity(organization *ownerv1.Organization, remote string) En
 	}
 }
 
+// NewPluginEntity returns a new plugin entity to print.
+func NewPluginEntity(plugin *pluginv1beta1.Plugin, pluginFullName bufparse.FullName) Entity {
+	return outputPlugin{
+		ID:         plugin.Id,
+		Remote:     pluginFullName.Registry(),
+		Owner:      pluginFullName.Owner(),
+		Name:       pluginFullName.Name(),
+		FullName:   pluginFullName.String(),
+		CreateTime: plugin.CreateTime.AsTime(),
+	}
+}
+
 // NewUserEntity returns a new user entity to print.
 func NewUserEntity(user *registryv1alpha1.User) Entity {
 	return outputUser{
@@ -464,6 +477,19 @@ type outputOrganization struct {
 
 func (o outputOrganization) fullName() string {
 	return o.FullName
+}
+
+type outputPlugin struct {
+	ID         string    `json:"id,omitempty"`
+	Remote     string    `json:"remote,omitempty"`
+	Owner      string    `json:"owner,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	FullName   string    `json:"-" bufprint:"Name"`
+	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+}
+
+func (m outputPlugin) fullName() string {
+	return m.FullName
 }
 
 type outputUser struct {
