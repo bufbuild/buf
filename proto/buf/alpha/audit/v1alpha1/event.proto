@@ -57,6 +57,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_LABEL = 12;
   RESOURCE_TYPE_SERVER = 13;
   RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
+  RESOURCE_TYPE_PLUGIN_LABEL = 16;
 }
 
 // Resource is the affected resource by the audited event.
@@ -115,6 +116,10 @@ enum EventType {
   EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
   EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED = 41;
   EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED = 42;
+  EVENT_TYPE_PLUGIN_LABEL_CREATED = 44;
+  EVENT_TYPE_PLUGIN_LABEL_MOVED = 45;
+  EVENT_TYPE_PLUGIN_LABEL_ARCHIVED = 46;
+  EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED = 47;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -188,6 +193,10 @@ message Event {
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
     PayloadDeviceAuthorizationGrantApproved device_authorization_grant_approved = 47;
     PayloadDeviceAuthorizationGrantDenied device_authorization_grant_denied = 48;
+    PayloadPluginLabelCreated plugin_label_created = 50;
+    PayloadPluginLabelMoved plugin_label_moved = 51;
+    PayloadPluginLabelArchived plugin_label_archived = 52;
+    PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
   }
 }
 
@@ -529,4 +538,54 @@ message PayloadDeviceAuthorizationGrantApproved {
 message PayloadDeviceAuthorizationGrantDenied {
   // client_id is the id of the registered oauth2 client of the grant.
   string client_id = 1;
+}
+
+message PayloadPluginLabelCreated {
+  // owner_id is the id of the owner of the plugin on which the label was created.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was created.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was created.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was created.
+  string plugin_name = 4;
+  // commit_id is the id of the commit on which the label was created.
+  string commit_id = 6;
+}
+
+message PayloadPluginLabelMoved {
+  // owner_id is the id of the owner of the plugin on which the label was moved.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was moved.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was moved.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was moved.
+  string plugin_name = 4;
+  // to_commit_id is the id of the commit on which the label was moved to.
+  string to_commit_id = 6;
+  // from_commit_id is the id of the commit on which the label was moved from.
+  string from_commit_id = 7;
+}
+
+message PayloadPluginLabelArchived {
+  // owner_id is the id of the owner of the plugin on which the label was archived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was archived.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was archived.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was archived.
+  string plugin_name = 4;
+}
+
+message PayloadPluginLabelUnarchived {
+  // owner_id is the id of the owner of the plugin on which the label was unarchived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was unarchived.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was unarchived.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was unarchived.
+  string plugin_name = 4;
 }
