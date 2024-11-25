@@ -163,7 +163,10 @@ func NewDebugLoggingInterceptor(container appext.LoggerContainer) connect.UnaryI
 			startTime := time.Now()
 			resp, err := next(ctx, req)
 			duration := time.Since(startTime)
-			status = connect.CodeOf(err)
+			var status connect.Code
+			if err != nil {
+				status = connect.CodeOf(err)
+			}
 			var responseSize int
 			if resp != nil && resp.Any() != nil {
 				msg, ok := resp.Any().(proto.Message)
