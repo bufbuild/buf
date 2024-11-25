@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pluginpush
+package bufpluginapi
 
 import (
 	"fmt"
@@ -28,19 +28,11 @@ var (
 	}
 )
 
-func v1beta1ProtoToDigestType(protoDigestType pluginv1beta1.DigestType) (bufplugin.DigestType, error) {
-	digestType, ok := v1beta1ProtoDigestTypeToDigestType[protoDigestType]
-	if !ok {
-		return 0, fmt.Errorf("unknown pluginv1beta1.DigestType: %v", protoDigestType)
-	}
-	return digestType, nil
-}
-
-// v1beta1ProtoToDigest converts the given proto Digest to a Digest.
+// V1Beta1ProtoToDigest converts the given proto Digest to a Digest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func v1beta1ProtoToDigest(protoDigest *pluginv1beta1.Digest) (bufplugin.Digest, error) {
+func V1Beta1ProtoToDigest(protoDigest *pluginv1beta1.Digest) (bufplugin.Digest, error) {
 	digestType, err := v1beta1ProtoToDigestType(protoDigest.Type)
 	if err != nil {
 		return nil, err
@@ -50,4 +42,25 @@ func v1beta1ProtoToDigest(protoDigest *pluginv1beta1.Digest) (bufplugin.Digest, 
 		return nil, err
 	}
 	return bufplugin.NewDigest(digestType, bufcasDigest)
+}
+
+// *** PRIVATE ***
+
+func pluginVisibilityToV1Proto(pluginVisibility bufplugin.PluginVisibility) (pluginv1beta1.PluginVisibility, error) {
+	switch pluginVisibility {
+	case bufplugin.PluginVisibilityPublic:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC, nil
+	case bufplugin.PluginVisibilityPrivate:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("unknown PluginVisibility: %v", pluginVisibility)
+	}
+}
+
+func v1beta1ProtoToDigestType(protoDigestType pluginv1beta1.DigestType) (bufplugin.DigestType, error) {
+	digestType, ok := v1beta1ProtoDigestTypeToDigestType[protoDigestType]
+	if !ok {
+		return 0, fmt.Errorf("unknown pluginv1beta1.DigestType: %v", protoDigestType)
+	}
+	return digestType, nil
 }

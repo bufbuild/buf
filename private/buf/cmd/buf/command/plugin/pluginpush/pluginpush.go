@@ -16,31 +16,25 @@ package pluginpush
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/bufbuild/buf/private/pkg/wasm"
-	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
 )
 
 const (
 	labelFlagName            = "label"
 	binaryFlagName           = "binary"
+	createFlagName           = "create"
+	createVisibilityFlagName = "create-visibility"
 	sourceControlURLFlagName = "source-control-url"
 )
 
@@ -67,6 +61,8 @@ func NewCommand(
 type flags struct {
 	Labels           []string
 	Binary           string
+	Create           bool
+	CreateVisibility string
 	SourceControlURL string
 }
 
@@ -75,6 +71,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.StringSliceVar(
 		&f.Labels,
 		labelFlagName,
@@ -86,6 +83,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		binaryFlagName,
 		"",
 		"The path to the Wasm binary file to push.",
+	)
+	flagSet.BoolVar(
+		&f.Create,
+		createFlagName,
+		false,
+		fmt.Sprintf(
+			"Create the plugin if it does not exist. Defaults to creating a private repository if --%s is not set.",
+			createVisibilityFlagName,
+		),
 	)
 	flagSet.StringVar(
 		&f.SourceControlURL,
@@ -108,17 +114,12 @@ func run(
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	commit, err := upload(ctx, container, flags, pluginFullName)
 	if err != nil {
 		return err
 	}
-	pluginKey, err := upload(ctx, container, flags, clientConfig, pluginFullName)
-	if err != nil {
-		return err
-	}
-	// Only one plugin key is returned.
-	if _, err := fmt.Fprintf(container.Stdout(), "%s\n", pluginKey.String()); err != nil {
+	// Only one commit is returned.
+	if _, err := fmt.Fprintf(container.Stdout(), "%s\n", commit.PluginKey().String()); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil
@@ -128,111 +129,41 @@ func upload(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-	clientConfig *connectclient.Config,
 	pluginFullName bufparse.FullName,
-) (_ bufplugin.PluginKey, retErr error) {
+) (_ bufplugin.Commit, retErr error) {
+	var plugin bufplugin.Plugin
 	switch {
 	case flags.Binary != "":
-		return uploadBinary(ctx, container, flags, clientConfig, pluginFullName)
+		var err error
+		plugin, err = bufplugin.NewLocalWasmPlugin(
+			pluginFullName,
+			func() ([]byte, error) {
+				wasmBinary, err := os.ReadFile(flags.Binary)
+				if err != nil {
+					return nil, fmt.Errorf("could not read Wasm binary %q: %w", flags.Binary, err)
+				}
+				return wasmBinary, nil
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		// This should never happen because the flags are validated.
 		return nil, syserror.Newf("--%s must be set", binaryFlagName)
 	}
-}
-
-func uploadBinary(
-	ctx context.Context,
-	container appext.Container,
-	flags *flags,
-	clientConfig *connectclient.Config,
-	pluginFullName bufparse.FullName,
-) (pluginKey bufplugin.PluginKey, retErr error) {
-	uploadServiceClient := bufregistryapiplugin.NewClientProvider(clientConfig).
-		V1Beta1UploadServiceClient(pluginFullName.Registry())
-
-	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	uploader, err := bufcli.NewPluginUploader(container)
 	if err != nil {
 		return nil, err
 	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	commits, err := uploader.Upload(ctx, []bufplugin.Plugin{plugin})
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
-	}()
-	// Load the binary from the `--binary` flag.
-	wasmBinary, err := os.ReadFile(flags.Binary)
-	if err != nil {
-		return nil, fmt.Errorf("could not read binary %q: %w", flags.Binary, err)
+	if len(commits) != 1 {
+		return nil, syserror.Newf("unexpected number of commits returned from server: %d", len(commits))
 	}
-	compressionType := pluginv1beta1.CompressionType_COMPRESSION_TYPE_ZSTD
-	compressedWasmBinary, err := zstdCompress(wasmBinary)
-	if err != nil {
-		return nil, fmt.Errorf("could not compress binary %q: %w", flags.Binary, err)
-	}
-
-	// Defer validation of the plugin binary to the server, but compile the
-	// binary locally to catch any errors early.
-	_, err = wasmRuntime.Compile(ctx, pluginFullName.Name(), wasmBinary)
-	if err != nil {
-		return nil, fmt.Errorf("could not compile binary %q: %w", flags.Binary, err)
-	}
-	// Upload the binary to the registry.
-	content := &pluginv1beta1.UploadRequest_Content{
-		PluginRef: &pluginv1beta1.PluginRef{
-			Value: &pluginv1beta1.PluginRef_Name_{
-				Name: &pluginv1beta1.PluginRef_Name{
-					Owner:  pluginFullName.Owner(),
-					Plugin: pluginFullName.Name(),
-				},
-			},
-		},
-		CompressionType: compressionType,
-		Content:         compressedWasmBinary,
-		ScopedLabelRefs: slicesext.Map(flags.Labels, func(label string) *pluginv1beta1.ScopedLabelRef {
-			return &pluginv1beta1.ScopedLabelRef{
-				Value: &pluginv1beta1.ScopedLabelRef_Name{
-					Name: label,
-				},
-			}
-		}),
-		SourceControlUrl: flags.SourceControlURL,
-	}
-	uploadResponse, err := uploadServiceClient.Upload(ctx, connect.NewRequest(&pluginv1beta1.UploadRequest{
-		Contents: []*pluginv1beta1.UploadRequest_Content{content},
-	}))
-	if err != nil {
-		return nil, err
-	}
-	if len(uploadResponse.Msg.Commits) != 1 {
-		return nil, syserror.Newf("unexpected number of commits returned from server: %d", len(uploadResponse.Msg.Commits))
-	}
-	protoCommit := uploadResponse.Msg.Commits[0]
-	commitID, err := uuidutil.FromDashless(protoCommit.Id)
-	if err != nil {
-		return nil, err
-	}
-	pluginKey, err = bufplugin.NewPluginKey(
-		pluginFullName,
-		commitID,
-		func() (bufplugin.Digest, error) {
-			return v1beta1ProtoToDigest(protoCommit.Digest)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return pluginKey, nil
-}
-
-func zstdCompress(data []byte) ([]byte, error) {
-	encoder, err := zstd.NewWriter(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create zstd encoder: %w", err)
-	}
-	defer encoder.Close()
-	return encoder.EncodeAll(data, nil), nil
+	return commits[0], nil
 }
 
 func validateFlags(flags *flags) error {
