@@ -27,12 +27,6 @@ import (
 
 // Plugin presents a BSR plugin.
 type Plugin interface {
-	// Data returns the bytes of the Plugin as a Wasm module.
-	//
-	// This is the raw bytes of the Wasm module in an uncompressed form.
-	//
-	// Will be nil if the plugin is not of type PluginTypeWasm.
-	Data() ([]byte, error)
 	// OpaqueID returns an unstructured ID that can uniquely identify a Plugin
 	// relative to the Workspace.
 	//
@@ -74,14 +68,21 @@ type Plugin interface {
 	// files and content. A Digest is a specific algorithm applied to the
 	// content of a Plugin.
 	//
-	// Digest may return an error if the Plugin is not a Wasm plugin.
+	// Will return an error if the Plugin is not a Wasm Plugin.
 	Digest(DigestType) (Digest, error)
+	// Data returns the bytes of the Plugin as a Wasm module.
+	//
+	// This is the raw bytes of the Wasm module in an uncompressed form.
+	//
+	// Will return an error if the Plugin is not a Wasm Plugin.
+	Data() ([]byte, error)
 	// IsWasm returns true if the Plugin is a Wasm Plugin.
 	//
 	// Plugins are either Wasm or not Wasm.
 	//
 	// A Wasm Plugin is a Plugin that is a Wasm module. Wasm Plugins are invoked
-	// with a wasm.Runtime.
+	// with the wasm.Runtime. The Plugin will have Data and will be able to
+	// calculate Digests.
 	//
 	// Wasm Plugins will always have Data.
 	IsWasm() bool

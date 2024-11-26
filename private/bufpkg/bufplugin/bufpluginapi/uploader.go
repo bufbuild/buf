@@ -181,7 +181,7 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 	}
 	pluginCommits := uploadResponse.Msg.Commits
 	if len(pluginCommits) != len(indexedPlugins) {
-		return nil, syserror.New("did not get the expected number of plugin commits")
+		return nil, syserror.Newf("expected %d Commits, found %d", len(indexedPlugins), len(pluginCommits))
 	}
 
 	indexedCommits := make([]slicesext.Indexed[bufplugin.Commit], 0, len(indexedPlugins))
@@ -301,7 +301,7 @@ func (u *uploader) validatePluginsExist(
 func zstdCompress(data []byte) ([]byte, error) {
 	encoder, err := zstd.NewWriter(nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create zstd encoder: %w", err)
+		return nil, err
 	}
 	defer encoder.Close()
 	return encoder.EncodeAll(data, nil), nil
