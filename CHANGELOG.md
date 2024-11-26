@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
+- Breaking analysis support for `buf beta lsp`.
 
 ## [v1.47.2] - 2024-11-14
 

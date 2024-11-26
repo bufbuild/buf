@@ -83,6 +83,20 @@ func (m *Map[K, V]) Get(key K) *V {
 	return &value.value
 }
 
+// Range ranges over this map. Beware! While ranging, writes to the map will block.
+//
+// This implements [iter.Seq2] for Map[K, V].
+func (m *Map[K, V]) Range(yield func(k K, v *V) bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	for k, v := range m.table {
+		if !yield(k, &v.value) {
+			break
+		}
+	}
+}
+
 // Delete deletes a key from the map.
 //
 // The key will only be evicted once [Map.Delete] has been called an equal number of times
