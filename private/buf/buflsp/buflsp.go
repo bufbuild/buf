@@ -65,6 +65,7 @@ func Serve(
 			&connWrapper{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
+		container:   container,
 		logger:      container.Logger(),
 		controller:  controller,
 		checkClient: checkClient,
@@ -89,8 +90,9 @@ func Serve(
 // Its handler methods are not defined in buflsp.go; they are defined in other files, grouped
 // according to the groupings in
 type lsp struct {
-	conn   jsonrpc2.Conn
-	client protocol.Client
+	conn      jsonrpc2.Conn
+	client    protocol.Client
+	container appext.Container
 
 	logger      *slog.Logger
 	controller  bufctl.Controller
@@ -130,19 +132,38 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 // to inject debug logging, tracing, and timeouts to requests.
 func (l *lsp) newHandler() jsonrpc2.Handler {
 	actual := protocol.ServerHandler(newServer(l), nil)
-	return func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) (retErr error) {
-		defer slogext.DebugProfile(l.logger, slog.String("method", req.Method()), slog.Any("params", req.Params()))()
+	return jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
+		l.logger.Debug(
+			"handling request",
+			slog.String("method", req.Method()),
+			slog.Any("params", req.Params()),
+		)
+		defer slogext.DebugProfile(
+			l.logger,
+			slog.String("method", req.Method()),
+			slog.Any("params", req.Params()),
+		)()
 
 		replier := l.wrapReplier(reply, req)
 
-		// Verify that the server has been initialized if this isn't the initialization
-		// request.
+		var err error
 		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
-			return replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+			// Verify that the server has been initialized if this isn't the initialization
+			// request.
+			err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+		} else {
+			l.lock.Lock()
+			err = actual(ctx, replier, req)
+			l.lock.Unlock()
 		}
 
-		l.lock.Lock()
-		defer l.lock.Unlock()
-		return actual(ctx, replier, req)
-	}
+		if err != nil {
+			l.logger.Error(
+				"error while replying to request",
+				slog.String("method", req.Method()),
+				slogext.ErrorAttr(err),
+			)
+		}
+		return nil
+	})
 }
