@@ -46,7 +46,7 @@ func V1Beta1ProtoToDigest(protoDigest *pluginv1beta1.Digest) (bufplugin.Digest, 
 
 // *** PRIVATE ***
 
-func pluginVisibilityToV1Proto(pluginVisibility bufplugin.PluginVisibility) (pluginv1beta1.PluginVisibility, error) {
+func pluginVisibilityToV1Beta1Proto(pluginVisibility bufplugin.PluginVisibility) (pluginv1beta1.PluginVisibility, error) {
 	switch pluginVisibility {
 	case bufplugin.PluginVisibilityPublic:
 		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC, nil
@@ -54,6 +54,15 @@ func pluginVisibilityToV1Proto(pluginVisibility bufplugin.PluginVisibility) (plu
 		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PRIVATE, nil
 	default:
 		return 0, fmt.Errorf("unknown PluginVisibility: %v", pluginVisibility)
+	}
+}
+
+func pluginTypeToV1Beta1Proto(pluginType bufplugin.PluginType) (pluginv1beta1.PluginType, error) {
+	switch pluginType {
+	case bufplugin.PluginTypeCheck:
+		return pluginv1beta1.PluginType_PLUGIN_TYPE_CHECK, nil
+	default:
+		return 0, fmt.Errorf("unknown PluginType: %v", pluginType)
 	}
 }
 

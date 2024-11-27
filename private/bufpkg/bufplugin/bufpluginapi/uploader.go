@@ -125,6 +125,7 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 				registry,
 				plugin,
 				uploadOptions.CreatePluginVisibility(),
+				uploadOptions.CreatePluginType(),
 			); err != nil {
 				return nil, err
 			}
@@ -223,8 +224,13 @@ func (u *uploader) createPluginIfNotExist(
 	primaryRegistry string,
 	plugin bufplugin.Plugin,
 	createPluginVisibility bufplugin.PluginVisibility,
+	createPluginType bufplugin.PluginType,
 ) (*pluginv1beta1.Plugin, error) {
-	v1ProtoCreatePluginVisibility, err := pluginVisibilityToV1Proto(createPluginVisibility)
+	v1Beta1ProtoCreatePluginVisibility, err := pluginVisibilityToV1Beta1Proto(createPluginVisibility)
+	if err != nil {
+		return nil, err
+	}
+	v1Beta1ProtoCreatePluginType, err := pluginTypeToV1Beta1Proto(createPluginType)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +246,8 @@ func (u *uploader) createPluginIfNotExist(
 							},
 						},
 						Name:       plugin.FullName().Name(),
-						Visibility: v1ProtoCreatePluginVisibility,
+						Visibility: v1Beta1ProtoCreatePluginVisibility,
+						Type:       v1Beta1ProtoCreatePluginType,
 					},
 				},
 			},

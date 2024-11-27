@@ -47,11 +47,12 @@ func UploadWithLabels(labels ...string) UploadOption {
 }
 
 // UploadWithCreateIfNotExist returns a new UploadOption that will result in the
-// Plugins being created on the registry with the given visibility and default label if they do not exist.
-func UploadWithCreateIfNotExist(createPluginVisibility PluginVisibility, createDefaultLabel string) UploadOption {
+// Plugins being created on the registry with the given visibility if they do not exist.
+func UploadWithCreateIfNotExist(createPluginVisibility PluginVisibility, createPluginType PluginType) UploadOption {
 	return func(uploadOptions *uploadOptions) {
 		uploadOptions.createIfNotExist = true
 		uploadOptions.createPluginVisibility = createPluginVisibility
+		uploadOptions.createPluginType = createPluginType
 	}
 }
 
@@ -77,6 +78,10 @@ type UploadOptions interface {
 	//
 	// Will always be present if CreateIfNotExist() is true.
 	CreatePluginVisibility() PluginVisibility
+	// CreatePluginType returns the type to create Plugins with.
+	//
+	// Will always be present if CreateIfNotExist() is true.
+	CreatePluginType() PluginType
 	// SourceControlURL returns the source control URL set by the user for the module
 	// contents uploaded. We set the same source control URL for all module contents.
 	SourceControlURL() string
@@ -108,6 +113,7 @@ type uploadOptions struct {
 	labels                 []string
 	createIfNotExist       bool
 	createPluginVisibility PluginVisibility
+	createPluginType       PluginType
 	sourceControlURL       string
 }
 
@@ -125,6 +131,10 @@ func (u *uploadOptions) CreateIfNotExist() bool {
 
 func (u *uploadOptions) CreatePluginVisibility() PluginVisibility {
 	return u.createPluginVisibility
+}
+
+func (u *uploadOptions) CreatePluginType() PluginType {
+	return u.createPluginType
 }
 
 func (u *uploadOptions) SourceControlURL() string {

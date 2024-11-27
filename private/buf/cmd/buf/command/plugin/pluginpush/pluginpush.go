@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -35,6 +36,7 @@ const (
 	binaryFlagName           = "binary"
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
+	createTypeFlagName       = "create-type"
 	sourceControlURLFlagName = "source-control-url"
 )
 
@@ -63,6 +65,7 @@ type flags struct {
 	Binary           string
 	Create           bool
 	CreateVisibility string
+	CreateType       string
 	SourceControlURL string
 }
 
@@ -89,8 +92,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		createFlagName,
 		false,
 		fmt.Sprintf(
-			"Create the plugin if it does not exist. Defaults to creating a private repository if --%s is not set.",
+			"Create the plugin if it does not exist. Defaults to creating a private repository if --%s is not set. Must be used with --%s.",
 			createVisibilityFlagName,
+			createTypeFlagName,
+		),
+	)
+	flagSet.StringVar(
+		&f.CreateType,
+		createTypeFlagName,
+		"",
+		fmt.Sprintf(
+			"The plugin's type setting, if created. Can only be set with --%s. Must be one of %s",
+			createTypeFlagName,
+			stringutil.SliceToString(bufplugin.AllPluginTypeStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -156,7 +170,22 @@ func upload(
 	if err != nil {
 		return nil, err
 	}
-	commits, err := uploader.Upload(ctx, []bufplugin.Plugin{plugin})
+	var options []bufplugin.UploadOption
+	if flags.Create {
+		createPluginVisibility, err := bufplugin.ParsePluginVisibility(flags.CreateVisibility)
+		if err != nil {
+			return nil, err
+		}
+		createPluginType, err := bufplugin.ParsePluginType(flags.CreateType)
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, bufplugin.UploadWithCreateIfNotExist(
+			createPluginVisibility,
+			createPluginType,
+		))
+	}
+	commits, err := uploader.Upload(ctx, []bufplugin.Plugin{plugin}, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -171,6 +200,9 @@ func validateFlags(flags *flags) error {
 		return err
 	}
 	if err := validateTypeFlags(flags); err != nil {
+		return err
+	}
+	if err := validateCreateFlags(flags); err != nil {
 		return err
 	}
 	return nil
@@ -205,6 +237,26 @@ func validateLabelFlagValues(flags *flags) error {
 	for _, label := range flags.Labels {
 		if label == "" {
 			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
+		}
+	}
+	return nil
+}
+
+func validateCreateFlags(flags *flags) error {
+	if flags.Create {
+		if flags.CreateVisibility == "" {
+			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is set", createVisibilityFlagName, createFlagName)
+		}
+		if _, err := bufplugin.ParsePluginVisibility(flags.CreateVisibility); err != nil {
+			return appcmd.WrapInvalidArgumentError(err)
+		}
+	}
+	if flags.Create {
+		if flags.CreateType == "" {
+			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is set", createTypeFlagName, createFlagName)
+		}
+		if _, err := bufplugin.ParsePluginType(flags.CreateType); err != nil {
+			return appcmd.WrapInvalidArgumentError(err)
 		}
 	}
 	return nil
