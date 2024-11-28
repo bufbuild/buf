@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modulelabellist
+package pluginlabellist
 
 import (
 	"context"
 	"fmt"
 
-	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -48,8 +48,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " <remote/owner/module[:ref]>",
-		Short:      "List module labels",
+		Use:        name + " <remote/owner/plugin[:ref]>",
+		Short:      "List plugin labels",
 		Args:       appcmd.ExactArgs(1),
 		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
@@ -106,11 +106,11 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufparse.ParseRef(container.Arg(0))
+	pluginRef, err := bufparse.ParseRef(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	archiveStatusFitler, err := bufcli.ArchiveStatusFlagToModuleArchiveStatusFilter(flags.ArchiveStatus)
+	archiveStatusFitler, err := bufcli.ArchiveStatusFlagToPluginArchiveStatusFilter(flags.ArchiveStatus)
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -122,26 +122,26 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
-	moduleFullName := moduleRef.FullName()
-	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleFullName.Registry())
-	order := modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_DESC
+	pluginClientProvider := bufregistryapiplugin.NewClientProvider(clientConfig)
+	pluginFullName := pluginRef.FullName()
+	labelServiceClient := pluginClientProvider.V1Beta1LabelServiceClient(pluginFullName.Registry())
+	order := pluginv1beta1.ListLabelsRequest_ORDER_UPDATE_TIME_DESC
 	if flags.Reverse {
-		order = modulev1.ListLabelsRequest_ORDER_UPDATE_TIME_ASC
+		order = pluginv1beta1.ListLabelsRequest_ORDER_UPDATE_TIME_ASC
 	}
 	resp, err := labelServiceClient.ListLabels(
 		ctx,
 		connect.NewRequest(
-			&modulev1.ListLabelsRequest{
+			&pluginv1beta1.ListLabelsRequest{
 				PageSize:  flags.PageSize,
 				PageToken: flags.PageToken,
-				ResourceRef: &modulev1.ResourceRef{
-					Value: &modulev1.ResourceRef_Name_{
-						Name: &modulev1.ResourceRef_Name{
-							Owner:  moduleFullName.Owner(),
-							Module: moduleFullName.Name(),
-							Child: &modulev1.ResourceRef_Name_Ref{
-								Ref: moduleRef.Ref(),
+				ResourceRef: &pluginv1beta1.ResourceRef{
+					Value: &pluginv1beta1.ResourceRef_Name_{
+						Name: &pluginv1beta1.ResourceRef_Name{
+							Owner:  pluginFullName.Owner(),
+							Plugin: pluginFullName.Name(),
+							Child: &pluginv1beta1.ResourceRef_Name_Ref{
+								Ref: pluginRef.Ref(),
 							},
 						},
 					},
@@ -153,7 +153,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRefNotFoundError(moduleRef)
+			return bufcli.NewRefNotFoundError(pluginRef)
 		}
 		return err
 	}
@@ -162,8 +162,8 @@ func run(
 		format,
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
-		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
-			return bufprint.NewLabelEntity(label, moduleFullName)
+		slicesext.Map(resp.Msg.Labels, func(label *pluginv1beta1.Label) bufprint.Entity {
+			return bufprint.NewLabelEntity(label, pluginFullName)
 		}),
 	)
 }
@@ -172,7 +172,7 @@ func nextPageCommand(container appext.Container, flags *flags, nextPageToken str
 	if nextPageToken == "" {
 		return ""
 	}
-	command := fmt.Sprintf("buf registry module label list %s", container.Arg(0))
+	command := fmt.Sprintf("buf registry plugin label list %s", container.Arg(0))
 	if flags.ArchiveStatus != bufcli.DefaultArchiveStatus {
 		command = fmt.Sprintf("%s --%s %s", command, archiveStatusName, flags.ArchiveStatus)
 	}

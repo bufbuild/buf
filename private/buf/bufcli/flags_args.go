@@ -318,8 +318,8 @@ func VisibilityFlagToPluginVisibilityAllowUnspecified(visibility string) (plugin
 	}
 }
 
-// ArchiveStatusFlagToArchiveStatusFilter parses the given string as a modulev1.ListLabelsRequest_ArchiveFilter.
-func ArchiveStatusFlagToArchiveStatusFilter(archiveStatus string) (modulev1.ListLabelsRequest_ArchiveFilter, error) {
+// ArchiveStatusFlagToModuleArchiveStatusFilter parses the given string as a modulev1.ListLabelsRequest_ArchiveFilter.
+func ArchiveStatusFlagToModuleArchiveStatusFilter(archiveStatus string) (modulev1.ListLabelsRequest_ArchiveFilter, error) {
 	switch archiveStatus {
 	case archivedArchiveStatus:
 		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_ARCHIVED_ONLY, nil
@@ -327,6 +327,20 @@ func ArchiveStatusFlagToArchiveStatusFilter(archiveStatus string) (modulev1.List
 		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
 	case allArchiveStatus:
 		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
+	default:
+		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
+	}
+}
+
+// ArchiveStatusFlagToPluginArchiveStatusFilter parses the given string as a pluginv1beta1.ListLabelsRequest_ArchiveFilter.
+func ArchiveStatusFlagToPluginArchiveStatusFilter(archiveStatus string) (pluginv1beta1.ListLabelsRequest_ArchiveFilter, error) {
+	switch archiveStatus {
+	case archivedArchiveStatus:
+		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ARCHIVED_ONLY, nil
+	case unarchivedArchiveStatus:
+		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
+	case allArchiveStatus:
+		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
 	default:
 		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
 	}

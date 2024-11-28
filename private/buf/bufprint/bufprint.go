@@ -199,28 +199,38 @@ func PrintEntity(writer io.Writer, format Format, entity Entity) error {
 	}
 }
 
-// NewLabelEntity returns a new label entity to print.
-func NewLabelEntity(label *modulev1.Label, moduleFullName bufparse.FullName) Entity {
+// NewLabelEntity returns a new label entity to print. It takes a label as an
+// interface to allow for modulev1.Label and pluginv1beta1.Label to be passed.
+func NewLabelEntity(label interface {
+	GetName() string
+	GetCommitId() string
+	GetCreateTime() *timestamppb.Timestamp
+	GetArchiveTime() *timestamppb.Timestamp
+}, moduleFullName bufparse.FullName) Entity {
 	var archiveTime *time.Time
-	if label.ArchiveTime != nil {
-		timeValue := label.ArchiveTime.AsTime()
+	if label.GetArchiveTime() != nil {
+		timeValue := label.GetArchiveTime().AsTime()
 		archiveTime = &timeValue
 	}
 	return outputLabel{
-		Name:           label.Name,
-		Commit:         label.CommitId,
-		CreateTime:     label.CreateTime.AsTime(),
+		Name:           label.GetName(),
+		Commit:         label.GetCommitId(),
+		CreateTime:     label.GetCreateTime().AsTime(),
 		ArchiveTime:    archiveTime,
-		moduleFullName: moduleFullName,
+		entityFullName: moduleFullName,
 	}
 }
 
-// NewCommitEntity returns a new commit entity to print.
-func NewCommitEntity(commit *modulev1.Commit, moduleFullName bufparse.FullName) Entity {
+// NewCommitEntity returns a new commit entity to print. It takes a commit as
+// an interface to allow for modulev1.Commit and pluginv1beta1.Commit to be passed.
+func NewCommitEntity(commit interface {
+	GetId() string
+	GetCreateTime() *timestamppb.Timestamp
+}, moduleFullName bufparse.FullName) Entity {
 	return outputCommit{
-		Commit:         commit.Id,
-		CreateTime:     commit.CreateTime.AsTime(),
-		moduleFullName: moduleFullName,
+		Commit:         commit.GetId(),
+		CreateTime:     commit.GetCreateTime().AsTime(),
+		entityFullName: moduleFullName,
 	}
 }
 
@@ -434,22 +444,22 @@ type outputLabel struct {
 	CreateTime  time.Time  `json:"create_time,omitempty" bufprint:"Create Time"`
 	ArchiveTime *time.Time `json:"archive_time,omitempty" bufprint:"Archive Time,omitempty"`
 
-	moduleFullName bufparse.FullName
+	entityFullName bufparse.FullName
 }
 
 func (l outputLabel) fullName() string {
-	return fmt.Sprintf("%s:%s", l.moduleFullName.String(), l.Name)
+	return fmt.Sprintf("%s:%s", l.entityFullName.String(), l.Name)
 }
 
 type outputCommit struct {
 	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
 	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
 
-	moduleFullName bufparse.FullName
+	entityFullName bufparse.FullName
 }
 
 func (c outputCommit) fullName() string {
-	return fmt.Sprintf("%s:%s", c.moduleFullName.String(), c.Commit)
+	return fmt.Sprintf("%s:%s", c.entityFullName.String(), c.Commit)
 }
 
 type outputModule struct {
