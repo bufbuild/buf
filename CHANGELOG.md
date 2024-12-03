@@ -4,6 +4,8 @@
 
 - Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
 - Breaking analysis support for `buf beta lsp`.
+- Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
+  determinisitic.
 
 ## [v1.47.2] - 2024-11-14
 
