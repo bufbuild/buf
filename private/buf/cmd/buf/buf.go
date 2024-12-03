@@ -89,6 +89,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugininfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabellist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
@@ -280,6 +284,16 @@ func NewRootCommand(name string) *appcmd.Command {
 									plugincommitinfo.NewCommand("info", builder, ""),
 									plugincommitlist.NewCommand("list", builder, ""),
 									plugincommitresolve.NewCommand("resolve", builder, ""),
+								},
+							},
+							{
+								Use:   "label",
+								Short: "Manage a plugin's labels",
+								SubCommands: []*appcmd.Command{
+									pluginlabelarchive.NewCommand("archive", builder, ""),
+									pluginlabelinfo.NewCommand("info", builder, ""),
+									pluginlabellist.NewCommand("list", builder, ""),
+									pluginlabelunarchive.NewCommand("unarchive", builder, ""),
 								},
 							},
 							plugincreate.NewCommand("create", builder),
