@@ -110,7 +110,7 @@ func run(
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	archiveStatusFitler, err := bufcli.ArchiveStatusFlagToArchiveStatusFilter(flags.ArchiveStatus)
+	archiveStatusFitler, err := bufcli.ArchiveStatusFlagToModuleArchiveStatusFilter(flags.ArchiveStatus)
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}

@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
+- Breaking analysis support for `buf beta lsp`.
+- Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
+  determinisitic.
+- Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
+  Only WebAssembly check plugins are supported at this time.
+- Add `buf registry plugin commit {add-label,info,list,resolve}` to manage BSR plugin commits.
+- Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
 
 ## [v1.47.2] - 2024-11-14
 

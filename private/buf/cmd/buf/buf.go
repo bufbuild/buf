@@ -35,8 +35,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv2"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
+	betaplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	betapluginpush "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -62,6 +62,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitaddlabel"
@@ -82,6 +83,18 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitaddlabel"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitresolve"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugininfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabellist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelunarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -174,8 +187,9 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:   "plugin",
-				Short: "Work with plugins",
+				Short: "Work with check plugins",
 				SubCommands: []*appcmd.Command{
+					pluginpush.NewCommand("push", builder),
 					pluginupdate.NewCommand("update", builder),
 				},
 			},
@@ -260,6 +274,36 @@ func NewRootCommand(name string) *appcmd.Command {
 							moduleupdate.NewCommand("update", builder),
 						},
 					},
+					{
+						Use:   "plugin",
+						Short: "Manage BSR plugins",
+						SubCommands: []*appcmd.Command{
+							{
+								Use:   "commit",
+								Short: "Manage a plugin's commits",
+								SubCommands: []*appcmd.Command{
+									plugincommitaddlabel.NewCommand("add-label", builder, ""),
+									plugincommitinfo.NewCommand("info", builder, ""),
+									plugincommitlist.NewCommand("list", builder, ""),
+									plugincommitresolve.NewCommand("resolve", builder, ""),
+								},
+							},
+							{
+								Use:   "label",
+								Short: "Manage a plugin's labels",
+								SubCommands: []*appcmd.Command{
+									pluginlabelarchive.NewCommand("archive", builder, ""),
+									pluginlabelinfo.NewCommand("info", builder, ""),
+									pluginlabellist.NewCommand("list", builder, ""),
+									pluginlabelunarchive.NewCommand("unarchive", builder, ""),
+								},
+							},
+							plugincreate.NewCommand("create", builder),
+							plugininfo.NewCommand("info", builder),
+							plugindelete.NewCommand("delete", builder),
+							pluginupdate.NewCommand("update", builder),
+						},
+					},
 				},
 			},
 			{
@@ -290,8 +334,8 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "plugin",
 								Short: "Manage plugins on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
-									pluginpush.NewCommand("push", builder),
-									plugindelete.NewCommand("delete", builder),
+									betapluginpush.NewCommand("push", builder),
+									betaplugindelete.NewCommand("delete", builder),
 								},
 							},
 						},

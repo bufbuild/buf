@@ -114,6 +114,9 @@ func (s *server) Initialize(
 				// usually get especially huge, so this simplifies our logic without
 				// necessarily making the LSP slow.
 				Change: protocol.TextDocumentSyncKindFull,
+				Save: &protocol.SaveOptions{
+					IncludeText: false,
+				},
 			},
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
@@ -139,6 +142,15 @@ func (s *server) Initialized(
 	ctx context.Context,
 	params *protocol.InitializedParams,
 ) error {
+	if s.initParams.Load().Capabilities.Workspace.DidChangeConfiguration.DynamicRegistration {
+		// The error is logged for us by the client wrapper.
+		_ = s.client.RegisterCapability(ctx, &protocol.RegistrationParams{
+			Registrations: []protocol.Registration{
+				{Method: protocol.MethodWorkspaceDidChangeConfiguration},
+			},
+		})
+	}
+
 	return nil
 }
 
@@ -166,6 +178,24 @@ func (s *server) Exit(ctx context.Context) error {
 	return s.lsp.conn.Close()
 }
 
+// DidChangeConfiguration is sent whenever the client changes its config settings.
+func (s *server) DidChangeConfiguration(
+	ctx context.Context,
+	params *protocol.DidChangeConfigurationParams,
+) error {
+	// We need to refresh every open file's settings, and refresh the file
+	// itself.
+	s.fileManager.uriToFile.Range(func(_ protocol.URI, file *file) bool {
+		if file.IsOpenInEditor() {
+			file.RefreshSettings(ctx)
+			file.Refresh(ctx)
+		}
+		return true
+	})
+
+	return nil
+}
+
 // -- File synchronization methods.
 
 // DidOpen is called whenever the client opens a document. This is our signal to parse
@@ -175,8 +205,9 @@ func (s *server) DidOpen(
 	params *protocol.DidOpenTextDocumentParams,
 ) error {
 	file := s.fileManager.Open(ctx, params.TextDocument.URI)
+	file.RefreshSettings(ctx)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
-	file.Refresh(context.WithoutCancel(ctx))
+	file.Refresh(ctx)
 	return nil
 }
 
@@ -193,7 +224,23 @@ func (s *server) DidChange(
 	}
 
 	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
-	file.Refresh(context.WithoutCancel(ctx))
+	file.Refresh(ctx)
+	return nil
+}
+
+// DidSave is called whenever the client saves a document.
+func (s *server) DidSave(
+	ctx context.Context,
+	params *protocol.DidSaveTextDocumentParams,
+) error {
+	// We use this as an opportunity to do a refresh; some lints, such as
+	// breaking-against-last-saved, rely on this.
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		// Update for a file we don't know about? Seems bad!
+		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
+	}
+	file.Refresh(ctx)
 	return nil
 }
 
@@ -217,7 +264,7 @@ func (s *server) Formatting(
 		}
 	}
 	if errorCount > 0 {
-		return nil, fmt.Errorf("cannot format file %q, %v error(s) found.", file.uri.Filename(), errorCount)
+		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), errorCount)
 	}
 
 	// Currently we have no way to honor any of the parameters.

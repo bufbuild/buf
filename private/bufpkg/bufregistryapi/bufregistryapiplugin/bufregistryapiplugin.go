@@ -30,6 +30,8 @@ var (
 	NopV1Beta1LabelServiceClientProvider V1Beta1LabelServiceClientProvider = nopClientProvider{}
 	// NopV1Beta1PluginServiceClientProvider is a V1Beta1PluginServiceClientProvider that provides unimplemented services for testing.
 	NopV1Beta1PluginServiceClientProvider V1Beta1PluginServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1ResourceServiceClientProvider is a V1Beta1ResourceServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1ResourceServiceClientProvider V1Beta1ResourceServiceClientProvider = nopClientProvider{}
 	// NopV1Beta1UploadServiceClientProvider is a V1Beta1UploadServiceClientProvider that provides unimplemented services for testing.
 	NopV1Beta1UploadServiceClientProvider V1Beta1UploadServiceClientProvider = nopClientProvider{}
 	// NopClientProvider is a ClientProvider that provides unimplemented services for testing.
@@ -56,6 +58,11 @@ type V1Beta1LabelServiceClientProvider interface {
 	V1Beta1LabelServiceClient(registry string) pluginv1beta1connect.LabelServiceClient
 }
 
+// V1Beta1ResourceServiceClientProvider provides ResourceServiceClients.
+type V1Beta1ResourceServiceClientProvider interface {
+	V1Beta1ResourceServiceClient(registry string) pluginv1beta1connect.ResourceServiceClient
+}
+
 // V1Beta1PluginServiceClientProvider provides PluginServiceClients.
 type V1Beta1PluginServiceClientProvider interface {
 	V1Beta1PluginServiceClient(registry string) pluginv1beta1connect.PluginServiceClient
@@ -72,6 +79,7 @@ type ClientProvider interface {
 	V1Beta1CommitServiceClientProvider
 	V1Beta1DownloadServiceClientProvider
 	V1Beta1LabelServiceClientProvider
+	V1Beta1ResourceServiceClientProvider
 	V1Beta1PluginServiceClientProvider
 	V1Beta1UploadServiceClientProvider
 }
@@ -125,6 +133,14 @@ func (c *clientProvider) V1Beta1LabelServiceClient(registry string) pluginv1beta
 	)
 }
 
+func (c *clientProvider) V1Beta1ResourceServiceClient(registry string) pluginv1beta1connect.ResourceServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		pluginv1beta1connect.NewResourceServiceClient,
+	)
+}
+
 func (c *clientProvider) V1Beta1PluginServiceClient(registry string) pluginv1beta1connect.PluginServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
@@ -157,6 +173,10 @@ func (nopClientProvider) V1Beta1DownloadServiceClient(registry string) pluginv1b
 
 func (nopClientProvider) V1Beta1LabelServiceClient(registry string) pluginv1beta1connect.LabelServiceClient {
 	return pluginv1beta1connect.UnimplementedLabelServiceHandler{}
+}
+
+func (nopClientProvider) V1Beta1ResourceServiceClient(registry string) pluginv1beta1connect.ResourceServiceClient {
+	return pluginv1beta1connect.UnimplementedResourceServiceHandler{}
 }
 
 func (nopClientProvider) V1Beta1PluginServiceClient(registry string) pluginv1beta1connect.PluginServiceClient {

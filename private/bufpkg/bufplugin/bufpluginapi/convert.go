@@ -44,6 +44,28 @@ func V1Beta1ProtoToDigest(protoDigest *pluginv1beta1.Digest) (bufplugin.Digest, 
 	return bufplugin.NewDigest(digestType, bufcasDigest)
 }
 
+// *** PRIVATE ***
+
+func pluginVisibilityToV1Beta1Proto(pluginVisibility bufplugin.PluginVisibility) (pluginv1beta1.PluginVisibility, error) {
+	switch pluginVisibility {
+	case bufplugin.PluginVisibilityPublic:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC, nil
+	case bufplugin.PluginVisibilityPrivate:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("unknown PluginVisibility: %v", pluginVisibility)
+	}
+}
+
+func pluginTypeToV1Beta1Proto(pluginType bufplugin.PluginType) (pluginv1beta1.PluginType, error) {
+	switch pluginType {
+	case bufplugin.PluginTypeCheck:
+		return pluginv1beta1.PluginType_PLUGIN_TYPE_CHECK, nil
+	default:
+		return 0, fmt.Errorf("unknown PluginType: %v", pluginType)
+	}
+}
+
 func v1beta1ProtoToDigestType(protoDigestType pluginv1beta1.DigestType) (bufplugin.DigestType, error) {
 	digestType, ok := v1beta1ProtoDigestTypeToDigestType[protoDigestType]
 	if !ok {

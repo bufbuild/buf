@@ -139,7 +139,7 @@ func run(
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Module updated."); err != nil {
+	if _, err := fmt.Fprintf(container.Stdout(), "Updated %s.\n", moduleFullName); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil

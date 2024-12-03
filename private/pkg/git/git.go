@@ -21,7 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -46,6 +48,11 @@ var (
 	// ErrInvalidGitCheckout is returned from CheckDirectoryIsValidGitCheckout when the
 	// specified directory is not a valid git checkout.
 	ErrInvalidGitCheckout = errors.New("invalid git checkout")
+
+	// ErrInvalidRef is returned from IsValidRef if the ref does not exist in the
+	// repository containing the given directory (or, if the directory is not
+	// a valid git checkout).
+	ErrInvalidRef = errors.New("invalid git ref")
 )
 
 // Name is a name identifiable by git.
@@ -344,6 +351,93 @@ func GetRefsForGitCommitAndRemote(
 		}
 	}
 	return refs, nil
+}
+
+// IsValidRef returns whether or not ref is a valid git ref for the git
+// repository that contains dir. Returns nil if the ref is valid.
+func IsValidRef(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	dir, ref string,
+) error {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := execext.Run(
+		ctx,
+		gitCommand,
+		execext.WithArgs("rev-parse", "--verify", ref),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
+	); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			if exitErr.ExitCode() == 128 {
+				return fmt.Errorf("could not find ref %s in %s: %w", ref, dir, ErrInvalidRef)
+			}
+		}
+		return err
+	}
+	return nil
+}
+
+// ReadFileAtRef will read the file at path rolled back to the given ref, if
+// it exists at that ref.
+//
+// Specifically, this will take path, and find the associated .git directory
+// (and thus, repository root) associated with that path, if any. It will then
+// look up the commit corresponding to ref in that git directory, and within
+// that commit, the blob corresponding to that path (relative to the repository
+// root).
+func ReadFileAtRef(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	path, ref string,
+) ([]byte, error) {
+	orig := path
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find a directory with a .git directory.
+	dir := filepath.Dir(path)
+	for {
+		_, err := os.Stat(filepath.Join(dir, ".git"))
+		if err == nil {
+			break
+		} else if errors.Is(err, os.ErrNotExist) {
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				return nil, fmt.Errorf("could not find .git directory for %s: %w", orig, ErrInvalidGitCheckout)
+			}
+			dir = parent
+		} else {
+			return nil, err
+		}
+	}
+
+	// This gives us the name of the blob we're looking for.
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Call git show to show us the file we want.
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := execext.Run(ctx, gitCommand,
+		execext.WithArgs("--no-pager", "show", ref+":"+rel),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get text of file %s at ref %s: %w: %s", orig, ref, err, stderr.String())
+	}
+
+	return stdout.Bytes(), nil
 }
 
 func getAllTrimmedLinesFromBuffer(buffer *bytes.Buffer) []string {
