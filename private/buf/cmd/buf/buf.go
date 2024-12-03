@@ -178,7 +178,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:   "plugin",
-				Short: "Work with plugins",
+				Short: "Work with check plugins",
 				SubCommands: []*appcmd.Command{
 					pluginpush.NewCommand("push", builder),
 				},

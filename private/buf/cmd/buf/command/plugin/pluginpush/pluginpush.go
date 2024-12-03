@@ -48,7 +48,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <remote/owner/plugin>",
-		Short: "Push a plugin to a registry",
+		Short: "Push a check plugin to a registry",
 		Long:  `The first argument is the plugin full name in the format <remote/owner/plugin>.`,
 		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
