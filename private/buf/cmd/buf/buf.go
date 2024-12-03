@@ -82,6 +82,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitaddlabel"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincommit/plugincommitresolve"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugincreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/plugininfo"
@@ -268,6 +272,16 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "plugin",
 						Short: "Manage BSR plugins",
 						SubCommands: []*appcmd.Command{
+							{
+								Use:   "commit",
+								Short: "Manage a plugin's commits",
+								SubCommands: []*appcmd.Command{
+									plugincommitaddlabel.NewCommand("add-label", builder, ""),
+									plugincommitinfo.NewCommand("info", builder, ""),
+									plugincommitlist.NewCommand("list", builder, ""),
+									plugincommitresolve.NewCommand("resolve", builder, ""),
+								},
+							},
 							plugincreate.NewCommand("create", builder),
 							plugininfo.NewCommand("info", builder),
 							plugindelete.NewCommand("delete", builder),
