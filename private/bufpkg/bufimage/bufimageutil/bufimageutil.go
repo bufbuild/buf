@@ -1016,6 +1016,13 @@ type orderedImports struct {
 	paths       []string
 }
 
+// newOrderedImports creates a new orderedImports structure.
+func newOrderedImports() *orderedImports {
+	return &orderedImports{
+		pathToIndex: map[string]int{},
+	}
+}
+
 // index returns the index for a given path. If the path does not exist in index map, -1
 // is returned and should be considered deleted.
 func (o *orderedImports) index(path string) int {
@@ -1051,11 +1058,4 @@ func (o *orderedImports) keys() []string {
 		}
 	}
 	return keys
-}
-
-// newOrderedImports creates a new orderedImports structure.
-func newOrderedImports() *orderedImports {
-	return &orderedImports{
-		pathToIndex: map[string]int{},
-	}
 }
