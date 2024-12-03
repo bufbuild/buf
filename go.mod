@@ -7,8 +7,8 @@ toolchain go1.23.3
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.35.2-20241031151143-70f632351282.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20240920164238-5a7b106cbb87.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241025140216-aa40f2c93090.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.35.2-20241025140216-aa40f2c93090.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241125212318-4a305dc3b757.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.35.2-20241125212318-4a305dc3b757.1
 	buf.build/go/bufplugin v0.6.0
 	buf.build/go/protoyaml v0.2.0
 	buf.build/go/spdx v0.2.0
@@ -30,12 +30,12 @@ require (
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/profile v1.7.0
-	github.com/quic-go/quic-go v0.48.1
+	github.com/quic-go/quic-go v0.48.2
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
-	github.com/tetratelabs/wazero v1.8.1
+	github.com/tetratelabs/wazero v1.8.2
 	go.lsp.dev/jsonrpc2 v0.10.0
 	go.lsp.dev/protocol v0.12.0
 	go.uber.org/zap v1.27.0
