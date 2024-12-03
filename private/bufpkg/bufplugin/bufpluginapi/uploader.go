@@ -37,7 +37,6 @@ func NewUploader(
 	pluginClientProvider interface {
 		bufregistryapiplugin.V1Beta1PluginServiceClientProvider
 		bufregistryapiplugin.V1Beta1UploadServiceClientProvider
-		bufregistryapiplugin.V1Beta1UploadServiceClientProvider
 	},
 	options ...UploaderOption,
 ) bufplugin.Uploader {
@@ -54,7 +53,6 @@ type uploader struct {
 	pluginClientProvider interface {
 		bufregistryapiplugin.V1Beta1PluginServiceClientProvider
 		bufregistryapiplugin.V1Beta1UploadServiceClientProvider
-		bufregistryapiplugin.V1Beta1UploadServiceClientProvider
 	}
 }
 
@@ -62,7 +60,6 @@ func newUploader(
 	logger *slog.Logger,
 	pluginClientProvider interface {
 		bufregistryapiplugin.V1Beta1PluginServiceClientProvider
-		bufregistryapiplugin.V1Beta1UploadServiceClientProvider
 		bufregistryapiplugin.V1Beta1UploadServiceClientProvider
 	},
 	options ...UploaderOption,
