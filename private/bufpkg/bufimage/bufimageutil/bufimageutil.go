@@ -1034,20 +1034,17 @@ func (o *orderedImports) index(path string) int {
 // then this is a no-op.
 func (o *orderedImports) add(path string) {
 	if _, ok := o.pathToIndex[path]; !ok {
-		o.paths = append(o.paths, path)
 		o.pathToIndex[path] = len(o.paths)
+		o.paths = append(o.paths, path)
 	}
 }
 
-// delete removes a key from the index map of ordered imports. Note that the path is not removed
-// from the paths list. If you want to iterate through the paths, use keys() to get all
-// non-deleted keys.
-func (o *orderedImports) delete(path string) error {
-	if _, ok := o.pathToIndex[path]; ok {
-		delete(o.pathToIndex, path)
-		return nil
-	}
-	return fmt.Errorf("no import found for: %s", path)
+// delete removes a key from the index map of ordered imports. If a non-existent path is
+// set for deletion, then this is a no-op.
+// Note that the path is not removed from the paths list. If you want to iterate through
+// the paths, use keys() to get all non-deleted keys.
+func (o *orderedImports) delete(path string) {
+	delete(o.pathToIndex, path)
 }
 
 // keys provides all non-deleted keys from the ordered imports.
@@ -1061,6 +1058,7 @@ func (o *orderedImports) keys() []string {
 	return keys
 }
 
+// newOrderedImports creates a new orderedImports structure.
 func newOrderedImports() *orderedImports {
 	return &orderedImports{
 		pathToIndex: map[string]int{},
