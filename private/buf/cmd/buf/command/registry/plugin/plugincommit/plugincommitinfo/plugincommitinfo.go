@@ -124,6 +124,6 @@ func run(
 	return bufprint.PrintEntity(
 		container.Stdout(),
 		format,
-		bufprint.NewPluginCommitEntity(commits[0], pluginRef.FullName()),
+		bufprint.NewCommitEntity(commits[0], pluginRef.FullName()),
 	)
 }

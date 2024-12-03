@@ -163,7 +163,7 @@ func run(
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
-			return bufprint.NewModuleLabelEntity(label, moduleFullName)
+			return bufprint.NewLabelEntity(label, moduleFullName)
 		}),
 	)
 }

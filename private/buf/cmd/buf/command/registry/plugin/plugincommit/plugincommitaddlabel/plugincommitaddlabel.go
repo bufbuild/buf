@@ -143,7 +143,7 @@ func run(
 		container.Stdout(),
 		format,
 		slicesext.Map(resp.Msg.Labels, func(label *pluginv1beta1.Label) bufprint.Entity {
-			return bufprint.NewPluginLabelEntity(label, pluginRef.FullName())
+			return bufprint.NewLabelEntity(label, pluginRef.FullName())
 		})...,
 	)
 }

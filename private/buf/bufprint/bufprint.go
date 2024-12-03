@@ -199,27 +199,37 @@ func PrintEntity(writer io.Writer, format Format, entity Entity) error {
 	}
 }
 
-// NewModuleLabelEntity returns a new label entity to print.
-func NewModuleLabelEntity(label *modulev1.Label, moduleFullName bufparse.FullName) Entity {
+// NewLabelEntity returns a new label entity to print. It takes a label as an
+// interface to allow for modulev1.Label and pluginv1beta1.Label to be passed.
+func NewLabelEntity(label interface {
+	GetName() string
+	GetCommitId() string
+	GetCreateTime() *timestamppb.Timestamp
+	GetArchiveTime() *timestamppb.Timestamp
+}, moduleFullName bufparse.FullName) Entity {
 	var archiveTime *time.Time
-	if label.ArchiveTime != nil {
-		timeValue := label.ArchiveTime.AsTime()
+	if label.GetArchiveTime() != nil {
+		timeValue := label.GetArchiveTime().AsTime()
 		archiveTime = &timeValue
 	}
 	return outputLabel{
-		Name:           label.Name,
-		Commit:         label.CommitId,
-		CreateTime:     label.CreateTime.AsTime(),
+		Name:           label.GetName(),
+		Commit:         label.GetCommitId(),
+		CreateTime:     label.GetCreateTime().AsTime(),
 		ArchiveTime:    archiveTime,
 		entityFullName: moduleFullName,
 	}
 }
 
-// NewModuleCommitEntity returns a new commit entity to print.
-func NewModuleCommitEntity(commit *modulev1.Commit, moduleFullName bufparse.FullName) Entity {
+// NewCommitEntity returns a new commit entity to print. It takes a commit as
+// an interface to allow for modulev1.Commit and pluginv1beta1.Commit to be passed.
+func NewCommitEntity(commit interface {
+	GetId() string
+	GetCreateTime() *timestamppb.Timestamp
+}, moduleFullName bufparse.FullName) Entity {
 	return outputCommit{
-		Commit:         commit.Id,
-		CreateTime:     commit.CreateTime.AsTime(),
+		Commit:         commit.GetId(),
+		CreateTime:     commit.GetCreateTime().AsTime(),
 		entityFullName: moduleFullName,
 	}
 }
@@ -258,31 +268,6 @@ func NewPluginEntity(plugin *pluginv1beta1.Plugin, pluginFullName bufparse.FullN
 		Name:       pluginFullName.Name(),
 		FullName:   pluginFullName.String(),
 		CreateTime: plugin.CreateTime.AsTime(),
-	}
-}
-
-// NewPluginLabelEntity returns a new label entity to print.
-func NewPluginLabelEntity(label *pluginv1beta1.Label, pluginFullName bufparse.FullName) Entity {
-	var archiveTime *time.Time
-	if label.ArchiveTime != nil {
-		timeValue := label.ArchiveTime.AsTime()
-		archiveTime = &timeValue
-	}
-	return outputLabel{
-		Name:           label.Name,
-		Commit:         label.CommitId,
-		CreateTime:     label.CreateTime.AsTime(),
-		ArchiveTime:    archiveTime,
-		entityFullName: pluginFullName,
-	}
-}
-
-// NewPluginCommitEntity returns a new commit entity to print.
-func NewPluginCommitEntity(commit *pluginv1beta1.Commit, moduleFullName bufparse.FullName) Entity {
-	return outputCommit{
-		Commit:         commit.Id,
-		CreateTime:     commit.CreateTime.AsTime(),
-		entityFullName: moduleFullName,
 	}
 }
 

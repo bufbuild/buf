@@ -123,6 +123,6 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		bufprint.NewModuleCommitEntity(commit, moduleRef.FullName()),
+		bufprint.NewCommitEntity(commit, moduleRef.FullName()),
 	)
 }

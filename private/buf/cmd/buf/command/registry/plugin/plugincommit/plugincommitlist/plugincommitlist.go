@@ -162,7 +162,7 @@ func run(
 			format,
 			"",
 			"",
-			[]bufprint.Entity{bufprint.NewPluginCommitEntity(commit, pluginRef.FullName())},
+			[]bufprint.Entity{bufprint.NewCommitEntity(commit, pluginRef.FullName())},
 		)
 	}
 	if resource.GetPlugin() != nil {
@@ -201,7 +201,7 @@ func run(
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
 			slicesext.Map(resp.Msg.Commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
-				return bufprint.NewPluginCommitEntity(commit, pluginRef.FullName())
+				return bufprint.NewCommitEntity(commit, pluginRef.FullName())
 			}),
 		)
 	}
@@ -253,7 +253,7 @@ func run(
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		slicesext.Map(commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
-			return bufprint.NewPluginCommitEntity(commit, pluginRef.FullName())
+			return bufprint.NewCommitEntity(commit, pluginRef.FullName())
 		}),
 	)
 }
