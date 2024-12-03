@@ -62,6 +62,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitaddlabel"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitinfo"
@@ -177,6 +178,13 @@ func NewRootCommand(name string) *appcmd.Command {
 					modlslintrules.NewCommand("ls-lint-rules", builder),
 					// Deprecated and hidden.
 					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
+				},
+			},
+			{
+				Use:   "plugin",
+				Short: "Work with check plugins",
+				SubCommands: []*appcmd.Command{
+					pluginpush.NewCommand("push", builder),
 				},
 			},
 			{

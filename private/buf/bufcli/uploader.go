@@ -17,20 +17,32 @@ package bufcli
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
-// NewUploader returns a new Uploader.
-func NewUploader(container appext.Container) (bufmodule.Uploader, error) {
+// NewModuleUploader returns a new Uploader for ModuleSets.
+func NewModuleUploader(container appext.Container) (bufmodule.Uploader, error) {
 	clientConfig, err := NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
 	}
-	return newUploader(container, bufregistryapimodule.NewClientProvider(clientConfig)), nil
+	return newModuleUploader(container, bufregistryapimodule.NewClientProvider(clientConfig)), nil
 }
 
-func newUploader(
+// NewPluginUploader returns a new Uploader for Plugins.
+func NewPluginUploader(container appext.Container) (bufplugin.Uploader, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	return newPluginUploader(container, bufregistryapiplugin.NewClientProvider(clientConfig)), nil
+}
+
+func newModuleUploader(
 	container appext.Container,
 	clientProvider bufregistryapimodule.ClientProvider,
 ) bufmodule.Uploader {
@@ -39,5 +51,15 @@ func newUploader(
 		clientProvider,
 		// OK if empty
 		bufmoduleapi.UploaderWithPublicRegistry(container.Env(publicRegistryEnvKey)),
+	)
+}
+
+func newPluginUploader(
+	container appext.Container,
+	clientProvider bufregistryapiplugin.ClientProvider,
+) bufplugin.Uploader {
+	return bufpluginapi.NewUploader(
+		container.Logger(),
+		clientProvider,
 	)
 }
