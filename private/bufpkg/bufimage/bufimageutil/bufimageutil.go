@@ -269,23 +269,18 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		// Only handle imports and dependencies if there are any.
 		for indexFrom, importPath := range imageFileDescriptor.GetDependency() {
 			path := append(basePath, int32(indexFrom))
-			// If there are no required imports, we mark this as deleted.
-			if importsRequired == nil {
-				sourcePathRemapper.markDeleted(path)
+			// We check if the import path exists among required imports. If yes, we
+			// move and then delete from required imports as we go.
+			if importsRequired != nil && importsRequired.index(importPath) != -1 {
+				sourcePathRemapper.markMoved(path, int32(indexTo))
+				indexFromTo[int32(indexFrom)] = int32(indexTo)
+				imageFileDescriptor.Dependency[indexTo] = importPath
+				indexTo++
+				// delete them as we go, so we know which ones weren't in the list
+				importsRequired.delete(importPath)
 			} else {
-				// Otherwise, we check if the import path exists among required imports. If yes, we
-				// move and then delete from required imports as we go.
-				if i := importsRequired.index(importPath); i != -1 {
-					sourcePathRemapper.markMoved(path, int32(indexTo))
-					indexFromTo[int32(indexFrom)] = int32(indexTo)
-					imageFileDescriptor.Dependency[indexTo] = importPath
-					indexTo++
-					// delete them as we go, so we know which ones weren't in the list
-					importsRequired.delete(importPath)
-				} else {
-					// Path did not exist in required imports, we mark as deleted.
-					sourcePathRemapper.markDeleted(path)
-				}
+				// Path did not exist in required imports, we mark as deleted.
+				sourcePathRemapper.markDeleted(path)
 			}
 		}
 		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:indexTo]
@@ -293,6 +288,8 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		// Add any other imports (which may not have been in the list because
 		// they were picked up via a public import). The filtered files will not
 		// use public imports.
+		// The imports are added in the order they are encountered when importing
+		// to maintain a deterministic ordering.
 		if importsRequired != nil {
 			imageFileDescriptor.Dependency = append(imageFileDescriptor.Dependency, importsRequired.keys()...)
 		}
