@@ -126,7 +126,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		createFlagName,
 		false,
 		fmt.Sprintf(
-			"Create the repository if it does not exist. Defaults to creating a private repository if --%s is not set.",
+			"Create the module if it does not exist. Defaults to creating a private module if --%s is not set.",
 			createVisibilityFlagName,
 		),
 	)
@@ -134,7 +134,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.CreateDefaultLabel,
 		createDefaultLabelFlagName,
 		"",
-		`The repository's default label setting, if created. If this is not set, then the repository will be created with the default label "main".`,
+		`The module's default label setting, if created. If this is not set, then the module will be created with the default label "main".`,
 	)
 	flagSet.StringVar(
 		&f.SourceControlURL,
@@ -218,7 +218,7 @@ func run(
 		return err
 	}
 
-	uploader, err := bufcli.NewUploader(container)
+	uploader, err := bufcli.NewModuleUploader(container)
 	if err != nil {
 		return err
 	}
