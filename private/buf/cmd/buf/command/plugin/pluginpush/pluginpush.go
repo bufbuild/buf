@@ -92,7 +92,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		createFlagName,
 		false,
 		fmt.Sprintf(
-			"Create the plugin if it does not exist. Defaults to creating a private repository if --%s is not set. Must be used with --%s.",
+			"Create the plugin if it does not exist. Defaults to creating a private plugin on the BSR if --%s is not set. Must be used with --%s.",
 			createVisibilityFlagName,
 			createTypeFlagName,
 		),
