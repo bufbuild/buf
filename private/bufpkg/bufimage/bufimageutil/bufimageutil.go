@@ -281,9 +281,7 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 					imageFileDescriptor.Dependency[indexTo] = importPath
 					indexTo++
 					// delete them as we go, so we know which ones weren't in the list
-					if err := importsRequired.delete(importPath); err != nil {
-						return nil, err
-					}
+					importsRequired.delete(importPath)
 				} else {
 					// Path did not exist in required imports, we mark as deleted.
 					sourcePathRemapper.markDeleted(path)
