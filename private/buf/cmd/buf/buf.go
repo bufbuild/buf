@@ -94,7 +94,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelunarchive"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
+	registrypluginupdate "github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -301,7 +301,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							plugincreate.NewCommand("create", builder),
 							plugininfo.NewCommand("info", builder),
 							plugindelete.NewCommand("delete", builder),
-							pluginupdate.NewCommand("update", builder),
+							registrypluginupdate.NewCommand("update", builder),
 						},
 					},
 				},
