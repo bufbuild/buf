@@ -39,11 +39,15 @@ type Plugin interface {
 	OpaqueID() string
 	// Path returns the path, including arguments, to invoke the binary plugin.
 	//
-	// This is not empty only when the plugin is local.
+	// This is not empty only when the Plugin is local.
 	Path() []string
-	// FullName returns the FullName of the Plugin.
+	// FullName returns the full name of the Plugin.
 	//
-	// This is nil
+	// May be nil. Callers should not rely on this value being present.
+	// However, this is always present for remote Plugins.
+	//
+	// At least one of FullName or Path will always be present. Use OpaqueID
+	// as an always-present identifier.
 	FullName() bufparse.FullName
 	// CommitID returns the BSR ID of the Commit.
 	//
@@ -78,7 +82,7 @@ type Plugin interface {
 	Data() ([]byte, error)
 	// IsWasm returns true if the Plugin is a Wasm Plugin.
 	//
-	// Plugins are either Wasm or not Wasm.
+	// Plugins are either Wasm or local.
 	//
 	// A Wasm Plugin is a Plugin that is a Wasm module. Wasm Plugins are invoked
 	// with the wasm.Runtime. The Plugin will have Data and will be able to
