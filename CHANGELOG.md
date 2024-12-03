@@ -6,6 +6,8 @@
 - Breaking analysis support for `buf beta lsp`.
 - Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
   determinisitic.
+- Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
+  Only WebAssembly check plugins are supported at this time.
 
 ## [v1.47.2] - 2024-11-14
 
