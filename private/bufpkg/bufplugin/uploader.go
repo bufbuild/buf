@@ -57,7 +57,7 @@ func UploadWithCreateIfNotExist(createPluginVisibility PluginVisibility, createP
 }
 
 // UploadWithSourceControlURL returns a new UploadOption that will set the source control
-// url for the module contents uploaded.
+// url for the plugin contents uploaded.
 func UploadWithSourceControlURL(sourceControlURL string) UploadOption {
 	return func(uploadOptions *uploadOptions) {
 		uploadOptions.sourceControlURL = sourceControlURL
@@ -82,8 +82,8 @@ type UploadOptions interface {
 	//
 	// Will always be present if CreateIfNotExist() is true.
 	CreatePluginType() PluginType
-	// SourceControlURL returns the source control URL set by the user for the module
-	// contents uploaded. We set the same source control URL for all module contents.
+	// SourceControlURL returns the source control URL set by the user for the plugin
+	// contents uploaded. We set the same source control URL for all plugin contents.
 	SourceControlURL() string
 
 	isUploadOptions()
