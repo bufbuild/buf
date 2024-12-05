@@ -277,8 +277,7 @@ func newGoRegistryConfig(
 			},
 		)
 	}
-	// If a base plugin name is specified, it must also exist in the top-level plugin dependencies
-	// list.
+	// If a base plugin is specified, it must also exist in the top-level plugin dependencies list.
 	var basePluginIdentity bufremotepluginref.PluginIdentity
 	if externalGoRegistryConfig.BasePlugin != "" {
 		var err error

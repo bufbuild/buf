@@ -9,7 +9,7 @@ deps:
 output_languages: [go]
 registry:
   go:
-    base_plugin_name: buf.build/library/go
+    base_plugin: buf.build/library/go
     min_version: 1.18
     deps:
       - module: google.golang.org/grpc
