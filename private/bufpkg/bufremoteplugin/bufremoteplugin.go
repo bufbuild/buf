@@ -133,6 +133,9 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 	case pluginRegistry.Go != nil:
 		goConfig := &registryv1alpha1.GoConfig{}
 		goConfig.MinimumVersion = pluginRegistry.Go.MinVersion
+		if pluginRegistry.Go.BasePluginIdentity != nil {
+			goConfig.BasePluginName = pluginRegistry.Go.BasePluginIdentity.IdentityString()
+		}
 		if pluginRegistry.Go.Deps != nil {
 			goConfig.RuntimeLibraries = make([]*registryv1alpha1.GoConfig_RuntimeLibrary, 0, len(pluginRegistry.Go.Deps))
 			for _, dependency := range pluginRegistry.Go.Deps {
@@ -249,6 +252,13 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	case config.GetGoConfig() != nil:
 		goConfig := &bufremotepluginconfig.GoRegistryConfig{}
 		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
+		if config.GetGoConfig().GetBasePluginName() != "" {
+			basePluginIdentity, err := bufremotepluginref.PluginIdentityForString(config.GetGoConfig().GetBasePluginName())
+			if err != nil {
+				return nil, err
+			}
+			goConfig.BasePluginIdentity = basePluginIdentity
+		}
 		runtimeLibraries := config.GetGoConfig().GetRuntimeLibraries()
 		if runtimeLibraries != nil {
 			goConfig.Deps = make([]*bufremotepluginconfig.GoRegistryDependencyConfig, 0, len(runtimeLibraries))
