@@ -441,7 +441,7 @@ type ExternalGoRegistryConfig struct {
 		Module  string `json:"module,omitempty" yaml:"module,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
-	BasePluginName string `json:"base_plugin_name,omitempty" yaml:"base_plugin_name,omitempty"`
+	BasePlugin string `json:"base_plugin,omitempty" yaml:"base_plugin,omitempty"`
 }
 
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.

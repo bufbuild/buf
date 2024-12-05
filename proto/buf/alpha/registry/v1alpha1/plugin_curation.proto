@@ -132,7 +132,7 @@ message GoConfig {
   // This affects how imports are resolved - the specified plugin's import path will be used as the
   // base path for all generated code, replacing the default protocolbuffers/go import paths. Used
   // when depending on non-default BSR plugins.
-  string base_plugin_name = 3;
+  string base_plugin = 3;
 }
 
 // NPMConfig is the configuration for a JavaScript NPM plugin.

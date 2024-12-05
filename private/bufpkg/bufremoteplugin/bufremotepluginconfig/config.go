@@ -280,9 +280,9 @@ func newGoRegistryConfig(
 	// If a base plugin name is specified, it must also exist in the top-level plugin dependencies
 	// list.
 	var basePluginIdentity bufremotepluginref.PluginIdentity
-	if externalGoRegistryConfig.BasePluginName != "" {
+	if externalGoRegistryConfig.BasePlugin != "" {
 		var err error
-		basePluginIdentity, err = pluginIdentityForStringWithOverrideRemote(externalGoRegistryConfig.BasePluginName, overrideRemote)
+		basePluginIdentity, err = pluginIdentityForStringWithOverrideRemote(externalGoRegistryConfig.BasePlugin, overrideRemote)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse base plugin: %w", err)
 		}
@@ -290,7 +290,7 @@ func newGoRegistryConfig(
 			return ref.IdentityString() == basePluginIdentity.IdentityString()
 		})
 		if !ok {
-			return nil, fmt.Errorf("base plugin %q not found in plugin dependencies", externalGoRegistryConfig.BasePluginName)
+			return nil, fmt.Errorf("base plugin %q not found in plugin dependencies", externalGoRegistryConfig.BasePlugin)
 		}
 	}
 	return &GoRegistryConfig{
