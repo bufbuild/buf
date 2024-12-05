@@ -284,7 +284,9 @@ func newGoRegistryConfig(
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse base plugin: %w", err)
 		}
-		// If plugin dependencies are specified, then the base plugin must also exist in that list.
+		// Validate the base plugin is included as one of the plugin dependencies when both are
+		// specified. This ensures there's exactly one base type and it has a known dependency to
+		// generate imports correctly and build a correct Go mod file.
 		if len(pluginDependencies) > 0 {
 			ok := slices.ContainsFunc(pluginDependencies, func(ref bufremotepluginref.PluginReference) bool {
 				return ref.IdentityString() == basePlugin.IdentityString()
