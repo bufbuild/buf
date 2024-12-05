@@ -543,6 +543,12 @@ func (b *moduleReadBucket) getIsTargetFileForPathUncached(ctx context.Context, p
 		// We've now deferred having to get fastscan.Results as much as we can.
 		protoFileTargetFastscanResult, err := b.getFastscanResultForPath(ctx, b.protoFileTargetPath)
 		if err != nil {
+			// In the case where multiple modules may have shared module roots through the includes key
+			// in the module configs, the protoFileTargetPath may not exist in the target module.
+			// In that case, we just return false.
+			if errors.Is(err, fs.ErrNotExist) {
+				return false, nil
+			}
 			return false, err
 		}
 		if protoFileTargetFastscanResult.PackageName == "" {
