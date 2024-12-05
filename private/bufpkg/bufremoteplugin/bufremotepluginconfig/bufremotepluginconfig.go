@@ -118,9 +118,9 @@ type RegistryConfig struct {
 
 // GoRegistryConfig is the registry configuration for a Go plugin.
 type GoRegistryConfig struct {
-	MinVersion         string
-	Deps               []*GoRegistryDependencyConfig
-	BasePluginIdentity bufremotepluginref.PluginIdentity
+	MinVersion string
+	Deps       []*GoRegistryDependencyConfig
+	BasePlugin bufremotepluginref.PluginIdentity
 }
 
 // GoRegistryDependencyConfig is the go registry dependency configuration.

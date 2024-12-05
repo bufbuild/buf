@@ -55,8 +55,8 @@ func TestGetConfigForBucket(t *testing.T) {
 			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
-					MinVersion:         "1.18",
-					BasePluginIdentity: basePluginIdentity,
+					MinVersion: "1.18",
+					BasePlugin: basePluginIdentity,
 					Deps: []*GoRegistryDependencyConfig{
 						{
 							Module:  "google.golang.org/grpc",
@@ -100,8 +100,8 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
-					MinVersion:         "1.18",
-					BasePluginIdentity: basePluginIdentity,
+					MinVersion: "1.18",
+					BasePlugin: basePluginIdentity,
 					Deps: []*GoRegistryDependencyConfig{
 						{
 							Module:  "google.golang.org/grpc",
