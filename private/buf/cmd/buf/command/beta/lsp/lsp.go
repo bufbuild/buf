@@ -26,7 +26,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
@@ -113,16 +112,8 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
-	checkClient, err := bufcheck.NewClient(
-		container.Logger(),
-		bufcheck.NewRunnerProvider(wasmRuntime),
-		bufcheck.ClientWithStderr(container.Stderr()),
-	)
-	if err != nil {
-		return err
-	}
 
-	conn, err := buflsp.Serve(ctx, wktBucket, container, controller, checkClient, jsonrpc2.NewStream(transport))
+	conn, err := buflsp.Serve(ctx, wktBucket, container, controller, wasmRuntime, jsonrpc2.NewStream(transport))
 	if err != nil {
 		return err
 	}

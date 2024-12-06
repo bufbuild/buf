@@ -16,9 +16,11 @@ package bufplugin
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -41,6 +43,25 @@ type PluginKeyProvider interface {
 	GetPluginKeysForPluginRefs(context.Context, []bufparse.Ref, DigestType) ([]PluginKey, error)
 }
 
+// NewStaticPluginKeyProvider returns a new PluginKeyProvider for the given PluginKeys.
+//
+// If the Ref is not found in the list of provided keys, fs.ErrNotExist will be
+// returned.
+func NewStaticPluginKeyProvider(pluginKeys []PluginKey) (PluginKeyProvider, error) {
+	if len(pluginKeys) == 0 {
+		return NopPluginKeyProvider, nil
+	}
+	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
+		return pluginKey.FullName().String()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return staticPluginKeyProvider{
+		pluginKeysByFullName: pluginKeysByFullName,
+	}, nil
+}
+
 // *** PRIVATE ***
 
 type nopPluginKeyProvider struct{}
@@ -51,4 +72,27 @@ func (nopPluginKeyProvider) GetPluginKeysForPluginRefs(
 	DigestType,
 ) ([]PluginKey, error) {
 	return nil, fs.ErrNotExist
+}
+
+type staticPluginKeyProvider struct {
+	pluginKeysByFullName map[string]PluginKey
+}
+
+func (s staticPluginKeyProvider) GetPluginKeysForPluginRefs(
+	ctx context.Context,
+	refs []bufparse.Ref,
+	digestType DigestType,
+) ([]PluginKey, error) {
+	fmt.Println("staticPluginKeyProvider.GetPluginKeysForPluginRefs")
+	pluginKeys := make([]PluginKey, len(refs))
+	for i, ref := range refs {
+		pluginKey, ok := s.pluginKeysByFullName[ref.FullName().String()]
+		if !ok {
+			return nil, fs.ErrNotExist
+		}
+		// TODO: validate the Ref matches the plugin key.
+		pluginKeys[i] = pluginKey
+	}
+	fmt.Println("got plugin keys", pluginKeys)
+	return pluginKeys, nil
 }

@@ -169,7 +169,7 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 	return r(pluginConfig)
 }
 
-// NewRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
+// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
@@ -180,9 +180,7 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 //   - bufconfig.PluginConfigTypeLocalWasm
 //
 // If the PluginConfigType is not supported, an error is returned.
-func NewRunnerProvider(
-	wasmRuntime wasm.Runtime,
-) RunnerProvider {
+func NewLocalRunnerProvider(wasmRuntime wasm.Runtime) RunnerProvider {
 	return newRunnerProvider(
 		wasmRuntime,
 	)

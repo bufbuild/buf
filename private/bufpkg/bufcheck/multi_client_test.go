@@ -182,13 +182,13 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 
 	client, err := newClient(
 		slogtestext.NewLogger(t),
-		NewRunnerProvider(wasm.UnimplementedRuntime),
+		NewLocalRunnerProvider(wasm.UnimplementedRuntime),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
 		"buf-plugin-duplicate-rule",
 		nil,
-		[]string{"buf-plugin-duplicate-rule"},
+		nil,
 	)
 	require.NoError(t, err)
 	emptyOptions, err := option.NewOptions(nil)
@@ -275,13 +275,13 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 
 	client, err := newClient(
 		slogtestext.NewLogger(t),
-		NewRunnerProvider(wasm.UnimplementedRuntime),
+		NewLocalRunnerProvider(wasm.UnimplementedRuntime),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
 		"buf-plugin-duplicate-category",
 		nil,
-		[]string{"buf-plugin-duplicate-category"},
+		nil,
 	)
 	require.NoError(t, err)
 	emptyOptions, err := option.NewOptions(nil)

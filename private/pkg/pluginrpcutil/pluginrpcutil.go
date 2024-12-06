@@ -15,18 +15,46 @@
 package pluginrpcutil
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
 
-// NewRunner returns a new pluginrpc.Runner for the program name.
-func NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
+// NewLocalRunner returns a new pluginrpc.Runner for the program name.
+func NewLocalRunner(programName string, programArgs ...string) pluginrpc.Runner {
 	return newRunner(programName, programArgs...)
 }
 
-// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.
+// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime.
+func NewWasmRunner(delegate wasm.Runtime, getData func() ([]byte, error), programName string, programArgs ...string) pluginrpc.Runner {
+	return newWasmRunner(delegate, getData, programName, programArgs...)
+}
+
+// NewLocalWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.
 //
 // This runner is used for local Wasm plugins. The program name is the path to the Wasm file.
-func NewWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
-	return newWasmRunner(delegate, programName, programArgs...)
+func NewLocalWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
+	getData := func() ([]byte, error) {
+		// Find the plugin filePath. We use the same logic as exec.LookPath, but we do
+		// not require the file to be executable. So check the local directory
+		// first before checking the PATH.
+		var filePath string
+		if fileInfo, err := os.Stat(programName); err == nil && !fileInfo.IsDir() {
+			filePath = programName
+		} else {
+			var err error
+			filePath, err = unsafeLookPath(programName)
+			if err != nil {
+				return nil, fmt.Errorf("could not find plugin %q in PATH: %v", programName, err)
+			}
+		}
+		moduleWasm, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("could not read plugin %q: %v", programName, err)
+		}
+		return moduleWasm, nil
+	}
+	return newWasmRunner(delegate, getData, programName, programArgs...)
 }

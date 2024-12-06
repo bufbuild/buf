@@ -183,11 +183,14 @@ func run(
 	}
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
+	controllerOptions := []bufctl.FunctionOption{
+		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.AgainstConfig),
+	}
 	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		flags.Against,
-		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.AgainstConfig),
+		controllerOptions...,
 	)
 	if err != nil {
 		return err
@@ -216,11 +219,20 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	checkRunnerProvider, err := controller.GetCheckRunnerProvider(
+		ctx,
+		input,
+		wasmRuntime,
+		controllerOptions...,
+	)
+	if err != nil {
+		return err
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
 			container.Logger(),
-			bufcheck.NewRunnerProvider(wasmRuntime),
+			checkRunnerProvider,
 			bufcheck.ClientWithStderr(container.Stderr()),
 		)
 		if err != nil {

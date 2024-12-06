@@ -100,7 +100,7 @@ func handle(
 	// The protoc plugins do not support custom lint/breaking change plugins for now.
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime),
+		bufcheck.NewLocalRunnerProvider(wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(pluginEnv.Stderr),
 	)
 	if err != nil {

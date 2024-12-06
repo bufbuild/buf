@@ -1350,7 +1350,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 			// Do not need any custom lint/breaking plugins here.
 			client, err := bufcheck.NewClient(
 				slogtestext.NewLogger(t),
-				bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime),
+				bufcheck.NewLocalRunnerProvider(wasm.UnimplementedRuntime),
 			)
 			require.NoError(t, err)
 			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
