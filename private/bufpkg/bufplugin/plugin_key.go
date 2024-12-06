@@ -17,9 +17,12 @@ package bufplugin
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 )
@@ -69,6 +72,32 @@ func NewPluginKey(
 		commitID,
 		getDigest,
 	)
+}
+
+// UniqueDigestTypeForPluginKeys returns the unique DigestType for the given PluginKeys.
+//
+// If the PluginKeys have different DigestTypes, an error is returned.
+// If the PluginKeys slice is empty, an error is returned.
+func UniqueDigestTypeForPluginKeys(pluginKeys []PluginKey) (DigestType, error) {
+	if len(pluginKeys) == 0 {
+		return 0, syserror.New("empty pluginKeys passed to UniqueDigestTypeForPluginKeys")
+	}
+	digests, err := slicesext.MapError(pluginKeys, PluginKey.Digest)
+	if err != nil {
+		return 0, err
+	}
+	digestType := digests[0].Type()
+	for _, digest := range digests[1:] {
+		if digestType != digest.Type() {
+			return 0, fmt.Errorf(
+				"different digest types detected where the same digest type must be used: %v, %v\n%s",
+				digestType,
+				digest.Type(),
+				strings.Join(slicesext.Map(pluginKeys, PluginKey.String), "\n"),
+			)
+		}
+	}
+	return digestType, nil
 }
 
 // ** PRIVATE **

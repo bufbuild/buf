@@ -17,8 +17,10 @@ package bufcli
 import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
@@ -39,11 +41,16 @@ func NewController(
 	}
 	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
 	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
+	pluginClientProvider := bufregistryapiplugin.NewClientProvider(clientConfig)
 	moduleDataProvider, err := newModuleDataProvider(container, moduleClientProvider, ownerClientProvider)
 	if err != nil {
 		return nil, err
 	}
 	commitProvider, err := newCommitProvider(container, moduleClientProvider, ownerClientProvider)
+	if err != nil {
+		return nil, err
+	}
+	pluginDataProvider, err := newPluginDataProvider(container, pluginClientProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +65,8 @@ func NewController(
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), moduleClientProvider),
 		moduleDataProvider,
 		commitProvider,
+		bufpluginapi.NewPluginKeyProvider(container.Logger(), pluginClientProvider),
+		pluginDataProvider,
 		wktStore,
 		// TODO FUTURE: Delete defaultHTTPClient and use the one from newConfig
 		defaultHTTPClient,

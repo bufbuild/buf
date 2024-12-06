@@ -400,6 +400,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedLockEntries,
+				nil,
 			)
 			if err != nil {
 				return nil, nil, err
@@ -444,6 +445,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		bufLock, err = bufconfig.NewBufLockFile(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
+			nil, // Plugins are not supported in v1.
 		)
 		if err != nil {
 			return nil, nil, err

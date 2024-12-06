@@ -15,6 +15,8 @@
 package bufcheck
 
 import (
+	"fmt"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -26,7 +28,9 @@ type runnerProvider struct {
 	wasmRuntime wasm.Runtime
 }
 
-func newRunnerProvider(wasmRuntime wasm.Runtime) *runnerProvider {
+func newRunnerProvider(
+	wasmRuntime wasm.Runtime,
+) *runnerProvider {
 	return &runnerProvider{
 		wasmRuntime: wasmRuntime,
 	}
@@ -49,6 +53,8 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 			path[0],
 			path[1:]...,
 		), nil
+	case bufconfig.PluginConfigTypeRemote:
+		return nil, fmt.Errorf("remote plugins are not supported")
 	default:
 		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())
 	}
