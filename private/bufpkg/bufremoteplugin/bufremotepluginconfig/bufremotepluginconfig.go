@@ -120,6 +120,7 @@ type RegistryConfig struct {
 type GoRegistryConfig struct {
 	MinVersion string
 	Deps       []*GoRegistryDependencyConfig
+	BasePlugin bufremotepluginref.PluginIdentity
 }
 
 // GoRegistryDependencyConfig is the go registry dependency configuration.
@@ -440,6 +441,7 @@ type ExternalGoRegistryConfig struct {
 		Module  string `json:"module,omitempty" yaml:"module,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
+	BasePlugin string `json:"base_plugin,omitempty" yaml:"base_plugin,omitempty"`
 }
 
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.

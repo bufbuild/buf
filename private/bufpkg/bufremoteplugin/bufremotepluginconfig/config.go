@@ -17,6 +17,7 @@ package bufremotepluginconfig
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"buf.build/go/spdx"
@@ -60,7 +61,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 			dependencies = append(dependencies, reference)
 		}
 	}
-	registryConfig, err := newRegistryConfig(externalConfig.Registry)
+	registryConfig, err := newRegistryConfig(externalConfig.Registry, dependencies, opts.overrideRemote)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,11 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	}, nil
 }
 
-func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
+func newRegistryConfig(
+	externalRegistryConfig ExternalRegistryConfig,
+	pluginDependencies []bufremotepluginref.PluginReference,
+	overrideRemote string,
+) (*RegistryConfig, error) {
 	var (
 		isGoEmpty     = externalRegistryConfig.Go == nil
 		isNPMEmpty    = externalRegistryConfig.NPM == nil
@@ -125,7 +130,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 	options := OptionsSliceToPluginOptions(externalRegistryConfig.Opts)
 	switch {
 	case !isGoEmpty:
-		goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go)
+		goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go, pluginDependencies, overrideRemote)
 		if err != nil {
 			return nil, err
 		}
@@ -242,14 +247,18 @@ func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) 
 	}, nil
 }
 
-func newGoRegistryConfig(externalGoRegistryConfig *ExternalGoRegistryConfig) (*GoRegistryConfig, error) {
+func newGoRegistryConfig(
+	externalGoRegistryConfig *ExternalGoRegistryConfig,
+	pluginDependencies []bufremotepluginref.PluginReference,
+	overrideRemote string,
+) (*GoRegistryConfig, error) {
 	if externalGoRegistryConfig == nil {
 		return nil, nil
 	}
 	if externalGoRegistryConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRegistryConfig.MinVersion) {
 		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRegistryConfig.MinVersion)
 	}
-	var dependencies []*GoRegistryDependencyConfig
+	var runtimeDependencies []*GoRegistryDependencyConfig
 	for _, dep := range externalGoRegistryConfig.Deps {
 		if dep.Module == "" {
 			return nil, errors.New("go runtime dependency requires a non-empty module name")
@@ -260,17 +269,37 @@ func newGoRegistryConfig(externalGoRegistryConfig *ExternalGoRegistryConfig) (*G
 		if !semver.IsValid(dep.Version) {
 			return nil, fmt.Errorf("go runtime dependency %s:%s does not have a valid semantic version", dep.Module, dep.Version)
 		}
-		dependencies = append(
-			dependencies,
+		runtimeDependencies = append(
+			runtimeDependencies,
 			&GoRegistryDependencyConfig{
 				Module:  dep.Module,
 				Version: dep.Version,
 			},
 		)
 	}
+	var basePlugin bufremotepluginref.PluginIdentity
+	if externalGoRegistryConfig.BasePlugin != "" {
+		var err error
+		basePlugin, err = pluginIdentityForStringWithOverrideRemote(externalGoRegistryConfig.BasePlugin, overrideRemote)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse base plugin: %w", err)
+		}
+		// Validate the base plugin is included as one of the plugin dependencies when both are
+		// specified. This ensures there's exactly one base type and it has a known dependency to
+		// generate imports correctly and build a correct Go mod file.
+		if len(pluginDependencies) > 0 {
+			ok := slices.ContainsFunc(pluginDependencies, func(ref bufremotepluginref.PluginReference) bool {
+				return ref.IdentityString() == basePlugin.IdentityString()
+			})
+			if !ok {
+				return nil, fmt.Errorf("base plugin %q not found in plugin dependencies", externalGoRegistryConfig.BasePlugin)
+			}
+		}
+	}
 	return &GoRegistryConfig{
 		MinVersion: externalGoRegistryConfig.MinVersion,
-		Deps:       dependencies,
+		Deps:       runtimeDependencies,
+		BasePlugin: basePlugin,
 	}, nil
 }
 
