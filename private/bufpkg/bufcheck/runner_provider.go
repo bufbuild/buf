@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
@@ -26,6 +27,7 @@ import (
 
 type runnerProvider struct {
 	wasmRuntime wasm.Runtime
+	readBucket  storage.ReadBucket
 }
 
 func newRunnerProvider(
@@ -39,21 +41,17 @@ func newRunnerProvider(
 func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 	switch pluginConfig.Type() {
 	case bufconfig.PluginConfigTypeLocal:
-		path := pluginConfig.Path()
-		return pluginrpcutil.NewRunner(
-			// We know that Path is of at least length 1.
-			path[0],
-			path[1:]...,
+		return pluginrpcutil.NewLocalRunner(
+			pluginConfig.Name(),
+			pluginConfig.Args()...,
 		), nil
 	case bufconfig.PluginConfigTypeLocalWasm:
-		path := pluginConfig.Path()
-		return pluginrpcutil.NewWasmRunner(
+		return pluginrpcutil.NewLocalWasmRunner(
 			r.wasmRuntime,
-			// We know that Path is of at least length 1.
-			path[0],
-			path[1:]...,
+			pluginConfig.Name(),
+			pluginConfig.Args()...,
 		), nil
-	case bufconfig.PluginConfigTypeRemote:
+	case bufconfig.PluginConfigTypeRemoteWasm:
 		return nil, fmt.Errorf("remote plugins are not supported")
 	default:
 		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())

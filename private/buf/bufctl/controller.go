@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
 	"sort"
 
 	"buf.build/go/protoyaml"
@@ -29,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -44,12 +46,15 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
+	"pluginrpc.com/pluginrpc"
 )
 
 // ImageWithConfig pairs an Image with lint and breaking configuration.
@@ -128,6 +133,11 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
+	GetCheckRunnerProvider(
+		ctx context.Context,
+		wasmRuntime wasm.Runtime,
+		options ...FunctionOption,
+	) (bufcheck.RunnerProvider, error)
 }
 
 func NewController(
@@ -706,6 +716,39 @@ func (c *controller) PutMessage(
 	return errors.Join(err, writeCloser.Close())
 }
 
+func (c *controller) GetCheckRunnerProvider(
+	ctx context.Context,
+	wasmRuntime wasm.Runtime,
+	options ...FunctionOption,
+) (bufcheck.RunnerProvider, error) {
+	if len(options) > 0 {
+		return nil, syserror.Newf("options are not supported for GetCheckRunnerProvider")
+	}
+	return bufcheck.RunnerProviderFunc(func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
+		plugin, err := c.getPluginForPluginConfig(ctx, pluginConfig)
+		if err != nil {
+			return nil, err
+		}
+		switch {
+		case plugin.IsWasm():
+			getData := plugin.Data
+			return pluginrpcutil.NewWasmRunner(
+				wasmRuntime,
+				getData,
+				pluginConfig.Name(),
+				pluginConfig.Args()...,
+			), nil
+		case plugin.IsLocal():
+			return pluginrpcutil.NewLocalRunner(
+				pluginConfig.Name(),
+				pluginConfig.Args()...,
+			), nil
+		default:
+			return nil, syserror.Newf("unknown plugin type: %s", plugin.OpaqueID())
+		}
+	}), nil
+}
+
 func (c *controller) getImage(
 	ctx context.Context,
 	input string,
@@ -1157,6 +1200,73 @@ Declare %q in the deps key in your buf.yaml.`,
 		}
 	}
 	return nil
+}
+
+// getPluginForPluginConfig resolves the plugin for the given PluginConfig.
+//
+// Remote plugins are resolved by fetching the plugin key for the given Ref, and then fetching
+// the plugin data for the plugin key.
+func (c *controller) getPluginForPluginConfig(
+	ctx context.Context,
+	pluginConfig bufconfig.PluginConfig,
+	options ...FunctionOption,
+) (bufplugin.Plugin, error) {
+	if len(options) > 0 {
+		return nil, syserror.Newf("options are not supported")
+	}
+	switch pluginConfigType := pluginConfig.Type(); pluginConfigType {
+	case bufconfig.PluginConfigTypeLocal:
+		return bufplugin.NewLocalPlugin(
+			pluginConfig.Name(),
+			pluginConfig.Args(),
+		)
+	case bufconfig.PluginConfigTypeLocalWasm:
+		pluginName := pluginConfig.Name()
+		getData := func() ([]byte, error) {
+			moduleWasm, err := os.ReadFile(pluginName)
+			if err != nil {
+				return nil, fmt.Errorf("could not read plugin %q: %v", pluginName, err)
+			}
+			return moduleWasm, nil
+
+		}
+		return bufplugin.NewLocalWasmPlugin(
+			nil, // We don't have a FullName for a local Wasm plugin.
+			pluginName,
+			pluginConfig.Args(),
+			getData,
+		)
+	case bufconfig.PluginConfigTypeRemoteWasm:
+		pluginRef := pluginConfig.Ref()
+		if pluginRef == nil {
+			return nil, syserror.Newf("Ref is required for remote plugins")
+		}
+		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, []bufparse.Ref{pluginRef}, bufplugin.DigestTypeP1)
+		if err != nil {
+			return nil, err
+		}
+		if len(pluginKeys) != 1 {
+			return nil, syserror.Newf("expected 1 plugin key, got %d", len(pluginKeys))
+		}
+		pluginKey := pluginKeys[0]
+		return bufplugin.NewRemoteWasmPlugin(
+			pluginKey.FullName(),
+			pluginConfig.Args(),
+			pluginKey.CommitID(),
+			func() ([]byte, error) {
+				pluginDatas, err := c.pluginDataProvider.GetPluginDatasForPluginKeys(ctx, []bufplugin.PluginKey{pluginKey})
+				if err != nil {
+					return nil, err
+				}
+				if len(pluginDatas) != 1 {
+					return nil, syserror.Newf("expected 1 plugin data, got %d", len(pluginDatas))
+				}
+				return pluginDatas[0].Data()
+			},
+		)
+	default:
+		return nil, syserror.Newf("unknown plugin config type: %v", pluginConfigType)
+	}
 }
 
 // handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print

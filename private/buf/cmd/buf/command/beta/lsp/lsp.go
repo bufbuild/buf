@@ -113,9 +113,13 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	checkRunnerProvider, err := controller.GetCheckRunnerProvider(ctx, wasmRuntime)
+	if err != nil {
+		return err
+	}
 	checkClient, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(wasmRuntime),
+		checkRunnerProvider,
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

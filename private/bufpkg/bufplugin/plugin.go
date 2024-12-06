@@ -37,10 +37,14 @@ type Plugin interface {
 	//
 	// If two Plugins have the same FullName, they will have the same OpaqueID.
 	OpaqueID() string
-	// Path returns the path, including arguments, to invoke the binary plugin.
+	// Name returns the name of the Plugin.
 	//
-	// This is not empty only when the Plugin is local.
-	Path() []string
+	// This is never empty.
+	Name() string
+	// Args returns the arguments to invoke the Plugin.
+	//
+	// This may be empty.
+	Args() []string
 	// FullName returns the full name of the Plugin.
 	//
 	// May be nil. Callers should not rely on this value being present.
@@ -104,18 +108,57 @@ type Plugin interface {
 	isPlugin()
 }
 
+// NewLocalPlugin returns a new Plugin for a local plugin.
+func NewLocalPlugin(
+	name string,
+	args []string,
+) (Plugin, error) {
+	return newPlugin(
+		"",  // description
+		nil, // pluginFullName
+		name,
+		args,
+		uuid.Nil, // commitID
+		false,    // isWasm
+		true,     // isLocal
+		nil,      // getData
+	)
+}
+
 // NewLocalWasmPlugin returns a new Plugin for a local Wasm plugin.
 func NewLocalWasmPlugin(
+	fullName bufparse.FullName,
+	name string,
+	args []string,
+	getData func() ([]byte, error),
+) (Plugin, error) {
+	return newPlugin(
+		"", // description
+		fullName,
+		name,
+		args,
+		uuid.Nil, // commitID
+		true,     // isWasm
+		true,     // isLocal
+		getData,
+	)
+}
+
+// NewRemoteWasmPlugin returns a new Plugin for a remote Wasm plugin.
+func NewRemoteWasmPlugin(
 	pluginFullName bufparse.FullName,
+	args []string,
+	commitID uuid.UUID,
 	getData func() ([]byte, error),
 ) (Plugin, error) {
 	return newPlugin(
 		"", // description
 		pluginFullName,
-		nil,      // path
-		uuid.Nil, // commitID
-		true,     // isWasm
-		true,     // isLocal
+		pluginFullName.String(),
+		args,
+		commitID,
+		true,  // isWasm
+		false, // isLocal
 		getData,
 	)
 }
@@ -125,7 +168,8 @@ func NewLocalWasmPlugin(
 type plugin struct {
 	description    string
 	pluginFullName bufparse.FullName
-	path           []string
+	name           string
+	args           []string
 	commitID       uuid.UUID
 	isWasm         bool
 	isLocal        bool
@@ -137,17 +181,18 @@ type plugin struct {
 func newPlugin(
 	description string,
 	pluginFullName bufparse.FullName,
-	path []string,
+	name string,
+	args []string,
 	commitID uuid.UUID,
 	isWasm bool,
 	isLocal bool,
 	getData func() ([]byte, error),
 ) (*plugin, error) {
+	if name == "" {
+		return nil, syserror.New("name not present when constructing a Plugin")
+	}
 	if isWasm && getData == nil {
 		return nil, syserror.Newf("getData not present when constructing a Wasm Plugin")
-	}
-	if !isWasm && len(path) == 0 {
-		return nil, syserror.New("path not present when constructing a non-Wasm Plugin")
 	}
 	if !isLocal && pluginFullName == nil {
 		return nil, syserror.New("pluginFullName not present when constructing a remote Plugin")
@@ -164,7 +209,8 @@ func newPlugin(
 	plugin := &plugin{
 		description:    description,
 		pluginFullName: pluginFullName,
-		path:           path,
+		name:           name,
+		args:           args,
 		commitID:       commitID,
 		isWasm:         isWasm,
 		isLocal:        isLocal,
@@ -178,11 +224,15 @@ func (p *plugin) OpaqueID() string {
 	if p.pluginFullName != nil {
 		return p.pluginFullName.String()
 	}
-	return strings.Join(p.path, " ")
+	return p.name + " " + strings.Join(p.args, " ")
 }
 
-func (p *plugin) Path() []string {
-	return p.path
+func (p *plugin) Name() string {
+	return p.name
+}
+
+func (p *plugin) Args() []string {
+	return p.args
 }
 
 func (p *plugin) FullName() bufparse.FullName {

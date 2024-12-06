@@ -16,10 +16,6 @@ package pluginrpcutil
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"os"
-	"os/exec"
 	"slices"
 	"sync"
 
@@ -29,6 +25,7 @@ import (
 
 type wasmRunner struct {
 	delegate    wasm.Runtime
+	getData     func() ([]byte, error)
 	programName string
 	programArgs []string
 	// lock protects compiledModule and compiledModuleErr. Store called as
@@ -41,11 +38,13 @@ type wasmRunner struct {
 
 func newWasmRunner(
 	delegate wasm.Runtime,
+	getData func() ([]byte, error),
 	programName string,
 	programArgs ...string,
 ) *wasmRunner {
 	return &wasmRunner{
 		delegate:    delegate,
+		getData:     getData,
 		programName: programName,
 		programArgs: programArgs,
 	}
@@ -79,22 +78,9 @@ func (r *wasmRunner) loadCompiledModuleOnce(ctx context.Context) (wasm.CompiledM
 }
 
 func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModule, error) {
-	// Find the plugin path. We use the same logic as exec.LookPath, but we do
-	// not require the file to be executable. So check the local directory
-	// first before checking the PATH.
-	var path string
-	if fileInfo, err := os.Stat(r.programName); err == nil && !fileInfo.IsDir() {
-		path = r.programName
-	} else {
-		var err error
-		path, err = unsafeLookPath(r.programName)
-		if err != nil {
-			return nil, fmt.Errorf("could not find plugin %q in PATH: %v", r.programName, err)
-		}
-	}
-	moduleWasm, err := os.ReadFile(path)
+	moduleWasm, err := r.getData()
 	if err != nil {
-		return nil, fmt.Errorf("could not read plugin %q: %v", r.programName, err)
+		return nil, err
 	}
 	// Compile the module. This CompiledModule is never released, so
 	// subsequent calls to this function will benefit from the cached
@@ -104,17 +90,4 @@ func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModul
 		return nil, err
 	}
 	return compiledModule, nil
-}
-
-// unsafeLookPath is a wrapper around exec.LookPath that restores the original
-// pre-Go 1.19 behavior of resolving queries that would use relative PATH
-// entries. We consider it acceptable for the use case of locating plugins.
-//
-// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
-func unsafeLookPath(file string) (string, error) {
-	path, err := exec.LookPath(file)
-	if errors.Is(err, exec.ErrDot) {
-		err = nil
-	}
-	return path, err
 }

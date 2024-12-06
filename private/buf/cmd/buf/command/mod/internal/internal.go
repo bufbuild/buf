@@ -175,7 +175,7 @@ func lsRun(
 	// BufYAMLFiles <=v1 never had plugins.
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime),
+		bufcheck.NewLocalRunnerProvider(wasm.UnimplementedRuntime),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {
