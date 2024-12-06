@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -31,8 +30,8 @@ const (
 	PluginConfigTypeLocal PluginConfigType = iota + 1
 	// PluginConfigTypeLocalWasm is the local Wasm plugin config type.
 	PluginConfigTypeLocalWasm
-	// PluginConfigTypeRemote is the remote plugin config type.
-	PluginConfigTypeRemote
+	// PluginConfigTypeRemoteWasm is the remote Wasm plugin config type.
+	PluginConfigTypeRemoteWasm
 )
 
 // PluginConfigType is a generate plugin configuration type.
@@ -42,17 +41,22 @@ type PluginConfigType int
 type PluginConfig interface {
 	// Type returns the plugin type. This is never the zero value.
 	Type() PluginConfigType
-	// Name returns the plugin name. This is never empty.
+	// Name returns the plugin name.
+	//
+	// This may be a path, a remote reference, or a Wasm file. Invoking code
+	// should check the Type to determine how to interpret this.
+	//
+	// This is never empty.
 	Name() string
 	// Options returns the plugin options.
 	//
 	// TODO: Will want good validation and good error messages for what this decodes.
 	// Otherwise we will confuse users. Do QA.
 	Options() map[string]any
-	// Path returns the path, including arguments, to invoke the binary plugin.
+	// Args returns the arguments, to invoke the plugin.
 	//
-	// This is not empty only when the plugin is local.
-	Path() []string
+	// This may be empty.
+	Args() []string
 	// Ref returns the plugin reference.
 	//
 	// This is only non-nil when the plugin is remote.
@@ -64,30 +68,47 @@ type PluginConfig interface {
 // NewLocalPluginConfig returns a new PluginConfig for a local plugin.
 func NewLocalPluginConfig(
 	name string,
+	args []string,
 	options map[string]any,
-	path []string,
 ) (PluginConfig, error) {
 	return newLocalPluginConfig(
 		name,
+		args,
 		options,
-		path,
 	)
 }
 
 // NewLocalWasmPluginConfig returns a new PluginConfig for a local Wasm plugin.
 //
-// The first path argument is the path to the Wasm plugin and must end with .wasm.
-// The remaining path arguments are the arguments to the Wasm plugin. These are passed
-// to the Wasm plugin as command line arguments.
+// The name is the path to the Wasm plugin and must end with .wasm.
+// The args are the arguments to the Wasm plugin. These are passed to the Wasm plugin
+// as command line arguments.
 func NewLocalWasmPluginConfig(
 	name string,
+	args []string,
 	options map[string]any,
-	path []string,
 ) (PluginConfig, error) {
 	return newLocalWasmPluginConfig(
 		name,
+		args,
 		options,
-		path,
+	)
+}
+
+// NewRemoteWasmPluginConfig returns a new PluginConfig for a remote Wasm plugin.
+//
+// The pluginRef is the remote reference to the plugin.
+// The args are the arguments to the remote plugin. These are passed to the remote plugin
+// as command line arguments.
+func NewRemoteWasmPluginConfig(
+	pluginRef bufparse.Ref,
+	args []string,
+	options map[string]any,
+) (PluginConfig, error) {
+	return newRemotePluginConfig(
+		pluginRef,
+		args,
+		options,
 	)
 }
 
@@ -95,9 +116,9 @@ func NewLocalWasmPluginConfig(
 
 type pluginConfig struct {
 	pluginConfigType PluginConfigType
-	name             string
 	options          map[string]any
-	path             []string
+	name             string
+	args             []string
 	ref              bufparse.Ref
 }
 
@@ -123,6 +144,7 @@ func newPluginConfigForExternalV2(
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
+	name, args := path[0], path[1:]
 	// Remote plugins are specified as plugin references.
 	if pluginRef, err := bufparse.ParseRef(path[0]); err == nil {
 		// Check if the local filepath exists, if it does presume its
@@ -131,6 +153,7 @@ func newPluginConfigForExternalV2(
 		if _, err := os.Stat(path[0]); os.IsNotExist(err) {
 			return newRemotePluginConfig(
 				pluginRef,
+				args,
 				options,
 			)
 		}
@@ -138,61 +161,63 @@ func newPluginConfigForExternalV2(
 	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
 	if filepath.Ext(path[0]) == ".wasm" {
 		return newLocalWasmPluginConfig(
-			strings.Join(path, " "),
+			name,
+			args,
 			options,
-			path,
 		)
 	}
 	return newLocalPluginConfig(
-		strings.Join(path, " "),
+		name,
+		args,
 		options,
-		path,
 	)
 }
 
 func newLocalPluginConfig(
 	name string,
+	args []string,
 	options map[string]any,
-	path []string,
 ) (*pluginConfig, error) {
-	if len(path) == 0 {
+	if len(name) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeLocal,
-		name:             name,
 		options:          options,
-		path:             path,
+		name:             name,
+		args:             args,
 	}, nil
 }
 
 func newLocalWasmPluginConfig(
 	name string,
+	args []string,
 	options map[string]any,
-	path []string,
 ) (*pluginConfig, error) {
-	if len(path) == 0 {
+	if len(name) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
-	if filepath.Ext(path[0]) != ".wasm" {
+	if filepath.Ext(name) != ".wasm" {
 		return nil, fmt.Errorf("must specify a path to the plugin, and the first path argument must end with .wasm")
 	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeLocalWasm,
-		name:             name,
 		options:          options,
-		path:             path,
+		name:             name,
+		args:             args,
 	}, nil
 }
 
 func newRemotePluginConfig(
 	pluginRef bufparse.Ref,
+	args []string,
 	options map[string]any,
 ) (*pluginConfig, error) {
 	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeRemote,
-		name:             pluginRef.FullName().Name(),
+		pluginConfigType: PluginConfigTypeRemoteWasm,
+		name:             pluginRef.String(),
 		options:          options,
+		args:             args,
 		ref:              pluginRef,
 	}, nil
 }
@@ -209,8 +234,8 @@ func (p *pluginConfig) Options() map[string]any {
 	return p.options
 }
 
-func (p *pluginConfig) Path() []string {
-	return p.path
+func (p *pluginConfig) Args() []string {
+	return p.args
 }
 
 func (p *pluginConfig) Ref() bufparse.Ref {
@@ -229,15 +254,12 @@ func newExternalV2ForPluginConfig(
 	externalBufYAMLFilePluginV2 := externalBufYAMLFilePluginV2{
 		Options: pluginConfig.Options(),
 	}
-	switch pluginConfig.Type() {
-	case PluginConfigTypeLocal:
-		path := pluginConfig.Path()
-		switch {
-		case len(path) == 1:
-			externalBufYAMLFilePluginV2.Plugin = path[0]
-		case len(path) > 1:
-			externalBufYAMLFilePluginV2.Plugin = path
-		}
+	args := pluginConfig.Args()
+	switch {
+	case len(args) == 0:
+		externalBufYAMLFilePluginV2.Plugin = pluginConfig.Name()
+	case len(args) > 0:
+		externalBufYAMLFilePluginV2.Plugin = append([]string{pluginConfig.Name()}, args...)
 	}
 	return externalBufYAMLFilePluginV2, nil
 }

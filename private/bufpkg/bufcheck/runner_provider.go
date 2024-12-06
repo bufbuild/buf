@@ -15,9 +15,12 @@
 package bufcheck
 
 import (
-	"fmt"
+	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -25,37 +28,135 @@ import (
 )
 
 type runnerProvider struct {
-	wasmRuntime wasm.Runtime
+	wasmRuntime        wasm.Runtime
+	pluginKeyProvider  bufplugin.PluginKeyProvider
+	pluginDataProvider bufplugin.PluginDataProvider
 }
 
 func newRunnerProvider(
 	wasmRuntime wasm.Runtime,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
 ) *runnerProvider {
 	return &runnerProvider{
-		wasmRuntime: wasmRuntime,
+		wasmRuntime:        wasmRuntime,
+		pluginKeyProvider:  pluginKeyProvider,
+		pluginDataProvider: pluginDataProvider,
 	}
 }
 
 func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 	switch pluginConfig.Type() {
 	case bufconfig.PluginConfigTypeLocal:
-		path := pluginConfig.Path()
-		return pluginrpcutil.NewRunner(
-			// We know that Path is of at least length 1.
-			path[0],
-			path[1:]...,
+		return pluginrpcutil.NewLocalRunner(
+			pluginConfig.Name(),
+			pluginConfig.Args()...,
 		), nil
 	case bufconfig.PluginConfigTypeLocalWasm:
-		path := pluginConfig.Path()
-		return pluginrpcutil.NewWasmRunner(
+		return pluginrpcutil.NewLocalWasmRunner(
 			r.wasmRuntime,
-			// We know that Path is of at least length 1.
-			path[0],
-			path[1:]...,
+			pluginConfig.Name(),
+			pluginConfig.Args()...,
 		), nil
-	case bufconfig.PluginConfigTypeRemote:
-		return nil, fmt.Errorf("remote plugins are not supported")
+	case bufconfig.PluginConfigTypeRemoteWasm:
+		return newRemoteWasmPluginRunner(
+			r.wasmRuntime,
+			r.pluginKeyProvider,
+			r.pluginDataProvider,
+			pluginConfig,
+		)
 	default:
 		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())
 	}
+}
+
+// *** PRIVATE ***
+
+// remoteWasmPluginRunner is a Runner that runs a remote Wasm plugin.
+//
+// This is a wrapper around a pluginrpc.Runner that first resolves the Ref to
+// a PluginKey using the PluginKeyProvider. It then loads the PluginData for
+// the PluginKey using the PluginDataProvider. The PluginData is then used to
+// create the pluginrpc.Runner. The Runner is only loaded once and is cached
+// for future calls. However, if the Runner fails to load it will try to
+// reload on the next call.
+type remoteWasmPluginRunner struct {
+	wasmRuntime        wasm.Runtime
+	pluginKeyProvider  bufplugin.PluginKeyProvider
+	pluginDataProvider bufplugin.PluginDataProvider
+	pluginRef          bufparse.Ref
+	pluginName         string
+	pluginArgs         []string
+	// lock protects runner.
+	lock   sync.RWMutex
+	runner pluginrpc.Runner
+}
+
+func newRemoteWasmPluginRunner(
+	wasmRuntime wasm.Runtime,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
+	pluginConfig bufconfig.PluginConfig,
+) (*remoteWasmPluginRunner, error) {
+	pluginRef := pluginConfig.Ref()
+	if pluginRef == nil {
+		return nil, syserror.Newf("Ref nil on PluginConfig of type %v", bufconfig.PluginConfigTypeRemoteWasm)
+	}
+	return &remoteWasmPluginRunner{
+		wasmRuntime:        wasmRuntime,
+		pluginKeyProvider:  pluginKeyProvider,
+		pluginDataProvider: pluginDataProvider,
+		pluginRef:          pluginRef,
+		pluginName:         pluginConfig.Name(),
+		pluginArgs:         pluginConfig.Args(),
+	}, nil
+}
+
+func (r *remoteWasmPluginRunner) Run(ctx context.Context, env pluginrpc.Env) (retErr error) {
+	delegate, err := r.loadRunnerOnce(ctx)
+	if err != nil {
+		return err
+	}
+	return delegate.Run(ctx, env)
+}
+
+func (r *remoteWasmPluginRunner) loadRunnerOnce(ctx context.Context) (pluginrpc.Runner, error) {
+	r.lock.RLock()
+	if r.runner != nil {
+		r.lock.RUnlock()
+		return r.runner, nil
+	}
+	r.lock.RUnlock()
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	if r.runner == nil {
+		runner, err := r.loadRunner(ctx)
+		if err != nil {
+			// The error isn't stored to avoid ctx cancellation issues. On the next call,
+			// the runner will be reloaded instead of returning the erorr.
+			return nil, err
+		}
+		r.runner = runner
+	}
+	return r.runner, nil
+}
+
+func (r *remoteWasmPluginRunner) loadRunner(ctx context.Context) (pluginrpc.Runner, error) {
+	pluginKeys, err := r.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, []bufparse.Ref{r.pluginRef}, bufplugin.DigestTypeP1)
+	if err != nil {
+		return nil, err
+	}
+	if len(pluginKeys) != 1 {
+		return nil, syserror.Newf("expected 1 PluginKey, got %d", len(pluginKeys))
+	}
+	// Load the data for the plugin now to ensure the context is valid for the entire operation.
+	pluginDatas, err := r.pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)
+	if err != nil {
+		return nil, err
+	}
+	if len(pluginDatas) != 1 {
+		return nil, syserror.Newf("expected 1 PluginData, got %d", len(pluginDatas))
+	}
+	data := pluginDatas[0]
+	return pluginrpcutil.NewWasmRunner(r.wasmRuntime, data.Data, r.pluginName, r.pluginArgs...), nil
 }

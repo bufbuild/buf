@@ -183,6 +183,10 @@ func lsRun(
 			return err
 		}
 	}
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -194,9 +198,13 @@ func lsRun(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	checkRunnerProvider, err := controller.GetCheckRunnerProvider(ctx, ".", wasmRuntime)
+	if err != nil {
+		return err
+	}
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewRunnerProvider(wasmRuntime),
+		checkRunnerProvider,
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

@@ -16,9 +16,11 @@ package bufplugin
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -41,6 +43,32 @@ type PluginKeyProvider interface {
 	GetPluginKeysForPluginRefs(context.Context, []bufparse.Ref, DigestType) ([]PluginKey, error)
 }
 
+// NewStaticPluginKeyProvider returns a new PluginKeyProvider for a set of PluginKeys.
+//
+// The set of PluginKeys must be unique by FullName. If there are duplicates,
+// an error will be returned. The Ref will be matched to the PluginKey by FullName.
+// If the Ref is not found in the set of provided keys, an error with
+// fs.ErrNotExist will be returned.
+func NewStaticPluginKeyProvider(pluginKeys []PluginKey) (PluginKeyProvider, error) {
+	if len(pluginKeys) == 0 {
+		return NopPluginKeyProvider, nil
+	}
+	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
+		return pluginKey.FullName().String()
+	})
+	if err != nil {
+		return nil, err
+	}
+	digetType, err := UniqueDigestTypeForPluginKeys(pluginKeys)
+	if err != nil {
+		return nil, err
+	}
+	return staticPluginKeyProvider{
+		pluginKeysByFullName: pluginKeysByFullName,
+		digestType:           digetType,
+	}, nil
+}
+
 // *** PRIVATE ***
 
 type nopPluginKeyProvider struct{}
@@ -51,4 +79,31 @@ func (nopPluginKeyProvider) GetPluginKeysForPluginRefs(
 	DigestType,
 ) ([]PluginKey, error) {
 	return nil, fs.ErrNotExist
+}
+
+type staticPluginKeyProvider struct {
+	pluginKeysByFullName map[string]PluginKey
+	digestType           DigestType
+}
+
+func (s staticPluginKeyProvider) GetPluginKeysForPluginRefs(
+	_ context.Context,
+	refs []bufparse.Ref,
+	digestType DigestType,
+) ([]PluginKey, error) {
+	if digestType != s.digestType {
+		return nil, fmt.Errorf("expected DigestType %v, got %v", s.digestType, digestType)
+	}
+	pluginKeys := make([]PluginKey, len(refs))
+	for i, ref := range refs {
+		// Only the FullName is used to match the PluginKey. The Ref is not
+		// validated to match the PluginKey as there is not enough information
+		// to do so.
+		pluginKey, ok := s.pluginKeysByFullName[ref.FullName().String()]
+		if !ok {
+			return nil, fs.ErrNotExist
+		}
+		pluginKeys[i] = pluginKey
+	}
+	return pluginKeys, nil
 }

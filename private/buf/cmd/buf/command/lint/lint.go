@@ -121,11 +121,14 @@ func run(
 	if err != nil {
 		return err
 	}
+	controllerOptions := []bufctl.FunctionOption{
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
+	}
 	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		input,
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
+		controllerOptions...,
 	)
 	if err != nil {
 		return err
@@ -141,11 +144,20 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	checkRunnerProvider, err := controller.GetCheckRunnerProvider(
+		ctx,
+		input,
+		wasmRuntime,
+		controllerOptions...,
+	)
+	if err != nil {
+		return err
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
 			container.Logger(),
-			bufcheck.NewRunnerProvider(wasmRuntime),
+			checkRunnerProvider,
 			bufcheck.ClientWithStderr(container.Stderr()),
 		)
 		if err != nil {

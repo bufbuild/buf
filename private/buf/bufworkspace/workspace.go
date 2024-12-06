@@ -18,6 +18,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
@@ -72,8 +73,14 @@ type Workspace interface {
 	// detector ignoring these configs anyways.
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
 	// PluginConfigs gets the configured PluginConfigs of the Workspace.
+	//
+	// These come from buf.yaml files.
 	PluginConfigs() []bufconfig.PluginConfig
-	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
+	// RemotePluginKeys gets the remote PluginKeys of the Workspace.
+	//
+	// These come from buf.lock files.
+	RemotePluginKeys() []bufplugin.PluginKey
+	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as Refs.
 	//
 	// These come from buf.yaml files.
 	//
@@ -105,6 +112,7 @@ type workspace struct {
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	pluginConfigs            []bufconfig.PluginConfig
+	remotePluginKeys         []bufplugin.PluginKey
 	configuredDepModuleRefs  []bufparse.Ref
 
 	// If true, the workspace was created from v2 buf.yamls.
@@ -117,6 +125,7 @@ func newWorkspace(
 	opaqueIDToLintConfig map[string]bufconfig.LintConfig,
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
 	pluginConfigs []bufconfig.PluginConfig,
+	remotePluginKeys []bufplugin.PluginKey,
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
 ) *workspace {
@@ -125,6 +134,7 @@ func newWorkspace(
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		pluginConfigs:            pluginConfigs,
+		remotePluginKeys:         remotePluginKeys,
 		configuredDepModuleRefs:  configuredDepModuleRefs,
 		isV2:                     isV2,
 	}
@@ -140,6 +150,10 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 
 func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
 	return slicesext.Copy(w.pluginConfigs)
+}
+
+func (w *workspace) RemotePluginKeys() []bufplugin.PluginKey {
+	return slicesext.Copy(w.remotePluginKeys)
 }
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufparse.Ref {
