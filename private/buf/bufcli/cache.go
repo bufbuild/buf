@@ -26,8 +26,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugincache"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginstore"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -35,23 +40,26 @@ import (
 )
 
 var (
-	// AllCacheModuleRelDirPaths are all directory paths for all time concerning the module cache.
+	// AllCacheRelDirPaths are all directory paths for all time
+	// concerning the module and plugin caches.
 	//
 	// These are normalized.
 	// These are relative to container.CacheDirPath().
 	//
 	// This variable is used for clearing the cache.
-	AllCacheModuleRelDirPaths = []string{
-		v1beta1CacheModuleDataRelDirPath,
-		v1beta1CacheModuleLockRelDirPath,
+	AllCacheRelDirPaths = []string{
 		v1CacheModuleDataRelDirPath,
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
+		v1beta1CacheModuleDataRelDirPath,
+		v1beta1CacheModuleLockRelDirPath,
 		v2CacheModuleRelDirPath,
-		v3CacheModuleRelDirPath,
 		v3CacheCommitsRelDirPath,
-		v3CacheWKTRelDirPath,
 		v3CacheModuleLockRelDirPath,
+		v3CacheModuleRelDirPath,
+		v3CachePluginRelDirPath,
+		v3CacheWKTRelDirPath,
+		v3CacheWasmRuntimeRelDirPath,
 	}
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
@@ -103,6 +111,10 @@ var (
 	//
 	// Normalized.
 	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "modulelocks")
+	// v3CachePluginRelDirPath is the relative path to the files cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CachePluginRelDirPath = normalpath.Join("v3", "plugins")
 	// v3CacheWasmRuntimeRelDirPath is the relative path to the Wasm runtime cache directory in its newest iteration.
 	// This directory is used to store the Wasm runtime cache. This is an implementation specific cache and opaque outside of the runtime.
 	//
@@ -141,6 +153,21 @@ func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, er
 			clientConfig,
 		),
 		bufregistryapiowner.NewClientProvider(
+			clientConfig,
+		),
+	)
+}
+
+// NewPluginDataProvider returns a new PluginDataProvider while creating the
+// required cache directories.
+func NewPluginDataProvider(container appext.Container) (bufplugin.PluginDataProvider, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	return newPluginDataProvider(
+		container,
+		bufregistryapiplugin.NewClientProvider(
 			clientConfig,
 		),
 	)
@@ -235,6 +262,33 @@ func newCommitProvider(
 		container.Logger(),
 		delegateReader,
 		bufmodulestore.NewCommitStore(
+			container.Logger(),
+			cacheBucket,
+		),
+	), nil
+}
+
+func newPluginDataProvider(
+	container appext.Container,
+	pluginClientProvider bufregistryapiplugin.ClientProvider,
+) (bufplugin.PluginDataProvider, error) {
+	if err := createCacheDir(container.CacheDirPath(), v3CachePluginRelDirPath); err != nil {
+		return nil, err
+	}
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CachePluginRelDirPath)
+	storageosProvider := storageos.NewProvider() // No symlinks.
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	if err != nil {
+		return nil, err
+	}
+	delegateModuleDataProvider := bufpluginapi.NewPluingDataProvider(
+		container.Logger(),
+		pluginClientProvider,
+	)
+	return bufplugincache.NewPluginDataProvider(
+		container.Logger(),
+		delegateModuleDataProvider,
+		bufpluginstore.NewPluginDataStore(
 			container.Logger(),
 			cacheBucket,
 		),

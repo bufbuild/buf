@@ -12,21 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package depupdate
+package pluginupdate
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -35,25 +31,20 @@ const (
 	onlyFlagName = "only"
 )
 
-// NewCommand returns a new update Command.
+// NewCommand returns a new Command.
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Update pinned module dependencies in a buf.lock",
-		Long: `Fetch the latest digests for the specified module references in buf.yaml,
-and write them and their transitive dependencies to buf.lock.
+		Short: "Update pinned remote plugins in a buf.lock",
+		Long: `Fetch the latest digests for the specified plugin references in buf.yaml.
 
 The first argument is the directory of the local module to update.
 Defaults to "." if no argument is specified.`,
-		Args:       appcmd.MaximumNArgs(1),
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -76,13 +67,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Only,
 		onlyFlagName,
 		nil,
-		"The name of the dependency to update. When set, only this dependency and its transitive dependencies are updated. May be passed multiple times",
+		"The name of the plugin to update. When set, only this plugin is updated. May be provided multiple times",
 	)
 	// TODO FUTURE: implement
 	_ = flagSet.MarkHidden(onlyFlagName)
 }
 
-// run update the buf.lock file for a specific module.
 func run(
 	ctx context.Context,
 	container appext.Container,
@@ -106,40 +96,38 @@ func run(
 	if err != nil {
 		return err
 	}
-	configuredDepModuleRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
+	configuredRemotePluginRefs, err := workspaceDepManager.ConfiguredRemotePluginRefs(ctx)
 	if err != nil {
 		return err
 	}
-	configuredDepModuleKeys, err := internal.ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
+	pluginKeyProvider, err := bufcli.NewPluginKeyProvider(container)
+	if err != nil {
+		return err
+	}
+	configuredRemotePluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(
 		ctx,
-		container,
-		configuredDepModuleRefs,
-		workspaceDepManager.BufLockFileDigestType(),
+		configuredRemotePluginRefs,
+		bufplugin.DigestTypeP1,
 	)
 	if err != nil {
 		return err
 	}
-	logger.DebugContext(
-		ctx,
-		"all deps",
-		slog.Any("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
-	)
 
 	// Store the existing buf.lock data.
-	existingDepModuleKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
+	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
 	if err != nil {
 		return err
 	}
-	if configuredDepModuleKeys == nil && existingDepModuleKeys == nil {
-		// No new configured deps were found, and no existing buf.lock deps were found, so there
+	if configuredRemotePluginKeys == nil && existingRemotePluginKeys == nil {
+		// No new configured remote plugins were found, and no existing buf.lock deps were found, so there
 		// is nothing to update, we can return here.
 		// This ensures we do not create an empty buf.lock when one did not exist in the first
 		// place and we do not need to go through the entire operation of updating non-existent
 		// deps and building the image for tamper-proofing.
-		logger.Warn(fmt.Sprintf("No configured dependencies were found to update in %q.", dirPath))
+		logger.Warn(fmt.Sprintf("No configured remote plugins were found to update in %q.", dirPath))
 		return nil
 	}
-	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
+	existingDepModuleKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
 	if err != nil {
 		return err
 	}
@@ -155,24 +143,9 @@ func run(
 			retErr = errors.Join(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys))
 		}
 	}()
-	// Edit the buf.lock file with the unpruned dependencies.
-	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys, existingRemotePluginKeys); err != nil {
+	// Edit the buf.lock file with the updated remote plugins.
+	if err := workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, configuredRemotePluginKeys); err != nil {
 		return err
 	}
-	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
-	if err != nil {
-		return err
-	}
-	// Validate that the workspace builds.
-	// Building also has the side effect of doing tamper-proofing.
-	if _, err := controller.GetImageForWorkspace(
-		ctx,
-		workspace,
-		// This is a performance optimization - we don't need source code info.
-		bufctl.WithImageExcludeSourceInfo(true),
-	); err != nil {
-		return err
-	}
-	// Log warnings for users on unused configured deps.
-	return internal.LogUnusedConfiguredDepsForWorkspace(workspace, logger)
+	return nil
 }

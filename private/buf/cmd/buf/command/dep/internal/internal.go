@@ -106,7 +106,11 @@ func Prune(
 	if err := validateModuleKeysContains(bufYAMLBasedDepModuleKeys, depModuleKeys); err != nil {
 		return err
 	}
-	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys)
+	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys, existingRemotePluginKeys)
 }
 
 // LogUnusedConfiugredDepsForWorkspace takes a workspace and logs the unused configured
