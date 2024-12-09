@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -66,24 +67,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	pluginKeyProvider, err := bufcli.NewPluginKeyProvider(container)
-	if err != nil {
-		return err
-	}
-	configuredRemotePluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(
-		ctx,
-		configuredRemotePluginRefs,
-		bufplugin.DigestTypeP1,
-	)
-	if err != nil {
-		return err
-	}
 	return prune(
 		ctx,
 		slicesext.Map(
-			configuredRemotePluginKeys,
-			func(pluginKey bufplugin.PluginKey) string {
-				return pluginKey.String()
+			configuredRemotePluginRefs,
+			func(pluginRef bufparse.Ref) string {
+				return pluginRef.FullName().String()
 			},
 		),
 		workspaceDepManager,
@@ -92,10 +81,10 @@ func run(
 
 func prune(
 	ctx context.Context,
-	bufYAMLBasedRemotePluginKeys []string,
+	bufYAMLBasedRemotePluginNames []string,
 	workspaceDepManager bufworkspace.WorkspaceDepManager,
 ) error {
-	bufYAMLPluginKeys := slicesext.ToStructMap(bufYAMLBasedRemotePluginKeys)
+	bufYAMLRemotePluginNames := slicesext.ToStructMap(bufYAMLBasedRemotePluginNames)
 	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
 	if err != nil {
 		return err
@@ -103,7 +92,7 @@ func prune(
 	var prunedBufLockPluginKeys []bufplugin.PluginKey
 	for _, existingRemotePluginKey := range existingRemotePluginKeys {
 		// Check if an existing plugin key from the buf.lock is confiugred in the buf.yaml.
-		if _, ok := bufYAMLPluginKeys[existingRemotePluginKey.String()]; ok {
+		if _, ok := bufYAMLRemotePluginNames[existingRemotePluginKey.FullName().String()]; ok {
 			// If yes, then we keep it for the updated buf.lock.
 			prunedBufLockPluginKeys = append(prunedBufLockPluginKeys, existingRemotePluginKey)
 		}
