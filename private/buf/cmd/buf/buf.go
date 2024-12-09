@@ -62,6 +62,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
@@ -191,6 +192,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					pluginpush.NewCommand("push", builder),
 					pluginupdate.NewCommand("update", builder),
+					pluginprune.NewCommand("prune", builder),
 				},
 			},
 			{
