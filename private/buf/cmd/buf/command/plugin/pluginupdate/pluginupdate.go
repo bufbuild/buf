@@ -18,11 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -131,6 +133,31 @@ func run(
 	if err != nil {
 		return err
 	}
+	// We do not prune the buf.lock during update, we only add update existing plugin keys
+	// or add new plugin keys.
+	configuredRemotePluginKeyNameToPluginKey := map[string]bufplugin.PluginKey{}
+	for _, configuredRemotePluginKey := range configuredRemotePluginKeys {
+		configuredRemotePluginKeyNameToPluginKey[configuredRemotePluginKey.FullName().String()] = configuredRemotePluginKey
+	}
+	var updatedRemotePluginKeys []bufplugin.PluginKey
+	for _, existingRemotePluginKey := range existingRemotePluginKeys {
+		if updatedRemotePluginKey, ok := configuredRemotePluginKeyNameToPluginKey[existingRemotePluginKey.FullName().String()]; ok {
+			updatedRemotePluginKeys = append(updatedRemotePluginKeys, updatedRemotePluginKey)
+			// This was found and updated, so we can delete from the map
+			delete(configuredRemotePluginKeyNameToPluginKey, existingRemotePluginKey.FullName().String())
+		} else {
+			// Otherwise, keep the existing remote plugin key from buf.lock
+			updatedRemotePluginKeys = append(updatedRemotePluginKeys, existingRemotePluginKey)
+		}
+	}
+	// Add any new configured remote plugin keys
+	updatedRemotePluginKeys = append(updatedRemotePluginKeys, slicesext.MapValuesToSlice(configuredRemotePluginKeyNameToPluginKey)...)
+	sort.Slice(
+		updatedRemotePluginKeys,
+		func(i int, j int) bool {
+			return updatedRemotePluginKeys[i].FullName().String() < updatedRemotePluginKeys[j].FullName().String()
+		},
+	)
 
 	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
 	// attempt to revert the buf.lock file.
@@ -144,7 +171,7 @@ func run(
 		}
 	}()
 	// Edit the buf.lock file with the updated remote plugins.
-	if err := workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, configuredRemotePluginKeys); err != nil {
+	if err := workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, updatedRemotePluginKeys); err != nil {
 		return err
 	}
 	return nil
