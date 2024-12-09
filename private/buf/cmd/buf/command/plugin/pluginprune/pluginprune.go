@@ -100,12 +100,12 @@ func prune(
 	if err != nil {
 		return err
 	}
-	var updatedBufLockPluginKeys []bufplugin.PluginKey
+	var prunedBufLockPluginKeys []bufplugin.PluginKey
 	for _, existingRemotePluginKey := range existingRemotePluginKeys {
 		// Check if an existing plugin key from the buf.lock is confiugred in the buf.yaml.
 		if _, ok := bufYAMLPluginKeys[existingRemotePluginKey.String()]; ok {
 			// If yes, then we keep it for the updated buf.lock.
-			updatedBufLockPluginKeys = append(updatedBufLockPluginKeys, existingRemotePluginKey)
+			prunedBufLockPluginKeys = append(prunedBufLockPluginKeys, existingRemotePluginKey)
 		}
 	}
 	// We keep the existing dep module keys as-is.
@@ -113,5 +113,5 @@ func prune(
 	if err != nil {
 		return err
 	}
-	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, updatedBufLockPluginKeys)
+	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, prunedBufLockPluginKeys)
 }
