@@ -385,6 +385,9 @@ message CuratedPlugin {
   string doc = 22;
   // The collections the Plugin belongs to.
   repeated PluginCollection collections = 23;
+  // The Plugin ID uniquely identifies the Plugin entity across all versions. This differs from the
+  // ID field, which uniquely identifies a specific immutable Plugin version/revision.
+  string plugin_id = 24;
 }
 
 // Plugin collections group related plugins, organizing them by functionality or ecosystem.
