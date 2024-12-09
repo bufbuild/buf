@@ -8,6 +8,8 @@
   determinisitic.
 - Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
   Only WebAssembly check plugins are supported at this time.
+- Add `buf plugin update` and `buf plugin prune` command to manage plugins in the `buf.lock`
+  file. Only WebAssembly check plugins are supported at this time.
 - Add `buf registry plugin commit {add-label,info,list,resolve}` to manage BSR plugin commits.
 - Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
 
