@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package pluginupdate
+package modulesettingupdate
 
 import _ "github.com/bufbuild/buf/private/usage"
