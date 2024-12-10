@@ -108,23 +108,6 @@ type Plugin interface {
 	isPlugin()
 }
 
-// NewLocalPlugin returns a new Plugin for a local plugin.
-func NewLocalPlugin(
-	name string,
-	args []string,
-) (Plugin, error) {
-	return newPlugin(
-		"",  // description
-		nil, // pluginFullName
-		name,
-		args,
-		uuid.Nil, // commitID
-		false,    // isWasm
-		true,     // isLocal
-		nil,      // getData
-	)
-}
-
 // NewLocalWasmPlugin returns a new Plugin for a local Wasm plugin.
 func NewLocalWasmPlugin(
 	fullName bufparse.FullName,
@@ -140,25 +123,6 @@ func NewLocalWasmPlugin(
 		uuid.Nil, // commitID
 		true,     // isWasm
 		true,     // isLocal
-		getData,
-	)
-}
-
-// NewRemoteWasmPlugin returns a new Plugin for a remote Wasm plugin.
-func NewRemoteWasmPlugin(
-	pluginFullName bufparse.FullName,
-	args []string,
-	commitID uuid.UUID,
-	getData func() ([]byte, error),
-) (Plugin, error) {
-	return newPlugin(
-		"", // description
-		pluginFullName,
-		pluginFullName.String(),
-		args,
-		commitID,
-		true,  // isWasm
-		false, // isLocal
 		getData,
 	)
 }
