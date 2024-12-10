@@ -81,6 +81,8 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
+  EVENT_TYPE_REPOSITORY_DEPRECATED = 48;
+  EVENT_TYPE_REPOSITORY_UNDEPRECATED = 49;
   EVENT_TYPE_REPOSITORY_DELETED = 7;
   EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
@@ -156,6 +158,8 @@ message Event {
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
     PayloadRepositoryCreated repository_created = 12;
+    PayloadRepositoryDeprecated repository_deprecated = 54;
+    PayloadRepositoryUndeprecated repository_undeprecated = 55;
     PayloadRepositoryDeleted repository_deleted = 13;
     PayloadRepositoryCommitPushed repository_commit_pushed = 14;
     PayloadRepositoryContributorAdded repository_contributor_added = 15;
@@ -268,6 +272,24 @@ message PayloadRepositoryCreated {
 }
 
 message PayloadRepositoryDeleted {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadRepositoryDeprecated {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadRepositoryUndeprecated {
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
