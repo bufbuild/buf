@@ -100,7 +100,7 @@ func newRemoteWasmPluginRunner(
 ) (*remoteWasmPluginRunner, error) {
 	pluginRef := pluginConfig.Ref()
 	if pluginRef == nil {
-		return nil, syserror.Newf("Ref nil on PluginConfig of type %v", bufconfig.PluginConfigTypeRemoteWasm)
+		return nil, syserror.Newf("Ref nil on PluginConfig of type %v", pluginConfig.Type())
 	}
 	return &remoteWasmPluginRunner{
 		wasmRuntime:        wasmRuntime,

@@ -373,7 +373,7 @@ func (f *file) FindModule(ctx context.Context) {
 	}
 
 	// Get the check runner provider for this file. The client is scoped to
-	// the input Buf lock file, so we need to get the check runner provider
+	// the inputs buf.lock file, so we need to get the check runner provider
 	// for the workspace that contains this file.
 	checkRunnerProvider, err := f.lsp.controller.GetCheckRunnerProvider(ctx, f.uri.Filename(), f.lsp.wasmRuntime)
 	if err != nil {

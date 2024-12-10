@@ -133,8 +133,9 @@ type Controller interface {
 	// GetCheckRunnerProvider gets a CheckRunnerProvider for the given input.
 	//
 	// The returned RunnerProvider will be able to run lint and breaking checks
-	// using the PluginConfigs from the input. The input provided will resolve
-	// the PluginKeys from the related buf.lock file.
+	// using the PluginConfigs declared in the input buf.yaml. The input
+	// provided will resolve to a Workspace, and the remote PluginConfigs
+	// Refs will be resolved to the PluginKeys from the buf.lock file.
 	GetCheckRunnerProvider(
 		ctx context.Context,
 		input string,
@@ -1201,32 +1202,44 @@ Declare %q in the deps key in your buf.yaml.`,
 
 // getPluginKeyProviderForRef create a new PluginKeyProvider for the Ref.
 //
-// Remote plugins Refs are resolved to PluginKeys from the workspace buf.lock file.
-// If the Ref is a MessageRef, we use the current directory buf.lock file.
+// The Ref is resolved to a Workspace. The Workspaces PluginConfigs from the
+// buf.yaml file and the PluginKeys from the buf.lock are resolved to create the
+// PluginKeyProvider.
+// If the Ref is a MessageRef, the current directory buf.lock file is used.
+//
+// PluginConfigs are validated to ensure that all remote PluginConfigs are
+// pinned in the buf.lock file.
 func (c *controller) getPluginKeyProviderForRef(
 	ctx context.Context,
 	ref buffetch.Ref,
 	functionOptions *functionOptions,
 ) (_ bufplugin.PluginKeyProvider, retErr error) {
+	var (
+		pluginConfigs []bufconfig.PluginConfig
+		pluginKeys    []bufplugin.PluginKey
+	)
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return bufplugin.NewStaticPluginKeyProvider(workspace.RemotePluginKeys())
+		pluginConfigs = workspace.PluginConfigs()
+		pluginKeys = workspace.RemotePluginKeys()
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return bufplugin.NewStaticPluginKeyProvider(workspace.RemotePluginKeys())
+		pluginConfigs = workspace.PluginConfigs()
+		pluginKeys = workspace.RemotePluginKeys()
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return bufplugin.NewStaticPluginKeyProvider(workspace.RemotePluginKeys())
+		pluginConfigs = workspace.PluginConfigs()
+		pluginKeys = workspace.RemotePluginKeys()
 	case buffetch.MessageRef:
 		bucket, err := c.storageosProvider.NewReadWriteBucket(
 			".",
@@ -1247,10 +1260,11 @@ func (c *controller) getPluginKeyProviderForRef(
 			}
 			// We did not find a buf.yaml in our current directory,
 			// and there was no config override.
+			// Remote plugins are not available.
 			return bufplugin.NopPluginKeyProvider, nil
 		}
-		var pluginKeys []bufplugin.PluginKey
 		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+			pluginConfigs = bufYAMLFile.PluginConfigs()
 			bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 				ctx,
 				bucket,
@@ -1267,11 +1281,32 @@ func (c *controller) getPluginKeyProviderForRef(
 			}
 			pluginKeys = bufLockFile.RemotePluginKeys()
 		}
-		return bufplugin.NewStaticPluginKeyProvider(pluginKeys)
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
+	// Validate that all remote PluginConfigs are present in the buf.lock file.
+	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
+		return pluginKey.FullName().String()
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate remote PluginKeys: %w", err)
+	}
+	// Remote PluginConfig Refs are any PluginConfigs that have a Ref.
+	remotePluginRefs := slicesext.Filter(
+		slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+			return pluginConfig.Ref()
+		}),
+		func(pluginRef bufparse.Ref) bool {
+			return pluginRef != nil
+		},
+	)
+	for _, remotePluginRef := range remotePluginRefs {
+		if _, ok := pluginKeysByFullName[remotePluginRef.FullName().String()]; !ok {
+			return nil, fmt.Errorf(`remote plugin %q is not in the buf.lock file, use "buf plugin update" to pin remote refs`, remotePluginRef)
+		}
+	}
+	return bufplugin.NewStaticPluginKeyProvider(pluginKeys)
 }
 
 // handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print

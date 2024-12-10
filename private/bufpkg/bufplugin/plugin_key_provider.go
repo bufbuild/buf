@@ -59,13 +59,8 @@ func NewStaticPluginKeyProvider(pluginKeys []PluginKey) (PluginKeyProvider, erro
 	if err != nil {
 		return nil, err
 	}
-	digetType, err := UniqueDigestTypeForPluginKeys(pluginKeys)
-	if err != nil {
-		return nil, err
-	}
 	return staticPluginKeyProvider{
 		pluginKeysByFullName: pluginKeysByFullName,
-		digestType:           digetType,
 	}, nil
 }
 
@@ -83,7 +78,6 @@ func (nopPluginKeyProvider) GetPluginKeysForPluginRefs(
 
 type staticPluginKeyProvider struct {
 	pluginKeysByFullName map[string]PluginKey
-	digestType           DigestType
 }
 
 func (s staticPluginKeyProvider) GetPluginKeysForPluginRefs(
@@ -91,9 +85,6 @@ func (s staticPluginKeyProvider) GetPluginKeysForPluginRefs(
 	refs []bufparse.Ref,
 	digestType DigestType,
 ) ([]PluginKey, error) {
-	if digestType != s.digestType {
-		return nil, fmt.Errorf("expected DigestType %v, got %v", s.digestType, digestType)
-	}
 	pluginKeys := make([]PluginKey, len(refs))
 	for i, ref := range refs {
 		// Only the FullName is used to match the PluginKey. The Ref is not
@@ -102,6 +93,13 @@ func (s staticPluginKeyProvider) GetPluginKeysForPluginRefs(
 		pluginKey, ok := s.pluginKeysByFullName[ref.FullName().String()]
 		if !ok {
 			return nil, fs.ErrNotExist
+		}
+		digest, err := pluginKey.Digest()
+		if err != nil {
+			return nil, err
+		}
+		if digest.Type() != digestType {
+			return nil, fmt.Errorf("expected DigestType %v, got %v", digestType, digest.Type())
 		}
 		pluginKeys[i] = pluginKey
 	}

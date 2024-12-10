@@ -405,8 +405,8 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
-		nil, // No plugin configs for v1
-		nil, // No remote plugin keys for v1
+		nil, // No PluginConfigs for v1
+		nil, // No remote PluginKeys for v1
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
