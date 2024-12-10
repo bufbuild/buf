@@ -287,6 +287,8 @@ message PayloadRepositoryDeprecated {
   string owner_name = 2;
   // visibility is the visibility of the repository.
   buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+  // deprecation_message is the deprecation message set by the deprecation actor.
+  string deprecation_message = 4;
 }
 
 message PayloadRepositoryUndeprecated {
