@@ -205,22 +205,13 @@ func newBufLockFile(
 	if err := validateNoDuplicateModuleKeysByFullName(depModuleKeys); err != nil {
 		return nil, err
 	}
-	if err := validateNoDuplicatePluginKeysByFullName(remotePluginKeys); err != nil {
-		return nil, err
-	}
 	switch fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
-		if err := validateModuleExpectedDigestType(depModuleKeys, fileVersion, bufmodule.DigestTypeB4); err != nil {
+		if err := validateExpectedDigestType(depModuleKeys, fileVersion, bufmodule.DigestTypeB4); err != nil {
 			return nil, err
-		}
-		if len(remotePluginKeys) > 0 {
-			return nil, errors.New("remote plugins are not supported in v1 or v1beta1 buf.lock files")
 		}
 	case FileVersionV2:
-		if err := validateModuleExpectedDigestType(depModuleKeys, fileVersion, bufmodule.DigestTypeB5); err != nil {
-			return nil, err
-		}
-		if err := validatePluginExpectedDigestType(remotePluginKeys, fileVersion, bufplugin.DigestTypeP1); err != nil {
+		if err := validateExpectedDigestType(depModuleKeys, fileVersion, bufmodule.DigestTypeB5); err != nil {
 			return nil, err
 		}
 	default:
@@ -531,18 +522,6 @@ func validateNoDuplicateModuleKeysByFullName(moduleKeys []bufmodule.ModuleKey) e
 	return nil
 }
 
-func validateNoDuplicatePluginKeysByFullName(pluginKeys []bufplugin.PluginKey) error {
-	pluginFullNameStringMap := make(map[string]struct{})
-	for _, pluginKey := range pluginKeys {
-		pluginFullNameString := pluginKey.FullName().String()
-		if _, ok := pluginFullNameStringMap[pluginFullNameString]; ok {
-			return fmt.Errorf("duplicate plugin %q attempted to be added to lock file", pluginFullNameString)
-		}
-		pluginFullNameStringMap[pluginFullNameString] = struct{}{}
-	}
-	return nil
-}
-
 func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 	switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
@@ -566,7 +545,7 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 	}
 }
 
-func validateModuleExpectedDigestType(
+func validateExpectedDigestType(
 	moduleKeys []bufmodule.ModuleKey,
 	fileVersion FileVersion,
 	expectedDigestType bufmodule.DigestType,
@@ -582,29 +561,6 @@ func validateModuleExpectedDigestType(
 				fileVersion,
 				expectedDigestType,
 				moduleKey.String(),
-				digest.Type(),
-			)
-		}
-	}
-	return nil
-}
-
-func validatePluginExpectedDigestType(
-	pluginKeys []bufplugin.PluginKey,
-	fileVersion FileVersion,
-	expectedDigestType bufplugin.DigestType,
-) error {
-	for _, pluginKey := range pluginKeys {
-		digest, err := pluginKey.Digest()
-		if err != nil {
-			return err
-		}
-		if digest.Type() != expectedDigestType {
-			return fmt.Errorf(
-				"%s lock files must use digest type %v, but remote plugin %s had a digest type of %v",
-				fileVersion,
-				expectedDigestType,
-				pluginKey.String(),
 				digest.Type(),
 			)
 		}
