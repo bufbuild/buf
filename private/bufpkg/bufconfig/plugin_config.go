@@ -43,8 +43,12 @@ type PluginConfig interface {
 	Type() PluginConfigType
 	// Name returns the plugin name.
 	//
-	// This may be a path, a remote reference, or a Wasm file. Invoking code
-	// should check the Type to determine how to interpret this.
+	// If the plugin is of Type PluginConfigTypeLocal, the Name is the command
+	// name or path to the command.
+	// If the plugin is of Type PluginConfigTypeLocalWasm, the Name is the
+	// path to the Wasm file. It must end with .wasm.
+	// If the plugin is of Type PluginConfigTypeRemoteWasm, the Name is a
+	// vaild bufparse.Ref and Ref returns the plugin reference.
 	//
 	// This is never empty.
 	Name() string
@@ -53,7 +57,7 @@ type PluginConfig interface {
 	// TODO: Will want good validation and good error messages for what this decodes.
 	// Otherwise we will confuse users. Do QA.
 	Options() map[string]any
-	// Args returns the arguments, to invoke the plugin.
+	// Args returns the arguments, excluding the name, for the plugin.
 	//
 	// This may be empty.
 	Args() []string
