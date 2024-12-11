@@ -131,12 +131,6 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
-	// GetCheckRunnerProvider gets a CheckRunnerProvider for the given input.
-	//
-	// The returned RunnerProvider will be able to run lint and breaking checks
-	// using the PluginConfigs declared in the input buf.yaml. The input
-	// provided will resolve to a Workspace, and the remote PluginConfigs
-	// Refs will be resolved to the PluginKeys from the buf.lock file.
 	GetCheckRunnerProviderForWorkspace(
 		ctx context.Context,
 		workspace bufworkspace.Workspace,
@@ -397,6 +391,9 @@ func (c *controller) GetTargetImageWithConfigs(
 			return nil, nil, err
 		}
 		imageWithConfigs, err = c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
+		if err != nil {
+			return nil, nil, err
+		}
 		pluginConfigs = workspace.PluginConfigs()
 		pluginKeys = workspace.RemotePluginKeys()
 	case buffetch.MessageRef:
