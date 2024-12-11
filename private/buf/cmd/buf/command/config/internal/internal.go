@@ -167,6 +167,8 @@ func lsRun(
 	if flags.Version != "" {
 		configOverride = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
 	}
+	pluginKeyProvider := bufplugin.NopPluginKeyProvider
+	pluginDataProvider := bufplugin.NopPluginDataProvider
 	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(ctx, ".", configOverride)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
@@ -183,6 +185,25 @@ func lsRun(
 		if err != nil {
 			return err
 		}
+	} else if configOverride != "" {
+		// To support remote plugins in the override, we need to resolve the remote
+		// Refs to PluginKeys. A buf.lock file is not required for this operation.
+		// We use the BSR to resolve any remote plugin Refs.
+		pluginKeyProvider, err = bufcli.NewPluginKeyProvider(container)
+		if err != nil {
+			return err
+		}
+		pluginDataProvider, err = bufcli.NewPluginDataProvider(container)
+		if err != nil {
+			return err
+		}
+	} else if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+		if bufLockFile, err := bufcli.GetBufLockFileForDirPath(ctx, "."); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		} else {
+		}
 	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
@@ -195,17 +216,6 @@ func lsRun(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
-	// To support remote plugins in the override, we need to resolve the remote
-	// Refs to PluginKeys. A buf.lock file is not required for this operation.
-	// We use the BSR to resolve any remote plugin Refs.
-	pluginKeyProvider, err := bufcli.NewPluginKeyProvider(container)
-	if err != nil {
-		return err
-	}
-	pluginDataProvider, err := bufcli.NewPluginDataProvider(container)
-	if err != nil {
-		return err
-	}
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		bufcheck.NewLocalRunnerProvider(wasmRuntime, pluginKeyProvider, pluginDataProvider),
@@ -304,4 +314,11 @@ func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, module
 		// TODO: add --module-name flag to allow differentiation
 		return nil, fmt.Errorf("multiple modules found for %q", modulePath)
 	}
+}
+
+func getBufYAMLFileAndRunnerProviderForDirPathOrOverride(
+	ctx context.Context,
+
+) (bufconfig.BufYAMLFile, bufcheck.RunnerProvider, error) {
+
 }
