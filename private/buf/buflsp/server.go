@@ -411,9 +411,9 @@ func (s *server) SemanticTokensFull(
 	defer progress.Done(ctx)
 
 	var (
-		encoded           []uint32
 		prevLine, prevCol uint32
 	)
+	encoded := []uint32{}
 	for i, symbol := range file.symbols {
 		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(file.symbols)), float64(i)/float64(len(file.symbols)))
 
