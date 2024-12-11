@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -1312,6 +1313,7 @@ func testBreaking(
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
+		bufplugin.NopPluginKeyProvider,
 	)
 	previousWorkspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
@@ -1344,7 +1346,11 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheck.NewClient(logger, bufcheck.NewRunnerProvider(wasm.UnimplementedRuntime))
+	client, err := bufcheck.NewClient(logger, bufcheck.NewLocalRunnerProvider(
+		wasm.UnimplementedRuntime,
+		bufplugin.NopPluginKeyProvider,
+		bufplugin.NopPluginDataProvider,
+	))
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,

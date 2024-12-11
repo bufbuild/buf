@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -48,6 +49,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
 )
@@ -128,6 +130,18 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
+	// GetCheckRunnerProvider gets a CheckRunnerProvider for the given input.
+	//
+	// The returned RunnerProvider will be able to run lint and breaking checks
+	// using the PluginConfigs declared in the input buf.yaml. The input
+	// provided will resolve to a Workspace, and the remote PluginConfigs
+	// Refs will be resolved to the PluginKeys from the buf.lock file.
+	GetCheckRunnerProvider(
+		ctx context.Context,
+		input string,
+		wasmRuntime wasm.Runtime,
+		options ...FunctionOption,
+	) (bufcheck.RunnerProvider, error)
 }
 
 func NewController(
@@ -243,6 +257,7 @@ func newController(
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
+		pluginKeyProvider,
 	)
 	controller.workspaceDepManagerProvider = bufworkspace.NewWorkspaceDepManagerProvider(
 		logger,
@@ -706,6 +721,32 @@ func (c *controller) PutMessage(
 	return errors.Join(err, writeCloser.Close())
 }
 
+func (c *controller) GetCheckRunnerProvider(
+	ctx context.Context,
+	input string,
+	wasmRuntime wasm.Runtime,
+	options ...FunctionOption,
+) (_ bufcheck.RunnerProvider, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
+	functionOptions := newFunctionOptions(c)
+	for _, option := range options {
+		option(functionOptions)
+	}
+	ref, err := c.buffetchRefParser.GetRef(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	pluginKeyProvider, err := c.getPluginKeyProviderForRef(ctx, ref, functionOptions)
+	if err != nil {
+		return nil, err
+	}
+	return bufcheck.NewLocalRunnerProvider(
+		wasmRuntime,
+		pluginKeyProvider,
+		c.pluginDataProvider,
+	), nil
+}
+
 func (c *controller) getImage(
 	ctx context.Context,
 	input string,
@@ -1157,6 +1198,115 @@ Declare %q in the deps key in your buf.yaml.`,
 		}
 	}
 	return nil
+}
+
+// getPluginKeyProviderForRef create a new PluginKeyProvider for the Ref.
+//
+// The Ref is resolved to a Workspace. The Workspaces PluginConfigs from the
+// buf.yaml file and the PluginKeys from the buf.lock are resolved to create the
+// PluginKeyProvider.
+// If the Ref is a MessageRef, the current directory buf.lock file is used.
+//
+// PluginConfigs are validated to ensure that all remote PluginConfigs are
+// pinned in the buf.lock file.
+func (c *controller) getPluginKeyProviderForRef(
+	ctx context.Context,
+	ref buffetch.Ref,
+	functionOptions *functionOptions,
+) (_ bufplugin.PluginKeyProvider, retErr error) {
+	var (
+		pluginConfigs []bufconfig.PluginConfig
+		pluginKeys    []bufplugin.PluginKey
+	)
+	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		pluginConfigs = workspace.PluginConfigs()
+		pluginKeys = workspace.RemotePluginKeys()
+	case buffetch.SourceRef:
+		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		pluginConfigs = workspace.PluginConfigs()
+		pluginKeys = workspace.RemotePluginKeys()
+	case buffetch.ModuleRef:
+		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		pluginConfigs = workspace.PluginConfigs()
+		pluginKeys = workspace.RemotePluginKeys()
+	case buffetch.MessageRef:
+		bucket, err := c.storageosProvider.NewReadWriteBucket(
+			".",
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
+			ctx,
+			bucket,
+			".",
+			functionOptions.configOverride,
+		)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+			// We did not find a buf.yaml in our current directory,
+			// and there was no config override.
+			// Remote plugins are not available.
+			return bufplugin.NopPluginKeyProvider, nil
+		}
+		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+			pluginConfigs = bufYAMLFile.PluginConfigs()
+			bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
+				ctx,
+				bucket,
+				// buf.lock files live next to the buf.yaml
+				".",
+			)
+			if err != nil {
+				if !errors.Is(err, fs.ErrNotExist) {
+					return nil, err
+				}
+				// We did not find a buf.lock in our current directory.
+				// Remote plugins are not available.
+				return bufplugin.NopPluginKeyProvider, nil
+			}
+			pluginKeys = bufLockFile.RemotePluginKeys()
+		}
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("invalid Ref: %T", ref)
+	}
+	// Validate that all remote PluginConfigs are present in the buf.lock file.
+	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
+		return pluginKey.FullName().String()
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate remote PluginKeys: %w", err)
+	}
+	// Remote PluginConfig Refs are any PluginConfigs that have a Ref.
+	remotePluginRefs := slicesext.Filter(
+		slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+			return pluginConfig.Ref()
+		}),
+		func(pluginRef bufparse.Ref) bool {
+			return pluginRef != nil
+		},
+	)
+	for _, remotePluginRef := range remotePluginRefs {
+		if _, ok := pluginKeysByFullName[remotePluginRef.FullName().String()]; !ok {
+			return nil, fmt.Errorf(`remote plugin %q is not in the buf.lock file, use "buf plugin update" to pin remote refs`, remotePluginRef)
+		}
+	}
+	return bufplugin.NewStaticPluginKeyProvider(pluginKeys)
 }
 
 // handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print

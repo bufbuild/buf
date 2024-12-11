@@ -22,6 +22,7 @@ import (
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -169,7 +170,8 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 	return r(pluginConfig)
 }
 
-// NewRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
+// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime and
+// the given plugin providers.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
@@ -178,13 +180,22 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 // The supported types are:
 //   - bufconfig.PluginConfigTypeLocal
 //   - bufconfig.PluginConfigTypeLocalWasm
+//   - bufconfig.PluginConfigTypeRemoteWasm
 //
 // If the PluginConfigType is not supported, an error is returned.
-func NewRunnerProvider(
+// To disable support for Wasm plugins, set wasmRuntime to wasm.UnimplementedRuntime.
+// To disable support for bufconfig.PluginConfigTypeRemoteWasm Plugins, set
+// pluginKeyProvider and pluginDataProvider to bufplugin.NopPluginKeyProvider
+// and bufplugin.NopPluginDataProvider.
+func NewLocalRunnerProvider(
 	wasmRuntime wasm.Runtime,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
 ) RunnerProvider {
 	return newRunnerProvider(
 		wasmRuntime,
+		pluginKeyProvider,
+		pluginDataProvider,
 	)
 }
 

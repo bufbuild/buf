@@ -12,6 +12,7 @@
   file. Only WebAssembly check plugins are supported at this time.
 - Add `buf registry plugin commit {add-label,info,list,resolve}` to manage BSR plugin commits.
 - Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
+- Support remote check plugins in `buf lint` and `buf breaking` commands.
 
 ## [v1.47.2] - 2024-11-14
 
