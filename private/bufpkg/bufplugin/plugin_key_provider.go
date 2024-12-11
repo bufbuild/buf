@@ -43,12 +43,13 @@ type PluginKeyProvider interface {
 	GetPluginKeysForPluginRefs(context.Context, []bufparse.Ref, DigestType) ([]PluginKey, error)
 }
 
-// NewStaticPluginKeyProvider returns a new PluginKeyProvider for a set of PluginKeys.
+// NewStaticPluginKeyProvider returns a new PluginKeyProvider for a static set of PluginKeys.
 //
 // The set of PluginKeys must be unique by FullName. If there are duplicates,
-// an error will be returned. The Ref will be matched to the PluginKey by FullName.
-// If the Ref is not found in the set of provided keys, an error with
-// fs.ErrNotExist will be returned.
+// an error will be returned.
+//
+// When resolving Refs, the Ref will be matched to the PluginKey by FullName.
+// If the Ref is not found in the set of provided keys, an fs.ErrNotExist will be returned.
 func NewStaticPluginKeyProvider(pluginKeys []PluginKey) (PluginKeyProvider, error) {
 	if len(pluginKeys) == 0 {
 		return NopPluginKeyProvider, nil

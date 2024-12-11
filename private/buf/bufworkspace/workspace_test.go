@@ -322,6 +322,7 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 		bsrProvider,
 		bsrProvider,
 		bsrProvider,
+		// TODO: add support for plugins to bufmoduletesting.NewOmniProvider.
 		bufplugin.NopPluginKeyProvider,
 	)
 }

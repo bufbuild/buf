@@ -184,6 +184,10 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		}
 		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
 			pluginConfigs = bufYAMLFile.PluginConfigs()
+			// To support remote plugins in the override, we need to
+			// resolve the remote Refs to PluginKeys. A buf.lock file
+			// is not expected to be present so we require the
+			// pluginKeyProvider to resolve these PluginKeys.
 			remotePluginRefs := slicesext.Filter(
 				slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 					return pluginConfig.Ref()
@@ -192,7 +196,6 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 					return ref != nil
 				},
 			)
-			// Resolve the remote plugin keys for any remote plugins.
 			if len(remotePluginRefs) > 0 {
 				var err error
 				remotePluginKeys, err = w.pluginKeyProvider.GetPluginKeysForPluginRefs(
