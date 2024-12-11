@@ -195,9 +195,20 @@ func lsRun(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	// To support remote plugins in the override, we need to resolve the remote
+	// Refs to PluginKeys. A buf.lock file is not required for this operation.
+	// We use the BSR to resolve any remote plugin Refs.
+	pluginKeyProvider, err := bufcli.NewPluginKeyProvider(container)
+	if err != nil {
+		return err
+	}
+	pluginDataProvider, err := bufcli.NewPluginDataProvider(container)
+	if err != nil {
+		return err
+	}
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewLocalRunnerProvider(wasmRuntime, bufplugin.NopPluginKeyProvider, bufplugin.NopPluginDataProvider),
+		bufcheck.NewLocalRunnerProvider(wasmRuntime, pluginKeyProvider, pluginDataProvider),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {
