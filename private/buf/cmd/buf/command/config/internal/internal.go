@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -183,10 +184,6 @@ func lsRun(
 			return err
 		}
 	}
-	controller, err := bufcli.NewController(container)
-	if err != nil {
-		return err
-	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -198,13 +195,9 @@ func lsRun(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
-	checkRunnerProvider, err := controller.GetCheckRunnerProvider(ctx, ".", wasmRuntime)
-	if err != nil {
-		return err
-	}
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		checkRunnerProvider,
+		bufcheck.NewLocalRunnerProvider(wasmRuntime, bufplugin.NopPluginKeyProvider, bufplugin.NopPluginDataProvider),
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {

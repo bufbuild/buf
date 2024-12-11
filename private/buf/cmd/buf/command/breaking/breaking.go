@@ -161,16 +161,25 @@ func run(
 	if err != nil {
 		return err
 	}
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
-	inputControllerOptions := []bufctl.FunctionOption{
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
-	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	imageWithConfigs, checkRunnerProvider, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		input,
-		inputControllerOptions...,
+		wasmRuntime,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err
@@ -186,9 +195,10 @@ func run(
 	}
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
-	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	againstImageWithConfigs, _, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		flags.Against,
+		wasmRuntime,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.AgainstConfig),
 	)
@@ -207,26 +217,6 @@ func run(
 			len(imageWithConfigs),
 			len(againstImageWithConfigs),
 		)
-	}
-	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
-	if err != nil {
-		return err
-	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
-	}()
-	checkRunnerProvider, err := controller.GetCheckRunnerProvider(
-		ctx,
-		input,
-		wasmRuntime,
-		inputControllerOptions...,
-	)
-	if err != nil {
-		return err
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {

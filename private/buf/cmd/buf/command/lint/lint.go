@@ -121,18 +121,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	controllerOptions := []bufctl.FunctionOption{
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
-	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
-		ctx,
-		input,
-		controllerOptions...,
-	)
-	if err != nil {
-		return err
-	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -144,11 +132,12 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
-	checkRunnerProvider, err := controller.GetCheckRunnerProvider(
+	imageWithConfigs, checkRunnerProvider, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		input,
 		wasmRuntime,
-		controllerOptions...,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err

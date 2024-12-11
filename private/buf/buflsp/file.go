@@ -371,11 +371,12 @@ func (f *file) FindModule(ctx context.Context) {
 		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
-
-	// Get the check runner provider for this file. The client is scoped to
-	// the inputs buf.lock file, so we need to get the check runner provider
-	// for the workspace that contains this file.
-	checkRunnerProvider, err := f.lsp.controller.GetCheckRunnerProvider(ctx, f.uri.Filename(), f.lsp.wasmRuntime)
+	// Get the bufcheck.RunnerProvider for this workspace.
+	checkRunnerProvider, err := f.lsp.controller.GetCheckRunnerProviderForWorkspace(
+		ctx,
+		workspace,
+		f.lsp.wasmRuntime,
+	)
 	if err != nil {
 		f.lsp.logger.Warn("could not get check runner provider", slogext.ErrorAttr(err))
 		return
