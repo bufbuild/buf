@@ -29,6 +29,10 @@ service DisplayService {
   rpc DisplayRepositoryElements(DisplayRepositoryElementsRequest) returns (DisplayRepositoryElementsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // DisplayCheckPluginElements returns which check plugin elements should be displayed to the user.
+  rpc DisplayCheckPluginElements(DisplayCheckPluginElementsRequest) returns (DisplayCheckPluginElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DisplayUserElements returns which user elements should be displayed to the user.
   rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -94,6 +98,19 @@ message DisplayRepositoryElementsResponse {
   bool write = 3;
   // Display limited_write repository elements if true. This is a subset of write elements.
   bool limited_write = 4;
+}
+
+message DisplayCheckPluginElementsRequest {
+  // The ID of the check plugin for which to check
+  // which elements should be displayed.
+  string plugin_id = 1;
+}
+
+message DisplayCheckPluginElementsResponse {
+  // Display check plugin settings element if true.
+  bool settings = 1;
+  // Display delete check plugin element if true.
+  bool delete = 2;
 }
 
 message DisplayUserElementsRequest {}
