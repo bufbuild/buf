@@ -162,48 +162,9 @@ func lsRun(
 			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", configuredOnlyFlagName, modulePathFlagName)
 		}
 	}
-
 	configOverride := flags.Config
 	if flags.Version != "" {
 		configOverride = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
-	}
-	pluginKeyProvider := bufplugin.NopPluginKeyProvider
-	pluginDataProvider := bufplugin.NopPluginDataProvider
-	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(ctx, ".", configOverride)
-	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			return err
-		}
-		bufYAMLFile, err = bufconfig.NewBufYAMLFile(
-			bufconfig.FileVersionV2,
-			[]bufconfig.ModuleConfig{
-				bufconfig.DefaultModuleConfigV2,
-			},
-			nil,
-			nil,
-		)
-		if err != nil {
-			return err
-		}
-	} else if configOverride != "" {
-		// To support remote plugins in the override, we need to resolve the remote
-		// Refs to PluginKeys. A buf.lock file is not required for this operation.
-		// We use the BSR to resolve any remote plugin Refs.
-		pluginKeyProvider, err = bufcli.NewPluginKeyProvider(container)
-		if err != nil {
-			return err
-		}
-		pluginDataProvider, err = bufcli.NewPluginDataProvider(container)
-		if err != nil {
-			return err
-		}
-	} else if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-		if bufLockFile, err := bufcli.GetBufLockFileForDirPath(ctx, "."); err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return err
-			}
-		} else {
-		}
 	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
@@ -216,9 +177,19 @@ func lsRun(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	bufYAMLFile, checkRunnerProvider, err := getBufYAMLFileAndRunnerProviderForDirPathOrOverride(
+		ctx,
+		container,
+		".", // Dir path.
+		configOverride,
+		wasmRuntime,
+	)
+	if err != nil {
+		return err
+	}
 	client, err := bufcheck.NewClient(
 		container.Logger(),
-		bufcheck.NewLocalRunnerProvider(wasmRuntime, pluginKeyProvider, pluginDataProvider),
+		checkRunnerProvider,
 		bufcheck.ClientWithStderr(container.Stderr()),
 	)
 	if err != nil {
@@ -318,7 +289,79 @@ func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, module
 
 func getBufYAMLFileAndRunnerProviderForDirPathOrOverride(
 	ctx context.Context,
-
+	container appext.Container,
+	dirPath string,
+	configOverride string,
+	wasmRuntime wasm.Runtime,
 ) (bufconfig.BufYAMLFile, bufcheck.RunnerProvider, error) {
-
+	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(ctx, dirPath, configOverride)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, nil, err
+		}
+		bufYAMLFile, err = bufconfig.NewBufYAMLFile(
+			bufconfig.FileVersionV2,
+			[]bufconfig.ModuleConfig{
+				bufconfig.DefaultModuleConfigV2,
+			},
+			nil,
+			nil,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		// The buf.lock file was not found, no plugins are configured.
+		return bufYAMLFile, bufcheck.NewLocalRunnerProvider(
+			wasmRuntime,
+			bufplugin.NopPluginKeyProvider,
+			bufplugin.NopPluginDataProvider,
+		), nil
+	}
+	pluginConfigs := bufYAMLFile.PluginConfigs()
+	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 || len(pluginConfigs) == 0 {
+		// The buf.yaml file was found, but no plugins were configured.
+		return bufYAMLFile, bufcheck.NewLocalRunnerProvider(
+			wasmRuntime,
+			bufplugin.NopPluginKeyProvider,
+			bufplugin.NopPluginDataProvider,
+		), nil
+	}
+	if configOverride != "" {
+		// To support remote plugins in the override, we need to resolve the remote
+		// Refs to PluginKeys. A buf.lock file is not required for this operation.
+		// We use the BSR to resolve any remote plugin Refs.
+		pluginKeyProvider, err := bufcli.NewPluginKeyProvider(container)
+		if err != nil {
+			return nil, nil, err
+		}
+		pluginDataProvider, err := bufcli.NewPluginDataProvider(container)
+		if err != nil {
+			return nil, nil, err
+		}
+		return bufYAMLFile, bufcheck.NewLocalRunnerProvider(
+			wasmRuntime,
+			pluginKeyProvider,
+			pluginDataProvider,
+		), nil
+	}
+	// If we have a v2 buf.yaml file, we need to use the Controller to get the
+	// CheckRunnerProvider for the Workspace. We use the Workspace to avoid
+	// re-validating the buf.lock plugins.
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return nil, nil, err
+	}
+	workspace, err := controller.GetWorkspace(ctx, dirPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	runnerProvider, err := controller.GetCheckRunnerProviderForWorkspace(
+		ctx,
+		workspace,
+		wasmRuntime,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bufYAMLFile, runnerProvider, nil
 }
