@@ -75,6 +75,8 @@ enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
   EVENT_TYPE_ORGANIZATION_DELETED = 2;
+  EVENT_TYPE_ORGANIZATION_METADATA_UPDATED = 50;
+  EVENT_TYPE_ORGANIZATION_VERIFICATION_STATUS_CHANGED = 51;
   EVENT_TYPE_ORGANIZATION_MEMBER_ADDED = 3;
   EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
@@ -90,6 +92,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
+  EVENT_TYPE_REPOSITORY_METADATA_UPDATED = 52;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
@@ -100,6 +103,8 @@ enum EventType {
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
+  EVENT_TYPE_USER_METADATA_UPDATED = 53;
+  EVENT_TYPE_USER_VERIFICATION_STATUS_CHANGED = 54;
   EVENT_TYPE_TOKEN_CREATED = 23;
   EVENT_TYPE_TOKEN_DELETED = 24;
   EVENT_TYPE_USER_REACTIVATED = 25;
@@ -112,7 +117,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED = 39;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
-  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
+  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34 [deprecated = true];
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
   EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
@@ -154,6 +159,8 @@ message Event {
   oneof payload {
     PayloadOrganizationCreated organization_created = 7;
     PayloadOrganizationDeleted organization_deleted = 8;
+    PayloadOrganizationMetadataUpdated organization_metadata_updated = 56;
+    PayloadOrganizationVerificationStatusChanged organization_verification_status_changed = 57;
     PayloadOrganizationMemberAdded organization_member_added = 9;
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
@@ -167,6 +174,7 @@ message Event {
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadRepositoryMetadataUpdated repository_metadata_updated = 58;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
     PayloadPluginCommitPushed plugin_commit_pushed = 49;
@@ -175,6 +183,8 @@ message Event {
     PayloadUserDeleted user_deleted = 23;
     PayloadUserLoggedIn user_logged_in = 24;
     PayloadUserLoggedOut user_logged_out = 25;
+    PayloadUserMetadataUpdated user_metadata_updated = 59;
+    PayloadUserVerificationStatusChanged user_verification_status_changed = 60;
     PayloadCuratedPluginCreated curated_plugin_created = 26;
     PayloadOrganizationIDPGroupAdded idp_group_added = 27;
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
@@ -191,7 +201,7 @@ message Event {
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
-    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
+    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
@@ -207,6 +217,32 @@ message Event {
 message PayloadOrganizationCreated {}
 
 message PayloadOrganizationDeleted {}
+
+message PayloadOrganizationMetadataUpdated {
+  message DescriptionUpdate {
+    // old_description is the organization description before the update.
+    string old_description = 1;
+    // new_description is the organization description after the update.
+    string new_description = 2;
+  }
+  message UrlUpdate {
+    // old_url is the organization url before the update.
+    string old_url = 3;
+    // new_url is the organization url after the update.
+    string new_url = 4;
+  }
+  // The description update that happened to the organization.
+  optional DescriptionUpdate description_update = 1;
+  // The url update that happened to the organization.
+  optional UrlUpdate url_update = 2;
+}
+
+message PayloadOrganizationVerificationStatusChanged {
+  // old_verification_status is the organization verification status before the update.
+  string old_verification_status = 1;
+  // new_verification_status is the organization verification status after the update.
+  string new_verification_status = 2;
+}
 
 message PayloadOrganizationMemberAdded {
   // organization_id is the id of the organization with the new member.
@@ -382,7 +418,12 @@ message PayloadRepositoryDefaultLabelNameChanged {
   string new_default_label_name = 4;
 }
 
+// PayloadRepositoryDefaultBranchChanged is deprecated.
+//
+// Use PayloadRepositoryDefaultLabelNameChanged instead.
 message PayloadRepositoryDefaultBranchChanged {
+  // deprecated, use PayloadRepositoryDefaultLabelNameChanged instead.
+  option deprecated = true;
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
@@ -391,6 +432,25 @@ message PayloadRepositoryDefaultBranchChanged {
   string old_default_branch = 3;
   // new_default_branch is the new default branch of the repository.
   string new_default_branch = 4;
+}
+
+message PayloadRepositoryMetadataUpdated {
+  message DescriptionUpdate {
+    // old_description is the repository description before the update.
+    string old_description = 1;
+    // new_description is the repository description after the update.
+    string new_description = 2;
+  }
+  message UrlUpdate {
+    // old_url is the repository url before the update.
+    string old_url = 3;
+    // new_url is the repository url after the update.
+    string new_url = 4;
+  }
+  // The description update that happened to the repository.
+  optional DescriptionUpdate description_update = 1;
+  // The url update that happened to the repository.
+  optional UrlUpdate url_update = 2;
 }
 
 message PayloadPluginCreated {
@@ -435,6 +495,32 @@ message PayloadUserDeleted {}
 message PayloadUserLoggedIn {}
 
 message PayloadUserLoggedOut {}
+
+message PayloadUserMetadataUpdated {
+  message DescriptionUpdate {
+    // old_description is the user description before the update.
+    string old_description = 1;
+    // new_description is the user description after the update.
+    string new_description = 2;
+  }
+  message UrlUpdate {
+    // old_url is the user url before the update.
+    string old_url = 3;
+    // new_url is the user url after the update.
+    string new_url = 4;
+  }
+  // The description update that happened to the user.
+  optional DescriptionUpdate description_update = 1;
+  // The url update that happened to the user.
+  optional UrlUpdate url_update = 2;
+}
+
+message PayloadUserVerificationStatusChanged {
+  // old_verification_status is the user verification status before the update.
+  string old_verification_status = 1;
+  // new_verification_status is the user verification status after the update.
+  string new_verification_status = 2;
+}
 
 // PayloadUserAutoMergedFromNewIdP is the payload for the audit event
 // EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP. It has no additional information
