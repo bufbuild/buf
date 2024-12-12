@@ -410,10 +410,18 @@ func (s *server) SemanticTokensFull(
 	progress.Begin(ctx, "Processing Tokens")
 	defer progress.Done(ctx)
 
+	// In the case where there are no symbols for the file, we return nil for SemanticTokensFull.
+	// This is based on the specification for the method textDocument/semanticTokens/full,
+	// the expected response is the union type `SemanticTokens | null`.
+	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
+	if len(file.symbols) == 0 {
+		return nil, nil
+	}
+
 	var (
+		encoded           []uint32
 		prevLine, prevCol uint32
 	)
-	encoded := []uint32{}
 	for i, symbol := range file.symbols {
 		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(file.symbols)), float64(i)/float64(len(file.symbols)))
 
