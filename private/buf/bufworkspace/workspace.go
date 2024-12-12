@@ -74,11 +74,11 @@ type Workspace interface {
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
 	// PluginConfigs gets the configured PluginConfigs of the Workspace.
 	//
-	// These come from buf.yaml files.
+	// These come from the buf.lock file. Only v2 supports plugins.
 	PluginConfigs() []bufconfig.PluginConfig
 	// RemotePluginKeys gets the remote PluginKeys of the Workspace.
 	//
-	// These come from buf.lock files.
+	// These come from the buf.lock file. Only v2 supports plugins.
 	RemotePluginKeys() []bufplugin.PluginKey
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as Refs.
 	//
