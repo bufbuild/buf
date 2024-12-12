@@ -826,7 +826,7 @@ func checkExampleValues(
 	}
 	// The shape of field path in a protovalidate.Violation depends on the type of the field descriptor.
 	violationFilterFunc := func(violation *validate.Violation) bool {
-		return violation.GetFieldPath() == string(fieldDescriptor.Name())
+		return protovalidate.FieldPathString(violation.GetField()) == string(fieldDescriptor.Name())
 	}
 	switch {
 	case fieldDescriptor.IsList():
@@ -834,7 +834,7 @@ func checkExampleValues(
 		violationFilterFunc = func(violation *validate.Violation) bool {
 			prefix := fieldDescriptor.Name() + "["
 			suffix := "]"
-			fieldPath := violation.GetFieldPath()
+			fieldPath := protovalidate.FieldPathString(violation.GetField())
 			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
 		}
 	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "key":
@@ -842,7 +842,7 @@ func checkExampleValues(
 		violationFilterFunc = func(violation *validate.Violation) bool {
 			prefix := parentMapFieldDescriptor.Name() + "["
 			suffix := "]"
-			fieldPath := violation.GetFieldPath()
+			fieldPath := protovalidate.FieldPathString(violation.GetField())
 			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.GetForKey()
 		}
 	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "value":
@@ -850,7 +850,7 @@ func checkExampleValues(
 		violationFilterFunc = func(violation *validate.Violation) bool {
 			prefix := parentMapFieldDescriptor.Name() + "["
 			suffix := "]"
-			fieldPath := violation.GetFieldPath()
+			fieldPath := protovalidate.FieldPathString(violation.GetField())
 			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
 		}
 	}
@@ -1026,8 +1026,8 @@ func checkExampleValues(
 		validationErr := &protovalidate.ValidationError{}
 		if errors.As(err, &validationErr) {
 			for _, violation := range validationErr.Violations {
-				if violationFilterFunc(violation) {
-					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.GetConstraintId(), violation.GetMessage())
+				if violationFilterFunc(violation.Proto) {
+					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.Proto.GetConstraintId(), violation.Proto.GetMessage())
 				}
 			}
 			continue
