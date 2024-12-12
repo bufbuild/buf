@@ -422,7 +422,7 @@ message PayloadRepositoryDefaultLabelNameChanged {
 //
 // Use PayloadRepositoryDefaultLabelNameChanged instead.
 message PayloadRepositoryDefaultBranchChanged {
-  // deprecated, use PayloadRepositoryDefaultLabelNameChanged instead.
+  // Deprecated, use PayloadRepositoryDefaultLabelNameChanged instead.
   option deprecated = true;
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;

@@ -1,7 +1,7 @@
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.35.2-20241031151143-70f632351282.1 h1:d6K/z/RqVYxeAsAIGaIBDjFmmAz6A0Fp21pZXNlAxZs=
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.35.2-20241031151143-70f632351282.1/go.mod h1:vKDy7lD1bsN2UjeLhqklPEjIsHfHAPgMb/PbRx2EFDc=
-buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20240920164238-5a7b106cbb87.1 h1:7QIeAuTdLp173vC/9JojRMDFcpmqtoYrxPmvdHAOynw=
-buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20240920164238-5a7b106cbb87.1/go.mod h1:mnHCFccv4HwuIAOHNGdiIc5ZYbBCvbTWZcodLN5wITI=
+buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20241127180247-a33202765966.1 h1:jLd96rDDNJ+zIJxvV/L855VEtrjR0G4aePVDlCpf6kw=
+buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20241127180247-a33202765966.1/go.mod h1:mnHCFccv4HwuIAOHNGdiIc5ZYbBCvbTWZcodLN5wITI=
 buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241125212318-4a305dc3b757.1 h1:q3PKZJfOuSZR8KC0asyo7EFID/3613pDFzFYAAO+Gd4=
 buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241125212318-4a305dc3b757.1/go.mod h1:w+XYJEgdkHK5XJ+44Eq2YD02DZVLFNFjfwFKPz0nZcg=
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.35.2-20241125212318-4a305dc3b757.1 h1:m2QVURqXvfedovCeWV5CsWm3VIrD87RHL+9P9o7HB84=
@@ -10,8 +10,8 @@ buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.35.2-20241007202033-c
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.35.2-20241007202033-cf42259fcbfc.1/go.mod h1:uTCf/J5B6H9XCTgHuI91LC9qaNqxJxQFh0kDY/GLn2k=
 buf.build/go/bufplugin v0.6.0 h1:3lhoh+0z+IUPS3ZajTPn/27LaLIkero2BDVnV7yXD1s=
 buf.build/go/bufplugin v0.6.0/go.mod h1:hWCjxxv24xdR6F5pNlQavZV2oo0J3uF4Ff1XEoyV6vU=
-buf.build/go/protoyaml v0.2.0 h1:2g3OHjtLDqXBREIOjpZGHmQ+U/4mkN1YiQjxNB68Ip8=
-buf.build/go/protoyaml v0.2.0/go.mod h1:L/9QvTDkTWcDTzAL6HMfN+mYC6CmZRm2KnsUA054iL0=
+buf.build/go/protoyaml v0.3.0 h1:NF/C1r0ezdUm8J3ABJsZqbsOVpT/Igrg2b//QPAIieo=
+buf.build/go/protoyaml v0.3.0/go.mod h1:gaDlo8lOhxsvsBqblrvMFaVOcKVS1RQya8SGFB5XIxU=
 buf.build/go/spdx v0.2.0 h1:IItqM0/cMxvFJJumcBuP8NrsIzMs/UYjp/6WSpq8LTw=
 buf.build/go/spdx v0.2.0/go.mod h1:bXdwQFem9Si3nsbNy8aJKGPoaPi5DKwdeEp5/ArZ6w8=
 cel.dev/expr v0.18.0 h1:CJ6drgk+Hf96lkLikr4rFf19WrU0BOWEihyZnI2TAzo=
@@ -36,8 +36,8 @@ github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/bufbuild/protoplugin v0.0.0-20240911180120-7bb73e41a54a h1:l3RhVoG0RtC61h6TVWnkniGj4TgBebuyPQRdleFAmTg=
 github.com/bufbuild/protoplugin v0.0.0-20240911180120-7bb73e41a54a/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
-github.com/bufbuild/protovalidate-go v0.7.3 h1:kKnoSueygR3xxppvuBpm9SEwIsP359MMRfMBGmRByPg=
-github.com/bufbuild/protovalidate-go v0.7.3/go.mod h1:CFv34wMqiBzAHdQ4q/tWYi9ILFYKuaC3/4zh6eqdUck=
+github.com/bufbuild/protovalidate-go v0.8.0 h1:Xs3kCLCJ4tQiogJ0iOXm+ClKw/KviW3nLAryCGW2I3Y=
+github.com/bufbuild/protovalidate-go v0.8.0/go.mod h1:JPWZInGm2y2NBg3vKDKdDIkvDjyLv31J3hLH5GIFc/Q=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
