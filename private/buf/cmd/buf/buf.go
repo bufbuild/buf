@@ -471,7 +471,6 @@ func wrapError(err error) error {
 			}
 			return errors.New(msg)
 		}
-		err = connectErr.Unwrap()
 	}
 
 	sysError, isSysError := syserror.As(err)
