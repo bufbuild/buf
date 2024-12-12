@@ -18,15 +18,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -166,23 +166,24 @@ func lsRun(
 	if flags.Version != "" {
 		configOverride = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
 	}
-	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(ctx, ".", configOverride)
+	controller, err := bufcli.NewController(container)
 	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			return err
-		}
-		bufYAMLFile, err = bufconfig.NewBufYAMLFile(
-			bufconfig.FileVersionV2,
-			[]bufconfig.ModuleConfig{
-				bufconfig.DefaultModuleConfigV2,
-			},
-			nil,
-			nil,
-		)
-		if err != nil {
-			return err
-		}
+		return err
 	}
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		".",
+		bufctl.WithConfigOverride(configOverride),
+	)
+	if err != nil {
+		return err
+	}
+
+	// If the module path is set, we need to ensure that the Workspace is a v2 Workspace.
+	if !workspace.IsV2() && flags.ModulePath != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s can only be specified for v2 workspaces", modulePathFlagName)
+	}
+
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -205,43 +206,41 @@ func lsRun(
 
 	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
-		moduleConfigs := bufYAMLFile.ModuleConfigs()
-		var moduleConfig bufconfig.ModuleConfig
-		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			if len(moduleConfigs) != 1 {
-				return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
+		var module bufmodule.Module
+		if flags.ModulePath != "" {
+			// If the module path is set, we need to find the module.
+			//
+			// In a v2 Workspace, the module path is the BucketID within the Workspace.
+			// For v1, the module path is derived by the workspace constructor. It is
+			// a user error if the module path is set on a v1 Workspace as validated above.
+			module = workspace.GetModuleForBucketID(flags.ModulePath)
+			if module == nil {
+				return fmt.Errorf("no module for path %q", flags.ModulePath)
 			}
-			moduleConfig = moduleConfigs[0]
-		case bufconfig.FileVersionV2:
-			switch len(moduleConfigs) {
-			case 0:
-				return syserror.New("got 0 ModuleConfigs from a BufYAMLFile")
-			case 1:
-				moduleConfig = moduleConfigs[0]
-			default:
-				if flags.ModulePath == "" {
-					return appcmd.NewInvalidArgumentErrorf("--%s must be specified if the the buf.yaml has more than one module", modulePathFlagName)
-				}
-				moduleConfig, err = getModuleConfigForModulePath(moduleConfigs, flags.ModulePath)
-				if err != nil {
-					return err
-				}
+		} else {
+			// If the module path is not set, we need to ensure
+			// that there is only one module in the Workspace.
+			modules := workspace.Modules()
+			if len(modules) == 0 {
+				return syserror.New("got 0 Modules for Workspace")
 			}
-		default:
-			return syserror.Newf("unknown FileVersion: %v", fileVersion)
+			if len(modules) > 1 {
+				return appcmd.NewInvalidArgumentErrorf("--%s must be specified if the the buf.yaml has more than one module", modulePathFlagName)
+			}
+			module = modules[0]
 		}
+
 		var checkConfig bufconfig.CheckConfig
 		switch ruleType {
 		case check.RuleTypeLint:
-			checkConfig = moduleConfig.LintConfig()
+			checkConfig = workspace.GetLintConfigForOpaqueID(module.OpaqueID())
 		case check.RuleTypeBreaking:
-			checkConfig = moduleConfig.BreakingConfig()
+			checkConfig = workspace.GetBreakingConfigForOpaqueID(module.OpaqueID())
 		default:
 			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
-			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
 		}
 		rules, err = client.ConfiguredRules(
 			ctx,
@@ -254,12 +253,16 @@ func lsRun(
 		}
 	} else {
 		allRulesOptions := []bufcheck.AllRulesOption{
-			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		}
+		fileVersion := bufconfig.FileVersionV1
+		if workspace.IsV2() {
+			fileVersion = bufconfig.FileVersionV2
 		}
 		rules, err = client.AllRules(
 			ctx,
 			ruleType,
-			bufYAMLFile.FileVersion(),
+			fileVersion,
 			allRulesOptions...,
 		)
 		if err != nil {
@@ -272,24 +275,4 @@ func lsRun(
 		flags.Format,
 		flags.IncludeDeprecated,
 	)
-}
-
-func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, modulePath string) (bufconfig.ModuleConfig, error) {
-	modulePath = normalpath.Normalize(modulePath)
-	// Multiple modules in a v2 workspace may have the same moduleDirPath.
-	moduleConfigsFound := []bufconfig.ModuleConfig{}
-	for _, moduleConfig := range moduleConfigs {
-		if moduleConfig.DirPath() == modulePath {
-			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
-		}
-	}
-	switch len(moduleConfigsFound) {
-	case 0:
-		return nil, fmt.Errorf("no module found for path %q", modulePath)
-	case 1:
-		return moduleConfigsFound[0], nil
-	default:
-		// TODO: add --module-name flag to allow differentiation
-		return nil, fmt.Errorf("multiple modules found for %q", modulePath)
-	}
 }

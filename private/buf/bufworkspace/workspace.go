@@ -92,6 +92,7 @@ type Workspace interface {
 	// handle v1 vs v2 transparently. Right now, this is only approved to be used in push
 	// when we want to know whether we need to print out only CommitIDs. Any other usages
 	// need to be evaluated.
+	// TODO: Validate the usecase for `buf config ls-lint-rules` and `buf config ls-breaking-rules`.
 	IsV2() bool
 
 	isWorkspace()
