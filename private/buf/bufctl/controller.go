@@ -357,45 +357,49 @@ func (c *controller) GetTargetImageWithConfigs(
 	if err != nil {
 		return nil, nil, err
 	}
-	var (
-		imageWithConfigs []ImageWithConfig
-		pluginConfigs    []bufconfig.PluginConfig
-		pluginKeys       []bufplugin.PluginKey
-	)
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, nil, err
 		}
-		imageWithConfigs, err = c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
+		imageWithConfigs, err := c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 		if err != nil {
 			return nil, nil, err
 		}
-		pluginConfigs = workspace.PluginConfigs()
-		pluginKeys = workspace.RemotePluginKeys()
+		checkRunnerProvider, err := c.GetCheckRunnerProviderForWorkspace(ctx, workspace, wasmRuntime)
+		if err != nil {
+			return nil, nil, err
+		}
+		return imageWithConfigs, checkRunnerProvider, nil
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, nil, err
 		}
-		imageWithConfigs, err = c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
+		imageWithConfigs, err := c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 		if err != nil {
 			return nil, nil, err
 		}
-		pluginConfigs = workspace.PluginConfigs()
-		pluginKeys = workspace.RemotePluginKeys()
+		checkRunnerProvider, err := c.GetCheckRunnerProviderForWorkspace(ctx, workspace, wasmRuntime)
+		if err != nil {
+			return nil, nil, err
+		}
+		return imageWithConfigs, checkRunnerProvider, nil
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, nil, err
 		}
-		imageWithConfigs, err = c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
+		imageWithConfigs, err := c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 		if err != nil {
 			return nil, nil, err
 		}
-		pluginConfigs = workspace.PluginConfigs()
-		pluginKeys = workspace.RemotePluginKeys()
+		checkRunnerProvider, err := c.GetCheckRunnerProviderForWorkspace(ctx, workspace, wasmRuntime)
+		if err != nil {
+			return nil, nil, err
+		}
+		return imageWithConfigs, checkRunnerProvider, nil
 	case buffetch.MessageRef:
 		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
 		if err != nil {
@@ -408,9 +412,12 @@ func (c *controller) GetTargetImageWithConfigs(
 		if err != nil {
 			return nil, nil, err
 		}
-		lintConfig := bufconfig.DefaultLintConfigV1
-		breakingConfig := bufconfig.DefaultBreakingConfigV1
-		var pluginConfigs []bufconfig.PluginConfig
+		var (
+			lintConfig        = bufconfig.DefaultLintConfigV1
+			breakingConfig    = bufconfig.DefaultBreakingConfigV1
+			pluginConfigs     []bufconfig.PluginConfig
+			pluginKeyProvider = bufplugin.NopPluginKeyProvider
+		)
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
 			bucket,
@@ -424,6 +431,7 @@ func (c *controller) GetTargetImageWithConfigs(
 			// We did not find a buf.yaml in our current directory, and there was no config override.
 			// Use the defaults.
 		} else {
+			pluginConfigs = bufYAMLFile.PluginConfigs()
 			if topLevelLintConfig := bufYAMLFile.TopLevelLintConfig(); topLevelLintConfig == nil {
 				// Ensure that this is a v2 config
 				if fileVersion := bufYAMLFile.FileVersion(); fileVersion != bufconfig.FileVersionV2 {
@@ -443,16 +451,20 @@ func (c *controller) GetTargetImageWithConfigs(
 			} else {
 				breakingConfig = topLevelBreakingConfig
 			}
-			// Plugin configs are only available in v2 configs.
-			if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-				pluginConfigs = bufYAMLFile.PluginConfigs()
-				bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
+
+			if functionOptions.configOverride != "" {
+				// To support remote plugins in the override, we need to resolve the remote
+				// Refs to PluginKeys. A buf.lock file is not required for this operation.
+				// We use the BSR to resolve any remote plugin Refs.
+				pluginKeyProvider = c.pluginKeyProvider
+			} else if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+				var pluginKeys []bufplugin.PluginKey
+				if bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 					ctx,
 					bucket,
 					// buf.lock files live next to the buf.yaml
 					".",
-				)
-				if err != nil {
+				); err != nil {
 					if !errors.Is(err, fs.ErrNotExist) {
 						return nil, nil, err
 					}
@@ -462,9 +474,16 @@ func (c *controller) GetTargetImageWithConfigs(
 				} else {
 					pluginKeys = bufLockFile.RemotePluginKeys()
 				}
+				pluginKeyProvider, err = newStaticPluginKeyProviderForPluginConfigs(
+					pluginConfigs,
+					pluginKeys,
+				)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
 		}
-		imageWithConfigs = []ImageWithConfig{
+		imageWithConfigs := []ImageWithConfig{
 			newImageWithConfig(
 				image,
 				lintConfig,
@@ -472,23 +491,16 @@ func (c *controller) GetTargetImageWithConfigs(
 				pluginConfigs,
 			),
 		}
+		checkRunnerProvider := bufcheck.NewLocalRunnerProvider(
+			wasmRuntime,
+			pluginKeyProvider,
+			c.pluginDataProvider,
+		)
+		return imageWithConfigs, checkRunnerProvider, nil
 	default:
 		// This is a system error.
 		return nil, nil, syserror.Newf("invalid Ref: %T", ref)
 	}
-	pluginKeyProvider, err := newStaticPluginKeyProviderForPluginConfigs(
-		pluginConfigs,
-		pluginKeys,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	checkRunnerProvider := bufcheck.NewLocalRunnerProvider(
-		wasmRuntime,
-		pluginKeyProvider,
-		c.pluginDataProvider,
-	)
-	return imageWithConfigs, checkRunnerProvider, nil
 }
 
 func (c *controller) GetImportableImageFileInfos(
