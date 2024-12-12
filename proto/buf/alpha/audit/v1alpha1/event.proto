@@ -112,7 +112,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED = 39;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
-  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
+  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34 [deprecated = true];
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
   EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
@@ -191,7 +191,7 @@ message Event {
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
-    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
+    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
@@ -382,7 +382,12 @@ message PayloadRepositoryDefaultLabelNameChanged {
   string new_default_label_name = 4;
 }
 
+// PayloadRepositoryDefaultBranchChanged is deprecated.
+//
+// Use PayloadRepositoryDefaultLabelNameChanged instead.
 message PayloadRepositoryDefaultBranchChanged {
+  // Deprecated, use PayloadRepositoryDefaultLabelNameChanged instead.
+  option deprecated = true;
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
