@@ -636,7 +636,12 @@ func getReadWriteBucketForOS(
 	}
 	fsRootTargetPaths := make([]string, len(targetPaths))
 	for i, targetPath := range targetPaths {
-		_, fsRootTargetPath, err := fsRootAndFSRelPathForPath(targetPath)
+		resolvedTargetPath := targetPath
+		if !filepath.IsAbs(targetPath) {
+			resolvedTargetPath = fsRoot + fsRootInputSubDirPath + "/" + targetPath
+		}
+
+		_, fsRootTargetPath, err := fsRootAndFSRelPathForPath(resolvedTargetPath)
 		if err != nil {
 			return nil, nil, err
 		}
