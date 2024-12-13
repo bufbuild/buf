@@ -371,23 +371,11 @@ func (f *file) FindModule(ctx context.Context) {
 		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
 		return
 	}
-	// Get the bufcheck.RunnerProvider for this workspace.
-	checkRunnerProvider, err := f.lsp.controller.GetCheckRunnerProviderForWorkspace(
-		ctx,
-		workspace,
-		f.lsp.wasmRuntime,
-	)
+
+	// Get the check client for this workspace.
+	checkClient, err := f.lsp.controller.NewCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
 	if err != nil {
-		f.lsp.logger.Warn("could not get check runner provider", slogext.ErrorAttr(err))
-		return
-	}
-	checkClient, err := bufcheck.NewClient(
-		f.lsp.logger,
-		checkRunnerProvider,
-		bufcheck.ClientWithStderr(f.lsp.container.Stderr()),
-	)
-	if err != nil {
-		f.lsp.logger.Warn("could not create check client", slogext.ErrorAttr(err))
+		f.lsp.logger.Warn("could not get check client", slogext.ErrorAttr(err))
 		return
 	}
 
