@@ -17,7 +17,7 @@ require (
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20240911180120-7bb73e41a54a
 	github.com/bufbuild/protovalidate-go v0.8.0
-	github.com/docker/docker v27.3.1+incompatible
+	github.com/docker/docker v27.4.0+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gofrs/flock v0.12.1
 	github.com/google/cel-go v0.22.1
