@@ -33,6 +33,7 @@ func rulesConfigForCheckConfig(
 	allRules []Rule,
 	allCategories []Category,
 	ruleType check.RuleType,
+	additionalCheckConfigs []bufconfig.CheckConfig,
 ) (*rulesConfig, error) {
 	return newRulesConfig(
 		checkConfig.UseIDsAndCategories(),
@@ -42,6 +43,7 @@ func rulesConfigForCheckConfig(
 		allRules,
 		allCategories,
 		ruleType,
+		additionalCheckConfigs,
 	)
 }
 
@@ -102,6 +104,10 @@ type rulesConfig struct {
 	// Rules, we don't warn for this plugin, as it may have had rules configured in breaking that
 	// we haven't accounted for.
 	//
+	// The caller can provider additional check configs to check if the plugin has rules configured.
+	// If the plugin has rules configured in any of the additional check configs provided, then
+	// we don't warn.
+	//
 	// The Rule IDs will be sorted.
 	// This will only contain RuleIDs of the given RuleType.
 	// There will be no empty key for plugin name (which means the Rule is builtin), that is
@@ -124,6 +130,7 @@ func newRulesConfig(
 	allRules []Rule,
 	allCategories []Category,
 	ruleType check.RuleType,
+	additionalCheckConfigs []bufconfig.CheckConfig,
 ) (*rulesConfig, error) {
 	allRulesForType := rulesForType(allRules, ruleType)
 	if len(allRulesForType) == 0 {
@@ -310,6 +317,24 @@ func newRulesConfig(
 		// delete the plugin name from the map
 		if _, ok := pluginNameToOtherRuleTypes[pluginName]; ok {
 			delete(unusedPluginNameToRuleIDs, pluginName)
+		}
+	}
+	// We check additional check configs. If rules
+	for _, checkConfig := range additionalCheckConfigs {
+		checkConfigUseRuleIDs, err := transformRuleOrCategoryIDsToRuleIDs(
+			checkConfig.UseIDsAndCategories(),
+			ruleIDToCategoryIDs,
+			categoryIDToRuleIDs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		for _, checkConfigRuleID := range checkConfigUseRuleIDs {
+			// We do not validate the additional check config rules here, only check for those
+			// that are found.
+			if rule, ok := ruleIDToRule[checkConfigRuleID]; ok {
+				delete(unusedPluginNameToRuleIDs, rule.PluginName())
+			}
 		}
 	}
 

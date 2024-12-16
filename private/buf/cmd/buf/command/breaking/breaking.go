@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -216,6 +217,12 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	allCheckConfigs := slicesext.Map(
+		imageWithConfigs,
+		func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
+			return imageWithConfig.BreakingConfig()
+		},
+	)
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
@@ -228,6 +235,7 @@ func run(
 		}
 		breakingOptions := []bufcheck.BreakingOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithAdditionalCheckConfigs(allCheckConfigs...),
 		}
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())

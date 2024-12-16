@@ -28,8 +28,9 @@ func configForLintConfig(
 	lintConfig bufconfig.LintConfig,
 	allRules []Rule,
 	allCategories []Category,
+	additionalCheckConfigs []bufconfig.CheckConfig,
 ) (*config, error) {
-	rulesConfig, err := rulesConfigForCheckConfig(lintConfig, allRules, allCategories, check.RuleTypeLint)
+	rulesConfig, err := rulesConfigForCheckConfig(lintConfig, allRules, allCategories, check.RuleTypeLint, additionalCheckConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +49,9 @@ func configForBreakingConfig(
 	allRules []Rule,
 	allCategories []Category,
 	excludeImports bool,
+	additionalCheckConfigs []bufconfig.CheckConfig,
 ) (*config, error) {
-	rulesConfig, err := rulesConfigForCheckConfig(breakingConfig, allRules, allCategories, check.RuleTypeBreaking)
+	rulesConfig, err := rulesConfigForCheckConfig(breakingConfig, allRules, allCategories, check.RuleTypeBreaking, additionalCheckConfigs)
 	if err != nil {
 		return nil, err
 	}

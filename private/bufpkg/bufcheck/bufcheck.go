@@ -126,6 +126,24 @@ type ConfiguredRulesOption interface {
 	applyToConfiguredRules(*configuredRulesOptions)
 }
 
+// LintBreakingAndConfiguredRulesOption is an option for Lint, Breaking, and ConfiguredRules.
+type LintBreakingAndConfiguredRulesOption interface {
+	LintOption
+	BreakingOption
+	ConfiguredRulesOption
+}
+
+// WithAdditionalCheckConfigs returns a new LintBreakingAndConfiguredRulesOption that allows
+// the caller to provide additional check configs that are being run. This allows the client
+// to check for unused plugins across additional check configs and provide users with a warning.
+//
+// The default is to only check the configs provided to the client for Lint, Breaking, or ConfiguredRules.
+func WithAdditionalCheckConfigs(additionalCheckConfigs ...bufconfig.CheckConfig) LintBreakingAndConfiguredRulesOption {
+	return &additionalCheckConfigsOption{
+		additionalCheckConfigs: additionalCheckConfigs,
+	}
+}
+
 // AllRulesOption is an option for AllRules.
 type AllRulesOption interface {
 	applyToAllRules(*allRulesOptions)

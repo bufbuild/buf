@@ -206,6 +206,10 @@ func lsRun(
 	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		allCheckConfigs := append(
+			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.LintConfig() }),
+			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.BreakingConfig() })...,
+		)
 		var moduleConfig bufconfig.ModuleConfig
 		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
@@ -242,6 +246,7 @@ func lsRun(
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithAdditionalCheckConfigs(allCheckConfigs...),
 		}
 		rules, err = client.ConfiguredRules(
 			ctx,
