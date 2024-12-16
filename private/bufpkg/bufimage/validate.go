@@ -26,10 +26,10 @@ func validateProtoImage(protoImage *imagev1.Image) error {
 	if protoImage == nil {
 		return errors.New("nil Image")
 	}
-	if len(protoImage.File) == 0 {
+	if len(protoImage.GetFile()) == 0 {
 		return errors.New("image contains no files")
 	}
-	for _, protoImageFile := range protoImage.File {
+	for _, protoImageFile := range protoImage.GetFile() {
 		if err := validateProtoImageFile(protoImageFile); err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func validateProtoImageFile(protoImageFile *imagev1.ImageFile) error {
 
 func validateProtoModuleInfo(protoModuleInfo *imagev1.ModuleInfo) error {
 	if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
-		return validateProtoModuleName(protoModuleInfo.Name)
+		return validateProtoModuleName(protoModuleInfo.GetName())
 	}
 	return nil
 }

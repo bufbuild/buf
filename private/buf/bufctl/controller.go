@@ -980,8 +980,8 @@ func (c *controller) getImageForMessageRef(
 	}
 
 	if functionOptions.imageExcludeSourceInfo {
-		for _, fileDescriptorProto := range protoImage.File {
-			fileDescriptorProto.SourceCodeInfo = nil
+		for _, fileDescriptorProto := range protoImage.GetFile() {
+			fileDescriptorProto.ClearSourceCodeInfo()
 		}
 	}
 
@@ -1210,7 +1210,7 @@ func bootstrapResolver(
 	if err := unmarshaler.Unmarshal(data, firstProtoImage); err != nil {
 		return nil, err
 	}
-	return protoencoding.NewResolver(firstProtoImage.File...)
+	return protoencoding.NewResolver(firstProtoImage.GetFile()...)
 }
 
 // WE DO NOT FILTER IF WE ALREADY FILTERED ON BUILDING OF A WORKSPACE

@@ -91,9 +91,9 @@ func run(
 	if _, err := service.DeleteWebhook(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.DeleteWebhookRequest{
+			registryv1alpha1.DeleteWebhookRequest_builder{
 				WebhookId: flags.WebhookID,
-			},
+			}.Build(),
 		),
 	); err != nil {
 		return err

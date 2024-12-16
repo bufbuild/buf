@@ -327,21 +327,21 @@ func fileDescriptorProtoToProtoImageFile(
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
 	if moduleFullName != nil {
-		protoModuleInfo = &imagev1.ModuleInfo{
-			Name: &imagev1.ModuleName{
+		protoModuleInfo = imagev1.ModuleInfo_builder{
+			Name: imagev1.ModuleName_builder{
 				Remote:     proto.String(moduleFullName.Registry()),
 				Owner:      proto.String(moduleFullName.Owner()),
 				Repository: proto.String(moduleFullName.Name()),
-			},
-		}
+			}.Build(),
+		}.Build()
 		if moduleProtoCommitID != "" {
-			protoModuleInfo.Commit = proto.String(moduleProtoCommitID)
+			protoModuleInfo.SetCommit(moduleProtoCommitID)
 		}
 	}
 	if len(unusedDependencyIndexes) == 0 {
 		unusedDependencyIndexes = nil
 	}
-	resultFile := &imagev1.ImageFile{
+	resultFile := imagev1.ImageFile_builder{
 		Name:             fileDescriptorProto.Name,
 		Package:          fileDescriptorProto.Package,
 		Syntax:           fileDescriptorProto.Syntax,
@@ -355,15 +355,15 @@ func fileDescriptorProtoToProtoImageFile(
 		Options:          fileDescriptorProto.GetOptions(),
 		SourceCodeInfo:   fileDescriptorProto.GetSourceCodeInfo(),
 		Edition:          fileDescriptorProto.Edition,
-		BufExtension: &imagev1.ImageFileExtension{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			// we might actually want to differentiate between unset and false
 			IsImport: proto.Bool(isImport),
 			// we might actually want to differentiate between unset and false
 			IsSyntaxUnspecified: proto.Bool(isSyntaxUnspecified),
 			UnusedDependency:    unusedDependencyIndexes,
 			ModuleInfo:          protoModuleInfo,
-		},
-	}
+		}.Build(),
+	}.Build()
 	resultFile.ProtoReflect().SetUnknown(stripBufExtensionField(fileDescriptorProto.ProtoReflect().GetUnknown()))
 	return resultFile
 }
