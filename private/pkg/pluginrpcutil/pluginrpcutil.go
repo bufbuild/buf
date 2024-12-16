@@ -15,6 +15,9 @@
 package pluginrpcutil
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
 )
@@ -24,9 +27,36 @@ func NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
 	return newRunner(programName, programArgs...)
 }
 
-// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and program name.
+// NewWasmRunner returns a new pluginrpc.Runner for the wasm.Runtime and Wasm data.
 //
-// This runner is used for local Wasm plugins. The program name is the path to the Wasm file.
-func NewWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
-	return newWasmRunner(delegate, programName, programArgs...)
+// This is used for Wasm plugins. getData returns the Wasm data.
+// The program name is the name of the source file. Must be non-empty.
+// The program args are the arguments to the program. May be empty.
+func NewWasmRunner(delegate wasm.Runtime, getData func() ([]byte, error), programName string, programArgs ...string) pluginrpc.Runner {
+	return newWasmRunner(delegate, getData, programName, programArgs...)
+}
+
+// NewLocalWasmRunner returns a new pluginrpc.Runner for the local wasm file.
+//
+// This is used for local Wasm plugins. The program name is the path to the Wasm file.
+// The program args are the arguments to the program. May be empty.
+// The Wasm file is read from the filesystem.
+func NewLocalWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
+	getData := func() ([]byte, error) {
+		// Find the plugin path. We use the same logic as exec.LookPath, but we do
+		// not require the file to be executable. So check the local directory
+		// first before checking the PATH.
+		var path string
+		if fileInfo, err := os.Stat(programName); err == nil && !fileInfo.IsDir() {
+			path = programName
+		} else {
+			var err error
+			path, err = unsafeLookPath(programName)
+			if err != nil {
+				return nil, fmt.Errorf("could not find file %q in PATH: %v", programName, err)
+			}
+		}
+		return os.ReadFile(path)
+	}
+	return NewWasmRunner(delegate, getData, programName, programArgs...)
 }
