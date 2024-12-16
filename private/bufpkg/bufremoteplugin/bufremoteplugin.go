@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"google.golang.org/protobuf/protooneofdefault"
 )
 
 // Plugin represents a plugin defined by a buf.plugin.yaml.
@@ -142,7 +143,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 				goConfig.SetRuntimeLibraries(append(goConfig.GetRuntimeLibraries(), goRuntimeDependencyToProtoGoRuntimeLibrary(dependency)))
 			}
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
+		registryConfig.SetGoConfig(protooneofdefault.ValueOrDefault(goConfig))
 	case pluginRegistry.NPM != nil:
 		importStyle, err := npmImportStyleToNPMProtoImportStyle(pluginRegistry.NPM.ImportStyle)
 		if err != nil {
@@ -158,7 +159,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 				npmConfig.SetRuntimeLibraries(append(npmConfig.GetRuntimeLibraries(), npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency)))
 			}
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
+		registryConfig.SetNpmConfig(protooneofdefault.ValueOrDefault(npmConfig))
 	case pluginRegistry.Maven != nil:
 		mavenConfig := &registryv1alpha1.MavenConfig{}
 		var javaCompilerConfig *registryv1alpha1.MavenConfig_CompilerJavaConfig
@@ -197,34 +198,34 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufremotepluginconfig.R
 				mavenConfig.GetAdditionalRuntimes()[i] = MavenRuntimeConfigToProtoRuntimeConfig(runtime)
 			}
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
+		registryConfig.SetMavenConfig(protooneofdefault.ValueOrDefault(mavenConfig))
 	case pluginRegistry.Swift != nil:
 		swiftConfig := SwiftRegistryConfigToProtoSwiftConfig(pluginRegistry.Swift)
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_SwiftConfig{SwiftConfig: swiftConfig}
+		registryConfig.SetSwiftConfig(protooneofdefault.ValueOrDefault(swiftConfig))
 	case pluginRegistry.Python != nil:
 		pythonConfig, err := PythonRegistryConfigToProtoPythonConfig(pluginRegistry.Python)
 		if err != nil {
 			return nil, err
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
+		registryConfig.SetPythonConfig(protooneofdefault.ValueOrDefault(pythonConfig))
 	case pluginRegistry.Cargo != nil:
 		cargoConfig, err := CargoRegistryConfigToProtoCargoConfig(pluginRegistry.Cargo)
 		if err != nil {
 			return nil, err
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_CargoConfig{CargoConfig: cargoConfig}
+		registryConfig.SetCargoConfig(protooneofdefault.ValueOrDefault(cargoConfig))
 	case pluginRegistry.Nuget != nil:
 		nugetConfig, err := NugetRegistryConfigToProtoNugetConfig(pluginRegistry.Nuget)
 		if err != nil {
 			return nil, err
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NugetConfig{NugetConfig: nugetConfig}
+		registryConfig.SetNugetConfig(protooneofdefault.ValueOrDefault(nugetConfig))
 	case pluginRegistry.Cmake != nil:
 		cmakeConfig, err := CmakeRegistryConfigToProtoCmakeConfig(pluginRegistry.Cmake)
 		if err != nil {
 			return nil, err
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_CmakeConfig{CmakeConfig: cmakeConfig}
+		registryConfig.SetCmakeConfig(protooneofdefault.ValueOrDefault(cmakeConfig))
 	}
 	return registryConfig, nil
 }
