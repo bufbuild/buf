@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/image.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -90,13 +91,8 @@ func (x ImageMask) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ImageMask.Descriptor instead.
-func (ImageMask) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_image_proto_rawDescGZIP(), []int{0}
-}
-
 type GetImageRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
 	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
 	// Optional reference (if unspecified, will use the repository's default_branch).
@@ -149,11 +145,6 @@ func (x *GetImageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetImageRequest.ProtoReflect.Descriptor instead.
-func (*GetImageRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_image_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *GetImageRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -203,8 +194,78 @@ func (x *GetImageRequest) GetIncludeMask() []ImageMask {
 	return nil
 }
 
+func (x *GetImageRequest) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *GetImageRequest) SetRepository(v string) {
+	x.Repository = v
+}
+
+func (x *GetImageRequest) SetReference(v string) {
+	x.Reference = v
+}
+
+func (x *GetImageRequest) SetExcludeImports(v bool) {
+	x.ExcludeImports = v
+}
+
+func (x *GetImageRequest) SetExcludeSourceInfo(v bool) {
+	x.ExcludeSourceInfo = v
+}
+
+func (x *GetImageRequest) SetTypes(v []string) {
+	x.Types = v
+}
+
+func (x *GetImageRequest) SetIncludeMask(v []ImageMask) {
+	x.IncludeMask = v
+}
+
+type GetImageRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Owner      string
+	Repository string
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string
+	// Exclude files from imported buf modules in this image.
+	ExcludeImports bool
+	// Exclude source_code_info fields from each ImageFile.
+	ExcludeSourceInfo bool
+	// When specified the returned image will only contain the necessary files and
+	// descriptors in those files to describe these types. Accepts messages, enums
+	// and services. All types must be defined in the buf module, types in
+	// dependencies are not accepted.
+	//
+	// At this time specifying `types` requires `exclude_source_info` to be set to
+	// true.
+	Types []string
+	// When not empty, the returned image's files will only include
+	// *DescriptorProto fields for the elements specified here. The masks are
+	// applied without regard for dependencies between types. For example, if
+	// `IMAGE_MASK_MESSAGES` is specified without `IMAGE_MASK_ENUMS` the resulting
+	// image will NOT contain enum definitions even if they are referenced from
+	// message fields.
+	IncludeMask []ImageMask
+}
+
+func (b0 GetImageRequest_builder) Build() *GetImageRequest {
+	m0 := &GetImageRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
+	x.ExcludeImports = b.ExcludeImports
+	x.ExcludeSourceInfo = b.ExcludeSourceInfo
+	x.Types = b.Types
+	x.IncludeMask = b.IncludeMask
+	return m0
+}
+
 type GetImageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Image         *v1.Image              `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -235,16 +296,40 @@ func (x *GetImageResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetImageResponse.ProtoReflect.Descriptor instead.
-func (*GetImageResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_image_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *GetImageResponse) GetImage() *v1.Image {
 	if x != nil {
 		return x.Image
 	}
 	return nil
+}
+
+func (x *GetImageResponse) SetImage(v *v1.Image) {
+	x.Image = v
+}
+
+func (x *GetImageResponse) HasImage() bool {
+	if x == nil {
+		return false
+	}
+	return x.Image != nil
+}
+
+func (x *GetImageResponse) ClearImage() {
+	x.Image = nil
+}
+
+type GetImageResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Image *v1.Image
+}
+
+func (b0 GetImageResponse_builder) Build() *GetImageResponse {
+	m0 := &GetImageResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Image = b.Image
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_image_proto protoreflect.FileDescriptor
@@ -312,18 +397,6 @@ var file_buf_alpha_registry_v1alpha1_image_proto_rawDesc = []byte{
 	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70,
 	0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31,
 	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_image_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_image_proto_rawDescData = file_buf_alpha_registry_v1alpha1_image_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_image_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_image_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_image_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_image_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_image_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_image_proto_enumTypes = make([]protoimpl.EnumInfo, 1)

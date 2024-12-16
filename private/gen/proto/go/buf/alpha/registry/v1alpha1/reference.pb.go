@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/reference.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 )
 
 type Reference struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Types that are valid to be assigned to Reference:
 	//
 	//	*Reference_Branch
@@ -73,11 +74,6 @@ func (x *Reference) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Reference.ProtoReflect.Descriptor instead.
-func (*Reference) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Reference) GetReference() isReference_Reference {
@@ -141,6 +137,233 @@ func (x *Reference) GetVcsCommit() *RepositoryVCSCommit {
 	return nil
 }
 
+func (x *Reference) SetBranch(v *RepositoryBranch) {
+	if v == nil {
+		x.Reference = nil
+		return
+	}
+	x.Reference = &Reference_Branch{v}
+}
+
+func (x *Reference) SetTag(v *RepositoryTag) {
+	if v == nil {
+		x.Reference = nil
+		return
+	}
+	x.Reference = &Reference_Tag{v}
+}
+
+func (x *Reference) SetCommit(v *RepositoryCommit) {
+	if v == nil {
+		x.Reference = nil
+		return
+	}
+	x.Reference = &Reference_Commit{v}
+}
+
+func (x *Reference) SetMain(v *RepositoryMainReference) {
+	if v == nil {
+		x.Reference = nil
+		return
+	}
+	x.Reference = &Reference_Main{v}
+}
+
+func (x *Reference) SetDraft(v *RepositoryDraft) {
+	if v == nil {
+		x.Reference = nil
+		return
+	}
+	x.Reference = &Reference_Draft{v}
+}
+
+func (x *Reference) SetVcsCommit(v *RepositoryVCSCommit) {
+	if v == nil {
+		x.Reference = nil
+		return
+	}
+	x.Reference = &Reference_VcsCommit{v}
+}
+
+func (x *Reference) HasReference() bool {
+	if x == nil {
+		return false
+	}
+	return x.Reference != nil
+}
+
+func (x *Reference) HasBranch() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*Reference_Branch)
+	return ok
+}
+
+func (x *Reference) HasTag() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*Reference_Tag)
+	return ok
+}
+
+func (x *Reference) HasCommit() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*Reference_Commit)
+	return ok
+}
+
+func (x *Reference) HasMain() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*Reference_Main)
+	return ok
+}
+
+func (x *Reference) HasDraft() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*Reference_Draft)
+	return ok
+}
+
+func (x *Reference) HasVcsCommit() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*Reference_VcsCommit)
+	return ok
+}
+
+func (x *Reference) ClearReference() {
+	x.Reference = nil
+}
+
+func (x *Reference) ClearBranch() {
+	if _, ok := x.Reference.(*Reference_Branch); ok {
+		x.Reference = nil
+	}
+}
+
+func (x *Reference) ClearTag() {
+	if _, ok := x.Reference.(*Reference_Tag); ok {
+		x.Reference = nil
+	}
+}
+
+func (x *Reference) ClearCommit() {
+	if _, ok := x.Reference.(*Reference_Commit); ok {
+		x.Reference = nil
+	}
+}
+
+func (x *Reference) ClearMain() {
+	if _, ok := x.Reference.(*Reference_Main); ok {
+		x.Reference = nil
+	}
+}
+
+func (x *Reference) ClearDraft() {
+	if _, ok := x.Reference.(*Reference_Draft); ok {
+		x.Reference = nil
+	}
+}
+
+func (x *Reference) ClearVcsCommit() {
+	if _, ok := x.Reference.(*Reference_VcsCommit); ok {
+		x.Reference = nil
+	}
+}
+
+const Reference_Reference_not_set_case case_Reference_Reference = 0
+const Reference_Branch_case case_Reference_Reference = 1
+const Reference_Tag_case case_Reference_Reference = 2
+const Reference_Commit_case case_Reference_Reference = 3
+const Reference_Main_case case_Reference_Reference = 5
+const Reference_Draft_case case_Reference_Reference = 6
+const Reference_VcsCommit_case case_Reference_Reference = 7
+
+func (x *Reference) WhichReference() case_Reference_Reference {
+	if x == nil {
+		return Reference_Reference_not_set_case
+	}
+	switch x.Reference.(type) {
+	case *Reference_Branch:
+		return Reference_Branch_case
+	case *Reference_Tag:
+		return Reference_Tag_case
+	case *Reference_Commit:
+		return Reference_Commit_case
+	case *Reference_Main:
+		return Reference_Main_case
+	case *Reference_Draft:
+		return Reference_Draft_case
+	case *Reference_VcsCommit:
+		return Reference_VcsCommit_case
+	default:
+		return Reference_Reference_not_set_case
+	}
+}
+
+type Reference_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof Reference:
+	// The requested reference is a branch.
+	Branch *RepositoryBranch
+	// The requested reference is a tag.
+	Tag *RepositoryTag
+	// The requested reference is a commit.
+	Commit *RepositoryCommit
+	// The requested reference is the default reference.
+	Main *RepositoryMainReference
+	// The requested reference is a draft commit.
+	Draft *RepositoryDraft
+	// The requested reference is a VCS commit.
+	VcsCommit *RepositoryVCSCommit
+	// -- end of Reference
+}
+
+func (b0 Reference_builder) Build() *Reference {
+	m0 := &Reference{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Branch != nil {
+		x.Reference = &Reference_Branch{b.Branch}
+	}
+	if b.Tag != nil {
+		x.Reference = &Reference_Tag{b.Tag}
+	}
+	if b.Commit != nil {
+		x.Reference = &Reference_Commit{b.Commit}
+	}
+	if b.Main != nil {
+		x.Reference = &Reference_Main{b.Main}
+	}
+	if b.Draft != nil {
+		x.Reference = &Reference_Draft{b.Draft}
+	}
+	if b.VcsCommit != nil {
+		x.Reference = &Reference_VcsCommit{b.VcsCommit}
+	}
+	return m0
+}
+
+type case_Reference_Reference protoreflect.FieldNumber
+
+func (x case_Reference_Reference) String() string {
+	md := file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isReference_Reference interface {
 	isReference_Reference()
 }
@@ -188,7 +411,7 @@ func (*Reference_Draft) isReference_Reference() {}
 func (*Reference_VcsCommit) isReference_Reference() {}
 
 type RepositoryMainReference struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Name is the configured default_branch for the repository (default: 'main').
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The latest commit in this repository. If the repository has no commits,
@@ -223,11 +446,6 @@ func (x *RepositoryMainReference) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RepositoryMainReference.ProtoReflect.Descriptor instead.
-func (*RepositoryMainReference) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *RepositoryMainReference) GetName() string {
 	if x != nil {
 		return x.Name
@@ -242,8 +460,46 @@ func (x *RepositoryMainReference) GetCommit() *RepositoryCommit {
 	return nil
 }
 
+func (x *RepositoryMainReference) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositoryMainReference) SetCommit(v *RepositoryCommit) {
+	x.Commit = v
+}
+
+func (x *RepositoryMainReference) HasCommit() bool {
+	if x == nil {
+		return false
+	}
+	return x.Commit != nil
+}
+
+func (x *RepositoryMainReference) ClearCommit() {
+	x.Commit = nil
+}
+
+type RepositoryMainReference_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Name is the configured default_branch for the repository (default: 'main').
+	Name string
+	// The latest commit in this repository. If the repository has no commits,
+	// this will be empty.
+	Commit *RepositoryCommit
+}
+
+func (b0 RepositoryMainReference_builder) Build() *RepositoryMainReference {
+	m0 := &RepositoryMainReference{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Name = b.Name
+	x.Commit = b.Commit
+	return m0
+}
+
 type RepositoryDraft struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The name of the draft
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The commit this draft points to.
@@ -277,11 +533,6 @@ func (x *RepositoryDraft) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RepositoryDraft.ProtoReflect.Descriptor instead.
-func (*RepositoryDraft) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *RepositoryDraft) GetName() string {
 	if x != nil {
 		return x.Name
@@ -296,8 +547,45 @@ func (x *RepositoryDraft) GetCommit() *RepositoryCommit {
 	return nil
 }
 
+func (x *RepositoryDraft) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositoryDraft) SetCommit(v *RepositoryCommit) {
+	x.Commit = v
+}
+
+func (x *RepositoryDraft) HasCommit() bool {
+	if x == nil {
+		return false
+	}
+	return x.Commit != nil
+}
+
+func (x *RepositoryDraft) ClearCommit() {
+	x.Commit = nil
+}
+
+type RepositoryDraft_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The name of the draft
+	Name string
+	// The commit this draft points to.
+	Commit *RepositoryCommit
+}
+
+func (b0 RepositoryDraft_builder) Build() *RepositoryDraft {
+	m0 := &RepositoryDraft{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Name = b.Name
+	x.Commit = b.Commit
+	return m0
+}
+
 type RepositoryVCSCommit struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// primary key, unique.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// immutable
@@ -335,11 +623,6 @@ func (x *RepositoryVCSCommit) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RepositoryVCSCommit.ProtoReflect.Descriptor instead.
-func (*RepositoryVCSCommit) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *RepositoryVCSCommit) GetId() string {
 	if x != nil {
 		return x.Id
@@ -368,8 +651,59 @@ func (x *RepositoryVCSCommit) GetCommitName() string {
 	return ""
 }
 
+func (x *RepositoryVCSCommit) SetId(v string) {
+	x.Id = v
+}
+
+func (x *RepositoryVCSCommit) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *RepositoryVCSCommit) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositoryVCSCommit) SetCommitName(v string) {
+	x.CommitName = v
+}
+
+func (x *RepositoryVCSCommit) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *RepositoryVCSCommit) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type RepositoryVCSCommit_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// primary key, unique.
+	Id string
+	// immutable
+	CreateTime *timestamppb.Timestamp
+	// The name of the VCS commit, e.g. for Git, it would be the Git hash.
+	Name string
+	// The name of the BSR commit this VCS commit belongs to.
+	CommitName string
+}
+
+func (b0 RepositoryVCSCommit_builder) Build() *RepositoryVCSCommit {
+	m0 := &RepositoryVCSCommit{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.Name = b.Name
+	x.CommitName = b.CommitName
+	return m0
+}
+
 type GetReferenceByNameRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Optional name (if unspecified, will use the repository's default_branch).
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Owner of the repository the reference belongs to.
@@ -405,11 +739,6 @@ func (x *GetReferenceByNameRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetReferenceByNameRequest.ProtoReflect.Descriptor instead.
-func (*GetReferenceByNameRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *GetReferenceByNameRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -431,8 +760,41 @@ func (x *GetReferenceByNameRequest) GetRepositoryName() string {
 	return ""
 }
 
+func (x *GetReferenceByNameRequest) SetName(v string) {
+	x.Name = v
+}
+
+func (x *GetReferenceByNameRequest) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *GetReferenceByNameRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+type GetReferenceByNameRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Optional name (if unspecified, will use the repository's default_branch).
+	Name string
+	// Owner of the repository the reference belongs to.
+	Owner string
+	// Name of the repository the reference belongs to.
+	RepositoryName string
+}
+
+func (b0 GetReferenceByNameRequest_builder) Build() *GetReferenceByNameRequest {
+	m0 := &GetReferenceByNameRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Name = b.Name
+	x.Owner = b.Owner
+	x.RepositoryName = b.RepositoryName
+	return m0
+}
+
 type GetReferenceByNameResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Reference     *Reference             `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -463,16 +825,40 @@ func (x *GetReferenceByNameResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetReferenceByNameResponse.ProtoReflect.Descriptor instead.
-func (*GetReferenceByNameResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *GetReferenceByNameResponse) GetReference() *Reference {
 	if x != nil {
 		return x.Reference
 	}
 	return nil
+}
+
+func (x *GetReferenceByNameResponse) SetReference(v *Reference) {
+	x.Reference = v
+}
+
+func (x *GetReferenceByNameResponse) HasReference() bool {
+	if x == nil {
+		return false
+	}
+	return x.Reference != nil
+}
+
+func (x *GetReferenceByNameResponse) ClearReference() {
+	x.Reference = nil
+}
+
+type GetReferenceByNameResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Reference *Reference
+}
+
+func (b0 GetReferenceByNameResponse_builder) Build() *GetReferenceByNameResponse {
+	m0 := &GetReferenceByNameResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Reference = b.Reference
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_reference_proto protoreflect.FileDescriptor
@@ -590,18 +976,6 @@ var file_buf_alpha_registry_v1alpha1_reference_proto_rawDesc = []byte{
 	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41,
 	0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a,
 	0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_reference_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_reference_proto_rawDescData = file_buf_alpha_registry_v1alpha1_reference_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_reference_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_reference_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_reference_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_reference_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_reference_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes = make([]protoimpl.MessageInfo, 6)

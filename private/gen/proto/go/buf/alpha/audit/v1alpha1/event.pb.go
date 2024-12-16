@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/audit/v1alpha1/event.proto
 
+//go:build !protoopaque
+
 package auditv1alpha1
 
 import (
@@ -26,7 +28,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -79,11 +80,6 @@ func (ActorType) Type() protoreflect.EnumType {
 
 func (x ActorType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ActorType.Descriptor instead.
-func (ActorType) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{0}
 }
 
 // ResourceType is the type of the resource that was affected by the audited
@@ -172,11 +168,6 @@ func (ResourceType) Type() protoreflect.EnumType {
 
 func (x ResourceType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ResourceType.Descriptor instead.
-func (ResourceType) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{1}
 }
 
 // EventType is the type of audited event.
@@ -366,14 +357,9 @@ func (x EventType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use EventType.Descriptor instead.
-func (EventType) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{2}
-}
-
 // Actor is the actor who caused the audited event.
 type Actor struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Type of actor who caused the audited event.
 	Type ActorType `protobuf:"varint,1,opt,name=type,proto3,enum=buf.alpha.audit.v1alpha1.ActorType" json:"type,omitempty"`
 	// Id of the actor who caused the audited event.
@@ -409,11 +395,6 @@ func (x *Actor) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Actor.ProtoReflect.Descriptor instead.
-func (*Actor) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *Actor) GetType() ActorType {
 	if x != nil {
 		return x.Type
@@ -435,9 +416,42 @@ func (x *Actor) GetName() string {
 	return ""
 }
 
+func (x *Actor) SetType(v ActorType) {
+	x.Type = v
+}
+
+func (x *Actor) SetId(v string) {
+	x.Id = v
+}
+
+func (x *Actor) SetName(v string) {
+	x.Name = v
+}
+
+type Actor_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Type of actor who caused the audited event.
+	Type ActorType
+	// Id of the actor who caused the audited event.
+	Id string
+	// Name of the actor who caused the audited event.
+	Name string
+}
+
+func (b0 Actor_builder) Build() *Actor {
+	m0 := &Actor{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Type = b.Type
+	x.Id = b.Id
+	x.Name = b.Name
+	return m0
+}
+
 // Resource is the affected resource by the audited event.
 type Resource struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Type of resource that was affected by the audited event.
 	Type ResourceType `protobuf:"varint,1,opt,name=type,proto3,enum=buf.alpha.audit.v1alpha1.ResourceType" json:"type,omitempty"`
 	// Id of the affected resource by the audited event.
@@ -473,11 +487,6 @@ func (x *Resource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Resource.ProtoReflect.Descriptor instead.
-func (*Resource) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *Resource) GetType() ResourceType {
 	if x != nil {
 		return x.Type
@@ -499,9 +508,42 @@ func (x *Resource) GetName() string {
 	return ""
 }
 
+func (x *Resource) SetType(v ResourceType) {
+	x.Type = v
+}
+
+func (x *Resource) SetId(v string) {
+	x.Id = v
+}
+
+func (x *Resource) SetName(v string) {
+	x.Name = v
+}
+
+type Resource_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Type of resource that was affected by the audited event.
+	Type ResourceType
+	// Id of the affected resource by the audited event.
+	Id string
+	// Name of the affected resource by the audited event.
+	Name string
+}
+
+func (b0 Resource_builder) Build() *Resource {
+	m0 := &Resource{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Type = b.Type
+	x.Id = b.Id
+	x.Name = b.Name
+	return m0
+}
+
 // EventMetadata provides additional details about the audited event.
 type EventMetadata struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// UserAgent is the User-Agent header associated with the request that triggered the audited event, if any.
 	UserAgent string `protobuf:"bytes,1,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty"`
 	// IP is the IP address associated with the request that triggered the audited event, if any.
@@ -537,11 +579,6 @@ func (x *EventMetadata) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EventMetadata.ProtoReflect.Descriptor instead.
-func (*EventMetadata) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *EventMetadata) GetUserAgent() string {
 	if x != nil {
 		return x.UserAgent
@@ -563,11 +600,44 @@ func (x *EventMetadata) GetTraceId() string {
 	return ""
 }
 
+func (x *EventMetadata) SetUserAgent(v string) {
+	x.UserAgent = v
+}
+
+func (x *EventMetadata) SetIp(v string) {
+	x.Ip = v
+}
+
+func (x *EventMetadata) SetTraceId(v string) {
+	x.TraceId = v
+}
+
+type EventMetadata_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// UserAgent is the User-Agent header associated with the request that triggered the audited event, if any.
+	UserAgent string
+	// IP is the IP address associated with the request that triggered the audited event, if any.
+	Ip string
+	// TraceID is the ID of the trace associated with the audited event, if any.
+	TraceId string
+}
+
+func (b0 EventMetadata_builder) Build() *EventMetadata {
+	m0 := &EventMetadata{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.UserAgent = b.UserAgent
+	x.Ip = b.Ip
+	x.TraceId = b.TraceId
+	return m0
+}
+
 // Event is an audited action that happened in the BSR, with the information of
 // what happened, when it happened, who did it, which resource was affected, and
 // more contextual information on the event.
 type Event struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Unique id of the audited event.
 	EventId string `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	// Type of the audited event. It specifies "what" happened.
@@ -661,11 +731,6 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Event.ProtoReflect.Descriptor instead.
-func (*Event) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Event) GetEventId() string {
@@ -1159,6 +1224,1566 @@ func (x *Event) GetPluginLabelUnarchived() *PayloadPluginLabelUnarchived {
 	return nil
 }
 
+func (x *Event) SetEventId(v string) {
+	x.EventId = v
+}
+
+func (x *Event) SetType(v EventType) {
+	x.Type = v
+}
+
+func (x *Event) SetActor(v *Actor) {
+	x.Actor = v
+}
+
+func (x *Event) SetResource(v *Resource) {
+	x.Resource = v
+}
+
+func (x *Event) SetEventTime(v *timestamppb.Timestamp) {
+	x.EventTime = v
+}
+
+func (x *Event) SetMetadata(v *EventMetadata) {
+	x.Metadata = v
+}
+
+func (x *Event) SetOrganizationCreated(v *PayloadOrganizationCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_OrganizationCreated{v}
+}
+
+func (x *Event) SetOrganizationDeleted(v *PayloadOrganizationDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_OrganizationDeleted{v}
+}
+
+func (x *Event) SetOrganizationMemberAdded(v *PayloadOrganizationMemberAdded) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_OrganizationMemberAdded{v}
+}
+
+func (x *Event) SetOrganizationMemberRoleChanged(v *PayloadOrganizationMemberRoleChanged) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_OrganizationMemberRoleChanged{v}
+}
+
+func (x *Event) SetOrganizationMemberRemoved(v *PayloadOrganizationMemberRemoved) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_OrganizationMemberRemoved{v}
+}
+
+func (x *Event) SetRepositoryCreated(v *PayloadRepositoryCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryCreated{v}
+}
+
+func (x *Event) SetRepositoryDeprecated(v *PayloadRepositoryDeprecated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryDeprecated{v}
+}
+
+func (x *Event) SetRepositoryUndeprecated(v *PayloadRepositoryUndeprecated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryUndeprecated{v}
+}
+
+func (x *Event) SetRepositoryDeleted(v *PayloadRepositoryDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryDeleted{v}
+}
+
+func (x *Event) SetRepositoryCommitPushed(v *PayloadRepositoryCommitPushed) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryCommitPushed{v}
+}
+
+func (x *Event) SetRepositoryContributorAdded(v *PayloadRepositoryContributorAdded) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryContributorAdded{v}
+}
+
+func (x *Event) SetRepositoryContributorRoleChanged(v *PayloadRepositoryContributorRoleChanged) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryContributorRoleChanged{v}
+}
+
+func (x *Event) SetRepositoryContributorRemoved(v *PayloadRepositoryContributorRemoved) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryContributorRemoved{v}
+}
+
+func (x *Event) SetRepositoryVisibilityChanged(v *PayloadRepositoryVisibilityChanged) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryVisibilityChanged{v}
+}
+
+func (x *Event) SetRepositoryDefaultLabelNameChanged(v *PayloadRepositoryDefaultLabelNameChanged) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryDefaultLabelNameChanged{v}
+}
+
+func (x *Event) SetPluginCreated(v *PayloadPluginCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginCreated{v}
+}
+
+func (x *Event) SetPluginDeleted(v *PayloadPluginDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginDeleted{v}
+}
+
+func (x *Event) SetPluginCommitPushed(v *PayloadPluginCommitPushed) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginCommitPushed{v}
+}
+
+func (x *Event) SetUserCreated(v *PayloadUserCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserCreated{v}
+}
+
+func (x *Event) SetUserDeactivated(v *PayloadUserDeactivated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserDeactivated{v}
+}
+
+func (x *Event) SetUserDeleted(v *PayloadUserDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserDeleted{v}
+}
+
+func (x *Event) SetUserLoggedIn(v *PayloadUserLoggedIn) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserLoggedIn{v}
+}
+
+func (x *Event) SetUserLoggedOut(v *PayloadUserLoggedOut) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserLoggedOut{v}
+}
+
+func (x *Event) SetCuratedPluginCreated(v *PayloadCuratedPluginCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_CuratedPluginCreated{v}
+}
+
+func (x *Event) SetIdpGroupAdded(v *PayloadOrganizationIDPGroupAdded) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_IdpGroupAdded{v}
+}
+
+func (x *Event) SetIdpGroupRemoved(v *PayloadOrganizationIDPGroupRemoved) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_IdpGroupRemoved{v}
+}
+
+func (x *Event) SetTokenCreated(v *PayloadTokenCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_TokenCreated{v}
+}
+
+func (x *Event) SetTokenDeleted(v *PayloadTokenDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_TokenDeleted{v}
+}
+
+func (x *Event) SetUserReactivated(v *PayloadUserReactivated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserReactivated{v}
+}
+
+func (x *Event) SetScimTokenCreated(v *PayloadSCIMTokenCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_ScimTokenCreated{v}
+}
+
+func (x *Event) SetScimTokenDeleted(v *PayloadSCIMTokenDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_ScimTokenDeleted{v}
+}
+
+func (x *Event) SetRepositoryCommitDeleted(v *PayloadRepositoryCommitDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryCommitDeleted{v}
+}
+
+func (x *Event) SetRepositoryLabelCreated(v *PayloadRepositoryLabelCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryLabelCreated{v}
+}
+
+func (x *Event) SetRepositoryLabelMoved(v *PayloadRepositoryLabelMoved) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryLabelMoved{v}
+}
+
+func (x *Event) SetRepositoryLabelArchived(v *PayloadRepositoryLabelArchived) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryLabelArchived{v}
+}
+
+func (x *Event) SetRepositoryLabelUnarchived(v *PayloadRepositoryLabelUnarchived) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryLabelUnarchived{v}
+}
+
+func (x *Event) SetCuratedPluginDeleted(v *PayloadCuratedPluginDeleted) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_CuratedPluginDeleted{v}
+}
+
+func (x *Event) SetPayloadServerBreakingChangePolicyEnabled(v *PayloadServerBreakingChangePolicyEnabled) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PayloadServerBreakingChangePolicyEnabled{v}
+}
+
+func (x *Event) SetPayloadServerBreakingChangePolicyDisabled(v *PayloadServerBreakingChangePolicyDisabled) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PayloadServerBreakingChangePolicyDisabled{v}
+}
+
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+func (x *Event) SetRepositoryDefaultBranchChanged(v *PayloadRepositoryDefaultBranchChanged) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_RepositoryDefaultBranchChanged{v}
+}
+
+func (x *Event) SetPayloadServerUniquenessPolicyEnabled(v *PayloadServerUniquenessPolicyEnabled) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PayloadServerUniquenessPolicyEnabled{v}
+}
+
+func (x *Event) SetPayloadServerUniquenessPolicyDisabled(v *PayloadServerUniquenessPolicyDisabled) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PayloadServerUniquenessPolicyDisabled{v}
+}
+
+func (x *Event) SetUserAutoMergedFromNewIdp(v *PayloadUserAutoMergedFromNewIdP) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_UserAutoMergedFromNewIdp{v}
+}
+
+func (x *Event) SetDeviceAuthorizationGrantApproved(v *PayloadDeviceAuthorizationGrantApproved) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_DeviceAuthorizationGrantApproved{v}
+}
+
+func (x *Event) SetDeviceAuthorizationGrantDenied(v *PayloadDeviceAuthorizationGrantDenied) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_DeviceAuthorizationGrantDenied{v}
+}
+
+func (x *Event) SetPluginLabelCreated(v *PayloadPluginLabelCreated) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginLabelCreated{v}
+}
+
+func (x *Event) SetPluginLabelMoved(v *PayloadPluginLabelMoved) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginLabelMoved{v}
+}
+
+func (x *Event) SetPluginLabelArchived(v *PayloadPluginLabelArchived) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginLabelArchived{v}
+}
+
+func (x *Event) SetPluginLabelUnarchived(v *PayloadPluginLabelUnarchived) {
+	if v == nil {
+		x.Payload = nil
+		return
+	}
+	x.Payload = &Event_PluginLabelUnarchived{v}
+}
+
+func (x *Event) HasActor() bool {
+	if x == nil {
+		return false
+	}
+	return x.Actor != nil
+}
+
+func (x *Event) HasResource() bool {
+	if x == nil {
+		return false
+	}
+	return x.Resource != nil
+}
+
+func (x *Event) HasEventTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.EventTime != nil
+}
+
+func (x *Event) HasMetadata() bool {
+	if x == nil {
+		return false
+	}
+	return x.Metadata != nil
+}
+
+func (x *Event) HasPayload() bool {
+	if x == nil {
+		return false
+	}
+	return x.Payload != nil
+}
+
+func (x *Event) HasOrganizationCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_OrganizationCreated)
+	return ok
+}
+
+func (x *Event) HasOrganizationDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_OrganizationDeleted)
+	return ok
+}
+
+func (x *Event) HasOrganizationMemberAdded() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_OrganizationMemberAdded)
+	return ok
+}
+
+func (x *Event) HasOrganizationMemberRoleChanged() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_OrganizationMemberRoleChanged)
+	return ok
+}
+
+func (x *Event) HasOrganizationMemberRemoved() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_OrganizationMemberRemoved)
+	return ok
+}
+
+func (x *Event) HasRepositoryCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryCreated)
+	return ok
+}
+
+func (x *Event) HasRepositoryDeprecated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryDeprecated)
+	return ok
+}
+
+func (x *Event) HasRepositoryUndeprecated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryUndeprecated)
+	return ok
+}
+
+func (x *Event) HasRepositoryDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryDeleted)
+	return ok
+}
+
+func (x *Event) HasRepositoryCommitPushed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryCommitPushed)
+	return ok
+}
+
+func (x *Event) HasRepositoryContributorAdded() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryContributorAdded)
+	return ok
+}
+
+func (x *Event) HasRepositoryContributorRoleChanged() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryContributorRoleChanged)
+	return ok
+}
+
+func (x *Event) HasRepositoryContributorRemoved() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryContributorRemoved)
+	return ok
+}
+
+func (x *Event) HasRepositoryVisibilityChanged() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryVisibilityChanged)
+	return ok
+}
+
+func (x *Event) HasRepositoryDefaultLabelNameChanged() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryDefaultLabelNameChanged)
+	return ok
+}
+
+func (x *Event) HasPluginCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginCreated)
+	return ok
+}
+
+func (x *Event) HasPluginDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginDeleted)
+	return ok
+}
+
+func (x *Event) HasPluginCommitPushed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginCommitPushed)
+	return ok
+}
+
+func (x *Event) HasUserCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserCreated)
+	return ok
+}
+
+func (x *Event) HasUserDeactivated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserDeactivated)
+	return ok
+}
+
+func (x *Event) HasUserDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserDeleted)
+	return ok
+}
+
+func (x *Event) HasUserLoggedIn() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserLoggedIn)
+	return ok
+}
+
+func (x *Event) HasUserLoggedOut() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserLoggedOut)
+	return ok
+}
+
+func (x *Event) HasCuratedPluginCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_CuratedPluginCreated)
+	return ok
+}
+
+func (x *Event) HasIdpGroupAdded() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_IdpGroupAdded)
+	return ok
+}
+
+func (x *Event) HasIdpGroupRemoved() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_IdpGroupRemoved)
+	return ok
+}
+
+func (x *Event) HasTokenCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_TokenCreated)
+	return ok
+}
+
+func (x *Event) HasTokenDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_TokenDeleted)
+	return ok
+}
+
+func (x *Event) HasUserReactivated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserReactivated)
+	return ok
+}
+
+func (x *Event) HasScimTokenCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_ScimTokenCreated)
+	return ok
+}
+
+func (x *Event) HasScimTokenDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_ScimTokenDeleted)
+	return ok
+}
+
+func (x *Event) HasRepositoryCommitDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryCommitDeleted)
+	return ok
+}
+
+func (x *Event) HasRepositoryLabelCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryLabelCreated)
+	return ok
+}
+
+func (x *Event) HasRepositoryLabelMoved() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryLabelMoved)
+	return ok
+}
+
+func (x *Event) HasRepositoryLabelArchived() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryLabelArchived)
+	return ok
+}
+
+func (x *Event) HasRepositoryLabelUnarchived() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryLabelUnarchived)
+	return ok
+}
+
+func (x *Event) HasCuratedPluginDeleted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_CuratedPluginDeleted)
+	return ok
+}
+
+func (x *Event) HasPayloadServerBreakingChangePolicyEnabled() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PayloadServerBreakingChangePolicyEnabled)
+	return ok
+}
+
+func (x *Event) HasPayloadServerBreakingChangePolicyDisabled() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PayloadServerBreakingChangePolicyDisabled)
+	return ok
+}
+
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+func (x *Event) HasRepositoryDefaultBranchChanged() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_RepositoryDefaultBranchChanged)
+	return ok
+}
+
+func (x *Event) HasPayloadServerUniquenessPolicyEnabled() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PayloadServerUniquenessPolicyEnabled)
+	return ok
+}
+
+func (x *Event) HasPayloadServerUniquenessPolicyDisabled() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PayloadServerUniquenessPolicyDisabled)
+	return ok
+}
+
+func (x *Event) HasUserAutoMergedFromNewIdp() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_UserAutoMergedFromNewIdp)
+	return ok
+}
+
+func (x *Event) HasDeviceAuthorizationGrantApproved() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_DeviceAuthorizationGrantApproved)
+	return ok
+}
+
+func (x *Event) HasDeviceAuthorizationGrantDenied() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_DeviceAuthorizationGrantDenied)
+	return ok
+}
+
+func (x *Event) HasPluginLabelCreated() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginLabelCreated)
+	return ok
+}
+
+func (x *Event) HasPluginLabelMoved() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginLabelMoved)
+	return ok
+}
+
+func (x *Event) HasPluginLabelArchived() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginLabelArchived)
+	return ok
+}
+
+func (x *Event) HasPluginLabelUnarchived() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Payload.(*Event_PluginLabelUnarchived)
+	return ok
+}
+
+func (x *Event) ClearActor() {
+	x.Actor = nil
+}
+
+func (x *Event) ClearResource() {
+	x.Resource = nil
+}
+
+func (x *Event) ClearEventTime() {
+	x.EventTime = nil
+}
+
+func (x *Event) ClearMetadata() {
+	x.Metadata = nil
+}
+
+func (x *Event) ClearPayload() {
+	x.Payload = nil
+}
+
+func (x *Event) ClearOrganizationCreated() {
+	if _, ok := x.Payload.(*Event_OrganizationCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearOrganizationDeleted() {
+	if _, ok := x.Payload.(*Event_OrganizationDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearOrganizationMemberAdded() {
+	if _, ok := x.Payload.(*Event_OrganizationMemberAdded); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearOrganizationMemberRoleChanged() {
+	if _, ok := x.Payload.(*Event_OrganizationMemberRoleChanged); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearOrganizationMemberRemoved() {
+	if _, ok := x.Payload.(*Event_OrganizationMemberRemoved); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryCreated() {
+	if _, ok := x.Payload.(*Event_RepositoryCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryDeprecated() {
+	if _, ok := x.Payload.(*Event_RepositoryDeprecated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryUndeprecated() {
+	if _, ok := x.Payload.(*Event_RepositoryUndeprecated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryDeleted() {
+	if _, ok := x.Payload.(*Event_RepositoryDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryCommitPushed() {
+	if _, ok := x.Payload.(*Event_RepositoryCommitPushed); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryContributorAdded() {
+	if _, ok := x.Payload.(*Event_RepositoryContributorAdded); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryContributorRoleChanged() {
+	if _, ok := x.Payload.(*Event_RepositoryContributorRoleChanged); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryContributorRemoved() {
+	if _, ok := x.Payload.(*Event_RepositoryContributorRemoved); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryVisibilityChanged() {
+	if _, ok := x.Payload.(*Event_RepositoryVisibilityChanged); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryDefaultLabelNameChanged() {
+	if _, ok := x.Payload.(*Event_RepositoryDefaultLabelNameChanged); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginCreated() {
+	if _, ok := x.Payload.(*Event_PluginCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginDeleted() {
+	if _, ok := x.Payload.(*Event_PluginDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginCommitPushed() {
+	if _, ok := x.Payload.(*Event_PluginCommitPushed); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserCreated() {
+	if _, ok := x.Payload.(*Event_UserCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserDeactivated() {
+	if _, ok := x.Payload.(*Event_UserDeactivated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserDeleted() {
+	if _, ok := x.Payload.(*Event_UserDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserLoggedIn() {
+	if _, ok := x.Payload.(*Event_UserLoggedIn); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserLoggedOut() {
+	if _, ok := x.Payload.(*Event_UserLoggedOut); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearCuratedPluginCreated() {
+	if _, ok := x.Payload.(*Event_CuratedPluginCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearIdpGroupAdded() {
+	if _, ok := x.Payload.(*Event_IdpGroupAdded); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearIdpGroupRemoved() {
+	if _, ok := x.Payload.(*Event_IdpGroupRemoved); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearTokenCreated() {
+	if _, ok := x.Payload.(*Event_TokenCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearTokenDeleted() {
+	if _, ok := x.Payload.(*Event_TokenDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserReactivated() {
+	if _, ok := x.Payload.(*Event_UserReactivated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearScimTokenCreated() {
+	if _, ok := x.Payload.(*Event_ScimTokenCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearScimTokenDeleted() {
+	if _, ok := x.Payload.(*Event_ScimTokenDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryCommitDeleted() {
+	if _, ok := x.Payload.(*Event_RepositoryCommitDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryLabelCreated() {
+	if _, ok := x.Payload.(*Event_RepositoryLabelCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryLabelMoved() {
+	if _, ok := x.Payload.(*Event_RepositoryLabelMoved); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryLabelArchived() {
+	if _, ok := x.Payload.(*Event_RepositoryLabelArchived); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearRepositoryLabelUnarchived() {
+	if _, ok := x.Payload.(*Event_RepositoryLabelUnarchived); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearCuratedPluginDeleted() {
+	if _, ok := x.Payload.(*Event_CuratedPluginDeleted); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPayloadServerBreakingChangePolicyEnabled() {
+	if _, ok := x.Payload.(*Event_PayloadServerBreakingChangePolicyEnabled); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPayloadServerBreakingChangePolicyDisabled() {
+	if _, ok := x.Payload.(*Event_PayloadServerBreakingChangePolicyDisabled); ok {
+		x.Payload = nil
+	}
+}
+
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+func (x *Event) ClearRepositoryDefaultBranchChanged() {
+	if _, ok := x.Payload.(*Event_RepositoryDefaultBranchChanged); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPayloadServerUniquenessPolicyEnabled() {
+	if _, ok := x.Payload.(*Event_PayloadServerUniquenessPolicyEnabled); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPayloadServerUniquenessPolicyDisabled() {
+	if _, ok := x.Payload.(*Event_PayloadServerUniquenessPolicyDisabled); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearUserAutoMergedFromNewIdp() {
+	if _, ok := x.Payload.(*Event_UserAutoMergedFromNewIdp); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearDeviceAuthorizationGrantApproved() {
+	if _, ok := x.Payload.(*Event_DeviceAuthorizationGrantApproved); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearDeviceAuthorizationGrantDenied() {
+	if _, ok := x.Payload.(*Event_DeviceAuthorizationGrantDenied); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginLabelCreated() {
+	if _, ok := x.Payload.(*Event_PluginLabelCreated); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginLabelMoved() {
+	if _, ok := x.Payload.(*Event_PluginLabelMoved); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginLabelArchived() {
+	if _, ok := x.Payload.(*Event_PluginLabelArchived); ok {
+		x.Payload = nil
+	}
+}
+
+func (x *Event) ClearPluginLabelUnarchived() {
+	if _, ok := x.Payload.(*Event_PluginLabelUnarchived); ok {
+		x.Payload = nil
+	}
+}
+
+const Event_Payload_not_set_case case_Event_Payload = 0
+const Event_OrganizationCreated_case case_Event_Payload = 7
+const Event_OrganizationDeleted_case case_Event_Payload = 8
+const Event_OrganizationMemberAdded_case case_Event_Payload = 9
+const Event_OrganizationMemberRoleChanged_case case_Event_Payload = 10
+const Event_OrganizationMemberRemoved_case case_Event_Payload = 11
+const Event_RepositoryCreated_case case_Event_Payload = 12
+const Event_RepositoryDeprecated_case case_Event_Payload = 54
+const Event_RepositoryUndeprecated_case case_Event_Payload = 55
+const Event_RepositoryDeleted_case case_Event_Payload = 13
+const Event_RepositoryCommitPushed_case case_Event_Payload = 14
+const Event_RepositoryContributorAdded_case case_Event_Payload = 15
+const Event_RepositoryContributorRoleChanged_case case_Event_Payload = 16
+const Event_RepositoryContributorRemoved_case case_Event_Payload = 17
+const Event_RepositoryVisibilityChanged_case case_Event_Payload = 18
+const Event_RepositoryDefaultLabelNameChanged_case case_Event_Payload = 46
+const Event_PluginCreated_case case_Event_Payload = 19
+const Event_PluginDeleted_case case_Event_Payload = 20
+const Event_PluginCommitPushed_case case_Event_Payload = 49
+const Event_UserCreated_case case_Event_Payload = 21
+const Event_UserDeactivated_case case_Event_Payload = 22
+const Event_UserDeleted_case case_Event_Payload = 23
+const Event_UserLoggedIn_case case_Event_Payload = 24
+const Event_UserLoggedOut_case case_Event_Payload = 25
+const Event_CuratedPluginCreated_case case_Event_Payload = 26
+const Event_IdpGroupAdded_case case_Event_Payload = 27
+const Event_IdpGroupRemoved_case case_Event_Payload = 28
+const Event_TokenCreated_case case_Event_Payload = 29
+const Event_TokenDeleted_case case_Event_Payload = 30
+const Event_UserReactivated_case case_Event_Payload = 31
+const Event_ScimTokenCreated_case case_Event_Payload = 32
+const Event_ScimTokenDeleted_case case_Event_Payload = 33
+const Event_RepositoryCommitDeleted_case case_Event_Payload = 34
+const Event_RepositoryLabelCreated_case case_Event_Payload = 35
+const Event_RepositoryLabelMoved_case case_Event_Payload = 36
+const Event_RepositoryLabelArchived_case case_Event_Payload = 44
+const Event_RepositoryLabelUnarchived_case case_Event_Payload = 45
+const Event_CuratedPluginDeleted_case case_Event_Payload = 37
+const Event_PayloadServerBreakingChangePolicyEnabled_case case_Event_Payload = 38
+const Event_PayloadServerBreakingChangePolicyDisabled_case case_Event_Payload = 39
+const Event_RepositoryDefaultBranchChanged_case case_Event_Payload = 40
+const Event_PayloadServerUniquenessPolicyEnabled_case case_Event_Payload = 41
+const Event_PayloadServerUniquenessPolicyDisabled_case case_Event_Payload = 42
+const Event_UserAutoMergedFromNewIdp_case case_Event_Payload = 43
+const Event_DeviceAuthorizationGrantApproved_case case_Event_Payload = 47
+const Event_DeviceAuthorizationGrantDenied_case case_Event_Payload = 48
+const Event_PluginLabelCreated_case case_Event_Payload = 50
+const Event_PluginLabelMoved_case case_Event_Payload = 51
+const Event_PluginLabelArchived_case case_Event_Payload = 52
+const Event_PluginLabelUnarchived_case case_Event_Payload = 53
+
+func (x *Event) WhichPayload() case_Event_Payload {
+	if x == nil {
+		return Event_Payload_not_set_case
+	}
+	switch x.Payload.(type) {
+	case *Event_OrganizationCreated:
+		return Event_OrganizationCreated_case
+	case *Event_OrganizationDeleted:
+		return Event_OrganizationDeleted_case
+	case *Event_OrganizationMemberAdded:
+		return Event_OrganizationMemberAdded_case
+	case *Event_OrganizationMemberRoleChanged:
+		return Event_OrganizationMemberRoleChanged_case
+	case *Event_OrganizationMemberRemoved:
+		return Event_OrganizationMemberRemoved_case
+	case *Event_RepositoryCreated:
+		return Event_RepositoryCreated_case
+	case *Event_RepositoryDeprecated:
+		return Event_RepositoryDeprecated_case
+	case *Event_RepositoryUndeprecated:
+		return Event_RepositoryUndeprecated_case
+	case *Event_RepositoryDeleted:
+		return Event_RepositoryDeleted_case
+	case *Event_RepositoryCommitPushed:
+		return Event_RepositoryCommitPushed_case
+	case *Event_RepositoryContributorAdded:
+		return Event_RepositoryContributorAdded_case
+	case *Event_RepositoryContributorRoleChanged:
+		return Event_RepositoryContributorRoleChanged_case
+	case *Event_RepositoryContributorRemoved:
+		return Event_RepositoryContributorRemoved_case
+	case *Event_RepositoryVisibilityChanged:
+		return Event_RepositoryVisibilityChanged_case
+	case *Event_RepositoryDefaultLabelNameChanged:
+		return Event_RepositoryDefaultLabelNameChanged_case
+	case *Event_PluginCreated:
+		return Event_PluginCreated_case
+	case *Event_PluginDeleted:
+		return Event_PluginDeleted_case
+	case *Event_PluginCommitPushed:
+		return Event_PluginCommitPushed_case
+	case *Event_UserCreated:
+		return Event_UserCreated_case
+	case *Event_UserDeactivated:
+		return Event_UserDeactivated_case
+	case *Event_UserDeleted:
+		return Event_UserDeleted_case
+	case *Event_UserLoggedIn:
+		return Event_UserLoggedIn_case
+	case *Event_UserLoggedOut:
+		return Event_UserLoggedOut_case
+	case *Event_CuratedPluginCreated:
+		return Event_CuratedPluginCreated_case
+	case *Event_IdpGroupAdded:
+		return Event_IdpGroupAdded_case
+	case *Event_IdpGroupRemoved:
+		return Event_IdpGroupRemoved_case
+	case *Event_TokenCreated:
+		return Event_TokenCreated_case
+	case *Event_TokenDeleted:
+		return Event_TokenDeleted_case
+	case *Event_UserReactivated:
+		return Event_UserReactivated_case
+	case *Event_ScimTokenCreated:
+		return Event_ScimTokenCreated_case
+	case *Event_ScimTokenDeleted:
+		return Event_ScimTokenDeleted_case
+	case *Event_RepositoryCommitDeleted:
+		return Event_RepositoryCommitDeleted_case
+	case *Event_RepositoryLabelCreated:
+		return Event_RepositoryLabelCreated_case
+	case *Event_RepositoryLabelMoved:
+		return Event_RepositoryLabelMoved_case
+	case *Event_RepositoryLabelArchived:
+		return Event_RepositoryLabelArchived_case
+	case *Event_RepositoryLabelUnarchived:
+		return Event_RepositoryLabelUnarchived_case
+	case *Event_CuratedPluginDeleted:
+		return Event_CuratedPluginDeleted_case
+	case *Event_PayloadServerBreakingChangePolicyEnabled:
+		return Event_PayloadServerBreakingChangePolicyEnabled_case
+	case *Event_PayloadServerBreakingChangePolicyDisabled:
+		return Event_PayloadServerBreakingChangePolicyDisabled_case
+	case *Event_RepositoryDefaultBranchChanged:
+		return Event_RepositoryDefaultBranchChanged_case
+	case *Event_PayloadServerUniquenessPolicyEnabled:
+		return Event_PayloadServerUniquenessPolicyEnabled_case
+	case *Event_PayloadServerUniquenessPolicyDisabled:
+		return Event_PayloadServerUniquenessPolicyDisabled_case
+	case *Event_UserAutoMergedFromNewIdp:
+		return Event_UserAutoMergedFromNewIdp_case
+	case *Event_DeviceAuthorizationGrantApproved:
+		return Event_DeviceAuthorizationGrantApproved_case
+	case *Event_DeviceAuthorizationGrantDenied:
+		return Event_DeviceAuthorizationGrantDenied_case
+	case *Event_PluginLabelCreated:
+		return Event_PluginLabelCreated_case
+	case *Event_PluginLabelMoved:
+		return Event_PluginLabelMoved_case
+	case *Event_PluginLabelArchived:
+		return Event_PluginLabelArchived_case
+	case *Event_PluginLabelUnarchived:
+		return Event_PluginLabelUnarchived_case
+	default:
+		return Event_Payload_not_set_case
+	}
+}
+
+type Event_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Unique id of the audited event.
+	EventId string
+	// Type of the audited event. It specifies "what" happened.
+	Type EventType
+	// Actor of the audited event. It specifies "who" did it.
+	Actor *Actor
+	// Resource of the audited event. It specifies "which resource" was affected.
+	Resource *Resource
+	// Time of the audited event. It specifies "when" it happened.
+	EventTime *timestamppb.Timestamp
+	// Metadata about the audited event. It specifies any additional details about the audited event.
+	Metadata *EventMetadata
+	// Payload of the audited event. It specifies additional context on the event.
+
+	// Fields of oneof Payload:
+	OrganizationCreated                       *PayloadOrganizationCreated
+	OrganizationDeleted                       *PayloadOrganizationDeleted
+	OrganizationMemberAdded                   *PayloadOrganizationMemberAdded
+	OrganizationMemberRoleChanged             *PayloadOrganizationMemberRoleChanged
+	OrganizationMemberRemoved                 *PayloadOrganizationMemberRemoved
+	RepositoryCreated                         *PayloadRepositoryCreated
+	RepositoryDeprecated                      *PayloadRepositoryDeprecated
+	RepositoryUndeprecated                    *PayloadRepositoryUndeprecated
+	RepositoryDeleted                         *PayloadRepositoryDeleted
+	RepositoryCommitPushed                    *PayloadRepositoryCommitPushed
+	RepositoryContributorAdded                *PayloadRepositoryContributorAdded
+	RepositoryContributorRoleChanged          *PayloadRepositoryContributorRoleChanged
+	RepositoryContributorRemoved              *PayloadRepositoryContributorRemoved
+	RepositoryVisibilityChanged               *PayloadRepositoryVisibilityChanged
+	RepositoryDefaultLabelNameChanged         *PayloadRepositoryDefaultLabelNameChanged
+	PluginCreated                             *PayloadPluginCreated
+	PluginDeleted                             *PayloadPluginDeleted
+	PluginCommitPushed                        *PayloadPluginCommitPushed
+	UserCreated                               *PayloadUserCreated
+	UserDeactivated                           *PayloadUserDeactivated
+	UserDeleted                               *PayloadUserDeleted
+	UserLoggedIn                              *PayloadUserLoggedIn
+	UserLoggedOut                             *PayloadUserLoggedOut
+	CuratedPluginCreated                      *PayloadCuratedPluginCreated
+	IdpGroupAdded                             *PayloadOrganizationIDPGroupAdded
+	IdpGroupRemoved                           *PayloadOrganizationIDPGroupRemoved
+	TokenCreated                              *PayloadTokenCreated
+	TokenDeleted                              *PayloadTokenDeleted
+	UserReactivated                           *PayloadUserReactivated
+	ScimTokenCreated                          *PayloadSCIMTokenCreated
+	ScimTokenDeleted                          *PayloadSCIMTokenDeleted
+	RepositoryCommitDeleted                   *PayloadRepositoryCommitDeleted
+	RepositoryLabelCreated                    *PayloadRepositoryLabelCreated
+	RepositoryLabelMoved                      *PayloadRepositoryLabelMoved
+	RepositoryLabelArchived                   *PayloadRepositoryLabelArchived
+	RepositoryLabelUnarchived                 *PayloadRepositoryLabelUnarchived
+	CuratedPluginDeleted                      *PayloadCuratedPluginDeleted
+	PayloadServerBreakingChangePolicyEnabled  *PayloadServerBreakingChangePolicyEnabled
+	PayloadServerBreakingChangePolicyDisabled *PayloadServerBreakingChangePolicyDisabled
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+	RepositoryDefaultBranchChanged        *PayloadRepositoryDefaultBranchChanged
+	PayloadServerUniquenessPolicyEnabled  *PayloadServerUniquenessPolicyEnabled
+	PayloadServerUniquenessPolicyDisabled *PayloadServerUniquenessPolicyDisabled
+	UserAutoMergedFromNewIdp              *PayloadUserAutoMergedFromNewIdP
+	DeviceAuthorizationGrantApproved      *PayloadDeviceAuthorizationGrantApproved
+	DeviceAuthorizationGrantDenied        *PayloadDeviceAuthorizationGrantDenied
+	PluginLabelCreated                    *PayloadPluginLabelCreated
+	PluginLabelMoved                      *PayloadPluginLabelMoved
+	PluginLabelArchived                   *PayloadPluginLabelArchived
+	PluginLabelUnarchived                 *PayloadPluginLabelUnarchived
+	// -- end of Payload
+}
+
+func (b0 Event_builder) Build() *Event {
+	m0 := &Event{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.EventId = b.EventId
+	x.Type = b.Type
+	x.Actor = b.Actor
+	x.Resource = b.Resource
+	x.EventTime = b.EventTime
+	x.Metadata = b.Metadata
+	if b.OrganizationCreated != nil {
+		x.Payload = &Event_OrganizationCreated{b.OrganizationCreated}
+	}
+	if b.OrganizationDeleted != nil {
+		x.Payload = &Event_OrganizationDeleted{b.OrganizationDeleted}
+	}
+	if b.OrganizationMemberAdded != nil {
+		x.Payload = &Event_OrganizationMemberAdded{b.OrganizationMemberAdded}
+	}
+	if b.OrganizationMemberRoleChanged != nil {
+		x.Payload = &Event_OrganizationMemberRoleChanged{b.OrganizationMemberRoleChanged}
+	}
+	if b.OrganizationMemberRemoved != nil {
+		x.Payload = &Event_OrganizationMemberRemoved{b.OrganizationMemberRemoved}
+	}
+	if b.RepositoryCreated != nil {
+		x.Payload = &Event_RepositoryCreated{b.RepositoryCreated}
+	}
+	if b.RepositoryDeprecated != nil {
+		x.Payload = &Event_RepositoryDeprecated{b.RepositoryDeprecated}
+	}
+	if b.RepositoryUndeprecated != nil {
+		x.Payload = &Event_RepositoryUndeprecated{b.RepositoryUndeprecated}
+	}
+	if b.RepositoryDeleted != nil {
+		x.Payload = &Event_RepositoryDeleted{b.RepositoryDeleted}
+	}
+	if b.RepositoryCommitPushed != nil {
+		x.Payload = &Event_RepositoryCommitPushed{b.RepositoryCommitPushed}
+	}
+	if b.RepositoryContributorAdded != nil {
+		x.Payload = &Event_RepositoryContributorAdded{b.RepositoryContributorAdded}
+	}
+	if b.RepositoryContributorRoleChanged != nil {
+		x.Payload = &Event_RepositoryContributorRoleChanged{b.RepositoryContributorRoleChanged}
+	}
+	if b.RepositoryContributorRemoved != nil {
+		x.Payload = &Event_RepositoryContributorRemoved{b.RepositoryContributorRemoved}
+	}
+	if b.RepositoryVisibilityChanged != nil {
+		x.Payload = &Event_RepositoryVisibilityChanged{b.RepositoryVisibilityChanged}
+	}
+	if b.RepositoryDefaultLabelNameChanged != nil {
+		x.Payload = &Event_RepositoryDefaultLabelNameChanged{b.RepositoryDefaultLabelNameChanged}
+	}
+	if b.PluginCreated != nil {
+		x.Payload = &Event_PluginCreated{b.PluginCreated}
+	}
+	if b.PluginDeleted != nil {
+		x.Payload = &Event_PluginDeleted{b.PluginDeleted}
+	}
+	if b.PluginCommitPushed != nil {
+		x.Payload = &Event_PluginCommitPushed{b.PluginCommitPushed}
+	}
+	if b.UserCreated != nil {
+		x.Payload = &Event_UserCreated{b.UserCreated}
+	}
+	if b.UserDeactivated != nil {
+		x.Payload = &Event_UserDeactivated{b.UserDeactivated}
+	}
+	if b.UserDeleted != nil {
+		x.Payload = &Event_UserDeleted{b.UserDeleted}
+	}
+	if b.UserLoggedIn != nil {
+		x.Payload = &Event_UserLoggedIn{b.UserLoggedIn}
+	}
+	if b.UserLoggedOut != nil {
+		x.Payload = &Event_UserLoggedOut{b.UserLoggedOut}
+	}
+	if b.CuratedPluginCreated != nil {
+		x.Payload = &Event_CuratedPluginCreated{b.CuratedPluginCreated}
+	}
+	if b.IdpGroupAdded != nil {
+		x.Payload = &Event_IdpGroupAdded{b.IdpGroupAdded}
+	}
+	if b.IdpGroupRemoved != nil {
+		x.Payload = &Event_IdpGroupRemoved{b.IdpGroupRemoved}
+	}
+	if b.TokenCreated != nil {
+		x.Payload = &Event_TokenCreated{b.TokenCreated}
+	}
+	if b.TokenDeleted != nil {
+		x.Payload = &Event_TokenDeleted{b.TokenDeleted}
+	}
+	if b.UserReactivated != nil {
+		x.Payload = &Event_UserReactivated{b.UserReactivated}
+	}
+	if b.ScimTokenCreated != nil {
+		x.Payload = &Event_ScimTokenCreated{b.ScimTokenCreated}
+	}
+	if b.ScimTokenDeleted != nil {
+		x.Payload = &Event_ScimTokenDeleted{b.ScimTokenDeleted}
+	}
+	if b.RepositoryCommitDeleted != nil {
+		x.Payload = &Event_RepositoryCommitDeleted{b.RepositoryCommitDeleted}
+	}
+	if b.RepositoryLabelCreated != nil {
+		x.Payload = &Event_RepositoryLabelCreated{b.RepositoryLabelCreated}
+	}
+	if b.RepositoryLabelMoved != nil {
+		x.Payload = &Event_RepositoryLabelMoved{b.RepositoryLabelMoved}
+	}
+	if b.RepositoryLabelArchived != nil {
+		x.Payload = &Event_RepositoryLabelArchived{b.RepositoryLabelArchived}
+	}
+	if b.RepositoryLabelUnarchived != nil {
+		x.Payload = &Event_RepositoryLabelUnarchived{b.RepositoryLabelUnarchived}
+	}
+	if b.CuratedPluginDeleted != nil {
+		x.Payload = &Event_CuratedPluginDeleted{b.CuratedPluginDeleted}
+	}
+	if b.PayloadServerBreakingChangePolicyEnabled != nil {
+		x.Payload = &Event_PayloadServerBreakingChangePolicyEnabled{b.PayloadServerBreakingChangePolicyEnabled}
+	}
+	if b.PayloadServerBreakingChangePolicyDisabled != nil {
+		x.Payload = &Event_PayloadServerBreakingChangePolicyDisabled{b.PayloadServerBreakingChangePolicyDisabled}
+	}
+	if b.RepositoryDefaultBranchChanged != nil {
+		x.Payload = &Event_RepositoryDefaultBranchChanged{b.RepositoryDefaultBranchChanged}
+	}
+	if b.PayloadServerUniquenessPolicyEnabled != nil {
+		x.Payload = &Event_PayloadServerUniquenessPolicyEnabled{b.PayloadServerUniquenessPolicyEnabled}
+	}
+	if b.PayloadServerUniquenessPolicyDisabled != nil {
+		x.Payload = &Event_PayloadServerUniquenessPolicyDisabled{b.PayloadServerUniquenessPolicyDisabled}
+	}
+	if b.UserAutoMergedFromNewIdp != nil {
+		x.Payload = &Event_UserAutoMergedFromNewIdp{b.UserAutoMergedFromNewIdp}
+	}
+	if b.DeviceAuthorizationGrantApproved != nil {
+		x.Payload = &Event_DeviceAuthorizationGrantApproved{b.DeviceAuthorizationGrantApproved}
+	}
+	if b.DeviceAuthorizationGrantDenied != nil {
+		x.Payload = &Event_DeviceAuthorizationGrantDenied{b.DeviceAuthorizationGrantDenied}
+	}
+	if b.PluginLabelCreated != nil {
+		x.Payload = &Event_PluginLabelCreated{b.PluginLabelCreated}
+	}
+	if b.PluginLabelMoved != nil {
+		x.Payload = &Event_PluginLabelMoved{b.PluginLabelMoved}
+	}
+	if b.PluginLabelArchived != nil {
+		x.Payload = &Event_PluginLabelArchived{b.PluginLabelArchived}
+	}
+	if b.PluginLabelUnarchived != nil {
+		x.Payload = &Event_PluginLabelUnarchived{b.PluginLabelUnarchived}
+	}
+	return m0
+}
+
+type case_Event_Payload protoreflect.FieldNumber
+
+func (x case_Event_Payload) String() string {
+	md := file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[3].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isEvent_Payload interface {
 	isEvent_Payload()
 }
@@ -1459,7 +3084,7 @@ func (*Event_PluginLabelArchived) isEvent_Payload() {}
 func (*Event_PluginLabelUnarchived) isEvent_Payload() {}
 
 type PayloadOrganizationCreated struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1489,13 +3114,20 @@ func (x *PayloadOrganizationCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadOrganizationCreated.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{4}
+type PayloadOrganizationCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadOrganizationCreated_builder) Build() *PayloadOrganizationCreated {
+	m0 := &PayloadOrganizationCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadOrganizationDeleted struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1525,13 +3157,20 @@ func (x *PayloadOrganizationDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadOrganizationDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{5}
+type PayloadOrganizationDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadOrganizationDeleted_builder) Build() *PayloadOrganizationDeleted {
+	m0 := &PayloadOrganizationDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadOrganizationMemberAdded struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// organization_id is the id of the organization with the new member.
 	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	// organization_name is the name of the organization with the new member.
@@ -1569,11 +3208,6 @@ func (x *PayloadOrganizationMemberAdded) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadOrganizationMemberAdded.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationMemberAdded) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *PayloadOrganizationMemberAdded) GetOrganizationId() string {
 	if x != nil {
 		return x.OrganizationId
@@ -1602,8 +3236,48 @@ func (x *PayloadOrganizationMemberAdded) GetMemberRoleSource() v1alpha1.Organiza
 	return v1alpha1.OrganizationRoleSource(0)
 }
 
+func (x *PayloadOrganizationMemberAdded) SetOrganizationId(v string) {
+	x.OrganizationId = v
+}
+
+func (x *PayloadOrganizationMemberAdded) SetOrganizationName(v string) {
+	x.OrganizationName = v
+}
+
+func (x *PayloadOrganizationMemberAdded) SetMemberRole(v v1alpha1.OrganizationRole) {
+	x.MemberRole = v
+}
+
+func (x *PayloadOrganizationMemberAdded) SetMemberRoleSource(v v1alpha1.OrganizationRoleSource) {
+	x.MemberRoleSource = v
+}
+
+type PayloadOrganizationMemberAdded_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// organization_id is the id of the organization with the new member.
+	OrganizationId string
+	// organization_name is the name of the organization with the new member.
+	OrganizationName string
+	// member_role is the role granted to the member added to the organization.
+	MemberRole v1alpha1.OrganizationRole
+	// member_role_source is the source of the role granted to the member.
+	MemberRoleSource v1alpha1.OrganizationRoleSource
+}
+
+func (b0 PayloadOrganizationMemberAdded_builder) Build() *PayloadOrganizationMemberAdded {
+	m0 := &PayloadOrganizationMemberAdded{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OrganizationId = b.OrganizationId
+	x.OrganizationName = b.OrganizationName
+	x.MemberRole = b.MemberRole
+	x.MemberRoleSource = b.MemberRoleSource
+	return m0
+}
+
 type PayloadOrganizationMemberRoleChanged struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// organization_id is the id of the organization within which the role was changed.
 	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	// organization_name is the name of the organization within which the role was changed.
@@ -1643,11 +3317,6 @@ func (x *PayloadOrganizationMemberRoleChanged) ProtoReflect() protoreflect.Messa
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PayloadOrganizationMemberRoleChanged.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationMemberRoleChanged) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PayloadOrganizationMemberRoleChanged) GetOrganizationId() string {
@@ -1692,8 +3361,62 @@ func (x *PayloadOrganizationMemberRoleChanged) GetNewMemberRoleSource() v1alpha1
 	return v1alpha1.OrganizationRoleSource(0)
 }
 
+func (x *PayloadOrganizationMemberRoleChanged) SetOrganizationId(v string) {
+	x.OrganizationId = v
+}
+
+func (x *PayloadOrganizationMemberRoleChanged) SetOrganizationName(v string) {
+	x.OrganizationName = v
+}
+
+func (x *PayloadOrganizationMemberRoleChanged) SetOldRole(v v1alpha1.OrganizationRole) {
+	x.OldRole = v
+}
+
+func (x *PayloadOrganizationMemberRoleChanged) SetNewRole(v v1alpha1.OrganizationRole) {
+	x.NewRole = v
+}
+
+func (x *PayloadOrganizationMemberRoleChanged) SetOldMemberRoleSource(v v1alpha1.OrganizationRoleSource) {
+	x.OldMemberRoleSource = v
+}
+
+func (x *PayloadOrganizationMemberRoleChanged) SetNewMemberRoleSource(v v1alpha1.OrganizationRoleSource) {
+	x.NewMemberRoleSource = v
+}
+
+type PayloadOrganizationMemberRoleChanged_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// organization_id is the id of the organization within which the role was changed.
+	OrganizationId string
+	// organization_name is the name of the organization within which the role was changed.
+	OrganizationName string
+	// old_role is the old role of the member whose role was changed.
+	OldRole v1alpha1.OrganizationRole
+	// new_role is the new role of the member whose role was changed.
+	NewRole v1alpha1.OrganizationRole
+	// old_member_role_source is the old source of the role granted to the member.
+	OldMemberRoleSource v1alpha1.OrganizationRoleSource
+	// new_member_role_source is the new source of the role granted to the member.
+	NewMemberRoleSource v1alpha1.OrganizationRoleSource
+}
+
+func (b0 PayloadOrganizationMemberRoleChanged_builder) Build() *PayloadOrganizationMemberRoleChanged {
+	m0 := &PayloadOrganizationMemberRoleChanged{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OrganizationId = b.OrganizationId
+	x.OrganizationName = b.OrganizationName
+	x.OldRole = b.OldRole
+	x.NewRole = b.NewRole
+	x.OldMemberRoleSource = b.OldMemberRoleSource
+	x.NewMemberRoleSource = b.NewMemberRoleSource
+	return m0
+}
+
 type PayloadOrganizationMemberRemoved struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// organization_id is the id of the organization that the member was removed from.
 	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	// organization_name is the name of the organization that the member was removed from.
@@ -1731,11 +3454,6 @@ func (x *PayloadOrganizationMemberRemoved) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadOrganizationMemberRemoved.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationMemberRemoved) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *PayloadOrganizationMemberRemoved) GetOrganizationId() string {
 	if x != nil {
 		return x.OrganizationId
@@ -1764,8 +3482,48 @@ func (x *PayloadOrganizationMemberRemoved) GetMemberRoleSource() v1alpha1.Organi
 	return v1alpha1.OrganizationRoleSource(0)
 }
 
+func (x *PayloadOrganizationMemberRemoved) SetOrganizationId(v string) {
+	x.OrganizationId = v
+}
+
+func (x *PayloadOrganizationMemberRemoved) SetOrganizationName(v string) {
+	x.OrganizationName = v
+}
+
+func (x *PayloadOrganizationMemberRemoved) SetMemberRole(v v1alpha1.OrganizationRole) {
+	x.MemberRole = v
+}
+
+func (x *PayloadOrganizationMemberRemoved) SetMemberRoleSource(v v1alpha1.OrganizationRoleSource) {
+	x.MemberRoleSource = v
+}
+
+type PayloadOrganizationMemberRemoved_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// organization_id is the id of the organization that the member was removed from.
+	OrganizationId string
+	// organization_name is the name of the organization that the member was removed from.
+	OrganizationName string
+	// member_role is the role that the member had when removed from the organization.
+	MemberRole v1alpha1.OrganizationRole
+	// member_role_source is the source of the role granted to the member.
+	MemberRoleSource v1alpha1.OrganizationRoleSource
+}
+
+func (b0 PayloadOrganizationMemberRemoved_builder) Build() *PayloadOrganizationMemberRemoved {
+	m0 := &PayloadOrganizationMemberRemoved{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OrganizationId = b.OrganizationId
+	x.OrganizationName = b.OrganizationName
+	x.MemberRole = b.MemberRole
+	x.MemberRoleSource = b.MemberRoleSource
+	return m0
+}
+
 type PayloadOrganizationIDPGroupAdded struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// organization_id is the id of the organization with the new IDP group.
 	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	// organization_name is the name of the organization with the new IDP group.
@@ -1799,11 +3557,6 @@ func (x *PayloadOrganizationIDPGroupAdded) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadOrganizationIDPGroupAdded.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationIDPGroupAdded) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{9}
-}
-
 func (x *PayloadOrganizationIDPGroupAdded) GetOrganizationId() string {
 	if x != nil {
 		return x.OrganizationId
@@ -1818,8 +3571,34 @@ func (x *PayloadOrganizationIDPGroupAdded) GetOrganizationName() string {
 	return ""
 }
 
+func (x *PayloadOrganizationIDPGroupAdded) SetOrganizationId(v string) {
+	x.OrganizationId = v
+}
+
+func (x *PayloadOrganizationIDPGroupAdded) SetOrganizationName(v string) {
+	x.OrganizationName = v
+}
+
+type PayloadOrganizationIDPGroupAdded_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// organization_id is the id of the organization with the new IDP group.
+	OrganizationId string
+	// organization_name is the name of the organization with the new IDP group.
+	OrganizationName string
+}
+
+func (b0 PayloadOrganizationIDPGroupAdded_builder) Build() *PayloadOrganizationIDPGroupAdded {
+	m0 := &PayloadOrganizationIDPGroupAdded{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OrganizationId = b.OrganizationId
+	x.OrganizationName = b.OrganizationName
+	return m0
+}
+
 type PayloadOrganizationIDPGroupRemoved struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// organization_id is the id of the organization with the removed IDP group.
 	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	// organization_name is the name of the organization with the removed IDP group.
@@ -1853,11 +3632,6 @@ func (x *PayloadOrganizationIDPGroupRemoved) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadOrganizationIDPGroupRemoved.ProtoReflect.Descriptor instead.
-func (*PayloadOrganizationIDPGroupRemoved) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{10}
-}
-
 func (x *PayloadOrganizationIDPGroupRemoved) GetOrganizationId() string {
 	if x != nil {
 		return x.OrganizationId
@@ -1872,8 +3646,34 @@ func (x *PayloadOrganizationIDPGroupRemoved) GetOrganizationName() string {
 	return ""
 }
 
+func (x *PayloadOrganizationIDPGroupRemoved) SetOrganizationId(v string) {
+	x.OrganizationId = v
+}
+
+func (x *PayloadOrganizationIDPGroupRemoved) SetOrganizationName(v string) {
+	x.OrganizationName = v
+}
+
+type PayloadOrganizationIDPGroupRemoved_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// organization_id is the id of the organization with the removed IDP group.
+	OrganizationId string
+	// organization_name is the name of the organization with the removed IDP group.
+	OrganizationName string
+}
+
+func (b0 PayloadOrganizationIDPGroupRemoved_builder) Build() *PayloadOrganizationIDPGroupRemoved {
+	m0 := &PayloadOrganizationIDPGroupRemoved{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OrganizationId = b.OrganizationId
+	x.OrganizationName = b.OrganizationName
+	return m0
+}
+
 type PayloadRepositoryCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -1912,11 +3712,6 @@ func (x *PayloadRepositoryCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryCreated.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{11}
-}
-
 func (x *PayloadRepositoryCreated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -1945,8 +3740,49 @@ func (x *PayloadRepositoryCreated) GetDefaultLabelName() string {
 	return ""
 }
 
+func (x *PayloadRepositoryCreated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryCreated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryCreated) SetVisibility(v v1alpha1.Visibility) {
+	x.Visibility = v
+}
+
+func (x *PayloadRepositoryCreated) SetDefaultLabelName(v string) {
+	x.DefaultLabelName = v
+}
+
+type PayloadRepositoryCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// visibility is the visibility of the repository.
+	Visibility v1alpha1.Visibility
+	// default_label_name is the name of the default label for the repository.
+	// If empty, the repository was created with the default label name of 'main'.
+	DefaultLabelName string
+}
+
+func (b0 PayloadRepositoryCreated_builder) Build() *PayloadRepositoryCreated {
+	m0 := &PayloadRepositoryCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.Visibility = b.Visibility
+	x.DefaultLabelName = b.DefaultLabelName
+	return m0
+}
+
 type PayloadRepositoryDeleted struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -1982,11 +3818,6 @@ func (x *PayloadRepositoryDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{12}
-}
-
 func (x *PayloadRepositoryDeleted) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2008,8 +3839,41 @@ func (x *PayloadRepositoryDeleted) GetVisibility() v1alpha1.Visibility {
 	return v1alpha1.Visibility(0)
 }
 
+func (x *PayloadRepositoryDeleted) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryDeleted) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryDeleted) SetVisibility(v v1alpha1.Visibility) {
+	x.Visibility = v
+}
+
+type PayloadRepositoryDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// visibility is the visibility of the repository.
+	Visibility v1alpha1.Visibility
+}
+
+func (b0 PayloadRepositoryDeleted_builder) Build() *PayloadRepositoryDeleted {
+	m0 := &PayloadRepositoryDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.Visibility = b.Visibility
+	return m0
+}
+
 type PayloadRepositoryDeprecated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2047,11 +3911,6 @@ func (x *PayloadRepositoryDeprecated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryDeprecated.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryDeprecated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{13}
-}
-
 func (x *PayloadRepositoryDeprecated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2080,8 +3939,48 @@ func (x *PayloadRepositoryDeprecated) GetDeprecationMessage() string {
 	return ""
 }
 
+func (x *PayloadRepositoryDeprecated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryDeprecated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryDeprecated) SetVisibility(v v1alpha1.Visibility) {
+	x.Visibility = v
+}
+
+func (x *PayloadRepositoryDeprecated) SetDeprecationMessage(v string) {
+	x.DeprecationMessage = v
+}
+
+type PayloadRepositoryDeprecated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// visibility is the visibility of the repository.
+	Visibility v1alpha1.Visibility
+	// deprecation_message is the deprecation message set by the deprecation actor.
+	DeprecationMessage string
+}
+
+func (b0 PayloadRepositoryDeprecated_builder) Build() *PayloadRepositoryDeprecated {
+	m0 := &PayloadRepositoryDeprecated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.Visibility = b.Visibility
+	x.DeprecationMessage = b.DeprecationMessage
+	return m0
+}
+
 type PayloadRepositoryUndeprecated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2117,11 +4016,6 @@ func (x *PayloadRepositoryUndeprecated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryUndeprecated.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryUndeprecated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{14}
-}
-
 func (x *PayloadRepositoryUndeprecated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2143,8 +4037,41 @@ func (x *PayloadRepositoryUndeprecated) GetVisibility() v1alpha1.Visibility {
 	return v1alpha1.Visibility(0)
 }
 
+func (x *PayloadRepositoryUndeprecated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryUndeprecated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryUndeprecated) SetVisibility(v v1alpha1.Visibility) {
+	x.Visibility = v
+}
+
+type PayloadRepositoryUndeprecated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// visibility is the visibility of the repository.
+	Visibility v1alpha1.Visibility
+}
+
+func (b0 PayloadRepositoryUndeprecated_builder) Build() *PayloadRepositoryUndeprecated {
+	m0 := &PayloadRepositoryUndeprecated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.Visibility = b.Visibility
+	return m0
+}
+
 type PayloadRepositoryCommitPushed struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2188,11 +4115,6 @@ func (x *PayloadRepositoryCommitPushed) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PayloadRepositoryCommitPushed.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryCommitPushed) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PayloadRepositoryCommitPushed) GetOwnerId() string {
@@ -2251,8 +4173,76 @@ func (x *PayloadRepositoryCommitPushed) GetB5Digest() string {
 	return ""
 }
 
+func (x *PayloadRepositoryCommitPushed) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetTags(v []string) {
+	x.Tags = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetDraftName(v string) {
+	x.DraftName = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetManifestDigest(v string) {
+	x.ManifestDigest = v
+}
+
+func (x *PayloadRepositoryCommitPushed) SetB5Digest(v string) {
+	x.B5Digest = v
+}
+
+type PayloadRepositoryCommitPushed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// repository_id is the id of the repository within which the commit was created.
+	RepositoryId string
+	// repository_name is the name of the repository within which the commit was created.
+	RepositoryName string
+	// tags are the tags included in the push. Optional.
+	Tags []string
+	// draft_name is the name of the draft. Optional.
+	DraftName string
+	// manifest_digest is the module's manifest digest.
+	ManifestDigest string
+	// b5_digest is the module's b5 digest.
+	B5Digest string
+}
+
+func (b0 PayloadRepositoryCommitPushed_builder) Build() *PayloadRepositoryCommitPushed {
+	m0 := &PayloadRepositoryCommitPushed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.Tags = b.Tags
+	x.DraftName = b.DraftName
+	x.ManifestDigest = b.ManifestDigest
+	x.B5Digest = b.B5Digest
+	return m0
+}
+
 type PayloadRepositoryContributorAdded struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2292,11 +4282,6 @@ func (x *PayloadRepositoryContributorAdded) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryContributorAdded.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryContributorAdded) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{16}
-}
-
 func (x *PayloadRepositoryContributorAdded) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2332,8 +4317,55 @@ func (x *PayloadRepositoryContributorAdded) GetContributorRole() v1alpha1.Reposi
 	return v1alpha1.RepositoryRole(0)
 }
 
+func (x *PayloadRepositoryContributorAdded) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryContributorAdded) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryContributorAdded) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryContributorAdded) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *PayloadRepositoryContributorAdded) SetContributorRole(v v1alpha1.RepositoryRole) {
+	x.ContributorRole = v
+}
+
+type PayloadRepositoryContributorAdded_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// repository_id is the id of the repository with the new contributor.
+	RepositoryId string
+	// repository_name is the name of the repository with the new contributor.
+	RepositoryName string
+	// contributor_role is the role granted to the contributor added to the repository.
+	ContributorRole v1alpha1.RepositoryRole
+}
+
+func (b0 PayloadRepositoryContributorAdded_builder) Build() *PayloadRepositoryContributorAdded {
+	m0 := &PayloadRepositoryContributorAdded{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.ContributorRole = b.ContributorRole
+	return m0
+}
+
 type PayloadRepositoryContributorRoleChanged struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2373,11 +4405,6 @@ func (x *PayloadRepositoryContributorRoleChanged) ProtoReflect() protoreflect.Me
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PayloadRepositoryContributorRoleChanged.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryContributorRoleChanged) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *PayloadRepositoryContributorRoleChanged) GetOwnerId() string {
@@ -2422,8 +4449,62 @@ func (x *PayloadRepositoryContributorRoleChanged) GetNewRole() v1alpha1.Reposito
 	return v1alpha1.RepositoryRole(0)
 }
 
+func (x *PayloadRepositoryContributorRoleChanged) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryContributorRoleChanged) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryContributorRoleChanged) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryContributorRoleChanged) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *PayloadRepositoryContributorRoleChanged) SetOldRole(v v1alpha1.RepositoryRole) {
+	x.OldRole = v
+}
+
+func (x *PayloadRepositoryContributorRoleChanged) SetNewRole(v v1alpha1.RepositoryRole) {
+	x.NewRole = v
+}
+
+type PayloadRepositoryContributorRoleChanged_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// repository_id is the id of the repository within which the role was changed.
+	RepositoryId string
+	// repository_name is the name of the repository within which the role was changed.
+	RepositoryName string
+	// old_role is the old role of the contributor whose role was changed.
+	OldRole v1alpha1.RepositoryRole
+	// new_role is the new role of the contributor whose role was changed.
+	NewRole v1alpha1.RepositoryRole
+}
+
+func (b0 PayloadRepositoryContributorRoleChanged_builder) Build() *PayloadRepositoryContributorRoleChanged {
+	m0 := &PayloadRepositoryContributorRoleChanged{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.OldRole = b.OldRole
+	x.NewRole = b.NewRole
+	return m0
+}
+
 type PayloadRepositoryContributorRemoved struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2463,11 +4544,6 @@ func (x *PayloadRepositoryContributorRemoved) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryContributorRemoved.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryContributorRemoved) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{18}
-}
-
 func (x *PayloadRepositoryContributorRemoved) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2503,8 +4579,55 @@ func (x *PayloadRepositoryContributorRemoved) GetContributorRole() v1alpha1.Repo
 	return v1alpha1.RepositoryRole(0)
 }
 
+func (x *PayloadRepositoryContributorRemoved) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryContributorRemoved) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryContributorRemoved) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryContributorRemoved) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *PayloadRepositoryContributorRemoved) SetContributorRole(v v1alpha1.RepositoryRole) {
+	x.ContributorRole = v
+}
+
+type PayloadRepositoryContributorRemoved_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// repository_id is the id of the repository that the contributor was removed from.
+	RepositoryId string
+	// repository_name is the name of the repository that the contributor was removed from.
+	RepositoryName string
+	// contributor_role is the role that the contributor had when removed from the repository.
+	ContributorRole v1alpha1.RepositoryRole
+}
+
+func (b0 PayloadRepositoryContributorRemoved_builder) Build() *PayloadRepositoryContributorRemoved {
+	m0 := &PayloadRepositoryContributorRemoved{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.ContributorRole = b.ContributorRole
+	return m0
+}
+
 type PayloadRepositoryVisibilityChanged struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2542,11 +4665,6 @@ func (x *PayloadRepositoryVisibilityChanged) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryVisibilityChanged.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryVisibilityChanged) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{19}
-}
-
 func (x *PayloadRepositoryVisibilityChanged) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2575,8 +4693,48 @@ func (x *PayloadRepositoryVisibilityChanged) GetNewVisibility() v1alpha1.Visibil
 	return v1alpha1.Visibility(0)
 }
 
+func (x *PayloadRepositoryVisibilityChanged) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryVisibilityChanged) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryVisibilityChanged) SetOldVisibility(v v1alpha1.Visibility) {
+	x.OldVisibility = v
+}
+
+func (x *PayloadRepositoryVisibilityChanged) SetNewVisibility(v v1alpha1.Visibility) {
+	x.NewVisibility = v
+}
+
+type PayloadRepositoryVisibilityChanged_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// old_visibility is the old visibility of the repository.
+	OldVisibility v1alpha1.Visibility
+	// new_visibility is the new visibility of the repository.
+	NewVisibility v1alpha1.Visibility
+}
+
+func (b0 PayloadRepositoryVisibilityChanged_builder) Build() *PayloadRepositoryVisibilityChanged {
+	m0 := &PayloadRepositoryVisibilityChanged{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.OldVisibility = b.OldVisibility
+	x.NewVisibility = b.NewVisibility
+	return m0
+}
+
 type PayloadRepositoryDefaultLabelNameChanged struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2614,11 +4772,6 @@ func (x *PayloadRepositoryDefaultLabelNameChanged) ProtoReflect() protoreflect.M
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryDefaultLabelNameChanged.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryDefaultLabelNameChanged) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{20}
-}
-
 func (x *PayloadRepositoryDefaultLabelNameChanged) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2647,13 +4800,53 @@ func (x *PayloadRepositoryDefaultLabelNameChanged) GetNewDefaultLabelName() stri
 	return ""
 }
 
+func (x *PayloadRepositoryDefaultLabelNameChanged) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryDefaultLabelNameChanged) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryDefaultLabelNameChanged) SetOldDefaultLabelName(v string) {
+	x.OldDefaultLabelName = v
+}
+
+func (x *PayloadRepositoryDefaultLabelNameChanged) SetNewDefaultLabelName(v string) {
+	x.NewDefaultLabelName = v
+}
+
+type PayloadRepositoryDefaultLabelNameChanged_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// old_default_label_name is the old default label name of the repository.
+	OldDefaultLabelName string
+	// new_default_label_name is the new default label name of the repository.
+	NewDefaultLabelName string
+}
+
+func (b0 PayloadRepositoryDefaultLabelNameChanged_builder) Build() *PayloadRepositoryDefaultLabelNameChanged {
+	m0 := &PayloadRepositoryDefaultLabelNameChanged{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.OldDefaultLabelName = b.OldDefaultLabelName
+	x.NewDefaultLabelName = b.NewDefaultLabelName
+	return m0
+}
+
 // PayloadRepositoryDefaultBranchChanged is deprecated.
 //
 // Use PayloadRepositoryDefaultLabelNameChanged instead.
 //
 // Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 type PayloadRepositoryDefaultBranchChanged struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository.
@@ -2691,11 +4884,6 @@ func (x *PayloadRepositoryDefaultBranchChanged) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryDefaultBranchChanged.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryDefaultBranchChanged) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{21}
-}
-
 func (x *PayloadRepositoryDefaultBranchChanged) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2724,8 +4912,49 @@ func (x *PayloadRepositoryDefaultBranchChanged) GetNewDefaultBranch() string {
 	return ""
 }
 
+func (x *PayloadRepositoryDefaultBranchChanged) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryDefaultBranchChanged) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryDefaultBranchChanged) SetOldDefaultBranch(v string) {
+	x.OldDefaultBranch = v
+}
+
+func (x *PayloadRepositoryDefaultBranchChanged) SetNewDefaultBranch(v string) {
+	x.NewDefaultBranch = v
+}
+
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+type PayloadRepositoryDefaultBranchChanged_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository.
+	OwnerId string
+	// owner_name is the name of the owner of the repository.
+	OwnerName string
+	// old_default_branch is the old default branch of the repository.
+	OldDefaultBranch string
+	// new_default_branch is the new default branch of the repository.
+	NewDefaultBranch string
+}
+
+func (b0 PayloadRepositoryDefaultBranchChanged_builder) Build() *PayloadRepositoryDefaultBranchChanged {
+	m0 := &PayloadRepositoryDefaultBranchChanged{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.OldDefaultBranch = b.OldDefaultBranch
+	x.NewDefaultBranch = b.NewDefaultBranch
+	return m0
+}
+
 type PayloadPluginCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin.
@@ -2761,11 +4990,6 @@ func (x *PayloadPluginCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadPluginCreated.ProtoReflect.Descriptor instead.
-func (*PayloadPluginCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{22}
-}
-
 func (x *PayloadPluginCreated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2787,8 +5011,41 @@ func (x *PayloadPluginCreated) GetPluginType() string {
 	return ""
 }
 
+func (x *PayloadPluginCreated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginCreated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginCreated) SetPluginType(v string) {
+	x.PluginType = v
+}
+
+type PayloadPluginCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin.
+	OwnerName string
+	// plugin_type is the type of the plugin.
+	PluginType string
+}
+
+func (b0 PayloadPluginCreated_builder) Build() *PayloadPluginCreated {
+	m0 := &PayloadPluginCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginType = b.PluginType
+	return m0
+}
+
 type PayloadPluginDeleted struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the check plugin.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the check plugin.
@@ -2824,11 +5081,6 @@ func (x *PayloadPluginDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadPluginDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadPluginDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{23}
-}
-
 func (x *PayloadPluginDeleted) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2850,8 +5102,41 @@ func (x *PayloadPluginDeleted) GetPluginType() string {
 	return ""
 }
 
+func (x *PayloadPluginDeleted) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginDeleted) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginDeleted) SetPluginType(v string) {
+	x.PluginType = v
+}
+
+type PayloadPluginDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the check plugin.
+	OwnerId string
+	// owner_name is the name of the owner of the check plugin.
+	OwnerName string
+	// plugin_type is the type of the plugin.
+	PluginType string
+}
+
+func (b0 PayloadPluginDeleted_builder) Build() *PayloadPluginDeleted {
+	m0 := &PayloadPluginDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginType = b.PluginType
+	return m0
+}
+
 type PayloadPluginCommitPushed struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin.
@@ -2891,11 +5176,6 @@ func (x *PayloadPluginCommitPushed) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadPluginCommitPushed.ProtoReflect.Descriptor instead.
-func (*PayloadPluginCommitPushed) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{24}
-}
-
 func (x *PayloadPluginCommitPushed) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -2931,8 +5211,55 @@ func (x *PayloadPluginCommitPushed) GetP1Digest() string {
 	return ""
 }
 
+func (x *PayloadPluginCommitPushed) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginCommitPushed) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginCommitPushed) SetPluginId(v string) {
+	x.PluginId = v
+}
+
+func (x *PayloadPluginCommitPushed) SetPluginName(v string) {
+	x.PluginName = v
+}
+
+func (x *PayloadPluginCommitPushed) SetP1Digest(v string) {
+	x.P1Digest = v
+}
+
+type PayloadPluginCommitPushed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin.
+	OwnerName string
+	// plugin_id is the id of the plugin.
+	PluginId string
+	// plugin_name is the name of the plugin.
+	PluginName string
+	// p1_digest is the p1 digest of the pushed plugin commit.
+	P1Digest string
+}
+
+func (b0 PayloadPluginCommitPushed_builder) Build() *PayloadPluginCommitPushed {
+	m0 := &PayloadPluginCommitPushed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginId = b.PluginId
+	x.PluginName = b.PluginName
+	x.P1Digest = b.P1Digest
+	return m0
+}
+
 type PayloadUserCreated struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2962,13 +5289,20 @@ func (x *PayloadUserCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserCreated.ProtoReflect.Descriptor instead.
-func (*PayloadUserCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{25}
+type PayloadUserCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserCreated_builder) Build() *PayloadUserCreated {
+	m0 := &PayloadUserCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadUserReactivated struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2998,13 +5332,20 @@ func (x *PayloadUserReactivated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserReactivated.ProtoReflect.Descriptor instead.
-func (*PayloadUserReactivated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{26}
+type PayloadUserReactivated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserReactivated_builder) Build() *PayloadUserReactivated {
+	m0 := &PayloadUserReactivated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadUserDeactivated struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3034,13 +5375,20 @@ func (x *PayloadUserDeactivated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserDeactivated.ProtoReflect.Descriptor instead.
-func (*PayloadUserDeactivated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{27}
+type PayloadUserDeactivated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserDeactivated_builder) Build() *PayloadUserDeactivated {
+	m0 := &PayloadUserDeactivated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadUserDeleted struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3070,13 +5418,20 @@ func (x *PayloadUserDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadUserDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{28}
+type PayloadUserDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserDeleted_builder) Build() *PayloadUserDeleted {
+	m0 := &PayloadUserDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadUserLoggedIn struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3106,13 +5461,20 @@ func (x *PayloadUserLoggedIn) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserLoggedIn.ProtoReflect.Descriptor instead.
-func (*PayloadUserLoggedIn) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{29}
+type PayloadUserLoggedIn_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserLoggedIn_builder) Build() *PayloadUserLoggedIn {
+	m0 := &PayloadUserLoggedIn{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadUserLoggedOut struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3142,9 +5504,16 @@ func (x *PayloadUserLoggedOut) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserLoggedOut.ProtoReflect.Descriptor instead.
-func (*PayloadUserLoggedOut) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{30}
+type PayloadUserLoggedOut_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserLoggedOut_builder) Build() *PayloadUserLoggedOut {
+	m0 := &PayloadUserLoggedOut{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 // PayloadUserAutoMergedFromNewIdP is the payload for the audit event
@@ -3152,7 +5521,7 @@ func (*PayloadUserLoggedOut) Descriptor() ([]byte, []int) {
 // to be included, since the new user is automatically merged to an existing user
 // without the new user being created.
 type PayloadUserAutoMergedFromNewIdP struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3182,13 +5551,20 @@ func (x *PayloadUserAutoMergedFromNewIdP) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadUserAutoMergedFromNewIdP.ProtoReflect.Descriptor instead.
-func (*PayloadUserAutoMergedFromNewIdP) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{31}
+type PayloadUserAutoMergedFromNewIdP_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadUserAutoMergedFromNewIdP_builder) Build() *PayloadUserAutoMergedFromNewIdP {
+	m0 := &PayloadUserAutoMergedFromNewIdP{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadCuratedPluginCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin.
@@ -3222,11 +5598,6 @@ func (x *PayloadCuratedPluginCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadCuratedPluginCreated.ProtoReflect.Descriptor instead.
-func (*PayloadCuratedPluginCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{32}
-}
-
 func (x *PayloadCuratedPluginCreated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3241,8 +5612,34 @@ func (x *PayloadCuratedPluginCreated) GetOwnerName() string {
 	return ""
 }
 
+func (x *PayloadCuratedPluginCreated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadCuratedPluginCreated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+type PayloadCuratedPluginCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin.
+	OwnerName string
+}
+
+func (b0 PayloadCuratedPluginCreated_builder) Build() *PayloadCuratedPluginCreated {
+	m0 := &PayloadCuratedPluginCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	return m0
+}
+
 type PayloadCuratedPluginDeleted struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin.
@@ -3276,11 +5673,6 @@ func (x *PayloadCuratedPluginDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadCuratedPluginDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadCuratedPluginDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{33}
-}
-
 func (x *PayloadCuratedPluginDeleted) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3295,8 +5687,34 @@ func (x *PayloadCuratedPluginDeleted) GetOwnerName() string {
 	return ""
 }
 
+func (x *PayloadCuratedPluginDeleted) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadCuratedPluginDeleted) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+type PayloadCuratedPluginDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin.
+	OwnerName string
+}
+
+func (b0 PayloadCuratedPluginDeleted_builder) Build() *PayloadCuratedPluginDeleted {
+	m0 := &PayloadCuratedPluginDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	return m0
+}
+
 type PayloadTokenCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the token.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// token_expiry_time is the expiry time of the token.
@@ -3330,11 +5748,6 @@ func (x *PayloadTokenCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadTokenCreated.ProtoReflect.Descriptor instead.
-func (*PayloadTokenCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{34}
-}
-
 func (x *PayloadTokenCreated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3349,8 +5762,45 @@ func (x *PayloadTokenCreated) GetTokenExpiryTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *PayloadTokenCreated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadTokenCreated) SetTokenExpiryTime(v *timestamppb.Timestamp) {
+	x.TokenExpiryTime = v
+}
+
+func (x *PayloadTokenCreated) HasTokenExpiryTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.TokenExpiryTime != nil
+}
+
+func (x *PayloadTokenCreated) ClearTokenExpiryTime() {
+	x.TokenExpiryTime = nil
+}
+
+type PayloadTokenCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the token.
+	OwnerId string
+	// token_expiry_time is the expiry time of the token.
+	TokenExpiryTime *timestamppb.Timestamp
+}
+
+func (b0 PayloadTokenCreated_builder) Build() *PayloadTokenCreated {
+	m0 := &PayloadTokenCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.TokenExpiryTime = b.TokenExpiryTime
+	return m0
+}
+
 type PayloadTokenDeleted struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the token.
 	OwnerId       string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -3382,11 +5832,6 @@ func (x *PayloadTokenDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadTokenDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadTokenDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{35}
-}
-
 func (x *PayloadTokenDeleted) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3394,8 +5839,27 @@ func (x *PayloadTokenDeleted) GetOwnerId() string {
 	return ""
 }
 
+func (x *PayloadTokenDeleted) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+type PayloadTokenDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the token.
+	OwnerId string
+}
+
+func (b0 PayloadTokenDeleted_builder) Build() *PayloadTokenDeleted {
+	m0 := &PayloadTokenDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	return m0
+}
+
 type PayloadSCIMTokenCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// token_expiry_time is the expiry time of the token.
 	TokenExpiryTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=token_expiry_time,json=tokenExpiryTime,proto3" json:"token_expiry_time,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -3427,11 +5891,6 @@ func (x *PayloadSCIMTokenCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadSCIMTokenCreated.ProtoReflect.Descriptor instead.
-func (*PayloadSCIMTokenCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{36}
-}
-
 func (x *PayloadSCIMTokenCreated) GetTokenExpiryTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.TokenExpiryTime
@@ -3439,8 +5898,38 @@ func (x *PayloadSCIMTokenCreated) GetTokenExpiryTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *PayloadSCIMTokenCreated) SetTokenExpiryTime(v *timestamppb.Timestamp) {
+	x.TokenExpiryTime = v
+}
+
+func (x *PayloadSCIMTokenCreated) HasTokenExpiryTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.TokenExpiryTime != nil
+}
+
+func (x *PayloadSCIMTokenCreated) ClearTokenExpiryTime() {
+	x.TokenExpiryTime = nil
+}
+
+type PayloadSCIMTokenCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// token_expiry_time is the expiry time of the token.
+	TokenExpiryTime *timestamppb.Timestamp
+}
+
+func (b0 PayloadSCIMTokenCreated_builder) Build() *PayloadSCIMTokenCreated {
+	m0 := &PayloadSCIMTokenCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.TokenExpiryTime = b.TokenExpiryTime
+	return m0
+}
+
 type PayloadSCIMTokenDeleted struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3470,13 +5959,20 @@ func (x *PayloadSCIMTokenDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadSCIMTokenDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadSCIMTokenDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{37}
+type PayloadSCIMTokenDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadSCIMTokenDeleted_builder) Build() *PayloadSCIMTokenDeleted {
+	m0 := &PayloadSCIMTokenDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadRepositoryCommitDeleted struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository from which the commit will be deleted.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository from which the commit will be deleted.
@@ -3516,11 +6012,6 @@ func (x *PayloadRepositoryCommitDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryCommitDeleted.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryCommitDeleted) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{38}
-}
-
 func (x *PayloadRepositoryCommitDeleted) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3556,8 +6047,55 @@ func (x *PayloadRepositoryCommitDeleted) GetDraftName() string {
 	return ""
 }
 
+func (x *PayloadRepositoryCommitDeleted) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryCommitDeleted) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryCommitDeleted) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryCommitDeleted) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *PayloadRepositoryCommitDeleted) SetDraftName(v string) {
+	x.DraftName = v
+}
+
+type PayloadRepositoryCommitDeleted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository from which the commit will be deleted.
+	OwnerId string
+	// owner_name is the name of the owner of the repository from which the commit will be deleted.
+	OwnerName string
+	// repository_id is the id of the repository from which the commit will be deleted.
+	RepositoryId string
+	// repository_name is the name of the repository from which the commit will be deleted.
+	RepositoryName string
+	// draft_name is the name of the draft. Optional.
+	DraftName string
+}
+
+func (b0 PayloadRepositoryCommitDeleted_builder) Build() *PayloadRepositoryCommitDeleted {
+	m0 := &PayloadRepositoryCommitDeleted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.DraftName = b.DraftName
+	return m0
+}
+
 type PayloadRepositoryLabelCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository on which the label was created.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository on which the label was created.
@@ -3599,11 +6137,6 @@ func (x *PayloadRepositoryLabelCreated) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PayloadRepositoryLabelCreated.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryLabelCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *PayloadRepositoryLabelCreated) GetOwnerId() string {
@@ -3649,8 +6182,65 @@ func (x *PayloadRepositoryLabelCreated) GetCommitId() string {
 	return ""
 }
 
+func (x *PayloadRepositoryLabelCreated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryLabelCreated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryLabelCreated) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryLabelCreated) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+func (x *PayloadRepositoryLabelCreated) SetLabelNamespace(v string) {
+	x.LabelNamespace = v
+}
+
+func (x *PayloadRepositoryLabelCreated) SetCommitId(v string) {
+	x.CommitId = v
+}
+
+type PayloadRepositoryLabelCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository on which the label was created.
+	OwnerId string
+	// owner_name is the name of the owner of the repository on which the label was created.
+	OwnerName string
+	// repository_id is the id of the repository on which the label was created.
+	RepositoryId string
+	// repository_name is the name of the repository from which the label was created.
+	RepositoryName string
+	// label_namespace is the namespace of the label that was created.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+	LabelNamespace string
+	// commit_id is the id of the commit on which the label was created.
+	CommitId string
+}
+
+func (b0 PayloadRepositoryLabelCreated_builder) Build() *PayloadRepositoryLabelCreated {
+	m0 := &PayloadRepositoryLabelCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.LabelNamespace = b.LabelNamespace
+	x.CommitId = b.CommitId
+	return m0
+}
+
 type PayloadRepositoryLabelMoved struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository on which the label was moved.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository on which the label was moved.
@@ -3694,11 +6284,6 @@ func (x *PayloadRepositoryLabelMoved) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PayloadRepositoryLabelMoved.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryLabelMoved) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *PayloadRepositoryLabelMoved) GetOwnerId() string {
@@ -3751,8 +6336,72 @@ func (x *PayloadRepositoryLabelMoved) GetFromCommitId() string {
 	return ""
 }
 
+func (x *PayloadRepositoryLabelMoved) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryLabelMoved) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryLabelMoved) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryLabelMoved) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+func (x *PayloadRepositoryLabelMoved) SetLabelNamespace(v string) {
+	x.LabelNamespace = v
+}
+
+func (x *PayloadRepositoryLabelMoved) SetToCommitId(v string) {
+	x.ToCommitId = v
+}
+
+func (x *PayloadRepositoryLabelMoved) SetFromCommitId(v string) {
+	x.FromCommitId = v
+}
+
+type PayloadRepositoryLabelMoved_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository on which the label was moved.
+	OwnerId string
+	// owner_name is the name of the owner of the repository on which the label was moved.
+	OwnerName string
+	// repository_id is the id of the repository on which the label was moved.
+	RepositoryId string
+	// repository_name is the name of the repository from which the label was moved.
+	RepositoryName string
+	// label_namespace is the namespace of the label that was moved.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
+	LabelNamespace string
+	// to_commit_id is the id of the commit on which the label was moved to.
+	ToCommitId string
+	// from_commit_id is the id of the commit on which the label was moved from.
+	FromCommitId string
+}
+
+func (b0 PayloadRepositoryLabelMoved_builder) Build() *PayloadRepositoryLabelMoved {
+	m0 := &PayloadRepositoryLabelMoved{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	x.LabelNamespace = b.LabelNamespace
+	x.ToCommitId = b.ToCommitId
+	x.FromCommitId = b.FromCommitId
+	return m0
+}
+
 type PayloadRepositoryLabelArchived struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository on which the label was archived.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository on which the label was archived.
@@ -3790,11 +6439,6 @@ func (x *PayloadRepositoryLabelArchived) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryLabelArchived.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryLabelArchived) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{41}
-}
-
 func (x *PayloadRepositoryLabelArchived) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3823,8 +6467,48 @@ func (x *PayloadRepositoryLabelArchived) GetRepositoryName() string {
 	return ""
 }
 
+func (x *PayloadRepositoryLabelArchived) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryLabelArchived) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryLabelArchived) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryLabelArchived) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+type PayloadRepositoryLabelArchived_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository on which the label was archived.
+	OwnerId string
+	// owner_name is the name of the owner of the repository on which the label was archived.
+	OwnerName string
+	// repository_id is the id of the repository on which the label was archived.
+	RepositoryId string
+	// repository_name is the name of the repository from which the label was archived.
+	RepositoryName string
+}
+
+func (b0 PayloadRepositoryLabelArchived_builder) Build() *PayloadRepositoryLabelArchived {
+	m0 := &PayloadRepositoryLabelArchived{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	return m0
+}
+
 type PayloadRepositoryLabelUnarchived struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the repository on which the label was unarchived.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the repository on which the label was unarchived.
@@ -3862,11 +6546,6 @@ func (x *PayloadRepositoryLabelUnarchived) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadRepositoryLabelUnarchived.ProtoReflect.Descriptor instead.
-func (*PayloadRepositoryLabelUnarchived) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{42}
-}
-
 func (x *PayloadRepositoryLabelUnarchived) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -3895,8 +6574,48 @@ func (x *PayloadRepositoryLabelUnarchived) GetRepositoryName() string {
 	return ""
 }
 
+func (x *PayloadRepositoryLabelUnarchived) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadRepositoryLabelUnarchived) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadRepositoryLabelUnarchived) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *PayloadRepositoryLabelUnarchived) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+type PayloadRepositoryLabelUnarchived_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the repository on which the label was unarchived.
+	OwnerId string
+	// owner_name is the name of the owner of the repository on which the label was unarchived.
+	OwnerName string
+	// repository_id is the id of the repository on which the label was unarchived.
+	RepositoryId string
+	// repository_name is the name of the repository from which the label was unarchived.
+	RepositoryName string
+}
+
+func (b0 PayloadRepositoryLabelUnarchived_builder) Build() *PayloadRepositoryLabelUnarchived {
+	m0 := &PayloadRepositoryLabelUnarchived{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryName = b.RepositoryName
+	return m0
+}
+
 type PayloadServerBreakingChangePolicyEnabled struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// category is the category of breaking changes.
 	Category v1alpha1.BreakingChangeCategory `protobuf:"varint,1,opt,name=category,proto3,enum=buf.alpha.registry.v1alpha1.BreakingChangeCategory" json:"category,omitempty"`
 	// ignore_unstable_packages tracks breaking change enforcement for unstable packages.
@@ -3930,11 +6649,6 @@ func (x *PayloadServerBreakingChangePolicyEnabled) ProtoReflect() protoreflect.M
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadServerBreakingChangePolicyEnabled.ProtoReflect.Descriptor instead.
-func (*PayloadServerBreakingChangePolicyEnabled) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{43}
-}
-
 func (x *PayloadServerBreakingChangePolicyEnabled) GetCategory() v1alpha1.BreakingChangeCategory {
 	if x != nil {
 		return x.Category
@@ -3949,8 +6663,45 @@ func (x *PayloadServerBreakingChangePolicyEnabled) GetIgnoreUnstablePackages() b
 	return false
 }
 
+func (x *PayloadServerBreakingChangePolicyEnabled) SetCategory(v v1alpha1.BreakingChangeCategory) {
+	x.Category = v
+}
+
+func (x *PayloadServerBreakingChangePolicyEnabled) SetIgnoreUnstablePackages(v bool) {
+	x.IgnoreUnstablePackages = &v
+}
+
+func (x *PayloadServerBreakingChangePolicyEnabled) HasIgnoreUnstablePackages() bool {
+	if x == nil {
+		return false
+	}
+	return x.IgnoreUnstablePackages != nil
+}
+
+func (x *PayloadServerBreakingChangePolicyEnabled) ClearIgnoreUnstablePackages() {
+	x.IgnoreUnstablePackages = nil
+}
+
+type PayloadServerBreakingChangePolicyEnabled_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// category is the category of breaking changes.
+	Category v1alpha1.BreakingChangeCategory
+	// ignore_unstable_packages tracks breaking change enforcement for unstable packages.
+	IgnoreUnstablePackages *bool
+}
+
+func (b0 PayloadServerBreakingChangePolicyEnabled_builder) Build() *PayloadServerBreakingChangePolicyEnabled {
+	m0 := &PayloadServerBreakingChangePolicyEnabled{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Category = b.Category
+	x.IgnoreUnstablePackages = b.IgnoreUnstablePackages
+	return m0
+}
+
 type PayloadServerBreakingChangePolicyDisabled struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3980,13 +6731,20 @@ func (x *PayloadServerBreakingChangePolicyDisabled) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadServerBreakingChangePolicyDisabled.ProtoReflect.Descriptor instead.
-func (*PayloadServerBreakingChangePolicyDisabled) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{44}
+type PayloadServerBreakingChangePolicyDisabled_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadServerBreakingChangePolicyDisabled_builder) Build() *PayloadServerBreakingChangePolicyDisabled {
+	m0 := &PayloadServerBreakingChangePolicyDisabled{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadServerUniquenessPolicyEnabled struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4016,13 +6774,20 @@ func (x *PayloadServerUniquenessPolicyEnabled) ProtoReflect() protoreflect.Messa
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadServerUniquenessPolicyEnabled.ProtoReflect.Descriptor instead.
-func (*PayloadServerUniquenessPolicyEnabled) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{45}
+type PayloadServerUniquenessPolicyEnabled_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadServerUniquenessPolicyEnabled_builder) Build() *PayloadServerUniquenessPolicyEnabled {
+	m0 := &PayloadServerUniquenessPolicyEnabled{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadServerUniquenessPolicyDisabled struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4052,13 +6817,20 @@ func (x *PayloadServerUniquenessPolicyDisabled) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadServerUniquenessPolicyDisabled.ProtoReflect.Descriptor instead.
-func (*PayloadServerUniquenessPolicyDisabled) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{46}
+type PayloadServerUniquenessPolicyDisabled_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadServerUniquenessPolicyDisabled_builder) Build() *PayloadServerUniquenessPolicyDisabled {
+	m0 := &PayloadServerUniquenessPolicyDisabled{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type PayloadDeviceAuthorizationGrantApproved struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// client_id is the id of the registered oauth2 client of the grant.
 	ClientId      string `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -4090,11 +6862,6 @@ func (x *PayloadDeviceAuthorizationGrantApproved) ProtoReflect() protoreflect.Me
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadDeviceAuthorizationGrantApproved.ProtoReflect.Descriptor instead.
-func (*PayloadDeviceAuthorizationGrantApproved) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{47}
-}
-
 func (x *PayloadDeviceAuthorizationGrantApproved) GetClientId() string {
 	if x != nil {
 		return x.ClientId
@@ -4102,8 +6869,27 @@ func (x *PayloadDeviceAuthorizationGrantApproved) GetClientId() string {
 	return ""
 }
 
+func (x *PayloadDeviceAuthorizationGrantApproved) SetClientId(v string) {
+	x.ClientId = v
+}
+
+type PayloadDeviceAuthorizationGrantApproved_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// client_id is the id of the registered oauth2 client of the grant.
+	ClientId string
+}
+
+func (b0 PayloadDeviceAuthorizationGrantApproved_builder) Build() *PayloadDeviceAuthorizationGrantApproved {
+	m0 := &PayloadDeviceAuthorizationGrantApproved{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.ClientId = b.ClientId
+	return m0
+}
+
 type PayloadDeviceAuthorizationGrantDenied struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// client_id is the id of the registered oauth2 client of the grant.
 	ClientId      string `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -4135,11 +6921,6 @@ func (x *PayloadDeviceAuthorizationGrantDenied) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadDeviceAuthorizationGrantDenied.ProtoReflect.Descriptor instead.
-func (*PayloadDeviceAuthorizationGrantDenied) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{48}
-}
-
 func (x *PayloadDeviceAuthorizationGrantDenied) GetClientId() string {
 	if x != nil {
 		return x.ClientId
@@ -4147,8 +6928,27 @@ func (x *PayloadDeviceAuthorizationGrantDenied) GetClientId() string {
 	return ""
 }
 
+func (x *PayloadDeviceAuthorizationGrantDenied) SetClientId(v string) {
+	x.ClientId = v
+}
+
+type PayloadDeviceAuthorizationGrantDenied_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// client_id is the id of the registered oauth2 client of the grant.
+	ClientId string
+}
+
+func (b0 PayloadDeviceAuthorizationGrantDenied_builder) Build() *PayloadDeviceAuthorizationGrantDenied {
+	m0 := &PayloadDeviceAuthorizationGrantDenied{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.ClientId = b.ClientId
+	return m0
+}
+
 type PayloadPluginLabelCreated struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin on which the label was created.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin on which the label was created.
@@ -4188,11 +6988,6 @@ func (x *PayloadPluginLabelCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadPluginLabelCreated.ProtoReflect.Descriptor instead.
-func (*PayloadPluginLabelCreated) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{49}
-}
-
 func (x *PayloadPluginLabelCreated) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -4228,8 +7023,55 @@ func (x *PayloadPluginLabelCreated) GetCommitId() string {
 	return ""
 }
 
+func (x *PayloadPluginLabelCreated) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginLabelCreated) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginLabelCreated) SetPluginId(v string) {
+	x.PluginId = v
+}
+
+func (x *PayloadPluginLabelCreated) SetPluginName(v string) {
+	x.PluginName = v
+}
+
+func (x *PayloadPluginLabelCreated) SetCommitId(v string) {
+	x.CommitId = v
+}
+
+type PayloadPluginLabelCreated_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin on which the label was created.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin on which the label was created.
+	OwnerName string
+	// plugin_id is the id of the plugin on which the label was created.
+	PluginId string
+	// plugin_name is the name of the plugin from which the label was created.
+	PluginName string
+	// commit_id is the id of the commit on which the label was created.
+	CommitId string
+}
+
+func (b0 PayloadPluginLabelCreated_builder) Build() *PayloadPluginLabelCreated {
+	m0 := &PayloadPluginLabelCreated{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginId = b.PluginId
+	x.PluginName = b.PluginName
+	x.CommitId = b.CommitId
+	return m0
+}
+
 type PayloadPluginLabelMoved struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin on which the label was moved.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin on which the label was moved.
@@ -4269,11 +7111,6 @@ func (x *PayloadPluginLabelMoved) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PayloadPluginLabelMoved.ProtoReflect.Descriptor instead.
-func (*PayloadPluginLabelMoved) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *PayloadPluginLabelMoved) GetOwnerId() string {
@@ -4318,8 +7155,62 @@ func (x *PayloadPluginLabelMoved) GetFromCommitId() string {
 	return ""
 }
 
+func (x *PayloadPluginLabelMoved) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginLabelMoved) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginLabelMoved) SetPluginId(v string) {
+	x.PluginId = v
+}
+
+func (x *PayloadPluginLabelMoved) SetPluginName(v string) {
+	x.PluginName = v
+}
+
+func (x *PayloadPluginLabelMoved) SetToCommitId(v string) {
+	x.ToCommitId = v
+}
+
+func (x *PayloadPluginLabelMoved) SetFromCommitId(v string) {
+	x.FromCommitId = v
+}
+
+type PayloadPluginLabelMoved_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin on which the label was moved.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin on which the label was moved.
+	OwnerName string
+	// plugin_id is the id of the plugin on which the label was moved.
+	PluginId string
+	// plugin_name is the name of the plugin from which the label was moved.
+	PluginName string
+	// to_commit_id is the id of the commit on which the label was moved to.
+	ToCommitId string
+	// from_commit_id is the id of the commit on which the label was moved from.
+	FromCommitId string
+}
+
+func (b0 PayloadPluginLabelMoved_builder) Build() *PayloadPluginLabelMoved {
+	m0 := &PayloadPluginLabelMoved{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginId = b.PluginId
+	x.PluginName = b.PluginName
+	x.ToCommitId = b.ToCommitId
+	x.FromCommitId = b.FromCommitId
+	return m0
+}
+
 type PayloadPluginLabelArchived struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin on which the label was archived.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin on which the label was archived.
@@ -4357,11 +7248,6 @@ func (x *PayloadPluginLabelArchived) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadPluginLabelArchived.ProtoReflect.Descriptor instead.
-func (*PayloadPluginLabelArchived) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{51}
-}
-
 func (x *PayloadPluginLabelArchived) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -4390,8 +7276,48 @@ func (x *PayloadPluginLabelArchived) GetPluginName() string {
 	return ""
 }
 
+func (x *PayloadPluginLabelArchived) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginLabelArchived) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginLabelArchived) SetPluginId(v string) {
+	x.PluginId = v
+}
+
+func (x *PayloadPluginLabelArchived) SetPluginName(v string) {
+	x.PluginName = v
+}
+
+type PayloadPluginLabelArchived_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin on which the label was archived.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin on which the label was archived.
+	OwnerName string
+	// plugin_id is the id of the plugin on which the label was archived.
+	PluginId string
+	// plugin_name is the name of the plugin from which the label was archived.
+	PluginName string
+}
+
+func (b0 PayloadPluginLabelArchived_builder) Build() *PayloadPluginLabelArchived {
+	m0 := &PayloadPluginLabelArchived{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginId = b.PluginId
+	x.PluginName = b.PluginName
+	return m0
+}
+
 type PayloadPluginLabelUnarchived struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// owner_id is the id of the owner of the plugin on which the label was unarchived.
 	OwnerId string `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	// owner_name is the name of the owner of the plugin on which the label was unarchived.
@@ -4429,11 +7355,6 @@ func (x *PayloadPluginLabelUnarchived) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PayloadPluginLabelUnarchived.ProtoReflect.Descriptor instead.
-func (*PayloadPluginLabelUnarchived) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP(), []int{52}
-}
-
 func (x *PayloadPluginLabelUnarchived) GetOwnerId() string {
 	if x != nil {
 		return x.OwnerId
@@ -4460,6 +7381,46 @@ func (x *PayloadPluginLabelUnarchived) GetPluginName() string {
 		return x.PluginName
 	}
 	return ""
+}
+
+func (x *PayloadPluginLabelUnarchived) SetOwnerId(v string) {
+	x.OwnerId = v
+}
+
+func (x *PayloadPluginLabelUnarchived) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *PayloadPluginLabelUnarchived) SetPluginId(v string) {
+	x.PluginId = v
+}
+
+func (x *PayloadPluginLabelUnarchived) SetPluginName(v string) {
+	x.PluginName = v
+}
+
+type PayloadPluginLabelUnarchived_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner of the plugin on which the label was unarchived.
+	OwnerId string
+	// owner_name is the name of the owner of the plugin on which the label was unarchived.
+	OwnerName string
+	// plugin_id is the id of the plugin on which the label was unarchived.
+	PluginId string
+	// plugin_name is the name of the plugin from which the label was unarchived.
+	PluginName string
+}
+
+func (b0 PayloadPluginLabelUnarchived_builder) Build() *PayloadPluginLabelUnarchived {
+	m0 := &PayloadPluginLabelUnarchived{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerId = b.OwnerId
+	x.OwnerName = b.OwnerName
+	x.PluginId = b.PluginId
+	x.PluginName = b.PluginName
+	return m0
 }
 
 var File_buf_alpha_audit_v1alpha1_event_proto protoreflect.FileDescriptor
@@ -5517,18 +8478,6 @@ var file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = []byte{
 	0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x41, 0x75, 0x64, 0x69,
 	0x74, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_audit_v1alpha1_event_proto_rawDescOnce sync.Once
-	file_buf_alpha_audit_v1alpha1_event_proto_rawDescData = file_buf_alpha_audit_v1alpha1_event_proto_rawDesc
-)
-
-func file_buf_alpha_audit_v1alpha1_event_proto_rawDescGZIP() []byte {
-	file_buf_alpha_audit_v1alpha1_event_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_audit_v1alpha1_event_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_audit_v1alpha1_event_proto_rawDescData)
-	})
-	return file_buf_alpha_audit_v1alpha1_event_proto_rawDescData
 }
 
 var file_buf_alpha_audit_v1alpha1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 3)

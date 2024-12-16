@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/module/v1alpha1/module.proto
 
+//go:build !protoopaque
+
 package modulev1alpha1
 
 import (
@@ -26,7 +28,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -77,14 +78,9 @@ func (x DigestType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use DigestType.Descriptor instead.
-func (DigestType) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{0}
-}
-
 // Digest represents a hash function's value.
 type Digest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// digest_type describes the hash algorithm. e.g. "SHAKE256"
 	DigestType DigestType `protobuf:"varint,1,opt,name=digest_type,json=digestType,proto3,enum=buf.alpha.module.v1alpha1.DigestType" json:"digest_type,omitempty"`
 	// digest is the hash's output without encoding.
@@ -118,11 +114,6 @@ func (x *Digest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Digest.ProtoReflect.Descriptor instead.
-func (*Digest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *Digest) GetDigestType() DigestType {
 	if x != nil {
 		return x.DigestType
@@ -137,9 +128,38 @@ func (x *Digest) GetDigest() []byte {
 	return nil
 }
 
+func (x *Digest) SetDigestType(v DigestType) {
+	x.DigestType = v
+}
+
+func (x *Digest) SetDigest(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.Digest = v
+}
+
+type Digest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// digest_type describes the hash algorithm. e.g. "SHAKE256"
+	DigestType DigestType
+	// digest is the hash's output without encoding.
+	Digest []byte
+}
+
+func (b0 Digest_builder) Build() *Digest {
+	m0 := &Digest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.DigestType = b.DigestType
+	x.Digest = b.Digest
+	return m0
+}
+
 // Blob represents some module content with an associated digest.
 type Blob struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Digest of the content.
 	Digest *Digest `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
 	// Content of the blob.
@@ -173,11 +193,6 @@ func (x *Blob) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Blob.ProtoReflect.Descriptor instead.
-func (*Blob) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *Blob) GetDigest() *Digest {
 	if x != nil {
 		return x.Digest
@@ -192,9 +207,49 @@ func (x *Blob) GetContent() []byte {
 	return nil
 }
 
+func (x *Blob) SetDigest(v *Digest) {
+	x.Digest = v
+}
+
+func (x *Blob) SetContent(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.Content = v
+}
+
+func (x *Blob) HasDigest() bool {
+	if x == nil {
+		return false
+	}
+	return x.Digest != nil
+}
+
+func (x *Blob) ClearDigest() {
+	x.Digest = nil
+}
+
+type Blob_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Digest of the content.
+	Digest *Digest
+	// Content of the blob.
+	Content []byte
+}
+
+func (b0 Blob_builder) Build() *Blob {
+	m0 := &Blob{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Digest = b.Digest
+	x.Content = b.Content
+	return m0
+}
+
 // Module is a module.
 type Module struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// files are the files that make up the set.
 	//
 	// Sorted by path.
@@ -251,11 +306,6 @@ func (x *Module) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Module.ProtoReflect.Descriptor instead.
-func (*Module) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *Module) GetFiles() []*ModuleFile {
 	if x != nil {
 		return x.Files
@@ -305,9 +355,105 @@ func (x *Module) GetDocumentationPath() string {
 	return ""
 }
 
+func (x *Module) SetFiles(v []*ModuleFile) {
+	x.Files = v
+}
+
+func (x *Module) SetDependencies(v []*ModulePin) {
+	x.Dependencies = v
+}
+
+func (x *Module) SetDocumentation(v string) {
+	x.Documentation = v
+}
+
+func (x *Module) SetBreakingConfig(v *v1.Config) {
+	x.BreakingConfig = v
+}
+
+func (x *Module) SetLintConfig(v *v11.Config) {
+	x.LintConfig = v
+}
+
+func (x *Module) SetLicense(v string) {
+	x.License = v
+}
+
+func (x *Module) SetDocumentationPath(v string) {
+	x.DocumentationPath = v
+}
+
+func (x *Module) HasBreakingConfig() bool {
+	if x == nil {
+		return false
+	}
+	return x.BreakingConfig != nil
+}
+
+func (x *Module) HasLintConfig() bool {
+	if x == nil {
+		return false
+	}
+	return x.LintConfig != nil
+}
+
+func (x *Module) ClearBreakingConfig() {
+	x.BreakingConfig = nil
+}
+
+func (x *Module) ClearLintConfig() {
+	x.LintConfig = nil
+}
+
+type Module_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// files are the files that make up the set.
+	//
+	// Sorted by path.
+	// Path must be unique.
+	// Only the target files. No imports.
+	//
+	// Maximum total size of all content: 32MB.
+	Files []*ModuleFile
+	// dependencies are the dependencies.
+	Dependencies []*ModulePin
+	// documentation is the string representation of the contents of the file at documentation_path.
+	//
+	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+	Documentation string
+	// breaking_config is the breaking change detection configuration set for the module.
+	BreakingConfig *v1.Config
+	// lint_config is the lint configuration set for the module.
+	LintConfig *v11.Config
+	// license is the string representation of the contents of the `LICENSE` file.
+	//
+	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+	License string
+	// documentation_path is the path of the file which contains the module documentation.
+	//
+	// either `buf.md`, `README.md` or `README.markdown`.
+	// if empty, assumes buf.md.
+	DocumentationPath string
+}
+
+func (b0 Module_builder) Build() *Module {
+	m0 := &Module{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Files = b.Files
+	x.Dependencies = b.Dependencies
+	x.Documentation = b.Documentation
+	x.BreakingConfig = b.BreakingConfig
+	x.LintConfig = b.LintConfig
+	x.License = b.License
+	x.DocumentationPath = b.DocumentationPath
+	return m0
+}
+
 // ModuleFile is a file within a FileSet.
 type ModuleFile struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// path is the relative path of the file.
 	// Path can only use '/' as the separator character, and includes no ".." components.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -342,11 +488,6 @@ func (x *ModuleFile) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ModuleFile.ProtoReflect.Descriptor instead.
-func (*ModuleFile) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *ModuleFile) GetPath() string {
 	if x != nil {
 		return x.Path
@@ -361,9 +502,39 @@ func (x *ModuleFile) GetContent() []byte {
 	return nil
 }
 
+func (x *ModuleFile) SetPath(v string) {
+	x.Path = v
+}
+
+func (x *ModuleFile) SetContent(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.Content = v
+}
+
+type ModuleFile_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// path is the relative path of the file.
+	// Path can only use '/' as the separator character, and includes no ".." components.
+	Path string
+	// content is the content of the file.
+	Content []byte
+}
+
+func (b0 ModuleFile_builder) Build() *ModuleFile {
+	m0 := &ModuleFile{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Path = b.Path
+	x.Content = b.Content
+	return m0
+}
+
 // ModuleReference is a module reference.
 type ModuleReference struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
 	Remote     string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
 	Owner      string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
@@ -398,11 +569,6 @@ func (x *ModuleReference) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ModuleReference.ProtoReflect.Descriptor instead.
-func (*ModuleReference) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *ModuleReference) GetRemote() string {
 	if x != nil {
 		return x.Remote
@@ -431,9 +597,46 @@ func (x *ModuleReference) GetReference() string {
 	return ""
 }
 
+func (x *ModuleReference) SetRemote(v string) {
+	x.Remote = v
+}
+
+func (x *ModuleReference) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *ModuleReference) SetRepository(v string) {
+	x.Repository = v
+}
+
+func (x *ModuleReference) SetReference(v string) {
+	x.Reference = v
+}
+
+type ModuleReference_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Remote     string
+	Owner      string
+	Repository string
+	// either tag, or commit
+	Reference string
+}
+
+func (b0 ModuleReference_builder) Build() *ModuleReference {
+	m0 := &ModuleReference{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Remote = b.Remote
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
+	return m0
+}
+
 // ModulePin is a module pin.
 type ModulePin struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
 	Remote     string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
 	Owner      string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
@@ -472,11 +675,6 @@ func (x *ModulePin) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ModulePin.ProtoReflect.Descriptor instead.
-func (*ModulePin) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *ModulePin) GetRemote() string {
 	if x != nil {
 		return x.Remote
@@ -510,6 +708,52 @@ func (x *ModulePin) GetManifestDigest() string {
 		return x.ManifestDigest
 	}
 	return ""
+}
+
+func (x *ModulePin) SetRemote(v string) {
+	x.Remote = v
+}
+
+func (x *ModulePin) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *ModulePin) SetRepository(v string) {
+	x.Repository = v
+}
+
+func (x *ModulePin) SetCommit(v string) {
+	x.Commit = v
+}
+
+func (x *ModulePin) SetManifestDigest(v string) {
+	x.ManifestDigest = v
+}
+
+type ModulePin_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Remote     string
+	Owner      string
+	Repository string
+	Commit     string
+	// Module's manifest digest. Replacement for previous b1/b3 digests.
+	// This is in the format '<digest_type>:<digest>`, where '<digest_type>' is the lowercase digest name ('shake256'),
+	// and '<digest>' is the lowercase hex-encoded digest.
+	// This value is persisted directly to the buf.lock file (https://buf.build/docs/configuration/v1/buf-lock) as the 'digest' key.
+	ManifestDigest string
+}
+
+func (b0 ModulePin_builder) Build() *ModulePin {
+	m0 := &ModulePin{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Remote = b.Remote
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Commit = b.Commit
+	x.ManifestDigest = b.ManifestDigest
+	return m0
 }
 
 var File_buf_alpha_module_v1alpha1_module_proto protoreflect.FileDescriptor
@@ -607,18 +851,6 @@ var file_buf_alpha_module_v1alpha1_module_proto_rawDesc = []byte{
 	0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x4d, 0x6f, 0x64, 0x75,
 	0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_module_v1alpha1_module_proto_rawDescOnce sync.Once
-	file_buf_alpha_module_v1alpha1_module_proto_rawDescData = file_buf_alpha_module_v1alpha1_module_proto_rawDesc
-)
-
-func file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP() []byte {
-	file_buf_alpha_module_v1alpha1_module_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_module_v1alpha1_module_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_module_v1alpha1_module_proto_rawDescData)
-	})
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescData
 }
 
 var file_buf_alpha_module_v1alpha1_module_proto_enumTypes = make([]protoimpl.EnumInfo, 1)

@@ -18,13 +18,14 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/role.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -79,11 +80,6 @@ func (x ServerRole) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ServerRole.Descriptor instead.
-func (ServerRole) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_role_proto_rawDescGZIP(), []int{0}
-}
-
 // The roles that users can have in a Organization.
 type OrganizationRole int32
 
@@ -135,11 +131,6 @@ func (x OrganizationRole) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use OrganizationRole.Descriptor instead.
-func (OrganizationRole) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_role_proto_rawDescGZIP(), []int{1}
-}
-
 // The source of a user's role in an Organization.
 type OrganizationRoleSource int32
 
@@ -186,11 +177,6 @@ func (OrganizationRoleSource) Type() protoreflect.EnumType {
 
 func (x OrganizationRoleSource) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use OrganizationRoleSource.Descriptor instead.
-func (OrganizationRoleSource) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_role_proto_rawDescGZIP(), []int{2}
 }
 
 // The roles that users can have for a Repository.
@@ -245,11 +231,6 @@ func (RepositoryRole) Type() protoreflect.EnumType {
 
 func (x RepositoryRole) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use RepositoryRole.Descriptor instead.
-func (RepositoryRole) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_role_proto_rawDescGZIP(), []int{3}
 }
 
 var File_buf_alpha_registry_v1alpha1_role_proto protoreflect.FileDescriptor
@@ -318,18 +299,6 @@ var file_buf_alpha_registry_v1alpha1_role_proto_rawDesc = []byte{
 	0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73,
 	0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_role_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_role_proto_rawDescData = file_buf_alpha_registry_v1alpha1_role_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_role_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_role_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_role_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_role_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_role_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_role_proto_enumTypes = make([]protoimpl.EnumInfo, 4)

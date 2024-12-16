@@ -42,13 +42,14 @@
 // We may explore other transports such as WebSockets or WebTransport, at which
 // point we should define proper proto services and methods here as well.
 
+//go:build !protoopaque
+
 package studiov1alpha1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -60,7 +61,7 @@ const (
 
 // Headers encode HTTP headers.
 type Headers struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value         []string               `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -92,11 +93,6 @@ func (x *Headers) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Headers.ProtoReflect.Descriptor instead.
-func (*Headers) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *Headers) GetKey() string {
 	if x != nil {
 		return x.Key
@@ -111,10 +107,34 @@ func (x *Headers) GetValue() []string {
 	return nil
 }
 
+func (x *Headers) SetKey(v string) {
+	x.Key = v
+}
+
+func (x *Headers) SetValue(v []string) {
+	x.Value = v
+}
+
+type Headers_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Key   string
+	Value []string
+}
+
+func (b0 Headers_builder) Build() *Headers {
+	m0 := &Headers{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Key = b.Key
+	x.Value = b.Value
+	return m0
+}
+
 // InvokeRequest encodes an enveloped RPC request. See the package documentation
 // for more information.
 type InvokeRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Target server the agent should forward this request to, e.g.
 	// "https://api.acme.corp/pkg.Service/Method". Using the "http" scheme will
 	// cause the request to be forwarded as h2c, whereas "https" forwards the
@@ -154,11 +174,6 @@ func (x *InvokeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InvokeRequest.ProtoReflect.Descriptor instead.
-func (*InvokeRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *InvokeRequest) GetTarget() string {
 	if x != nil {
 		return x.Target
@@ -180,10 +195,50 @@ func (x *InvokeRequest) GetBody() []byte {
 	return nil
 }
 
+func (x *InvokeRequest) SetTarget(v string) {
+	x.Target = v
+}
+
+func (x *InvokeRequest) SetHeaders(v []*Headers) {
+	x.Headers = v
+}
+
+func (x *InvokeRequest) SetBody(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.Body = v
+}
+
+type InvokeRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Target server the agent should forward this request to, e.g.
+	// "https://api.acme.corp/pkg.Service/Method". Using the "http" scheme will
+	// cause the request to be forwarded as h2c, whereas "https" forwards the
+	// request with regular h2.
+	Target string
+	// Headers to send with the request. If body is set, a Content-Type header
+	// must be specified.
+	Headers []*Headers
+	// The message to be sent in the request (without any protocol specific framing).
+	Body []byte
+}
+
+func (b0 InvokeRequest_builder) Build() *InvokeRequest {
+	m0 := &InvokeRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Target = b.Target
+	x.Headers = b.Headers
+	x.Body = b.Body
+	return m0
+}
+
 // InvokeResponse encodes an enveloped RPC response. See the package documentation
 // for more information.
 type InvokeResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Headers received in the response.
 	Headers []*Headers `protobuf:"bytes,1,rep,name=headers,proto3" json:"headers,omitempty"`
 	// The encoded message received in the response (without protocol specific framing).
@@ -219,11 +274,6 @@ func (x *InvokeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InvokeResponse.ProtoReflect.Descriptor instead.
-func (*InvokeResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *InvokeResponse) GetHeaders() []*Headers {
 	if x != nil {
 		return x.Headers
@@ -243,6 +293,42 @@ func (x *InvokeResponse) GetTrailers() []*Headers {
 		return x.Trailers
 	}
 	return nil
+}
+
+func (x *InvokeResponse) SetHeaders(v []*Headers) {
+	x.Headers = v
+}
+
+func (x *InvokeResponse) SetBody(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.Body = v
+}
+
+func (x *InvokeResponse) SetTrailers(v []*Headers) {
+	x.Trailers = v
+}
+
+type InvokeResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Headers received in the response.
+	Headers []*Headers
+	// The encoded message received in the response (without protocol specific framing).
+	Body []byte
+	// Trailers received in the response.
+	Trailers []*Headers
+}
+
+func (b0 InvokeResponse_builder) Build() *InvokeResponse {
+	m0 := &InvokeResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Headers = b.Headers
+	x.Body = b.Body
+	x.Trailers = b.Trailers
+	return m0
 }
 
 var File_buf_alpha_studio_v1alpha1_invoke_proto protoreflect.FileDescriptor
@@ -291,18 +377,6 @@ var file_buf_alpha_studio_v1alpha1_invoke_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1c, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68,
 	0x61, 0x3a, 0x3a, 0x53, 0x74, 0x75, 0x64, 0x69, 0x6f, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70,
 	0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescOnce sync.Once
-	file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescData = file_buf_alpha_studio_v1alpha1_invoke_proto_rawDesc
-)
-
-func file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescGZIP() []byte {
-	file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescData)
-	})
-	return file_buf_alpha_studio_v1alpha1_invoke_proto_rawDescData
 }
 
 var file_buf_alpha_studio_v1alpha1_invoke_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

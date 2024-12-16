@@ -18,13 +18,14 @@
 // 	protoc        (unknown)
 // source: buf/alpha/lint/v1/config.proto
 
+//go:build !protoopaque
+
 package lintv1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -42,7 +43,7 @@ const (
 // The rule and category IDs are not encoded as enums in this package because we may want to support custom rule
 // and category IDs in the future. Callers will need to resolve the rule and category ID strings.
 type Config struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// version represents the version of the lint rule and category IDs that should be used with this config.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// use_ids lists the rule and/or category IDs that are included in the lint check.
@@ -97,11 +98,6 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Config.ProtoReflect.Descriptor instead.
-func (*Config) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_lint_v1_config_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Config) GetVersion() string {
@@ -181,9 +177,103 @@ func (x *Config) GetAllowCommentIgnores() bool {
 	return false
 }
 
+func (x *Config) SetVersion(v string) {
+	x.Version = v
+}
+
+func (x *Config) SetUseIds(v []string) {
+	x.UseIds = v
+}
+
+func (x *Config) SetExceptIds(v []string) {
+	x.ExceptIds = v
+}
+
+func (x *Config) SetIgnorePaths(v []string) {
+	x.IgnorePaths = v
+}
+
+func (x *Config) SetIgnoreIdPaths(v []*IDPaths) {
+	x.IgnoreIdPaths = v
+}
+
+func (x *Config) SetEnumZeroValueSuffix(v string) {
+	x.EnumZeroValueSuffix = v
+}
+
+func (x *Config) SetRpcAllowSameRequestResponse(v bool) {
+	x.RpcAllowSameRequestResponse = v
+}
+
+func (x *Config) SetRpcAllowGoogleProtobufEmptyRequests(v bool) {
+	x.RpcAllowGoogleProtobufEmptyRequests = v
+}
+
+func (x *Config) SetRpcAllowGoogleProtobufEmptyResponses(v bool) {
+	x.RpcAllowGoogleProtobufEmptyResponses = v
+}
+
+func (x *Config) SetServiceSuffix(v string) {
+	x.ServiceSuffix = v
+}
+
+func (x *Config) SetAllowCommentIgnores(v bool) {
+	x.AllowCommentIgnores = v
+}
+
+type Config_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// version represents the version of the lint rule and category IDs that should be used with this config.
+	Version string
+	// use_ids lists the rule and/or category IDs that are included in the lint check.
+	UseIds []string
+	// except_ids lists the rule and/or category IDs that are excluded from the lint check.
+	ExceptIds []string
+	// ignore_paths lists the paths of directories and/or files that should be ignored by the lint check.
+	// All paths are relative to the root of the module.
+	IgnorePaths []string
+	// ignore_id_paths is a map of rule and/or category IDs to directory and/or file paths to exclude from the
+	// lint check. This corresponds with the ignore_only configuration key.
+	IgnoreIdPaths []*IDPaths
+	// enum_zero_value_suffix controls the behavior of the ENUM_ZERO_VALUE lint rule ID. By default, this rule
+	// verifies that the zero value of all enums ends in _UNSPECIFIED. This config allows the user to override
+	// this value with the given string.
+	EnumZeroValueSuffix string
+	// rpc_allow_same_request_response allows the same message type for both the request and response of an RPC.
+	RpcAllowSameRequestResponse bool
+	// rpc_allow_google_protobuf_empty_requests allows the RPC requests to use the google.protobuf.Empty message.
+	RpcAllowGoogleProtobufEmptyRequests bool
+	// rpc_allow_google_protobuf_empty_responses allows the RPC responses to use the google.protobuf.Empty message.
+	RpcAllowGoogleProtobufEmptyResponses bool
+	// service_suffix applies to the SERVICE_SUFFIX rule ID. By default, the rule verifies that all service names
+	// end with the suffix Service. This allows users to override the value with the given string.
+	ServiceSuffix string
+	// allow_comment_ignores turns on comment-driven ignores.
+	AllowCommentIgnores bool
+}
+
+func (b0 Config_builder) Build() *Config {
+	m0 := &Config{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Version = b.Version
+	x.UseIds = b.UseIds
+	x.ExceptIds = b.ExceptIds
+	x.IgnorePaths = b.IgnorePaths
+	x.IgnoreIdPaths = b.IgnoreIdPaths
+	x.EnumZeroValueSuffix = b.EnumZeroValueSuffix
+	x.RpcAllowSameRequestResponse = b.RpcAllowSameRequestResponse
+	x.RpcAllowGoogleProtobufEmptyRequests = b.RpcAllowGoogleProtobufEmptyRequests
+	x.RpcAllowGoogleProtobufEmptyResponses = b.RpcAllowGoogleProtobufEmptyResponses
+	x.ServiceSuffix = b.ServiceSuffix
+	x.AllowCommentIgnores = b.AllowCommentIgnores
+	return m0
+}
+
 // IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.
 type IDPaths struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -215,11 +305,6 @@ func (x *IDPaths) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IDPaths.ProtoReflect.Descriptor instead.
-func (*IDPaths) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_lint_v1_config_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *IDPaths) GetId() string {
 	if x != nil {
 		return x.Id
@@ -232,6 +317,30 @@ func (x *IDPaths) GetPaths() []string {
 		return x.Paths
 	}
 	return nil
+}
+
+func (x *IDPaths) SetId(v string) {
+	x.Id = v
+}
+
+func (x *IDPaths) SetPaths(v []string) {
+	x.Paths = v
+}
+
+type IDPaths_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id    string
+	Paths []string
+}
+
+func (b0 IDPaths_builder) Build() *IDPaths {
+	m0 := &IDPaths{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Paths = b.Paths
+	return m0
 }
 
 var File_buf_alpha_lint_v1_config_proto protoreflect.FileDescriptor
@@ -294,18 +403,6 @@ var file_buf_alpha_lint_v1_config_proto_rawDesc = []byte{
 	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x42,
 	0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x4c, 0x69, 0x6e, 0x74, 0x3a,
 	0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_lint_v1_config_proto_rawDescOnce sync.Once
-	file_buf_alpha_lint_v1_config_proto_rawDescData = file_buf_alpha_lint_v1_config_proto_rawDesc
-)
-
-func file_buf_alpha_lint_v1_config_proto_rawDescGZIP() []byte {
-	file_buf_alpha_lint_v1_config_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_lint_v1_config_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_lint_v1_config_proto_rawDescData)
-	})
-	return file_buf_alpha_lint_v1_config_proto_rawDescData
 }
 
 var file_buf_alpha_lint_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

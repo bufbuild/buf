@@ -18,13 +18,14 @@
 // 	protoc        (unknown)
 // source: buf/alpha/breaking/v1/config.proto
 
+//go:build !protoopaque
+
 package breakingv1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -42,7 +43,7 @@ const (
 // The rule and category IDs are not encoded as enums in this package because we may want to support custom rule
 // and category IDs in the future. Callers will need to resolve the rule and category ID strings.
 type Config struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// version represents the version of the breaking change rule and category IDs that should be used with this config.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// use_ids lists the rule and/or category IDs that are included in the breaking change check.
@@ -91,11 +92,6 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Config.ProtoReflect.Descriptor instead.
-func (*Config) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_breaking_v1_config_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *Config) GetVersion() string {
 	if x != nil {
 		return x.Version
@@ -138,9 +134,70 @@ func (x *Config) GetIgnoreUnstablePackages() bool {
 	return false
 }
 
+func (x *Config) SetVersion(v string) {
+	x.Version = v
+}
+
+func (x *Config) SetUseIds(v []string) {
+	x.UseIds = v
+}
+
+func (x *Config) SetExceptIds(v []string) {
+	x.ExceptIds = v
+}
+
+func (x *Config) SetIgnorePaths(v []string) {
+	x.IgnorePaths = v
+}
+
+func (x *Config) SetIgnoreIdPaths(v []*IDPaths) {
+	x.IgnoreIdPaths = v
+}
+
+func (x *Config) SetIgnoreUnstablePackages(v bool) {
+	x.IgnoreUnstablePackages = v
+}
+
+type Config_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// version represents the version of the breaking change rule and category IDs that should be used with this config.
+	Version string
+	// use_ids lists the rule and/or category IDs that are included in the breaking change check.
+	UseIds []string
+	// except_ids lists the rule and/or category IDs that are excluded from the breaking change check.
+	ExceptIds []string
+	// ignore_paths lists the paths of directories and/or files that should be ignored by the breaking change check.
+	// All paths are relative to the root of the module.
+	IgnorePaths []string
+	// ignore_id_paths is a map of rule and/or category IDs to directory and/or file paths to exclude from the
+	// breaking change check. This corresponds with the ignore_only configuration key.
+	IgnoreIdPaths []*IDPaths
+	// ignore_unstable_packages ignores packages with a last component that is one of the unstable forms recognised
+	// by the PACKAGE_VERSION_SUFFIX:
+	//
+	//	v\d+test.*
+	//	v\d+(alpha|beta)\d+
+	//	v\d+p\d+(alpha|beta)\d+
+	IgnoreUnstablePackages bool
+}
+
+func (b0 Config_builder) Build() *Config {
+	m0 := &Config{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Version = b.Version
+	x.UseIds = b.UseIds
+	x.ExceptIds = b.ExceptIds
+	x.IgnorePaths = b.IgnorePaths
+	x.IgnoreIdPaths = b.IgnoreIdPaths
+	x.IgnoreUnstablePackages = b.IgnoreUnstablePackages
+	return m0
+}
+
 // IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.
 type IDPaths struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -172,11 +229,6 @@ func (x *IDPaths) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IDPaths.ProtoReflect.Descriptor instead.
-func (*IDPaths) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_breaking_v1_config_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *IDPaths) GetId() string {
 	if x != nil {
 		return x.Id
@@ -189,6 +241,30 @@ func (x *IDPaths) GetPaths() []string {
 		return x.Paths
 	}
 	return nil
+}
+
+func (x *IDPaths) SetId(v string) {
+	x.Id = v
+}
+
+func (x *IDPaths) SetPaths(v []string) {
+	x.Paths = v
+}
+
+type IDPaths_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id    string
+	Paths []string
+}
+
+func (b0 IDPaths_builder) Build() *IDPaths {
+	m0 := &IDPaths{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Paths = b.Paths
+	return m0
 }
 
 var File_buf_alpha_breaking_v1_config_proto protoreflect.FileDescriptor
@@ -233,18 +309,6 @@ var file_buf_alpha_breaking_v1_config_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x18, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68,
 	0x61, 0x3a, 0x3a, 0x42, 0x72, 0x65, 0x61, 0x6b, 0x69, 0x6e, 0x67, 0x3a, 0x3a, 0x56, 0x31, 0x62,
 	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_breaking_v1_config_proto_rawDescOnce sync.Once
-	file_buf_alpha_breaking_v1_config_proto_rawDescData = file_buf_alpha_breaking_v1_config_proto_rawDesc
-)
-
-func file_buf_alpha_breaking_v1_config_proto_rawDescGZIP() []byte {
-	file_buf_alpha_breaking_v1_config_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_breaking_v1_config_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_breaking_v1_config_proto_rawDescData)
-	})
-	return file_buf_alpha_breaking_v1_config_proto_rawDescData
 }
 
 var file_buf_alpha_breaking_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

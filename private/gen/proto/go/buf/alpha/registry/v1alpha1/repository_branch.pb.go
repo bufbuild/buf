@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/repository_branch.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 )
 
 type RepositoryBranch struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// primary key, unique.
 	// branches are based on labels, so when a branch is pushed to, the ID will point to the
 	// updated entry in the labels table.
@@ -84,11 +85,6 @@ func (x *RepositoryBranch) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RepositoryBranch.ProtoReflect.Descriptor instead.
-func (*RepositoryBranch) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RepositoryBranch) GetId() string {
@@ -147,8 +143,91 @@ func (x *RepositoryBranch) GetLastUpdateGitCommitHash() string {
 	return ""
 }
 
+func (x *RepositoryBranch) SetId(v string) {
+	x.Id = v
+}
+
+func (x *RepositoryBranch) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositoryBranch) SetLatestCommitName(v string) {
+	x.LatestCommitName = v
+}
+
+func (x *RepositoryBranch) SetIsMainBranch(v bool) {
+	x.IsMainBranch = v
+}
+
+func (x *RepositoryBranch) SetLastUpdateTime(v *timestamppb.Timestamp) {
+	x.LastUpdateTime = v
+}
+
+func (x *RepositoryBranch) SetLastUpdateUserId(v string) {
+	x.LastUpdateUserId = v
+}
+
+func (x *RepositoryBranch) SetLastUpdateGitAuthorName(v string) {
+	x.LastUpdateGitAuthorName = v
+}
+
+func (x *RepositoryBranch) SetLastUpdateGitCommitHash(v string) {
+	x.LastUpdateGitCommitHash = v
+}
+
+func (x *RepositoryBranch) HasLastUpdateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.LastUpdateTime != nil
+}
+
+func (x *RepositoryBranch) ClearLastUpdateTime() {
+	x.LastUpdateTime = nil
+}
+
+type RepositoryBranch_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// primary key, unique.
+	// branches are based on labels, so when a branch is pushed to, the ID will point to the
+	// updated entry in the labels table.
+	Id string
+	// The name of the repository branch.
+	Name string
+	// The name of the latest commit on the branch.
+	LatestCommitName string
+	// is_main_branch denotes whether this branch is considered the main branch of the repository.
+	IsMainBranch bool
+	// The last update time of the branch.
+	LastUpdateTime *timestamppb.Timestamp
+	// The ID of the user who updated the branch.
+	LastUpdateUserId string
+	// The author name of the most recent associated git commit of the branch. May be an empty string
+	// if no commit in the branch history contains any associated git commit.
+	LastUpdateGitAuthorName string
+	// The git commit hash of the most recent associated git commit of the branch. May be an empty
+	// string if no commit in the branch history contains any associated git commit.
+	LastUpdateGitCommitHash string
+}
+
+func (b0 RepositoryBranch_builder) Build() *RepositoryBranch {
+	m0 := &RepositoryBranch{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Name = b.Name
+	x.LatestCommitName = b.LatestCommitName
+	x.IsMainBranch = b.IsMainBranch
+	x.LastUpdateTime = b.LastUpdateTime
+	x.LastUpdateUserId = b.LastUpdateUserId
+	x.LastUpdateGitAuthorName = b.LastUpdateGitAuthorName
+	x.LastUpdateGitCommitHash = b.LastUpdateGitCommitHash
+	return m0
+}
+
 type GetRepositoryBranchRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository for which the branch is requested.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// The name of the branch to get.
@@ -182,11 +261,6 @@ func (x *GetRepositoryBranchRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryBranchRequest.ProtoReflect.Descriptor instead.
-func (*GetRepositoryBranchRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *GetRepositoryBranchRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -201,8 +275,34 @@ func (x *GetRepositoryBranchRequest) GetName() string {
 	return ""
 }
 
+func (x *GetRepositoryBranchRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *GetRepositoryBranchRequest) SetName(v string) {
+	x.Name = v
+}
+
+type GetRepositoryBranchRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository for which the branch is requested.
+	RepositoryId string
+	// The name of the branch to get.
+	Name string
+}
+
+func (b0 GetRepositoryBranchRequest_builder) Build() *GetRepositoryBranchRequest {
+	m0 := &GetRepositoryBranchRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.Name = b.Name
+	return m0
+}
+
 type GetRepositoryBranchResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Branch        *RepositoryBranch      `protobuf:"bytes,1,opt,name=branch,proto3" json:"branch,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -233,11 +333,6 @@ func (x *GetRepositoryBranchResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryBranchResponse.ProtoReflect.Descriptor instead.
-func (*GetRepositoryBranchResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *GetRepositoryBranchResponse) GetBranch() *RepositoryBranch {
 	if x != nil {
 		return x.Branch
@@ -245,8 +340,37 @@ func (x *GetRepositoryBranchResponse) GetBranch() *RepositoryBranch {
 	return nil
 }
 
+func (x *GetRepositoryBranchResponse) SetBranch(v *RepositoryBranch) {
+	x.Branch = v
+}
+
+func (x *GetRepositoryBranchResponse) HasBranch() bool {
+	if x == nil {
+		return false
+	}
+	return x.Branch != nil
+}
+
+func (x *GetRepositoryBranchResponse) ClearBranch() {
+	x.Branch = nil
+}
+
+type GetRepositoryBranchResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Branch *RepositoryBranch
+}
+
+func (b0 GetRepositoryBranchResponse_builder) Build() *GetRepositoryBranchResponse {
+	m0 := &GetRepositoryBranchResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Branch = b.Branch
+	return m0
+}
+
 type ListRepositoryBranchesRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository whose branches should be listed.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	PageSize     uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -281,11 +405,6 @@ func (x *ListRepositoryBranchesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryBranchesRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryBranchesRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *ListRepositoryBranchesRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -307,8 +426,40 @@ func (x *ListRepositoryBranchesRequest) GetPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryBranchesRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ListRepositoryBranchesRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryBranchesRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+type ListRepositoryBranchesRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository whose branches should be listed.
+	RepositoryId string
+	PageSize     uint32
+	// The first page is returned if this is empty.
+	PageToken string
+}
+
+func (b0 ListRepositoryBranchesRequest_builder) Build() *ListRepositoryBranchesRequest {
+	m0 := &ListRepositoryBranchesRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	return m0
+}
+
 type ListRepositoryBranchesResponse struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryBranches []*RepositoryBranch    `protobuf:"bytes,1,rep,name=repository_branches,json=repositoryBranches,proto3" json:"repository_branches,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -341,11 +492,6 @@ func (x *ListRepositoryBranchesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryBranchesResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryBranchesResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *ListRepositoryBranchesResponse) GetRepositoryBranches() []*RepositoryBranch {
 	if x != nil {
 		return x.RepositoryBranches
@@ -360,8 +506,33 @@ func (x *ListRepositoryBranchesResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryBranchesResponse) SetRepositoryBranches(v []*RepositoryBranch) {
+	x.RepositoryBranches = v
+}
+
+func (x *ListRepositoryBranchesResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryBranchesResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryBranches []*RepositoryBranch
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 ListRepositoryBranchesResponse_builder) Build() *ListRepositoryBranchesResponse {
+	m0 := &ListRepositoryBranchesResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryBranches = b.RepositoryBranches
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type ListRepositoryBranchesByReferenceRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository whose branches should be listed.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	PageSize     uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -401,11 +572,6 @@ func (x *ListRepositoryBranchesByReferenceRequest) ProtoReflect() protoreflect.M
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListRepositoryBranchesByReferenceRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryBranchesByReferenceRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListRepositoryBranchesByReferenceRequest) GetRepositoryId() string {
@@ -454,6 +620,128 @@ func (x *ListRepositoryBranchesByReferenceRequest) GetVcsCommitHash() string {
 	return ""
 }
 
+func (x *ListRepositoryBranchesByReferenceRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) SetCommitName(v string) {
+	x.Reference = &ListRepositoryBranchesByReferenceRequest_CommitName{v}
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) SetVcsCommitHash(v string) {
+	x.Reference = &ListRepositoryBranchesByReferenceRequest_VcsCommitHash{v}
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) HasReference() bool {
+	if x == nil {
+		return false
+	}
+	return x.Reference != nil
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) HasCommitName() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*ListRepositoryBranchesByReferenceRequest_CommitName)
+	return ok
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) HasVcsCommitHash() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Reference.(*ListRepositoryBranchesByReferenceRequest_VcsCommitHash)
+	return ok
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) ClearReference() {
+	x.Reference = nil
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) ClearCommitName() {
+	if _, ok := x.Reference.(*ListRepositoryBranchesByReferenceRequest_CommitName); ok {
+		x.Reference = nil
+	}
+}
+
+func (x *ListRepositoryBranchesByReferenceRequest) ClearVcsCommitHash() {
+	if _, ok := x.Reference.(*ListRepositoryBranchesByReferenceRequest_VcsCommitHash); ok {
+		x.Reference = nil
+	}
+}
+
+const ListRepositoryBranchesByReferenceRequest_Reference_not_set_case case_ListRepositoryBranchesByReferenceRequest_Reference = 0
+const ListRepositoryBranchesByReferenceRequest_CommitName_case case_ListRepositoryBranchesByReferenceRequest_Reference = 4
+const ListRepositoryBranchesByReferenceRequest_VcsCommitHash_case case_ListRepositoryBranchesByReferenceRequest_Reference = 5
+
+func (x *ListRepositoryBranchesByReferenceRequest) WhichReference() case_ListRepositoryBranchesByReferenceRequest_Reference {
+	if x == nil {
+		return ListRepositoryBranchesByReferenceRequest_Reference_not_set_case
+	}
+	switch x.Reference.(type) {
+	case *ListRepositoryBranchesByReferenceRequest_CommitName:
+		return ListRepositoryBranchesByReferenceRequest_CommitName_case
+	case *ListRepositoryBranchesByReferenceRequest_VcsCommitHash:
+		return ListRepositoryBranchesByReferenceRequest_VcsCommitHash_case
+	default:
+		return ListRepositoryBranchesByReferenceRequest_Reference_not_set_case
+	}
+}
+
+type ListRepositoryBranchesByReferenceRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository whose branches should be listed.
+	RepositoryId string
+	PageSize     uint32
+	// The first page is returned if this is empty.
+	PageToken string
+	// The reference by which to filter the returned branches.
+
+	// Fields of oneof Reference:
+	// The name of a BSR commit. This will filter the branches to only those that include the commit.
+	CommitName *string
+	// The hash of a VCS commit. This will filter the branches to only those that include the commit
+	// associated with the VCS hash.
+	VcsCommitHash *string
+	// -- end of Reference
+}
+
+func (b0 ListRepositoryBranchesByReferenceRequest_builder) Build() *ListRepositoryBranchesByReferenceRequest {
+	m0 := &ListRepositoryBranchesByReferenceRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	if b.CommitName != nil {
+		x.Reference = &ListRepositoryBranchesByReferenceRequest_CommitName{*b.CommitName}
+	}
+	if b.VcsCommitHash != nil {
+		x.Reference = &ListRepositoryBranchesByReferenceRequest_VcsCommitHash{*b.VcsCommitHash}
+	}
+	return m0
+}
+
+type case_ListRepositoryBranchesByReferenceRequest_Reference protoreflect.FieldNumber
+
+func (x case_ListRepositoryBranchesByReferenceRequest_Reference) String() string {
+	md := file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes[5].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isListRepositoryBranchesByReferenceRequest_Reference interface {
 	isListRepositoryBranchesByReferenceRequest_Reference()
 }
@@ -476,7 +764,7 @@ func (*ListRepositoryBranchesByReferenceRequest_VcsCommitHash) isListRepositoryB
 }
 
 type ListRepositoryBranchesByReferenceResponse struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryBranches []*RepositoryBranch    `protobuf:"bytes,1,rep,name=repository_branches,json=repositoryBranches,proto3" json:"repository_branches,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -509,11 +797,6 @@ func (x *ListRepositoryBranchesByReferenceResponse) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryBranchesByReferenceResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryBranchesByReferenceResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *ListRepositoryBranchesByReferenceResponse) GetRepositoryBranches() []*RepositoryBranch {
 	if x != nil {
 		return x.RepositoryBranches
@@ -528,8 +811,33 @@ func (x *ListRepositoryBranchesByReferenceResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryBranchesByReferenceResponse) SetRepositoryBranches(v []*RepositoryBranch) {
+	x.RepositoryBranches = v
+}
+
+func (x *ListRepositoryBranchesByReferenceResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryBranchesByReferenceResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryBranches []*RepositoryBranch
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 ListRepositoryBranchesByReferenceResponse_builder) Build() *ListRepositoryBranchesByReferenceResponse {
+	m0 := &ListRepositoryBranchesByReferenceResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryBranches = b.RepositoryBranches
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type GetCurrentDefaultBranchRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository whose current default branch is returned.
 	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -561,11 +869,6 @@ func (x *GetCurrentDefaultBranchRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCurrentDefaultBranchRequest.ProtoReflect.Descriptor instead.
-func (*GetCurrentDefaultBranchRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *GetCurrentDefaultBranchRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -573,8 +876,27 @@ func (x *GetCurrentDefaultBranchRequest) GetRepositoryId() string {
 	return ""
 }
 
+func (x *GetCurrentDefaultBranchRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+type GetCurrentDefaultBranchRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository whose current default branch is returned.
+	RepositoryId string
+}
+
+func (b0 GetCurrentDefaultBranchRequest_builder) Build() *GetCurrentDefaultBranchRequest {
+	m0 := &GetCurrentDefaultBranchRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	return m0
+}
+
 type GetCurrentDefaultBranchResponse struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
+	state                protoimpl.MessageState `protogen:"hybrid.v1"`
 	CurrentDefaultBranch *RepositoryBranch      `protobuf:"bytes,1,opt,name=current_default_branch,json=currentDefaultBranch,proto3" json:"current_default_branch,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -605,16 +927,40 @@ func (x *GetCurrentDefaultBranchResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCurrentDefaultBranchResponse.ProtoReflect.Descriptor instead.
-func (*GetCurrentDefaultBranchResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *GetCurrentDefaultBranchResponse) GetCurrentDefaultBranch() *RepositoryBranch {
 	if x != nil {
 		return x.CurrentDefaultBranch
 	}
 	return nil
+}
+
+func (x *GetCurrentDefaultBranchResponse) SetCurrentDefaultBranch(v *RepositoryBranch) {
+	x.CurrentDefaultBranch = v
+}
+
+func (x *GetCurrentDefaultBranchResponse) HasCurrentDefaultBranch() bool {
+	if x == nil {
+		return false
+	}
+	return x.CurrentDefaultBranch != nil
+}
+
+func (x *GetCurrentDefaultBranchResponse) ClearCurrentDefaultBranch() {
+	x.CurrentDefaultBranch = nil
+}
+
+type GetCurrentDefaultBranchResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CurrentDefaultBranch *RepositoryBranch
+}
+
+func (b0 GetCurrentDefaultBranchResponse_builder) Build() *GetCurrentDefaultBranchResponse {
+	m0 := &GetCurrentDefaultBranchResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.CurrentDefaultBranch = b.CurrentDefaultBranch
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_repository_branch_proto protoreflect.FileDescriptor
@@ -782,18 +1128,6 @@ var file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDesc = []byte{
 	0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
 	0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescData = file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_repository_branch_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_repository_branch_proto_msgTypes = make([]protoimpl.MessageInfo, 9)

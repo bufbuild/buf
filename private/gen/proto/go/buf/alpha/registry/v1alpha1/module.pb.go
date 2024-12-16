@@ -18,13 +18,14 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/module.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -38,7 +39,7 @@ const (
 //
 // It does not include a remote.
 type LocalModuleReference struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
 	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
 	// either branch or commit
@@ -72,11 +73,6 @@ func (x *LocalModuleReference) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LocalModuleReference.ProtoReflect.Descriptor instead.
-func (*LocalModuleReference) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_module_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *LocalModuleReference) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -98,11 +94,42 @@ func (x *LocalModuleReference) GetReference() string {
 	return ""
 }
 
+func (x *LocalModuleReference) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *LocalModuleReference) SetRepository(v string) {
+	x.Repository = v
+}
+
+func (x *LocalModuleReference) SetReference(v string) {
+	x.Reference = v
+}
+
+type LocalModuleReference_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Owner      string
+	Repository string
+	// either branch or commit
+	Reference string
+}
+
+func (b0 LocalModuleReference_builder) Build() *LocalModuleReference {
+	m0 := &LocalModuleReference{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
+	return m0
+}
+
 // LocalModulePin is a local module pin.
 //
 // It does not include a remote.
 type LocalModulePin struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
 	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
 	Commit     string                 `protobuf:"bytes,4,opt,name=commit,proto3" json:"commit,omitempty"`
@@ -137,11 +164,6 @@ func (x *LocalModulePin) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LocalModulePin.ProtoReflect.Descriptor instead.
-func (*LocalModulePin) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_module_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *LocalModulePin) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -168,6 +190,43 @@ func (x *LocalModulePin) GetManifestDigest() string {
 		return x.ManifestDigest
 	}
 	return ""
+}
+
+func (x *LocalModulePin) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *LocalModulePin) SetRepository(v string) {
+	x.Repository = v
+}
+
+func (x *LocalModulePin) SetCommit(v string) {
+	x.Commit = v
+}
+
+func (x *LocalModulePin) SetManifestDigest(v string) {
+	x.ManifestDigest = v
+}
+
+type LocalModulePin_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Owner      string
+	Repository string
+	Commit     string
+	// Module's manifest digest. Replacement for previous b1/b3 digests.
+	ManifestDigest string
+}
+
+func (b0 LocalModulePin_builder) Build() *LocalModulePin {
+	m0 := &LocalModulePin{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Commit = b.Commit
+	x.ManifestDigest = b.ManifestDigest
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_module_proto protoreflect.FileDescriptor
@@ -216,18 +275,6 @@ var file_buf_alpha_registry_v1alpha1_module_proto_rawDesc = []byte{
 	0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a,
 	0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_module_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_module_proto_rawDescData = file_buf_alpha_registry_v1alpha1_module_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_module_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_module_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_module_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_module_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_module_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_module_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
