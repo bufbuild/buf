@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/verification_status.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (

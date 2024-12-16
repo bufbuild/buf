@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/reference.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -35,10 +37,18 @@ const (
 )
 
 type Reference struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Reference isReference_Reference  `protobuf_oneof:"reference"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Reference:
+	//
+	//	*Reference_Branch
+	//	*Reference_Tag
+	//	*Reference_Commit
+	//	*Reference_Main
+	//	*Reference_Draft
+	//	*Reference_VcsCommit
+	Reference     isReference_Reference `protobuf_oneof:"reference"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Reference) Reset() {
@@ -66,9 +76,16 @@ func (x *Reference) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *Reference) GetReference() isReference_Reference {
+	if x != nil {
+		return x.Reference
+	}
+	return nil
+}
+
 func (x *Reference) GetBranch() *RepositoryBranch {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Reference.(*reference_Branch); ok {
+		if x, ok := x.Reference.(*Reference_Branch); ok {
 			return x.Branch
 		}
 	}
@@ -77,7 +94,7 @@ func (x *Reference) GetBranch() *RepositoryBranch {
 
 func (x *Reference) GetTag() *RepositoryTag {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Reference.(*reference_Tag); ok {
+		if x, ok := x.Reference.(*Reference_Tag); ok {
 			return x.Tag
 		}
 	}
@@ -86,7 +103,7 @@ func (x *Reference) GetTag() *RepositoryTag {
 
 func (x *Reference) GetCommit() *RepositoryCommit {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Reference.(*reference_Commit); ok {
+		if x, ok := x.Reference.(*Reference_Commit); ok {
 			return x.Commit
 		}
 	}
@@ -95,7 +112,7 @@ func (x *Reference) GetCommit() *RepositoryCommit {
 
 func (x *Reference) GetMain() *RepositoryMainReference {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Reference.(*reference_Main); ok {
+		if x, ok := x.Reference.(*Reference_Main); ok {
 			return x.Main
 		}
 	}
@@ -104,7 +121,7 @@ func (x *Reference) GetMain() *RepositoryMainReference {
 
 func (x *Reference) GetDraft() *RepositoryDraft {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Reference.(*reference_Draft); ok {
+		if x, ok := x.Reference.(*Reference_Draft); ok {
 			return x.Draft
 		}
 	}
@@ -113,7 +130,7 @@ func (x *Reference) GetDraft() *RepositoryDraft {
 
 func (x *Reference) GetVcsCommit() *RepositoryVCSCommit {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Reference.(*reference_VcsCommit); ok {
+		if x, ok := x.Reference.(*Reference_VcsCommit); ok {
 			return x.VcsCommit
 		}
 	}
@@ -122,64 +139,64 @@ func (x *Reference) GetVcsCommit() *RepositoryVCSCommit {
 
 func (x *Reference) SetBranch(v *RepositoryBranch) {
 	if v == nil {
-		x.xxx_hidden_Reference = nil
+		x.Reference = nil
 		return
 	}
-	x.xxx_hidden_Reference = &reference_Branch{v}
+	x.Reference = &Reference_Branch{v}
 }
 
 func (x *Reference) SetTag(v *RepositoryTag) {
 	if v == nil {
-		x.xxx_hidden_Reference = nil
+		x.Reference = nil
 		return
 	}
-	x.xxx_hidden_Reference = &reference_Tag{v}
+	x.Reference = &Reference_Tag{v}
 }
 
 func (x *Reference) SetCommit(v *RepositoryCommit) {
 	if v == nil {
-		x.xxx_hidden_Reference = nil
+		x.Reference = nil
 		return
 	}
-	x.xxx_hidden_Reference = &reference_Commit{v}
+	x.Reference = &Reference_Commit{v}
 }
 
 func (x *Reference) SetMain(v *RepositoryMainReference) {
 	if v == nil {
-		x.xxx_hidden_Reference = nil
+		x.Reference = nil
 		return
 	}
-	x.xxx_hidden_Reference = &reference_Main{v}
+	x.Reference = &Reference_Main{v}
 }
 
 func (x *Reference) SetDraft(v *RepositoryDraft) {
 	if v == nil {
-		x.xxx_hidden_Reference = nil
+		x.Reference = nil
 		return
 	}
-	x.xxx_hidden_Reference = &reference_Draft{v}
+	x.Reference = &Reference_Draft{v}
 }
 
 func (x *Reference) SetVcsCommit(v *RepositoryVCSCommit) {
 	if v == nil {
-		x.xxx_hidden_Reference = nil
+		x.Reference = nil
 		return
 	}
-	x.xxx_hidden_Reference = &reference_VcsCommit{v}
+	x.Reference = &Reference_VcsCommit{v}
 }
 
 func (x *Reference) HasReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Reference != nil
+	return x.Reference != nil
 }
 
 func (x *Reference) HasBranch() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Reference.(*reference_Branch)
+	_, ok := x.Reference.(*Reference_Branch)
 	return ok
 }
 
@@ -187,7 +204,7 @@ func (x *Reference) HasTag() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Reference.(*reference_Tag)
+	_, ok := x.Reference.(*Reference_Tag)
 	return ok
 }
 
@@ -195,7 +212,7 @@ func (x *Reference) HasCommit() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Reference.(*reference_Commit)
+	_, ok := x.Reference.(*Reference_Commit)
 	return ok
 }
 
@@ -203,7 +220,7 @@ func (x *Reference) HasMain() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Reference.(*reference_Main)
+	_, ok := x.Reference.(*Reference_Main)
 	return ok
 }
 
@@ -211,7 +228,7 @@ func (x *Reference) HasDraft() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Reference.(*reference_Draft)
+	_, ok := x.Reference.(*Reference_Draft)
 	return ok
 }
 
@@ -219,47 +236,47 @@ func (x *Reference) HasVcsCommit() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Reference.(*reference_VcsCommit)
+	_, ok := x.Reference.(*Reference_VcsCommit)
 	return ok
 }
 
 func (x *Reference) ClearReference() {
-	x.xxx_hidden_Reference = nil
+	x.Reference = nil
 }
 
 func (x *Reference) ClearBranch() {
-	if _, ok := x.xxx_hidden_Reference.(*reference_Branch); ok {
-		x.xxx_hidden_Reference = nil
+	if _, ok := x.Reference.(*Reference_Branch); ok {
+		x.Reference = nil
 	}
 }
 
 func (x *Reference) ClearTag() {
-	if _, ok := x.xxx_hidden_Reference.(*reference_Tag); ok {
-		x.xxx_hidden_Reference = nil
+	if _, ok := x.Reference.(*Reference_Tag); ok {
+		x.Reference = nil
 	}
 }
 
 func (x *Reference) ClearCommit() {
-	if _, ok := x.xxx_hidden_Reference.(*reference_Commit); ok {
-		x.xxx_hidden_Reference = nil
+	if _, ok := x.Reference.(*Reference_Commit); ok {
+		x.Reference = nil
 	}
 }
 
 func (x *Reference) ClearMain() {
-	if _, ok := x.xxx_hidden_Reference.(*reference_Main); ok {
-		x.xxx_hidden_Reference = nil
+	if _, ok := x.Reference.(*Reference_Main); ok {
+		x.Reference = nil
 	}
 }
 
 func (x *Reference) ClearDraft() {
-	if _, ok := x.xxx_hidden_Reference.(*reference_Draft); ok {
-		x.xxx_hidden_Reference = nil
+	if _, ok := x.Reference.(*Reference_Draft); ok {
+		x.Reference = nil
 	}
 }
 
 func (x *Reference) ClearVcsCommit() {
-	if _, ok := x.xxx_hidden_Reference.(*reference_VcsCommit); ok {
-		x.xxx_hidden_Reference = nil
+	if _, ok := x.Reference.(*Reference_VcsCommit); ok {
+		x.Reference = nil
 	}
 }
 
@@ -275,18 +292,18 @@ func (x *Reference) WhichReference() case_Reference_Reference {
 	if x == nil {
 		return Reference_Reference_not_set_case
 	}
-	switch x.xxx_hidden_Reference.(type) {
-	case *reference_Branch:
+	switch x.Reference.(type) {
+	case *Reference_Branch:
 		return Reference_Branch_case
-	case *reference_Tag:
+	case *Reference_Tag:
 		return Reference_Tag_case
-	case *reference_Commit:
+	case *Reference_Commit:
 		return Reference_Commit_case
-	case *reference_Main:
+	case *Reference_Main:
 		return Reference_Main_case
-	case *reference_Draft:
+	case *Reference_Draft:
 		return Reference_Draft_case
-	case *reference_VcsCommit:
+	case *Reference_VcsCommit:
 		return Reference_VcsCommit_case
 	default:
 		return Reference_Reference_not_set_case
@@ -296,7 +313,7 @@ func (x *Reference) WhichReference() case_Reference_Reference {
 type Reference_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Reference:
+	// Fields of oneof Reference:
 	// The requested reference is a branch.
 	Branch *RepositoryBranch
 	// The requested reference is a tag.
@@ -309,7 +326,7 @@ type Reference_builder struct {
 	Draft *RepositoryDraft
 	// The requested reference is a VCS commit.
 	VcsCommit *RepositoryVCSCommit
-	// -- end of xxx_hidden_Reference
+	// -- end of Reference
 }
 
 func (b0 Reference_builder) Build() *Reference {
@@ -317,22 +334,22 @@ func (b0 Reference_builder) Build() *Reference {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Branch != nil {
-		x.xxx_hidden_Reference = &reference_Branch{b.Branch}
+		x.Reference = &Reference_Branch{b.Branch}
 	}
 	if b.Tag != nil {
-		x.xxx_hidden_Reference = &reference_Tag{b.Tag}
+		x.Reference = &Reference_Tag{b.Tag}
 	}
 	if b.Commit != nil {
-		x.xxx_hidden_Reference = &reference_Commit{b.Commit}
+		x.Reference = &Reference_Commit{b.Commit}
 	}
 	if b.Main != nil {
-		x.xxx_hidden_Reference = &reference_Main{b.Main}
+		x.Reference = &Reference_Main{b.Main}
 	}
 	if b.Draft != nil {
-		x.xxx_hidden_Reference = &reference_Draft{b.Draft}
+		x.Reference = &Reference_Draft{b.Draft}
 	}
 	if b.VcsCommit != nil {
-		x.xxx_hidden_Reference = &reference_VcsCommit{b.VcsCommit}
+		x.Reference = &Reference_VcsCommit{b.VcsCommit}
 	}
 	return m0
 }
@@ -351,54 +368,57 @@ type isReference_Reference interface {
 	isReference_Reference()
 }
 
-type reference_Branch struct {
+type Reference_Branch struct {
 	// The requested reference is a branch.
 	Branch *RepositoryBranch `protobuf:"bytes,1,opt,name=branch,proto3,oneof"`
 }
 
-type reference_Tag struct {
+type Reference_Tag struct {
 	// The requested reference is a tag.
 	Tag *RepositoryTag `protobuf:"bytes,2,opt,name=tag,proto3,oneof"`
 }
 
-type reference_Commit struct {
+type Reference_Commit struct {
 	// The requested reference is a commit.
 	Commit *RepositoryCommit `protobuf:"bytes,3,opt,name=commit,proto3,oneof"`
 }
 
-type reference_Main struct {
+type Reference_Main struct {
 	// The requested reference is the default reference.
 	Main *RepositoryMainReference `protobuf:"bytes,5,opt,name=main,proto3,oneof"`
 }
 
-type reference_Draft struct {
+type Reference_Draft struct {
 	// The requested reference is a draft commit.
 	Draft *RepositoryDraft `protobuf:"bytes,6,opt,name=draft,proto3,oneof"`
 }
 
-type reference_VcsCommit struct {
+type Reference_VcsCommit struct {
 	// The requested reference is a VCS commit.
 	VcsCommit *RepositoryVCSCommit `protobuf:"bytes,7,opt,name=vcs_commit,json=vcsCommit,proto3,oneof"`
 }
 
-func (*reference_Branch) isReference_Reference() {}
+func (*Reference_Branch) isReference_Reference() {}
 
-func (*reference_Tag) isReference_Reference() {}
+func (*Reference_Tag) isReference_Reference() {}
 
-func (*reference_Commit) isReference_Reference() {}
+func (*Reference_Commit) isReference_Reference() {}
 
-func (*reference_Main) isReference_Reference() {}
+func (*Reference_Main) isReference_Reference() {}
 
-func (*reference_Draft) isReference_Reference() {}
+func (*Reference_Draft) isReference_Reference() {}
 
-func (*reference_VcsCommit) isReference_Reference() {}
+func (*Reference_VcsCommit) isReference_Reference() {}
 
 type RepositoryMainReference struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Commit *RepositoryCommit      `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Name is the configured default_branch for the repository (default: 'main').
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The latest commit in this repository. If the repository has no commits,
+	// this will be empty.
+	Commit        *RepositoryCommit `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RepositoryMainReference) Reset() {
@@ -428,35 +448,35 @@ func (x *RepositoryMainReference) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryMainReference) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *RepositoryMainReference) GetCommit() *RepositoryCommit {
 	if x != nil {
-		return x.xxx_hidden_Commit
+		return x.Commit
 	}
 	return nil
 }
 
 func (x *RepositoryMainReference) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *RepositoryMainReference) SetCommit(v *RepositoryCommit) {
-	x.xxx_hidden_Commit = v
+	x.Commit = v
 }
 
 func (x *RepositoryMainReference) HasCommit() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Commit != nil
+	return x.Commit != nil
 }
 
 func (x *RepositoryMainReference) ClearCommit() {
-	x.xxx_hidden_Commit = nil
+	x.Commit = nil
 }
 
 type RepositoryMainReference_builder struct {
@@ -473,17 +493,19 @@ func (b0 RepositoryMainReference_builder) Build() *RepositoryMainReference {
 	m0 := &RepositoryMainReference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Commit = b.Commit
+	x.Name = b.Name
+	x.Commit = b.Commit
 	return m0
 }
 
 type RepositoryDraft struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Commit *RepositoryCommit      `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The name of the draft
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The commit this draft points to.
+	Commit        *RepositoryCommit `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RepositoryDraft) Reset() {
@@ -513,35 +535,35 @@ func (x *RepositoryDraft) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryDraft) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *RepositoryDraft) GetCommit() *RepositoryCommit {
 	if x != nil {
-		return x.xxx_hidden_Commit
+		return x.Commit
 	}
 	return nil
 }
 
 func (x *RepositoryDraft) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *RepositoryDraft) SetCommit(v *RepositoryCommit) {
-	x.xxx_hidden_Commit = v
+	x.Commit = v
 }
 
 func (x *RepositoryDraft) HasCommit() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Commit != nil
+	return x.Commit != nil
 }
 
 func (x *RepositoryDraft) ClearCommit() {
-	x.xxx_hidden_Commit = nil
+	x.Commit = nil
 }
 
 type RepositoryDraft_builder struct {
@@ -557,19 +579,23 @@ func (b0 RepositoryDraft_builder) Build() *RepositoryDraft {
 	m0 := &RepositoryDraft{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Commit = b.Commit
+	x.Name = b.Name
+	x.Commit = b.Commit
 	return m0
 }
 
 type RepositoryVCSCommit struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	xxx_hidden_Name       string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_CommitName string                 `protobuf:"bytes,4,opt,name=commit_name,json=commitName,proto3" json:"commit_name,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// primary key, unique.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// immutable
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	// The name of the VCS commit, e.g. for Git, it would be the Git hash.
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// The name of the BSR commit this VCS commit belongs to.
+	CommitName    string `protobuf:"bytes,4,opt,name=commit_name,json=commitName,proto3" json:"commit_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RepositoryVCSCommit) Reset() {
@@ -599,57 +625,57 @@ func (x *RepositoryVCSCommit) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryVCSCommit) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *RepositoryVCSCommit) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreateTime
+		return x.CreateTime
 	}
 	return nil
 }
 
 func (x *RepositoryVCSCommit) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *RepositoryVCSCommit) GetCommitName() string {
 	if x != nil {
-		return x.xxx_hidden_CommitName
+		return x.CommitName
 	}
 	return ""
 }
 
 func (x *RepositoryVCSCommit) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *RepositoryVCSCommit) SetCreateTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreateTime = v
+	x.CreateTime = v
 }
 
 func (x *RepositoryVCSCommit) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *RepositoryVCSCommit) SetCommitName(v string) {
-	x.xxx_hidden_CommitName = v
+	x.CommitName = v
 }
 
 func (x *RepositoryVCSCommit) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreateTime != nil
+	return x.CreateTime != nil
 }
 
 func (x *RepositoryVCSCommit) ClearCreateTime() {
-	x.xxx_hidden_CreateTime = nil
+	x.CreateTime = nil
 }
 
 type RepositoryVCSCommit_builder struct {
@@ -669,20 +695,23 @@ func (b0 RepositoryVCSCommit_builder) Build() *RepositoryVCSCommit {
 	m0 := &RepositoryVCSCommit{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_CreateTime = b.CreateTime
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_CommitName = b.CommitName
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.Name = b.Name
+	x.CommitName = b.CommitName
 	return m0
 }
 
 type GetReferenceByNameRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Owner          string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_RepositoryName string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Optional name (if unspecified, will use the repository's default_branch).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Owner of the repository the reference belongs to.
+	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Name of the repository the reference belongs to.
+	RepositoryName string `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetReferenceByNameRequest) Reset() {
@@ -712,35 +741,35 @@ func (x *GetReferenceByNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetReferenceByNameRequest) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *GetReferenceByNameRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetReferenceByNameRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryName
+		return x.RepositoryName
 	}
 	return ""
 }
 
 func (x *GetReferenceByNameRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *GetReferenceByNameRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetReferenceByNameRequest) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
+	x.RepositoryName = v
 }
 
 type GetReferenceByNameRequest_builder struct {
@@ -758,17 +787,17 @@ func (b0 GetReferenceByNameRequest_builder) Build() *GetReferenceByNameRequest {
 	m0 := &GetReferenceByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.Name = b.Name
+	x.Owner = b.Owner
+	x.RepositoryName = b.RepositoryName
 	return m0
 }
 
 type GetReferenceByNameResponse struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Reference *Reference             `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Reference     *Reference             `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetReferenceByNameResponse) Reset() {
@@ -798,24 +827,24 @@ func (x *GetReferenceByNameResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetReferenceByNameResponse) GetReference() *Reference {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return nil
 }
 
 func (x *GetReferenceByNameResponse) SetReference(v *Reference) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 func (x *GetReferenceByNameResponse) HasReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Reference != nil
+	return x.Reference != nil
 }
 
 func (x *GetReferenceByNameResponse) ClearReference() {
-	x.xxx_hidden_Reference = nil
+	x.Reference = nil
 }
 
 type GetReferenceByNameResponse_builder struct {
@@ -828,7 +857,7 @@ func (b0 GetReferenceByNameResponse_builder) Build() *GetReferenceByNameResponse
 	m0 := &GetReferenceByNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Reference = b.Reference
+	x.Reference = b.Reference
 	return m0
 }
 
@@ -991,12 +1020,12 @@ func file_buf_alpha_registry_v1alpha1_reference_proto_init() {
 	file_buf_alpha_registry_v1alpha1_repository_commit_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_tag_proto_init()
 	file_buf_alpha_registry_v1alpha1_reference_proto_msgTypes[0].OneofWrappers = []any{
-		(*reference_Branch)(nil),
-		(*reference_Tag)(nil),
-		(*reference_Commit)(nil),
-		(*reference_Main)(nil),
-		(*reference_Draft)(nil),
-		(*reference_VcsCommit)(nil),
+		(*Reference_Branch)(nil),
+		(*Reference_Tag)(nil),
+		(*Reference_Commit)(nil),
+		(*Reference_Main)(nil),
+		(*Reference_Draft)(nil),
+		(*Reference_VcsCommit)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

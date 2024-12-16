@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/user.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -126,18 +128,28 @@ func (x UserType) Number() protoreflect.EnumNumber {
 }
 
 type User struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_CreateTime         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	xxx_hidden_UpdateTime         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	xxx_hidden_Username           string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
-	xxx_hidden_Deactivated        bool                   `protobuf:"varint,5,opt,name=deactivated,proto3" json:"deactivated,omitempty"`
-	xxx_hidden_Description        string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
-	xxx_hidden_Url                string                 `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
-	xxx_hidden_VerificationStatus VerificationStatus     `protobuf:"varint,8,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
-	xxx_hidden_UserType           UserType               `protobuf:"varint,9,opt,name=user_type,json=userType,proto3,enum=buf.alpha.registry.v1alpha1.UserType" json:"user_type,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// primary key, unique, immutable
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// immutable
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	// mutable
+	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	// unique, mutable
+	Username string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	// mutable
+	Deactivated bool `protobuf:"varint,5,opt,name=deactivated,proto3" json:"deactivated,omitempty"`
+	// description is the user configurable description of the user.
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	// url is the user configurable URL in the description of the user,
+	// always included the scheme and will not have a #fragment suffix.
+	Url string `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
+	// verification status of the user, configurable by server admin.
+	VerificationStatus VerificationStatus `protobuf:"varint,8,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
+	// user type of the user, depends on how the user was created.
+	UserType      UserType `protobuf:"varint,9,opt,name=user_type,json=userType,proto3,enum=buf.alpha.registry.v1alpha1.UserType" json:"user_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
@@ -167,123 +179,123 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 func (x *User) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *User) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreateTime
+		return x.CreateTime
 	}
 	return nil
 }
 
 func (x *User) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_UpdateTime
+		return x.UpdateTime
 	}
 	return nil
 }
 
 func (x *User) GetUsername() string {
 	if x != nil {
-		return x.xxx_hidden_Username
+		return x.Username
 	}
 	return ""
 }
 
 func (x *User) GetDeactivated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deactivated
+		return x.Deactivated
 	}
 	return false
 }
 
 func (x *User) GetDescription() string {
 	if x != nil {
-		return x.xxx_hidden_Description
+		return x.Description
 	}
 	return ""
 }
 
 func (x *User) GetUrl() string {
 	if x != nil {
-		return x.xxx_hidden_Url
+		return x.Url
 	}
 	return ""
 }
 
 func (x *User) GetVerificationStatus() VerificationStatus {
 	if x != nil {
-		return x.xxx_hidden_VerificationStatus
+		return x.VerificationStatus
 	}
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 func (x *User) GetUserType() UserType {
 	if x != nil {
-		return x.xxx_hidden_UserType
+		return x.UserType
 	}
 	return UserType_USER_TYPE_UNSPECIFIED
 }
 
 func (x *User) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *User) SetCreateTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreateTime = v
+	x.CreateTime = v
 }
 
 func (x *User) SetUpdateTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_UpdateTime = v
+	x.UpdateTime = v
 }
 
 func (x *User) SetUsername(v string) {
-	x.xxx_hidden_Username = v
+	x.Username = v
 }
 
 func (x *User) SetDeactivated(v bool) {
-	x.xxx_hidden_Deactivated = v
+	x.Deactivated = v
 }
 
 func (x *User) SetDescription(v string) {
-	x.xxx_hidden_Description = v
+	x.Description = v
 }
 
 func (x *User) SetUrl(v string) {
-	x.xxx_hidden_Url = v
+	x.Url = v
 }
 
 func (x *User) SetVerificationStatus(v VerificationStatus) {
-	x.xxx_hidden_VerificationStatus = v
+	x.VerificationStatus = v
 }
 
 func (x *User) SetUserType(v UserType) {
-	x.xxx_hidden_UserType = v
+	x.UserType = v
 }
 
 func (x *User) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreateTime != nil
+	return x.CreateTime != nil
 }
 
 func (x *User) HasUpdateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UpdateTime != nil
+	return x.UpdateTime != nil
 }
 
 func (x *User) ClearCreateTime() {
-	x.xxx_hidden_CreateTime = nil
+	x.CreateTime = nil
 }
 
 func (x *User) ClearUpdateTime() {
-	x.xxx_hidden_UpdateTime = nil
+	x.UpdateTime = nil
 }
 
 type User_builder struct {
@@ -314,27 +326,30 @@ func (b0 User_builder) Build() *User {
 	m0 := &User{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_CreateTime = b.CreateTime
-	x.xxx_hidden_UpdateTime = b.UpdateTime
-	x.xxx_hidden_Username = b.Username
-	x.xxx_hidden_Deactivated = b.Deactivated
-	x.xxx_hidden_Description = b.Description
-	x.xxx_hidden_Url = b.Url
-	x.xxx_hidden_VerificationStatus = b.VerificationStatus
-	x.xxx_hidden_UserType = b.UserType
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.UpdateTime = b.UpdateTime
+	x.Username = b.Username
+	x.Deactivated = b.Deactivated
+	x.Description = b.Description
+	x.Url = b.Url
+	x.VerificationStatus = b.VerificationStatus
+	x.UserType = b.UserType
 	return m0
 }
 
 // TODO: #663 move this to organization service
 type OrganizationUser struct {
-	state                             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User                   *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	xxx_hidden_OrganizationId         string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	xxx_hidden_OrganizationRole       OrganizationRole       `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
-	xxx_hidden_OrganizationRoleSource OrganizationRoleSource `protobuf:"varint,4,opt,name=organization_role_source,json=organizationRoleSource,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRoleSource" json:"organization_role_source,omitempty"`
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	User  *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	// The ID of the organization for which the role belongs to.
+	OrganizationId string `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	// The role that the user has in the organization above.
+	OrganizationRole OrganizationRole `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	// The source of the user's role in the organization above.
+	OrganizationRoleSource OrganizationRoleSource `protobuf:"varint,4,opt,name=organization_role_source,json=organizationRoleSource,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRoleSource" json:"organization_role_source,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *OrganizationUser) Reset() {
@@ -364,57 +379,57 @@ func (x *OrganizationUser) ProtoReflect() protoreflect.Message {
 
 func (x *OrganizationUser) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *OrganizationUser) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *OrganizationUser) GetOrganizationRole() OrganizationRole {
 	if x != nil {
-		return x.xxx_hidden_OrganizationRole
+		return x.OrganizationRole
 	}
 	return OrganizationRole_ORGANIZATION_ROLE_UNSPECIFIED
 }
 
 func (x *OrganizationUser) GetOrganizationRoleSource() OrganizationRoleSource {
 	if x != nil {
-		return x.xxx_hidden_OrganizationRoleSource
+		return x.OrganizationRoleSource
 	}
 	return OrganizationRoleSource_ORGANIZATION_ROLE_SOURCE_UNSPECIFIED
 }
 
 func (x *OrganizationUser) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *OrganizationUser) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 func (x *OrganizationUser) SetOrganizationRole(v OrganizationRole) {
-	x.xxx_hidden_OrganizationRole = v
+	x.OrganizationRole = v
 }
 
 func (x *OrganizationUser) SetOrganizationRoleSource(v OrganizationRoleSource) {
-	x.xxx_hidden_OrganizationRoleSource = v
+	x.OrganizationRoleSource = v
 }
 
 func (x *OrganizationUser) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *OrganizationUser) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type OrganizationUser_builder struct {
@@ -433,10 +448,10 @@ func (b0 OrganizationUser_builder) Build() *OrganizationUser {
 	m0 := &OrganizationUser{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
-	x.xxx_hidden_OrganizationId = b.OrganizationId
-	x.xxx_hidden_OrganizationRole = b.OrganizationRole
-	x.xxx_hidden_OrganizationRoleSource = b.OrganizationRoleSource
+	x.User = b.User
+	x.OrganizationId = b.OrganizationId
+	x.OrganizationRole = b.OrganizationRole
+	x.OrganizationRoleSource = b.OrganizationRoleSource
 	return m0
 }
 
@@ -445,11 +460,13 @@ func (b0 OrganizationUser_builder) Build() *OrganizationUser {
 // These preferences are stored in the database so the language and plugins
 // are pre-selected when the user navigates back to the Generated SDKs page from any device or browser.
 type UserPluginPreference struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SelectedLanguage PluginLanguage         `protobuf:"varint,2,opt,name=selected_language,json=selectedLanguage,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"selected_language,omitempty"`
-	xxx_hidden_SelectedPlugins  []string               `protobuf:"bytes,3,rep,name=selected_plugins,json=selectedPlugins,proto3" json:"selected_plugins,omitempty"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The language that the user has indicidated as their preferred language for plugins.
+	SelectedLanguage PluginLanguage `protobuf:"varint,2,opt,name=selected_language,json=selectedLanguage,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"selected_language,omitempty"`
+	// A list of plugin names selected by the user.
+	SelectedPlugins []string `protobuf:"bytes,3,rep,name=selected_plugins,json=selectedPlugins,proto3" json:"selected_plugins,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UserPluginPreference) Reset() {
@@ -479,24 +496,24 @@ func (x *UserPluginPreference) ProtoReflect() protoreflect.Message {
 
 func (x *UserPluginPreference) GetSelectedLanguage() PluginLanguage {
 	if x != nil {
-		return x.xxx_hidden_SelectedLanguage
+		return x.SelectedLanguage
 	}
 	return PluginLanguage_PLUGIN_LANGUAGE_UNSPECIFIED
 }
 
 func (x *UserPluginPreference) GetSelectedPlugins() []string {
 	if x != nil {
-		return x.xxx_hidden_SelectedPlugins
+		return x.SelectedPlugins
 	}
 	return nil
 }
 
 func (x *UserPluginPreference) SetSelectedLanguage(v PluginLanguage) {
-	x.xxx_hidden_SelectedLanguage = v
+	x.SelectedLanguage = v
 }
 
 func (x *UserPluginPreference) SetSelectedPlugins(v []string) {
-	x.xxx_hidden_SelectedPlugins = v
+	x.SelectedPlugins = v
 }
 
 type UserPluginPreference_builder struct {
@@ -512,16 +529,16 @@ func (b0 UserPluginPreference_builder) Build() *UserPluginPreference {
 	m0 := &UserPluginPreference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SelectedLanguage = b.SelectedLanguage
-	x.xxx_hidden_SelectedPlugins = b.SelectedPlugins
+	x.SelectedLanguage = b.SelectedLanguage
+	x.SelectedPlugins = b.SelectedPlugins
 	return m0
 }
 
 type CreateUserRequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Username string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateUserRequest) Reset() {
@@ -551,13 +568,13 @@ func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateUserRequest) GetUsername() string {
 	if x != nil {
-		return x.xxx_hidden_Username
+		return x.Username
 	}
 	return ""
 }
 
 func (x *CreateUserRequest) SetUsername(v string) {
-	x.xxx_hidden_Username = v
+	x.Username = v
 }
 
 type CreateUserRequest_builder struct {
@@ -570,15 +587,15 @@ func (b0 CreateUserRequest_builder) Build() *CreateUserRequest {
 	m0 := &CreateUserRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Username = b.Username
+	x.Username = b.Username
 	return m0
 }
 
 type CreateUserResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateUserResponse) Reset() {
@@ -608,24 +625,24 @@ func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateUserResponse) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *CreateUserResponse) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *CreateUserResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *CreateUserResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type CreateUserResponse_builder struct {
@@ -638,13 +655,13 @@ func (b0 CreateUserResponse_builder) Build() *CreateUserResponse {
 	m0 := &CreateUserResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
+	x.User = b.User
 	return m0
 }
 
 type GetUserRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -676,13 +693,13 @@ func (x *GetUserRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserRequest) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GetUserRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 type GetUserRequest_builder struct {
@@ -695,15 +712,15 @@ func (b0 GetUserRequest_builder) Build() *GetUserRequest {
 	m0 := &GetUserRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
+	x.Id = b.Id
 	return m0
 }
 
 type GetUserResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserResponse) Reset() {
@@ -733,24 +750,24 @@ func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserResponse) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *GetUserResponse) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *GetUserResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *GetUserResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type GetUserResponse_builder struct {
@@ -763,15 +780,15 @@ func (b0 GetUserResponse_builder) Build() *GetUserResponse {
 	m0 := &GetUserResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
+	x.User = b.User
 	return m0
 }
 
 type GetUserByUsernameRequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Username string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserByUsernameRequest) Reset() {
@@ -801,13 +818,13 @@ func (x *GetUserByUsernameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserByUsernameRequest) GetUsername() string {
 	if x != nil {
-		return x.xxx_hidden_Username
+		return x.Username
 	}
 	return ""
 }
 
 func (x *GetUserByUsernameRequest) SetUsername(v string) {
-	x.xxx_hidden_Username = v
+	x.Username = v
 }
 
 type GetUserByUsernameRequest_builder struct {
@@ -820,15 +837,15 @@ func (b0 GetUserByUsernameRequest_builder) Build() *GetUserByUsernameRequest {
 	m0 := &GetUserByUsernameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Username = b.Username
+	x.Username = b.Username
 	return m0
 }
 
 type GetUserByUsernameResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserByUsernameResponse) Reset() {
@@ -858,24 +875,24 @@ func (x *GetUserByUsernameResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserByUsernameResponse) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *GetUserByUsernameResponse) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *GetUserByUsernameResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *GetUserByUsernameResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type GetUserByUsernameResponse_builder struct {
@@ -888,19 +905,22 @@ func (b0 GetUserByUsernameResponse_builder) Build() *GetUserByUsernameResponse {
 	m0 := &GetUserByUsernameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
+	x.User = b.User
 	return m0
 }
 
 type ListUsersRequest struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PageSize        uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken       string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse         bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	xxx_hidden_UserStateFilter UserState              `protobuf:"varint,4,opt,name=user_state_filter,json=userStateFilter,proto3,enum=buf.alpha.registry.v1alpha1.UserState" json:"user_state_filter,omitempty"`
-	xxx_hidden_UserTypeFilters []UserType             `protobuf:"varint,5,rep,packed,name=user_type_filters,json=userTypeFilters,proto3,enum=buf.alpha.registry.v1alpha1.UserType" json:"user_type_filters,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// If the user_state_filter is unspecified, users of all states are included.
+	UserStateFilter UserState `protobuf:"varint,4,opt,name=user_state_filter,json=userStateFilter,proto3,enum=buf.alpha.registry.v1alpha1.UserState" json:"user_state_filter,omitempty"`
+	// If the user_type_filters is empty, users of all types are included.
+	UserTypeFilters []UserType `protobuf:"varint,5,rep,packed,name=user_type_filters,json=userTypeFilters,proto3,enum=buf.alpha.registry.v1alpha1.UserType" json:"user_type_filters,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListUsersRequest) Reset() {
@@ -930,57 +950,57 @@ func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListUsersRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListUsersRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListUsersRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListUsersRequest) GetUserStateFilter() UserState {
 	if x != nil {
-		return x.xxx_hidden_UserStateFilter
+		return x.UserStateFilter
 	}
 	return UserState_USER_STATE_UNSPECIFIED
 }
 
 func (x *ListUsersRequest) GetUserTypeFilters() []UserType {
 	if x != nil {
-		return x.xxx_hidden_UserTypeFilters
+		return x.UserTypeFilters
 	}
 	return nil
 }
 
 func (x *ListUsersRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListUsersRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListUsersRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 func (x *ListUsersRequest) SetUserStateFilter(v UserState) {
-	x.xxx_hidden_UserStateFilter = v
+	x.UserStateFilter = v
 }
 
 func (x *ListUsersRequest) SetUserTypeFilters(v []UserType) {
-	x.xxx_hidden_UserTypeFilters = v
+	x.UserTypeFilters = v
 }
 
 type ListUsersRequest_builder struct {
@@ -1000,20 +1020,21 @@ func (b0 ListUsersRequest_builder) Build() *ListUsersRequest {
 	m0 := &ListUsersRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
-	x.xxx_hidden_UserStateFilter = b.UserStateFilter
-	x.xxx_hidden_UserTypeFilters = b.UserTypeFilters
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	x.UserStateFilter = b.UserStateFilter
+	x.UserTypeFilters = b.UserTypeFilters
 	return m0
 }
 
 type ListUsersResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Users         *[]*User               `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Users []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListUsersResponse) Reset() {
@@ -1043,26 +1064,24 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListUsersResponse) GetUsers() []*User {
 	if x != nil {
-		if x.xxx_hidden_Users != nil {
-			return *x.xxx_hidden_Users
-		}
+		return x.Users
 	}
 	return nil
 }
 
 func (x *ListUsersResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListUsersResponse) SetUsers(v []*User) {
-	x.xxx_hidden_Users = &v
+	x.Users = v
 }
 
 func (x *ListUsersResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListUsersResponse_builder struct {
@@ -1077,19 +1096,20 @@ func (b0 ListUsersResponse_builder) Build() *ListUsersResponse {
 	m0 := &ListUsersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Users = &b.Users
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Users = b.Users
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type ListOrganizationUsersRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	xxx_hidden_PageSize       uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken      string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse        bool                   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	PageSize       uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListOrganizationUsersRequest) Reset() {
@@ -1119,46 +1139,46 @@ func (x *ListOrganizationUsersRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListOrganizationUsersRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *ListOrganizationUsersRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListOrganizationUsersRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListOrganizationUsersRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListOrganizationUsersRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 func (x *ListOrganizationUsersRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListOrganizationUsersRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListOrganizationUsersRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListOrganizationUsersRequest_builder struct {
@@ -1175,19 +1195,20 @@ func (b0 ListOrganizationUsersRequest_builder) Build() *ListOrganizationUsersReq
 	m0 := &ListOrganizationUsersRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.OrganizationId = b.OrganizationId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListOrganizationUsersResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Users         *[]*OrganizationUser   `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Users []*OrganizationUser    `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListOrganizationUsersResponse) Reset() {
@@ -1217,26 +1238,24 @@ func (x *ListOrganizationUsersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListOrganizationUsersResponse) GetUsers() []*OrganizationUser {
 	if x != nil {
-		if x.xxx_hidden_Users != nil {
-			return *x.xxx_hidden_Users
-		}
+		return x.Users
 	}
 	return nil
 }
 
 func (x *ListOrganizationUsersResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListOrganizationUsersResponse) SetUsers(v []*OrganizationUser) {
-	x.xxx_hidden_Users = &v
+	x.Users = v
 }
 
 func (x *ListOrganizationUsersResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListOrganizationUsersResponse_builder struct {
@@ -1251,13 +1270,13 @@ func (b0 ListOrganizationUsersResponse_builder) Build() *ListOrganizationUsersRe
 	m0 := &ListOrganizationUsersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Users = &b.Users
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Users = b.Users
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type DeleteUserRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1300,7 +1319,7 @@ func (b0 DeleteUserRequest_builder) Build() *DeleteUserRequest {
 }
 
 type DeleteUserResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1343,8 +1362,8 @@ func (b0 DeleteUserResponse_builder) Build() *DeleteUserResponse {
 }
 
 type DeactivateUserRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1376,13 +1395,13 @@ func (x *DeactivateUserRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeactivateUserRequest) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DeactivateUserRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 type DeactivateUserRequest_builder struct {
@@ -1395,12 +1414,12 @@ func (b0 DeactivateUserRequest_builder) Build() *DeactivateUserRequest {
 	m0 := &DeactivateUserRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
+	x.Id = b.Id
 	return m0
 }
 
 type DeactivateUserResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1443,11 +1462,13 @@ func (b0 DeactivateUserResponse_builder) Build() *DeactivateUserResponse {
 }
 
 type UpdateUserServerRoleRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId     string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	xxx_hidden_ServerRole ServerRole             `protobuf:"varint,2,opt,name=server_role,json=serverRole,proto3,enum=buf.alpha.registry.v1alpha1.ServerRole" json:"server_role,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the user for which to be updated a role.
+	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// The new role of the user in the server.
+	ServerRole    ServerRole `protobuf:"varint,2,opt,name=server_role,json=serverRole,proto3,enum=buf.alpha.registry.v1alpha1.ServerRole" json:"server_role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateUserServerRoleRequest) Reset() {
@@ -1477,24 +1498,24 @@ func (x *UpdateUserServerRoleRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateUserServerRoleRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *UpdateUserServerRoleRequest) GetServerRole() ServerRole {
 	if x != nil {
-		return x.xxx_hidden_ServerRole
+		return x.ServerRole
 	}
 	return ServerRole_SERVER_ROLE_UNSPECIFIED
 }
 
 func (x *UpdateUserServerRoleRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 func (x *UpdateUserServerRoleRequest) SetServerRole(v ServerRole) {
-	x.xxx_hidden_ServerRole = v
+	x.ServerRole = v
 }
 
 type UpdateUserServerRoleRequest_builder struct {
@@ -1510,13 +1531,13 @@ func (b0 UpdateUserServerRoleRequest_builder) Build() *UpdateUserServerRoleReque
 	m0 := &UpdateUserServerRoleRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
-	x.xxx_hidden_ServerRole = b.ServerRole
+	x.UserId = b.UserId
+	x.ServerRole = b.ServerRole
 	return m0
 }
 
 type UpdateUserServerRoleResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1559,10 +1580,11 @@ func (b0 UpdateUserServerRoleResponse_builder) Build() *UpdateUserServerRoleResp
 }
 
 type CountUsersRequest struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserStateFilter UserState              `protobuf:"varint,1,opt,name=user_state_filter,json=userStateFilter,proto3,enum=buf.alpha.registry.v1alpha1.UserState" json:"user_state_filter,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// If the user_state_filter is unspecified, all users are included.
+	UserStateFilter UserState `protobuf:"varint,1,opt,name=user_state_filter,json=userStateFilter,proto3,enum=buf.alpha.registry.v1alpha1.UserState" json:"user_state_filter,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CountUsersRequest) Reset() {
@@ -1592,13 +1614,13 @@ func (x *CountUsersRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CountUsersRequest) GetUserStateFilter() UserState {
 	if x != nil {
-		return x.xxx_hidden_UserStateFilter
+		return x.UserStateFilter
 	}
 	return UserState_USER_STATE_UNSPECIFIED
 }
 
 func (x *CountUsersRequest) SetUserStateFilter(v UserState) {
-	x.xxx_hidden_UserStateFilter = v
+	x.UserStateFilter = v
 }
 
 type CountUsersRequest_builder struct {
@@ -1612,15 +1634,15 @@ func (b0 CountUsersRequest_builder) Build() *CountUsersRequest {
 	m0 := &CountUsersRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserStateFilter = b.UserStateFilter
+	x.UserStateFilter = b.UserStateFilter
 	return m0
 }
 
 type CountUsersResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_TotalCount uint32                 `protobuf:"varint,1,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	TotalCount    uint32                 `protobuf:"varint,1,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CountUsersResponse) Reset() {
@@ -1650,13 +1672,13 @@ func (x *CountUsersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CountUsersResponse) GetTotalCount() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TotalCount
+		return x.TotalCount
 	}
 	return 0
 }
 
 func (x *CountUsersResponse) SetTotalCount(v uint32) {
-	x.xxx_hidden_TotalCount = v
+	x.TotalCount = v
 }
 
 type CountUsersResponse_builder struct {
@@ -1669,19 +1691,19 @@ func (b0 CountUsersResponse_builder) Build() *CountUsersResponse {
 	m0 := &CountUsersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_TotalCount = b.TotalCount
+	x.TotalCount = b.TotalCount
 	return m0
 }
 
 type UpdateUserSettingsRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId      string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	xxx_hidden_Description *string                `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	xxx_hidden_Url         *string                `protobuf:"bytes,3,opt,name=url,proto3,oneof" json:"url,omitempty"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"hybrid.v1"`
+	UserId string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// optional, update to description will only be made when this is present
+	Description *string `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	// optional, update to url will only be made when this is present
+	Url           *string `protobuf:"bytes,3,opt,name=url,proto3,oneof" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateUserSettingsRequest) Reset() {
@@ -1711,67 +1733,57 @@ func (x *UpdateUserSettingsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateUserSettingsRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *UpdateUserSettingsRequest) GetDescription() string {
-	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+	if x != nil && x.Description != nil {
+		return *x.Description
 	}
 	return ""
 }
 
 func (x *UpdateUserSettingsRequest) GetUrl() string {
-	if x != nil {
-		if x.xxx_hidden_Url != nil {
-			return *x.xxx_hidden_Url
-		}
-		return ""
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
 
 func (x *UpdateUserSettingsRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 func (x *UpdateUserSettingsRequest) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Description = &v
 }
 
 func (x *UpdateUserSettingsRequest) SetUrl(v string) {
-	x.xxx_hidden_Url = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	x.Url = &v
 }
 
 func (x *UpdateUserSettingsRequest) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Description != nil
 }
 
 func (x *UpdateUserSettingsRequest) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.Url != nil
 }
 
 func (x *UpdateUserSettingsRequest) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Description = nil
+	x.Description = nil
 }
 
 func (x *UpdateUserSettingsRequest) ClearUrl() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Url = nil
+	x.Url = nil
 }
 
 type UpdateUserSettingsRequest_builder struct {
@@ -1788,20 +1800,14 @@ func (b0 UpdateUserSettingsRequest_builder) Build() *UpdateUserSettingsRequest {
 	m0 := &UpdateUserSettingsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Url != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Url = b.Url
-	}
+	x.UserId = b.UserId
+	x.Description = b.Description
+	x.Url = b.Url
 	return m0
 }
 
 type UpdateUserSettingsResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1844,7 +1850,7 @@ func (b0 UpdateUserSettingsResponse_builder) Build() *UpdateUserSettingsResponse
 }
 
 type GetUserPluginPreferencesRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1887,10 +1893,10 @@ func (b0 GetUserPluginPreferencesRequest_builder) Build() *GetUserPluginPreferen
 }
 
 type GetUserPluginPreferencesResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Preference *UserPluginPreference  `protobuf:"bytes,1,opt,name=preference,proto3" json:"preference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Preference    *UserPluginPreference  `protobuf:"bytes,1,opt,name=preference,proto3" json:"preference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserPluginPreferencesResponse) Reset() {
@@ -1920,24 +1926,24 @@ func (x *GetUserPluginPreferencesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserPluginPreferencesResponse) GetPreference() *UserPluginPreference {
 	if x != nil {
-		return x.xxx_hidden_Preference
+		return x.Preference
 	}
 	return nil
 }
 
 func (x *GetUserPluginPreferencesResponse) SetPreference(v *UserPluginPreference) {
-	x.xxx_hidden_Preference = v
+	x.Preference = v
 }
 
 func (x *GetUserPluginPreferencesResponse) HasPreference() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Preference != nil
+	return x.Preference != nil
 }
 
 func (x *GetUserPluginPreferencesResponse) ClearPreference() {
-	x.xxx_hidden_Preference = nil
+	x.Preference = nil
 }
 
 type GetUserPluginPreferencesResponse_builder struct {
@@ -1950,15 +1956,15 @@ func (b0 GetUserPluginPreferencesResponse_builder) Build() *GetUserPluginPrefere
 	m0 := &GetUserPluginPreferencesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Preference = b.Preference
+	x.Preference = b.Preference
 	return m0
 }
 
 type UpdateUserPluginPreferencesRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Preference *UserPluginPreference  `protobuf:"bytes,1,opt,name=preference,proto3" json:"preference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Preference    *UserPluginPreference  `protobuf:"bytes,1,opt,name=preference,proto3" json:"preference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateUserPluginPreferencesRequest) Reset() {
@@ -1988,24 +1994,24 @@ func (x *UpdateUserPluginPreferencesRequest) ProtoReflect() protoreflect.Message
 
 func (x *UpdateUserPluginPreferencesRequest) GetPreference() *UserPluginPreference {
 	if x != nil {
-		return x.xxx_hidden_Preference
+		return x.Preference
 	}
 	return nil
 }
 
 func (x *UpdateUserPluginPreferencesRequest) SetPreference(v *UserPluginPreference) {
-	x.xxx_hidden_Preference = v
+	x.Preference = v
 }
 
 func (x *UpdateUserPluginPreferencesRequest) HasPreference() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Preference != nil
+	return x.Preference != nil
 }
 
 func (x *UpdateUserPluginPreferencesRequest) ClearPreference() {
-	x.xxx_hidden_Preference = nil
+	x.Preference = nil
 }
 
 type UpdateUserPluginPreferencesRequest_builder struct {
@@ -2018,15 +2024,15 @@ func (b0 UpdateUserPluginPreferencesRequest_builder) Build() *UpdateUserPluginPr
 	m0 := &UpdateUserPluginPreferencesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Preference = b.Preference
+	x.Preference = b.Preference
 	return m0
 }
 
 type UpdateUserPluginPreferencesResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Preference *UserPluginPreference  `protobuf:"bytes,1,opt,name=preference,proto3" json:"preference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Preference    *UserPluginPreference  `protobuf:"bytes,1,opt,name=preference,proto3" json:"preference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateUserPluginPreferencesResponse) Reset() {
@@ -2056,24 +2062,24 @@ func (x *UpdateUserPluginPreferencesResponse) ProtoReflect() protoreflect.Messag
 
 func (x *UpdateUserPluginPreferencesResponse) GetPreference() *UserPluginPreference {
 	if x != nil {
-		return x.xxx_hidden_Preference
+		return x.Preference
 	}
 	return nil
 }
 
 func (x *UpdateUserPluginPreferencesResponse) SetPreference(v *UserPluginPreference) {
-	x.xxx_hidden_Preference = v
+	x.Preference = v
 }
 
 func (x *UpdateUserPluginPreferencesResponse) HasPreference() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Preference != nil
+	return x.Preference != nil
 }
 
 func (x *UpdateUserPluginPreferencesResponse) ClearPreference() {
-	x.xxx_hidden_Preference = nil
+	x.Preference = nil
 }
 
 type UpdateUserPluginPreferencesResponse_builder struct {
@@ -2086,7 +2092,7 @@ func (b0 UpdateUserPluginPreferencesResponse_builder) Build() *UpdateUserPluginP
 	m0 := &UpdateUserPluginPreferencesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Preference = b.Preference
+	x.Preference = b.Preference
 	return m0
 }
 

@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/repository.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -79,21 +81,39 @@ func (x Visibility) Number() protoreflect.EnumNumber {
 }
 
 type Repository struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_CreateTime         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	xxx_hidden_UpdateTime         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	xxx_hidden_Name               string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Owner              isRepository_Owner     `protobuf_oneof:"owner"`
-	xxx_hidden_Visibility         Visibility             `protobuf:"varint,7,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
-	xxx_hidden_Deprecated         bool                   `protobuf:"varint,8,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	xxx_hidden_DeprecationMessage string                 `protobuf:"bytes,9,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
-	xxx_hidden_OwnerName          string                 `protobuf:"bytes,10,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	xxx_hidden_Description        string                 `protobuf:"bytes,11,opt,name=description,proto3" json:"description,omitempty"`
-	xxx_hidden_Url                string                 `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
-	xxx_hidden_DefaultBranch      string                 `protobuf:"bytes,13,opt,name=default_branch,json=defaultBranch,proto3" json:"default_branch,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// primary key, unique, immutable
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// immutable
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	// mutable
+	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	// unique, mutable
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	// Types that are valid to be assigned to Owner:
+	//
+	//	*Repository_UserId
+	//	*Repository_OrganizationId
+	Owner      isRepository_Owner `protobuf_oneof:"owner"`
+	Visibility Visibility         `protobuf:"varint,7,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
+	// deprecated means this repository is deprecated.
+	Deprecated bool `protobuf:"varint,8,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	// deprecation_message is the message shown if the repository is deprecated.
+	DeprecationMessage string `protobuf:"bytes,9,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
+	// owner_name is the name of the owner of the repository,
+	// either a username or organization name.
+	OwnerName string `protobuf:"bytes,10,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	// description is the user configurable description of the repository.
+	Description string `protobuf:"bytes,11,opt,name=description,proto3" json:"description,omitempty"`
+	// url is the user configurable URL in the description of the repository,
+	// always included the scheme and will not have a #fragment suffix.
+	Url string `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
+	// default_branch in a BSR repository. It is used when syncing a git repository, to make sure both
+	// default branches (BSR and Git) are in sync. By default, every BSR repository is created with a
+	// "main" default branch.
+	DefaultBranch string `protobuf:"bytes,13,opt,name=default_branch,json=defaultBranch,proto3" json:"default_branch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Repository) Reset() {
@@ -123,35 +143,42 @@ func (x *Repository) ProtoReflect() protoreflect.Message {
 
 func (x *Repository) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Repository) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreateTime
+		return x.CreateTime
 	}
 	return nil
 }
 
 func (x *Repository) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_UpdateTime
+		return x.UpdateTime
 	}
 	return nil
 }
 
 func (x *Repository) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
+func (x *Repository) GetOwner() isRepository_Owner {
+	if x != nil {
+		return x.Owner
+	}
+	return nil
+}
+
 func (x *Repository) GetUserId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Owner.(*repository_UserId); ok {
+		if x, ok := x.Owner.(*Repository_UserId); ok {
 			return x.UserId
 		}
 	}
@@ -160,7 +187,7 @@ func (x *Repository) GetUserId() string {
 
 func (x *Repository) GetOrganizationId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Owner.(*repository_OrganizationId); ok {
+		if x, ok := x.Owner.(*Repository_OrganizationId); ok {
 			return x.OrganizationId
 		}
 	}
@@ -169,131 +196,131 @@ func (x *Repository) GetOrganizationId() string {
 
 func (x *Repository) GetVisibility() Visibility {
 	if x != nil {
-		return x.xxx_hidden_Visibility
+		return x.Visibility
 	}
 	return Visibility_VISIBILITY_UNSPECIFIED
 }
 
 func (x *Repository) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *Repository) GetDeprecationMessage() string {
 	if x != nil {
-		return x.xxx_hidden_DeprecationMessage
+		return x.DeprecationMessage
 	}
 	return ""
 }
 
 func (x *Repository) GetOwnerName() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerName
+		return x.OwnerName
 	}
 	return ""
 }
 
 func (x *Repository) GetDescription() string {
 	if x != nil {
-		return x.xxx_hidden_Description
+		return x.Description
 	}
 	return ""
 }
 
 func (x *Repository) GetUrl() string {
 	if x != nil {
-		return x.xxx_hidden_Url
+		return x.Url
 	}
 	return ""
 }
 
 func (x *Repository) GetDefaultBranch() string {
 	if x != nil {
-		return x.xxx_hidden_DefaultBranch
+		return x.DefaultBranch
 	}
 	return ""
 }
 
 func (x *Repository) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *Repository) SetCreateTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreateTime = v
+	x.CreateTime = v
 }
 
 func (x *Repository) SetUpdateTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_UpdateTime = v
+	x.UpdateTime = v
 }
 
 func (x *Repository) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Repository) SetUserId(v string) {
-	x.xxx_hidden_Owner = &repository_UserId{v}
+	x.Owner = &Repository_UserId{v}
 }
 
 func (x *Repository) SetOrganizationId(v string) {
-	x.xxx_hidden_Owner = &repository_OrganizationId{v}
+	x.Owner = &Repository_OrganizationId{v}
 }
 
 func (x *Repository) SetVisibility(v Visibility) {
-	x.xxx_hidden_Visibility = v
+	x.Visibility = v
 }
 
 func (x *Repository) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 func (x *Repository) SetDeprecationMessage(v string) {
-	x.xxx_hidden_DeprecationMessage = v
+	x.DeprecationMessage = v
 }
 
 func (x *Repository) SetOwnerName(v string) {
-	x.xxx_hidden_OwnerName = v
+	x.OwnerName = v
 }
 
 func (x *Repository) SetDescription(v string) {
-	x.xxx_hidden_Description = v
+	x.Description = v
 }
 
 func (x *Repository) SetUrl(v string) {
-	x.xxx_hidden_Url = v
+	x.Url = v
 }
 
 func (x *Repository) SetDefaultBranch(v string) {
-	x.xxx_hidden_DefaultBranch = v
+	x.DefaultBranch = v
 }
 
 func (x *Repository) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreateTime != nil
+	return x.CreateTime != nil
 }
 
 func (x *Repository) HasUpdateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UpdateTime != nil
+	return x.UpdateTime != nil
 }
 
 func (x *Repository) HasOwner() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Owner != nil
+	return x.Owner != nil
 }
 
 func (x *Repository) HasUserId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Owner.(*repository_UserId)
+	_, ok := x.Owner.(*Repository_UserId)
 	return ok
 }
 
@@ -301,31 +328,31 @@ func (x *Repository) HasOrganizationId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Owner.(*repository_OrganizationId)
+	_, ok := x.Owner.(*Repository_OrganizationId)
 	return ok
 }
 
 func (x *Repository) ClearCreateTime() {
-	x.xxx_hidden_CreateTime = nil
+	x.CreateTime = nil
 }
 
 func (x *Repository) ClearUpdateTime() {
-	x.xxx_hidden_UpdateTime = nil
+	x.UpdateTime = nil
 }
 
 func (x *Repository) ClearOwner() {
-	x.xxx_hidden_Owner = nil
+	x.Owner = nil
 }
 
 func (x *Repository) ClearUserId() {
-	if _, ok := x.xxx_hidden_Owner.(*repository_UserId); ok {
-		x.xxx_hidden_Owner = nil
+	if _, ok := x.Owner.(*Repository_UserId); ok {
+		x.Owner = nil
 	}
 }
 
 func (x *Repository) ClearOrganizationId() {
-	if _, ok := x.xxx_hidden_Owner.(*repository_OrganizationId); ok {
-		x.xxx_hidden_Owner = nil
+	if _, ok := x.Owner.(*Repository_OrganizationId); ok {
+		x.Owner = nil
 	}
 }
 
@@ -337,10 +364,10 @@ func (x *Repository) WhichOwner() case_Repository_Owner {
 	if x == nil {
 		return Repository_Owner_not_set_case
 	}
-	switch x.xxx_hidden_Owner.(type) {
-	case *repository_UserId:
+	switch x.Owner.(type) {
+	case *Repository_UserId:
 		return Repository_UserId_case
-	case *repository_OrganizationId:
+	case *Repository_OrganizationId:
 		return Repository_OrganizationId_case
 	default:
 		return Repository_Owner_not_set_case
@@ -358,12 +385,12 @@ type Repository_builder struct {
 	UpdateTime *timestamppb.Timestamp
 	// unique, mutable
 	Name string
-	// Fields of oneof xxx_hidden_Owner:
+	// Fields of oneof Owner:
 	// foreign key, mutable
 	UserId *string
 	// foreign key, mutable
 	OrganizationId *string
-	// -- end of xxx_hidden_Owner
+	// -- end of Owner
 	Visibility Visibility
 	// deprecated means this repository is deprecated.
 	Deprecated bool
@@ -387,23 +414,23 @@ func (b0 Repository_builder) Build() *Repository {
 	m0 := &Repository{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_CreateTime = b.CreateTime
-	x.xxx_hidden_UpdateTime = b.UpdateTime
-	x.xxx_hidden_Name = b.Name
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.UpdateTime = b.UpdateTime
+	x.Name = b.Name
 	if b.UserId != nil {
-		x.xxx_hidden_Owner = &repository_UserId{*b.UserId}
+		x.Owner = &Repository_UserId{*b.UserId}
 	}
 	if b.OrganizationId != nil {
-		x.xxx_hidden_Owner = &repository_OrganizationId{*b.OrganizationId}
+		x.Owner = &Repository_OrganizationId{*b.OrganizationId}
 	}
-	x.xxx_hidden_Visibility = b.Visibility
-	x.xxx_hidden_Deprecated = b.Deprecated
-	x.xxx_hidden_DeprecationMessage = b.DeprecationMessage
-	x.xxx_hidden_OwnerName = b.OwnerName
-	x.xxx_hidden_Description = b.Description
-	x.xxx_hidden_Url = b.Url
-	x.xxx_hidden_DefaultBranch = b.DefaultBranch
+	x.Visibility = b.Visibility
+	x.Deprecated = b.Deprecated
+	x.DeprecationMessage = b.DeprecationMessage
+	x.OwnerName = b.OwnerName
+	x.Description = b.Description
+	x.Url = b.Url
+	x.DefaultBranch = b.DefaultBranch
 	return m0
 }
 
@@ -421,26 +448,26 @@ type isRepository_Owner interface {
 	isRepository_Owner()
 }
 
-type repository_UserId struct {
+type Repository_UserId struct {
 	// foreign key, mutable
 	UserId string `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3,oneof"`
 }
 
-type repository_OrganizationId struct {
+type Repository_OrganizationId struct {
 	// foreign key, mutable
 	OrganizationId string `protobuf:"bytes,6,opt,name=organization_id,json=organizationId,proto3,oneof"`
 }
 
-func (*repository_UserId) isRepository_Owner() {}
+func (*Repository_UserId) isRepository_Owner() {}
 
-func (*repository_OrganizationId) isRepository_Owner() {}
+func (*Repository_OrganizationId) isRepository_Owner() {}
 
 type RepositoryCounts struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_TagsCount   uint32                 `protobuf:"varint,1,opt,name=tags_count,json=tagsCount,proto3" json:"tags_count,omitempty"`
-	xxx_hidden_DraftsCount uint32                 `protobuf:"varint,3,opt,name=drafts_count,json=draftsCount,proto3" json:"drafts_count,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	TagsCount     uint32                 `protobuf:"varint,1,opt,name=tags_count,json=tagsCount,proto3" json:"tags_count,omitempty"`
+	DraftsCount   uint32                 `protobuf:"varint,3,opt,name=drafts_count,json=draftsCount,proto3" json:"drafts_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RepositoryCounts) Reset() {
@@ -470,24 +497,24 @@ func (x *RepositoryCounts) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryCounts) GetTagsCount() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TagsCount
+		return x.TagsCount
 	}
 	return 0
 }
 
 func (x *RepositoryCounts) GetDraftsCount() uint32 {
 	if x != nil {
-		return x.xxx_hidden_DraftsCount
+		return x.DraftsCount
 	}
 	return 0
 }
 
 func (x *RepositoryCounts) SetTagsCount(v uint32) {
-	x.xxx_hidden_TagsCount = v
+	x.TagsCount = v
 }
 
 func (x *RepositoryCounts) SetDraftsCount(v uint32) {
-	x.xxx_hidden_DraftsCount = v
+	x.DraftsCount = v
 }
 
 type RepositoryCounts_builder struct {
@@ -501,19 +528,23 @@ func (b0 RepositoryCounts_builder) Build() *RepositoryCounts {
 	m0 := &RepositoryCounts{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_TagsCount = b.TagsCount
-	x.xxx_hidden_DraftsCount = b.DraftsCount
+	x.TagsCount = b.TagsCount
+	x.DraftsCount = b.DraftsCount
 	return m0
 }
 
 type RepositoryContributor struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User         *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,2,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	xxx_hidden_ExplicitRole RepositoryRole         `protobuf:"varint,3,opt,name=explicit_role,json=explicitRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"explicit_role,omitempty"`
-	xxx_hidden_ImplicitRole RepositoryRole         `protobuf:"varint,4,opt,name=implicit_role,json=implicitRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"implicit_role,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	User  *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	// The ID of the for which the role belongs to.
+	RepositoryId string `protobuf:"bytes,2,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	// The role that the user has been explicitly assigned against the repository.
+	ExplicitRole RepositoryRole `protobuf:"varint,3,opt,name=explicit_role,json=explicitRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"explicit_role,omitempty"`
+	// Optionally defines the role that the user has implicitly against the repository through the owning organization.
+	// If the repository does not belong to an organization or the user is not part of the owning organization, this is unset.
+	ImplicitRole  RepositoryRole `protobuf:"varint,4,opt,name=implicit_role,json=implicitRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"implicit_role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RepositoryContributor) Reset() {
@@ -543,57 +574,57 @@ func (x *RepositoryContributor) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryContributor) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *RepositoryContributor) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *RepositoryContributor) GetExplicitRole() RepositoryRole {
 	if x != nil {
-		return x.xxx_hidden_ExplicitRole
+		return x.ExplicitRole
 	}
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
 func (x *RepositoryContributor) GetImplicitRole() RepositoryRole {
 	if x != nil {
-		return x.xxx_hidden_ImplicitRole
+		return x.ImplicitRole
 	}
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
 func (x *RepositoryContributor) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *RepositoryContributor) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 func (x *RepositoryContributor) SetExplicitRole(v RepositoryRole) {
-	x.xxx_hidden_ExplicitRole = v
+	x.ExplicitRole = v
 }
 
 func (x *RepositoryContributor) SetImplicitRole(v RepositoryRole) {
-	x.xxx_hidden_ImplicitRole = v
+	x.ImplicitRole = v
 }
 
 func (x *RepositoryContributor) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *RepositoryContributor) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type RepositoryContributor_builder struct {
@@ -613,23 +644,29 @@ func (b0 RepositoryContributor_builder) Build() *RepositoryContributor {
 	m0 := &RepositoryContributor{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
-	x.xxx_hidden_RepositoryId = b.RepositoryId
-	x.xxx_hidden_ExplicitRole = b.ExplicitRole
-	x.xxx_hidden_ImplicitRole = b.ImplicitRole
+	x.User = b.User
+	x.RepositoryId = b.RepositoryId
+	x.ExplicitRole = b.ExplicitRole
+	x.ImplicitRole = b.ImplicitRole
 	return m0
 }
 
 type RepositoryMetadata struct {
-	state                              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_Name                    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_OwnerName               string                 `protobuf:"bytes,3,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	xxx_hidden_OwnerVerificationStatus VerificationStatus     `protobuf:"varint,4,opt,name=owner_verification_status,json=ownerVerificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"owner_verification_status,omitempty"`
-	xxx_hidden_LatestCommitTime        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=latest_commit_time,json=latestCommitTime,proto3" json:"latest_commit_time,omitempty"`
-	xxx_hidden_LatestSpdxLicenseId     string                 `protobuf:"bytes,6,opt,name=latest_spdx_license_id,json=latestSpdxLicenseId,proto3" json:"latest_spdx_license_id,omitempty"`
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The name of the repository.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// The owner name of the repository.
+	OwnerName string `protobuf:"bytes,3,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	// The verification status of the owner of the repository.
+	OwnerVerificationStatus VerificationStatus `protobuf:"varint,4,opt,name=owner_verification_status,json=ownerVerificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"owner_verification_status,omitempty"`
+	// The commit time of the latest main commit in the repository.
+	LatestCommitTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=latest_commit_time,json=latestCommitTime,proto3" json:"latest_commit_time,omitempty"`
+	// The SPDX license ID of the latest main commit in the repository.
+	LatestSpdxLicenseId string `protobuf:"bytes,6,opt,name=latest_spdx_license_id,json=latestSpdxLicenseId,proto3" json:"latest_spdx_license_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RepositoryMetadata) Reset() {
@@ -659,79 +696,79 @@ func (x *RepositoryMetadata) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryMetadata) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *RepositoryMetadata) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *RepositoryMetadata) GetOwnerName() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerName
+		return x.OwnerName
 	}
 	return ""
 }
 
 func (x *RepositoryMetadata) GetOwnerVerificationStatus() VerificationStatus {
 	if x != nil {
-		return x.xxx_hidden_OwnerVerificationStatus
+		return x.OwnerVerificationStatus
 	}
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 func (x *RepositoryMetadata) GetLatestCommitTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LatestCommitTime
+		return x.LatestCommitTime
 	}
 	return nil
 }
 
 func (x *RepositoryMetadata) GetLatestSpdxLicenseId() string {
 	if x != nil {
-		return x.xxx_hidden_LatestSpdxLicenseId
+		return x.LatestSpdxLicenseId
 	}
 	return ""
 }
 
 func (x *RepositoryMetadata) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *RepositoryMetadata) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *RepositoryMetadata) SetOwnerName(v string) {
-	x.xxx_hidden_OwnerName = v
+	x.OwnerName = v
 }
 
 func (x *RepositoryMetadata) SetOwnerVerificationStatus(v VerificationStatus) {
-	x.xxx_hidden_OwnerVerificationStatus = v
+	x.OwnerVerificationStatus = v
 }
 
 func (x *RepositoryMetadata) SetLatestCommitTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LatestCommitTime = v
+	x.LatestCommitTime = v
 }
 
 func (x *RepositoryMetadata) SetLatestSpdxLicenseId(v string) {
-	x.xxx_hidden_LatestSpdxLicenseId = v
+	x.LatestSpdxLicenseId = v
 }
 
 func (x *RepositoryMetadata) HasLatestCommitTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LatestCommitTime != nil
+	return x.LatestCommitTime != nil
 }
 
 func (x *RepositoryMetadata) ClearLatestCommitTime() {
-	x.xxx_hidden_LatestCommitTime = nil
+	x.LatestCommitTime = nil
 }
 
 type RepositoryMetadata_builder struct {
@@ -755,20 +792,22 @@ func (b0 RepositoryMetadata_builder) Build() *RepositoryMetadata {
 	m0 := &RepositoryMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_OwnerName = b.OwnerName
-	x.xxx_hidden_OwnerVerificationStatus = b.OwnerVerificationStatus
-	x.xxx_hidden_LatestCommitTime = b.LatestCommitTime
-	x.xxx_hidden_LatestSpdxLicenseId = b.LatestSpdxLicenseId
+	x.Id = b.Id
+	x.Name = b.Name
+	x.OwnerName = b.OwnerName
+	x.OwnerVerificationStatus = b.OwnerVerificationStatus
+	x.LatestCommitTime = b.LatestCommitTime
+	x.LatestSpdxLicenseId = b.LatestSpdxLicenseId
 	return m0
 }
 
 type GetRepositoriesByFullNameRequest struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FullNames []string               `protobuf:"bytes,1,rep,name=full_names,json=fullNames,proto3" json:"full_names,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// minimum length is 1
+	// maximum length is 250
+	FullNames     []string `protobuf:"bytes,1,rep,name=full_names,json=fullNames,proto3" json:"full_names,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoriesByFullNameRequest) Reset() {
@@ -798,13 +837,13 @@ func (x *GetRepositoriesByFullNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoriesByFullNameRequest) GetFullNames() []string {
 	if x != nil {
-		return x.xxx_hidden_FullNames
+		return x.FullNames
 	}
 	return nil
 }
 
 func (x *GetRepositoriesByFullNameRequest) SetFullNames(v []string) {
-	x.xxx_hidden_FullNames = v
+	x.FullNames = v
 }
 
 type GetRepositoriesByFullNameRequest_builder struct {
@@ -819,15 +858,15 @@ func (b0 GetRepositoriesByFullNameRequest_builder) Build() *GetRepositoriesByFul
 	m0 := &GetRepositoriesByFullNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FullNames = b.FullNames
+	x.FullNames = b.FullNames
 	return m0
 }
 
 type GetRepositoriesByFullNameResponse struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repositories *[]*Repository         `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repositories  []*Repository          `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoriesByFullNameResponse) Reset() {
@@ -857,15 +896,13 @@ func (x *GetRepositoriesByFullNameResponse) ProtoReflect() protoreflect.Message 
 
 func (x *GetRepositoriesByFullNameResponse) GetRepositories() []*Repository {
 	if x != nil {
-		if x.xxx_hidden_Repositories != nil {
-			return *x.xxx_hidden_Repositories
-		}
+		return x.Repositories
 	}
 	return nil
 }
 
 func (x *GetRepositoriesByFullNameResponse) SetRepositories(v []*Repository) {
-	x.xxx_hidden_Repositories = &v
+	x.Repositories = v
 }
 
 type GetRepositoriesByFullNameResponse_builder struct {
@@ -878,13 +915,13 @@ func (b0 GetRepositoriesByFullNameResponse_builder) Build() *GetRepositoriesByFu
 	m0 := &GetRepositoriesByFullNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repositories = &b.Repositories
+	x.Repositories = b.Repositories
 	return m0
 }
 
 type GetRepositoryRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -916,13 +953,13 @@ func (x *GetRepositoryRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryRequest) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GetRepositoryRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 type GetRepositoryRequest_builder struct {
@@ -935,16 +972,16 @@ func (b0 GetRepositoryRequest_builder) Build() *GetRepositoryRequest {
 	m0 := &GetRepositoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
+	x.Id = b.Id
 	return m0
 }
 
 type GetRepositoryResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repository *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Counts     *RepositoryCounts      `protobuf:"bytes,2,opt,name=counts,proto3" json:"counts,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repository    *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
+	Counts        *RepositoryCounts      `protobuf:"bytes,2,opt,name=counts,proto3" json:"counts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryResponse) Reset() {
@@ -974,46 +1011,46 @@ func (x *GetRepositoryResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryResponse) GetRepository() *Repository {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return nil
 }
 
 func (x *GetRepositoryResponse) GetCounts() *RepositoryCounts {
 	if x != nil {
-		return x.xxx_hidden_Counts
+		return x.Counts
 	}
 	return nil
 }
 
 func (x *GetRepositoryResponse) SetRepository(v *Repository) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetRepositoryResponse) SetCounts(v *RepositoryCounts) {
-	x.xxx_hidden_Counts = v
+	x.Counts = v
 }
 
 func (x *GetRepositoryResponse) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Repository != nil
+	return x.Repository != nil
 }
 
 func (x *GetRepositoryResponse) HasCounts() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Counts != nil
+	return x.Counts != nil
 }
 
 func (x *GetRepositoryResponse) ClearRepository() {
-	x.xxx_hidden_Repository = nil
+	x.Repository = nil
 }
 
 func (x *GetRepositoryResponse) ClearCounts() {
-	x.xxx_hidden_Counts = nil
+	x.Counts = nil
 }
 
 type GetRepositoryResponse_builder struct {
@@ -1027,16 +1064,16 @@ func (b0 GetRepositoryResponse_builder) Build() *GetRepositoryResponse {
 	m0 := &GetRepositoryResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Counts = b.Counts
+	x.Repository = b.Repository
+	x.Counts = b.Counts
 	return m0
 }
 
 type GetRepositoryByFullNameRequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FullName string                 `protobuf:"bytes,1,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	FullName      string                 `protobuf:"bytes,1,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryByFullNameRequest) Reset() {
@@ -1066,13 +1103,13 @@ func (x *GetRepositoryByFullNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryByFullNameRequest) GetFullName() string {
 	if x != nil {
-		return x.xxx_hidden_FullName
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *GetRepositoryByFullNameRequest) SetFullName(v string) {
-	x.xxx_hidden_FullName = v
+	x.FullName = v
 }
 
 type GetRepositoryByFullNameRequest_builder struct {
@@ -1085,16 +1122,16 @@ func (b0 GetRepositoryByFullNameRequest_builder) Build() *GetRepositoryByFullNam
 	m0 := &GetRepositoryByFullNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FullName = b.FullName
+	x.FullName = b.FullName
 	return m0
 }
 
 type GetRepositoryByFullNameResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repository *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Counts     *RepositoryCounts      `protobuf:"bytes,2,opt,name=counts,proto3" json:"counts,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repository    *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
+	Counts        *RepositoryCounts      `protobuf:"bytes,2,opt,name=counts,proto3" json:"counts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryByFullNameResponse) Reset() {
@@ -1124,46 +1161,46 @@ func (x *GetRepositoryByFullNameResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryByFullNameResponse) GetRepository() *Repository {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return nil
 }
 
 func (x *GetRepositoryByFullNameResponse) GetCounts() *RepositoryCounts {
 	if x != nil {
-		return x.xxx_hidden_Counts
+		return x.Counts
 	}
 	return nil
 }
 
 func (x *GetRepositoryByFullNameResponse) SetRepository(v *Repository) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetRepositoryByFullNameResponse) SetCounts(v *RepositoryCounts) {
-	x.xxx_hidden_Counts = v
+	x.Counts = v
 }
 
 func (x *GetRepositoryByFullNameResponse) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Repository != nil
+	return x.Repository != nil
 }
 
 func (x *GetRepositoryByFullNameResponse) HasCounts() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Counts != nil
+	return x.Counts != nil
 }
 
 func (x *GetRepositoryByFullNameResponse) ClearRepository() {
-	x.xxx_hidden_Repository = nil
+	x.Repository = nil
 }
 
 func (x *GetRepositoryByFullNameResponse) ClearCounts() {
-	x.xxx_hidden_Counts = nil
+	x.Counts = nil
 }
 
 type GetRepositoryByFullNameResponse_builder struct {
@@ -1177,18 +1214,19 @@ func (b0 GetRepositoryByFullNameResponse_builder) Build() *GetRepositoryByFullNa
 	m0 := &GetRepositoryByFullNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Counts = b.Counts
+	x.Repository = b.Repository
+	x.Counts = b.Counts
 	return m0
 }
 
 type ListRepositoriesRequest struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse   bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRepositoriesRequest) Reset() {
@@ -1218,35 +1256,35 @@ func (x *ListRepositoriesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListRepositoriesRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListRepositoriesRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoriesRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListRepositoriesRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListRepositoriesRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListRepositoriesRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListRepositoriesRequest_builder struct {
@@ -1262,18 +1300,19 @@ func (b0 ListRepositoriesRequest_builder) Build() *ListRepositoriesRequest {
 	m0 := &ListRepositoriesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListRepositoriesResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repositories  *[]*Repository         `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repositories []*Repository          `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRepositoriesResponse) Reset() {
@@ -1303,26 +1342,24 @@ func (x *ListRepositoriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRepositoriesResponse) GetRepositories() []*Repository {
 	if x != nil {
-		if x.xxx_hidden_Repositories != nil {
-			return *x.xxx_hidden_Repositories
-		}
+		return x.Repositories
 	}
 	return nil
 }
 
 func (x *ListRepositoriesResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoriesResponse) SetRepositories(v []*Repository) {
-	x.xxx_hidden_Repositories = &v
+	x.Repositories = v
 }
 
 func (x *ListRepositoriesResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListRepositoriesResponse_builder struct {
@@ -1337,19 +1374,21 @@ func (b0 ListRepositoriesResponse_builder) Build() *ListRepositoriesResponse {
 	m0 := &ListRepositoriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repositories = &b.Repositories
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Repositories = b.Repositories
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type ListUserRepositoriesRequest struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	xxx_hidden_PageSize  uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse   bool                   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the user whose repositories should be listed.
+	UserId   string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListUserRepositoriesRequest) Reset() {
@@ -1379,46 +1418,46 @@ func (x *ListUserRepositoriesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListUserRepositoriesRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *ListUserRepositoriesRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListUserRepositoriesRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListUserRepositoriesRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListUserRepositoriesRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 func (x *ListUserRepositoriesRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListUserRepositoriesRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListUserRepositoriesRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListUserRepositoriesRequest_builder struct {
@@ -1436,19 +1475,20 @@ func (b0 ListUserRepositoriesRequest_builder) Build() *ListUserRepositoriesReque
 	m0 := &ListUserRepositoriesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.UserId = b.UserId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListUserRepositoriesResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repositories  *[]*Repository         `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repositories []*Repository          `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListUserRepositoriesResponse) Reset() {
@@ -1478,26 +1518,24 @@ func (x *ListUserRepositoriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListUserRepositoriesResponse) GetRepositories() []*Repository {
 	if x != nil {
-		if x.xxx_hidden_Repositories != nil {
-			return *x.xxx_hidden_Repositories
-		}
+		return x.Repositories
 	}
 	return nil
 }
 
 func (x *ListUserRepositoriesResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListUserRepositoriesResponse) SetRepositories(v []*Repository) {
-	x.xxx_hidden_Repositories = &v
+	x.Repositories = v
 }
 
 func (x *ListUserRepositoriesResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListUserRepositoriesResponse_builder struct {
@@ -1512,18 +1550,19 @@ func (b0 ListUserRepositoriesResponse_builder) Build() *ListUserRepositoriesResp
 	m0 := &ListUserRepositoriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repositories = &b.Repositories
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Repositories = b.Repositories
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type ListRepositoriesUserCanAccessRequest struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse   bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRepositoriesUserCanAccessRequest) Reset() {
@@ -1553,35 +1592,35 @@ func (x *ListRepositoriesUserCanAccessRequest) ProtoReflect() protoreflect.Messa
 
 func (x *ListRepositoriesUserCanAccessRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListRepositoriesUserCanAccessRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoriesUserCanAccessRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListRepositoriesUserCanAccessRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListRepositoriesUserCanAccessRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListRepositoriesUserCanAccessRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListRepositoriesUserCanAccessRequest_builder struct {
@@ -1597,18 +1636,19 @@ func (b0 ListRepositoriesUserCanAccessRequest_builder) Build() *ListRepositories
 	m0 := &ListRepositoriesUserCanAccessRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListRepositoriesUserCanAccessResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repositories  *[]*Repository         `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repositories []*Repository          `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRepositoriesUserCanAccessResponse) Reset() {
@@ -1638,26 +1678,24 @@ func (x *ListRepositoriesUserCanAccessResponse) ProtoReflect() protoreflect.Mess
 
 func (x *ListRepositoriesUserCanAccessResponse) GetRepositories() []*Repository {
 	if x != nil {
-		if x.xxx_hidden_Repositories != nil {
-			return *x.xxx_hidden_Repositories
-		}
+		return x.Repositories
 	}
 	return nil
 }
 
 func (x *ListRepositoriesUserCanAccessResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoriesUserCanAccessResponse) SetRepositories(v []*Repository) {
-	x.xxx_hidden_Repositories = &v
+	x.Repositories = v
 }
 
 func (x *ListRepositoriesUserCanAccessResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListRepositoriesUserCanAccessResponse_builder struct {
@@ -1672,19 +1710,21 @@ func (b0 ListRepositoriesUserCanAccessResponse_builder) Build() *ListRepositorie
 	m0 := &ListRepositoriesUserCanAccessResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repositories = &b.Repositories
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Repositories = b.Repositories
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type ListOrganizationRepositoriesRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	xxx_hidden_PageSize       uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken      string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse        bool                   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization whose repositories should be listed.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	PageSize       uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListOrganizationRepositoriesRequest) Reset() {
@@ -1714,46 +1754,46 @@ func (x *ListOrganizationRepositoriesRequest) ProtoReflect() protoreflect.Messag
 
 func (x *ListOrganizationRepositoriesRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *ListOrganizationRepositoriesRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListOrganizationRepositoriesRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListOrganizationRepositoriesRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListOrganizationRepositoriesRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 func (x *ListOrganizationRepositoriesRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListOrganizationRepositoriesRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListOrganizationRepositoriesRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListOrganizationRepositoriesRequest_builder struct {
@@ -1771,19 +1811,20 @@ func (b0 ListOrganizationRepositoriesRequest_builder) Build() *ListOrganizationR
 	m0 := &ListOrganizationRepositoriesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.OrganizationId = b.OrganizationId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListOrganizationRepositoriesResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repositories  *[]*Repository         `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repositories []*Repository          `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListOrganizationRepositoriesResponse) Reset() {
@@ -1813,26 +1854,24 @@ func (x *ListOrganizationRepositoriesResponse) ProtoReflect() protoreflect.Messa
 
 func (x *ListOrganizationRepositoriesResponse) GetRepositories() []*Repository {
 	if x != nil {
-		if x.xxx_hidden_Repositories != nil {
-			return *x.xxx_hidden_Repositories
-		}
+		return x.Repositories
 	}
 	return nil
 }
 
 func (x *ListOrganizationRepositoriesResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListOrganizationRepositoriesResponse) SetRepositories(v []*Repository) {
-	x.xxx_hidden_Repositories = &v
+	x.Repositories = v
 }
 
 func (x *ListOrganizationRepositoriesResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListOrganizationRepositoriesResponse_builder struct {
@@ -1847,17 +1886,18 @@ func (b0 ListOrganizationRepositoriesResponse_builder) Build() *ListOrganization
 	m0 := &ListOrganizationRepositoriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repositories = &b.Repositories
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Repositories = b.Repositories
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type CreateRepositoryByFullNameRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FullName   string                 `protobuf:"bytes,1,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	xxx_hidden_Visibility Visibility             `protobuf:"varint,2,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Must be unique across repositories.
+	FullName      string     `protobuf:"bytes,1,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	Visibility    Visibility `protobuf:"varint,2,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateRepositoryByFullNameRequest) Reset() {
@@ -1887,24 +1927,24 @@ func (x *CreateRepositoryByFullNameRequest) ProtoReflect() protoreflect.Message 
 
 func (x *CreateRepositoryByFullNameRequest) GetFullName() string {
 	if x != nil {
-		return x.xxx_hidden_FullName
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *CreateRepositoryByFullNameRequest) GetVisibility() Visibility {
 	if x != nil {
-		return x.xxx_hidden_Visibility
+		return x.Visibility
 	}
 	return Visibility_VISIBILITY_UNSPECIFIED
 }
 
 func (x *CreateRepositoryByFullNameRequest) SetFullName(v string) {
-	x.xxx_hidden_FullName = v
+	x.FullName = v
 }
 
 func (x *CreateRepositoryByFullNameRequest) SetVisibility(v Visibility) {
-	x.xxx_hidden_Visibility = v
+	x.Visibility = v
 }
 
 type CreateRepositoryByFullNameRequest_builder struct {
@@ -1919,16 +1959,16 @@ func (b0 CreateRepositoryByFullNameRequest_builder) Build() *CreateRepositoryByF
 	m0 := &CreateRepositoryByFullNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FullName = b.FullName
-	x.xxx_hidden_Visibility = b.Visibility
+	x.FullName = b.FullName
+	x.Visibility = b.Visibility
 	return m0
 }
 
 type CreateRepositoryByFullNameResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repository *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repository    *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateRepositoryByFullNameResponse) Reset() {
@@ -1958,24 +1998,24 @@ func (x *CreateRepositoryByFullNameResponse) ProtoReflect() protoreflect.Message
 
 func (x *CreateRepositoryByFullNameResponse) GetRepository() *Repository {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return nil
 }
 
 func (x *CreateRepositoryByFullNameResponse) SetRepository(v *Repository) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *CreateRepositoryByFullNameResponse) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Repository != nil
+	return x.Repository != nil
 }
 
 func (x *CreateRepositoryByFullNameResponse) ClearRepository() {
-	x.xxx_hidden_Repository = nil
+	x.Repository = nil
 }
 
 type CreateRepositoryByFullNameResponse_builder struct {
@@ -1988,13 +2028,13 @@ func (b0 CreateRepositoryByFullNameResponse_builder) Build() *CreateRepositoryBy
 	m0 := &CreateRepositoryByFullNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repository = b.Repository
+	x.Repository = b.Repository
 	return m0
 }
 
 type DeleteRepositoryRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2026,13 +2066,13 @@ func (x *DeleteRepositoryRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteRepositoryRequest) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DeleteRepositoryRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 type DeleteRepositoryRequest_builder struct {
@@ -2045,12 +2085,12 @@ func (b0 DeleteRepositoryRequest_builder) Build() *DeleteRepositoryRequest {
 	m0 := &DeleteRepositoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
+	x.Id = b.Id
 	return m0
 }
 
 type DeleteRepositoryResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2093,10 +2133,10 @@ func (b0 DeleteRepositoryResponse_builder) Build() *DeleteRepositoryResponse {
 }
 
 type DeleteRepositoryByFullNameRequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FullName string                 `protobuf:"bytes,1,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	FullName      string                 `protobuf:"bytes,1,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteRepositoryByFullNameRequest) Reset() {
@@ -2126,13 +2166,13 @@ func (x *DeleteRepositoryByFullNameRequest) ProtoReflect() protoreflect.Message 
 
 func (x *DeleteRepositoryByFullNameRequest) GetFullName() string {
 	if x != nil {
-		return x.xxx_hidden_FullName
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *DeleteRepositoryByFullNameRequest) SetFullName(v string) {
-	x.xxx_hidden_FullName = v
+	x.FullName = v
 }
 
 type DeleteRepositoryByFullNameRequest_builder struct {
@@ -2145,12 +2185,12 @@ func (b0 DeleteRepositoryByFullNameRequest_builder) Build() *DeleteRepositoryByF
 	m0 := &DeleteRepositoryByFullNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FullName = b.FullName
+	x.FullName = b.FullName
 	return m0
 }
 
 type DeleteRepositoryByFullNameResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2193,12 +2233,14 @@ func (b0 DeleteRepositoryByFullNameResponse_builder) Build() *DeleteRepositoryBy
 }
 
 type DeprecateRepositoryByNameRequest struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OwnerName          string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	xxx_hidden_RepositoryName     string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	xxx_hidden_DeprecationMessage string                 `protobuf:"bytes,3,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	OwnerName      string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	RepositoryName string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	// A message shown along with the deprecation warning for this repository.
+	// It must be a utf8 encoded string containing 256 or fewer characters.
+	DeprecationMessage string `protobuf:"bytes,3,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DeprecateRepositoryByNameRequest) Reset() {
@@ -2228,35 +2270,35 @@ func (x *DeprecateRepositoryByNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeprecateRepositoryByNameRequest) GetOwnerName() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerName
+		return x.OwnerName
 	}
 	return ""
 }
 
 func (x *DeprecateRepositoryByNameRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryName
+		return x.RepositoryName
 	}
 	return ""
 }
 
 func (x *DeprecateRepositoryByNameRequest) GetDeprecationMessage() string {
 	if x != nil {
-		return x.xxx_hidden_DeprecationMessage
+		return x.DeprecationMessage
 	}
 	return ""
 }
 
 func (x *DeprecateRepositoryByNameRequest) SetOwnerName(v string) {
-	x.xxx_hidden_OwnerName = v
+	x.OwnerName = v
 }
 
 func (x *DeprecateRepositoryByNameRequest) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
+	x.RepositoryName = v
 }
 
 func (x *DeprecateRepositoryByNameRequest) SetDeprecationMessage(v string) {
-	x.xxx_hidden_DeprecationMessage = v
+	x.DeprecationMessage = v
 }
 
 type DeprecateRepositoryByNameRequest_builder struct {
@@ -2273,17 +2315,17 @@ func (b0 DeprecateRepositoryByNameRequest_builder) Build() *DeprecateRepositoryB
 	m0 := &DeprecateRepositoryByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OwnerName = b.OwnerName
-	x.xxx_hidden_RepositoryName = b.RepositoryName
-	x.xxx_hidden_DeprecationMessage = b.DeprecationMessage
+	x.OwnerName = b.OwnerName
+	x.RepositoryName = b.RepositoryName
+	x.DeprecationMessage = b.DeprecationMessage
 	return m0
 }
 
 type DeprecateRepositoryByNameResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repository *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repository    *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeprecateRepositoryByNameResponse) Reset() {
@@ -2313,24 +2355,24 @@ func (x *DeprecateRepositoryByNameResponse) ProtoReflect() protoreflect.Message 
 
 func (x *DeprecateRepositoryByNameResponse) GetRepository() *Repository {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return nil
 }
 
 func (x *DeprecateRepositoryByNameResponse) SetRepository(v *Repository) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *DeprecateRepositoryByNameResponse) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Repository != nil
+	return x.Repository != nil
 }
 
 func (x *DeprecateRepositoryByNameResponse) ClearRepository() {
-	x.xxx_hidden_Repository = nil
+	x.Repository = nil
 }
 
 type DeprecateRepositoryByNameResponse_builder struct {
@@ -2343,16 +2385,16 @@ func (b0 DeprecateRepositoryByNameResponse_builder) Build() *DeprecateRepository
 	m0 := &DeprecateRepositoryByNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repository = b.Repository
+	x.Repository = b.Repository
 	return m0
 }
 
 type UndeprecateRepositoryByNameRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OwnerName      string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	xxx_hidden_RepositoryName string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	OwnerName      string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	RepositoryName string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UndeprecateRepositoryByNameRequest) Reset() {
@@ -2382,24 +2424,24 @@ func (x *UndeprecateRepositoryByNameRequest) ProtoReflect() protoreflect.Message
 
 func (x *UndeprecateRepositoryByNameRequest) GetOwnerName() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerName
+		return x.OwnerName
 	}
 	return ""
 }
 
 func (x *UndeprecateRepositoryByNameRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryName
+		return x.RepositoryName
 	}
 	return ""
 }
 
 func (x *UndeprecateRepositoryByNameRequest) SetOwnerName(v string) {
-	x.xxx_hidden_OwnerName = v
+	x.OwnerName = v
 }
 
 func (x *UndeprecateRepositoryByNameRequest) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
+	x.RepositoryName = v
 }
 
 type UndeprecateRepositoryByNameRequest_builder struct {
@@ -2413,16 +2455,16 @@ func (b0 UndeprecateRepositoryByNameRequest_builder) Build() *UndeprecateReposit
 	m0 := &UndeprecateRepositoryByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OwnerName = b.OwnerName
-	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.OwnerName = b.OwnerName
+	x.RepositoryName = b.RepositoryName
 	return m0
 }
 
 type UndeprecateRepositoryByNameResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Repository *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Repository    *Repository            `protobuf:"bytes,1,opt,name=repository,proto3" json:"repository,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UndeprecateRepositoryByNameResponse) Reset() {
@@ -2452,24 +2494,24 @@ func (x *UndeprecateRepositoryByNameResponse) ProtoReflect() protoreflect.Messag
 
 func (x *UndeprecateRepositoryByNameResponse) GetRepository() *Repository {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return nil
 }
 
 func (x *UndeprecateRepositoryByNameResponse) SetRepository(v *Repository) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *UndeprecateRepositoryByNameResponse) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Repository != nil
+	return x.Repository != nil
 }
 
 func (x *UndeprecateRepositoryByNameResponse) ClearRepository() {
-	x.xxx_hidden_Repository = nil
+	x.Repository = nil
 }
 
 type UndeprecateRepositoryByNameResponse_builder struct {
@@ -2482,17 +2524,21 @@ func (b0 UndeprecateRepositoryByNameResponse_builder) Build() *UndeprecateReposi
 	m0 := &UndeprecateRepositoryByNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Repository = b.Repository
+	x.Repository = b.Repository
 	return m0
 }
 
 type SetRepositoryContributorRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId   string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	xxx_hidden_UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	xxx_hidden_RepositoryRole RepositoryRole         `protobuf:"varint,3,opt,name=repository_role,json=repositoryRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_role,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which the user's role will be set.
+	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	// The ID of the user whose role will be set.
+	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// The role to assign to the user.
+	// Setting UNSPECIFIED means removing the user's role.
+	RepositoryRole RepositoryRole `protobuf:"varint,3,opt,name=repository_role,json=repositoryRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_role,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SetRepositoryContributorRequest) Reset() {
@@ -2522,35 +2568,35 @@ func (x *SetRepositoryContributorRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SetRepositoryContributorRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *SetRepositoryContributorRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *SetRepositoryContributorRequest) GetRepositoryRole() RepositoryRole {
 	if x != nil {
-		return x.xxx_hidden_RepositoryRole
+		return x.RepositoryRole
 	}
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
 func (x *SetRepositoryContributorRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 func (x *SetRepositoryContributorRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 func (x *SetRepositoryContributorRequest) SetRepositoryRole(v RepositoryRole) {
-	x.xxx_hidden_RepositoryRole = v
+	x.RepositoryRole = v
 }
 
 type SetRepositoryContributorRequest_builder struct {
@@ -2569,14 +2615,14 @@ func (b0 SetRepositoryContributorRequest_builder) Build() *SetRepositoryContribu
 	m0 := &SetRepositoryContributorRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
-	x.xxx_hidden_UserId = b.UserId
-	x.xxx_hidden_RepositoryRole = b.RepositoryRole
+	x.RepositoryId = b.RepositoryId
+	x.UserId = b.UserId
+	x.RepositoryRole = b.RepositoryRole
 	return m0
 }
 
 type SetRepositoryContributorResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2619,13 +2665,14 @@ func (b0 SetRepositoryContributorResponse_builder) Build() *SetRepositoryContrib
 }
 
 type ListRepositoryContributorsRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	xxx_hidden_PageSize     uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken    string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse      bool                   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	PageSize     uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRepositoryContributorsRequest) Reset() {
@@ -2655,46 +2702,46 @@ func (x *ListRepositoryContributorsRequest) ProtoReflect() protoreflect.Message 
 
 func (x *ListRepositoryContributorsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *ListRepositoryContributorsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListRepositoryContributorsRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoryContributorsRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListRepositoryContributorsRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 func (x *ListRepositoryContributorsRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListRepositoryContributorsRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListRepositoryContributorsRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListRepositoryContributorsRequest_builder struct {
@@ -2711,19 +2758,20 @@ func (b0 ListRepositoryContributorsRequest_builder) Build() *ListRepositoryContr
 	m0 := &ListRepositoryContributorsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.RepositoryId = b.RepositoryId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListRepositoryContributorsResponse struct {
-	state                    protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_Users         *[]*RepositoryContributor `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
-	xxx_hidden_NextPageToken string                    `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Users []*RepositoryContributor `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRepositoryContributorsResponse) Reset() {
@@ -2753,26 +2801,24 @@ func (x *ListRepositoryContributorsResponse) ProtoReflect() protoreflect.Message
 
 func (x *ListRepositoryContributorsResponse) GetUsers() []*RepositoryContributor {
 	if x != nil {
-		if x.xxx_hidden_Users != nil {
-			return *x.xxx_hidden_Users
-		}
+		return x.Users
 	}
 	return nil
 }
 
 func (x *ListRepositoryContributorsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoryContributorsResponse) SetUsers(v []*RepositoryContributor) {
-	x.xxx_hidden_Users = &v
+	x.Users = v
 }
 
 func (x *ListRepositoryContributorsResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListRepositoryContributorsResponse_builder struct {
@@ -2787,17 +2833,19 @@ func (b0 ListRepositoryContributorsResponse_builder) Build() *ListRepositoryCont
 	m0 := &ListRepositoryContributorsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Users = &b.Users
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Users = b.Users
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type GetRepositoryContributorRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	xxx_hidden_UserId       string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which to get the contributor information.
+	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	// The ID of the user for which to get the contributor information.
+	UserId        string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryContributorRequest) Reset() {
@@ -2827,24 +2875,24 @@ func (x *GetRepositoryContributorRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryContributorRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *GetRepositoryContributorRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *GetRepositoryContributorRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 func (x *GetRepositoryContributorRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 type GetRepositoryContributorRequest_builder struct {
@@ -2860,16 +2908,17 @@ func (b0 GetRepositoryContributorRequest_builder) Build() *GetRepositoryContribu
 	m0 := &GetRepositoryContributorRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
-	x.xxx_hidden_UserId = b.UserId
+	x.RepositoryId = b.RepositoryId
+	x.UserId = b.UserId
 	return m0
 }
 
 type GetRepositoryContributorResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User *RepositoryContributor `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The contributor information of the user in the repository.
+	User          *RepositoryContributor `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryContributorResponse) Reset() {
@@ -2899,24 +2948,24 @@ func (x *GetRepositoryContributorResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryContributorResponse) GetUser() *RepositoryContributor {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *GetRepositoryContributorResponse) SetUser(v *RepositoryContributor) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *GetRepositoryContributorResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *GetRepositoryContributorResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type GetRepositoryContributorResponse_builder struct {
@@ -2930,15 +2979,16 @@ func (b0 GetRepositoryContributorResponse_builder) Build() *GetRepositoryContrib
 	m0 := &GetRepositoryContributorResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
+	x.User = b.User
 	return m0
 }
 
 type GetRepositorySettingsRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which to get the settings.
+	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositorySettingsRequest) Reset() {
@@ -2968,13 +3018,13 @@ func (x *GetRepositorySettingsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositorySettingsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *GetRepositorySettingsRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 type GetRepositorySettingsRequest_builder struct {
@@ -2988,15 +3038,17 @@ func (b0 GetRepositorySettingsRequest_builder) Build() *GetRepositorySettingsReq
 	m0 := &GetRepositorySettingsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.RepositoryId = b.RepositoryId
 	return m0
 }
 
 type GetRepositorySettingsResponse struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ContributorsCount uint32                 `protobuf:"varint,1,opt,name=contributors_count,json=contributorsCount,proto3" json:"contributors_count,omitempty"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The number of outside contributors in the repository,
+	// excluding owning-organization's members that have an explicit role.
+	ContributorsCount uint32 `protobuf:"varint,1,opt,name=contributors_count,json=contributorsCount,proto3" json:"contributors_count,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetRepositorySettingsResponse) Reset() {
@@ -3026,13 +3078,13 @@ func (x *GetRepositorySettingsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositorySettingsResponse) GetContributorsCount() uint32 {
 	if x != nil {
-		return x.xxx_hidden_ContributorsCount
+		return x.ContributorsCount
 	}
 	return 0
 }
 
 func (x *GetRepositorySettingsResponse) SetContributorsCount(v uint32) {
-	x.xxx_hidden_ContributorsCount = v
+	x.ContributorsCount = v
 }
 
 type GetRepositorySettingsResponse_builder struct {
@@ -3047,22 +3099,24 @@ func (b0 GetRepositorySettingsResponse_builder) Build() *GetRepositorySettingsRe
 	m0 := &GetRepositorySettingsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ContributorsCount = b.ContributorsCount
+	x.ContributorsCount = b.ContributorsCount
 	return m0
 }
 
 type UpdateRepositorySettingsByNameRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OwnerName      string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	xxx_hidden_RepositoryName string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	xxx_hidden_Visibility     Visibility             `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
-	xxx_hidden_Description    *string                `protobuf:"bytes,4,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	xxx_hidden_Url            *string                `protobuf:"bytes,5,opt,name=url,proto3,oneof" json:"url,omitempty"`
-	xxx_hidden_DefaultBranch  *string                `protobuf:"bytes,6,opt,name=default_branch,json=defaultBranch,proto3,oneof" json:"default_branch,omitempty"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	OwnerName      string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	RepositoryName string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	// optional, update to visibility will only be made if this is specified.
+	Visibility Visibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
+	// optional, update to description will only be made when this is present
+	Description *string `protobuf:"bytes,4,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	// optional, update to url will only be made when this is present
+	Url *string `protobuf:"bytes,5,opt,name=url,proto3,oneof" json:"url,omitempty"`
+	// optional, update to default_branch will only be made when this is present
+	DefaultBranch *string `protobuf:"bytes,6,opt,name=default_branch,json=defaultBranch,proto3,oneof" json:"default_branch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) Reset() {
@@ -3092,116 +3146,101 @@ func (x *UpdateRepositorySettingsByNameRequest) ProtoReflect() protoreflect.Mess
 
 func (x *UpdateRepositorySettingsByNameRequest) GetOwnerName() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerName
+		return x.OwnerName
 	}
 	return ""
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryName
+		return x.RepositoryName
 	}
 	return ""
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) GetVisibility() Visibility {
 	if x != nil {
-		return x.xxx_hidden_Visibility
+		return x.Visibility
 	}
 	return Visibility_VISIBILITY_UNSPECIFIED
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) GetDescription() string {
-	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+	if x != nil && x.Description != nil {
+		return *x.Description
 	}
 	return ""
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) GetUrl() string {
-	if x != nil {
-		if x.xxx_hidden_Url != nil {
-			return *x.xxx_hidden_Url
-		}
-		return ""
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) GetDefaultBranch() string {
-	if x != nil {
-		if x.xxx_hidden_DefaultBranch != nil {
-			return *x.xxx_hidden_DefaultBranch
-		}
-		return ""
+	if x != nil && x.DefaultBranch != nil {
+		return *x.DefaultBranch
 	}
 	return ""
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) SetOwnerName(v string) {
-	x.xxx_hidden_OwnerName = v
+	x.OwnerName = v
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
+	x.RepositoryName = v
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) SetVisibility(v Visibility) {
-	x.xxx_hidden_Visibility = v
+	x.Visibility = v
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.Description = &v
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) SetUrl(v string) {
-	x.xxx_hidden_Url = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.Url = &v
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) SetDefaultBranch(v string) {
-	x.xxx_hidden_DefaultBranch = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	x.DefaultBranch = &v
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.Description != nil
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	return x.Url != nil
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) HasDefaultBranch() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	return x.DefaultBranch != nil
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Description = nil
+	x.Description = nil
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) ClearUrl() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Url = nil
+	x.Url = nil
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) ClearDefaultBranch() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_DefaultBranch = nil
+	x.DefaultBranch = nil
 }
 
 type UpdateRepositorySettingsByNameRequest_builder struct {
@@ -3223,26 +3262,17 @@ func (b0 UpdateRepositorySettingsByNameRequest_builder) Build() *UpdateRepositor
 	m0 := &UpdateRepositorySettingsByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OwnerName = b.OwnerName
-	x.xxx_hidden_RepositoryName = b.RepositoryName
-	x.xxx_hidden_Visibility = b.Visibility
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Url != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_Url = b.Url
-	}
-	if b.DefaultBranch != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_DefaultBranch = b.DefaultBranch
-	}
+	x.OwnerName = b.OwnerName
+	x.RepositoryName = b.RepositoryName
+	x.Visibility = b.Visibility
+	x.Description = b.Description
+	x.Url = b.Url
+	x.DefaultBranch = b.DefaultBranch
 	return m0
 }
 
 type UpdateRepositorySettingsByNameResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3285,10 +3315,11 @@ func (b0 UpdateRepositorySettingsByNameResponse_builder) Build() *UpdateReposito
 }
 
 type GetRepositoriesMetadataRequest struct {
-	state          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Ids []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The list of repository IDs to request the metadata.
+	Ids           []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoriesMetadataRequest) Reset() {
@@ -3318,13 +3349,13 @@ func (x *GetRepositoriesMetadataRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoriesMetadataRequest) GetIds() []string {
 	if x != nil {
-		return x.xxx_hidden_Ids
+		return x.Ids
 	}
 	return nil
 }
 
 func (x *GetRepositoriesMetadataRequest) SetIds(v []string) {
-	x.xxx_hidden_Ids = v
+	x.Ids = v
 }
 
 type GetRepositoriesMetadataRequest_builder struct {
@@ -3338,15 +3369,15 @@ func (b0 GetRepositoriesMetadataRequest_builder) Build() *GetRepositoriesMetadat
 	m0 := &GetRepositoriesMetadataRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Ids = b.Ids
+	x.Ids = b.Ids
 	return m0
 }
 
 type GetRepositoriesMetadataResponse struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Metadata *[]*RepositoryMetadata `protobuf:"bytes,1,rep,name=metadata,proto3" json:"metadata,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Metadata      []*RepositoryMetadata  `protobuf:"bytes,1,rep,name=metadata,proto3" json:"metadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoriesMetadataResponse) Reset() {
@@ -3376,15 +3407,13 @@ func (x *GetRepositoriesMetadataResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoriesMetadataResponse) GetMetadata() []*RepositoryMetadata {
 	if x != nil {
-		if x.xxx_hidden_Metadata != nil {
-			return *x.xxx_hidden_Metadata
-		}
+		return x.Metadata
 	}
 	return nil
 }
 
 func (x *GetRepositoriesMetadataResponse) SetMetadata(v []*RepositoryMetadata) {
-	x.xxx_hidden_Metadata = &v
+	x.Metadata = v
 }
 
 type GetRepositoriesMetadataResponse_builder struct {
@@ -3397,17 +3426,20 @@ func (b0 GetRepositoriesMetadataResponse_builder) Build() *GetRepositoriesMetada
 	m0 := &GetRepositoriesMetadataResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Metadata = &b.Metadata
+	x.Metadata = b.Metadata
 	return m0
 }
 
 type GetRepositoryDependencyDOTStringRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The owner of the BSR repository.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// The name of the BSR repository.
+	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryDependencyDOTStringRequest) Reset() {
@@ -3437,35 +3469,35 @@ func (x *GetRepositoryDependencyDOTStringRequest) ProtoReflect() protoreflect.Me
 
 func (x *GetRepositoryDependencyDOTStringRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetRepositoryDependencyDOTStringRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetRepositoryDependencyDOTStringRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetRepositoryDependencyDOTStringRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetRepositoryDependencyDOTStringRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetRepositoryDependencyDOTStringRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 type GetRepositoryDependencyDOTStringRequest_builder struct {
@@ -3483,17 +3515,20 @@ func (b0 GetRepositoryDependencyDOTStringRequest_builder) Build() *GetRepository
 	m0 := &GetRepositoryDependencyDOTStringRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
 	return m0
 }
 
 type GetRepositoryDependencyDOTStringResponse struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DotString string                 `protobuf:"bytes,1,opt,name=dot_string,json=dotString,proto3" json:"dot_string,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The string DOT representation of the dependency graph for the repository.
+	//
+	// DOT language reference: https://graphviz.org/doc/info/lang.html
+	DotString     string `protobuf:"bytes,1,opt,name=dot_string,json=dotString,proto3" json:"dot_string,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRepositoryDependencyDOTStringResponse) Reset() {
@@ -3523,13 +3558,13 @@ func (x *GetRepositoryDependencyDOTStringResponse) ProtoReflect() protoreflect.M
 
 func (x *GetRepositoryDependencyDOTStringResponse) GetDotString() string {
 	if x != nil {
-		return x.xxx_hidden_DotString
+		return x.DotString
 	}
 	return ""
 }
 
 func (x *GetRepositoryDependencyDOTStringResponse) SetDotString(v string) {
-	x.xxx_hidden_DotString = v
+	x.DotString = v
 }
 
 type GetRepositoryDependencyDOTStringResponse_builder struct {
@@ -3545,7 +3580,7 @@ func (b0 GetRepositoryDependencyDOTStringResponse_builder) Build() *GetRepositor
 	m0 := &GetRepositoryDependencyDOTStringResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_DotString = b.DotString
+	x.DotString = b.DotString
 	return m0
 }
 
@@ -4263,8 +4298,8 @@ func file_buf_alpha_registry_v1alpha1_repository_proto_init() {
 	file_buf_alpha_registry_v1alpha1_user_proto_init()
 	file_buf_alpha_registry_v1alpha1_verification_status_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[0].OneofWrappers = []any{
-		(*repository_UserId)(nil),
-		(*repository_OrganizationId)(nil),
+		(*Repository_UserId)(nil),
+		(*Repository_OrganizationId)(nil),
 	}
 	file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[36].OneofWrappers = []any{}
 	type x struct{}

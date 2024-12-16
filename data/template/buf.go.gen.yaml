@@ -9,7 +9,7 @@ plugins:
     out: private/gen/proto/go
     opt:
       - paths=source_relative
-      - default_api_level=API_OPAQUE
+      - default_api_level=API_HYBRID
       - Mgoogle/protobuf/cpp_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
       - Mgoogle/protobuf/java_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
 inputs:

@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/breaking/v1/config.proto
 
+//go:build !protoopaque
+
 package breakingv1
 
 import (
@@ -41,15 +43,28 @@ const (
 // The rule and category IDs are not encoded as enums in this package because we may want to support custom rule
 // and category IDs in the future. Callers will need to resolve the rule and category ID strings.
 type Config struct {
-	state                             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Version                string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	xxx_hidden_UseIds                 []string               `protobuf:"bytes,2,rep,name=use_ids,json=useIds,proto3" json:"use_ids,omitempty"`
-	xxx_hidden_ExceptIds              []string               `protobuf:"bytes,3,rep,name=except_ids,json=exceptIds,proto3" json:"except_ids,omitempty"`
-	xxx_hidden_IgnorePaths            []string               `protobuf:"bytes,4,rep,name=ignore_paths,json=ignorePaths,proto3" json:"ignore_paths,omitempty"`
-	xxx_hidden_IgnoreIdPaths          *[]*IDPaths            `protobuf:"bytes,5,rep,name=ignore_id_paths,json=ignoreIdPaths,proto3" json:"ignore_id_paths,omitempty"`
-	xxx_hidden_IgnoreUnstablePackages bool                   `protobuf:"varint,6,opt,name=ignore_unstable_packages,json=ignoreUnstablePackages,proto3" json:"ignore_unstable_packages,omitempty"`
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// version represents the version of the breaking change rule and category IDs that should be used with this config.
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	// use_ids lists the rule and/or category IDs that are included in the breaking change check.
+	UseIds []string `protobuf:"bytes,2,rep,name=use_ids,json=useIds,proto3" json:"use_ids,omitempty"`
+	// except_ids lists the rule and/or category IDs that are excluded from the breaking change check.
+	ExceptIds []string `protobuf:"bytes,3,rep,name=except_ids,json=exceptIds,proto3" json:"except_ids,omitempty"`
+	// ignore_paths lists the paths of directories and/or files that should be ignored by the breaking change check.
+	// All paths are relative to the root of the module.
+	IgnorePaths []string `protobuf:"bytes,4,rep,name=ignore_paths,json=ignorePaths,proto3" json:"ignore_paths,omitempty"`
+	// ignore_id_paths is a map of rule and/or category IDs to directory and/or file paths to exclude from the
+	// breaking change check. This corresponds with the ignore_only configuration key.
+	IgnoreIdPaths []*IDPaths `protobuf:"bytes,5,rep,name=ignore_id_paths,json=ignoreIdPaths,proto3" json:"ignore_id_paths,omitempty"`
+	// ignore_unstable_packages ignores packages with a last component that is one of the unstable forms recognised
+	// by the PACKAGE_VERSION_SUFFIX:
+	//
+	//	v\d+test.*
+	//	v\d+(alpha|beta)\d+
+	//	v\d+p\d+(alpha|beta)\d+
+	IgnoreUnstablePackages bool `protobuf:"varint,6,opt,name=ignore_unstable_packages,json=ignoreUnstablePackages,proto3" json:"ignore_unstable_packages,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -79,70 +94,68 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 func (x *Config) GetVersion() string {
 	if x != nil {
-		return x.xxx_hidden_Version
+		return x.Version
 	}
 	return ""
 }
 
 func (x *Config) GetUseIds() []string {
 	if x != nil {
-		return x.xxx_hidden_UseIds
+		return x.UseIds
 	}
 	return nil
 }
 
 func (x *Config) GetExceptIds() []string {
 	if x != nil {
-		return x.xxx_hidden_ExceptIds
+		return x.ExceptIds
 	}
 	return nil
 }
 
 func (x *Config) GetIgnorePaths() []string {
 	if x != nil {
-		return x.xxx_hidden_IgnorePaths
+		return x.IgnorePaths
 	}
 	return nil
 }
 
 func (x *Config) GetIgnoreIdPaths() []*IDPaths {
 	if x != nil {
-		if x.xxx_hidden_IgnoreIdPaths != nil {
-			return *x.xxx_hidden_IgnoreIdPaths
-		}
+		return x.IgnoreIdPaths
 	}
 	return nil
 }
 
 func (x *Config) GetIgnoreUnstablePackages() bool {
 	if x != nil {
-		return x.xxx_hidden_IgnoreUnstablePackages
+		return x.IgnoreUnstablePackages
 	}
 	return false
 }
 
 func (x *Config) SetVersion(v string) {
-	x.xxx_hidden_Version = v
+	x.Version = v
 }
 
 func (x *Config) SetUseIds(v []string) {
-	x.xxx_hidden_UseIds = v
+	x.UseIds = v
 }
 
 func (x *Config) SetExceptIds(v []string) {
-	x.xxx_hidden_ExceptIds = v
+	x.ExceptIds = v
 }
 
 func (x *Config) SetIgnorePaths(v []string) {
-	x.xxx_hidden_IgnorePaths = v
+	x.IgnorePaths = v
 }
 
 func (x *Config) SetIgnoreIdPaths(v []*IDPaths) {
-	x.xxx_hidden_IgnoreIdPaths = &v
+	x.IgnoreIdPaths = v
 }
 
 func (x *Config) SetIgnoreUnstablePackages(v bool) {
-	x.xxx_hidden_IgnoreUnstablePackages = v
+	x.IgnoreUnstablePackages = v
 }
 
 type Config_builder struct {
@@ -173,22 +186,22 @@ func (b0 Config_builder) Build() *Config {
 	m0 := &Config{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Version = b.Version
-	x.xxx_hidden_UseIds = b.UseIds
-	x.xxx_hidden_ExceptIds = b.ExceptIds
-	x.xxx_hidden_IgnorePaths = b.IgnorePaths
-	x.xxx_hidden_IgnoreIdPaths = &b.IgnoreIdPaths
-	x.xxx_hidden_IgnoreUnstablePackages = b.IgnoreUnstablePackages
+	x.Version = b.Version
+	x.UseIds = b.UseIds
+	x.ExceptIds = b.ExceptIds
+	x.IgnorePaths = b.IgnorePaths
+	x.IgnoreIdPaths = b.IgnoreIdPaths
+	x.IgnoreUnstablePackages = b.IgnoreUnstablePackages
 	return m0
 }
 
 // IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.
 type IDPaths struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_Paths []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IDPaths) Reset() {
@@ -218,24 +231,24 @@ func (x *IDPaths) ProtoReflect() protoreflect.Message {
 
 func (x *IDPaths) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *IDPaths) GetPaths() []string {
 	if x != nil {
-		return x.xxx_hidden_Paths
+		return x.Paths
 	}
 	return nil
 }
 
 func (x *IDPaths) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *IDPaths) SetPaths(v []string) {
-	x.xxx_hidden_Paths = v
+	x.Paths = v
 }
 
 type IDPaths_builder struct {
@@ -249,8 +262,8 @@ func (b0 IDPaths_builder) Build() *IDPaths {
 	m0 := &IDPaths{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_Paths = b.Paths
+	x.Id = b.Id
+	x.Paths = b.Paths
 	return m0
 }
 

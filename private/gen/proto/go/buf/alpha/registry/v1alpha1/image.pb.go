@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/image.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -90,16 +92,32 @@ func (x ImageMask) Number() protoreflect.EnumNumber {
 }
 
 type GetImageRequest struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner             string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository        string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference         string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	xxx_hidden_ExcludeImports    bool                   `protobuf:"varint,4,opt,name=exclude_imports,json=excludeImports,proto3" json:"exclude_imports,omitempty"`
-	xxx_hidden_ExcludeSourceInfo bool                   `protobuf:"varint,5,opt,name=exclude_source_info,json=excludeSourceInfo,proto3" json:"exclude_source_info,omitempty"`
-	xxx_hidden_Types             []string               `protobuf:"bytes,6,rep,name=types,proto3" json:"types,omitempty"`
-	xxx_hidden_IncludeMask       []ImageMask            `protobuf:"varint,7,rep,packed,name=include_mask,json=includeMask,proto3,enum=buf.alpha.registry.v1alpha1.ImageMask" json:"include_mask,omitempty"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Exclude files from imported buf modules in this image.
+	ExcludeImports bool `protobuf:"varint,4,opt,name=exclude_imports,json=excludeImports,proto3" json:"exclude_imports,omitempty"`
+	// Exclude source_code_info fields from each ImageFile.
+	ExcludeSourceInfo bool `protobuf:"varint,5,opt,name=exclude_source_info,json=excludeSourceInfo,proto3" json:"exclude_source_info,omitempty"`
+	// When specified the returned image will only contain the necessary files and
+	// descriptors in those files to describe these types. Accepts messages, enums
+	// and services. All types must be defined in the buf module, types in
+	// dependencies are not accepted.
+	//
+	// At this time specifying `types` requires `exclude_source_info` to be set to
+	// true.
+	Types []string `protobuf:"bytes,6,rep,name=types,proto3" json:"types,omitempty"`
+	// When not empty, the returned image's files will only include
+	// *DescriptorProto fields for the elements specified here. The masks are
+	// applied without regard for dependencies between types. For example, if
+	// `IMAGE_MASK_MESSAGES` is specified without `IMAGE_MASK_ENUMS` the resulting
+	// image will NOT contain enum definitions even if they are referenced from
+	// message fields.
+	IncludeMask   []ImageMask `protobuf:"varint,7,rep,packed,name=include_mask,json=includeMask,proto3,enum=buf.alpha.registry.v1alpha1.ImageMask" json:"include_mask,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetImageRequest) Reset() {
@@ -129,79 +147,79 @@ func (x *GetImageRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetImageRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetImageRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetImageRequest) GetExcludeImports() bool {
 	if x != nil {
-		return x.xxx_hidden_ExcludeImports
+		return x.ExcludeImports
 	}
 	return false
 }
 
 func (x *GetImageRequest) GetExcludeSourceInfo() bool {
 	if x != nil {
-		return x.xxx_hidden_ExcludeSourceInfo
+		return x.ExcludeSourceInfo
 	}
 	return false
 }
 
 func (x *GetImageRequest) GetTypes() []string {
 	if x != nil {
-		return x.xxx_hidden_Types
+		return x.Types
 	}
 	return nil
 }
 
 func (x *GetImageRequest) GetIncludeMask() []ImageMask {
 	if x != nil {
-		return x.xxx_hidden_IncludeMask
+		return x.IncludeMask
 	}
 	return nil
 }
 
 func (x *GetImageRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetImageRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetImageRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 func (x *GetImageRequest) SetExcludeImports(v bool) {
-	x.xxx_hidden_ExcludeImports = v
+	x.ExcludeImports = v
 }
 
 func (x *GetImageRequest) SetExcludeSourceInfo(v bool) {
-	x.xxx_hidden_ExcludeSourceInfo = v
+	x.ExcludeSourceInfo = v
 }
 
 func (x *GetImageRequest) SetTypes(v []string) {
-	x.xxx_hidden_Types = v
+	x.Types = v
 }
 
 func (x *GetImageRequest) SetIncludeMask(v []ImageMask) {
-	x.xxx_hidden_IncludeMask = v
+	x.IncludeMask = v
 }
 
 type GetImageRequest_builder struct {
@@ -236,21 +254,21 @@ func (b0 GetImageRequest_builder) Build() *GetImageRequest {
 	m0 := &GetImageRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
-	x.xxx_hidden_ExcludeImports = b.ExcludeImports
-	x.xxx_hidden_ExcludeSourceInfo = b.ExcludeSourceInfo
-	x.xxx_hidden_Types = b.Types
-	x.xxx_hidden_IncludeMask = b.IncludeMask
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
+	x.ExcludeImports = b.ExcludeImports
+	x.ExcludeSourceInfo = b.ExcludeSourceInfo
+	x.Types = b.Types
+	x.IncludeMask = b.IncludeMask
 	return m0
 }
 
 type GetImageResponse struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Image *v1.Image              `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Image         *v1.Image              `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetImageResponse) Reset() {
@@ -280,24 +298,24 @@ func (x *GetImageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetImageResponse) GetImage() *v1.Image {
 	if x != nil {
-		return x.xxx_hidden_Image
+		return x.Image
 	}
 	return nil
 }
 
 func (x *GetImageResponse) SetImage(v *v1.Image) {
-	x.xxx_hidden_Image = v
+	x.Image = v
 }
 
 func (x *GetImageResponse) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return x.Image != nil
 }
 
 func (x *GetImageResponse) ClearImage() {
-	x.xxx_hidden_Image = nil
+	x.Image = nil
 }
 
 type GetImageResponse_builder struct {
@@ -310,7 +328,7 @@ func (b0 GetImageResponse_builder) Build() *GetImageResponse {
 	m0 := &GetImageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Image = b.Image
+	x.Image = b.Image
 	return m0
 }
 
