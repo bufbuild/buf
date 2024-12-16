@@ -78,7 +78,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelunarchive"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulesetting/modulesettingupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulesettings/modulesettingsupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
@@ -95,7 +95,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelunarchive"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginsetting/pluginsettingupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginsettings/pluginsettingsupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -269,17 +269,17 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:   "setting",
+								Use:   "settings",
 								Short: "Manage a module's settings",
 								SubCommands: []*appcmd.Command{
-									modulesettingupdate.NewCommand("update", builder, ""),
+									modulesettingsupdate.NewCommand("update", builder, ""),
 								},
 							},
 							modulecreate.NewCommand("create", builder),
 							moduleinfo.NewCommand("info", builder),
 							moduledelete.NewCommand("delete", builder),
 							moduledeprecate.NewCommand("deprecate", builder),
-							modulesettingupdate.NewCommand("update", builder, deprecatedMessage("buf registry module setting update", "buf registry update")),
+							modulesettingsupdate.NewCommand("update", builder, deprecatedMessage("buf registry module settings update", "buf registry update")),
 							moduleundeprecate.NewCommand("undeprecate", builder),
 						},
 					},
@@ -308,10 +308,10 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:   "setting",
+								Use:   "settings",
 								Short: "Manage a plugin's settings",
 								SubCommands: []*appcmd.Command{
-									pluginsettingupdate.NewCommand("update", builder),
+									pluginsettingsupdate.NewCommand("update", builder),
 								},
 							},
 							plugincreate.NewCommand("create", builder),

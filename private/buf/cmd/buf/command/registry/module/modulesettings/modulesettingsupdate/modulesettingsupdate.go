@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pluginsettingupdate
+package modulesettingsupdate
 
 import (
 	"context"
 	"fmt"
 
-	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -30,18 +30,24 @@ import (
 )
 
 const (
-	visibilityFlagName  = "visibility"
-	descriptionFlagName = "description"
-	urlFlagName         = "url"
+	visibilityFlagName   = "visibility"
+	descriptionFlagName  = "description"
+	urlFlagName          = "url"
+	defaultLabelFlagName = "default-label-name"
 )
 
-// NewCommand returns a new Command.
-func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
+// NewCommand returns a new Command
+func NewCommand(
+	name string,
+	builder appext.SubCommandBuilder,
+	deprecated string,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/plugin>",
-		Short: "Update BSR plugin settings",
-		Args:  appcmd.ExactArgs(1),
+		Use:        name + " <remote/owner/module>",
+		Short:      "Update BSR module settings",
+		Args:       appcmd.ExactArgs(1),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -68,13 +74,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		flagSet,
 		descriptionFlagName,
 		&f.Description,
-		"The new description for the plugin",
+		"The new description for the module",
 	)
 	bufcli.BindStringPointer(
 		flagSet,
 		urlFlagName,
 		&f.URL,
-		"The new URL for the plugin",
+		"The new URL for the module",
+	)
+	flagSet.StringVar(
+		&f.DefaultLabel,
+		defaultLabelFlagName,
+		"",
+		"The label that commits are pushed to by default",
 	)
 }
 
@@ -83,11 +95,11 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	pluginFullName, err := bufparse.ParseFullName(container.Arg(0))
+	moduleFullName, err := bufparse.ParseFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
-	visibility, err := bufcli.VisibilityFlagToPluginVisibilityAllowUnspecified(flags.Visibility)
+	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.WrapInvalidArgumentError(err)
 	}
@@ -95,43 +107,44 @@ func run(
 	if err != nil {
 		return err
 	}
-	var visibilityUpdate *pluginv1beta1.PluginVisibility
-	if visibility != pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED {
-		visibilityUpdate = &visibility
+	moduleServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	visibilityUpdate := &visibility
+	if visibility == modulev1.ModuleVisibility_MODULE_VISIBILITY_UNSPECIFIED {
+		visibilityUpdate = nil
 	}
-
-	pluginServiceClient := bufregistryapiplugin.NewClientProvider(clientConfig).
-		V1Beta1PluginServiceClient(pluginFullName.Registry())
-
-	pluginResponse, err := pluginServiceClient.UpdatePlugins(ctx, connect.NewRequest(
-		&pluginv1beta1.UpdatePluginsRequest{
-			Values: []*pluginv1beta1.UpdatePluginsRequest_Value{
-				{
-					PluginRef: &pluginv1beta1.PluginRef{
-						Value: &pluginv1beta1.PluginRef_Name_{
-							Name: &pluginv1beta1.PluginRef_Name{
-								Owner:  pluginFullName.Owner(),
-								Plugin: pluginFullName.Name(),
+	defaultLabelUpdate := &flags.DefaultLabel
+	if flags.DefaultLabel == "" {
+		defaultLabelUpdate = nil
+	}
+	if _, err := moduleServiceClient.UpdateModules(
+		ctx,
+		&connect.Request[modulev1.UpdateModulesRequest]{
+			Msg: &modulev1.UpdateModulesRequest{
+				Values: []*modulev1.UpdateModulesRequest_Value{
+					{
+						ModuleRef: &modulev1.ModuleRef{
+							Value: &modulev1.ModuleRef_Name_{
+								Name: &modulev1.ModuleRef_Name{
+									Owner:  moduleFullName.Owner(),
+									Module: moduleFullName.Name(),
+								},
 							},
 						},
+						Description:      flags.Description,
+						Url:              flags.URL,
+						Visibility:       visibilityUpdate,
+						DefaultLabelName: defaultLabelUpdate,
 					},
-					Visibility: visibilityUpdate,
 				},
 			},
 		},
-	))
-	if err != nil {
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	plugins := pluginResponse.Msg.Plugins
-	if len(plugins) != 1 {
-		return syserror.Newf("unexpected number of plugins returned from server: %d", len(plugins))
-	}
-	_, err = fmt.Fprintf(container.Stdout(), "Updated %s.\n", pluginFullName)
-	if err != nil {
+	if _, err := fmt.Fprintf(container.Stdout(), "Updated %s.\n", moduleFullName); err != nil {
 		return syserror.Wrap(err)
 	}
 	return nil

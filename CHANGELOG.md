@@ -12,7 +12,7 @@
   file. Only WebAssembly check plugins are supported at this time.
 - Add `buf registry plugin commit {add-label,info,list,resolve}` to manage BSR plugin commits.
 - Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
-- Move `buf registry module update` to `buf registry module setting update`. Command
+- Move `buf registry module update` to `buf registry module settings update`. Command
   `buf registry module update` is now deprecated.
 
 ## [v1.47.2] - 2024-11-14
