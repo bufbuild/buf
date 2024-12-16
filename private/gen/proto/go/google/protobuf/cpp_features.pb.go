@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: google/protobuf/cpp_features.proto
 
-//go:build !protoopaque
-
 package protobuf
 
 import (
@@ -84,15 +82,13 @@ func (x CppFeatures_StringType) Number() protoreflect.EnumNumber {
 }
 
 type CppFeatures struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Whether or not to treat an enum field as closed.  This option is only
-	// applicable to enum fields, and will be removed in the future.  It is
-	// consistent with the legacy behavior of using proto3 enum types for proto2
-	// fields.
-	LegacyClosedEnum *bool                   `protobuf:"varint,1,opt,name=legacy_closed_enum,json=legacyClosedEnum" json:"legacy_closed_enum,omitempty"`
-	StringType       *CppFeatures_StringType `protobuf:"varint,2,opt,name=string_type,json=stringType,enum=pb.CppFeatures_StringType" json:"string_type,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LegacyClosedEnum bool                   `protobuf:"varint,1,opt,name=legacy_closed_enum,json=legacyClosedEnum" json:"legacy_closed_enum,omitempty"`
+	xxx_hidden_StringType       CppFeatures_StringType `protobuf:"varint,2,opt,name=string_type,json=stringType,enum=pb.CppFeatures_StringType" json:"string_type,omitempty"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *CppFeatures) Reset() {
@@ -121,47 +117,53 @@ func (x *CppFeatures) ProtoReflect() protoreflect.Message {
 }
 
 func (x *CppFeatures) GetLegacyClosedEnum() bool {
-	if x != nil && x.LegacyClosedEnum != nil {
-		return *x.LegacyClosedEnum
+	if x != nil {
+		return x.xxx_hidden_LegacyClosedEnum
 	}
 	return false
 }
 
 func (x *CppFeatures) GetStringType() CppFeatures_StringType {
-	if x != nil && x.StringType != nil {
-		return *x.StringType
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
+			return x.xxx_hidden_StringType
+		}
 	}
 	return CppFeatures_STRING_TYPE_UNKNOWN
 }
 
 func (x *CppFeatures) SetLegacyClosedEnum(v bool) {
-	x.LegacyClosedEnum = &v
+	x.xxx_hidden_LegacyClosedEnum = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *CppFeatures) SetStringType(v CppFeatures_StringType) {
-	x.StringType = &v
+	x.xxx_hidden_StringType = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *CppFeatures) HasLegacyClosedEnum() bool {
 	if x == nil {
 		return false
 	}
-	return x.LegacyClosedEnum != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *CppFeatures) HasStringType() bool {
 	if x == nil {
 		return false
 	}
-	return x.StringType != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CppFeatures) ClearLegacyClosedEnum() {
-	x.LegacyClosedEnum = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_LegacyClosedEnum = false
 }
 
 func (x *CppFeatures) ClearStringType() {
-	x.StringType = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_StringType = CppFeatures_STRING_TYPE_UNKNOWN
 }
 
 type CppFeatures_builder struct {
@@ -179,8 +181,14 @@ func (b0 CppFeatures_builder) Build() *CppFeatures {
 	m0 := &CppFeatures{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LegacyClosedEnum = b.LegacyClosedEnum
-	x.StringType = b.StringType
+	if b.LegacyClosedEnum != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_LegacyClosedEnum = *b.LegacyClosedEnum
+	}
+	if b.StringType != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_StringType = *b.StringType
+	}
 	return m0
 }
 

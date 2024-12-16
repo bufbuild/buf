@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/recommendation.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -39,14 +37,14 @@ const (
 // RecommendedRepository is the information about a repository needed to link to
 // its owner page.
 type RecommendedRepository struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner         string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	RepositoryId  string                 `protobuf:"bytes,5,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner        string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_CreateTime   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_Description  string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,5,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RecommendedRepository) Reset() {
@@ -76,68 +74,68 @@ func (x *RecommendedRepository) ProtoReflect() protoreflect.Message {
 
 func (x *RecommendedRepository) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *RecommendedRepository) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *RecommendedRepository) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *RecommendedRepository) GetDescription() string {
 	if x != nil {
-		return x.Description
+		return x.xxx_hidden_Description
 	}
 	return ""
 }
 
 func (x *RecommendedRepository) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *RecommendedRepository) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *RecommendedRepository) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *RecommendedRepository) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *RecommendedRepository) SetDescription(v string) {
-	x.Description = v
+	x.xxx_hidden_Description = v
 }
 
 func (x *RecommendedRepository) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *RecommendedRepository) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *RecommendedRepository) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 type RecommendedRepository_builder struct {
@@ -154,21 +152,21 @@ func (b0 RecommendedRepository_builder) Build() *RecommendedRepository {
 	m0 := &RecommendedRepository{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.CreateTime = b.CreateTime
-	x.Description = b.Description
-	x.RepositoryId = b.RepositoryId
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_Description = b.Description
+	x.xxx_hidden_RepositoryId = b.RepositoryId
 	return m0
 }
 
 // SetRecommendedResource is the information needed to configure a resource recommendation
 type SetRecommendedResource struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner         string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SetRecommendedResource) Reset() {
@@ -198,24 +196,24 @@ func (x *SetRecommendedResource) ProtoReflect() protoreflect.Message {
 
 func (x *SetRecommendedResource) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *SetRecommendedResource) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *SetRecommendedResource) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *SetRecommendedResource) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type SetRecommendedResource_builder struct {
@@ -229,13 +227,13 @@ func (b0 SetRecommendedResource_builder) Build() *SetRecommendedResource {
 	m0 := &SetRecommendedResource{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type RecommendedRepositoriesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,10 +276,10 @@ func (b0 RecommendedRepositoriesRequest_builder) Build() *RecommendedRepositorie
 }
 
 type RecommendedRepositoriesResponse struct {
-	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
-	Repositories  []*RecommendedRepository `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_Repositories *[]*RecommendedRepository `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RecommendedRepositoriesResponse) Reset() {
@@ -311,13 +309,15 @@ func (x *RecommendedRepositoriesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *RecommendedRepositoriesResponse) GetRepositories() []*RecommendedRepository {
 	if x != nil {
-		return x.Repositories
+		if x.xxx_hidden_Repositories != nil {
+			return *x.xxx_hidden_Repositories
+		}
 	}
 	return nil
 }
 
 func (x *RecommendedRepositoriesResponse) SetRepositories(v []*RecommendedRepository) {
-	x.Repositories = v
+	x.xxx_hidden_Repositories = &v
 }
 
 type RecommendedRepositoriesResponse_builder struct {
@@ -330,12 +330,12 @@ func (b0 RecommendedRepositoriesResponse_builder) Build() *RecommendedRepositori
 	m0 := &RecommendedRepositoriesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Repositories = b.Repositories
+	x.xxx_hidden_Repositories = &b.Repositories
 	return m0
 }
 
 type ListRecommendedResourcesRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -378,10 +378,10 @@ func (b0 ListRecommendedResourcesRequest_builder) Build() *ListRecommendedResour
 }
 
 type ListRecommendedResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Resources     []*Resource            `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Resources *[]*Resource           `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListRecommendedResourcesResponse) Reset() {
@@ -411,13 +411,15 @@ func (x *ListRecommendedResourcesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRecommendedResourcesResponse) GetResources() []*Resource {
 	if x != nil {
-		return x.Resources
+		if x.xxx_hidden_Resources != nil {
+			return *x.xxx_hidden_Resources
+		}
 	}
 	return nil
 }
 
 func (x *ListRecommendedResourcesResponse) SetResources(v []*Resource) {
-	x.Resources = v
+	x.xxx_hidden_Resources = &v
 }
 
 type ListRecommendedResourcesResponse_builder struct {
@@ -430,15 +432,15 @@ func (b0 ListRecommendedResourcesResponse_builder) Build() *ListRecommendedResou
 	m0 := &ListRecommendedResourcesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Resources = b.Resources
+	x.xxx_hidden_Resources = &b.Resources
 	return m0
 }
 
 type SetRecommendedResourcesRequest struct {
-	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
-	Resources     []*SetRecommendedResource `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Resources *[]*SetRecommendedResource `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *SetRecommendedResourcesRequest) Reset() {
@@ -468,13 +470,15 @@ func (x *SetRecommendedResourcesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SetRecommendedResourcesRequest) GetResources() []*SetRecommendedResource {
 	if x != nil {
-		return x.Resources
+		if x.xxx_hidden_Resources != nil {
+			return *x.xxx_hidden_Resources
+		}
 	}
 	return nil
 }
 
 func (x *SetRecommendedResourcesRequest) SetResources(v []*SetRecommendedResource) {
-	x.Resources = v
+	x.xxx_hidden_Resources = &v
 }
 
 type SetRecommendedResourcesRequest_builder struct {
@@ -487,12 +491,12 @@ func (b0 SetRecommendedResourcesRequest_builder) Build() *SetRecommendedResource
 	m0 := &SetRecommendedResourcesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Resources = b.Resources
+	x.xxx_hidden_Resources = &b.Resources
 	return m0
 }
 
 type SetRecommendedResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

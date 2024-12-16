@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/github.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -36,10 +34,10 @@ const (
 )
 
 type GithubAppConfig struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	AppId         string                 `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AppId string                 `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GithubAppConfig) Reset() {
@@ -69,13 +67,13 @@ func (x *GithubAppConfig) ProtoReflect() protoreflect.Message {
 
 func (x *GithubAppConfig) GetAppId() string {
 	if x != nil {
-		return x.AppId
+		return x.xxx_hidden_AppId
 	}
 	return ""
 }
 
 func (x *GithubAppConfig) SetAppId(v string) {
-	x.AppId = v
+	x.xxx_hidden_AppId = v
 }
 
 type GithubAppConfig_builder struct {
@@ -88,12 +86,12 @@ func (b0 GithubAppConfig_builder) Build() *GithubAppConfig {
 	m0 := &GithubAppConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AppId = b.AppId
+	x.xxx_hidden_AppId = b.AppId
 	return m0
 }
 
 type GetGithubAppConfigRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -136,10 +134,10 @@ func (b0 GetGithubAppConfigRequest_builder) Build() *GetGithubAppConfigRequest {
 }
 
 type GetGithubAppConfigResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	AppConfig     *GithubAppConfig       `protobuf:"bytes,1,opt,name=app_config,json=appConfig,proto3" json:"app_config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AppConfig *GithubAppConfig       `protobuf:"bytes,1,opt,name=app_config,json=appConfig,proto3" json:"app_config,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetGithubAppConfigResponse) Reset() {
@@ -169,24 +167,24 @@ func (x *GetGithubAppConfigResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetGithubAppConfigResponse) GetAppConfig() *GithubAppConfig {
 	if x != nil {
-		return x.AppConfig
+		return x.xxx_hidden_AppConfig
 	}
 	return nil
 }
 
 func (x *GetGithubAppConfigResponse) SetAppConfig(v *GithubAppConfig) {
-	x.AppConfig = v
+	x.xxx_hidden_AppConfig = v
 }
 
 func (x *GetGithubAppConfigResponse) HasAppConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.AppConfig != nil
+	return x.xxx_hidden_AppConfig != nil
 }
 
 func (x *GetGithubAppConfigResponse) ClearAppConfig() {
-	x.AppConfig = nil
+	x.xxx_hidden_AppConfig = nil
 }
 
 type GetGithubAppConfigResponse_builder struct {
@@ -199,7 +197,7 @@ func (b0 GetGithubAppConfigResponse_builder) Build() *GetGithubAppConfigResponse
 	m0 := &GetGithubAppConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AppConfig = b.AppConfig
+	x.xxx_hidden_AppConfig = b.AppConfig
 	return m0
 }
 

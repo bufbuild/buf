@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/owner.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -36,14 +34,10 @@ const (
 )
 
 type Owner struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Owner:
-	//
-	//	*Owner_User
-	//	*Owner_Organization
-	Owner         isOwner_Owner `protobuf_oneof:"owner"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner isOwner_Owner          `protobuf_oneof:"owner"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Owner) Reset() {
@@ -71,16 +65,9 @@ func (x *Owner) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *Owner) GetOwner() isOwner_Owner {
-	if x != nil {
-		return x.Owner
-	}
-	return nil
-}
-
 func (x *Owner) GetUser() *User {
 	if x != nil {
-		if x, ok := x.Owner.(*Owner_User); ok {
+		if x, ok := x.xxx_hidden_Owner.(*owner_User); ok {
 			return x.User
 		}
 	}
@@ -89,7 +76,7 @@ func (x *Owner) GetUser() *User {
 
 func (x *Owner) GetOrganization() *Organization {
 	if x != nil {
-		if x, ok := x.Owner.(*Owner_Organization); ok {
+		if x, ok := x.xxx_hidden_Owner.(*owner_Organization); ok {
 			return x.Organization
 		}
 	}
@@ -98,32 +85,32 @@ func (x *Owner) GetOrganization() *Organization {
 
 func (x *Owner) SetUser(v *User) {
 	if v == nil {
-		x.Owner = nil
+		x.xxx_hidden_Owner = nil
 		return
 	}
-	x.Owner = &Owner_User{v}
+	x.xxx_hidden_Owner = &owner_User{v}
 }
 
 func (x *Owner) SetOrganization(v *Organization) {
 	if v == nil {
-		x.Owner = nil
+		x.xxx_hidden_Owner = nil
 		return
 	}
-	x.Owner = &Owner_Organization{v}
+	x.xxx_hidden_Owner = &owner_Organization{v}
 }
 
 func (x *Owner) HasOwner() bool {
 	if x == nil {
 		return false
 	}
-	return x.Owner != nil
+	return x.xxx_hidden_Owner != nil
 }
 
 func (x *Owner) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Owner.(*Owner_User)
+	_, ok := x.xxx_hidden_Owner.(*owner_User)
 	return ok
 }
 
@@ -131,23 +118,23 @@ func (x *Owner) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Owner.(*Owner_Organization)
+	_, ok := x.xxx_hidden_Owner.(*owner_Organization)
 	return ok
 }
 
 func (x *Owner) ClearOwner() {
-	x.Owner = nil
+	x.xxx_hidden_Owner = nil
 }
 
 func (x *Owner) ClearUser() {
-	if _, ok := x.Owner.(*Owner_User); ok {
-		x.Owner = nil
+	if _, ok := x.xxx_hidden_Owner.(*owner_User); ok {
+		x.xxx_hidden_Owner = nil
 	}
 }
 
 func (x *Owner) ClearOrganization() {
-	if _, ok := x.Owner.(*Owner_Organization); ok {
-		x.Owner = nil
+	if _, ok := x.xxx_hidden_Owner.(*owner_Organization); ok {
+		x.xxx_hidden_Owner = nil
 	}
 }
 
@@ -159,10 +146,10 @@ func (x *Owner) WhichOwner() case_Owner_Owner {
 	if x == nil {
 		return Owner_Owner_not_set_case
 	}
-	switch x.Owner.(type) {
-	case *Owner_User:
+	switch x.xxx_hidden_Owner.(type) {
+	case *owner_User:
 		return Owner_User_case
-	case *Owner_Organization:
+	case *owner_Organization:
 		return Owner_Organization_case
 	default:
 		return Owner_Owner_not_set_case
@@ -172,12 +159,12 @@ func (x *Owner) WhichOwner() case_Owner_Owner {
 type Owner_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Owner:
+	// Fields of oneof xxx_hidden_Owner:
 	// The requested owner is a `User`.
 	User *User
 	// The requested owner is a `Organization`.
 	Organization *Organization
-	// -- end of Owner
+	// -- end of xxx_hidden_Owner
 }
 
 func (b0 Owner_builder) Build() *Owner {
@@ -185,10 +172,10 @@ func (b0 Owner_builder) Build() *Owner {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.User != nil {
-		x.Owner = &Owner_User{b.User}
+		x.xxx_hidden_Owner = &owner_User{b.User}
 	}
 	if b.Organization != nil {
-		x.Owner = &Owner_Organization{b.Organization}
+		x.xxx_hidden_Owner = &owner_Organization{b.Organization}
 	}
 	return m0
 }
@@ -207,26 +194,25 @@ type isOwner_Owner interface {
 	isOwner_Owner()
 }
 
-type Owner_User struct {
+type owner_User struct {
 	// The requested owner is a `User`.
 	User *User `protobuf:"bytes,1,opt,name=user,proto3,oneof"`
 }
 
-type Owner_Organization struct {
+type owner_Organization struct {
 	// The requested owner is a `Organization`.
 	Organization *Organization `protobuf:"bytes,2,opt,name=organization,proto3,oneof"`
 }
 
-func (*Owner_User) isOwner_Owner() {}
+func (*owner_User) isOwner_Owner() {}
 
-func (*Owner_Organization) isOwner_Owner() {}
+func (*owner_Organization) isOwner_Owner() {}
 
 type GetOwnerByNameRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Name of the requested owner.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetOwnerByNameRequest) Reset() {
@@ -256,13 +242,13 @@ func (x *GetOwnerByNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetOwnerByNameRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GetOwnerByNameRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type GetOwnerByNameRequest_builder struct {
@@ -276,15 +262,15 @@ func (b0 GetOwnerByNameRequest_builder) Build() *GetOwnerByNameRequest {
 	m0 := &GetOwnerByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type GetOwnerByNameResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner         *Owner                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner *Owner                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetOwnerByNameResponse) Reset() {
@@ -314,24 +300,24 @@ func (x *GetOwnerByNameResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetOwnerByNameResponse) GetOwner() *Owner {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return nil
 }
 
 func (x *GetOwnerByNameResponse) SetOwner(v *Owner) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *GetOwnerByNameResponse) HasOwner() bool {
 	if x == nil {
 		return false
 	}
-	return x.Owner != nil
+	return x.xxx_hidden_Owner != nil
 }
 
 func (x *GetOwnerByNameResponse) ClearOwner() {
-	x.Owner = nil
+	x.xxx_hidden_Owner = nil
 }
 
 type GetOwnerByNameResponse_builder struct {
@@ -344,7 +330,7 @@ func (b0 GetOwnerByNameResponse_builder) Build() *GetOwnerByNameResponse {
 	m0 := &GetOwnerByNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
+	x.xxx_hidden_Owner = b.Owner
 	return m0
 }
 
@@ -437,8 +423,8 @@ func file_buf_alpha_registry_v1alpha1_owner_proto_init() {
 	file_buf_alpha_registry_v1alpha1_organization_proto_init()
 	file_buf_alpha_registry_v1alpha1_user_proto_init()
 	file_buf_alpha_registry_v1alpha1_owner_proto_msgTypes[0].OneofWrappers = []any{
-		(*Owner_User)(nil),
-		(*Owner_Organization)(nil),
+		(*owner_User)(nil),
+		(*owner_Organization)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

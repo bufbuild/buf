@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/module/v1alpha1/module.proto
 
-//go:build !protoopaque
-
 package modulev1alpha1
 
 import (
@@ -80,13 +78,11 @@ func (x DigestType) Number() protoreflect.EnumNumber {
 
 // Digest represents a hash function's value.
 type Digest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// digest_type describes the hash algorithm. e.g. "SHAKE256"
-	DigestType DigestType `protobuf:"varint,1,opt,name=digest_type,json=digestType,proto3,enum=buf.alpha.module.v1alpha1.DigestType" json:"digest_type,omitempty"`
-	// digest is the hash's output without encoding.
-	Digest        []byte `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DigestType DigestType             `protobuf:"varint,1,opt,name=digest_type,json=digestType,proto3,enum=buf.alpha.module.v1alpha1.DigestType" json:"digest_type,omitempty"`
+	xxx_hidden_Digest     []byte                 `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *Digest) Reset() {
@@ -116,27 +112,27 @@ func (x *Digest) ProtoReflect() protoreflect.Message {
 
 func (x *Digest) GetDigestType() DigestType {
 	if x != nil {
-		return x.DigestType
+		return x.xxx_hidden_DigestType
 	}
 	return DigestType_DIGEST_TYPE_UNSPECIFIED
 }
 
 func (x *Digest) GetDigest() []byte {
 	if x != nil {
-		return x.Digest
+		return x.xxx_hidden_Digest
 	}
 	return nil
 }
 
 func (x *Digest) SetDigestType(v DigestType) {
-	x.DigestType = v
+	x.xxx_hidden_DigestType = v
 }
 
 func (x *Digest) SetDigest(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Digest = v
+	x.xxx_hidden_Digest = v
 }
 
 type Digest_builder struct {
@@ -152,20 +148,18 @@ func (b0 Digest_builder) Build() *Digest {
 	m0 := &Digest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DigestType = b.DigestType
-	x.Digest = b.Digest
+	x.xxx_hidden_DigestType = b.DigestType
+	x.xxx_hidden_Digest = b.Digest
 	return m0
 }
 
 // Blob represents some module content with an associated digest.
 type Blob struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Digest of the content.
-	Digest *Digest `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
-	// Content of the blob.
-	Content       []byte `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Digest  *Digest                `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
+	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Blob) Reset() {
@@ -195,38 +189,38 @@ func (x *Blob) ProtoReflect() protoreflect.Message {
 
 func (x *Blob) GetDigest() *Digest {
 	if x != nil {
-		return x.Digest
+		return x.xxx_hidden_Digest
 	}
 	return nil
 }
 
 func (x *Blob) GetContent() []byte {
 	if x != nil {
-		return x.Content
+		return x.xxx_hidden_Content
 	}
 	return nil
 }
 
 func (x *Blob) SetDigest(v *Digest) {
-	x.Digest = v
+	x.xxx_hidden_Digest = v
 }
 
 func (x *Blob) SetContent(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Content = v
+	x.xxx_hidden_Content = v
 }
 
 func (x *Blob) HasDigest() bool {
 	if x == nil {
 		return false
 	}
-	return x.Digest != nil
+	return x.xxx_hidden_Digest != nil
 }
 
 func (x *Blob) ClearDigest() {
-	x.Digest = nil
+	x.xxx_hidden_Digest = nil
 }
 
 type Blob_builder struct {
@@ -242,43 +236,23 @@ func (b0 Blob_builder) Build() *Blob {
 	m0 := &Blob{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Digest = b.Digest
-	x.Content = b.Content
+	x.xxx_hidden_Digest = b.Digest
+	x.xxx_hidden_Content = b.Content
 	return m0
 }
 
 // Module is a module.
 type Module struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// files are the files that make up the set.
-	//
-	// Sorted by path.
-	// Path must be unique.
-	// Only the target files. No imports.
-	//
-	// Maximum total size of all content: 32MB.
-	Files []*ModuleFile `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
-	// dependencies are the dependencies.
-	Dependencies []*ModulePin `protobuf:"bytes,2,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
-	// documentation is the string representation of the contents of the file at documentation_path.
-	//
-	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-	Documentation string `protobuf:"bytes,3,opt,name=documentation,proto3" json:"documentation,omitempty"`
-	// breaking_config is the breaking change detection configuration set for the module.
-	BreakingConfig *v1.Config `protobuf:"bytes,4,opt,name=breaking_config,json=breakingConfig,proto3" json:"breaking_config,omitempty"`
-	// lint_config is the lint configuration set for the module.
-	LintConfig *v11.Config `protobuf:"bytes,5,opt,name=lint_config,json=lintConfig,proto3" json:"lint_config,omitempty"`
-	// license is the string representation of the contents of the `LICENSE` file.
-	//
-	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-	License string `protobuf:"bytes,6,opt,name=license,proto3" json:"license,omitempty"`
-	// documentation_path is the path of the file which contains the module documentation.
-	//
-	// either `buf.md`, `README.md` or `README.markdown`.
-	// if empty, assumes buf.md.
-	DocumentationPath string `protobuf:"bytes,7,opt,name=documentation_path,json=documentationPath,proto3" json:"documentation_path,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Files             *[]*ModuleFile         `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	xxx_hidden_Dependencies      *[]*ModulePin          `protobuf:"bytes,2,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
+	xxx_hidden_Documentation     string                 `protobuf:"bytes,3,opt,name=documentation,proto3" json:"documentation,omitempty"`
+	xxx_hidden_BreakingConfig    *v1.Config             `protobuf:"bytes,4,opt,name=breaking_config,json=breakingConfig,proto3" json:"breaking_config,omitempty"`
+	xxx_hidden_LintConfig        *v11.Config            `protobuf:"bytes,5,opt,name=lint_config,json=lintConfig,proto3" json:"lint_config,omitempty"`
+	xxx_hidden_License           string                 `protobuf:"bytes,6,opt,name=license,proto3" json:"license,omitempty"`
+	xxx_hidden_DocumentationPath string                 `protobuf:"bytes,7,opt,name=documentation_path,json=documentationPath,proto3" json:"documentation_path,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *Module) Reset() {
@@ -308,101 +282,105 @@ func (x *Module) ProtoReflect() protoreflect.Message {
 
 func (x *Module) GetFiles() []*ModuleFile {
 	if x != nil {
-		return x.Files
+		if x.xxx_hidden_Files != nil {
+			return *x.xxx_hidden_Files
+		}
 	}
 	return nil
 }
 
 func (x *Module) GetDependencies() []*ModulePin {
 	if x != nil {
-		return x.Dependencies
+		if x.xxx_hidden_Dependencies != nil {
+			return *x.xxx_hidden_Dependencies
+		}
 	}
 	return nil
 }
 
 func (x *Module) GetDocumentation() string {
 	if x != nil {
-		return x.Documentation
+		return x.xxx_hidden_Documentation
 	}
 	return ""
 }
 
 func (x *Module) GetBreakingConfig() *v1.Config {
 	if x != nil {
-		return x.BreakingConfig
+		return x.xxx_hidden_BreakingConfig
 	}
 	return nil
 }
 
 func (x *Module) GetLintConfig() *v11.Config {
 	if x != nil {
-		return x.LintConfig
+		return x.xxx_hidden_LintConfig
 	}
 	return nil
 }
 
 func (x *Module) GetLicense() string {
 	if x != nil {
-		return x.License
+		return x.xxx_hidden_License
 	}
 	return ""
 }
 
 func (x *Module) GetDocumentationPath() string {
 	if x != nil {
-		return x.DocumentationPath
+		return x.xxx_hidden_DocumentationPath
 	}
 	return ""
 }
 
 func (x *Module) SetFiles(v []*ModuleFile) {
-	x.Files = v
+	x.xxx_hidden_Files = &v
 }
 
 func (x *Module) SetDependencies(v []*ModulePin) {
-	x.Dependencies = v
+	x.xxx_hidden_Dependencies = &v
 }
 
 func (x *Module) SetDocumentation(v string) {
-	x.Documentation = v
+	x.xxx_hidden_Documentation = v
 }
 
 func (x *Module) SetBreakingConfig(v *v1.Config) {
-	x.BreakingConfig = v
+	x.xxx_hidden_BreakingConfig = v
 }
 
 func (x *Module) SetLintConfig(v *v11.Config) {
-	x.LintConfig = v
+	x.xxx_hidden_LintConfig = v
 }
 
 func (x *Module) SetLicense(v string) {
-	x.License = v
+	x.xxx_hidden_License = v
 }
 
 func (x *Module) SetDocumentationPath(v string) {
-	x.DocumentationPath = v
+	x.xxx_hidden_DocumentationPath = v
 }
 
 func (x *Module) HasBreakingConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.BreakingConfig != nil
+	return x.xxx_hidden_BreakingConfig != nil
 }
 
 func (x *Module) HasLintConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.LintConfig != nil
+	return x.xxx_hidden_LintConfig != nil
 }
 
 func (x *Module) ClearBreakingConfig() {
-	x.BreakingConfig = nil
+	x.xxx_hidden_BreakingConfig = nil
 }
 
 func (x *Module) ClearLintConfig() {
-	x.LintConfig = nil
+	x.xxx_hidden_LintConfig = nil
 }
 
 type Module_builder struct {
@@ -441,26 +419,23 @@ func (b0 Module_builder) Build() *Module {
 	m0 := &Module{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Files = b.Files
-	x.Dependencies = b.Dependencies
-	x.Documentation = b.Documentation
-	x.BreakingConfig = b.BreakingConfig
-	x.LintConfig = b.LintConfig
-	x.License = b.License
-	x.DocumentationPath = b.DocumentationPath
+	x.xxx_hidden_Files = &b.Files
+	x.xxx_hidden_Dependencies = &b.Dependencies
+	x.xxx_hidden_Documentation = b.Documentation
+	x.xxx_hidden_BreakingConfig = b.BreakingConfig
+	x.xxx_hidden_LintConfig = b.LintConfig
+	x.xxx_hidden_License = b.License
+	x.xxx_hidden_DocumentationPath = b.DocumentationPath
 	return m0
 }
 
 // ModuleFile is a file within a FileSet.
 type ModuleFile struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// path is the relative path of the file.
-	// Path can only use '/' as the separator character, and includes no ".." components.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// content is the content of the file.
-	Content       []byte `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Path    string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ModuleFile) Reset() {
@@ -490,27 +465,27 @@ func (x *ModuleFile) ProtoReflect() protoreflect.Message {
 
 func (x *ModuleFile) GetPath() string {
 	if x != nil {
-		return x.Path
+		return x.xxx_hidden_Path
 	}
 	return ""
 }
 
 func (x *ModuleFile) GetContent() []byte {
 	if x != nil {
-		return x.Content
+		return x.xxx_hidden_Content
 	}
 	return nil
 }
 
 func (x *ModuleFile) SetPath(v string) {
-	x.Path = v
+	x.xxx_hidden_Path = v
 }
 
 func (x *ModuleFile) SetContent(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Content = v
+	x.xxx_hidden_Content = v
 }
 
 type ModuleFile_builder struct {
@@ -527,21 +502,20 @@ func (b0 ModuleFile_builder) Build() *ModuleFile {
 	m0 := &ModuleFile{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Path = b.Path
-	x.Content = b.Content
+	x.xxx_hidden_Path = b.Path
+	x.xxx_hidden_Content = b.Content
 	return m0
 }
 
 // ModuleReference is a module reference.
 type ModuleReference struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Remote     string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
-	Owner      string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
-	// either tag, or commit
-	Reference     string `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Remote     string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Reference  string                 `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ModuleReference) Reset() {
@@ -571,46 +545,46 @@ func (x *ModuleReference) ProtoReflect() protoreflect.Message {
 
 func (x *ModuleReference) GetRemote() string {
 	if x != nil {
-		return x.Remote
+		return x.xxx_hidden_Remote
 	}
 	return ""
 }
 
 func (x *ModuleReference) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *ModuleReference) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *ModuleReference) GetReference() string {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return ""
 }
 
 func (x *ModuleReference) SetRemote(v string) {
-	x.Remote = v
+	x.xxx_hidden_Remote = v
 }
 
 func (x *ModuleReference) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *ModuleReference) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *ModuleReference) SetReference(v string) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 type ModuleReference_builder struct {
@@ -627,27 +601,23 @@ func (b0 ModuleReference_builder) Build() *ModuleReference {
 	m0 := &ModuleReference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Remote = b.Remote
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Reference = b.Reference
+	x.xxx_hidden_Remote = b.Remote
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Reference = b.Reference
 	return m0
 }
 
 // ModulePin is a module pin.
 type ModulePin struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Remote     string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
-	Owner      string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
-	Commit     string                 `protobuf:"bytes,5,opt,name=commit,proto3" json:"commit,omitempty"`
-	// Module's manifest digest. Replacement for previous b1/b3 digests.
-	// This is in the format '<digest_type>:<digest>`, where '<digest_type>' is the lowercase digest name ('shake256'),
-	// and '<digest>' is the lowercase hex-encoded digest.
-	// This value is persisted directly to the buf.lock file (https://buf.build/docs/configuration/v1/buf-lock) as the 'digest' key.
-	ManifestDigest string `protobuf:"bytes,8,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Remote         string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
+	xxx_hidden_Owner          string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository     string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Commit         string                 `protobuf:"bytes,5,opt,name=commit,proto3" json:"commit,omitempty"`
+	xxx_hidden_ManifestDigest string                 `protobuf:"bytes,8,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ModulePin) Reset() {
@@ -677,57 +647,57 @@ func (x *ModulePin) ProtoReflect() protoreflect.Message {
 
 func (x *ModulePin) GetRemote() string {
 	if x != nil {
-		return x.Remote
+		return x.xxx_hidden_Remote
 	}
 	return ""
 }
 
 func (x *ModulePin) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *ModulePin) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *ModulePin) GetCommit() string {
 	if x != nil {
-		return x.Commit
+		return x.xxx_hidden_Commit
 	}
 	return ""
 }
 
 func (x *ModulePin) GetManifestDigest() string {
 	if x != nil {
-		return x.ManifestDigest
+		return x.xxx_hidden_ManifestDigest
 	}
 	return ""
 }
 
 func (x *ModulePin) SetRemote(v string) {
-	x.Remote = v
+	x.xxx_hidden_Remote = v
 }
 
 func (x *ModulePin) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *ModulePin) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *ModulePin) SetCommit(v string) {
-	x.Commit = v
+	x.xxx_hidden_Commit = v
 }
 
 func (x *ModulePin) SetManifestDigest(v string) {
-	x.ManifestDigest = v
+	x.xxx_hidden_ManifestDigest = v
 }
 
 type ModulePin_builder struct {
@@ -748,11 +718,11 @@ func (b0 ModulePin_builder) Build() *ModulePin {
 	m0 := &ModulePin{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Remote = b.Remote
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Commit = b.Commit
-	x.ManifestDigest = b.ManifestDigest
+	x.xxx_hidden_Remote = b.Remote
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Commit = b.Commit
+	x.xxx_hidden_ManifestDigest = b.ManifestDigest
 	return m0
 }
 

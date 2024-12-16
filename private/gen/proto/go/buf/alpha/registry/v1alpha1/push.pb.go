@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/push.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -38,25 +36,16 @@ const (
 
 // PushRequest specifies the module to push to the BSR.
 type PushRequest struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
-	Branch string           `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
-	Module *v1alpha1.Module `protobuf:"bytes,4,opt,name=module,proto3" json:"module,omitempty"`
-	// Optional; if provided, the provided tags
-	// are created for the pushed commit.
-	Tags []string `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
-	// Optional; if provided, the pushed commit
-	// will be appended to these tracks. If the
-	// tracks do not exist, they will be created.
-	//
-	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
-	Tracks []string `protobuf:"bytes,6,rep,name=tracks,proto3" json:"tracks,omitempty"`
-	// If non-empty, the push creates a draft commit with this name.
-	DraftName     string `protobuf:"bytes,7,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Branch     string                 `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
+	xxx_hidden_Module     *v1alpha1.Module       `protobuf:"bytes,4,opt,name=module,proto3" json:"module,omitempty"`
+	xxx_hidden_Tags       []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
+	xxx_hidden_Tracks     []string               `protobuf:"bytes,6,rep,name=tracks,proto3" json:"tracks,omitempty"`
+	xxx_hidden_DraftName  string                 `protobuf:"bytes,7,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *PushRequest) Reset() {
@@ -86,14 +75,14 @@ func (x *PushRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PushRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *PushRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
@@ -101,21 +90,21 @@ func (x *PushRequest) GetRepository() string {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 func (x *PushRequest) GetBranch() string {
 	if x != nil {
-		return x.Branch
+		return x.xxx_hidden_Branch
 	}
 	return ""
 }
 
 func (x *PushRequest) GetModule() *v1alpha1.Module {
 	if x != nil {
-		return x.Module
+		return x.xxx_hidden_Module
 	}
 	return nil
 }
 
 func (x *PushRequest) GetTags() []string {
 	if x != nil {
-		return x.Tags
+		return x.xxx_hidden_Tags
 	}
 	return nil
 }
@@ -123,57 +112,57 @@ func (x *PushRequest) GetTags() []string {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 func (x *PushRequest) GetTracks() []string {
 	if x != nil {
-		return x.Tracks
+		return x.xxx_hidden_Tracks
 	}
 	return nil
 }
 
 func (x *PushRequest) GetDraftName() string {
 	if x != nil {
-		return x.DraftName
+		return x.xxx_hidden_DraftName
 	}
 	return ""
 }
 
 func (x *PushRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *PushRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 func (x *PushRequest) SetBranch(v string) {
-	x.Branch = v
+	x.xxx_hidden_Branch = v
 }
 
 func (x *PushRequest) SetModule(v *v1alpha1.Module) {
-	x.Module = v
+	x.xxx_hidden_Module = v
 }
 
 func (x *PushRequest) SetTags(v []string) {
-	x.Tags = v
+	x.xxx_hidden_Tags = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 func (x *PushRequest) SetTracks(v []string) {
-	x.Tracks = v
+	x.xxx_hidden_Tracks = v
 }
 
 func (x *PushRequest) SetDraftName(v string) {
-	x.DraftName = v
+	x.xxx_hidden_DraftName = v
 }
 
 func (x *PushRequest) HasModule() bool {
 	if x == nil {
 		return false
 	}
-	return x.Module != nil
+	return x.xxx_hidden_Module != nil
 }
 
 func (x *PushRequest) ClearModule() {
-	x.Module = nil
+	x.xxx_hidden_Module = nil
 }
 
 type PushRequest_builder struct {
@@ -201,22 +190,22 @@ func (b0 PushRequest_builder) Build() *PushRequest {
 	m0 := &PushRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Branch = b.Branch
-	x.Module = b.Module
-	x.Tags = b.Tags
-	x.Tracks = b.Tracks
-	x.DraftName = b.DraftName
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Branch = b.Branch
+	x.xxx_hidden_Module = b.Module
+	x.xxx_hidden_Tags = b.Tags
+	x.xxx_hidden_Tracks = b.Tracks
+	x.xxx_hidden_DraftName = b.DraftName
 	return m0
 }
 
 // PushResponse is the pushed module pin, local to the used remote.
 type PushResponse struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	LocalModulePin *LocalModulePin        `protobuf:"bytes,5,opt,name=local_module_pin,json=localModulePin,proto3" json:"local_module_pin,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LocalModulePin *LocalModulePin        `protobuf:"bytes,5,opt,name=local_module_pin,json=localModulePin,proto3" json:"local_module_pin,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *PushResponse) Reset() {
@@ -246,24 +235,24 @@ func (x *PushResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PushResponse) GetLocalModulePin() *LocalModulePin {
 	if x != nil {
-		return x.LocalModulePin
+		return x.xxx_hidden_LocalModulePin
 	}
 	return nil
 }
 
 func (x *PushResponse) SetLocalModulePin(v *LocalModulePin) {
-	x.LocalModulePin = v
+	x.xxx_hidden_LocalModulePin = v
 }
 
 func (x *PushResponse) HasLocalModulePin() bool {
 	if x == nil {
 		return false
 	}
-	return x.LocalModulePin != nil
+	return x.xxx_hidden_LocalModulePin != nil
 }
 
 func (x *PushResponse) ClearLocalModulePin() {
-	x.LocalModulePin = nil
+	x.xxx_hidden_LocalModulePin = nil
 }
 
 type PushResponse_builder struct {
@@ -276,35 +265,22 @@ func (b0 PushResponse_builder) Build() *PushResponse {
 	m0 := &PushResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LocalModulePin = b.LocalModulePin
+	x.xxx_hidden_LocalModulePin = b.LocalModulePin
 	return m0
 }
 
 // PushManifestAndBlobsRequest holds the module to push in the manifest+blobs
 // encoding format.
 type PushManifestAndBlobsRequest struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Manifest with all the module files being pushed.
-	// The content of the manifest blob is a text encoding of an ordered list of unique paths, each path encoded as:
-	//
-	//	<digest_type>:<digest>[SP][SP]<path>[LF]
-	//
-	// The only current supported digest type is 'shake256'. The shake256 digest consists of 64 bytes of lowercase hex
-	// encoded output of SHAKE256. See buf.alpha.module.v1alpha1.Digest for more details.
-	Manifest *v1alpha1.Blob `protobuf:"bytes,3,opt,name=manifest,proto3" json:"manifest,omitempty"`
-	// Referenced blobs in the manifest. Keep in mind there is not necessarily one
-	// blob per file, but one blob per digest, so for files with exactly the same
-	// content, you can send just one blob.
-	Blobs []*v1alpha1.Blob `protobuf:"bytes,4,rep,name=blobs,proto3" json:"blobs,omitempty"`
-	// Optional; if provided, the provided tags
-	// are created for the pushed commit.
-	Tags []string `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
-	// If non-empty, the push creates a draft commit with this name.
-	DraftName     string `protobuf:"bytes,6,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Manifest   *v1alpha1.Blob         `protobuf:"bytes,3,opt,name=manifest,proto3" json:"manifest,omitempty"`
+	xxx_hidden_Blobs      *[]*v1alpha1.Blob      `protobuf:"bytes,4,rep,name=blobs,proto3" json:"blobs,omitempty"`
+	xxx_hidden_Tags       []string               `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
+	xxx_hidden_DraftName  string                 `protobuf:"bytes,6,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *PushManifestAndBlobsRequest) Reset() {
@@ -334,79 +310,81 @@ func (x *PushManifestAndBlobsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PushManifestAndBlobsRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *PushManifestAndBlobsRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *PushManifestAndBlobsRequest) GetManifest() *v1alpha1.Blob {
 	if x != nil {
-		return x.Manifest
+		return x.xxx_hidden_Manifest
 	}
 	return nil
 }
 
 func (x *PushManifestAndBlobsRequest) GetBlobs() []*v1alpha1.Blob {
 	if x != nil {
-		return x.Blobs
+		if x.xxx_hidden_Blobs != nil {
+			return *x.xxx_hidden_Blobs
+		}
 	}
 	return nil
 }
 
 func (x *PushManifestAndBlobsRequest) GetTags() []string {
 	if x != nil {
-		return x.Tags
+		return x.xxx_hidden_Tags
 	}
 	return nil
 }
 
 func (x *PushManifestAndBlobsRequest) GetDraftName() string {
 	if x != nil {
-		return x.DraftName
+		return x.xxx_hidden_DraftName
 	}
 	return ""
 }
 
 func (x *PushManifestAndBlobsRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *PushManifestAndBlobsRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *PushManifestAndBlobsRequest) SetManifest(v *v1alpha1.Blob) {
-	x.Manifest = v
+	x.xxx_hidden_Manifest = v
 }
 
 func (x *PushManifestAndBlobsRequest) SetBlobs(v []*v1alpha1.Blob) {
-	x.Blobs = v
+	x.xxx_hidden_Blobs = &v
 }
 
 func (x *PushManifestAndBlobsRequest) SetTags(v []string) {
-	x.Tags = v
+	x.xxx_hidden_Tags = v
 }
 
 func (x *PushManifestAndBlobsRequest) SetDraftName(v string) {
-	x.DraftName = v
+	x.xxx_hidden_DraftName = v
 }
 
 func (x *PushManifestAndBlobsRequest) HasManifest() bool {
 	if x == nil {
 		return false
 	}
-	return x.Manifest != nil
+	return x.xxx_hidden_Manifest != nil
 }
 
 func (x *PushManifestAndBlobsRequest) ClearManifest() {
-	x.Manifest = nil
+	x.xxx_hidden_Manifest = nil
 }
 
 type PushManifestAndBlobsRequest_builder struct {
@@ -437,22 +415,22 @@ func (b0 PushManifestAndBlobsRequest_builder) Build() *PushManifestAndBlobsReque
 	m0 := &PushManifestAndBlobsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Manifest = b.Manifest
-	x.Blobs = b.Blobs
-	x.Tags = b.Tags
-	x.DraftName = b.DraftName
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Manifest = b.Manifest
+	x.xxx_hidden_Blobs = &b.Blobs
+	x.xxx_hidden_Tags = b.Tags
+	x.xxx_hidden_DraftName = b.DraftName
 	return m0
 }
 
 // PushManifestAndBlobsResponse is the pushed module pin, local to the used
 // remote.
 type PushManifestAndBlobsResponse struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	LocalModulePin *LocalModulePin        `protobuf:"bytes,1,opt,name=local_module_pin,json=localModulePin,proto3" json:"local_module_pin,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LocalModulePin *LocalModulePin        `protobuf:"bytes,1,opt,name=local_module_pin,json=localModulePin,proto3" json:"local_module_pin,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *PushManifestAndBlobsResponse) Reset() {
@@ -482,24 +460,24 @@ func (x *PushManifestAndBlobsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PushManifestAndBlobsResponse) GetLocalModulePin() *LocalModulePin {
 	if x != nil {
-		return x.LocalModulePin
+		return x.xxx_hidden_LocalModulePin
 	}
 	return nil
 }
 
 func (x *PushManifestAndBlobsResponse) SetLocalModulePin(v *LocalModulePin) {
-	x.LocalModulePin = v
+	x.xxx_hidden_LocalModulePin = v
 }
 
 func (x *PushManifestAndBlobsResponse) HasLocalModulePin() bool {
 	if x == nil {
 		return false
 	}
-	return x.LocalModulePin != nil
+	return x.xxx_hidden_LocalModulePin != nil
 }
 
 func (x *PushManifestAndBlobsResponse) ClearLocalModulePin() {
-	x.LocalModulePin = nil
+	x.xxx_hidden_LocalModulePin = nil
 }
 
 type PushManifestAndBlobsResponse_builder struct {
@@ -512,7 +490,7 @@ func (b0 PushManifestAndBlobsResponse_builder) Build() *PushManifestAndBlobsResp
 	m0 := &PushManifestAndBlobsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LocalModulePin = b.LocalModulePin
+	x.xxx_hidden_LocalModulePin = b.LocalModulePin
 	return m0
 }
 

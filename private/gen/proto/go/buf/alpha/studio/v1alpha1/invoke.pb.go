@@ -42,8 +42,6 @@
 // We may explore other transports such as WebSockets or WebTransport, at which
 // point we should define proper proto services and methods here as well.
 
-//go:build !protoopaque
-
 package studiov1alpha1
 
 import (
@@ -61,11 +59,11 @@ const (
 
 // Headers encode HTTP headers.
 type Headers struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         []string               `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	xxx_hidden_Value []string               `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Headers) Reset() {
@@ -95,24 +93,24 @@ func (x *Headers) ProtoReflect() protoreflect.Message {
 
 func (x *Headers) GetKey() string {
 	if x != nil {
-		return x.Key
+		return x.xxx_hidden_Key
 	}
 	return ""
 }
 
 func (x *Headers) GetValue() []string {
 	if x != nil {
-		return x.Value
+		return x.xxx_hidden_Value
 	}
 	return nil
 }
 
 func (x *Headers) SetKey(v string) {
-	x.Key = v
+	x.xxx_hidden_Key = v
 }
 
 func (x *Headers) SetValue(v []string) {
-	x.Value = v
+	x.xxx_hidden_Value = v
 }
 
 type Headers_builder struct {
@@ -126,27 +124,20 @@ func (b0 Headers_builder) Build() *Headers {
 	m0 := &Headers{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Key = b.Key
-	x.Value = b.Value
+	x.xxx_hidden_Key = b.Key
+	x.xxx_hidden_Value = b.Value
 	return m0
 }
 
 // InvokeRequest encodes an enveloped RPC request. See the package documentation
 // for more information.
 type InvokeRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Target server the agent should forward this request to, e.g.
-	// "https://api.acme.corp/pkg.Service/Method". Using the "http" scheme will
-	// cause the request to be forwarded as h2c, whereas "https" forwards the
-	// request with regular h2.
-	Target string `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
-	// Headers to send with the request. If body is set, a Content-Type header
-	// must be specified.
-	Headers []*Headers `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
-	// The message to be sent in the request (without any protocol specific framing).
-	Body          []byte `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Target  string                 `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
+	xxx_hidden_Headers *[]*Headers            `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
+	xxx_hidden_Body    []byte                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *InvokeRequest) Reset() {
@@ -176,38 +167,40 @@ func (x *InvokeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *InvokeRequest) GetTarget() string {
 	if x != nil {
-		return x.Target
+		return x.xxx_hidden_Target
 	}
 	return ""
 }
 
 func (x *InvokeRequest) GetHeaders() []*Headers {
 	if x != nil {
-		return x.Headers
+		if x.xxx_hidden_Headers != nil {
+			return *x.xxx_hidden_Headers
+		}
 	}
 	return nil
 }
 
 func (x *InvokeRequest) GetBody() []byte {
 	if x != nil {
-		return x.Body
+		return x.xxx_hidden_Body
 	}
 	return nil
 }
 
 func (x *InvokeRequest) SetTarget(v string) {
-	x.Target = v
+	x.xxx_hidden_Target = v
 }
 
 func (x *InvokeRequest) SetHeaders(v []*Headers) {
-	x.Headers = v
+	x.xxx_hidden_Headers = &v
 }
 
 func (x *InvokeRequest) SetBody(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Body = v
+	x.xxx_hidden_Body = v
 }
 
 type InvokeRequest_builder struct {
@@ -229,24 +222,21 @@ func (b0 InvokeRequest_builder) Build() *InvokeRequest {
 	m0 := &InvokeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Target = b.Target
-	x.Headers = b.Headers
-	x.Body = b.Body
+	x.xxx_hidden_Target = b.Target
+	x.xxx_hidden_Headers = &b.Headers
+	x.xxx_hidden_Body = b.Body
 	return m0
 }
 
 // InvokeResponse encodes an enveloped RPC response. See the package documentation
 // for more information.
 type InvokeResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Headers received in the response.
-	Headers []*Headers `protobuf:"bytes,1,rep,name=headers,proto3" json:"headers,omitempty"`
-	// The encoded message received in the response (without protocol specific framing).
-	Body []byte `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
-	// Trailers received in the response.
-	Trailers      []*Headers `protobuf:"bytes,3,rep,name=trailers,proto3" json:"trailers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Headers  *[]*Headers            `protobuf:"bytes,1,rep,name=headers,proto3" json:"headers,omitempty"`
+	xxx_hidden_Body     []byte                 `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
+	xxx_hidden_Trailers *[]*Headers            `protobuf:"bytes,3,rep,name=trailers,proto3" json:"trailers,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *InvokeResponse) Reset() {
@@ -276,38 +266,42 @@ func (x *InvokeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *InvokeResponse) GetHeaders() []*Headers {
 	if x != nil {
-		return x.Headers
+		if x.xxx_hidden_Headers != nil {
+			return *x.xxx_hidden_Headers
+		}
 	}
 	return nil
 }
 
 func (x *InvokeResponse) GetBody() []byte {
 	if x != nil {
-		return x.Body
+		return x.xxx_hidden_Body
 	}
 	return nil
 }
 
 func (x *InvokeResponse) GetTrailers() []*Headers {
 	if x != nil {
-		return x.Trailers
+		if x.xxx_hidden_Trailers != nil {
+			return *x.xxx_hidden_Trailers
+		}
 	}
 	return nil
 }
 
 func (x *InvokeResponse) SetHeaders(v []*Headers) {
-	x.Headers = v
+	x.xxx_hidden_Headers = &v
 }
 
 func (x *InvokeResponse) SetBody(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Body = v
+	x.xxx_hidden_Body = v
 }
 
 func (x *InvokeResponse) SetTrailers(v []*Headers) {
-	x.Trailers = v
+	x.xxx_hidden_Trailers = &v
 }
 
 type InvokeResponse_builder struct {
@@ -325,9 +319,9 @@ func (b0 InvokeResponse_builder) Build() *InvokeResponse {
 	m0 := &InvokeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Headers = b.Headers
-	x.Body = b.Body
-	x.Trailers = b.Trailers
+	x.xxx_hidden_Headers = &b.Headers
+	x.xxx_hidden_Body = b.Body
+	x.xxx_hidden_Trailers = &b.Trailers
 	return m0
 }
 
