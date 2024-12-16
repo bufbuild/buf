@@ -295,6 +295,8 @@ func (f *file) Refresh(ctx context.Context) {
 	// lock. It is safe to use because if another LSP call is made, we allow checks to finish
 	// before resolving a subsequent LSP request.
 	go func() {
+		// We stagger the check operation by 5ms and run it for the latest Refresh state.
+		time.Sleep(refreshCheckStagger)
 		// Call TryLock, if unnsuccessful, then another thread holds the lock, so we provide a
 		// debug log and move on.
 		if !f.lsp.lock.TryLock() {
@@ -303,10 +305,8 @@ func (f *file) Refresh(ctx context.Context) {
 			)
 			return
 		}
-		// We have successful obtained the lock, we can now run the checks.
+		// We have successfully obtained the lock, we can now run the checks.
 		defer f.lsp.lock.Unlock()
-		// We stagger the check operation by 5ms and run it for the latest Refresh state.
-		time.Sleep(refreshCheckStagger)
 		f.BuildImages(ctx)
 		f.RunLints(ctx)
 		f.RunBreaking(ctx)
