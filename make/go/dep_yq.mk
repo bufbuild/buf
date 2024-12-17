@@ -14,20 +14,20 @@ YQ_VERSION ?= v4.44.1
 
 ifeq ($(UNAME_OS),Darwin)
 YQ_OS := darwin
-ifeq ($(UNAME_ARCH),x86_64)
-YQ_ARCH := amd64
-endif
-ifeq ($(UNAME_ARCH),arm64)
-YQ_ARCH := arm64
-endif
+else ifeq ($(UNAME_OS),Linux)
+YQ_OS := linux
 endif
 
 ifeq ($(UNAME_ARCH),x86_64)
-ifeq ($(UNAME_OS),Linux)
-YQ_OS := linux
 YQ_ARCH := amd64
+else ifeq ($(UNAME_ARCH),arm64)
+YQ_ARCH := arm64
+else ifeq ($(UNAME_ARCH),aarch64)
+YQ_ARCH := arm64
+else
+YQ_ARCH := $(UNAME_ARCH)
 endif
-endif
+
 
 YQ := $(CACHE_VERSIONS)/yq/$(YQ_VERSION)
 $(YQ):

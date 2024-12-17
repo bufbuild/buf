@@ -132,7 +132,7 @@ message ExtensionRangeOptions {
 }
 message FeatureSet {
   optional FieldPresence field_presence = 1 [
-    edition_defaults = { value: "EXPLICIT", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "EXPLICIT", edition: EDITION_LEGACY },
     edition_defaults = { value: "IMPLICIT", edition: EDITION_PROTO3 },
     edition_defaults = { value: "EXPLICIT", edition: EDITION_2023 },
     feature_support = { edition_introduced: EDITION_2023 },
@@ -141,7 +141,7 @@ message FeatureSet {
     targets = TARGET_TYPE_FILE
   ];
   optional EnumType enum_type = 2 [
-    edition_defaults = { value: "CLOSED", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "CLOSED", edition: EDITION_LEGACY },
     edition_defaults = { value: "OPEN", edition: EDITION_PROTO3 },
     feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
@@ -149,7 +149,7 @@ message FeatureSet {
     targets = TARGET_TYPE_FILE
   ];
   optional RepeatedFieldEncoding repeated_field_encoding = 3 [
-    edition_defaults = { value: "EXPANDED", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "EXPANDED", edition: EDITION_LEGACY },
     edition_defaults = { value: "PACKED", edition: EDITION_PROTO3 },
     feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
@@ -157,7 +157,7 @@ message FeatureSet {
     targets = TARGET_TYPE_FILE
   ];
   optional Utf8Validation utf8_validation = 4 [
-    edition_defaults = { value: "NONE", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "NONE", edition: EDITION_LEGACY },
     edition_defaults = { value: "VERIFY", edition: EDITION_PROTO3 },
     feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
@@ -165,14 +165,14 @@ message FeatureSet {
     targets = TARGET_TYPE_FILE
   ];
   optional MessageEncoding message_encoding = 5 [
-    edition_defaults = { value: "LENGTH_PREFIXED", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "LENGTH_PREFIXED", edition: EDITION_LEGACY },
     feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
     targets = TARGET_TYPE_FIELD,
     targets = TARGET_TYPE_FILE
   ];
   optional JsonFormat json_format = 6 [
-    edition_defaults = { value: "LEGACY_BEST_EFFORT", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "LEGACY_BEST_EFFORT", edition: EDITION_LEGACY },
     edition_defaults = { value: "ALLOW", edition: EDITION_PROTO3 },
     feature_support = { edition_introduced: EDITION_2023 },
     retention = RETENTION_RUNTIME,
@@ -347,6 +347,13 @@ message FileDescriptorProto {
 }
 message FileDescriptorSet {
   repeated FileDescriptorProto file = 1;
+  extensions 536000000 [
+    declaration = {
+      number: 536000000,
+      full_name: ".buf.descriptor.v1.buf_file_descriptor_set_extension",
+      type: ".buf.descriptor.v1.FileDescriptorSetExtension"
+    }
+  ];
 }
 message FileOptions {
   optional string java_package = 1;
@@ -439,6 +446,13 @@ message SourceCodeInfo {
     optional string trailing_comments = 4;
     repeated string leading_detached_comments = 6;
   }
+  extensions 536000000 [
+    declaration = {
+      number: 536000000,
+      full_name: ".buf.descriptor.v1.buf_source_code_info_extension",
+      type: ".buf.descriptor.v1.SourceCodeInfoExtension"
+    }
+  ];
 }
 message UninterpretedOption {
   repeated NamePart name = 2;
