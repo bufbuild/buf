@@ -16,6 +16,8 @@ GO_BINS ?=
 # Settable
 GO_TEST_BINS ?=
 # Settable
+GO_TEST_WASM_BINS ?=
+# Settable
 GO_GET_PKGS ?=
 # Settable
 GO_MOD_VERSION ?= 1.22
@@ -142,7 +144,7 @@ build: prebuild ## Run go build.
 pretest::
 
 .PHONY: test
-test: pretest installtest ## Run all go tests.
+test: pretest installtest installtestwasm ## Run all go tests.
 	go test $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: testrace
@@ -203,3 +205,17 @@ endef
 
 $(foreach gobin,$(sort $(GO_TEST_BINS)),$(eval $(call gotestbinfunc,$(gobin))))
 $(foreach gobin,$(sort $(GO_TEST_BINS)),$(eval FILE_IGNORES := $(FILE_IGNORES) $(gobin)/$(notdir $(gobin))))
+
+.PHONY: installtestwasm
+installtestwasm::
+
+define gotestwasmfunc
+.PHONY: installtestwasm$(notdir $(1))
+installtestwasm$(notdir $(1)):
+	GOOS=wasip1 GOARCH=wasm go build -o $(GOBIN)/$(notdir $(1)).wasm ./$(1)
+
+installtestwasm:: installtestwasm$(notdir $(1))
+endef
+
+$(foreach gobin,$(sort $(GO_TEST_WASM_BINS)),$(eval $(call gotestwasmfunc,$(gobin))))
+$(foreach gobin,$(sort $(GO_TEST_WASM_BINS)),$(eval FILE_IGNORES := $(FILE_IGNORES) $(gobin)/$(notdir $(gobin))))
