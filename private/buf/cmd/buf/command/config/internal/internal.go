@@ -246,7 +246,7 @@ func lsRun(
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
-			bufcheck.WithAdditionalCheckConfigs(allCheckConfigs...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		rules, err = client.ConfiguredRules(
 			ctx,

@@ -161,7 +161,7 @@ func run(
 		}
 		lintOptions := []bufcheck.LintOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
-			bufcheck.WithAdditionalCheckConfigs(allCheckConfigs...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if err := client.Lint(
 			ctx,

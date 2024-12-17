@@ -235,7 +235,7 @@ func run(
 		}
 		breakingOptions := []bufcheck.BreakingOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
-			bufcheck.WithAdditionalCheckConfigs(allCheckConfigs...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())

@@ -319,7 +319,8 @@ func newRulesConfig(
 			delete(unusedPluginNameToRuleIDs, pluginName)
 		}
 	}
-	// We check additional check configs. If rules
+	// We check additional check configs. If rules are set in the related check configs, then
+	// the plugin is not considered unused.
 	for _, checkConfig := range additionalCheckConfigs {
 		checkConfigUseRuleIDs, err := transformRuleOrCategoryIDsToRuleIDs(
 			checkConfig.UseIDsAndCategories(),
