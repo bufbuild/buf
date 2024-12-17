@@ -10,9 +10,9 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20240523 checked 20240527
+# https://github.com/protocolbuffers/protobuf/releases 20241204 checked 20241217
 # NOTE: Set to version compatible with genproto source code (only used in tests).
-PROTOC_VERSION ?= 27.0
+PROTOC_VERSION ?= 29.1
 
 # Google adds a dash to release candidate versions in the name of the
 # release artifact, i.e. v27.0-rc1 -> v27.0-rc-1

@@ -14,19 +14,16 @@ JQ_VERSION ?= 1.7.1
 
 ifeq ($(UNAME_OS),Darwin)
 JQ_OS := macos
+else ifeq ($(UNAME_OS),Linux)
+JQ_OS := linux
+endif
+
 ifeq ($(UNAME_ARCH),x86_64)
 JQ_ARCH := amd64
 else
 JQ_ARCH := $(UNAME_ARCH)
 endif
-endif
 
-ifeq ($(UNAME_ARCH),x86_64)
-ifeq ($(UNAME_OS),Linux)
-JQ_OS := linux
-JQ_ARCH := amd64
-endif
-endif
 JQ := $(CACHE_VERSIONS)/jq/$(JQ_VERSION)
 $(JQ):
 	@rm -f $(CACHE_BIN)/jq
