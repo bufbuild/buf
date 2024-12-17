@@ -105,7 +105,7 @@ enum EventType {
   EVENT_TYPE_USER_REACTIVATED = 25;
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
   EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
-  EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
+  EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28 [deprecated = true];
   EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29;
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
   EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED = 38;
@@ -183,7 +183,7 @@ message Event {
     PayloadUserReactivated user_reactivated = 31;
     PayloadSCIMTokenCreated scim_token_created = 32;
     PayloadSCIMTokenDeleted scim_token_deleted = 33;
-    PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
+    PayloadRepositoryCommitDeleted repository_commit_deleted = 34 [deprecated = true];
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
     PayloadRepositoryLabelArchived repository_label_archived = 44;
@@ -480,7 +480,12 @@ message PayloadSCIMTokenCreated {
 
 message PayloadSCIMTokenDeleted {}
 
+// PayloadRepositoryCommitDeleted is deprecated.
+//
+// Individual repository commits cannot be deleted.
 message PayloadRepositoryCommitDeleted {
+  // Deprecated, individual repository commits cannot be deleted.
+  option deprecated = true;
   // owner_id is the id of the owner of the repository from which the commit will be deleted.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository from which the commit will be deleted.
