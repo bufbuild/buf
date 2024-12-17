@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package moduleupdate
+package modulesettingsupdate
 
 import (
 	"context"
@@ -37,12 +37,17 @@ const (
 )
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
+func NewCommand(
+	name string,
+	builder appext.SubCommandBuilder,
+	deprecated string,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/module>",
-		Short: "Update BSR module settings",
-		Args:  appcmd.ExactArgs(1),
+		Use:        name + " <remote/owner/module>",
+		Short:      "Update BSR module settings",
+		Args:       appcmd.ExactArgs(1),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
