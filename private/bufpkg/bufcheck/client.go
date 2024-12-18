@@ -104,7 +104,7 @@ func (c *client) Lint(
 	if err != nil {
 		return err
 	}
-	config, err := configForLintConfig(lintConfig, allRules, allCategories)
+	config, err := configForLintConfig(lintConfig, allRules, allCategories, lintOptions.relatedCheckConfigs)
 	if err != nil {
 		return err
 	}
@@ -168,6 +168,7 @@ func (c *client) Breaking(
 		allRules,
 		allCategories,
 		breakingOptions.excludeImports,
+		breakingOptions.relatedCheckConfigs,
 	)
 	if err != nil {
 		return err
@@ -229,7 +230,7 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, allCategories, ruleType)
+	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, allCategories, ruleType, configuredRulesOptions.relatedCheckConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +477,8 @@ func checkCommentLineForCheckIgnore(
 }
 
 type lintOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	pluginConfigs       []bufconfig.PluginConfig
+	relatedCheckConfigs []bufconfig.CheckConfig
 }
 
 func newLintOptions() *lintOptions {
@@ -484,8 +486,9 @@ func newLintOptions() *lintOptions {
 }
 
 type breakingOptions struct {
-	pluginConfigs  []bufconfig.PluginConfig
-	excludeImports bool
+	pluginConfigs       []bufconfig.PluginConfig
+	excludeImports      bool
+	relatedCheckConfigs []bufconfig.CheckConfig
 }
 
 func newBreakingOptions() *breakingOptions {
@@ -493,7 +496,8 @@ func newBreakingOptions() *breakingOptions {
 }
 
 type configuredRulesOptions struct {
-	pluginConfigs []bufconfig.PluginConfig
+	pluginConfigs       []bufconfig.PluginConfig
+	relatedCheckConfigs []bufconfig.CheckConfig
 }
 
 func newConfiguredRulesOptions() *configuredRulesOptions {
@@ -552,4 +556,20 @@ func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) 
 
 func (p *pluginConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
 	allCategoriesOptions.pluginConfigs = append(allCategoriesOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+type relatedCheckConfigsOption struct {
+	relatedCheckConfigs []bufconfig.CheckConfig
+}
+
+func (r *relatedCheckConfigsOption) applyToLint(lintOptions *lintOptions) {
+	lintOptions.relatedCheckConfigs = append(lintOptions.relatedCheckConfigs, r.relatedCheckConfigs...)
+}
+
+func (r *relatedCheckConfigsOption) applyToBreaking(breakingOptions *breakingOptions) {
+	breakingOptions.relatedCheckConfigs = append(breakingOptions.relatedCheckConfigs, r.relatedCheckConfigs...)
+}
+
+func (r *relatedCheckConfigsOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
+	configuredRulesOptions.relatedCheckConfigs = append(configuredRulesOptions.relatedCheckConfigs, r.relatedCheckConfigs...)
 }

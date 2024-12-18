@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -217,6 +218,22 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	// We add all check configs (both lint and breaking) as related configs to check if plugins
+	// have rules configured.
+	allCheckConfigs := append(
+		slicesext.Map(
+			imageWithConfigs,
+			func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
+				return imageWithConfig.LintConfig()
+			},
+		),
+		slicesext.Map(
+			imageWithConfigs,
+			func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
+				return imageWithConfig.BreakingConfig()
+			},
+		)...,
+	)
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
@@ -233,6 +250,7 @@ func run(
 		}
 		breakingOptions := []bufcheck.BreakingOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
