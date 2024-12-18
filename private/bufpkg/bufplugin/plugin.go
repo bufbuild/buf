@@ -32,26 +32,29 @@ type Plugin interface {
 	//
 	// An OpaqueID's structure should not be relied upon, and is not a
 	// globally-unique identifier. It's uniqueness property only applies to
-	// the lifetime of the Plugin, and only within Plugin commonly built
-	// from the Workspace root.
+	// the lifetime of the Plugin, and only within the Workspace the Plugin
+	// is defined in.
 	//
-	// If two Plugins have the same FullName, they will have the same OpaqueID.
+	// If two Plugins have the same Name and Args, they will have the same OpaqueID.
 	OpaqueID() string
 	// Name returns the name of the Plugin.
+	//  - For local Plugins, this is the path to the executable binary.
+	//  - For local Wasm Plugins, this is the path to the Wasm binary.
+	//  - For remote Plugins, this is the FullName of the Plugin in the form
+	//    remote/owner/name.
 	//
 	// This is never empty.
 	Name() string
 	// Args returns the arguments to invoke the Plugin.
 	//
-	// This may be empty.
+	// May be nil.
 	Args() []string
 	// FullName returns the full name of the Plugin.
 	//
 	// May be nil. Callers should not rely on this value being present.
 	// However, this is always present for remote Plugins.
 	//
-	// At least one of FullName or Path will always be present. Use OpaqueID
-	// as an always-present identifier.
+	// Use OpaqueID as an always-present identifier.
 	FullName() bufparse.FullName
 	// CommitID returns the BSR ID of the Commit.
 	//
@@ -110,15 +113,14 @@ type Plugin interface {
 
 // NewLocalWasmPlugin returns a new Plugin for a local Wasm plugin.
 func NewLocalWasmPlugin(
-	fullName bufparse.FullName,
-	name string,
+	pluginFullName bufparse.FullName,
 	args []string,
 	getData func() ([]byte, error),
 ) (Plugin, error) {
 	return newPlugin(
 		"", // description
-		fullName,
-		name,
+		pluginFullName,
+		pluginFullName.String(),
 		args,
 		uuid.Nil, // commitID
 		true,     // isWasm
@@ -185,10 +187,7 @@ func newPlugin(
 }
 
 func (p *plugin) OpaqueID() string {
-	if p.pluginFullName != nil {
-		return p.pluginFullName.String()
-	}
-	return p.name + " " + strings.Join(p.args, " ")
+	return strings.Join(append([]string{p.name}, p.args...), " ")
 }
 
 func (p *plugin) Name() string {

@@ -1,24 +1,24 @@
 module github.com/bufbuild/buf
 
-go 1.22.7
+go 1.22.0
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.35.2-20241031151143-70f632351282.1
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20240920164238-5a7b106cbb87.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241125212318-4a305dc3b757.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.35.2-20241125212318-4a305dc3b757.1
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.0-20241031151143-70f632351282.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.0-20241127180247-a33202765966.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241210175624-28487aef65cd.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.0-20241210175624-28487aef65cd.1
 	buf.build/go/bufplugin v0.6.0
-	buf.build/go/protoyaml v0.2.0
+	buf.build/go/protoyaml v0.3.0
 	buf.build/go/spdx v0.2.0
 	connectrpc.com/connect v1.17.0
 	connectrpc.com/otelconnect v0.7.1
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20240911180120-7bb73e41a54a
-	github.com/bufbuild/protovalidate-go v0.7.3
-	github.com/docker/docker v27.3.1+incompatible
-	github.com/go-chi/chi/v5 v5.1.0
+	github.com/bufbuild/protovalidate-go v0.8.0
+	github.com/docker/docker v27.4.0+incompatible
+	github.com/go-chi/chi/v5 v5.2.0
 	github.com/gofrs/flock v0.12.1
 	github.com/google/cel-go v0.22.1
 	github.com/google/go-cmp v0.6.0
@@ -40,21 +40,21 @@ require (
 	go.lsp.dev/protocol v0.12.0
 	go.uber.org/zap v1.27.0
 	go.uber.org/zap/exp v0.3.0
-	golang.org/x/crypto v0.30.0
-	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
+	golang.org/x/crypto v0.31.0
+	golang.org/x/exp v0.0.0-20241215155358-4a5509556b9e
 	golang.org/x/mod v0.22.0
 	golang.org/x/net v0.32.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/term v0.27.0
 	golang.org/x/tools v0.28.0
-	google.golang.org/protobuf v1.35.2
+	google.golang.org/protobuf v1.36.0
 	gopkg.in/yaml.v3 v3.0.1
 	pluginrpc.com/pluginrpc v0.5.0
 )
 
 require (
-	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.35.2-20241007202033-cf42259fcbfc.1 // indirect
-	cel.dev/expr v0.18.0 // indirect
+	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.0-20241007202033-cf42259fcbfc.1 // indirect
+	cel.dev/expr v0.19.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.12.9 // indirect
@@ -66,13 +66,13 @@ require (
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.16.1 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/containerd/ttrpc v1.2.6 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v27.3.1+incompatible // indirect
+	github.com/docker/cli v27.4.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -83,8 +83,8 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/pprof v0.0.0-20241122213907-cbe949e5a41b // indirect
+	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
+	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -114,15 +114,16 @@ require (
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.lsp.dev/uri v0.3.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.57.0 // indirect
-	go.opentelemetry.io/otel v1.32.0 // indirect
-	go.opentelemetry.io/otel/metric v1.32.0 // indirect
-	go.opentelemetry.io/otel/trace v1.32.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0 // indirect
+	go.opentelemetry.io/otel v1.33.0 // indirect
+	go.opentelemetry.io/otel/metric v1.33.0 // indirect
+	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20241118233622-e639e219e697 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
-	google.golang.org/grpc v1.68.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
+	google.golang.org/grpc v1.69.0 // indirect
 )

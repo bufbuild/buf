@@ -149,11 +149,9 @@ func upload(
 	switch {
 	case flags.Binary != "":
 		// We create a local plugin reference to the Wasm binary.
-		pluginName := flags.Binary
 		var err error
 		plugin, err = bufplugin.NewLocalWasmPlugin(
 			pluginFullName,
-			pluginName,
 			nil, // args
 			func() ([]byte, error) {
 				wasmBinary, err := os.ReadFile(flags.Binary)

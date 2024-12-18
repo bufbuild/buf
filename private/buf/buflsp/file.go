@@ -26,6 +26,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -43,7 +44,10 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-const descriptorPath = "google/protobuf/descriptor.proto"
+const (
+	descriptorPath      = "google/protobuf/descriptor.proto"
+	refreshCheckStagger = 5 * time.Millisecond
+)
 
 // file is a file that has been opened by the client.
 //
@@ -286,9 +290,28 @@ func (f *file) Refresh(ctx context.Context) {
 	f.FindModule(ctx)
 
 	progress.Report(ctx, "Running Checks", 4.0/6)
-	f.BuildImages(ctx)
-	f.RunLints(ctx)
-	f.RunBreaking(ctx)
+	// Since checks are a more expensive operation, we do not want to run a check on every
+	// Refresh call. Instead, we can stagger the checks and only run them periodically by
+	// spinning them off into a go routine. Then we attempt to lock using the top-level LSP
+	// lock. It is safe to use because if another LSP call is made, we allow checks to finish
+	// before resolving a subsequent LSP request.
+	go func() {
+		// We stagger the check operation by 5ms and run it for the latest Refresh state.
+		time.Sleep(refreshCheckStagger)
+		// Call TryLock, if unnsuccessful, then another thread holds the lock, so we provide a
+		// debug log and move on.
+		if !f.lsp.lock.TryLock() {
+			f.lsp.logger.Debug(
+				fmt.Sprintf("another thread holds the LSP lock, no new checks started for %v", f.uri),
+			)
+			return
+		}
+		// We have successfully obtained the lock, we can now run the checks.
+		defer f.lsp.lock.Unlock()
+		f.BuildImages(ctx)
+		f.RunLints(ctx)
+		f.RunBreaking(ctx)
+	}()
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)

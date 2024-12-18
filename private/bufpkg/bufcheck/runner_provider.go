@@ -63,7 +63,8 @@ func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginr
 			r.wasmRuntime,
 			r.pluginKeyProvider,
 			r.pluginDataProvider,
-			pluginConfig,
+			pluginConfig.Ref(),
+			pluginConfig.Args(),
 		)
 	default:
 		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())
@@ -85,7 +86,6 @@ type remoteWasmPluginRunner struct {
 	pluginKeyProvider  bufplugin.PluginKeyProvider
 	pluginDataProvider bufplugin.PluginDataProvider
 	pluginRef          bufparse.Ref
-	pluginName         string
 	pluginArgs         []string
 	// lock protects runner.
 	lock   sync.RWMutex
@@ -96,19 +96,15 @@ func newRemoteWasmPluginRunner(
 	wasmRuntime wasm.Runtime,
 	pluginKeyProvider bufplugin.PluginKeyProvider,
 	pluginDataProvider bufplugin.PluginDataProvider,
-	pluginConfig bufconfig.PluginConfig,
+	pluginRef bufparse.Ref,
+	pluginArgs []string,
 ) (*remoteWasmPluginRunner, error) {
-	pluginRef := pluginConfig.Ref()
-	if pluginRef == nil {
-		return nil, syserror.Newf("Ref nil on PluginConfig of type %v", pluginConfig.Type())
-	}
 	return &remoteWasmPluginRunner{
 		wasmRuntime:        wasmRuntime,
 		pluginKeyProvider:  pluginKeyProvider,
 		pluginDataProvider: pluginDataProvider,
 		pluginRef:          pluginRef,
-		pluginName:         pluginConfig.Name(),
-		pluginArgs:         pluginConfig.Args(),
+		pluginArgs:         pluginArgs,
 	}, nil
 }
 
@@ -158,5 +154,7 @@ func (r *remoteWasmPluginRunner) loadRunner(ctx context.Context) (pluginrpc.Runn
 		return nil, syserror.Newf("expected 1 PluginData, got %d", len(pluginDatas))
 	}
 	data := pluginDatas[0]
-	return pluginrpcutil.NewWasmRunner(r.wasmRuntime, data.Data, r.pluginName, r.pluginArgs...), nil
+	// The program name is the FullName of the plugin.
+	programName := r.pluginRef.FullName().String()
+	return pluginrpcutil.NewWasmRunner(r.wasmRuntime, data.Data, programName, r.pluginArgs...), nil
 }
