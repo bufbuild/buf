@@ -440,7 +440,7 @@ func TestBasic(t *testing.T) {
 		newImage.Files(),
 	)
 
-	protoImage := &imagev1.Image{
+	protoImage := imagev1.Image_builder{
 		File: []*imagev1.ImageFile{
 			protoImageFileAA,
 			protoImageFileImport,
@@ -450,7 +450,7 @@ func TestBasic(t *testing.T) {
 			protoImageFileBB,
 			protoImageFileOutlandishDirectoryName,
 		},
-	}
+	}.Build()
 	newImage, err = bufimage.NewImageForProto(protoImage)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -883,7 +883,7 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 
 func testProtoImageFileToFileDescriptorProto(imageFile *imagev1.ImageFile) *descriptorpb.FileDescriptorProto {
 	return &descriptorpb.FileDescriptorProto{
-		Name:       imageFile.Name,
-		Dependency: imageFile.Dependency,
+		Name:       proto.ValueOrNil(imageFile.HasName(), imageFile.GetName),
+		Dependency: imageFile.GetDependency(),
 	}
 }
