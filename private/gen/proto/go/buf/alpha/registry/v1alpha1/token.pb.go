@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/token.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -37,13 +35,13 @@ const (
 )
 
 type Token struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	ExpireTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
-	Note          string                 `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_ExpireTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	xxx_hidden_Note       string                 `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *Token) Reset() {
@@ -73,68 +71,68 @@ func (x *Token) ProtoReflect() protoreflect.Message {
 
 func (x *Token) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *Token) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *Token) GetExpireTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpireTime
+		return x.xxx_hidden_ExpireTime
 	}
 	return nil
 }
 
 func (x *Token) GetNote() string {
 	if x != nil {
-		return x.Note
+		return x.xxx_hidden_Note
 	}
 	return ""
 }
 
 func (x *Token) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *Token) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *Token) SetExpireTime(v *timestamppb.Timestamp) {
-	x.ExpireTime = v
+	x.xxx_hidden_ExpireTime = v
 }
 
 func (x *Token) SetNote(v string) {
-	x.Note = v
+	x.xxx_hidden_Note = v
 }
 
 func (x *Token) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *Token) HasExpireTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpireTime != nil
+	return x.xxx_hidden_ExpireTime != nil
 }
 
 func (x *Token) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 func (x *Token) ClearExpireTime() {
-	x.ExpireTime = nil
+	x.xxx_hidden_ExpireTime = nil
 }
 
 type Token_builder struct {
@@ -150,25 +148,20 @@ func (b0 Token_builder) Build() *Token {
 	m0 := &Token{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.CreateTime = b.CreateTime
-	x.ExpireTime = b.ExpireTime
-	x.Note = b.Note
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_ExpireTime = b.ExpireTime
+	x.xxx_hidden_Note = b.Note
 	return m0
 }
 
 type CreateTokenRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Note  string                 `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
-	// The time until which the token should be valid.
-	// Must be in the future. May be null for no expiry.
-	ExpireTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
-	// The ID of the user to create a new token, can only be
-	// the user who perform this action, or a machine user.
-	// Default to the user who perform this action if this is empty.
-	UserId        string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Note       string                 `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
+	xxx_hidden_ExpireTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	xxx_hidden_UserId     string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *CreateTokenRequest) Reset() {
@@ -198,46 +191,46 @@ func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateTokenRequest) GetNote() string {
 	if x != nil {
-		return x.Note
+		return x.xxx_hidden_Note
 	}
 	return ""
 }
 
 func (x *CreateTokenRequest) GetExpireTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpireTime
+		return x.xxx_hidden_ExpireTime
 	}
 	return nil
 }
 
 func (x *CreateTokenRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *CreateTokenRequest) SetNote(v string) {
-	x.Note = v
+	x.xxx_hidden_Note = v
 }
 
 func (x *CreateTokenRequest) SetExpireTime(v *timestamppb.Timestamp) {
-	x.ExpireTime = v
+	x.xxx_hidden_ExpireTime = v
 }
 
 func (x *CreateTokenRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 func (x *CreateTokenRequest) HasExpireTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.ExpireTime != nil
+	return x.xxx_hidden_ExpireTime != nil
 }
 
 func (x *CreateTokenRequest) ClearExpireTime() {
-	x.ExpireTime = nil
+	x.xxx_hidden_ExpireTime = nil
 }
 
 type CreateTokenRequest_builder struct {
@@ -257,18 +250,17 @@ func (b0 CreateTokenRequest_builder) Build() *CreateTokenRequest {
 	m0 := &CreateTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Note = b.Note
-	x.ExpireTime = b.ExpireTime
-	x.UserId = b.UserId
+	x.xxx_hidden_Note = b.Note
+	x.xxx_hidden_ExpireTime = b.ExpireTime
+	x.xxx_hidden_UserId = b.UserId
 	return m0
 }
 
 type CreateTokenResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plaintext token to use for authentication.
-	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CreateTokenResponse) Reset() {
@@ -298,13 +290,13 @@ func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateTokenResponse) GetToken() string {
 	if x != nil {
-		return x.Token
+		return x.xxx_hidden_Token
 	}
 	return ""
 }
 
 func (x *CreateTokenResponse) SetToken(v string) {
-	x.Token = v
+	x.xxx_hidden_Token = v
 }
 
 type CreateTokenResponse_builder struct {
@@ -318,15 +310,15 @@ func (b0 CreateTokenResponse_builder) Build() *CreateTokenResponse {
 	m0 := &CreateTokenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Token = b.Token
+	x.xxx_hidden_Token = b.Token
 	return m0
 }
 
 type GetTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	TokenId       string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_TokenId string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetTokenRequest) Reset() {
@@ -356,13 +348,13 @@ func (x *GetTokenRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetTokenRequest) GetTokenId() string {
 	if x != nil {
-		return x.TokenId
+		return x.xxx_hidden_TokenId
 	}
 	return ""
 }
 
 func (x *GetTokenRequest) SetTokenId(v string) {
-	x.TokenId = v
+	x.xxx_hidden_TokenId = v
 }
 
 type GetTokenRequest_builder struct {
@@ -375,15 +367,15 @@ func (b0 GetTokenRequest_builder) Build() *GetTokenRequest {
 	m0 := &GetTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.TokenId = b.TokenId
+	x.xxx_hidden_TokenId = b.TokenId
 	return m0
 }
 
 type GetTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Token         *Token                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token *Token                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetTokenResponse) Reset() {
@@ -413,24 +405,24 @@ func (x *GetTokenResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetTokenResponse) GetToken() *Token {
 	if x != nil {
-		return x.Token
+		return x.xxx_hidden_Token
 	}
 	return nil
 }
 
 func (x *GetTokenResponse) SetToken(v *Token) {
-	x.Token = v
+	x.xxx_hidden_Token = v
 }
 
 func (x *GetTokenResponse) HasToken() bool {
 	if x == nil {
 		return false
 	}
-	return x.Token != nil
+	return x.xxx_hidden_Token != nil
 }
 
 func (x *GetTokenResponse) ClearToken() {
-	x.Token = nil
+	x.xxx_hidden_Token = nil
 }
 
 type GetTokenResponse_builder struct {
@@ -443,22 +435,18 @@ func (b0 GetTokenResponse_builder) Build() *GetTokenResponse {
 	m0 := &GetTokenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Token = b.Token
+	x.xxx_hidden_Token = b.Token
 	return m0
 }
 
 type ListTokensRequest struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	// The ID of the user to list tokens, can only be
-	// the user who perform this action, or a machine user.
-	// Default to the user who perform this action if this is empty.
-	UserId        string `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse   bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	xxx_hidden_UserId    string                 `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListTokensRequest) Reset() {
@@ -488,46 +476,46 @@ func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListTokensRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListTokensRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListTokensRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListTokensRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *ListTokensRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListTokensRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListTokensRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 func (x *ListTokensRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 type ListTokensRequest_builder struct {
@@ -547,20 +535,19 @@ func (b0 ListTokensRequest_builder) Build() *ListTokensRequest {
 	m0 := &ListTokensRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
-	x.UserId = b.UserId
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
+	x.xxx_hidden_UserId = b.UserId
 	return m0
 }
 
 type ListTokensResponse struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Tokens []*Token               `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Tokens        *[]*Token              `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
+	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListTokensResponse) Reset() {
@@ -590,24 +577,26 @@ func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListTokensResponse) GetTokens() []*Token {
 	if x != nil {
-		return x.Tokens
+		if x.xxx_hidden_Tokens != nil {
+			return *x.xxx_hidden_Tokens
+		}
 	}
 	return nil
 }
 
 func (x *ListTokensResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListTokensResponse) SetTokens(v []*Token) {
-	x.Tokens = v
+	x.xxx_hidden_Tokens = &v
 }
 
 func (x *ListTokensResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListTokensResponse_builder struct {
@@ -622,16 +611,16 @@ func (b0 ListTokensResponse_builder) Build() *ListTokensResponse {
 	m0 := &ListTokensResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Tokens = b.Tokens
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Tokens = &b.Tokens
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type DeleteTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	TokenId       string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_TokenId string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DeleteTokenRequest) Reset() {
@@ -661,13 +650,13 @@ func (x *DeleteTokenRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteTokenRequest) GetTokenId() string {
 	if x != nil {
-		return x.TokenId
+		return x.xxx_hidden_TokenId
 	}
 	return ""
 }
 
 func (x *DeleteTokenRequest) SetTokenId(v string) {
-	x.TokenId = v
+	x.xxx_hidden_TokenId = v
 }
 
 type DeleteTokenRequest_builder struct {
@@ -680,12 +669,12 @@ func (b0 DeleteTokenRequest_builder) Build() *DeleteTokenRequest {
 	m0 := &DeleteTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.TokenId = b.TokenId
+	x.xxx_hidden_TokenId = b.TokenId
 	return m0
 }
 
 type DeleteTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

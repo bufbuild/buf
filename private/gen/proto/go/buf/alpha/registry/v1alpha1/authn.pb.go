@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/authn.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -36,7 +34,7 @@ const (
 )
 
 type GetCurrentUserRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -79,10 +77,10 @@ func (b0 GetCurrentUserRequest_builder) Build() *GetCurrentUserRequest {
 }
 
 type GetCurrentUserResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetCurrentUserResponse) Reset() {
@@ -112,24 +110,24 @@ func (x *GetCurrentUserResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCurrentUserResponse) GetUser() *User {
 	if x != nil {
-		return x.User
+		return x.xxx_hidden_User
 	}
 	return nil
 }
 
 func (x *GetCurrentUserResponse) SetUser(v *User) {
-	x.User = v
+	x.xxx_hidden_User = v
 }
 
 func (x *GetCurrentUserResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.User != nil
+	return x.xxx_hidden_User != nil
 }
 
 func (x *GetCurrentUserResponse) ClearUser() {
-	x.User = nil
+	x.xxx_hidden_User = nil
 }
 
 type GetCurrentUserResponse_builder struct {
@@ -142,12 +140,12 @@ func (b0 GetCurrentUserResponse_builder) Build() *GetCurrentUserResponse {
 	m0 := &GetCurrentUserResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.User = b.User
+	x.xxx_hidden_User = b.User
 	return m0
 }
 
 type GetCurrentUserSubjectRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -190,14 +188,10 @@ func (b0 GetCurrentUserSubjectRequest_builder) Build() *GetCurrentUserSubjectReq
 }
 
 type GetCurrentUserSubjectResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The user's subject for mapping to user in identity provider.
-	// Note: we do not want to make it part of the User response as
-	// it contains potentially sensitive information and the User
-	// response is shared with other users.
-	Subject       string `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Subject string                 `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetCurrentUserSubjectResponse) Reset() {
@@ -227,13 +221,13 @@ func (x *GetCurrentUserSubjectResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCurrentUserSubjectResponse) GetSubject() string {
 	if x != nil {
-		return x.Subject
+		return x.xxx_hidden_Subject
 	}
 	return ""
 }
 
 func (x *GetCurrentUserSubjectResponse) SetSubject(v string) {
-	x.Subject = v
+	x.xxx_hidden_Subject = v
 }
 
 type GetCurrentUserSubjectResponse_builder struct {
@@ -250,7 +244,7 @@ func (b0 GetCurrentUserSubjectResponse_builder) Build() *GetCurrentUserSubjectRe
 	m0 := &GetCurrentUserSubjectResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Subject = b.Subject
+	x.xxx_hidden_Subject = b.Subject
 	return m0
 }
 

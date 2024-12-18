@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/display.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -36,12 +34,10 @@ const (
 )
 
 type DisplayOrganizationElementsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which to check
-	// which elements should be displayed.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *DisplayOrganizationElementsRequest) Reset() {
@@ -71,13 +67,13 @@ func (x *DisplayOrganizationElementsRequest) ProtoReflect() protoreflect.Message
 
 func (x *DisplayOrganizationElementsRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *DisplayOrganizationElementsRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 type DisplayOrganizationElementsRequest_builder struct {
@@ -92,22 +88,18 @@ func (b0 DisplayOrganizationElementsRequest_builder) Build() *DisplayOrganizatio
 	m0 := &DisplayOrganizationElementsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
+	x.xxx_hidden_OrganizationId = b.OrganizationId
 	return m0
 }
 
 type DisplayOrganizationElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display create organization repository element if true.
-	CreateRepository bool `protobuf:"varint,1,opt,name=create_repository,json=createRepository,proto3" json:"create_repository,omitempty"`
-	// Display organization settings element if true.
-	Settings bool `protobuf:"varint,4,opt,name=settings,proto3" json:"settings,omitempty"`
-	// Display update organization settings element if true.
-	UpdateSettings bool `protobuf:"varint,5,opt,name=update_settings,json=updateSettings,proto3" json:"update_settings,omitempty"`
-	// Display delete organization element if true.
-	Delete        bool `protobuf:"varint,6,opt,name=delete,proto3" json:"delete,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CreateRepository bool                   `protobuf:"varint,1,opt,name=create_repository,json=createRepository,proto3" json:"create_repository,omitempty"`
+	xxx_hidden_Settings         bool                   `protobuf:"varint,4,opt,name=settings,proto3" json:"settings,omitempty"`
+	xxx_hidden_UpdateSettings   bool                   `protobuf:"varint,5,opt,name=update_settings,json=updateSettings,proto3" json:"update_settings,omitempty"`
+	xxx_hidden_Delete           bool                   `protobuf:"varint,6,opt,name=delete,proto3" json:"delete,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *DisplayOrganizationElementsResponse) Reset() {
@@ -137,46 +129,46 @@ func (x *DisplayOrganizationElementsResponse) ProtoReflect() protoreflect.Messag
 
 func (x *DisplayOrganizationElementsResponse) GetCreateRepository() bool {
 	if x != nil {
-		return x.CreateRepository
+		return x.xxx_hidden_CreateRepository
 	}
 	return false
 }
 
 func (x *DisplayOrganizationElementsResponse) GetSettings() bool {
 	if x != nil {
-		return x.Settings
+		return x.xxx_hidden_Settings
 	}
 	return false
 }
 
 func (x *DisplayOrganizationElementsResponse) GetUpdateSettings() bool {
 	if x != nil {
-		return x.UpdateSettings
+		return x.xxx_hidden_UpdateSettings
 	}
 	return false
 }
 
 func (x *DisplayOrganizationElementsResponse) GetDelete() bool {
 	if x != nil {
-		return x.Delete
+		return x.xxx_hidden_Delete
 	}
 	return false
 }
 
 func (x *DisplayOrganizationElementsResponse) SetCreateRepository(v bool) {
-	x.CreateRepository = v
+	x.xxx_hidden_CreateRepository = v
 }
 
 func (x *DisplayOrganizationElementsResponse) SetSettings(v bool) {
-	x.Settings = v
+	x.xxx_hidden_Settings = v
 }
 
 func (x *DisplayOrganizationElementsResponse) SetUpdateSettings(v bool) {
-	x.UpdateSettings = v
+	x.xxx_hidden_UpdateSettings = v
 }
 
 func (x *DisplayOrganizationElementsResponse) SetDelete(v bool) {
-	x.Delete = v
+	x.xxx_hidden_Delete = v
 }
 
 type DisplayOrganizationElementsResponse_builder struct {
@@ -196,20 +188,18 @@ func (b0 DisplayOrganizationElementsResponse_builder) Build() *DisplayOrganizati
 	m0 := &DisplayOrganizationElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CreateRepository = b.CreateRepository
-	x.Settings = b.Settings
-	x.UpdateSettings = b.UpdateSettings
-	x.Delete = b.Delete
+	x.xxx_hidden_CreateRepository = b.CreateRepository
+	x.xxx_hidden_Settings = b.Settings
+	x.xxx_hidden_UpdateSettings = b.UpdateSettings
+	x.xxx_hidden_Delete = b.Delete
 	return m0
 }
 
 type DisplayRepositoryElementsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository for which to check
-	// which elements should be displayed.
-	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *DisplayRepositoryElementsRequest) Reset() {
@@ -239,13 +229,13 @@ func (x *DisplayRepositoryElementsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DisplayRepositoryElementsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *DisplayRepositoryElementsRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 type DisplayRepositoryElementsRequest_builder struct {
@@ -260,22 +250,18 @@ func (b0 DisplayRepositoryElementsRequest_builder) Build() *DisplayRepositoryEle
 	m0 := &DisplayRepositoryElementsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryId = b.RepositoryId
 	return m0
 }
 
 type DisplayRepositoryElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display repository settings element if true.
-	Settings bool `protobuf:"varint,1,opt,name=settings,proto3" json:"settings,omitempty"`
-	// Display delete repository element if true.
-	Delete bool `protobuf:"varint,2,opt,name=delete,proto3" json:"delete,omitempty"`
-	// Display write repository elements if true. It includes all elements from limited_write.
-	Write bool `protobuf:"varint,3,opt,name=write,proto3" json:"write,omitempty"`
-	// Display limited_write repository elements if true. This is a subset of write elements.
-	LimitedWrite  bool `protobuf:"varint,4,opt,name=limited_write,json=limitedWrite,proto3" json:"limited_write,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Settings     bool                   `protobuf:"varint,1,opt,name=settings,proto3" json:"settings,omitempty"`
+	xxx_hidden_Delete       bool                   `protobuf:"varint,2,opt,name=delete,proto3" json:"delete,omitempty"`
+	xxx_hidden_Write        bool                   `protobuf:"varint,3,opt,name=write,proto3" json:"write,omitempty"`
+	xxx_hidden_LimitedWrite bool                   `protobuf:"varint,4,opt,name=limited_write,json=limitedWrite,proto3" json:"limited_write,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *DisplayRepositoryElementsResponse) Reset() {
@@ -305,46 +291,46 @@ func (x *DisplayRepositoryElementsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *DisplayRepositoryElementsResponse) GetSettings() bool {
 	if x != nil {
-		return x.Settings
+		return x.xxx_hidden_Settings
 	}
 	return false
 }
 
 func (x *DisplayRepositoryElementsResponse) GetDelete() bool {
 	if x != nil {
-		return x.Delete
+		return x.xxx_hidden_Delete
 	}
 	return false
 }
 
 func (x *DisplayRepositoryElementsResponse) GetWrite() bool {
 	if x != nil {
-		return x.Write
+		return x.xxx_hidden_Write
 	}
 	return false
 }
 
 func (x *DisplayRepositoryElementsResponse) GetLimitedWrite() bool {
 	if x != nil {
-		return x.LimitedWrite
+		return x.xxx_hidden_LimitedWrite
 	}
 	return false
 }
 
 func (x *DisplayRepositoryElementsResponse) SetSettings(v bool) {
-	x.Settings = v
+	x.xxx_hidden_Settings = v
 }
 
 func (x *DisplayRepositoryElementsResponse) SetDelete(v bool) {
-	x.Delete = v
+	x.xxx_hidden_Delete = v
 }
 
 func (x *DisplayRepositoryElementsResponse) SetWrite(v bool) {
-	x.Write = v
+	x.xxx_hidden_Write = v
 }
 
 func (x *DisplayRepositoryElementsResponse) SetLimitedWrite(v bool) {
-	x.LimitedWrite = v
+	x.xxx_hidden_LimitedWrite = v
 }
 
 type DisplayRepositoryElementsResponse_builder struct {
@@ -364,20 +350,18 @@ func (b0 DisplayRepositoryElementsResponse_builder) Build() *DisplayRepositoryEl
 	m0 := &DisplayRepositoryElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Settings = b.Settings
-	x.Delete = b.Delete
-	x.Write = b.Write
-	x.LimitedWrite = b.LimitedWrite
+	x.xxx_hidden_Settings = b.Settings
+	x.xxx_hidden_Delete = b.Delete
+	x.xxx_hidden_Write = b.Write
+	x.xxx_hidden_LimitedWrite = b.LimitedWrite
 	return m0
 }
 
 type DisplayPluginElementsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the plugin for which to check
-	// which elements should be displayed.
-	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *DisplayPluginElementsRequest) Reset() {
@@ -407,13 +391,13 @@ func (x *DisplayPluginElementsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DisplayPluginElementsRequest) GetPluginId() string {
 	if x != nil {
-		return x.PluginId
+		return x.xxx_hidden_PluginId
 	}
 	return ""
 }
 
 func (x *DisplayPluginElementsRequest) SetPluginId(v string) {
-	x.PluginId = v
+	x.xxx_hidden_PluginId = v
 }
 
 type DisplayPluginElementsRequest_builder struct {
@@ -428,18 +412,16 @@ func (b0 DisplayPluginElementsRequest_builder) Build() *DisplayPluginElementsReq
 	m0 := &DisplayPluginElementsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginId = b.PluginId
+	x.xxx_hidden_PluginId = b.PluginId
 	return m0
 }
 
 type DisplayPluginElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display plugin settings element if true.
-	Settings bool `protobuf:"varint,1,opt,name=settings,proto3" json:"settings,omitempty"`
-	// Display delete plugin element if true.
-	Delete        bool `protobuf:"varint,2,opt,name=delete,proto3" json:"delete,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Settings bool                   `protobuf:"varint,1,opt,name=settings,proto3" json:"settings,omitempty"`
+	xxx_hidden_Delete   bool                   `protobuf:"varint,2,opt,name=delete,proto3" json:"delete,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *DisplayPluginElementsResponse) Reset() {
@@ -469,24 +451,24 @@ func (x *DisplayPluginElementsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DisplayPluginElementsResponse) GetSettings() bool {
 	if x != nil {
-		return x.Settings
+		return x.xxx_hidden_Settings
 	}
 	return false
 }
 
 func (x *DisplayPluginElementsResponse) GetDelete() bool {
 	if x != nil {
-		return x.Delete
+		return x.xxx_hidden_Delete
 	}
 	return false
 }
 
 func (x *DisplayPluginElementsResponse) SetSettings(v bool) {
-	x.Settings = v
+	x.xxx_hidden_Settings = v
 }
 
 func (x *DisplayPluginElementsResponse) SetDelete(v bool) {
-	x.Delete = v
+	x.xxx_hidden_Delete = v
 }
 
 type DisplayPluginElementsResponse_builder struct {
@@ -502,13 +484,13 @@ func (b0 DisplayPluginElementsResponse_builder) Build() *DisplayPluginElementsRe
 	m0 := &DisplayPluginElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Settings = b.Settings
-	x.Delete = b.Delete
+	x.xxx_hidden_Settings = b.Settings
+	x.xxx_hidden_Delete = b.Delete
 	return m0
 }
 
 type DisplayUserElementsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -551,11 +533,10 @@ func (b0 DisplayUserElementsRequest_builder) Build() *DisplayUserElementsRequest
 }
 
 type DisplayUserElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display delete user element if true.
-	Delete        bool `protobuf:"varint,1,opt,name=delete,proto3" json:"delete,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Delete bool                   `protobuf:"varint,1,opt,name=delete,proto3" json:"delete,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *DisplayUserElementsResponse) Reset() {
@@ -585,13 +566,13 @@ func (x *DisplayUserElementsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DisplayUserElementsResponse) GetDelete() bool {
 	if x != nil {
-		return x.Delete
+		return x.xxx_hidden_Delete
 	}
 	return false
 }
 
 func (x *DisplayUserElementsResponse) SetDelete(v bool) {
-	x.Delete = v
+	x.xxx_hidden_Delete = v
 }
 
 type DisplayUserElementsResponse_builder struct {
@@ -605,12 +586,12 @@ func (b0 DisplayUserElementsResponse_builder) Build() *DisplayUserElementsRespon
 	m0 := &DisplayUserElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Delete = b.Delete
+	x.xxx_hidden_Delete = b.Delete
 	return m0
 }
 
 type DisplayServerElementsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -653,11 +634,10 @@ func (b0 DisplayServerElementsRequest_builder) Build() *DisplayServerElementsReq
 }
 
 type DisplayServerElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display server admin panel element if true.
-	AdminPanel    bool `protobuf:"varint,1,opt,name=admin_panel,json=adminPanel,proto3" json:"admin_panel,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AdminPanel bool                   `protobuf:"varint,1,opt,name=admin_panel,json=adminPanel,proto3" json:"admin_panel,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *DisplayServerElementsResponse) Reset() {
@@ -687,13 +667,13 @@ func (x *DisplayServerElementsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DisplayServerElementsResponse) GetAdminPanel() bool {
 	if x != nil {
-		return x.AdminPanel
+		return x.xxx_hidden_AdminPanel
 	}
 	return false
 }
 
 func (x *DisplayServerElementsResponse) SetAdminPanel(v bool) {
-	x.AdminPanel = v
+	x.xxx_hidden_AdminPanel = v
 }
 
 type DisplayServerElementsResponse_builder struct {
@@ -707,17 +687,15 @@ func (b0 DisplayServerElementsResponse_builder) Build() *DisplayServerElementsRe
 	m0 := &DisplayServerElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.AdminPanel = b.AdminPanel
+	x.xxx_hidden_AdminPanel = b.AdminPanel
 	return m0
 }
 
 type DisplayOwnerEntitledElementsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the owner for which to check
-	// which elements are entitled to be displayed.
-	OwnerName     string `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OwnerName string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *DisplayOwnerEntitledElementsRequest) Reset() {
@@ -747,13 +725,13 @@ func (x *DisplayOwnerEntitledElementsRequest) ProtoReflect() protoreflect.Messag
 
 func (x *DisplayOwnerEntitledElementsRequest) GetOwnerName() string {
 	if x != nil {
-		return x.OwnerName
+		return x.xxx_hidden_OwnerName
 	}
 	return ""
 }
 
 func (x *DisplayOwnerEntitledElementsRequest) SetOwnerName(v string) {
-	x.OwnerName = v
+	x.xxx_hidden_OwnerName = v
 }
 
 type DisplayOwnerEntitledElementsRequest_builder struct {
@@ -768,16 +746,15 @@ func (b0 DisplayOwnerEntitledElementsRequest_builder) Build() *DisplayOwnerEntit
 	m0 := &DisplayOwnerEntitledElementsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OwnerName = b.OwnerName
+	x.xxx_hidden_OwnerName = b.OwnerName
 	return m0
 }
 
 type DisplayOwnerEntitledElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display create private repository element if true.
-	CreatePrivateRepository bool `protobuf:"varint,1,opt,name=create_private_repository,json=createPrivateRepository,proto3" json:"create_private_repository,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CreatePrivateRepository bool                   `protobuf:"varint,1,opt,name=create_private_repository,json=createPrivateRepository,proto3" json:"create_private_repository,omitempty"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *DisplayOwnerEntitledElementsResponse) Reset() {
@@ -807,13 +784,13 @@ func (x *DisplayOwnerEntitledElementsResponse) ProtoReflect() protoreflect.Messa
 
 func (x *DisplayOwnerEntitledElementsResponse) GetCreatePrivateRepository() bool {
 	if x != nil {
-		return x.CreatePrivateRepository
+		return x.xxx_hidden_CreatePrivateRepository
 	}
 	return false
 }
 
 func (x *DisplayOwnerEntitledElementsResponse) SetCreatePrivateRepository(v bool) {
-	x.CreatePrivateRepository = v
+	x.xxx_hidden_CreatePrivateRepository = v
 }
 
 type DisplayOwnerEntitledElementsResponse_builder struct {
@@ -827,17 +804,15 @@ func (b0 DisplayOwnerEntitledElementsResponse_builder) Build() *DisplayOwnerEnti
 	m0 := &DisplayOwnerEntitledElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CreatePrivateRepository = b.CreatePrivateRepository
+	x.xxx_hidden_CreatePrivateRepository = b.CreatePrivateRepository
 	return m0
 }
 
 type DisplayRepositoryEntitledElementsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository for which to check
-	// which elements are entitled to be displayed.
-	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *DisplayRepositoryEntitledElementsRequest) Reset() {
@@ -867,13 +842,13 @@ func (x *DisplayRepositoryEntitledElementsRequest) ProtoReflect() protoreflect.M
 
 func (x *DisplayRepositoryEntitledElementsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *DisplayRepositoryEntitledElementsRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 type DisplayRepositoryEntitledElementsRequest_builder struct {
@@ -888,16 +863,15 @@ func (b0 DisplayRepositoryEntitledElementsRequest_builder) Build() *DisplayRepos
 	m0 := &DisplayRepositoryEntitledElementsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryId = b.RepositoryId
 	return m0
 }
 
 type DisplayRepositoryEntitledElementsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Display repository change to private setting element if true.
-	SetPrivate    bool `protobuf:"varint,1,opt,name=set_private,json=setPrivate,proto3" json:"set_private,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SetPrivate bool                   `protobuf:"varint,1,opt,name=set_private,json=setPrivate,proto3" json:"set_private,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *DisplayRepositoryEntitledElementsResponse) Reset() {
@@ -927,13 +901,13 @@ func (x *DisplayRepositoryEntitledElementsResponse) ProtoReflect() protoreflect.
 
 func (x *DisplayRepositoryEntitledElementsResponse) GetSetPrivate() bool {
 	if x != nil {
-		return x.SetPrivate
+		return x.xxx_hidden_SetPrivate
 	}
 	return false
 }
 
 func (x *DisplayRepositoryEntitledElementsResponse) SetSetPrivate(v bool) {
-	x.SetPrivate = v
+	x.xxx_hidden_SetPrivate = v
 }
 
 type DisplayRepositoryEntitledElementsResponse_builder struct {
@@ -947,17 +921,15 @@ func (b0 DisplayRepositoryEntitledElementsResponse_builder) Build() *DisplayRepo
 	m0 := &DisplayRepositoryEntitledElementsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SetPrivate = b.SetPrivate
+	x.xxx_hidden_SetPrivate = b.SetPrivate
 	return m0
 }
 
 type ListManageableRepositoryRolesRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository for which to check
-	// which roles should be displayed as manageable.
-	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListManageableRepositoryRolesRequest) Reset() {
@@ -987,13 +959,13 @@ func (x *ListManageableRepositoryRolesRequest) ProtoReflect() protoreflect.Messa
 
 func (x *ListManageableRepositoryRolesRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ListManageableRepositoryRolesRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 type ListManageableRepositoryRolesRequest_builder struct {
@@ -1008,17 +980,15 @@ func (b0 ListManageableRepositoryRolesRequest_builder) Build() *ListManageableRe
 	m0 := &ListManageableRepositoryRolesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryId = b.RepositoryId
 	return m0
 }
 
 type ListManageableRepositoryRolesResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The list of roles that should be displayed
-	// to the user as manageable.
-	Roles         []RepositoryRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Roles []RepositoryRole       `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"roles,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListManageableRepositoryRolesResponse) Reset() {
@@ -1048,13 +1018,13 @@ func (x *ListManageableRepositoryRolesResponse) ProtoReflect() protoreflect.Mess
 
 func (x *ListManageableRepositoryRolesResponse) GetRoles() []RepositoryRole {
 	if x != nil {
-		return x.Roles
+		return x.xxx_hidden_Roles
 	}
 	return nil
 }
 
 func (x *ListManageableRepositoryRolesResponse) SetRoles(v []RepositoryRole) {
-	x.Roles = v
+	x.xxx_hidden_Roles = v
 }
 
 type ListManageableRepositoryRolesResponse_builder struct {
@@ -1069,20 +1039,16 @@ func (b0 ListManageableRepositoryRolesResponse_builder) Build() *ListManageableR
 	m0 := &ListManageableRepositoryRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Roles = b.Roles
+	x.xxx_hidden_Roles = b.Roles
 	return m0
 }
 
 type ListManageableUserRepositoryRolesRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository for which to check
-	// which roles should be displayed as manageable.
-	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The ID of the target user for which to check
-	// which roles are manageable.
-	UserId        string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_UserId       string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListManageableUserRepositoryRolesRequest) Reset() {
@@ -1112,24 +1078,24 @@ func (x *ListManageableUserRepositoryRolesRequest) ProtoReflect() protoreflect.M
 
 func (x *ListManageableUserRepositoryRolesRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ListManageableUserRepositoryRolesRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *ListManageableUserRepositoryRolesRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *ListManageableUserRepositoryRolesRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 type ListManageableUserRepositoryRolesRequest_builder struct {
@@ -1147,18 +1113,16 @@ func (b0 ListManageableUserRepositoryRolesRequest_builder) Build() *ListManageab
 	m0 := &ListManageableUserRepositoryRolesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.UserId = b.UserId
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_UserId = b.UserId
 	return m0
 }
 
 type ListManageableUserRepositoryRolesResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The list of roles that should be displayed
-	// to the user as manageable.
-	Roles         []RepositoryRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"roles,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Roles []RepositoryRole       `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"roles,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListManageableUserRepositoryRolesResponse) Reset() {
@@ -1188,13 +1152,13 @@ func (x *ListManageableUserRepositoryRolesResponse) ProtoReflect() protoreflect.
 
 func (x *ListManageableUserRepositoryRolesResponse) GetRoles() []RepositoryRole {
 	if x != nil {
-		return x.Roles
+		return x.xxx_hidden_Roles
 	}
 	return nil
 }
 
 func (x *ListManageableUserRepositoryRolesResponse) SetRoles(v []RepositoryRole) {
-	x.Roles = v
+	x.xxx_hidden_Roles = v
 }
 
 type ListManageableUserRepositoryRolesResponse_builder struct {
@@ -1209,7 +1173,7 @@ func (b0 ListManageableUserRepositoryRolesResponse_builder) Build() *ListManagea
 	m0 := &ListManageableUserRepositoryRolesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Roles = b.Roles
+	x.xxx_hidden_Roles = b.Roles
 	return m0
 }
 

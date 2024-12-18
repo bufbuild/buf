@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/schema.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -84,53 +82,16 @@ func (x Format) Number() protoreflect.EnumNumber {
 }
 
 type GetSchemaRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the repo that contains the schema to retrieve (a user name or
-	// organization name).
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the repo that contains the schema to retrieve.
-	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Optional version of the repo. If unspecified, defaults to latest version on
-	// the repo's "main" branch.
-	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// Zero or more types names. The names may refer to messages, enums, services,
-	// methods, or extensions. All names must be fully-qualified. If any name
-	// is unknown, the request will fail and no schema will be returned.
-	//
-	// If no names are provided, the full schema for the module is returned.
-	// Otherwise, the resulting schema contains only the named elements and all of
-	// their dependencies. This is enough information for the caller to construct
-	// a dynamic message for any requested message types or to dynamically invoke
-	// an RPC for any requested methods or services.
-	Types []string `protobuf:"bytes,4,rep,name=types,proto3" json:"types,omitempty"`
-	// If present, this is a commit that the client already has cached. So if the
-	// given module version resolves to this same commit, the server should not
-	// send back any descriptors since the client already has them.
-	//
-	// This allows a client to efficiently poll for updates: after the initial RPC
-	// to get a schema, the client can cache the descriptors and the resolved
-	// commit. It then includes that commit in subsequent requests in this field,
-	// and the server will only reply with a schema (and new commit) if/when the
-	// resolved commit changes.
-	IfNotCommit string `protobuf:"bytes,5,opt,name=if_not_commit,json=ifNotCommit,proto3" json:"if_not_commit,omitempty"`
-	// If true, the returned schema will not include extension definitions for custom
-	// options that appear on schema elements. When filtering the schema based on the
-	// given element names, options on all encountered elements are usually examined
-	// as well. But that is not the case if excluding custom options.
-	//
-	// This flag is ignored if element_names is empty as the entire schema is always
-	// returned in that case.
-	ExcludeCustomOptions bool `protobuf:"varint,6,opt,name=exclude_custom_options,json=excludeCustomOptions,proto3" json:"exclude_custom_options,omitempty"`
-	// If true, the returned schema will not include known extensions for extendable
-	// messages for schema elements. If exclude_custom_options is true, such extensions
-	// may still be returned if the applicable descriptor options type is part of the
-	// requested schema.
-	//
-	// This flag is ignored if element_names is empty as the entire schema is always
-	// returned in that case.
-	ExcludeKnownExtensions bool `protobuf:"varint,7,opt,name=exclude_known_extensions,json=excludeKnownExtensions,proto3" json:"exclude_known_extensions,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner                  string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository             string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Version                string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Types                  []string               `protobuf:"bytes,4,rep,name=types,proto3" json:"types,omitempty"`
+	xxx_hidden_IfNotCommit            string                 `protobuf:"bytes,5,opt,name=if_not_commit,json=ifNotCommit,proto3" json:"if_not_commit,omitempty"`
+	xxx_hidden_ExcludeCustomOptions   bool                   `protobuf:"varint,6,opt,name=exclude_custom_options,json=excludeCustomOptions,proto3" json:"exclude_custom_options,omitempty"`
+	xxx_hidden_ExcludeKnownExtensions bool                   `protobuf:"varint,7,opt,name=exclude_known_extensions,json=excludeKnownExtensions,proto3" json:"exclude_known_extensions,omitempty"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *GetSchemaRequest) Reset() {
@@ -160,79 +121,79 @@ func (x *GetSchemaRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetSchemaRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *GetSchemaRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *GetSchemaRequest) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetSchemaRequest) GetTypes() []string {
 	if x != nil {
-		return x.Types
+		return x.xxx_hidden_Types
 	}
 	return nil
 }
 
 func (x *GetSchemaRequest) GetIfNotCommit() string {
 	if x != nil {
-		return x.IfNotCommit
+		return x.xxx_hidden_IfNotCommit
 	}
 	return ""
 }
 
 func (x *GetSchemaRequest) GetExcludeCustomOptions() bool {
 	if x != nil {
-		return x.ExcludeCustomOptions
+		return x.xxx_hidden_ExcludeCustomOptions
 	}
 	return false
 }
 
 func (x *GetSchemaRequest) GetExcludeKnownExtensions() bool {
 	if x != nil {
-		return x.ExcludeKnownExtensions
+		return x.xxx_hidden_ExcludeKnownExtensions
 	}
 	return false
 }
 
 func (x *GetSchemaRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *GetSchemaRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *GetSchemaRequest) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *GetSchemaRequest) SetTypes(v []string) {
-	x.Types = v
+	x.xxx_hidden_Types = v
 }
 
 func (x *GetSchemaRequest) SetIfNotCommit(v string) {
-	x.IfNotCommit = v
+	x.xxx_hidden_IfNotCommit = v
 }
 
 func (x *GetSchemaRequest) SetExcludeCustomOptions(v bool) {
-	x.ExcludeCustomOptions = v
+	x.xxx_hidden_ExcludeCustomOptions = v
 }
 
 func (x *GetSchemaRequest) SetExcludeKnownExtensions(v bool) {
-	x.ExcludeKnownExtensions = v
+	x.xxx_hidden_ExcludeKnownExtensions = v
 }
 
 type GetSchemaRequest_builder struct {
@@ -288,29 +249,22 @@ func (b0 GetSchemaRequest_builder) Build() *GetSchemaRequest {
 	m0 := &GetSchemaRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Version = b.Version
-	x.Types = b.Types
-	x.IfNotCommit = b.IfNotCommit
-	x.ExcludeCustomOptions = b.ExcludeCustomOptions
-	x.ExcludeKnownExtensions = b.ExcludeKnownExtensions
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Types = b.Types
+	x.xxx_hidden_IfNotCommit = b.IfNotCommit
+	x.xxx_hidden_ExcludeCustomOptions = b.ExcludeCustomOptions
+	x.xxx_hidden_ExcludeKnownExtensions = b.ExcludeKnownExtensions
 	return m0
 }
 
 type GetSchemaResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The resolved version of the schema. If the requested version was a commit,
-	// this value is the same as that. If the requested version referred to a tag
-	// or branch, this is the commit for that tag or latest commit for that
-	// branch. If the request did not include any version, this is the latest
-	// version for the module's main branch.
-	Commit string `protobuf:"bytes,1,opt,name=commit,proto3" json:"commit,omitempty"`
-	// The schema, which is a set of file descriptors that include the requested elements
-	// and their dependencies.
-	SchemaFiles   *descriptorpb.FileDescriptorSet `protobuf:"bytes,2,opt,name=schema_files,json=schemaFiles,proto3" json:"schema_files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Commit      string                          `protobuf:"bytes,1,opt,name=commit,proto3" json:"commit,omitempty"`
+	xxx_hidden_SchemaFiles *descriptorpb.FileDescriptorSet `protobuf:"bytes,2,opt,name=schema_files,json=schemaFiles,proto3" json:"schema_files,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetSchemaResponse) Reset() {
@@ -340,35 +294,35 @@ func (x *GetSchemaResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSchemaResponse) GetCommit() string {
 	if x != nil {
-		return x.Commit
+		return x.xxx_hidden_Commit
 	}
 	return ""
 }
 
 func (x *GetSchemaResponse) GetSchemaFiles() *descriptorpb.FileDescriptorSet {
 	if x != nil {
-		return x.SchemaFiles
+		return x.xxx_hidden_SchemaFiles
 	}
 	return nil
 }
 
 func (x *GetSchemaResponse) SetCommit(v string) {
-	x.Commit = v
+	x.xxx_hidden_Commit = v
 }
 
 func (x *GetSchemaResponse) SetSchemaFiles(v *descriptorpb.FileDescriptorSet) {
-	x.SchemaFiles = v
+	x.xxx_hidden_SchemaFiles = v
 }
 
 func (x *GetSchemaResponse) HasSchemaFiles() bool {
 	if x == nil {
 		return false
 	}
-	return x.SchemaFiles != nil
+	return x.xxx_hidden_SchemaFiles != nil
 }
 
 func (x *GetSchemaResponse) ClearSchemaFiles() {
-	x.SchemaFiles = nil
+	x.xxx_hidden_SchemaFiles = nil
 }
 
 type GetSchemaResponse_builder struct {
@@ -389,44 +343,23 @@ func (b0 GetSchemaResponse_builder) Build() *GetSchemaResponse {
 	m0 := &GetSchemaResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Commit = b.Commit
-	x.SchemaFiles = b.SchemaFiles
+	x.xxx_hidden_Commit = b.Commit
+	x.xxx_hidden_SchemaFiles = b.SchemaFiles
 	return m0
 }
 
 type ConvertMessageRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the repo that contains the schema to retrieve (a user name or
-	// organization name).
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the repo that contains the schema to retrieve.
-	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Optional version of the repo. This can be a tag or branch name or a commit.
-	// If unspecified, defaults to latest version on the repo's "main" branch.
-	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// The fully-qualified name of the message. Required.
-	MessageName string `protobuf:"bytes,4,opt,name=message_name,json=messageName,proto3" json:"message_name,omitempty"`
-	// The format of the input data. Required.
-	InputFormat Format `protobuf:"varint,5,opt,name=input_format,json=inputFormat,proto3,enum=buf.alpha.registry.v1alpha1.Format" json:"input_format,omitempty"`
-	// The input data that is to be converted. Required. This must be
-	// a valid encoding of type indicated by message_name in the format
-	// indicated by input_format.
-	InputData []byte `protobuf:"bytes,6,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
-	// If true, any unresolvable fields in the input are discarded. For
-	// formats other than FORMAT_BINARY, this means that the operation
-	// will fail if the input contains unrecognized field names. For
-	// FORMAT_BINARY, unrecognized fields can be retained and possibly
-	// included in the reformatted output (depending on the requested
-	// output format).
-	DiscardUnknown bool `protobuf:"varint,7,opt,name=discard_unknown,json=discardUnknown,proto3" json:"discard_unknown,omitempty"`
-	// Types that are valid to be assigned to OutputFormat:
-	//
-	//	*ConvertMessageRequest_OutputBinary
-	//	*ConvertMessageRequest_OutputJson
-	//	*ConvertMessageRequest_OutputText
-	OutputFormat  isConvertMessageRequest_OutputFormat `protobuf_oneof:"output_format"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_Owner          string                               `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository     string                               `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Version        string                               `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_MessageName    string                               `protobuf:"bytes,4,opt,name=message_name,json=messageName,proto3" json:"message_name,omitempty"`
+	xxx_hidden_InputFormat    Format                               `protobuf:"varint,5,opt,name=input_format,json=inputFormat,proto3,enum=buf.alpha.registry.v1alpha1.Format" json:"input_format,omitempty"`
+	xxx_hidden_InputData      []byte                               `protobuf:"bytes,6,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
+	xxx_hidden_DiscardUnknown bool                                 `protobuf:"varint,7,opt,name=discard_unknown,json=discardUnknown,proto3" json:"discard_unknown,omitempty"`
+	xxx_hidden_OutputFormat   isConvertMessageRequest_OutputFormat `protobuf_oneof:"output_format"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ConvertMessageRequest) Reset() {
@@ -456,63 +389,56 @@ func (x *ConvertMessageRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ConvertMessageRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *ConvertMessageRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *ConvertMessageRequest) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *ConvertMessageRequest) GetMessageName() string {
 	if x != nil {
-		return x.MessageName
+		return x.xxx_hidden_MessageName
 	}
 	return ""
 }
 
 func (x *ConvertMessageRequest) GetInputFormat() Format {
 	if x != nil {
-		return x.InputFormat
+		return x.xxx_hidden_InputFormat
 	}
 	return Format_FORMAT_UNSPECIFIED
 }
 
 func (x *ConvertMessageRequest) GetInputData() []byte {
 	if x != nil {
-		return x.InputData
+		return x.xxx_hidden_InputData
 	}
 	return nil
 }
 
 func (x *ConvertMessageRequest) GetDiscardUnknown() bool {
 	if x != nil {
-		return x.DiscardUnknown
+		return x.xxx_hidden_DiscardUnknown
 	}
 	return false
 }
 
-func (x *ConvertMessageRequest) GetOutputFormat() isConvertMessageRequest_OutputFormat {
-	if x != nil {
-		return x.OutputFormat
-	}
-	return nil
-}
-
 func (x *ConvertMessageRequest) GetOutputBinary() *BinaryOutputOptions {
 	if x != nil {
-		if x, ok := x.OutputFormat.(*ConvertMessageRequest_OutputBinary); ok {
+		if x, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputBinary); ok {
 			return x.OutputBinary
 		}
 	}
@@ -521,7 +447,7 @@ func (x *ConvertMessageRequest) GetOutputBinary() *BinaryOutputOptions {
 
 func (x *ConvertMessageRequest) GetOutputJson() *JSONOutputOptions {
 	if x != nil {
-		if x, ok := x.OutputFormat.(*ConvertMessageRequest_OutputJson); ok {
+		if x, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputJson); ok {
 			return x.OutputJson
 		}
 	}
@@ -530,7 +456,7 @@ func (x *ConvertMessageRequest) GetOutputJson() *JSONOutputOptions {
 
 func (x *ConvertMessageRequest) GetOutputText() *TextOutputOptions {
 	if x != nil {
-		if x, ok := x.OutputFormat.(*ConvertMessageRequest_OutputText); ok {
+		if x, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputText); ok {
 			return x.OutputText
 		}
 	}
@@ -538,72 +464,72 @@ func (x *ConvertMessageRequest) GetOutputText() *TextOutputOptions {
 }
 
 func (x *ConvertMessageRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *ConvertMessageRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *ConvertMessageRequest) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *ConvertMessageRequest) SetMessageName(v string) {
-	x.MessageName = v
+	x.xxx_hidden_MessageName = v
 }
 
 func (x *ConvertMessageRequest) SetInputFormat(v Format) {
-	x.InputFormat = v
+	x.xxx_hidden_InputFormat = v
 }
 
 func (x *ConvertMessageRequest) SetInputData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.InputData = v
+	x.xxx_hidden_InputData = v
 }
 
 func (x *ConvertMessageRequest) SetDiscardUnknown(v bool) {
-	x.DiscardUnknown = v
+	x.xxx_hidden_DiscardUnknown = v
 }
 
 func (x *ConvertMessageRequest) SetOutputBinary(v *BinaryOutputOptions) {
 	if v == nil {
-		x.OutputFormat = nil
+		x.xxx_hidden_OutputFormat = nil
 		return
 	}
-	x.OutputFormat = &ConvertMessageRequest_OutputBinary{v}
+	x.xxx_hidden_OutputFormat = &convertMessageRequest_OutputBinary{v}
 }
 
 func (x *ConvertMessageRequest) SetOutputJson(v *JSONOutputOptions) {
 	if v == nil {
-		x.OutputFormat = nil
+		x.xxx_hidden_OutputFormat = nil
 		return
 	}
-	x.OutputFormat = &ConvertMessageRequest_OutputJson{v}
+	x.xxx_hidden_OutputFormat = &convertMessageRequest_OutputJson{v}
 }
 
 func (x *ConvertMessageRequest) SetOutputText(v *TextOutputOptions) {
 	if v == nil {
-		x.OutputFormat = nil
+		x.xxx_hidden_OutputFormat = nil
 		return
 	}
-	x.OutputFormat = &ConvertMessageRequest_OutputText{v}
+	x.xxx_hidden_OutputFormat = &convertMessageRequest_OutputText{v}
 }
 
 func (x *ConvertMessageRequest) HasOutputFormat() bool {
 	if x == nil {
 		return false
 	}
-	return x.OutputFormat != nil
+	return x.xxx_hidden_OutputFormat != nil
 }
 
 func (x *ConvertMessageRequest) HasOutputBinary() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.OutputFormat.(*ConvertMessageRequest_OutputBinary)
+	_, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputBinary)
 	return ok
 }
 
@@ -611,7 +537,7 @@ func (x *ConvertMessageRequest) HasOutputJson() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.OutputFormat.(*ConvertMessageRequest_OutputJson)
+	_, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputJson)
 	return ok
 }
 
@@ -619,29 +545,29 @@ func (x *ConvertMessageRequest) HasOutputText() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.OutputFormat.(*ConvertMessageRequest_OutputText)
+	_, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputText)
 	return ok
 }
 
 func (x *ConvertMessageRequest) ClearOutputFormat() {
-	x.OutputFormat = nil
+	x.xxx_hidden_OutputFormat = nil
 }
 
 func (x *ConvertMessageRequest) ClearOutputBinary() {
-	if _, ok := x.OutputFormat.(*ConvertMessageRequest_OutputBinary); ok {
-		x.OutputFormat = nil
+	if _, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputBinary); ok {
+		x.xxx_hidden_OutputFormat = nil
 	}
 }
 
 func (x *ConvertMessageRequest) ClearOutputJson() {
-	if _, ok := x.OutputFormat.(*ConvertMessageRequest_OutputJson); ok {
-		x.OutputFormat = nil
+	if _, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputJson); ok {
+		x.xxx_hidden_OutputFormat = nil
 	}
 }
 
 func (x *ConvertMessageRequest) ClearOutputText() {
-	if _, ok := x.OutputFormat.(*ConvertMessageRequest_OutputText); ok {
-		x.OutputFormat = nil
+	if _, ok := x.xxx_hidden_OutputFormat.(*convertMessageRequest_OutputText); ok {
+		x.xxx_hidden_OutputFormat = nil
 	}
 }
 
@@ -654,12 +580,12 @@ func (x *ConvertMessageRequest) WhichOutputFormat() case_ConvertMessageRequest_O
 	if x == nil {
 		return ConvertMessageRequest_OutputFormat_not_set_case
 	}
-	switch x.OutputFormat.(type) {
-	case *ConvertMessageRequest_OutputBinary:
+	switch x.xxx_hidden_OutputFormat.(type) {
+	case *convertMessageRequest_OutputBinary:
 		return ConvertMessageRequest_OutputBinary_case
-	case *ConvertMessageRequest_OutputJson:
+	case *convertMessageRequest_OutputJson:
 		return ConvertMessageRequest_OutputJson_case
-	case *ConvertMessageRequest_OutputText:
+	case *convertMessageRequest_OutputText:
 		return ConvertMessageRequest_OutputText_case
 	default:
 		return ConvertMessageRequest_OutputFormat_not_set_case
@@ -692,32 +618,32 @@ type ConvertMessageRequest_builder struct {
 	// included in the reformatted output (depending on the requested
 	// output format).
 	DiscardUnknown bool
-	// Fields of oneof OutputFormat:
+	// Fields of oneof xxx_hidden_OutputFormat:
 	OutputBinary *BinaryOutputOptions
 	OutputJson   *JSONOutputOptions
 	OutputText   *TextOutputOptions
-	// -- end of OutputFormat
+	// -- end of xxx_hidden_OutputFormat
 }
 
 func (b0 ConvertMessageRequest_builder) Build() *ConvertMessageRequest {
 	m0 := &ConvertMessageRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Version = b.Version
-	x.MessageName = b.MessageName
-	x.InputFormat = b.InputFormat
-	x.InputData = b.InputData
-	x.DiscardUnknown = b.DiscardUnknown
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_MessageName = b.MessageName
+	x.xxx_hidden_InputFormat = b.InputFormat
+	x.xxx_hidden_InputData = b.InputData
+	x.xxx_hidden_DiscardUnknown = b.DiscardUnknown
 	if b.OutputBinary != nil {
-		x.OutputFormat = &ConvertMessageRequest_OutputBinary{b.OutputBinary}
+		x.xxx_hidden_OutputFormat = &convertMessageRequest_OutputBinary{b.OutputBinary}
 	}
 	if b.OutputJson != nil {
-		x.OutputFormat = &ConvertMessageRequest_OutputJson{b.OutputJson}
+		x.xxx_hidden_OutputFormat = &convertMessageRequest_OutputJson{b.OutputJson}
 	}
 	if b.OutputText != nil {
-		x.OutputFormat = &ConvertMessageRequest_OutputText{b.OutputText}
+		x.xxx_hidden_OutputFormat = &convertMessageRequest_OutputText{b.OutputText}
 	}
 	return m0
 }
@@ -736,26 +662,26 @@ type isConvertMessageRequest_OutputFormat interface {
 	isConvertMessageRequest_OutputFormat()
 }
 
-type ConvertMessageRequest_OutputBinary struct {
+type convertMessageRequest_OutputBinary struct {
 	OutputBinary *BinaryOutputOptions `protobuf:"bytes,8,opt,name=output_binary,json=outputBinary,proto3,oneof"`
 }
 
-type ConvertMessageRequest_OutputJson struct {
+type convertMessageRequest_OutputJson struct {
 	OutputJson *JSONOutputOptions `protobuf:"bytes,9,opt,name=output_json,json=outputJson,proto3,oneof"`
 }
 
-type ConvertMessageRequest_OutputText struct {
+type convertMessageRequest_OutputText struct {
 	OutputText *TextOutputOptions `protobuf:"bytes,10,opt,name=output_text,json=outputText,proto3,oneof"`
 }
 
-func (*ConvertMessageRequest_OutputBinary) isConvertMessageRequest_OutputFormat() {}
+func (*convertMessageRequest_OutputBinary) isConvertMessageRequest_OutputFormat() {}
 
-func (*ConvertMessageRequest_OutputJson) isConvertMessageRequest_OutputFormat() {}
+func (*convertMessageRequest_OutputJson) isConvertMessageRequest_OutputFormat() {}
 
-func (*ConvertMessageRequest_OutputText) isConvertMessageRequest_OutputFormat() {}
+func (*convertMessageRequest_OutputText) isConvertMessageRequest_OutputFormat() {}
 
 type BinaryOutputOptions struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -798,16 +724,11 @@ func (b0 BinaryOutputOptions_builder) Build() *BinaryOutputOptions {
 }
 
 type JSONOutputOptions struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Enum fields will be emitted as numeric values. If false (the dafault), enum
-	// fields are emitted as strings that are the enum values' names.
-	UseEnumNumbers bool `protobuf:"varint,3,opt,name=use_enum_numbers,json=useEnumNumbers,proto3" json:"use_enum_numbers,omitempty"`
-	// Includes fields that have their default values. This applies only to fields
-	// defined in proto3 syntax that have no explicit "optional" keyword. Other
-	// optional fields will be included if present in the input data.
-	IncludeDefaults bool `protobuf:"varint,4,opt,name=include_defaults,json=includeDefaults,proto3" json:"include_defaults,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UseEnumNumbers  bool                   `protobuf:"varint,3,opt,name=use_enum_numbers,json=useEnumNumbers,proto3" json:"use_enum_numbers,omitempty"`
+	xxx_hidden_IncludeDefaults bool                   `protobuf:"varint,4,opt,name=include_defaults,json=includeDefaults,proto3" json:"include_defaults,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *JSONOutputOptions) Reset() {
@@ -837,24 +758,24 @@ func (x *JSONOutputOptions) ProtoReflect() protoreflect.Message {
 
 func (x *JSONOutputOptions) GetUseEnumNumbers() bool {
 	if x != nil {
-		return x.UseEnumNumbers
+		return x.xxx_hidden_UseEnumNumbers
 	}
 	return false
 }
 
 func (x *JSONOutputOptions) GetIncludeDefaults() bool {
 	if x != nil {
-		return x.IncludeDefaults
+		return x.xxx_hidden_IncludeDefaults
 	}
 	return false
 }
 
 func (x *JSONOutputOptions) SetUseEnumNumbers(v bool) {
-	x.UseEnumNumbers = v
+	x.xxx_hidden_UseEnumNumbers = v
 }
 
 func (x *JSONOutputOptions) SetIncludeDefaults(v bool) {
-	x.IncludeDefaults = v
+	x.xxx_hidden_IncludeDefaults = v
 }
 
 type JSONOutputOptions_builder struct {
@@ -873,19 +794,16 @@ func (b0 JSONOutputOptions_builder) Build() *JSONOutputOptions {
 	m0 := &JSONOutputOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UseEnumNumbers = b.UseEnumNumbers
-	x.IncludeDefaults = b.IncludeDefaults
+	x.xxx_hidden_UseEnumNumbers = b.UseEnumNumbers
+	x.xxx_hidden_IncludeDefaults = b.IncludeDefaults
 	return m0
 }
 
 type TextOutputOptions struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// If true and the input data includes unrecognized fields, the unrecognized
-	// fields will be preserved in the text output (using field numbers and raw
-	// values).
-	IncludeUnrecognized bool `protobuf:"varint,2,opt,name=include_unrecognized,json=includeUnrecognized,proto3" json:"include_unrecognized,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_IncludeUnrecognized bool                   `protobuf:"varint,2,opt,name=include_unrecognized,json=includeUnrecognized,proto3" json:"include_unrecognized,omitempty"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *TextOutputOptions) Reset() {
@@ -915,13 +833,13 @@ func (x *TextOutputOptions) ProtoReflect() protoreflect.Message {
 
 func (x *TextOutputOptions) GetIncludeUnrecognized() bool {
 	if x != nil {
-		return x.IncludeUnrecognized
+		return x.xxx_hidden_IncludeUnrecognized
 	}
 	return false
 }
 
 func (x *TextOutputOptions) SetIncludeUnrecognized(v bool) {
-	x.IncludeUnrecognized = v
+	x.xxx_hidden_IncludeUnrecognized = v
 }
 
 type TextOutputOptions_builder struct {
@@ -937,22 +855,16 @@ func (b0 TextOutputOptions_builder) Build() *TextOutputOptions {
 	m0 := &TextOutputOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IncludeUnrecognized = b.IncludeUnrecognized
+	x.xxx_hidden_IncludeUnrecognized = b.IncludeUnrecognized
 	return m0
 }
 
 type ConvertMessageResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The resolved version of the schema. If the requested version was a commit,
-	// this value is the same as that. If the requested version referred to a tag
-	// or branch, this is the commit for that tag or latest commit for that
-	// branch. If the request did not include any version, this is the latest
-	// version for the module's main branch.
-	Commit string `protobuf:"bytes,1,opt,name=commit,proto3" json:"commit,omitempty"`
-	// The reformatted data.
-	OutputData    []byte `protobuf:"bytes,2,opt,name=output_data,json=outputData,proto3" json:"output_data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Commit     string                 `protobuf:"bytes,1,opt,name=commit,proto3" json:"commit,omitempty"`
+	xxx_hidden_OutputData []byte                 `protobuf:"bytes,2,opt,name=output_data,json=outputData,proto3" json:"output_data,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ConvertMessageResponse) Reset() {
@@ -982,27 +894,27 @@ func (x *ConvertMessageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ConvertMessageResponse) GetCommit() string {
 	if x != nil {
-		return x.Commit
+		return x.xxx_hidden_Commit
 	}
 	return ""
 }
 
 func (x *ConvertMessageResponse) GetOutputData() []byte {
 	if x != nil {
-		return x.OutputData
+		return x.xxx_hidden_OutputData
 	}
 	return nil
 }
 
 func (x *ConvertMessageResponse) SetCommit(v string) {
-	x.Commit = v
+	x.xxx_hidden_Commit = v
 }
 
 func (x *ConvertMessageResponse) SetOutputData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.OutputData = v
+	x.xxx_hidden_OutputData = v
 }
 
 type ConvertMessageResponse_builder struct {
@@ -1022,8 +934,8 @@ func (b0 ConvertMessageResponse_builder) Build() *ConvertMessageResponse {
 	m0 := &ConvertMessageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Commit = b.Commit
-	x.OutputData = b.OutputData
+	x.xxx_hidden_Commit = b.Commit
+	x.xxx_hidden_OutputData = b.OutputData
 	return m0
 }
 
@@ -1191,9 +1103,9 @@ func file_buf_alpha_registry_v1alpha1_schema_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_schema_proto_msgTypes[2].OneofWrappers = []any{
-		(*ConvertMessageRequest_OutputBinary)(nil),
-		(*ConvertMessageRequest_OutputJson)(nil),
-		(*ConvertMessageRequest_OutputText)(nil),
+		(*convertMessageRequest_OutputBinary)(nil),
+		(*convertMessageRequest_OutputJson)(nil),
+		(*convertMessageRequest_OutputText)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

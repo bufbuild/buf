@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/repository_tag.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -37,23 +35,14 @@ const (
 )
 
 type RepositoryTag struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// primary key, unique.
-	// tags are based on labels, so if a label has been moved, the ID will point to the
-	// updated entry in the labels table.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// immutable
-	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// We reserve field number '3' for the update_time.
-	// google.protobuf.Timestamp update_time = 3;
-	// The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
-	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
-	// The name of the commit this tag belongs to.
-	CommitName string `protobuf:"bytes,5,opt,name=commit_name,json=commitName,proto3" json:"commit_name,omitempty"`
-	// The username of the author of the tag.
-	Author        string `protobuf:"bytes,6,opt,name=author,proto3" json:"author,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_CommitName string                 `protobuf:"bytes,5,opt,name=commit_name,json=commitName,proto3" json:"commit_name,omitempty"`
+	xxx_hidden_Author     string                 `protobuf:"bytes,6,opt,name=author,proto3" json:"author,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *RepositoryTag) Reset() {
@@ -83,68 +72,68 @@ func (x *RepositoryTag) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryTag) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *RepositoryTag) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *RepositoryTag) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *RepositoryTag) GetCommitName() string {
 	if x != nil {
-		return x.CommitName
+		return x.xxx_hidden_CommitName
 	}
 	return ""
 }
 
 func (x *RepositoryTag) GetAuthor() string {
 	if x != nil {
-		return x.Author
+		return x.xxx_hidden_Author
 	}
 	return ""
 }
 
 func (x *RepositoryTag) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *RepositoryTag) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *RepositoryTag) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *RepositoryTag) SetCommitName(v string) {
-	x.CommitName = v
+	x.xxx_hidden_CommitName = v
 }
 
 func (x *RepositoryTag) SetAuthor(v string) {
-	x.Author = v
+	x.xxx_hidden_Author = v
 }
 
 func (x *RepositoryTag) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *RepositoryTag) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 type RepositoryTag_builder struct {
@@ -170,22 +159,20 @@ func (b0 RepositoryTag_builder) Build() *RepositoryTag {
 	m0 := &RepositoryTag{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.CreateTime = b.CreateTime
-	x.Name = b.Name
-	x.CommitName = b.CommitName
-	x.Author = b.Author
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CommitName = b.CommitName
+	x.xxx_hidden_Author = b.Author
 	return m0
 }
 
 type GetRepositoryTagRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository this tag belongs to.
-	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The name of the repository tag to get, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetRepositoryTagRequest) Reset() {
@@ -215,24 +202,24 @@ func (x *GetRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryTagRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *GetRepositoryTagRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GetRepositoryTagRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *GetRepositoryTagRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type GetRepositoryTagRequest_builder struct {
@@ -248,16 +235,16 @@ func (b0 GetRepositoryTagRequest_builder) Build() *GetRepositoryTagRequest {
 	m0 := &GetRepositoryTagRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.Name = b.Name
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type GetRepositoryTagResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *GetRepositoryTagResponse) Reset() {
@@ -287,24 +274,24 @@ func (x *GetRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	if x != nil {
-		return x.RepositoryTag
+		return x.xxx_hidden_RepositoryTag
 	}
 	return nil
 }
 
 func (x *GetRepositoryTagResponse) SetRepositoryTag(v *RepositoryTag) {
-	x.RepositoryTag = v
+	x.xxx_hidden_RepositoryTag = v
 }
 
 func (x *GetRepositoryTagResponse) HasRepositoryTag() bool {
 	if x == nil {
 		return false
 	}
-	return x.RepositoryTag != nil
+	return x.xxx_hidden_RepositoryTag != nil
 }
 
 func (x *GetRepositoryTagResponse) ClearRepositoryTag() {
-	x.RepositoryTag = nil
+	x.xxx_hidden_RepositoryTag = nil
 }
 
 type GetRepositoryTagResponse_builder struct {
@@ -317,20 +304,17 @@ func (b0 GetRepositoryTagResponse_builder) Build() *GetRepositoryTagResponse {
 	m0 := &GetRepositoryTagResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryTag = b.RepositoryTag
+	x.xxx_hidden_RepositoryTag = b.RepositoryTag
 	return m0
 }
 
 type CreateRepositoryTagRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository this tag should be created on.
-	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The name of the commit this tag should be created for.
-	CommitName    string `protobuf:"bytes,3,opt,name=commit_name,json=commitName,proto3" json:"commit_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_CommitName   string                 `protobuf:"bytes,3,opt,name=commit_name,json=commitName,proto3" json:"commit_name,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CreateRepositoryTagRequest) Reset() {
@@ -360,35 +344,35 @@ func (x *CreateRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateRepositoryTagRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *CreateRepositoryTagRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CreateRepositoryTagRequest) GetCommitName() string {
 	if x != nil {
-		return x.CommitName
+		return x.xxx_hidden_CommitName
 	}
 	return ""
 }
 
 func (x *CreateRepositoryTagRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *CreateRepositoryTagRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CreateRepositoryTagRequest) SetCommitName(v string) {
-	x.CommitName = v
+	x.xxx_hidden_CommitName = v
 }
 
 type CreateRepositoryTagRequest_builder struct {
@@ -406,17 +390,17 @@ func (b0 CreateRepositoryTagRequest_builder) Build() *CreateRepositoryTagRequest
 	m0 := &CreateRepositoryTagRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.Name = b.Name
-	x.CommitName = b.CommitName
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CommitName = b.CommitName
 	return m0
 }
 
 type CreateRepositoryTagResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *CreateRepositoryTagResponse) Reset() {
@@ -446,24 +430,24 @@ func (x *CreateRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	if x != nil {
-		return x.RepositoryTag
+		return x.xxx_hidden_RepositoryTag
 	}
 	return nil
 }
 
 func (x *CreateRepositoryTagResponse) SetRepositoryTag(v *RepositoryTag) {
-	x.RepositoryTag = v
+	x.xxx_hidden_RepositoryTag = v
 }
 
 func (x *CreateRepositoryTagResponse) HasRepositoryTag() bool {
 	if x == nil {
 		return false
 	}
-	return x.RepositoryTag != nil
+	return x.xxx_hidden_RepositoryTag != nil
 }
 
 func (x *CreateRepositoryTagResponse) ClearRepositoryTag() {
-	x.RepositoryTag = nil
+	x.xxx_hidden_RepositoryTag = nil
 }
 
 type CreateRepositoryTagResponse_builder struct {
@@ -476,20 +460,19 @@ func (b0 CreateRepositoryTagResponse_builder) Build() *CreateRepositoryTagRespon
 	m0 := &CreateRepositoryTagResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryTag = b.RepositoryTag
+	x.xxx_hidden_RepositoryTag = b.RepositoryTag
 	return m0
 }
 
 type UpdateRepositoryTagRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository this tag belongs to.
-	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The name of the repository tag, to update e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The name of the commit this tag should reference.
-	CommitName    *string `protobuf:"bytes,3,opt,name=commit_name,json=commitName,proto3,oneof" json:"commit_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_CommitName   *string                `protobuf:"bytes,3,opt,name=commit_name,json=commitName,proto3,oneof" json:"commit_name,omitempty"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *UpdateRepositoryTagRequest) Reset() {
@@ -519,46 +502,51 @@ func (x *UpdateRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateRepositoryTagRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *UpdateRepositoryTagRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *UpdateRepositoryTagRequest) GetCommitName() string {
-	if x != nil && x.CommitName != nil {
-		return *x.CommitName
+	if x != nil {
+		if x.xxx_hidden_CommitName != nil {
+			return *x.xxx_hidden_CommitName
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpdateRepositoryTagRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *UpdateRepositoryTagRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *UpdateRepositoryTagRequest) SetCommitName(v string) {
-	x.CommitName = &v
+	x.xxx_hidden_CommitName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *UpdateRepositoryTagRequest) HasCommitName() bool {
 	if x == nil {
 		return false
 	}
-	return x.CommitName != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *UpdateRepositoryTagRequest) ClearCommitName() {
-	x.CommitName = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_CommitName = nil
 }
 
 type UpdateRepositoryTagRequest_builder struct {
@@ -576,17 +564,20 @@ func (b0 UpdateRepositoryTagRequest_builder) Build() *UpdateRepositoryTagRequest
 	m0 := &UpdateRepositoryTagRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.Name = b.Name
-	x.CommitName = b.CommitName
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_Name = b.Name
+	if b.CommitName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_CommitName = b.CommitName
+	}
 	return m0
 }
 
 type UpdateRepositoryTagResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *UpdateRepositoryTagResponse) Reset() {
@@ -616,24 +607,24 @@ func (x *UpdateRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	if x != nil {
-		return x.RepositoryTag
+		return x.xxx_hidden_RepositoryTag
 	}
 	return nil
 }
 
 func (x *UpdateRepositoryTagResponse) SetRepositoryTag(v *RepositoryTag) {
-	x.RepositoryTag = v
+	x.xxx_hidden_RepositoryTag = v
 }
 
 func (x *UpdateRepositoryTagResponse) HasRepositoryTag() bool {
 	if x == nil {
 		return false
 	}
-	return x.RepositoryTag != nil
+	return x.xxx_hidden_RepositoryTag != nil
 }
 
 func (x *UpdateRepositoryTagResponse) ClearRepositoryTag() {
-	x.RepositoryTag = nil
+	x.xxx_hidden_RepositoryTag = nil
 }
 
 type UpdateRepositoryTagResponse_builder struct {
@@ -646,20 +637,18 @@ func (b0 UpdateRepositoryTagResponse_builder) Build() *UpdateRepositoryTagRespon
 	m0 := &UpdateRepositoryTagResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryTag = b.RepositoryTag
+	x.xxx_hidden_RepositoryTag = b.RepositoryTag
 	return m0
 }
 
 type ListRepositoryTagsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository whose tags should be listed.
-	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	PageSize     uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse       bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_PageSize     uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken    string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse      bool                   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListRepositoryTagsRequest) Reset() {
@@ -689,46 +678,46 @@ func (x *ListRepositoryTagsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListRepositoryTagsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListRepositoryTagsRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListRepositoryTagsRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *ListRepositoryTagsRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListRepositoryTagsRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListRepositoryTagsRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type ListRepositoryTagsRequest_builder struct {
@@ -746,20 +735,19 @@ func (b0 ListRepositoryTagsRequest_builder) Build() *ListRepositoryTagsRequest {
 	m0 := &ListRepositoryTagsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 type ListRepositoryTagsResponse struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryTags []*RepositoryTag       `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryTags *[]*RepositoryTag      `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
+	xxx_hidden_NextPageToken  string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ListRepositoryTagsResponse) Reset() {
@@ -789,24 +777,26 @@ func (x *ListRepositoryTagsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListRepositoryTagsResponse) GetRepositoryTags() []*RepositoryTag {
 	if x != nil {
-		return x.RepositoryTags
+		if x.xxx_hidden_RepositoryTags != nil {
+			return *x.xxx_hidden_RepositoryTags
+		}
 	}
 	return nil
 }
 
 func (x *ListRepositoryTagsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsResponse) SetRepositoryTags(v []*RepositoryTag) {
-	x.RepositoryTags = v
+	x.xxx_hidden_RepositoryTags = &v
 }
 
 func (x *ListRepositoryTagsResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListRepositoryTagsResponse_builder struct {
@@ -821,23 +811,20 @@ func (b0 ListRepositoryTagsResponse_builder) Build() *ListRepositoryTagsResponse
 	m0 := &ListRepositoryTagsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryTags = b.RepositoryTags
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_RepositoryTags = &b.RepositoryTags
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type ListRepositoryTagsForReferenceRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the repository whose tags should be listed.
-	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// Optional reference (if unspecified, will use the repository's default_branch).
-	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	PageSize  uint32 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse       bool   `protobuf:"varint,5,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_Reference    string                 `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
+	xxx_hidden_PageSize     uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken    string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse      bool                   `protobuf:"varint,5,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) Reset() {
@@ -867,57 +854,57 @@ func (x *ListRepositoryTagsForReferenceRequest) ProtoReflect() protoreflect.Mess
 
 func (x *ListRepositoryTagsForReferenceRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) GetReference() string {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) SetReference(v string) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListRepositoryTagsForReferenceRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type ListRepositoryTagsForReferenceRequest_builder struct {
@@ -937,21 +924,20 @@ func (b0 ListRepositoryTagsForReferenceRequest_builder) Build() *ListRepositoryT
 	m0 := &ListRepositoryTagsForReferenceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.Reference = b.Reference
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_Reference = b.Reference
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 type ListRepositoryTagsForReferenceResponse struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryTags []*RepositoryTag       `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryTags *[]*RepositoryTag      `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
+	xxx_hidden_NextPageToken  string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ListRepositoryTagsForReferenceResponse) Reset() {
@@ -981,24 +967,26 @@ func (x *ListRepositoryTagsForReferenceResponse) ProtoReflect() protoreflect.Mes
 
 func (x *ListRepositoryTagsForReferenceResponse) GetRepositoryTags() []*RepositoryTag {
 	if x != nil {
-		return x.RepositoryTags
+		if x.xxx_hidden_RepositoryTags != nil {
+			return *x.xxx_hidden_RepositoryTags
+		}
 	}
 	return nil
 }
 
 func (x *ListRepositoryTagsForReferenceResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListRepositoryTagsForReferenceResponse) SetRepositoryTags(v []*RepositoryTag) {
-	x.RepositoryTags = v
+	x.xxx_hidden_RepositoryTags = &v
 }
 
 func (x *ListRepositoryTagsForReferenceResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListRepositoryTagsForReferenceResponse_builder struct {
@@ -1013,8 +1001,8 @@ func (b0 ListRepositoryTagsForReferenceResponse_builder) Build() *ListRepository
 	m0 := &ListRepositoryTagsForReferenceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryTags = b.RepositoryTags
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_RepositoryTags = &b.RepositoryTags
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 

@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/audit/v1alpha1/service.proto
 
-//go:build !protoopaque
-
 package auditv1alpha1
 
 import (
@@ -37,17 +35,13 @@ const (
 )
 
 type ListAuditedEventsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The page size for listing audited events, values between 1-250.
-	PageSize uint32 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The page token for paginating. The first page is returned if this is empty.
-	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// The start timestamp to filter events from.
-	Start *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start,proto3" json:"start,omitempty"`
-	// The end timestamp to filter events to.
-	End           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end,proto3" json:"end,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Start     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start,proto3" json:"start,omitempty"`
+	xxx_hidden_End       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end,proto3" json:"end,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListAuditedEventsRequest) Reset() {
@@ -77,68 +71,68 @@ func (x *ListAuditedEventsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListAuditedEventsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListAuditedEventsRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListAuditedEventsRequest) GetStart() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Start
+		return x.xxx_hidden_Start
 	}
 	return nil
 }
 
 func (x *ListAuditedEventsRequest) GetEnd() *timestamppb.Timestamp {
 	if x != nil {
-		return x.End
+		return x.xxx_hidden_End
 	}
 	return nil
 }
 
 func (x *ListAuditedEventsRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListAuditedEventsRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListAuditedEventsRequest) SetStart(v *timestamppb.Timestamp) {
-	x.Start = v
+	x.xxx_hidden_Start = v
 }
 
 func (x *ListAuditedEventsRequest) SetEnd(v *timestamppb.Timestamp) {
-	x.End = v
+	x.xxx_hidden_End = v
 }
 
 func (x *ListAuditedEventsRequest) HasStart() bool {
 	if x == nil {
 		return false
 	}
-	return x.Start != nil
+	return x.xxx_hidden_Start != nil
 }
 
 func (x *ListAuditedEventsRequest) HasEnd() bool {
 	if x == nil {
 		return false
 	}
-	return x.End != nil
+	return x.xxx_hidden_End != nil
 }
 
 func (x *ListAuditedEventsRequest) ClearStart() {
-	x.Start = nil
+	x.xxx_hidden_Start = nil
 }
 
 func (x *ListAuditedEventsRequest) ClearEnd() {
-	x.End = nil
+	x.xxx_hidden_End = nil
 }
 
 type ListAuditedEventsRequest_builder struct {
@@ -158,22 +152,19 @@ func (b0 ListAuditedEventsRequest_builder) Build() *ListAuditedEventsRequest {
 	m0 := &ListAuditedEventsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Start = b.Start
-	x.End = b.End
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Start = b.Start
+	x.xxx_hidden_End = b.End
 	return m0
 }
 
 type ListAuditedEventsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The list of audited events in the current page.
-	Events []*Event `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
-	// The token for the next page of audited events. There are no more pages if
-	// this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Events        *[]*Event              `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListAuditedEventsResponse) Reset() {
@@ -203,24 +194,26 @@ func (x *ListAuditedEventsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListAuditedEventsResponse) GetEvents() []*Event {
 	if x != nil {
-		return x.Events
+		if x.xxx_hidden_Events != nil {
+			return *x.xxx_hidden_Events
+		}
 	}
 	return nil
 }
 
 func (x *ListAuditedEventsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListAuditedEventsResponse) SetEvents(v []*Event) {
-	x.Events = v
+	x.xxx_hidden_Events = &v
 }
 
 func (x *ListAuditedEventsResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListAuditedEventsResponse_builder struct {
@@ -237,8 +230,8 @@ func (b0 ListAuditedEventsResponse_builder) Build() *ListAuditedEventsResponse {
 	m0 := &ListAuditedEventsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Events = b.Events
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Events = &b.Events
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
