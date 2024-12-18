@@ -211,10 +211,6 @@ func lsRun(
 	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
-		allCheckConfigs := append(
-			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.LintConfig() }),
-			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.BreakingConfig() })...,
-		)
 		var moduleConfig bufconfig.ModuleConfig
 		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
@@ -241,6 +237,12 @@ func lsRun(
 			return syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
 		var checkConfig bufconfig.CheckConfig
+		// We add all check configs (both lint and breaking) as related configs to check if plugins
+		// have rules configured.
+		allCheckConfigs := append(
+			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.LintConfig() }),
+			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.BreakingConfig() })...,
+		)
 		switch ruleType {
 		case check.RuleTypeLint:
 			checkConfig = moduleConfig.LintConfig()

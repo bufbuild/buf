@@ -145,11 +145,21 @@ func run(
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 	var allFileAnnotations []bufanalysis.FileAnnotation
-	allCheckConfigs := slicesext.Map(
-		imageWithConfigs,
-		func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
-			return imageWithConfig.LintConfig()
-		},
+	// We add all check configs (both lint and breaking) as related configs to check if plugins
+	// have rules configured.
+	allCheckConfigs := append(
+		slicesext.Map(
+			imageWithConfigs,
+			func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
+				return imageWithConfig.LintConfig()
+			},
+		),
+		slicesext.Map(
+			imageWithConfigs,
+			func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
+				return imageWithConfig.BreakingConfig()
+			},
+		)...,
 	)
 	for _, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
