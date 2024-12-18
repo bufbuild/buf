@@ -51,18 +51,7 @@ type PluginKeyProvider interface {
 // When resolving Refs, the Ref will be matched to the PluginKey by FullName.
 // If the Ref is not found in the set of provided keys, an fs.ErrNotExist will be returned.
 func NewStaticPluginKeyProvider(pluginKeys []PluginKey) (PluginKeyProvider, error) {
-	if len(pluginKeys) == 0 {
-		return NopPluginKeyProvider, nil
-	}
-	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
-		return pluginKey.FullName().String()
-	})
-	if err != nil {
-		return nil, err
-	}
-	return staticPluginKeyProvider{
-		pluginKeysByFullName: pluginKeysByFullName,
-	}, nil
+	return newStaticPluginKeyProvider(pluginKeys)
 }
 
 // *** PRIVATE ***
@@ -79,6 +68,22 @@ func (nopPluginKeyProvider) GetPluginKeysForPluginRefs(
 
 type staticPluginKeyProvider struct {
 	pluginKeysByFullName map[string]PluginKey
+}
+
+func newStaticPluginKeyProvider(pluginKeys []PluginKey) (*staticPluginKeyProvider, error) {
+	var pluginKeysByFullName map[string]PluginKey
+	if len(pluginKeys) > 0 {
+		var err error
+		pluginKeysByFullName, err = slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
+			return pluginKey.FullName().String()
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &staticPluginKeyProvider{
+		pluginKeysByFullName: pluginKeysByFullName,
+	}, nil
 }
 
 func (s staticPluginKeyProvider) GetPluginKeysForPluginRefs(

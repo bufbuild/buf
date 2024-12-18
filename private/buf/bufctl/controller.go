@@ -130,9 +130,9 @@ type Controller interface {
 		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
-	// NewCheckClient returns a new CheckClient for the given input.
+	// NewCheckClient returns a new bufcheck.Client for the given input.
 	//
-	// CheckClients are bound to a specific input to ensure that the correct
+	// Clients are bound to a specific input to ensure that the correct
 	// plugin dependencies are used. Where the input is resolvable to a
 	// Workspace, this function wraps NewCheckClientForWorkspace. For
 	// message inputs, the local directory or config override is used.
@@ -142,9 +142,9 @@ type Controller interface {
 		wasmRuntime wasm.Runtime,
 		options ...FunctionOption,
 	) (bufcheck.Client, error)
-	// NewCheckClientForWorkspace returns a new CheckClient for the given Workspace.
+	// NewCheckClientForWorkspace returns a new bufcheck.Client for the given Workspace.
 	//
-	// CheckClients are bound to a specific Workspace to ensure that the correct
+	// Clients are bound to a specific Workspace to ensure that the correct
 	// plugin dependencies are used.
 	NewCheckClientForWorkspace(
 		ctx context.Context,
@@ -1334,7 +1334,7 @@ func (c *controller) getPluginKeyProviderForDirPath(
 	}
 	pluginConfigs = bufYAMLFile.PluginConfigs()
 	if len(pluginConfigs) == 0 || bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-		// No plugins were found or are supported by the current version.
+		// No plugins were found or they are not supported by the current version.
 		return bufplugin.NopPluginKeyProvider, nil
 	}
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(

@@ -41,16 +41,7 @@ type PluginConfigType int
 type PluginConfig interface {
 	// Type returns the plugin type. This is never the zero value.
 	Type() PluginConfigType
-	// Name returns the plugin name.
-	//
-	// If the plugin is of Type PluginConfigTypeLocal, the Name is the command
-	// name or path to the command.
-	// If the plugin is of Type PluginConfigTypeLocalWasm, the Name is the
-	// path to the Wasm file. It must end with .wasm.
-	// If the plugin is of Type PluginConfigTypeRemoteWasm, the Name is a
-	// vaild bufparse.Ref and Ref returns the plugin reference.
-	//
-	// This is never empty.
+	// Name returns the plugin name. This is never empty.
 	Name() string
 	// Options returns the plugin options.
 	//
