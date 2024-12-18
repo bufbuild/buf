@@ -151,6 +151,7 @@ func upload(
 		var err error
 		plugin, err = bufplugin.NewLocalWasmPlugin(
 			pluginFullName,
+			nil, // args
 			func() ([]byte, error) {
 				wasmBinary, err := os.ReadFile(flags.Binary)
 				if err != nil {
