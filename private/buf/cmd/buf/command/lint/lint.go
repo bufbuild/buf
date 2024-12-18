@@ -121,15 +121,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
-		ctx,
-		input,
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
-	)
-	if err != nil {
-		return err
-	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -141,7 +132,7 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
-	checkClient, err := controller.NewCheckClient(
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		input,
 		wasmRuntime,

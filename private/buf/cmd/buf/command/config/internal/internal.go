@@ -198,11 +198,18 @@ func lsRun(
 	if err != nil {
 		return err
 	}
-	checkClient, err := controller.NewCheckClient(
+	workspace, err := controller.GetWorkspace(
 		ctx,
 		".",
+		bufctl.WithConfigOverride(configOverride),
+	)
+	if err != nil {
+		return err
+	}
+	checkClient, err := controller.GetCheckClientForWorkspace(
+		ctx,
+		workspace,
 		wasmRuntime,
-		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err

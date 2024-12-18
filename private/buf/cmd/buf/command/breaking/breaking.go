@@ -161,11 +161,23 @@ func run(
 	if err != nil {
 		return err
 	}
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		input,
+		wasmRuntime,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
 	)
@@ -183,9 +195,10 @@ func run(
 	}
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
-	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	againstImageWithConfigs, _, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		flags.Against,
+		wasm.UnimplementedRuntime,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.AgainstConfig),
 	)
@@ -204,28 +217,6 @@ func run(
 			len(imageWithConfigs),
 			len(againstImageWithConfigs),
 		)
-	}
-	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
-	if err != nil {
-		return err
-	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
-	}()
-	// Get the check client for the input images.
-	checkClient, err := controller.NewCheckClient(
-		ctx,
-		input,
-		wasmRuntime,
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
-	)
-	if err != nil {
-		return err
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {

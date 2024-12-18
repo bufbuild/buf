@@ -396,7 +396,7 @@ func (f *file) FindModule(ctx context.Context) {
 	}
 
 	// Get the check client for this workspace.
-	checkClient, err := f.lsp.controller.NewCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
+	checkClient, err := f.lsp.controller.GetCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
 	if err != nil {
 		f.lsp.logger.Warn("could not get check client", slogext.ErrorAttr(err))
 		return
