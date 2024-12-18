@@ -78,8 +78,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulelabel/modulelabelunarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulesettings/modulesettingsupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleundeprecate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/moduleupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/organization/organizationinfo"
@@ -95,7 +95,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelunarchive"
-	registrypluginupdate "github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginsettings/pluginsettingsupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -268,12 +268,19 @@ func NewRootCommand(name string) *appcmd.Command {
 									modulelabelunarchive.NewCommand("unarchive", builder, ""),
 								},
 							},
+							{
+								Use:   "settings",
+								Short: "Manage a module's settings",
+								SubCommands: []*appcmd.Command{
+									modulesettingsupdate.NewCommand("update", builder, ""),
+								},
+							},
 							modulecreate.NewCommand("create", builder),
 							moduleinfo.NewCommand("info", builder),
 							moduledelete.NewCommand("delete", builder),
 							moduledeprecate.NewCommand("deprecate", builder),
+							modulesettingsupdate.NewCommand("update", builder, deprecatedMessage("buf registry module settings update", "buf registry update")),
 							moduleundeprecate.NewCommand("undeprecate", builder),
-							moduleupdate.NewCommand("update", builder),
 						},
 					},
 					{
@@ -300,10 +307,16 @@ func NewRootCommand(name string) *appcmd.Command {
 									pluginlabelunarchive.NewCommand("unarchive", builder, ""),
 								},
 							},
+							{
+								Use:   "settings",
+								Short: "Manage a plugin's settings",
+								SubCommands: []*appcmd.Command{
+									pluginsettingsupdate.NewCommand("update", builder),
+								},
+							},
 							plugincreate.NewCommand("create", builder),
 							plugininfo.NewCommand("info", builder),
 							plugindelete.NewCommand("delete", builder),
-							registrypluginupdate.NewCommand("update", builder),
 						},
 					},
 				},

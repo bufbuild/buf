@@ -22,7 +22,7 @@ GO_GET_PKGS ?=
 # Settable
 GO_MOD_VERSION ?= 1.22
 # Settable
-GO_MOD_TOOLCHAIN ?= 1.23.2
+GO_MOD_TOOLCHAIN ?= 1.23.4
 # Settable
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
