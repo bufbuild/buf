@@ -95,8 +95,9 @@ type Controller interface {
 	// with a configured bufcheck Client.
 	//
 	// ImageWithConfig scopes the configuration per image for use with breaking
-	// and lint checks. The Client is bound to the input to ensure that the
-	// correct plugin dependencies are used.
+	// and lint checks. The check Client is bound to the input to ensure that the
+	// correct remote plugin dependencies are used. A wasmRuntime is provided
+	// to evaluate Wasm plugins.
 	GetTargetImageWithConfigsAndCheckClient(
 		ctx context.Context,
 		input string,
@@ -140,7 +141,8 @@ type Controller interface {
 	// GetCheckClientForWorkspace returns a new bufcheck Client for the given Workspace.
 	//
 	// Clients are bound to a specific Workspace to ensure that the correct
-	// plugin dependencies are used.
+	// plugin dependencies are used. A wasmRuntime is provided to evaluate
+	// Wasm plugins.
 	GetCheckClientForWorkspace(
 		ctx context.Context,
 		workspace bufworkspace.Workspace,
