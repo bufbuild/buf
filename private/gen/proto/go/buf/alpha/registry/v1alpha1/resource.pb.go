@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/resource.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -34,10 +36,14 @@ const (
 )
 
 type Resource struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Resource isResource_Resource    `protobuf_oneof:"resource"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Resource:
+	//
+	//	*Resource_Repository
+	//	*Resource_Plugin
+	Resource      isResource_Resource `protobuf_oneof:"resource"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Resource) Reset() {
@@ -65,9 +71,16 @@ func (x *Resource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *Resource) GetResource() isResource_Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 func (x *Resource) GetRepository() *Repository {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*resource_Repository); ok {
+		if x, ok := x.Resource.(*Resource_Repository); ok {
 			return x.Repository
 		}
 	}
@@ -76,7 +89,7 @@ func (x *Resource) GetRepository() *Repository {
 
 func (x *Resource) GetPlugin() *CuratedPlugin {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*resource_Plugin); ok {
+		if x, ok := x.Resource.(*Resource_Plugin); ok {
 			return x.Plugin
 		}
 	}
@@ -85,32 +98,32 @@ func (x *Resource) GetPlugin() *CuratedPlugin {
 
 func (x *Resource) SetRepository(v *Repository) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &resource_Repository{v}
+	x.Resource = &Resource_Repository{v}
 }
 
 func (x *Resource) SetPlugin(v *CuratedPlugin) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &resource_Plugin{v}
+	x.Resource = &Resource_Plugin{v}
 }
 
 func (x *Resource) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resource != nil
+	return x.Resource != nil
 }
 
 func (x *Resource) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*resource_Repository)
+	_, ok := x.Resource.(*Resource_Repository)
 	return ok
 }
 
@@ -118,23 +131,23 @@ func (x *Resource) HasPlugin() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*resource_Plugin)
+	_, ok := x.Resource.(*Resource_Plugin)
 	return ok
 }
 
 func (x *Resource) ClearResource() {
-	x.xxx_hidden_Resource = nil
+	x.Resource = nil
 }
 
 func (x *Resource) ClearRepository() {
-	if _, ok := x.xxx_hidden_Resource.(*resource_Repository); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*Resource_Repository); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *Resource) ClearPlugin() {
-	if _, ok := x.xxx_hidden_Resource.(*resource_Plugin); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*Resource_Plugin); ok {
+		x.Resource = nil
 	}
 }
 
@@ -146,10 +159,10 @@ func (x *Resource) WhichResource() case_Resource_Resource {
 	if x == nil {
 		return Resource_Resource_not_set_case
 	}
-	switch x.xxx_hidden_Resource.(type) {
-	case *resource_Repository:
+	switch x.Resource.(type) {
+	case *Resource_Repository:
 		return Resource_Repository_case
-	case *resource_Plugin:
+	case *Resource_Plugin:
 		return Resource_Plugin_case
 	default:
 		return Resource_Resource_not_set_case
@@ -159,10 +172,10 @@ func (x *Resource) WhichResource() case_Resource_Resource {
 type Resource_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Resource:
+	// Fields of oneof Resource:
 	Repository *Repository
 	Plugin     *CuratedPlugin
-	// -- end of xxx_hidden_Resource
+	// -- end of Resource
 }
 
 func (b0 Resource_builder) Build() *Resource {
@@ -170,10 +183,10 @@ func (b0 Resource_builder) Build() *Resource {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Repository != nil {
-		x.xxx_hidden_Resource = &resource_Repository{b.Repository}
+		x.Resource = &Resource_Repository{b.Repository}
 	}
 	if b.Plugin != nil {
-		x.xxx_hidden_Resource = &resource_Plugin{b.Plugin}
+		x.Resource = &Resource_Plugin{b.Plugin}
 	}
 	return m0
 }
@@ -192,24 +205,26 @@ type isResource_Resource interface {
 	isResource_Resource()
 }
 
-type resource_Repository struct {
+type Resource_Repository struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository,proto3,oneof"`
 }
 
-type resource_Plugin struct {
+type Resource_Plugin struct {
 	Plugin *CuratedPlugin `protobuf:"bytes,2,opt,name=plugin,proto3,oneof"`
 }
 
-func (*resource_Repository) isResource_Resource() {}
+func (*Resource_Repository) isResource_Resource() {}
 
-func (*resource_Plugin) isResource_Resource() {}
+func (*Resource_Plugin) isResource_Resource() {}
 
 type GetResourceByNameRequest struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Owner of the requested resource.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Name of the requested resource.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetResourceByNameRequest) Reset() {
@@ -239,24 +254,24 @@ func (x *GetResourceByNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetResourceByNameRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetResourceByNameRequest) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *GetResourceByNameRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetResourceByNameRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 type GetResourceByNameRequest_builder struct {
@@ -272,16 +287,16 @@ func (b0 GetResourceByNameRequest_builder) Build() *GetResourceByNameRequest {
 	m0 := &GetResourceByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Name = b.Name
+	x.Owner = b.Owner
+	x.Name = b.Name
 	return m0
 }
 
 type GetResourceByNameResponse struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Resource *Resource              `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Resource      *Resource              `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetResourceByNameResponse) Reset() {
@@ -311,24 +326,24 @@ func (x *GetResourceByNameResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetResourceByNameResponse) GetResource() *Resource {
 	if x != nil {
-		return x.xxx_hidden_Resource
+		return x.Resource
 	}
 	return nil
 }
 
 func (x *GetResourceByNameResponse) SetResource(v *Resource) {
-	x.xxx_hidden_Resource = v
+	x.Resource = v
 }
 
 func (x *GetResourceByNameResponse) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resource != nil
+	return x.Resource != nil
 }
 
 func (x *GetResourceByNameResponse) ClearResource() {
-	x.xxx_hidden_Resource = nil
+	x.Resource = nil
 }
 
 type GetResourceByNameResponse_builder struct {
@@ -341,7 +356,7 @@ func (b0 GetResourceByNameResponse_builder) Build() *GetResourceByNameResponse {
 	m0 := &GetResourceByNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Resource = b.Resource
+	x.Resource = b.Resource
 	return m0
 }
 
@@ -439,8 +454,8 @@ func file_buf_alpha_registry_v1alpha1_resource_proto_init() {
 	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_proto_init()
 	file_buf_alpha_registry_v1alpha1_resource_proto_msgTypes[0].OneofWrappers = []any{
-		(*resource_Repository)(nil),
-		(*resource_Plugin)(nil),
+		(*Resource_Repository)(nil),
+		(*Resource_Plugin)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

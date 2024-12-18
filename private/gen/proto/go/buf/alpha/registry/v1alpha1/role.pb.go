@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/role.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (

@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/scim_token.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -35,12 +37,12 @@ const (
 )
 
 type SCIMToken struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	xxx_hidden_ExpireTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	ExpireTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SCIMToken) Reset() {
@@ -70,57 +72,57 @@ func (x *SCIMToken) ProtoReflect() protoreflect.Message {
 
 func (x *SCIMToken) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SCIMToken) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreateTime
+		return x.CreateTime
 	}
 	return nil
 }
 
 func (x *SCIMToken) GetExpireTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ExpireTime
+		return x.ExpireTime
 	}
 	return nil
 }
 
 func (x *SCIMToken) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *SCIMToken) SetCreateTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreateTime = v
+	x.CreateTime = v
 }
 
 func (x *SCIMToken) SetExpireTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ExpireTime = v
+	x.ExpireTime = v
 }
 
 func (x *SCIMToken) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreateTime != nil
+	return x.CreateTime != nil
 }
 
 func (x *SCIMToken) HasExpireTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ExpireTime != nil
+	return x.ExpireTime != nil
 }
 
 func (x *SCIMToken) ClearCreateTime() {
-	x.xxx_hidden_CreateTime = nil
+	x.CreateTime = nil
 }
 
 func (x *SCIMToken) ClearExpireTime() {
-	x.xxx_hidden_ExpireTime = nil
+	x.ExpireTime = nil
 }
 
 type SCIMToken_builder struct {
@@ -135,17 +137,19 @@ func (b0 SCIMToken_builder) Build() *SCIMToken {
 	m0 := &SCIMToken{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_CreateTime = b.CreateTime
-	x.xxx_hidden_ExpireTime = b.ExpireTime
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.ExpireTime = b.ExpireTime
 	return m0
 }
 
 type CreateSCIMTokenRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ExpireTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The time until which the token should be valid.
+	// Must be in the future. May be null for no expiry.
+	ExpireTime    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateSCIMTokenRequest) Reset() {
@@ -175,24 +179,24 @@ func (x *CreateSCIMTokenRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateSCIMTokenRequest) GetExpireTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ExpireTime
+		return x.ExpireTime
 	}
 	return nil
 }
 
 func (x *CreateSCIMTokenRequest) SetExpireTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ExpireTime = v
+	x.ExpireTime = v
 }
 
 func (x *CreateSCIMTokenRequest) HasExpireTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ExpireTime != nil
+	return x.ExpireTime != nil
 }
 
 func (x *CreateSCIMTokenRequest) ClearExpireTime() {
-	x.xxx_hidden_ExpireTime = nil
+	x.ExpireTime = nil
 }
 
 type CreateSCIMTokenRequest_builder struct {
@@ -207,15 +211,16 @@ func (b0 CreateSCIMTokenRequest_builder) Build() *CreateSCIMTokenRequest {
 	m0 := &CreateSCIMTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ExpireTime = b.ExpireTime
+	x.ExpireTime = b.ExpireTime
 	return m0
 }
 
 type CreateSCIMTokenResponse struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Token string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The plaintext token to use for authentication.
+	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateSCIMTokenResponse) Reset() {
@@ -245,13 +250,13 @@ func (x *CreateSCIMTokenResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateSCIMTokenResponse) GetToken() string {
 	if x != nil {
-		return x.xxx_hidden_Token
+		return x.Token
 	}
 	return ""
 }
 
 func (x *CreateSCIMTokenResponse) SetToken(v string) {
-	x.xxx_hidden_Token = v
+	x.Token = v
 }
 
 type CreateSCIMTokenResponse_builder struct {
@@ -265,17 +270,18 @@ func (b0 CreateSCIMTokenResponse_builder) Build() *CreateSCIMTokenResponse {
 	m0 := &CreateSCIMTokenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Token = b.Token
+	x.Token = b.Token
 	return m0
 }
 
 type ListSCIMTokensRequest struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_Reverse   bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The first page is returned if this is empty.
+	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse       bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListSCIMTokensRequest) Reset() {
@@ -305,35 +311,35 @@ func (x *ListSCIMTokensRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListSCIMTokensRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListSCIMTokensRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListSCIMTokensRequest) GetReverse() bool {
 	if x != nil {
-		return x.xxx_hidden_Reverse
+		return x.Reverse
 	}
 	return false
 }
 
 func (x *ListSCIMTokensRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListSCIMTokensRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListSCIMTokensRequest) SetReverse(v bool) {
-	x.xxx_hidden_Reverse = v
+	x.Reverse = v
 }
 
 type ListSCIMTokensRequest_builder struct {
@@ -349,18 +355,19 @@ func (b0 ListSCIMTokensRequest_builder) Build() *ListSCIMTokensRequest {
 	m0 := &ListSCIMTokensRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Reverse = b.Reverse
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
 	return m0
 }
 
 type ListSCIMTokensResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Tokens        *[]*SCIMToken          `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"hybrid.v1"`
+	Tokens []*SCIMToken           `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
+	// There are no more pages if this is empty.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListSCIMTokensResponse) Reset() {
@@ -390,26 +397,24 @@ func (x *ListSCIMTokensResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListSCIMTokensResponse) GetTokens() []*SCIMToken {
 	if x != nil {
-		if x.xxx_hidden_Tokens != nil {
-			return *x.xxx_hidden_Tokens
-		}
+		return x.Tokens
 	}
 	return nil
 }
 
 func (x *ListSCIMTokensResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListSCIMTokensResponse) SetTokens(v []*SCIMToken) {
-	x.xxx_hidden_Tokens = &v
+	x.Tokens = v
 }
 
 func (x *ListSCIMTokensResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListSCIMTokensResponse_builder struct {
@@ -424,16 +429,16 @@ func (b0 ListSCIMTokensResponse_builder) Build() *ListSCIMTokensResponse {
 	m0 := &ListSCIMTokensResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Tokens = &b.Tokens
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Tokens = b.Tokens
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type DeleteSCIMTokenRequest struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_TokenId string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	TokenId       string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteSCIMTokenRequest) Reset() {
@@ -463,13 +468,13 @@ func (x *DeleteSCIMTokenRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteSCIMTokenRequest) GetTokenId() string {
 	if x != nil {
-		return x.xxx_hidden_TokenId
+		return x.TokenId
 	}
 	return ""
 }
 
 func (x *DeleteSCIMTokenRequest) SetTokenId(v string) {
-	x.xxx_hidden_TokenId = v
+	x.TokenId = v
 }
 
 type DeleteSCIMTokenRequest_builder struct {
@@ -482,12 +487,12 @@ func (b0 DeleteSCIMTokenRequest_builder) Build() *DeleteSCIMTokenRequest {
 	m0 := &DeleteSCIMTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_TokenId = b.TokenId
+	x.TokenId = b.TokenId
 	return m0
 }
 
 type DeleteSCIMTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

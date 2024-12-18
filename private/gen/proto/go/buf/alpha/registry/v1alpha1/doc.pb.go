@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/doc.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -83,12 +85,13 @@ func (x FieldType) Number() protoreflect.EnumNumber {
 
 // GetSourceDirectoryInfoRequest takes an owner, repository, and reference.
 type GetSourceDirectoryInfoRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSourceDirectoryInfoRequest) Reset() {
@@ -118,35 +121,35 @@ func (x *GetSourceDirectoryInfoRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetSourceDirectoryInfoRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetSourceDirectoryInfoRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetSourceDirectoryInfoRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetSourceDirectoryInfoRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetSourceDirectoryInfoRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetSourceDirectoryInfoRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 type GetSourceDirectoryInfoRequest_builder struct {
@@ -162,18 +165,18 @@ func (b0 GetSourceDirectoryInfoRequest_builder) Build() *GetSourceDirectoryInfoR
 	m0 := &GetSourceDirectoryInfoRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
 	return m0
 }
 
 // GetSourceDirectoryInfoResponse returns the root FileInfo for the requested module.
 type GetSourceDirectoryInfoResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Root *FileInfo              `protobuf:"bytes,1,opt,name=root,proto3" json:"root,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Root          *FileInfo              `protobuf:"bytes,1,opt,name=root,proto3" json:"root,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSourceDirectoryInfoResponse) Reset() {
@@ -203,24 +206,24 @@ func (x *GetSourceDirectoryInfoResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSourceDirectoryInfoResponse) GetRoot() *FileInfo {
 	if x != nil {
-		return x.xxx_hidden_Root
+		return x.Root
 	}
 	return nil
 }
 
 func (x *GetSourceDirectoryInfoResponse) SetRoot(v *FileInfo) {
-	x.xxx_hidden_Root = v
+	x.Root = v
 }
 
 func (x *GetSourceDirectoryInfoResponse) HasRoot() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Root != nil
+	return x.Root != nil
 }
 
 func (x *GetSourceDirectoryInfoResponse) ClearRoot() {
-	x.xxx_hidden_Root = nil
+	x.Root = nil
 }
 
 type GetSourceDirectoryInfoResponse_builder struct {
@@ -233,19 +236,20 @@ func (b0 GetSourceDirectoryInfoResponse_builder) Build() *GetSourceDirectoryInfo
 	m0 := &GetSourceDirectoryInfoResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Root = b.Root
+	x.Root = b.Root
 	return m0
 }
 
 // FileInfo is a nested structure that contains the file path, whether or not it's a directory,
 // and if so, the FileInfo children of that directory.
 type FileInfo struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Path     string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	xxx_hidden_IsDir    bool                   `protobuf:"varint,2,opt,name=is_dir,json=isDir,proto3" json:"is_dir,omitempty"`
-	xxx_hidden_Children *[]*FileInfo           `protobuf:"bytes,3,rep,name=children,proto3" json:"children,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// the normalized path of the directory, relative to the root of the module.
+	Path          string      `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	IsDir         bool        `protobuf:"varint,2,opt,name=is_dir,json=isDir,proto3" json:"is_dir,omitempty"`
+	Children      []*FileInfo `protobuf:"bytes,3,rep,name=children,proto3" json:"children,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FileInfo) Reset() {
@@ -275,37 +279,35 @@ func (x *FileInfo) ProtoReflect() protoreflect.Message {
 
 func (x *FileInfo) GetPath() string {
 	if x != nil {
-		return x.xxx_hidden_Path
+		return x.Path
 	}
 	return ""
 }
 
 func (x *FileInfo) GetIsDir() bool {
 	if x != nil {
-		return x.xxx_hidden_IsDir
+		return x.IsDir
 	}
 	return false
 }
 
 func (x *FileInfo) GetChildren() []*FileInfo {
 	if x != nil {
-		if x.xxx_hidden_Children != nil {
-			return *x.xxx_hidden_Children
-		}
+		return x.Children
 	}
 	return nil
 }
 
 func (x *FileInfo) SetPath(v string) {
-	x.xxx_hidden_Path = v
+	x.Path = v
 }
 
 func (x *FileInfo) SetIsDir(v bool) {
-	x.xxx_hidden_IsDir = v
+	x.IsDir = v
 }
 
 func (x *FileInfo) SetChildren(v []*FileInfo) {
-	x.xxx_hidden_Children = &v
+	x.Children = v
 }
 
 type FileInfo_builder struct {
@@ -321,21 +323,23 @@ func (b0 FileInfo_builder) Build() *FileInfo {
 	m0 := &FileInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Path = b.Path
-	x.xxx_hidden_IsDir = b.IsDir
-	x.xxx_hidden_Children = &b.Children
+	x.Path = b.Path
+	x.IsDir = b.IsDir
+	x.Children = b.Children
 	return m0
 }
 
 // GetSourceFileRequest takes an owner, repository, reference, and normalized path.
 type GetSourceFileRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	xxx_hidden_Path       string                 `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// the normalized path to the requested file, relative to the root of the module.
+	Path          string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSourceFileRequest) Reset() {
@@ -365,46 +369,46 @@ func (x *GetSourceFileRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetSourceFileRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetSourceFileRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetSourceFileRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetSourceFileRequest) GetPath() string {
 	if x != nil {
-		return x.xxx_hidden_Path
+		return x.Path
 	}
 	return ""
 }
 
 func (x *GetSourceFileRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetSourceFileRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetSourceFileRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 func (x *GetSourceFileRequest) SetPath(v string) {
-	x.xxx_hidden_Path = v
+	x.Path = v
 }
 
 type GetSourceFileRequest_builder struct {
@@ -422,19 +426,20 @@ func (b0 GetSourceFileRequest_builder) Build() *GetSourceFileRequest {
 	m0 := &GetSourceFileRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
-	x.xxx_hidden_Path = b.Path
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
+	x.Path = b.Path
 	return m0
 }
 
 // GetSourceFileResponse returns the source code contents of the requested file.
 type GetSourceFileResponse struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Content []byte                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// content is the content of the file.
+	Content       []byte `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSourceFileResponse) Reset() {
@@ -464,7 +469,7 @@ func (x *GetSourceFileResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSourceFileResponse) GetContent() []byte {
 	if x != nil {
-		return x.xxx_hidden_Content
+		return x.Content
 	}
 	return nil
 }
@@ -473,7 +478,7 @@ func (x *GetSourceFileResponse) SetContent(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Content = v
+	x.Content = v
 }
 
 type GetSourceFileResponse_builder struct {
@@ -487,18 +492,19 @@ func (b0 GetSourceFileResponse_builder) Build() *GetSourceFileResponse {
 	m0 := &GetSourceFileResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Content = b.Content
+	x.Content = b.Content
 	return m0
 }
 
 // GetModulePackagesRequest takes an owner, repository, and reference.
 type GetModulePackagesRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetModulePackagesRequest) Reset() {
@@ -528,35 +534,35 @@ func (x *GetModulePackagesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetModulePackagesRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetModulePackagesRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetModulePackagesRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetModulePackagesRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetModulePackagesRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetModulePackagesRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 type GetModulePackagesRequest_builder struct {
@@ -572,19 +578,19 @@ func (b0 GetModulePackagesRequest_builder) Build() *GetModulePackagesRequest {
 	m0 := &GetModulePackagesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
 	return m0
 }
 
 // GetModulePackagesResponse returns the list of ModulePackages for the requested module.
 type GetModulePackagesResponse struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_ModulePackages *[]*ModulePackage      `protobuf:"bytes,2,rep,name=module_packages,json=modulePackages,proto3" json:"module_packages,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ModulePackages []*ModulePackage       `protobuf:"bytes,2,rep,name=module_packages,json=modulePackages,proto3" json:"module_packages,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetModulePackagesResponse) Reset() {
@@ -614,26 +620,24 @@ func (x *GetModulePackagesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetModulePackagesResponse) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *GetModulePackagesResponse) GetModulePackages() []*ModulePackage {
 	if x != nil {
-		if x.xxx_hidden_ModulePackages != nil {
-			return *x.xxx_hidden_ModulePackages
-		}
+		return x.ModulePackages
 	}
 	return nil
 }
 
 func (x *GetModulePackagesResponse) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *GetModulePackagesResponse) SetModulePackages(v []*ModulePackage) {
-	x.xxx_hidden_ModulePackages = &v
+	x.ModulePackages = v
 }
 
 type GetModulePackagesResponse_builder struct {
@@ -647,18 +651,18 @@ func (b0 GetModulePackagesResponse_builder) Build() *GetModulePackagesResponse {
 	m0 := &GetModulePackagesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_ModulePackages = &b.ModulePackages
+	x.Name = b.Name
+	x.ModulePackages = b.ModulePackages
 	return m0
 }
 
 // ModulePackage provides the details about a module's associated package.
 type ModulePackage struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ModulePackage) Reset() {
@@ -688,24 +692,24 @@ func (x *ModulePackage) ProtoReflect() protoreflect.Message {
 
 func (x *ModulePackage) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ModulePackage) GetDescription() string {
 	if x != nil {
-		return x.xxx_hidden_Description
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ModulePackage) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *ModulePackage) SetDescription(v string) {
-	x.xxx_hidden_Description = v
+	x.Description = v
 }
 
 type ModulePackage_builder struct {
@@ -719,19 +723,20 @@ func (b0 ModulePackage_builder) Build() *ModulePackage {
 	m0 := &ModulePackage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Description = b.Description
+	x.Name = b.Name
+	x.Description = b.Description
 	return m0
 }
 
 // GetModuleDocumentationRequest takes an owner, repository, and reference.
 type GetModuleDocumentationRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetModuleDocumentationRequest) Reset() {
@@ -761,35 +766,35 @@ func (x *GetModuleDocumentationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetModuleDocumentationRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetModuleDocumentationRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetModuleDocumentationRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetModuleDocumentationRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetModuleDocumentationRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetModuleDocumentationRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 type GetModuleDocumentationRequest_builder struct {
@@ -805,18 +810,18 @@ func (b0 GetModuleDocumentationRequest_builder) Build() *GetModuleDocumentationR
 	m0 := &GetModuleDocumentationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
 	return m0
 }
 
 // GetModuleDocumentationResponse returns the ModuleDocumentation for the requested module.
 type GetModuleDocumentationResponse struct {
-	state                          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ModuleDocumentation *ModuleDocumentation   `protobuf:"bytes,1,opt,name=module_documentation,json=moduleDocumentation,proto3" json:"module_documentation,omitempty"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"hybrid.v1"`
+	ModuleDocumentation *ModuleDocumentation   `protobuf:"bytes,1,opt,name=module_documentation,json=moduleDocumentation,proto3" json:"module_documentation,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetModuleDocumentationResponse) Reset() {
@@ -846,24 +851,24 @@ func (x *GetModuleDocumentationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetModuleDocumentationResponse) GetModuleDocumentation() *ModuleDocumentation {
 	if x != nil {
-		return x.xxx_hidden_ModuleDocumentation
+		return x.ModuleDocumentation
 	}
 	return nil
 }
 
 func (x *GetModuleDocumentationResponse) SetModuleDocumentation(v *ModuleDocumentation) {
-	x.xxx_hidden_ModuleDocumentation = v
+	x.ModuleDocumentation = v
 }
 
 func (x *GetModuleDocumentationResponse) HasModuleDocumentation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ModuleDocumentation != nil
+	return x.ModuleDocumentation != nil
 }
 
 func (x *GetModuleDocumentationResponse) ClearModuleDocumentation() {
-	x.xxx_hidden_ModuleDocumentation = nil
+	x.ModuleDocumentation = nil
 }
 
 type GetModuleDocumentationResponse_builder struct {
@@ -876,19 +881,31 @@ func (b0 GetModuleDocumentationResponse_builder) Build() *GetModuleDocumentation
 	m0 := &GetModuleDocumentationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ModuleDocumentation = b.ModuleDocumentation
+	x.ModuleDocumentation = b.ModuleDocumentation
 	return m0
 }
 
 // ModuleDocumentation provides the name of the module and associated documentations.
 type ModuleDocumentation struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Documentation     string                 `protobuf:"bytes,3,opt,name=documentation,proto3" json:"documentation,omitempty"`
-	xxx_hidden_License           string                 `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
-	xxx_hidden_DocumentationPath string                 `protobuf:"bytes,5,opt,name=documentation_path,json=documentationPath,proto3" json:"documentation_path,omitempty"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is the string representation of the contents of the buf.md file for module-level documentation.
+	//
+	// The buf.md file is a part of the module.
+	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+	Documentation string `protobuf:"bytes,3,opt,name=documentation,proto3" json:"documentation,omitempty"`
+	// This is the string representation of the contents of the LICENSE file for module-level license.
+	//
+	// The LICENSE file is a part of the module.
+	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+	License string `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
+	// documentation_path is the path of the file which contains the module documentation.
+	//
+	// either `buf.md`, `README.md` or `README.markdown`.
+	// if empty, assumes buf.md.
+	DocumentationPath string `protobuf:"bytes,5,opt,name=documentation_path,json=documentationPath,proto3" json:"documentation_path,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ModuleDocumentation) Reset() {
@@ -918,46 +935,46 @@ func (x *ModuleDocumentation) ProtoReflect() protoreflect.Message {
 
 func (x *ModuleDocumentation) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ModuleDocumentation) GetDocumentation() string {
 	if x != nil {
-		return x.xxx_hidden_Documentation
+		return x.Documentation
 	}
 	return ""
 }
 
 func (x *ModuleDocumentation) GetLicense() string {
 	if x != nil {
-		return x.xxx_hidden_License
+		return x.License
 	}
 	return ""
 }
 
 func (x *ModuleDocumentation) GetDocumentationPath() string {
 	if x != nil {
-		return x.xxx_hidden_DocumentationPath
+		return x.DocumentationPath
 	}
 	return ""
 }
 
 func (x *ModuleDocumentation) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *ModuleDocumentation) SetDocumentation(v string) {
-	x.xxx_hidden_Documentation = v
+	x.Documentation = v
 }
 
 func (x *ModuleDocumentation) SetLicense(v string) {
-	x.xxx_hidden_License = v
+	x.License = v
 }
 
 func (x *ModuleDocumentation) SetDocumentationPath(v string) {
-	x.xxx_hidden_DocumentationPath = v
+	x.DocumentationPath = v
 }
 
 type ModuleDocumentation_builder struct {
@@ -985,22 +1002,24 @@ func (b0 ModuleDocumentation_builder) Build() *ModuleDocumentation {
 	m0 := &ModuleDocumentation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Documentation = b.Documentation
-	x.xxx_hidden_License = b.License
-	x.xxx_hidden_DocumentationPath = b.DocumentationPath
+	x.Name = b.Name
+	x.Documentation = b.Documentation
+	x.License = b.License
+	x.DocumentationPath = b.DocumentationPath
 	return m0
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.
 type GetPackageDocumentationRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Owner       string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository  string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Reference   string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	xxx_hidden_PackageName string                 `protobuf:"bytes,4,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// this is the fully qualified package name.
+	PackageName   string `protobuf:"bytes,4,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetPackageDocumentationRequest) Reset() {
@@ -1030,46 +1049,46 @@ func (x *GetPackageDocumentationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetPackageDocumentationRequest) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *GetPackageDocumentationRequest) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *GetPackageDocumentationRequest) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *GetPackageDocumentationRequest) GetPackageName() string {
 	if x != nil {
-		return x.xxx_hidden_PackageName
+		return x.PackageName
 	}
 	return ""
 }
 
 func (x *GetPackageDocumentationRequest) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *GetPackageDocumentationRequest) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *GetPackageDocumentationRequest) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 func (x *GetPackageDocumentationRequest) SetPackageName(v string) {
-	x.xxx_hidden_PackageName = v
+	x.PackageName = v
 }
 
 type GetPackageDocumentationRequest_builder struct {
@@ -1087,19 +1106,19 @@ func (b0 GetPackageDocumentationRequest_builder) Build() *GetPackageDocumentatio
 	m0 := &GetPackageDocumentationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Reference = b.Reference
-	x.xxx_hidden_PackageName = b.PackageName
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Reference = b.Reference
+	x.PackageName = b.PackageName
 	return m0
 }
 
 // GetPackageDocumentationReponse returns the documentation for the requested package.
 type GetPackageDocumentationResponse struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PackageDocumentation *PackageDocumentation  `protobuf:"bytes,1,opt,name=package_documentation,json=packageDocumentation,proto3" json:"package_documentation,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"hybrid.v1"`
+	PackageDocumentation *PackageDocumentation  `protobuf:"bytes,1,opt,name=package_documentation,json=packageDocumentation,proto3" json:"package_documentation,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetPackageDocumentationResponse) Reset() {
@@ -1129,24 +1148,24 @@ func (x *GetPackageDocumentationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetPackageDocumentationResponse) GetPackageDocumentation() *PackageDocumentation {
 	if x != nil {
-		return x.xxx_hidden_PackageDocumentation
+		return x.PackageDocumentation
 	}
 	return nil
 }
 
 func (x *GetPackageDocumentationResponse) SetPackageDocumentation(v *PackageDocumentation) {
-	x.xxx_hidden_PackageDocumentation = v
+	x.PackageDocumentation = v
 }
 
 func (x *GetPackageDocumentationResponse) HasPackageDocumentation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PackageDocumentation != nil
+	return x.PackageDocumentation != nil
 }
 
 func (x *GetPackageDocumentationResponse) ClearPackageDocumentation() {
-	x.xxx_hidden_PackageDocumentation = nil
+	x.PackageDocumentation = nil
 }
 
 type GetPackageDocumentationResponse_builder struct {
@@ -1159,21 +1178,31 @@ func (b0 GetPackageDocumentationResponse_builder) Build() *GetPackageDocumentati
 	m0 := &GetPackageDocumentationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PackageDocumentation = b.PackageDocumentation
+	x.PackageDocumentation = b.PackageDocumentation
 	return m0
 }
 
 // PackageDocumentation provides the name, description, and top level types defined in the package.
 type PackageDocumentation struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Comments       string                 `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_Services       *[]*Service            `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`
-	xxx_hidden_Enums          *[]*Enum               `protobuf:"bytes,4,rep,name=enums,proto3" json:"enums,omitempty"`
-	xxx_hidden_Messages       *[]*Message            `protobuf:"bytes,5,rep,name=messages,proto3" json:"messages,omitempty"`
-	xxx_hidden_FileExtensions *[]*FileExtension      `protobuf:"bytes,6,rep,name=file_extensions,json=fileExtensions,proto3" json:"file_extensions,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// comments contains the package-level comment documentation.
+	// There is currently no convention for this.
+	//
+	// This is derived from the leading comments at the top level of the package.
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
+	// services contains all the services defined in the package in alphabetical order.
+	Services []*Service `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`
+	// enums contains all the enums defined in the package in alphabetical order.
+	Enums []*Enum `protobuf:"bytes,4,rep,name=enums,proto3" json:"enums,omitempty"`
+	// messages contains all the messages defined in the package in alphabetical order.
+	Messages []*Message `protobuf:"bytes,5,rep,name=messages,proto3" json:"messages,omitempty"`
+	// extensions contains all the file level extensions in the package in alphabetical order.
+	FileExtensions []*FileExtension `protobuf:"bytes,6,rep,name=file_extensions,json=fileExtensions,proto3" json:"file_extensions,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PackageDocumentation) Reset() {
@@ -1203,76 +1232,68 @@ func (x *PackageDocumentation) ProtoReflect() protoreflect.Message {
 
 func (x *PackageDocumentation) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *PackageDocumentation) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *PackageDocumentation) GetServices() []*Service {
 	if x != nil {
-		if x.xxx_hidden_Services != nil {
-			return *x.xxx_hidden_Services
-		}
+		return x.Services
 	}
 	return nil
 }
 
 func (x *PackageDocumentation) GetEnums() []*Enum {
 	if x != nil {
-		if x.xxx_hidden_Enums != nil {
-			return *x.xxx_hidden_Enums
-		}
+		return x.Enums
 	}
 	return nil
 }
 
 func (x *PackageDocumentation) GetMessages() []*Message {
 	if x != nil {
-		if x.xxx_hidden_Messages != nil {
-			return *x.xxx_hidden_Messages
-		}
+		return x.Messages
 	}
 	return nil
 }
 
 func (x *PackageDocumentation) GetFileExtensions() []*FileExtension {
 	if x != nil {
-		if x.xxx_hidden_FileExtensions != nil {
-			return *x.xxx_hidden_FileExtensions
-		}
+		return x.FileExtensions
 	}
 	return nil
 }
 
 func (x *PackageDocumentation) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *PackageDocumentation) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *PackageDocumentation) SetServices(v []*Service) {
-	x.xxx_hidden_Services = &v
+	x.Services = v
 }
 
 func (x *PackageDocumentation) SetEnums(v []*Enum) {
-	x.xxx_hidden_Enums = &v
+	x.Enums = v
 }
 
 func (x *PackageDocumentation) SetMessages(v []*Message) {
-	x.xxx_hidden_Messages = &v
+	x.Messages = v
 }
 
 func (x *PackageDocumentation) SetFileExtensions(v []*FileExtension) {
-	x.xxx_hidden_FileExtensions = &v
+	x.FileExtensions = v
 }
 
 type PackageDocumentation_builder struct {
@@ -1300,12 +1321,12 @@ func (b0 PackageDocumentation_builder) Build() *PackageDocumentation {
 	m0 := &PackageDocumentation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_Services = &b.Services
-	x.xxx_hidden_Enums = &b.Enums
-	x.xxx_hidden_Messages = &b.Messages
-	x.xxx_hidden_FileExtensions = &b.FileExtensions
+	x.Name = b.Name
+	x.Comments = b.Comments
+	x.Services = b.Services
+	x.Enums = b.Enums
+	x.Messages = b.Messages
+	x.FileExtensions = b.FileExtensions
 	return m0
 }
 
@@ -1314,13 +1335,13 @@ func (b0 PackageDocumentation_builder) Build() *PackageDocumentation {
 // This does not provide the leading or trailing comments as these will
 // be parsed into descriptions or dropped respectively.
 type Location struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_StartLine   int32                  `protobuf:"varint,1,opt,name=start_line,json=startLine,proto3" json:"start_line,omitempty"`
-	xxx_hidden_StartColumn int32                  `protobuf:"varint,2,opt,name=start_column,json=startColumn,proto3" json:"start_column,omitempty"`
-	xxx_hidden_EndLine     int32                  `protobuf:"varint,3,opt,name=end_line,json=endLine,proto3" json:"end_line,omitempty"`
-	xxx_hidden_EndColumn   int32                  `protobuf:"varint,4,opt,name=end_column,json=endColumn,proto3" json:"end_column,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	StartLine     int32                  `protobuf:"varint,1,opt,name=start_line,json=startLine,proto3" json:"start_line,omitempty"`
+	StartColumn   int32                  `protobuf:"varint,2,opt,name=start_column,json=startColumn,proto3" json:"start_column,omitempty"`
+	EndLine       int32                  `protobuf:"varint,3,opt,name=end_line,json=endLine,proto3" json:"end_line,omitempty"`
+	EndColumn     int32                  `protobuf:"varint,4,opt,name=end_column,json=endColumn,proto3" json:"end_column,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Location) Reset() {
@@ -1350,46 +1371,46 @@ func (x *Location) ProtoReflect() protoreflect.Message {
 
 func (x *Location) GetStartLine() int32 {
 	if x != nil {
-		return x.xxx_hidden_StartLine
+		return x.StartLine
 	}
 	return 0
 }
 
 func (x *Location) GetStartColumn() int32 {
 	if x != nil {
-		return x.xxx_hidden_StartColumn
+		return x.StartColumn
 	}
 	return 0
 }
 
 func (x *Location) GetEndLine() int32 {
 	if x != nil {
-		return x.xxx_hidden_EndLine
+		return x.EndLine
 	}
 	return 0
 }
 
 func (x *Location) GetEndColumn() int32 {
 	if x != nil {
-		return x.xxx_hidden_EndColumn
+		return x.EndColumn
 	}
 	return 0
 }
 
 func (x *Location) SetStartLine(v int32) {
-	x.xxx_hidden_StartLine = v
+	x.StartLine = v
 }
 
 func (x *Location) SetStartColumn(v int32) {
-	x.xxx_hidden_StartColumn = v
+	x.StartColumn = v
 }
 
 func (x *Location) SetEndLine(v int32) {
-	x.xxx_hidden_EndLine = v
+	x.EndLine = v
 }
 
 func (x *Location) SetEndColumn(v int32) {
-	x.xxx_hidden_EndColumn = v
+	x.EndColumn = v
 }
 
 type Location_builder struct {
@@ -1405,28 +1426,44 @@ func (b0 Location_builder) Build() *Location {
 	m0 := &Location{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_StartLine = b.StartLine
-	x.xxx_hidden_StartColumn = b.StartColumn
-	x.xxx_hidden_EndLine = b.EndLine
-	x.xxx_hidden_EndColumn = b.EndColumn
+	x.StartLine = b.StartLine
+	x.StartColumn = b.StartColumn
+	x.EndLine = b.EndLine
+	x.EndColumn = b.EndColumn
 	return m0
 }
 
 // Service provides information for the documentation for a given service type in a file.
 type Service struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_NestedName           string                 `protobuf:"bytes,2,opt,name=nested_name,json=nestedName,proto3" json:"nested_name,omitempty"`
-	xxx_hidden_FullName             string                 `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	xxx_hidden_Comments             string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_FilePath             string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	xxx_hidden_Location             *Location              `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
-	xxx_hidden_Methods              *[]*Method             `protobuf:"bytes,7,rep,name=methods,proto3" json:"methods,omitempty"`
-	xxx_hidden_ImplicitlyDeprecated bool                   `protobuf:"varint,9,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	xxx_hidden_Options              *[]*FieldLiteral       `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
-	xxx_hidden_ServiceOptions       *ServiceOptions        `protobuf:"bytes,8,opt,name=service_options,json=serviceOptions,proto3" json:"service_options,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// nested_name includes the nested types for a given type definition.
+	NestedName string `protobuf:"bytes,2,opt,name=nested_name,json=nestedName,proto3" json:"nested_name,omitempty"`
+	// full_name includes the package name and nested types for a given type definition.
+	FullName string `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	// comments is derived from the leading comments of a given service.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
+	// file_path is the normalized path of the file containing the service.
+	// This is used for navigating to the source code for the service.
+	FilePath string    `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	Location *Location `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
+	Methods  []*Method `protobuf:"bytes,7,rep,name=methods,proto3" json:"methods,omitempty"`
+	// implicitly_deprecated is true if its enclosing file is deprecated.
+	ImplicitlyDeprecated bool `protobuf:"varint,9,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the service. This is a super-set of
+	// service_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	// This supersedes service_options.
+	Options []*FieldLiteral `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
+	// Use options instead.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
+	ServiceOptions *ServiceOptions `protobuf:"bytes,8,opt,name=service_options,json=serviceOptions,proto3" json:"service_options,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Service) Reset() {
@@ -1456,67 +1493,63 @@ func (x *Service) ProtoReflect() protoreflect.Message {
 
 func (x *Service) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Service) GetNestedName() string {
 	if x != nil {
-		return x.xxx_hidden_NestedName
+		return x.NestedName
 	}
 	return ""
 }
 
 func (x *Service) GetFullName() string {
 	if x != nil {
-		return x.xxx_hidden_FullName
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *Service) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *Service) GetFilePath() string {
 	if x != nil {
-		return x.xxx_hidden_FilePath
+		return x.FilePath
 	}
 	return ""
 }
 
 func (x *Service) GetLocation() *Location {
 	if x != nil {
-		return x.xxx_hidden_Location
+		return x.Location
 	}
 	return nil
 }
 
 func (x *Service) GetMethods() []*Method {
 	if x != nil {
-		if x.xxx_hidden_Methods != nil {
-			return *x.xxx_hidden_Methods
-		}
+		return x.Methods
 	}
 	return nil
 }
 
 func (x *Service) GetImplicitlyDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_ImplicitlyDeprecated
+		return x.ImplicitlyDeprecated
 	}
 	return false
 }
 
 func (x *Service) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
@@ -1524,57 +1557,57 @@ func (x *Service) GetOptions() []*FieldLiteral {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Service) GetServiceOptions() *ServiceOptions {
 	if x != nil {
-		return x.xxx_hidden_ServiceOptions
+		return x.ServiceOptions
 	}
 	return nil
 }
 
 func (x *Service) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Service) SetNestedName(v string) {
-	x.xxx_hidden_NestedName = v
+	x.NestedName = v
 }
 
 func (x *Service) SetFullName(v string) {
-	x.xxx_hidden_FullName = v
+	x.FullName = v
 }
 
 func (x *Service) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *Service) SetFilePath(v string) {
-	x.xxx_hidden_FilePath = v
+	x.FilePath = v
 }
 
 func (x *Service) SetLocation(v *Location) {
-	x.xxx_hidden_Location = v
+	x.Location = v
 }
 
 func (x *Service) SetMethods(v []*Method) {
-	x.xxx_hidden_Methods = &v
+	x.Methods = v
 }
 
 func (x *Service) SetImplicitlyDeprecated(v bool) {
-	x.xxx_hidden_ImplicitlyDeprecated = v
+	x.ImplicitlyDeprecated = v
 }
 
 func (x *Service) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Service) SetServiceOptions(v *ServiceOptions) {
-	x.xxx_hidden_ServiceOptions = v
+	x.ServiceOptions = v
 }
 
 func (x *Service) HasLocation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Location != nil
+	return x.Location != nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -1582,16 +1615,16 @@ func (x *Service) HasServiceOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ServiceOptions != nil
+	return x.ServiceOptions != nil
 }
 
 func (x *Service) ClearLocation() {
-	x.xxx_hidden_Location = nil
+	x.Location = nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Service) ClearServiceOptions() {
-	x.xxx_hidden_ServiceOptions = nil
+	x.ServiceOptions = nil
 }
 
 type Service_builder struct {
@@ -1629,16 +1662,16 @@ func (b0 Service_builder) Build() *Service {
 	m0 := &Service{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_NestedName = b.NestedName
-	x.xxx_hidden_FullName = b.FullName
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_FilePath = b.FilePath
-	x.xxx_hidden_Location = b.Location
-	x.xxx_hidden_Methods = &b.Methods
-	x.xxx_hidden_ImplicitlyDeprecated = b.ImplicitlyDeprecated
-	x.xxx_hidden_Options = &b.Options
-	x.xxx_hidden_ServiceOptions = b.ServiceOptions
+	x.Name = b.Name
+	x.NestedName = b.NestedName
+	x.FullName = b.FullName
+	x.Comments = b.Comments
+	x.FilePath = b.FilePath
+	x.Location = b.Location
+	x.Methods = b.Methods
+	x.ImplicitlyDeprecated = b.ImplicitlyDeprecated
+	x.Options = b.Options
+	x.ServiceOptions = b.ServiceOptions
 	return m0
 }
 
@@ -1646,10 +1679,10 @@ func (b0 Service_builder) Build() *Service {
 //
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 type ServiceOptions struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deprecated bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deprecated    bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ServiceOptions) Reset() {
@@ -1679,13 +1712,13 @@ func (x *ServiceOptions) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceOptions) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *ServiceOptions) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -1699,22 +1732,34 @@ func (b0 ServiceOptions_builder) Build() *ServiceOptions {
 	m0 := &ServiceOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deprecated = b.Deprecated
+	x.Deprecated = b.Deprecated
 	return m0
 }
 
 // Method provides information for the documentation for a method of a given service.
 type Method struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Comments             string                 `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_Request              *MethodRequestResponse `protobuf:"bytes,3,opt,name=request,proto3" json:"request,omitempty"`
-	xxx_hidden_Response             *MethodRequestResponse `protobuf:"bytes,4,opt,name=response,proto3" json:"response,omitempty"`
-	xxx_hidden_ImplicitlyDeprecated bool                   `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	xxx_hidden_Options              *[]*FieldLiteral       `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
-	xxx_hidden_MethodOptions        *MethodOptions         `protobuf:"bytes,5,opt,name=method_options,json=methodOptions,proto3" json:"method_options,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// comments is derived from the leading comments of a given method.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string                 `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
+	Request  *MethodRequestResponse `protobuf:"bytes,3,opt,name=request,proto3" json:"request,omitempty"`
+	Response *MethodRequestResponse `protobuf:"bytes,4,opt,name=response,proto3" json:"response,omitempty"`
+	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+	ImplicitlyDeprecated bool `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the method. This is a super-set of
+	// method_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	// This supersedes method_options.
+	Options []*FieldLiteral `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
+	// Use options instead.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
+	MethodOptions *MethodOptions `protobuf:"bytes,5,opt,name=method_options,json=methodOptions,proto3" json:"method_options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Method) Reset() {
@@ -1744,44 +1789,42 @@ func (x *Method) ProtoReflect() protoreflect.Message {
 
 func (x *Method) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Method) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *Method) GetRequest() *MethodRequestResponse {
 	if x != nil {
-		return x.xxx_hidden_Request
+		return x.Request
 	}
 	return nil
 }
 
 func (x *Method) GetResponse() *MethodRequestResponse {
 	if x != nil {
-		return x.xxx_hidden_Response
+		return x.Response
 	}
 	return nil
 }
 
 func (x *Method) GetImplicitlyDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_ImplicitlyDeprecated
+		return x.ImplicitlyDeprecated
 	}
 	return false
 }
 
 func (x *Method) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
@@ -1789,52 +1832,52 @@ func (x *Method) GetOptions() []*FieldLiteral {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Method) GetMethodOptions() *MethodOptions {
 	if x != nil {
-		return x.xxx_hidden_MethodOptions
+		return x.MethodOptions
 	}
 	return nil
 }
 
 func (x *Method) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Method) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *Method) SetRequest(v *MethodRequestResponse) {
-	x.xxx_hidden_Request = v
+	x.Request = v
 }
 
 func (x *Method) SetResponse(v *MethodRequestResponse) {
-	x.xxx_hidden_Response = v
+	x.Response = v
 }
 
 func (x *Method) SetImplicitlyDeprecated(v bool) {
-	x.xxx_hidden_ImplicitlyDeprecated = v
+	x.ImplicitlyDeprecated = v
 }
 
 func (x *Method) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Method) SetMethodOptions(v *MethodOptions) {
-	x.xxx_hidden_MethodOptions = v
+	x.MethodOptions = v
 }
 
 func (x *Method) HasRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Request != nil
+	return x.Request != nil
 }
 
 func (x *Method) HasResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Response != nil
+	return x.Response != nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -1842,20 +1885,20 @@ func (x *Method) HasMethodOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MethodOptions != nil
+	return x.MethodOptions != nil
 }
 
 func (x *Method) ClearRequest() {
-	x.xxx_hidden_Request = nil
+	x.Request = nil
 }
 
 func (x *Method) ClearResponse() {
-	x.xxx_hidden_Response = nil
+	x.Response = nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Method) ClearMethodOptions() {
-	x.xxx_hidden_MethodOptions = nil
+	x.MethodOptions = nil
 }
 
 type Method_builder struct {
@@ -1886,13 +1929,13 @@ func (b0 Method_builder) Build() *Method {
 	m0 := &Method{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_Request = b.Request
-	x.xxx_hidden_Response = b.Response
-	x.xxx_hidden_ImplicitlyDeprecated = b.ImplicitlyDeprecated
-	x.xxx_hidden_Options = &b.Options
-	x.xxx_hidden_MethodOptions = b.MethodOptions
+	x.Name = b.Name
+	x.Comments = b.Comments
+	x.Request = b.Request
+	x.Response = b.Response
+	x.ImplicitlyDeprecated = b.ImplicitlyDeprecated
+	x.Options = b.Options
+	x.MethodOptions = b.MethodOptions
 	return m0
 }
 
@@ -1900,11 +1943,12 @@ func (b0 Method_builder) Build() *Method {
 //
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 type MethodOptions struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deprecated       bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	xxx_hidden_IdempotencyLevel int32                  `protobuf:"varint,2,opt,name=idempotency_level,json=idempotencyLevel,proto3" json:"idempotency_level,omitempty"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deprecated bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	// idempotency_level holds a value of the enumeration `google.protobuf.MethodOptions.IdempotencyLevel.
+	IdempotencyLevel int32 `protobuf:"varint,2,opt,name=idempotency_level,json=idempotencyLevel,proto3" json:"idempotency_level,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *MethodOptions) Reset() {
@@ -1934,24 +1978,24 @@ func (x *MethodOptions) ProtoReflect() protoreflect.Message {
 
 func (x *MethodOptions) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *MethodOptions) GetIdempotencyLevel() int32 {
 	if x != nil {
-		return x.xxx_hidden_IdempotencyLevel
+		return x.IdempotencyLevel
 	}
 	return 0
 }
 
 func (x *MethodOptions) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 func (x *MethodOptions) SetIdempotencyLevel(v int32) {
-	x.xxx_hidden_IdempotencyLevel = v
+	x.IdempotencyLevel = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -1967,21 +2011,26 @@ func (b0 MethodOptions_builder) Build() *MethodOptions {
 	m0 := &MethodOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deprecated = b.Deprecated
-	x.xxx_hidden_IdempotencyLevel = b.IdempotencyLevel
+	x.Deprecated = b.Deprecated
+	x.IdempotencyLevel = b.IdempotencyLevel
 	return m0
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
 type MethodRequestResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_NestedType      string                 `protobuf:"bytes,1,opt,name=nested_type,json=nestedType,proto3" json:"nested_type,omitempty"`
-	xxx_hidden_FullType        string                 `protobuf:"bytes,2,opt,name=full_type,json=fullType,proto3" json:"full_type,omitempty"`
-	xxx_hidden_Streaming       bool                   `protobuf:"varint,3,opt,name=streaming,proto3" json:"streaming,omitempty"`
-	xxx_hidden_Message         *Message               `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
-	xxx_hidden_ImportModuleRef *ImportModuleRef       `protobuf:"bytes,5,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// nested_type is the nested name of the message of the request or response. This includes nested definitions.
+	NestedType string `protobuf:"bytes,1,opt,name=nested_type,json=nestedType,proto3" json:"nested_type,omitempty"`
+	// full_type is the fully qualified name of the message of the request or response. This includes package and nested definitions.
+	FullType string `protobuf:"bytes,2,opt,name=full_type,json=fullType,proto3" json:"full_type,omitempty"`
+	// boolean flag for whether the streaming label is set on an method request or response.
+	Streaming bool     `protobuf:"varint,3,opt,name=streaming,proto3" json:"streaming,omitempty"`
+	Message   *Message `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	// import_module_ref is included if the request or response is an imported type.
+	// It contains all the metadata for the import.
+	ImportModuleRef *ImportModuleRef `protobuf:"bytes,5,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *MethodRequestResponse) Reset() {
@@ -2011,79 +2060,79 @@ func (x *MethodRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *MethodRequestResponse) GetNestedType() string {
 	if x != nil {
-		return x.xxx_hidden_NestedType
+		return x.NestedType
 	}
 	return ""
 }
 
 func (x *MethodRequestResponse) GetFullType() string {
 	if x != nil {
-		return x.xxx_hidden_FullType
+		return x.FullType
 	}
 	return ""
 }
 
 func (x *MethodRequestResponse) GetStreaming() bool {
 	if x != nil {
-		return x.xxx_hidden_Streaming
+		return x.Streaming
 	}
 	return false
 }
 
 func (x *MethodRequestResponse) GetMessage() *Message {
 	if x != nil {
-		return x.xxx_hidden_Message
+		return x.Message
 	}
 	return nil
 }
 
 func (x *MethodRequestResponse) GetImportModuleRef() *ImportModuleRef {
 	if x != nil {
-		return x.xxx_hidden_ImportModuleRef
+		return x.ImportModuleRef
 	}
 	return nil
 }
 
 func (x *MethodRequestResponse) SetNestedType(v string) {
-	x.xxx_hidden_NestedType = v
+	x.NestedType = v
 }
 
 func (x *MethodRequestResponse) SetFullType(v string) {
-	x.xxx_hidden_FullType = v
+	x.FullType = v
 }
 
 func (x *MethodRequestResponse) SetStreaming(v bool) {
-	x.xxx_hidden_Streaming = v
+	x.Streaming = v
 }
 
 func (x *MethodRequestResponse) SetMessage(v *Message) {
-	x.xxx_hidden_Message = v
+	x.Message = v
 }
 
 func (x *MethodRequestResponse) SetImportModuleRef(v *ImportModuleRef) {
-	x.xxx_hidden_ImportModuleRef = v
+	x.ImportModuleRef = v
 }
 
 func (x *MethodRequestResponse) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Message != nil
+	return x.Message != nil
 }
 
 func (x *MethodRequestResponse) HasImportModuleRef() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImportModuleRef != nil
+	return x.ImportModuleRef != nil
 }
 
 func (x *MethodRequestResponse) ClearMessage() {
-	x.xxx_hidden_Message = nil
+	x.Message = nil
 }
 
 func (x *MethodRequestResponse) ClearImportModuleRef() {
-	x.xxx_hidden_ImportModuleRef = nil
+	x.ImportModuleRef = nil
 }
 
 type MethodRequestResponse_builder struct {
@@ -2105,29 +2154,44 @@ func (b0 MethodRequestResponse_builder) Build() *MethodRequestResponse {
 	m0 := &MethodRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_NestedType = b.NestedType
-	x.xxx_hidden_FullType = b.FullType
-	x.xxx_hidden_Streaming = b.Streaming
-	x.xxx_hidden_Message = b.Message
-	x.xxx_hidden_ImportModuleRef = b.ImportModuleRef
+	x.NestedType = b.NestedType
+	x.FullType = b.FullType
+	x.Streaming = b.Streaming
+	x.Message = b.Message
+	x.ImportModuleRef = b.ImportModuleRef
 	return m0
 }
 
 // Enum provides information for the documentation of an enum.
 type Enum struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_NestedName           string                 `protobuf:"bytes,2,opt,name=nested_name,json=nestedName,proto3" json:"nested_name,omitempty"`
-	xxx_hidden_FullName             string                 `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	xxx_hidden_Comments             string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_FilePath             string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	xxx_hidden_Location             *Location              `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
-	xxx_hidden_Values               *[]*EnumValue          `protobuf:"bytes,7,rep,name=values,proto3" json:"values,omitempty"`
-	xxx_hidden_ImplicitlyDeprecated bool                   `protobuf:"varint,9,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	xxx_hidden_Options              *[]*FieldLiteral       `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
-	xxx_hidden_EnumOptions          *EnumOptions           `protobuf:"bytes,8,opt,name=enum_options,json=enumOptions,proto3" json:"enum_options,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// nested_name includes the nested types for a given type definition.
+	NestedName string `protobuf:"bytes,2,opt,name=nested_name,json=nestedName,proto3" json:"nested_name,omitempty"`
+	// full_name includes the package name and nested types for a given type definition.
+	FullName string `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	// comments is derived from the leading comments of a given Enum.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
+	// file_path is the normalized path of the file containing the enum.
+	FilePath string       `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	Location *Location    `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
+	Values   []*EnumValue `protobuf:"bytes,7,rep,name=values,proto3" json:"values,omitempty"`
+	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+	ImplicitlyDeprecated bool `protobuf:"varint,9,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the enum. This is a super-set of
+	// enum_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	// // This supersedes enum_options.
+	Options []*FieldLiteral `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
+	// Use options instead.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
+	EnumOptions   *EnumOptions `protobuf:"bytes,8,opt,name=enum_options,json=enumOptions,proto3" json:"enum_options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Enum) Reset() {
@@ -2157,67 +2221,63 @@ func (x *Enum) ProtoReflect() protoreflect.Message {
 
 func (x *Enum) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Enum) GetNestedName() string {
 	if x != nil {
-		return x.xxx_hidden_NestedName
+		return x.NestedName
 	}
 	return ""
 }
 
 func (x *Enum) GetFullName() string {
 	if x != nil {
-		return x.xxx_hidden_FullName
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *Enum) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *Enum) GetFilePath() string {
 	if x != nil {
-		return x.xxx_hidden_FilePath
+		return x.FilePath
 	}
 	return ""
 }
 
 func (x *Enum) GetLocation() *Location {
 	if x != nil {
-		return x.xxx_hidden_Location
+		return x.Location
 	}
 	return nil
 }
 
 func (x *Enum) GetValues() []*EnumValue {
 	if x != nil {
-		if x.xxx_hidden_Values != nil {
-			return *x.xxx_hidden_Values
-		}
+		return x.Values
 	}
 	return nil
 }
 
 func (x *Enum) GetImplicitlyDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_ImplicitlyDeprecated
+		return x.ImplicitlyDeprecated
 	}
 	return false
 }
 
 func (x *Enum) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
@@ -2225,57 +2285,57 @@ func (x *Enum) GetOptions() []*FieldLiteral {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Enum) GetEnumOptions() *EnumOptions {
 	if x != nil {
-		return x.xxx_hidden_EnumOptions
+		return x.EnumOptions
 	}
 	return nil
 }
 
 func (x *Enum) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Enum) SetNestedName(v string) {
-	x.xxx_hidden_NestedName = v
+	x.NestedName = v
 }
 
 func (x *Enum) SetFullName(v string) {
-	x.xxx_hidden_FullName = v
+	x.FullName = v
 }
 
 func (x *Enum) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *Enum) SetFilePath(v string) {
-	x.xxx_hidden_FilePath = v
+	x.FilePath = v
 }
 
 func (x *Enum) SetLocation(v *Location) {
-	x.xxx_hidden_Location = v
+	x.Location = v
 }
 
 func (x *Enum) SetValues(v []*EnumValue) {
-	x.xxx_hidden_Values = &v
+	x.Values = v
 }
 
 func (x *Enum) SetImplicitlyDeprecated(v bool) {
-	x.xxx_hidden_ImplicitlyDeprecated = v
+	x.ImplicitlyDeprecated = v
 }
 
 func (x *Enum) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Enum) SetEnumOptions(v *EnumOptions) {
-	x.xxx_hidden_EnumOptions = v
+	x.EnumOptions = v
 }
 
 func (x *Enum) HasLocation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Location != nil
+	return x.Location != nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -2283,16 +2343,16 @@ func (x *Enum) HasEnumOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_EnumOptions != nil
+	return x.EnumOptions != nil
 }
 
 func (x *Enum) ClearLocation() {
-	x.xxx_hidden_Location = nil
+	x.Location = nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Enum) ClearEnumOptions() {
-	x.xxx_hidden_EnumOptions = nil
+	x.EnumOptions = nil
 }
 
 type Enum_builder struct {
@@ -2329,16 +2389,16 @@ func (b0 Enum_builder) Build() *Enum {
 	m0 := &Enum{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_NestedName = b.NestedName
-	x.xxx_hidden_FullName = b.FullName
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_FilePath = b.FilePath
-	x.xxx_hidden_Location = b.Location
-	x.xxx_hidden_Values = &b.Values
-	x.xxx_hidden_ImplicitlyDeprecated = b.ImplicitlyDeprecated
-	x.xxx_hidden_Options = &b.Options
-	x.xxx_hidden_EnumOptions = b.EnumOptions
+	x.Name = b.Name
+	x.NestedName = b.NestedName
+	x.FullName = b.FullName
+	x.Comments = b.Comments
+	x.FilePath = b.FilePath
+	x.Location = b.Location
+	x.Values = b.Values
+	x.ImplicitlyDeprecated = b.ImplicitlyDeprecated
+	x.Options = b.Options
+	x.EnumOptions = b.EnumOptions
 	return m0
 }
 
@@ -2346,11 +2406,11 @@ func (b0 Enum_builder) Build() *Enum {
 //
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 type EnumOptions struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deprecated bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	xxx_hidden_AllowAlias bool                   `protobuf:"varint,2,opt,name=allow_alias,json=allowAlias,proto3" json:"allow_alias,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deprecated    bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	AllowAlias    bool                   `protobuf:"varint,2,opt,name=allow_alias,json=allowAlias,proto3" json:"allow_alias,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnumOptions) Reset() {
@@ -2380,24 +2440,24 @@ func (x *EnumOptions) ProtoReflect() protoreflect.Message {
 
 func (x *EnumOptions) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *EnumOptions) GetAllowAlias() bool {
 	if x != nil {
-		return x.xxx_hidden_AllowAlias
+		return x.AllowAlias
 	}
 	return false
 }
 
 func (x *EnumOptions) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 func (x *EnumOptions) SetAllowAlias(v bool) {
-	x.xxx_hidden_AllowAlias = v
+	x.AllowAlias = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -2412,21 +2472,32 @@ func (b0 EnumOptions_builder) Build() *EnumOptions {
 	m0 := &EnumOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deprecated = b.Deprecated
-	x.xxx_hidden_AllowAlias = b.AllowAlias
+	x.Deprecated = b.Deprecated
+	x.AllowAlias = b.AllowAlias
 	return m0
 }
 
 // EnumValue provides information for the documentation of an enum value.
 type EnumValue struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Number           int32                  `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
-	xxx_hidden_Comments         string                 `protobuf:"bytes,3,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_Options          *[]*FieldLiteral       `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"`
-	xxx_hidden_EnumValueOptions *EnumValueOptions      `protobuf:"bytes,4,opt,name=enum_value_options,json=enumValueOptions,proto3" json:"enum_value_options,omitempty"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Number int32                  `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
+	// comments is derived from the leading comments of a given enum value.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,3,opt,name=comments,proto3" json:"comments,omitempty"`
+	// All options that are present on the enum. This is a super-set of
+	// enum_value_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	// // This supersedes enum_value_options.
+	Options []*FieldLiteral `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"`
+	// Use options instead.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
+	EnumValueOptions *EnumValueOptions `protobuf:"bytes,4,opt,name=enum_value_options,json=enumValueOptions,proto3" json:"enum_value_options,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *EnumValue) Reset() {
@@ -2456,30 +2527,28 @@ func (x *EnumValue) ProtoReflect() protoreflect.Message {
 
 func (x *EnumValue) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *EnumValue) GetNumber() int32 {
 	if x != nil {
-		return x.xxx_hidden_Number
+		return x.Number
 	}
 	return 0
 }
 
 func (x *EnumValue) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *EnumValue) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
@@ -2487,30 +2556,30 @@ func (x *EnumValue) GetOptions() []*FieldLiteral {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *EnumValue) GetEnumValueOptions() *EnumValueOptions {
 	if x != nil {
-		return x.xxx_hidden_EnumValueOptions
+		return x.EnumValueOptions
 	}
 	return nil
 }
 
 func (x *EnumValue) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *EnumValue) SetNumber(v int32) {
-	x.xxx_hidden_Number = v
+	x.Number = v
 }
 
 func (x *EnumValue) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *EnumValue) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *EnumValue) SetEnumValueOptions(v *EnumValueOptions) {
-	x.xxx_hidden_EnumValueOptions = v
+	x.EnumValueOptions = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -2518,12 +2587,12 @@ func (x *EnumValue) HasEnumValueOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_EnumValueOptions != nil
+	return x.EnumValueOptions != nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *EnumValue) ClearEnumValueOptions() {
-	x.xxx_hidden_EnumValueOptions = nil
+	x.EnumValueOptions = nil
 }
 
 type EnumValue_builder struct {
@@ -2551,11 +2620,11 @@ func (b0 EnumValue_builder) Build() *EnumValue {
 	m0 := &EnumValue{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Number = b.Number
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_Options = &b.Options
-	x.xxx_hidden_EnumValueOptions = b.EnumValueOptions
+	x.Name = b.Name
+	x.Number = b.Number
+	x.Comments = b.Comments
+	x.Options = b.Options
+	x.EnumValueOptions = b.EnumValueOptions
 	return m0
 }
 
@@ -2563,10 +2632,10 @@ func (b0 EnumValue_builder) Build() *EnumValue {
 //
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 type EnumValueOptions struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deprecated bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deprecated    bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnumValueOptions) Reset() {
@@ -2596,13 +2665,13 @@ func (x *EnumValueOptions) ProtoReflect() protoreflect.Message {
 
 func (x *EnumValueOptions) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *EnumValueOptions) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -2616,20 +2685,22 @@ func (b0 EnumValueOptions_builder) Build() *EnumValueOptions {
 	m0 := &EnumValueOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deprecated = b.Deprecated
+	x.Deprecated = b.Deprecated
 	return m0
 }
 
 // ImportRef provides the import metadata if a type is imported.
 type ImportModuleRef struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Remote      string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
-	xxx_hidden_Owner       string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	xxx_hidden_Repository  string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
-	xxx_hidden_Commit      string                 `protobuf:"bytes,4,opt,name=commit,proto3" json:"commit,omitempty"`
-	xxx_hidden_PackageName string                 `protobuf:"bytes,5,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Remote     string                 `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
+	Owner      string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
+	// the commit is based on the module commit of the imported type provided
+	// by the image.
+	Commit        string `protobuf:"bytes,4,opt,name=commit,proto3" json:"commit,omitempty"`
+	PackageName   string `protobuf:"bytes,5,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImportModuleRef) Reset() {
@@ -2659,57 +2730,57 @@ func (x *ImportModuleRef) ProtoReflect() protoreflect.Message {
 
 func (x *ImportModuleRef) GetRemote() string {
 	if x != nil {
-		return x.xxx_hidden_Remote
+		return x.Remote
 	}
 	return ""
 }
 
 func (x *ImportModuleRef) GetOwner() string {
 	if x != nil {
-		return x.xxx_hidden_Owner
+		return x.Owner
 	}
 	return ""
 }
 
 func (x *ImportModuleRef) GetRepository() string {
 	if x != nil {
-		return x.xxx_hidden_Repository
+		return x.Repository
 	}
 	return ""
 }
 
 func (x *ImportModuleRef) GetCommit() string {
 	if x != nil {
-		return x.xxx_hidden_Commit
+		return x.Commit
 	}
 	return ""
 }
 
 func (x *ImportModuleRef) GetPackageName() string {
 	if x != nil {
-		return x.xxx_hidden_PackageName
+		return x.PackageName
 	}
 	return ""
 }
 
 func (x *ImportModuleRef) SetRemote(v string) {
-	x.xxx_hidden_Remote = v
+	x.Remote = v
 }
 
 func (x *ImportModuleRef) SetOwner(v string) {
-	x.xxx_hidden_Owner = v
+	x.Owner = v
 }
 
 func (x *ImportModuleRef) SetRepository(v string) {
-	x.xxx_hidden_Repository = v
+	x.Repository = v
 }
 
 func (x *ImportModuleRef) SetCommit(v string) {
-	x.xxx_hidden_Commit = v
+	x.Commit = v
 }
 
 func (x *ImportModuleRef) SetPackageName(v string) {
-	x.xxx_hidden_PackageName = v
+	x.PackageName = v
 }
 
 type ImportModuleRef_builder struct {
@@ -2728,31 +2799,46 @@ func (b0 ImportModuleRef_builder) Build() *ImportModuleRef {
 	m0 := &ImportModuleRef{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Remote = b.Remote
-	x.xxx_hidden_Owner = b.Owner
-	x.xxx_hidden_Repository = b.Repository
-	x.xxx_hidden_Commit = b.Commit
-	x.xxx_hidden_PackageName = b.PackageName
+	x.Remote = b.Remote
+	x.Owner = b.Owner
+	x.Repository = b.Repository
+	x.Commit = b.Commit
+	x.PackageName = b.PackageName
 	return m0
 }
 
 // Message provides information for the documentation of a protobuf message.
 type Message struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_NestedName           string                 `protobuf:"bytes,2,opt,name=nested_name,json=nestedName,proto3" json:"nested_name,omitempty"`
-	xxx_hidden_FullName             string                 `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	xxx_hidden_Comments             string                 `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_FilePath             string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	xxx_hidden_IsMapEntry           bool                   `protobuf:"varint,6,opt,name=is_map_entry,json=isMapEntry,proto3" json:"is_map_entry,omitempty"`
-	xxx_hidden_Fields               *[]*MessageField       `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
-	xxx_hidden_Location             *Location              `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty"`
-	xxx_hidden_MessageExtensions    *[]*Field              `protobuf:"bytes,9,rep,name=message_extensions,json=messageExtensions,proto3" json:"message_extensions,omitempty"`
-	xxx_hidden_ImplicitlyDeprecated bool                   `protobuf:"varint,11,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	xxx_hidden_Options              *[]*FieldLiteral       `protobuf:"bytes,12,rep,name=options,proto3" json:"options,omitempty"`
-	xxx_hidden_MessageOptions       *MessageOptions        `protobuf:"bytes,10,opt,name=message_options,json=messageOptions,proto3" json:"message_options,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// nested_name includes the nested types for a given type definition.
+	NestedName string `protobuf:"bytes,2,opt,name=nested_name,json=nestedName,proto3" json:"nested_name,omitempty"`
+	// full_name includes the package name and nested types for a given type definition.
+	FullName string `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	// comments is derived from the leading comments of a given message.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,4,opt,name=comments,proto3" json:"comments,omitempty"`
+	// file_path is the normalized path of the file containing the message.
+	FilePath          string          `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	IsMapEntry        bool            `protobuf:"varint,6,opt,name=is_map_entry,json=isMapEntry,proto3" json:"is_map_entry,omitempty"`
+	Fields            []*MessageField `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
+	Location          *Location       `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty"`
+	MessageExtensions []*Field        `protobuf:"bytes,9,rep,name=message_extensions,json=messageExtensions,proto3" json:"message_extensions,omitempty"`
+	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+	ImplicitlyDeprecated bool `protobuf:"varint,11,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the message. This is a super-set of
+	// message_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	// // This supersedes message_options.
+	Options []*FieldLiteral `protobuf:"bytes,12,rep,name=options,proto3" json:"options,omitempty"`
+	// Use options instead.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
+	MessageOptions *MessageOptions `protobuf:"bytes,10,opt,name=message_options,json=messageOptions,proto3" json:"message_options,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Message) Reset() {
@@ -2782,83 +2868,77 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 func (x *Message) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Message) GetNestedName() string {
 	if x != nil {
-		return x.xxx_hidden_NestedName
+		return x.NestedName
 	}
 	return ""
 }
 
 func (x *Message) GetFullName() string {
 	if x != nil {
-		return x.xxx_hidden_FullName
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *Message) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *Message) GetFilePath() string {
 	if x != nil {
-		return x.xxx_hidden_FilePath
+		return x.FilePath
 	}
 	return ""
 }
 
 func (x *Message) GetIsMapEntry() bool {
 	if x != nil {
-		return x.xxx_hidden_IsMapEntry
+		return x.IsMapEntry
 	}
 	return false
 }
 
 func (x *Message) GetFields() []*MessageField {
 	if x != nil {
-		if x.xxx_hidden_Fields != nil {
-			return *x.xxx_hidden_Fields
-		}
+		return x.Fields
 	}
 	return nil
 }
 
 func (x *Message) GetLocation() *Location {
 	if x != nil {
-		return x.xxx_hidden_Location
+		return x.Location
 	}
 	return nil
 }
 
 func (x *Message) GetMessageExtensions() []*Field {
 	if x != nil {
-		if x.xxx_hidden_MessageExtensions != nil {
-			return *x.xxx_hidden_MessageExtensions
-		}
+		return x.MessageExtensions
 	}
 	return nil
 }
 
 func (x *Message) GetImplicitlyDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_ImplicitlyDeprecated
+		return x.ImplicitlyDeprecated
 	}
 	return false
 }
 
 func (x *Message) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
@@ -2866,65 +2946,65 @@ func (x *Message) GetOptions() []*FieldLiteral {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Message) GetMessageOptions() *MessageOptions {
 	if x != nil {
-		return x.xxx_hidden_MessageOptions
+		return x.MessageOptions
 	}
 	return nil
 }
 
 func (x *Message) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Message) SetNestedName(v string) {
-	x.xxx_hidden_NestedName = v
+	x.NestedName = v
 }
 
 func (x *Message) SetFullName(v string) {
-	x.xxx_hidden_FullName = v
+	x.FullName = v
 }
 
 func (x *Message) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *Message) SetFilePath(v string) {
-	x.xxx_hidden_FilePath = v
+	x.FilePath = v
 }
 
 func (x *Message) SetIsMapEntry(v bool) {
-	x.xxx_hidden_IsMapEntry = v
+	x.IsMapEntry = v
 }
 
 func (x *Message) SetFields(v []*MessageField) {
-	x.xxx_hidden_Fields = &v
+	x.Fields = v
 }
 
 func (x *Message) SetLocation(v *Location) {
-	x.xxx_hidden_Location = v
+	x.Location = v
 }
 
 func (x *Message) SetMessageExtensions(v []*Field) {
-	x.xxx_hidden_MessageExtensions = &v
+	x.MessageExtensions = v
 }
 
 func (x *Message) SetImplicitlyDeprecated(v bool) {
-	x.xxx_hidden_ImplicitlyDeprecated = v
+	x.ImplicitlyDeprecated = v
 }
 
 func (x *Message) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Message) SetMessageOptions(v *MessageOptions) {
-	x.xxx_hidden_MessageOptions = v
+	x.MessageOptions = v
 }
 
 func (x *Message) HasLocation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Location != nil
+	return x.Location != nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -2932,16 +3012,16 @@ func (x *Message) HasMessageOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MessageOptions != nil
+	return x.MessageOptions != nil
 }
 
 func (x *Message) ClearLocation() {
-	x.xxx_hidden_Location = nil
+	x.Location = nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Message) ClearMessageOptions() {
-	x.xxx_hidden_MessageOptions = nil
+	x.MessageOptions = nil
 }
 
 type Message_builder struct {
@@ -2980,27 +3060,31 @@ func (b0 Message_builder) Build() *Message {
 	m0 := &Message{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_NestedName = b.NestedName
-	x.xxx_hidden_FullName = b.FullName
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_FilePath = b.FilePath
-	x.xxx_hidden_IsMapEntry = b.IsMapEntry
-	x.xxx_hidden_Fields = &b.Fields
-	x.xxx_hidden_Location = b.Location
-	x.xxx_hidden_MessageExtensions = &b.MessageExtensions
-	x.xxx_hidden_ImplicitlyDeprecated = b.ImplicitlyDeprecated
-	x.xxx_hidden_Options = &b.Options
-	x.xxx_hidden_MessageOptions = b.MessageOptions
+	x.Name = b.Name
+	x.NestedName = b.NestedName
+	x.FullName = b.FullName
+	x.Comments = b.Comments
+	x.FilePath = b.FilePath
+	x.IsMapEntry = b.IsMapEntry
+	x.Fields = b.Fields
+	x.Location = b.Location
+	x.MessageExtensions = b.MessageExtensions
+	x.ImplicitlyDeprecated = b.ImplicitlyDeprecated
+	x.Options = b.Options
+	x.MessageOptions = b.MessageOptions
 	return m0
 }
 
 // MessageField can be either a single field or a oneof set of fields.
 type MessageField struct {
-	state                   protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_MessageField isMessageField_MessageField `protobuf_oneof:"message_field"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to MessageField:
+	//
+	//	*MessageField_Field
+	//	*MessageField_Oneof
+	MessageField  isMessageField_MessageField `protobuf_oneof:"message_field"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MessageField) Reset() {
@@ -3028,9 +3112,16 @@ func (x *MessageField) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *MessageField) GetMessageField() isMessageField_MessageField {
+	if x != nil {
+		return x.MessageField
+	}
+	return nil
+}
+
 func (x *MessageField) GetField() *Field {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageField.(*messageField_Field); ok {
+		if x, ok := x.MessageField.(*MessageField_Field); ok {
 			return x.Field
 		}
 	}
@@ -3039,7 +3130,7 @@ func (x *MessageField) GetField() *Field {
 
 func (x *MessageField) GetOneof() *Oneof {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageField.(*messageField_Oneof); ok {
+		if x, ok := x.MessageField.(*MessageField_Oneof); ok {
 			return x.Oneof
 		}
 	}
@@ -3048,32 +3139,32 @@ func (x *MessageField) GetOneof() *Oneof {
 
 func (x *MessageField) SetField(v *Field) {
 	if v == nil {
-		x.xxx_hidden_MessageField = nil
+		x.MessageField = nil
 		return
 	}
-	x.xxx_hidden_MessageField = &messageField_Field{v}
+	x.MessageField = &MessageField_Field{v}
 }
 
 func (x *MessageField) SetOneof(v *Oneof) {
 	if v == nil {
-		x.xxx_hidden_MessageField = nil
+		x.MessageField = nil
 		return
 	}
-	x.xxx_hidden_MessageField = &messageField_Oneof{v}
+	x.MessageField = &MessageField_Oneof{v}
 }
 
 func (x *MessageField) HasMessageField() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MessageField != nil
+	return x.MessageField != nil
 }
 
 func (x *MessageField) HasField() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageField.(*messageField_Field)
+	_, ok := x.MessageField.(*MessageField_Field)
 	return ok
 }
 
@@ -3081,23 +3172,23 @@ func (x *MessageField) HasOneof() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageField.(*messageField_Oneof)
+	_, ok := x.MessageField.(*MessageField_Oneof)
 	return ok
 }
 
 func (x *MessageField) ClearMessageField() {
-	x.xxx_hidden_MessageField = nil
+	x.MessageField = nil
 }
 
 func (x *MessageField) ClearField() {
-	if _, ok := x.xxx_hidden_MessageField.(*messageField_Field); ok {
-		x.xxx_hidden_MessageField = nil
+	if _, ok := x.MessageField.(*MessageField_Field); ok {
+		x.MessageField = nil
 	}
 }
 
 func (x *MessageField) ClearOneof() {
-	if _, ok := x.xxx_hidden_MessageField.(*messageField_Oneof); ok {
-		x.xxx_hidden_MessageField = nil
+	if _, ok := x.MessageField.(*MessageField_Oneof); ok {
+		x.MessageField = nil
 	}
 }
 
@@ -3109,10 +3200,10 @@ func (x *MessageField) WhichMessageField() case_MessageField_MessageField {
 	if x == nil {
 		return MessageField_MessageField_not_set_case
 	}
-	switch x.xxx_hidden_MessageField.(type) {
-	case *messageField_Field:
+	switch x.MessageField.(type) {
+	case *MessageField_Field:
 		return MessageField_Field_case
-	case *messageField_Oneof:
+	case *MessageField_Oneof:
 		return MessageField_Oneof_case
 	default:
 		return MessageField_MessageField_not_set_case
@@ -3122,10 +3213,10 @@ func (x *MessageField) WhichMessageField() case_MessageField_MessageField {
 type MessageField_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_MessageField:
+	// Fields of oneof MessageField:
 	Field *Field
 	Oneof *Oneof
-	// -- end of xxx_hidden_MessageField
+	// -- end of MessageField
 }
 
 func (b0 MessageField_builder) Build() *MessageField {
@@ -3133,10 +3224,10 @@ func (b0 MessageField_builder) Build() *MessageField {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Field != nil {
-		x.xxx_hidden_MessageField = &messageField_Field{b.Field}
+		x.MessageField = &MessageField_Field{b.Field}
 	}
 	if b.Oneof != nil {
-		x.xxx_hidden_MessageField = &messageField_Oneof{b.Oneof}
+		x.MessageField = &MessageField_Oneof{b.Oneof}
 	}
 	return m0
 }
@@ -3155,26 +3246,26 @@ type isMessageField_MessageField interface {
 	isMessageField_MessageField()
 }
 
-type messageField_Field struct {
+type MessageField_Field struct {
 	Field *Field `protobuf:"bytes,1,opt,name=field,proto3,oneof"`
 }
 
-type messageField_Oneof struct {
+type MessageField_Oneof struct {
 	Oneof *Oneof `protobuf:"bytes,2,opt,name=oneof,proto3,oneof"`
 }
 
-func (*messageField_Field) isMessageField_MessageField() {}
+func (*MessageField_Field) isMessageField_MessageField() {}
 
-func (*messageField_Oneof) isMessageField_MessageField() {}
+func (*MessageField_Oneof) isMessageField_MessageField() {}
 
 // MessageOptions provides information for the documentation of options for a message.
 //
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 type MessageOptions struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deprecated bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deprecated    bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MessageOptions) Reset() {
@@ -3204,13 +3295,13 @@ func (x *MessageOptions) ProtoReflect() protoreflect.Message {
 
 func (x *MessageOptions) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *MessageOptions) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -3224,18 +3315,21 @@ func (b0 MessageOptions_builder) Build() *MessageOptions {
 	m0 := &MessageOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deprecated = b.Deprecated
+	x.Deprecated = b.Deprecated
 	return m0
 }
 
 // Oneof represents a oneof set of fields.
 type Oneof struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Fields  *[]*Field              `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`
-	xxx_hidden_Options *[]*FieldLiteral       `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Fields []*Field               `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`
+	// All options that are present on the OneOf.
+	// This is a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	Options       []*FieldLiteral `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Oneof) Reset() {
@@ -3265,39 +3359,35 @@ func (x *Oneof) ProtoReflect() protoreflect.Message {
 
 func (x *Oneof) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Oneof) GetFields() []*Field {
 	if x != nil {
-		if x.xxx_hidden_Fields != nil {
-			return *x.xxx_hidden_Fields
-		}
+		return x.Fields
 	}
 	return nil
 }
 
 func (x *Oneof) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
 
 func (x *Oneof) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Oneof) SetFields(v []*Field) {
-	x.xxx_hidden_Fields = &v
+	x.Fields = v
 }
 
 func (x *Oneof) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 type Oneof_builder struct {
@@ -3315,28 +3405,47 @@ func (b0 Oneof_builder) Build() *Oneof {
 	m0 := &Oneof{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Fields = &b.Fields
-	x.xxx_hidden_Options = &b.Options
+	x.Name = b.Name
+	x.Fields = b.Fields
+	x.Options = b.Options
 	return m0
 }
 
 // Field provides information for the documentation of a message field.
 type Field struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Comments        string                 `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_Label           string                 `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
-	xxx_hidden_NestedType      string                 `protobuf:"bytes,4,opt,name=nested_type,json=nestedType,proto3" json:"nested_type,omitempty"`
-	xxx_hidden_FullType        string                 `protobuf:"bytes,5,opt,name=full_type,json=fullType,proto3" json:"full_type,omitempty"`
-	xxx_hidden_Tag             uint32                 `protobuf:"varint,6,opt,name=tag,proto3" json:"tag,omitempty"`
-	xxx_hidden_MapEntry        *MapEntry              `protobuf:"bytes,7,opt,name=map_entry,json=mapEntry,proto3" json:"map_entry,omitempty"`
-	xxx_hidden_ImportModuleRef *ImportModuleRef       `protobuf:"bytes,8,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
-	xxx_hidden_Extendee        string                 `protobuf:"bytes,9,opt,name=extendee,proto3" json:"extendee,omitempty"`
-	xxx_hidden_Options         *[]*FieldLiteral       `protobuf:"bytes,11,rep,name=options,proto3" json:"options,omitempty"`
-	xxx_hidden_FieldOptions    *FieldOptions          `protobuf:"bytes,10,opt,name=field_options,json=fieldOptions,proto3" json:"field_options,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// comments is derived from the leading comments of a given message field.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
+	Label    string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	// string representation of the nested name of the field type, which includes nested definitions.
+	NestedType string `protobuf:"bytes,4,opt,name=nested_type,json=nestedType,proto3" json:"nested_type,omitempty"`
+	// string representation of the full name of the field type, which includes package name
+	// and nested definitions.
+	FullType string `protobuf:"bytes,5,opt,name=full_type,json=fullType,proto3" json:"full_type,omitempty"`
+	Tag      uint32 `protobuf:"varint,6,opt,name=tag,proto3" json:"tag,omitempty"`
+	// MapEntry is present if the field is a map type.
+	MapEntry *MapEntry `protobuf:"bytes,7,opt,name=map_entry,json=mapEntry,proto3" json:"map_entry,omitempty"`
+	// import_module_ref is included if the field is an imported type.
+	// It contains all the metadata for the import.
+	ImportModuleRef *ImportModuleRef `protobuf:"bytes,8,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
+	// Extendee is the name of the type that is being ext if the field is an extension.
+	// This is an empty string for fields that are not extenions.
+	Extendee string `protobuf:"bytes,9,opt,name=extendee,proto3" json:"extendee,omitempty"`
+	// All options that are present on the field. This is a super-set of
+	// field_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	// This supersedes field_options.
+	Options []*FieldLiteral `protobuf:"bytes,11,rep,name=options,proto3" json:"options,omitempty"`
+	// Use options instead.
+	//
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
+	FieldOptions  *FieldOptions `protobuf:"bytes,10,opt,name=field_options,json=fieldOptions,proto3" json:"field_options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Field) Reset() {
@@ -3366,72 +3475,70 @@ func (x *Field) ProtoReflect() protoreflect.Message {
 
 func (x *Field) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Field) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *Field) GetLabel() string {
 	if x != nil {
-		return x.xxx_hidden_Label
+		return x.Label
 	}
 	return ""
 }
 
 func (x *Field) GetNestedType() string {
 	if x != nil {
-		return x.xxx_hidden_NestedType
+		return x.NestedType
 	}
 	return ""
 }
 
 func (x *Field) GetFullType() string {
 	if x != nil {
-		return x.xxx_hidden_FullType
+		return x.FullType
 	}
 	return ""
 }
 
 func (x *Field) GetTag() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Tag
+		return x.Tag
 	}
 	return 0
 }
 
 func (x *Field) GetMapEntry() *MapEntry {
 	if x != nil {
-		return x.xxx_hidden_MapEntry
+		return x.MapEntry
 	}
 	return nil
 }
 
 func (x *Field) GetImportModuleRef() *ImportModuleRef {
 	if x != nil {
-		return x.xxx_hidden_ImportModuleRef
+		return x.ImportModuleRef
 	}
 	return nil
 }
 
 func (x *Field) GetExtendee() string {
 	if x != nil {
-		return x.xxx_hidden_Extendee
+		return x.Extendee
 	}
 	return ""
 }
 
 func (x *Field) GetOptions() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Options != nil {
-			return *x.xxx_hidden_Options
-		}
+		return x.Options
 	}
 	return nil
 }
@@ -3439,68 +3546,68 @@ func (x *Field) GetOptions() []*FieldLiteral {
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Field) GetFieldOptions() *FieldOptions {
 	if x != nil {
-		return x.xxx_hidden_FieldOptions
+		return x.FieldOptions
 	}
 	return nil
 }
 
 func (x *Field) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *Field) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *Field) SetLabel(v string) {
-	x.xxx_hidden_Label = v
+	x.Label = v
 }
 
 func (x *Field) SetNestedType(v string) {
-	x.xxx_hidden_NestedType = v
+	x.NestedType = v
 }
 
 func (x *Field) SetFullType(v string) {
-	x.xxx_hidden_FullType = v
+	x.FullType = v
 }
 
 func (x *Field) SetTag(v uint32) {
-	x.xxx_hidden_Tag = v
+	x.Tag = v
 }
 
 func (x *Field) SetMapEntry(v *MapEntry) {
-	x.xxx_hidden_MapEntry = v
+	x.MapEntry = v
 }
 
 func (x *Field) SetImportModuleRef(v *ImportModuleRef) {
-	x.xxx_hidden_ImportModuleRef = v
+	x.ImportModuleRef = v
 }
 
 func (x *Field) SetExtendee(v string) {
-	x.xxx_hidden_Extendee = v
+	x.Extendee = v
 }
 
 func (x *Field) SetOptions(v []*FieldLiteral) {
-	x.xxx_hidden_Options = &v
+	x.Options = v
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Field) SetFieldOptions(v *FieldOptions) {
-	x.xxx_hidden_FieldOptions = v
+	x.FieldOptions = v
 }
 
 func (x *Field) HasMapEntry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MapEntry != nil
+	return x.MapEntry != nil
 }
 
 func (x *Field) HasImportModuleRef() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImportModuleRef != nil
+	return x.ImportModuleRef != nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -3508,20 +3615,20 @@ func (x *Field) HasFieldOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_FieldOptions != nil
+	return x.FieldOptions != nil
 }
 
 func (x *Field) ClearMapEntry() {
-	x.xxx_hidden_MapEntry = nil
+	x.MapEntry = nil
 }
 
 func (x *Field) ClearImportModuleRef() {
-	x.xxx_hidden_ImportModuleRef = nil
+	x.ImportModuleRef = nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 func (x *Field) ClearFieldOptions() {
-	x.xxx_hidden_FieldOptions = nil
+	x.FieldOptions = nil
 }
 
 type Field_builder struct {
@@ -3563,17 +3670,17 @@ func (b0 Field_builder) Build() *Field {
 	m0 := &Field{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_Label = b.Label
-	x.xxx_hidden_NestedType = b.NestedType
-	x.xxx_hidden_FullType = b.FullType
-	x.xxx_hidden_Tag = b.Tag
-	x.xxx_hidden_MapEntry = b.MapEntry
-	x.xxx_hidden_ImportModuleRef = b.ImportModuleRef
-	x.xxx_hidden_Extendee = b.Extendee
-	x.xxx_hidden_Options = &b.Options
-	x.xxx_hidden_FieldOptions = b.FieldOptions
+	x.Name = b.Name
+	x.Comments = b.Comments
+	x.Label = b.Label
+	x.NestedType = b.NestedType
+	x.FullType = b.FullType
+	x.Tag = b.Tag
+	x.MapEntry = b.MapEntry
+	x.ImportModuleRef = b.ImportModuleRef
+	x.Extendee = b.Extendee
+	x.Options = b.Options
+	x.FieldOptions = b.FieldOptions
 	return m0
 }
 
@@ -3581,15 +3688,15 @@ func (b0 Field_builder) Build() *Field {
 //
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
 type FieldOptions struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deprecated  bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	xxx_hidden_Packed      bool                   `protobuf:"varint,2,opt,name=packed,proto3,oneof" json:"packed,omitempty"`
-	xxx_hidden_Ctype       int32                  `protobuf:"varint,3,opt,name=ctype,proto3" json:"ctype,omitempty"`
-	xxx_hidden_Jstype      int32                  `protobuf:"varint,4,opt,name=jstype,proto3" json:"jstype,omitempty"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deprecated bool                   `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	Packed     *bool                  `protobuf:"varint,2,opt,name=packed,proto3,oneof" json:"packed,omitempty"`
+	// ctype holds a value of the enumeration `google.protobuf.FieldOptions.CType.
+	Ctype int32 `protobuf:"varint,3,opt,name=ctype,proto3" json:"ctype,omitempty"`
+	// jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
+	Jstype        int32 `protobuf:"varint,4,opt,name=jstype,proto3" json:"jstype,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FieldOptions) Reset() {
@@ -3619,59 +3726,57 @@ func (x *FieldOptions) ProtoReflect() protoreflect.Message {
 
 func (x *FieldOptions) GetDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_Deprecated
+		return x.Deprecated
 	}
 	return false
 }
 
 func (x *FieldOptions) GetPacked() bool {
-	if x != nil {
-		return x.xxx_hidden_Packed
+	if x != nil && x.Packed != nil {
+		return *x.Packed
 	}
 	return false
 }
 
 func (x *FieldOptions) GetCtype() int32 {
 	if x != nil {
-		return x.xxx_hidden_Ctype
+		return x.Ctype
 	}
 	return 0
 }
 
 func (x *FieldOptions) GetJstype() int32 {
 	if x != nil {
-		return x.xxx_hidden_Jstype
+		return x.Jstype
 	}
 	return 0
 }
 
 func (x *FieldOptions) SetDeprecated(v bool) {
-	x.xxx_hidden_Deprecated = v
+	x.Deprecated = v
 }
 
 func (x *FieldOptions) SetPacked(v bool) {
-	x.xxx_hidden_Packed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Packed = &v
 }
 
 func (x *FieldOptions) SetCtype(v int32) {
-	x.xxx_hidden_Ctype = v
+	x.Ctype = v
 }
 
 func (x *FieldOptions) SetJstype(v int32) {
-	x.xxx_hidden_Jstype = v
+	x.Jstype = v
 }
 
 func (x *FieldOptions) HasPacked() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Packed != nil
 }
 
 func (x *FieldOptions) ClearPacked() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Packed = false
+	x.Packed = nil
 }
 
 // Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/doc.proto.
@@ -3690,26 +3795,30 @@ func (b0 FieldOptions_builder) Build() *FieldOptions {
 	m0 := &FieldOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Deprecated = b.Deprecated
-	if b.Packed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Packed = *b.Packed
-	}
-	x.xxx_hidden_Ctype = b.Ctype
-	x.xxx_hidden_Jstype = b.Jstype
+	x.Deprecated = b.Deprecated
+	x.Packed = b.Packed
+	x.Ctype = b.Ctype
+	x.Jstype = b.Jstype
 	return m0
 }
 
 // FieldLiteral represents a field and its value. It can be used to model descriptor options.
 type FieldLiteral struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	xxx_hidden_Tag             int32                  `protobuf:"varint,2,opt,name=tag,proto3" json:"tag,omitempty"`
-	xxx_hidden_FieldType       FieldType              `protobuf:"varint,3,opt,name=field_type,json=fieldType,proto3,enum=buf.alpha.registry.v1alpha1.FieldType" json:"field_type,omitempty"`
-	xxx_hidden_Value           *LiteralValue          `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
-	xxx_hidden_ImportModuleRef *ImportModuleRef       `protobuf:"bytes,5,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// When is_extension is true, name is the fully-qualified name of the
+	// extension. Otherwise, it is the simple name of the field.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The unique field number associated with the field.
+	Tag int32 `protobuf:"varint,2,opt,name=tag,proto3" json:"tag,omitempty"`
+	// Indicates whether this is an extension or not.
+	FieldType FieldType `protobuf:"varint,3,opt,name=field_type,json=fieldType,proto3,enum=buf.alpha.registry.v1alpha1.FieldType" json:"field_type,omitempty"`
+	// The field's value.
+	Value *LiteralValue `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
+	// This is the module where the extension is defined if the field type
+	// is extension or the module where the messages is defined for field type any.
+	ImportModuleRef *ImportModuleRef `protobuf:"bytes,5,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *FieldLiteral) Reset() {
@@ -3739,79 +3848,79 @@ func (x *FieldLiteral) ProtoReflect() protoreflect.Message {
 
 func (x *FieldLiteral) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *FieldLiteral) GetTag() int32 {
 	if x != nil {
-		return x.xxx_hidden_Tag
+		return x.Tag
 	}
 	return 0
 }
 
 func (x *FieldLiteral) GetFieldType() FieldType {
 	if x != nil {
-		return x.xxx_hidden_FieldType
+		return x.FieldType
 	}
 	return FieldType_FIELD_TYPE_UNSPECIFIED
 }
 
 func (x *FieldLiteral) GetValue() *LiteralValue {
 	if x != nil {
-		return x.xxx_hidden_Value
+		return x.Value
 	}
 	return nil
 }
 
 func (x *FieldLiteral) GetImportModuleRef() *ImportModuleRef {
 	if x != nil {
-		return x.xxx_hidden_ImportModuleRef
+		return x.ImportModuleRef
 	}
 	return nil
 }
 
 func (x *FieldLiteral) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *FieldLiteral) SetTag(v int32) {
-	x.xxx_hidden_Tag = v
+	x.Tag = v
 }
 
 func (x *FieldLiteral) SetFieldType(v FieldType) {
-	x.xxx_hidden_FieldType = v
+	x.FieldType = v
 }
 
 func (x *FieldLiteral) SetValue(v *LiteralValue) {
-	x.xxx_hidden_Value = v
+	x.Value = v
 }
 
 func (x *FieldLiteral) SetImportModuleRef(v *ImportModuleRef) {
-	x.xxx_hidden_ImportModuleRef = v
+	x.ImportModuleRef = v
 }
 
 func (x *FieldLiteral) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Value != nil
+	return x.Value != nil
 }
 
 func (x *FieldLiteral) HasImportModuleRef() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImportModuleRef != nil
+	return x.ImportModuleRef != nil
 }
 
 func (x *FieldLiteral) ClearValue() {
-	x.xxx_hidden_Value = nil
+	x.Value = nil
 }
 
 func (x *FieldLiteral) ClearImportModuleRef() {
-	x.xxx_hidden_ImportModuleRef = nil
+	x.ImportModuleRef = nil
 }
 
 type FieldLiteral_builder struct {
@@ -3835,20 +3944,22 @@ func (b0 FieldLiteral_builder) Build() *FieldLiteral {
 	m0 := &FieldLiteral{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Tag = b.Tag
-	x.xxx_hidden_FieldType = b.FieldType
-	x.xxx_hidden_Value = b.Value
-	x.xxx_hidden_ImportModuleRef = b.ImportModuleRef
+	x.Name = b.Name
+	x.Tag = b.Tag
+	x.FieldType = b.FieldType
+	x.Value = b.Value
+	x.ImportModuleRef = b.ImportModuleRef
 	return m0
 }
 
 // MessageLiteral represents an option value for a type that is a message.
 type MessageLiteral struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Fields *[]*FieldLiteral       `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Map of field names to value. Extension field names will be in the form:
+	// [fully.qualified.extension.Name].
+	Fields        []*FieldLiteral `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MessageLiteral) Reset() {
@@ -3878,15 +3989,13 @@ func (x *MessageLiteral) ProtoReflect() protoreflect.Message {
 
 func (x *MessageLiteral) GetFields() []*FieldLiteral {
 	if x != nil {
-		if x.xxx_hidden_Fields != nil {
-			return *x.xxx_hidden_Fields
-		}
+		return x.Fields
 	}
 	return nil
 }
 
 func (x *MessageLiteral) SetFields(v []*FieldLiteral) {
-	x.xxx_hidden_Fields = &v
+	x.Fields = v
 }
 
 type MessageLiteral_builder struct {
@@ -3901,7 +4010,7 @@ func (b0 MessageLiteral_builder) Build() *MessageLiteral {
 	m0 := &MessageLiteral{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Fields = &b.Fields
+	x.Fields = b.Fields
 	return m0
 }
 
@@ -3909,10 +4018,10 @@ func (b0 MessageLiteral_builder) Build() *MessageLiteral {
 // Maps are also represented using an ArrayLiteral, where each map entry is a MessageLiteral
 // that contains a key and value field.
 type ArrayLiteral struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Elements *[]*LiteralValue       `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Elements      []*LiteralValue        `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ArrayLiteral) Reset() {
@@ -3942,15 +4051,13 @@ func (x *ArrayLiteral) ProtoReflect() protoreflect.Message {
 
 func (x *ArrayLiteral) GetElements() []*LiteralValue {
 	if x != nil {
-		if x.xxx_hidden_Elements != nil {
-			return *x.xxx_hidden_Elements
-		}
+		return x.Elements
 	}
 	return nil
 }
 
 func (x *ArrayLiteral) SetElements(v []*LiteralValue) {
-	x.xxx_hidden_Elements = &v
+	x.Elements = v
 }
 
 type ArrayLiteral_builder struct {
@@ -3963,17 +4070,27 @@ func (b0 ArrayLiteral_builder) Build() *ArrayLiteral {
 	m0 := &ArrayLiteral{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Elements = &b.Elements
+	x.Elements = b.Elements
 	return m0
 }
 
 // LiteralValue represents the actual value of the extension.
 type LiteralValue struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Value    isLiteralValue_Value   `protobuf_oneof:"value"`
-	xxx_hidden_Comments string                 `protobuf:"bytes,10,opt,name=comments,proto3" json:"comments,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Value:
+	//
+	//	*LiteralValue_StringValue
+	//	*LiteralValue_IntValue
+	//	*LiteralValue_UintValue
+	//	*LiteralValue_DoubleValue
+	//	*LiteralValue_BoolValue
+	//	*LiteralValue_EnumValueNameValue
+	//	*LiteralValue_ArrayValue
+	//	*LiteralValue_MessageValue
+	Value         isLiteralValue_Value `protobuf_oneof:"value"`
+	Comments      string               `protobuf:"bytes,10,opt,name=comments,proto3" json:"comments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LiteralValue) Reset() {
@@ -4001,9 +4118,16 @@ func (x *LiteralValue) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *LiteralValue) GetValue() isLiteralValue_Value {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
 func (x *LiteralValue) GetStringValue() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_StringValue); ok {
+		if x, ok := x.Value.(*LiteralValue_StringValue); ok {
 			return x.StringValue
 		}
 	}
@@ -4012,7 +4136,7 @@ func (x *LiteralValue) GetStringValue() string {
 
 func (x *LiteralValue) GetIntValue() int64 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_IntValue); ok {
+		if x, ok := x.Value.(*LiteralValue_IntValue); ok {
 			return x.IntValue
 		}
 	}
@@ -4021,7 +4145,7 @@ func (x *LiteralValue) GetIntValue() int64 {
 
 func (x *LiteralValue) GetUintValue() uint64 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_UintValue); ok {
+		if x, ok := x.Value.(*LiteralValue_UintValue); ok {
 			return x.UintValue
 		}
 	}
@@ -4030,7 +4154,7 @@ func (x *LiteralValue) GetUintValue() uint64 {
 
 func (x *LiteralValue) GetDoubleValue() float64 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_DoubleValue); ok {
+		if x, ok := x.Value.(*LiteralValue_DoubleValue); ok {
 			return x.DoubleValue
 		}
 	}
@@ -4039,7 +4163,7 @@ func (x *LiteralValue) GetDoubleValue() float64 {
 
 func (x *LiteralValue) GetBoolValue() bool {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_BoolValue); ok {
+		if x, ok := x.Value.(*LiteralValue_BoolValue); ok {
 			return x.BoolValue
 		}
 	}
@@ -4048,7 +4172,7 @@ func (x *LiteralValue) GetBoolValue() bool {
 
 func (x *LiteralValue) GetEnumValueNameValue() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_EnumValueNameValue); ok {
+		if x, ok := x.Value.(*LiteralValue_EnumValueNameValue); ok {
 			return x.EnumValueNameValue
 		}
 	}
@@ -4057,7 +4181,7 @@ func (x *LiteralValue) GetEnumValueNameValue() string {
 
 func (x *LiteralValue) GetArrayValue() *ArrayLiteral {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_ArrayValue); ok {
+		if x, ok := x.Value.(*LiteralValue_ArrayValue); ok {
 			return x.ArrayValue
 		}
 	}
@@ -4066,7 +4190,7 @@ func (x *LiteralValue) GetArrayValue() *ArrayLiteral {
 
 func (x *LiteralValue) GetMessageValue() *MessageLiteral {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Value.(*literalValue_MessageValue); ok {
+		if x, ok := x.Value.(*LiteralValue_MessageValue); ok {
 			return x.MessageValue
 		}
 	}
@@ -4075,67 +4199,67 @@ func (x *LiteralValue) GetMessageValue() *MessageLiteral {
 
 func (x *LiteralValue) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *LiteralValue) SetStringValue(v string) {
-	x.xxx_hidden_Value = &literalValue_StringValue{v}
+	x.Value = &LiteralValue_StringValue{v}
 }
 
 func (x *LiteralValue) SetIntValue(v int64) {
-	x.xxx_hidden_Value = &literalValue_IntValue{v}
+	x.Value = &LiteralValue_IntValue{v}
 }
 
 func (x *LiteralValue) SetUintValue(v uint64) {
-	x.xxx_hidden_Value = &literalValue_UintValue{v}
+	x.Value = &LiteralValue_UintValue{v}
 }
 
 func (x *LiteralValue) SetDoubleValue(v float64) {
-	x.xxx_hidden_Value = &literalValue_DoubleValue{v}
+	x.Value = &LiteralValue_DoubleValue{v}
 }
 
 func (x *LiteralValue) SetBoolValue(v bool) {
-	x.xxx_hidden_Value = &literalValue_BoolValue{v}
+	x.Value = &LiteralValue_BoolValue{v}
 }
 
 func (x *LiteralValue) SetEnumValueNameValue(v string) {
-	x.xxx_hidden_Value = &literalValue_EnumValueNameValue{v}
+	x.Value = &LiteralValue_EnumValueNameValue{v}
 }
 
 func (x *LiteralValue) SetArrayValue(v *ArrayLiteral) {
 	if v == nil {
-		x.xxx_hidden_Value = nil
+		x.Value = nil
 		return
 	}
-	x.xxx_hidden_Value = &literalValue_ArrayValue{v}
+	x.Value = &LiteralValue_ArrayValue{v}
 }
 
 func (x *LiteralValue) SetMessageValue(v *MessageLiteral) {
 	if v == nil {
-		x.xxx_hidden_Value = nil
+		x.Value = nil
 		return
 	}
-	x.xxx_hidden_Value = &literalValue_MessageValue{v}
+	x.Value = &LiteralValue_MessageValue{v}
 }
 
 func (x *LiteralValue) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *LiteralValue) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Value != nil
+	return x.Value != nil
 }
 
 func (x *LiteralValue) HasStringValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_StringValue)
+	_, ok := x.Value.(*LiteralValue_StringValue)
 	return ok
 }
 
@@ -4143,7 +4267,7 @@ func (x *LiteralValue) HasIntValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_IntValue)
+	_, ok := x.Value.(*LiteralValue_IntValue)
 	return ok
 }
 
@@ -4151,7 +4275,7 @@ func (x *LiteralValue) HasUintValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_UintValue)
+	_, ok := x.Value.(*LiteralValue_UintValue)
 	return ok
 }
 
@@ -4159,7 +4283,7 @@ func (x *LiteralValue) HasDoubleValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_DoubleValue)
+	_, ok := x.Value.(*LiteralValue_DoubleValue)
 	return ok
 }
 
@@ -4167,7 +4291,7 @@ func (x *LiteralValue) HasBoolValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_BoolValue)
+	_, ok := x.Value.(*LiteralValue_BoolValue)
 	return ok
 }
 
@@ -4175,7 +4299,7 @@ func (x *LiteralValue) HasEnumValueNameValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_EnumValueNameValue)
+	_, ok := x.Value.(*LiteralValue_EnumValueNameValue)
 	return ok
 }
 
@@ -4183,7 +4307,7 @@ func (x *LiteralValue) HasArrayValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_ArrayValue)
+	_, ok := x.Value.(*LiteralValue_ArrayValue)
 	return ok
 }
 
@@ -4191,59 +4315,59 @@ func (x *LiteralValue) HasMessageValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Value.(*literalValue_MessageValue)
+	_, ok := x.Value.(*LiteralValue_MessageValue)
 	return ok
 }
 
 func (x *LiteralValue) ClearValue() {
-	x.xxx_hidden_Value = nil
+	x.Value = nil
 }
 
 func (x *LiteralValue) ClearStringValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_StringValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_StringValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearIntValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_IntValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_IntValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearUintValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_UintValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_UintValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearDoubleValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_DoubleValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_DoubleValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearBoolValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_BoolValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_BoolValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearEnumValueNameValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_EnumValueNameValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_EnumValueNameValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearArrayValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_ArrayValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_ArrayValue); ok {
+		x.Value = nil
 	}
 }
 
 func (x *LiteralValue) ClearMessageValue() {
-	if _, ok := x.xxx_hidden_Value.(*literalValue_MessageValue); ok {
-		x.xxx_hidden_Value = nil
+	if _, ok := x.Value.(*LiteralValue_MessageValue); ok {
+		x.Value = nil
 	}
 }
 
@@ -4261,22 +4385,22 @@ func (x *LiteralValue) WhichValue() case_LiteralValue_Value {
 	if x == nil {
 		return LiteralValue_Value_not_set_case
 	}
-	switch x.xxx_hidden_Value.(type) {
-	case *literalValue_StringValue:
+	switch x.Value.(type) {
+	case *LiteralValue_StringValue:
 		return LiteralValue_StringValue_case
-	case *literalValue_IntValue:
+	case *LiteralValue_IntValue:
 		return LiteralValue_IntValue_case
-	case *literalValue_UintValue:
+	case *LiteralValue_UintValue:
 		return LiteralValue_UintValue_case
-	case *literalValue_DoubleValue:
+	case *LiteralValue_DoubleValue:
 		return LiteralValue_DoubleValue_case
-	case *literalValue_BoolValue:
+	case *LiteralValue_BoolValue:
 		return LiteralValue_BoolValue_case
-	case *literalValue_EnumValueNameValue:
+	case *LiteralValue_EnumValueNameValue:
 		return LiteralValue_EnumValueNameValue_case
-	case *literalValue_ArrayValue:
+	case *LiteralValue_ArrayValue:
 		return LiteralValue_ArrayValue_case
-	case *literalValue_MessageValue:
+	case *LiteralValue_MessageValue:
 		return LiteralValue_MessageValue_case
 	default:
 		return LiteralValue_Value_not_set_case
@@ -4286,7 +4410,7 @@ func (x *LiteralValue) WhichValue() case_LiteralValue_Value {
 type LiteralValue_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Value:
+	// Fields of oneof Value:
 	StringValue        *string
 	IntValue           *int64
 	UintValue          *uint64
@@ -4295,7 +4419,7 @@ type LiteralValue_builder struct {
 	EnumValueNameValue *string
 	ArrayValue         *ArrayLiteral
 	MessageValue       *MessageLiteral
-	// -- end of xxx_hidden_Value
+	// -- end of Value
 	Comments string
 }
 
@@ -4304,30 +4428,30 @@ func (b0 LiteralValue_builder) Build() *LiteralValue {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.StringValue != nil {
-		x.xxx_hidden_Value = &literalValue_StringValue{*b.StringValue}
+		x.Value = &LiteralValue_StringValue{*b.StringValue}
 	}
 	if b.IntValue != nil {
-		x.xxx_hidden_Value = &literalValue_IntValue{*b.IntValue}
+		x.Value = &LiteralValue_IntValue{*b.IntValue}
 	}
 	if b.UintValue != nil {
-		x.xxx_hidden_Value = &literalValue_UintValue{*b.UintValue}
+		x.Value = &LiteralValue_UintValue{*b.UintValue}
 	}
 	if b.DoubleValue != nil {
-		x.xxx_hidden_Value = &literalValue_DoubleValue{*b.DoubleValue}
+		x.Value = &LiteralValue_DoubleValue{*b.DoubleValue}
 	}
 	if b.BoolValue != nil {
-		x.xxx_hidden_Value = &literalValue_BoolValue{*b.BoolValue}
+		x.Value = &LiteralValue_BoolValue{*b.BoolValue}
 	}
 	if b.EnumValueNameValue != nil {
-		x.xxx_hidden_Value = &literalValue_EnumValueNameValue{*b.EnumValueNameValue}
+		x.Value = &LiteralValue_EnumValueNameValue{*b.EnumValueNameValue}
 	}
 	if b.ArrayValue != nil {
-		x.xxx_hidden_Value = &literalValue_ArrayValue{b.ArrayValue}
+		x.Value = &LiteralValue_ArrayValue{b.ArrayValue}
 	}
 	if b.MessageValue != nil {
-		x.xxx_hidden_Value = &literalValue_MessageValue{b.MessageValue}
+		x.Value = &LiteralValue_MessageValue{b.MessageValue}
 	}
-	x.xxx_hidden_Comments = b.Comments
+	x.Comments = b.Comments
 	return m0
 }
 
@@ -4345,63 +4469,68 @@ type isLiteralValue_Value interface {
 	isLiteralValue_Value()
 }
 
-type literalValue_StringValue struct {
+type LiteralValue_StringValue struct {
 	StringValue string `protobuf:"bytes,2,opt,name=string_value,json=stringValue,proto3,oneof"`
 }
 
-type literalValue_IntValue struct {
+type LiteralValue_IntValue struct {
 	IntValue int64 `protobuf:"varint,3,opt,name=int_value,json=intValue,proto3,oneof"`
 }
 
-type literalValue_UintValue struct {
+type LiteralValue_UintValue struct {
 	UintValue uint64 `protobuf:"varint,4,opt,name=uint_value,json=uintValue,proto3,oneof"`
 }
 
-type literalValue_DoubleValue struct {
+type LiteralValue_DoubleValue struct {
 	DoubleValue float64 `protobuf:"fixed64,5,opt,name=double_value,json=doubleValue,proto3,oneof"`
 }
 
-type literalValue_BoolValue struct {
+type LiteralValue_BoolValue struct {
 	BoolValue bool `protobuf:"varint,6,opt,name=bool_value,json=boolValue,proto3,oneof"`
 }
 
-type literalValue_EnumValueNameValue struct {
+type LiteralValue_EnumValueNameValue struct {
 	EnumValueNameValue string `protobuf:"bytes,7,opt,name=enum_value_name_value,json=enumValueNameValue,proto3,oneof"`
 }
 
-type literalValue_ArrayValue struct {
+type LiteralValue_ArrayValue struct {
 	ArrayValue *ArrayLiteral `protobuf:"bytes,8,opt,name=array_value,json=arrayValue,proto3,oneof"`
 }
 
-type literalValue_MessageValue struct {
+type LiteralValue_MessageValue struct {
 	MessageValue *MessageLiteral `protobuf:"bytes,9,opt,name=message_value,json=messageValue,proto3,oneof"`
 }
 
-func (*literalValue_StringValue) isLiteralValue_Value() {}
+func (*LiteralValue_StringValue) isLiteralValue_Value() {}
 
-func (*literalValue_IntValue) isLiteralValue_Value() {}
+func (*LiteralValue_IntValue) isLiteralValue_Value() {}
 
-func (*literalValue_UintValue) isLiteralValue_Value() {}
+func (*LiteralValue_UintValue) isLiteralValue_Value() {}
 
-func (*literalValue_DoubleValue) isLiteralValue_Value() {}
+func (*LiteralValue_DoubleValue) isLiteralValue_Value() {}
 
-func (*literalValue_BoolValue) isLiteralValue_Value() {}
+func (*LiteralValue_BoolValue) isLiteralValue_Value() {}
 
-func (*literalValue_EnumValueNameValue) isLiteralValue_Value() {}
+func (*LiteralValue_EnumValueNameValue) isLiteralValue_Value() {}
 
-func (*literalValue_ArrayValue) isLiteralValue_Value() {}
+func (*LiteralValue_ArrayValue) isLiteralValue_Value() {}
 
-func (*literalValue_MessageValue) isLiteralValue_Value() {}
+func (*LiteralValue_MessageValue) isLiteralValue_Value() {}
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
 type MapEntry struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_KeyFullType          string                 `protobuf:"bytes,1,opt,name=key_full_type,json=keyFullType,proto3" json:"key_full_type,omitempty"`
-	xxx_hidden_ValueNestedType      string                 `protobuf:"bytes,2,opt,name=value_nested_type,json=valueNestedType,proto3" json:"value_nested_type,omitempty"`
-	xxx_hidden_ValueFullType        string                 `protobuf:"bytes,3,opt,name=value_full_type,json=valueFullType,proto3" json:"value_full_type,omitempty"`
-	xxx_hidden_ValueImportModuleRef *ImportModuleRef       `protobuf:"bytes,4,opt,name=value_import_module_ref,json=valueImportModuleRef,proto3" json:"value_import_module_ref,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// string representation of the full name of the type for the map key. keys can only be
+	// scalar types: https://developers.google.com/protocol-buffers/docs/overview#maps
+	KeyFullType string `protobuf:"bytes,1,opt,name=key_full_type,json=keyFullType,proto3" json:"key_full_type,omitempty"`
+	// string representation of the nested name of the type for the map value.
+	ValueNestedType string `protobuf:"bytes,2,opt,name=value_nested_type,json=valueNestedType,proto3" json:"value_nested_type,omitempty"`
+	// string representation of the full name of the type for the map value.
+	ValueFullType string `protobuf:"bytes,3,opt,name=value_full_type,json=valueFullType,proto3" json:"value_full_type,omitempty"`
+	// if the value is an imported type, this is the import module ref
+	ValueImportModuleRef *ImportModuleRef `protobuf:"bytes,4,opt,name=value_import_module_ref,json=valueImportModuleRef,proto3" json:"value_import_module_ref,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *MapEntry) Reset() {
@@ -4431,57 +4560,57 @@ func (x *MapEntry) ProtoReflect() protoreflect.Message {
 
 func (x *MapEntry) GetKeyFullType() string {
 	if x != nil {
-		return x.xxx_hidden_KeyFullType
+		return x.KeyFullType
 	}
 	return ""
 }
 
 func (x *MapEntry) GetValueNestedType() string {
 	if x != nil {
-		return x.xxx_hidden_ValueNestedType
+		return x.ValueNestedType
 	}
 	return ""
 }
 
 func (x *MapEntry) GetValueFullType() string {
 	if x != nil {
-		return x.xxx_hidden_ValueFullType
+		return x.ValueFullType
 	}
 	return ""
 }
 
 func (x *MapEntry) GetValueImportModuleRef() *ImportModuleRef {
 	if x != nil {
-		return x.xxx_hidden_ValueImportModuleRef
+		return x.ValueImportModuleRef
 	}
 	return nil
 }
 
 func (x *MapEntry) SetKeyFullType(v string) {
-	x.xxx_hidden_KeyFullType = v
+	x.KeyFullType = v
 }
 
 func (x *MapEntry) SetValueNestedType(v string) {
-	x.xxx_hidden_ValueNestedType = v
+	x.ValueNestedType = v
 }
 
 func (x *MapEntry) SetValueFullType(v string) {
-	x.xxx_hidden_ValueFullType = v
+	x.ValueFullType = v
 }
 
 func (x *MapEntry) SetValueImportModuleRef(v *ImportModuleRef) {
-	x.xxx_hidden_ValueImportModuleRef = v
+	x.ValueImportModuleRef = v
 }
 
 func (x *MapEntry) HasValueImportModuleRef() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ValueImportModuleRef != nil
+	return x.ValueImportModuleRef != nil
 }
 
 func (x *MapEntry) ClearValueImportModuleRef() {
-	x.xxx_hidden_ValueImportModuleRef = nil
+	x.ValueImportModuleRef = nil
 }
 
 type MapEntry_builder struct {
@@ -4502,24 +4631,32 @@ func (b0 MapEntry_builder) Build() *MapEntry {
 	m0 := &MapEntry{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_KeyFullType = b.KeyFullType
-	x.xxx_hidden_ValueNestedType = b.ValueNestedType
-	x.xxx_hidden_ValueFullType = b.ValueFullType
-	x.xxx_hidden_ValueImportModuleRef = b.ValueImportModuleRef
+	x.KeyFullType = b.KeyFullType
+	x.ValueNestedType = b.ValueNestedType
+	x.ValueFullType = b.ValueFullType
+	x.ValueImportModuleRef = b.ValueImportModuleRef
 	return m0
 }
 
 // FileExtension provides the information for the documentation of a file extension.
 type FileExtension struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ExtensionType        string                 `protobuf:"bytes,1,opt,name=extension_type,json=extensionType,proto3" json:"extension_type,omitempty"`
-	xxx_hidden_Comments             string                 `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
-	xxx_hidden_FilePath             string                 `protobuf:"bytes,3,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	xxx_hidden_Location             *Location              `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
-	xxx_hidden_Fields               *[]*Field              `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
-	xxx_hidden_ImplicitlyDeprecated bool                   `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// extension_type is the string representation of the type being extended.
+	ExtensionType string `protobuf:"bytes,1,opt,name=extension_type,json=extensionType,proto3" json:"extension_type,omitempty"`
+	// comments is derived from the leading comments of a given message field.
+	//
+	// Paragraph newlines (double new lines) are respected, however single newlines are not.
+	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+	Comments string `protobuf:"bytes,2,opt,name=comments,proto3" json:"comments,omitempty"`
+	// file_path is the normalized path of the file containing the message.
+	FilePath string    `protobuf:"bytes,3,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	Location *Location `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
+	// fields are all the fields that are associated with the extension.
+	Fields []*Field `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
+	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+	ImplicitlyDeprecated bool `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *FileExtension) Reset() {
@@ -4549,81 +4686,79 @@ func (x *FileExtension) ProtoReflect() protoreflect.Message {
 
 func (x *FileExtension) GetExtensionType() string {
 	if x != nil {
-		return x.xxx_hidden_ExtensionType
+		return x.ExtensionType
 	}
 	return ""
 }
 
 func (x *FileExtension) GetComments() string {
 	if x != nil {
-		return x.xxx_hidden_Comments
+		return x.Comments
 	}
 	return ""
 }
 
 func (x *FileExtension) GetFilePath() string {
 	if x != nil {
-		return x.xxx_hidden_FilePath
+		return x.FilePath
 	}
 	return ""
 }
 
 func (x *FileExtension) GetLocation() *Location {
 	if x != nil {
-		return x.xxx_hidden_Location
+		return x.Location
 	}
 	return nil
 }
 
 func (x *FileExtension) GetFields() []*Field {
 	if x != nil {
-		if x.xxx_hidden_Fields != nil {
-			return *x.xxx_hidden_Fields
-		}
+		return x.Fields
 	}
 	return nil
 }
 
 func (x *FileExtension) GetImplicitlyDeprecated() bool {
 	if x != nil {
-		return x.xxx_hidden_ImplicitlyDeprecated
+		return x.ImplicitlyDeprecated
 	}
 	return false
 }
 
 func (x *FileExtension) SetExtensionType(v string) {
-	x.xxx_hidden_ExtensionType = v
+	x.ExtensionType = v
 }
 
 func (x *FileExtension) SetComments(v string) {
-	x.xxx_hidden_Comments = v
+	x.Comments = v
 }
 
 func (x *FileExtension) SetFilePath(v string) {
-	x.xxx_hidden_FilePath = v
+	x.FilePath = v
 }
 
 func (x *FileExtension) SetLocation(v *Location) {
-	x.xxx_hidden_Location = v
+	x.Location = v
 }
 
 func (x *FileExtension) SetFields(v []*Field) {
-	x.xxx_hidden_Fields = &v
+	x.Fields = v
 }
 
 func (x *FileExtension) SetImplicitlyDeprecated(v bool) {
-	x.xxx_hidden_ImplicitlyDeprecated = v
+	x.ImplicitlyDeprecated = v
 }
 
 func (x *FileExtension) HasLocation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Location != nil
+	return x.Location != nil
 }
 
 func (x *FileExtension) ClearLocation() {
-	x.xxx_hidden_Location = nil
+	x.Location = nil
 }
 
 type FileExtension_builder struct {
@@ -4649,12 +4784,12 @@ func (b0 FileExtension_builder) Build() *FileExtension {
 	m0 := &FileExtension{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ExtensionType = b.ExtensionType
-	x.xxx_hidden_Comments = b.Comments
-	x.xxx_hidden_FilePath = b.FilePath
-	x.xxx_hidden_Location = b.Location
-	x.xxx_hidden_Fields = &b.Fields
-	x.xxx_hidden_ImplicitlyDeprecated = b.ImplicitlyDeprecated
+	x.ExtensionType = b.ExtensionType
+	x.Comments = b.Comments
+	x.FilePath = b.FilePath
+	x.Location = b.Location
+	x.Fields = b.Fields
+	x.ImplicitlyDeprecated = b.ImplicitlyDeprecated
 	return m0
 }
 
@@ -5317,19 +5452,19 @@ func file_buf_alpha_registry_v1alpha1_doc_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[26].OneofWrappers = []any{
-		(*messageField_Field)(nil),
-		(*messageField_Oneof)(nil),
+		(*MessageField_Field)(nil),
+		(*MessageField_Oneof)(nil),
 	}
 	file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[30].OneofWrappers = []any{}
 	file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[34].OneofWrappers = []any{
-		(*literalValue_StringValue)(nil),
-		(*literalValue_IntValue)(nil),
-		(*literalValue_UintValue)(nil),
-		(*literalValue_DoubleValue)(nil),
-		(*literalValue_BoolValue)(nil),
-		(*literalValue_EnumValueNameValue)(nil),
-		(*literalValue_ArrayValue)(nil),
-		(*literalValue_MessageValue)(nil),
+		(*LiteralValue_StringValue)(nil),
+		(*LiteralValue_IntValue)(nil),
+		(*LiteralValue_UintValue)(nil),
+		(*LiteralValue_DoubleValue)(nil),
+		(*LiteralValue_BoolValue)(nil),
+		(*LiteralValue_EnumValueNameValue)(nil),
+		(*LiteralValue_ArrayValue)(nil),
+		(*LiteralValue_MessageValue)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

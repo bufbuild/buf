@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/authz.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -34,10 +36,12 @@ const (
 )
 
 type UserCanCreateOrganizationRepositoryRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization for which to check
+	// whether the user is authorized.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UserCanCreateOrganizationRepositoryRequest) Reset() {
@@ -67,13 +71,13 @@ func (x *UserCanCreateOrganizationRepositoryRequest) ProtoReflect() protoreflect
 
 func (x *UserCanCreateOrganizationRepositoryRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UserCanCreateOrganizationRepositoryRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 type UserCanCreateOrganizationRepositoryRequest_builder struct {
@@ -88,15 +92,15 @@ func (b0 UserCanCreateOrganizationRepositoryRequest_builder) Build() *UserCanCre
 	m0 := &UserCanCreateOrganizationRepositoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.OrganizationId = b.OrganizationId
 	return m0
 }
 
 type UserCanCreateOrganizationRepositoryResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanCreateOrganizationRepositoryResponse) Reset() {
@@ -126,13 +130,13 @@ func (x *UserCanCreateOrganizationRepositoryResponse) ProtoReflect() protoreflec
 
 func (x *UserCanCreateOrganizationRepositoryResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanCreateOrganizationRepositoryResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanCreateOrganizationRepositoryResponse_builder struct {
@@ -145,15 +149,17 @@ func (b0 UserCanCreateOrganizationRepositoryResponse_builder) Build() *UserCanCr
 	m0 := &UserCanCreateOrganizationRepositoryResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanSeeRepositorySettingsRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which to check
+	// whether the user is authorized.
+	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanSeeRepositorySettingsRequest) Reset() {
@@ -183,13 +189,13 @@ func (x *UserCanSeeRepositorySettingsRequest) ProtoReflect() protoreflect.Messag
 
 func (x *UserCanSeeRepositorySettingsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *UserCanSeeRepositorySettingsRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 type UserCanSeeRepositorySettingsRequest_builder struct {
@@ -204,15 +210,15 @@ func (b0 UserCanSeeRepositorySettingsRequest_builder) Build() *UserCanSeeReposit
 	m0 := &UserCanSeeRepositorySettingsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.RepositoryId = b.RepositoryId
 	return m0
 }
 
 type UserCanSeeRepositorySettingsResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanSeeRepositorySettingsResponse) Reset() {
@@ -242,13 +248,13 @@ func (x *UserCanSeeRepositorySettingsResponse) ProtoReflect() protoreflect.Messa
 
 func (x *UserCanSeeRepositorySettingsResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanSeeRepositorySettingsResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanSeeRepositorySettingsResponse_builder struct {
@@ -261,15 +267,17 @@ func (b0 UserCanSeeRepositorySettingsResponse_builder) Build() *UserCanSeeReposi
 	m0 := &UserCanSeeRepositorySettingsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanSeeOrganizationSettingsRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization for which to check
+	// whether the user is authorized.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UserCanSeeOrganizationSettingsRequest) Reset() {
@@ -299,13 +307,13 @@ func (x *UserCanSeeOrganizationSettingsRequest) ProtoReflect() protoreflect.Mess
 
 func (x *UserCanSeeOrganizationSettingsRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UserCanSeeOrganizationSettingsRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 type UserCanSeeOrganizationSettingsRequest_builder struct {
@@ -320,15 +328,15 @@ func (b0 UserCanSeeOrganizationSettingsRequest_builder) Build() *UserCanSeeOrgan
 	m0 := &UserCanSeeOrganizationSettingsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.OrganizationId = b.OrganizationId
 	return m0
 }
 
 type UserCanSeeOrganizationSettingsResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanSeeOrganizationSettingsResponse) Reset() {
@@ -358,13 +366,13 @@ func (x *UserCanSeeOrganizationSettingsResponse) ProtoReflect() protoreflect.Mes
 
 func (x *UserCanSeeOrganizationSettingsResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanSeeOrganizationSettingsResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanSeeOrganizationSettingsResponse_builder struct {
@@ -377,15 +385,17 @@ func (b0 UserCanSeeOrganizationSettingsResponse_builder) Build() *UserCanSeeOrga
 	m0 := &UserCanSeeOrganizationSettingsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanAddOrganizationMemberRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization for which to check
+	// whether the user is authorized.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UserCanAddOrganizationMemberRequest) Reset() {
@@ -415,13 +425,13 @@ func (x *UserCanAddOrganizationMemberRequest) ProtoReflect() protoreflect.Messag
 
 func (x *UserCanAddOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UserCanAddOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 type UserCanAddOrganizationMemberRequest_builder struct {
@@ -436,15 +446,17 @@ func (b0 UserCanAddOrganizationMemberRequest_builder) Build() *UserCanAddOrganiz
 	m0 := &UserCanAddOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.OrganizationId = b.OrganizationId
 	return m0
 }
 
 type UserCanAddOrganizationMemberResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AuthorizedRoles []OrganizationRole     `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"authorized_roles,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The list of roles that the user is authorized to add, empty list means the user is
+	// not authorized to add any members.
+	AuthorizedRoles []OrganizationRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"authorized_roles,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UserCanAddOrganizationMemberResponse) Reset() {
@@ -474,13 +486,13 @@ func (x *UserCanAddOrganizationMemberResponse) ProtoReflect() protoreflect.Messa
 
 func (x *UserCanAddOrganizationMemberResponse) GetAuthorizedRoles() []OrganizationRole {
 	if x != nil {
-		return x.xxx_hidden_AuthorizedRoles
+		return x.AuthorizedRoles
 	}
 	return nil
 }
 
 func (x *UserCanAddOrganizationMemberResponse) SetAuthorizedRoles(v []OrganizationRole) {
-	x.xxx_hidden_AuthorizedRoles = v
+	x.AuthorizedRoles = v
 }
 
 type UserCanAddOrganizationMemberResponse_builder struct {
@@ -495,15 +507,17 @@ func (b0 UserCanAddOrganizationMemberResponse_builder) Build() *UserCanAddOrgani
 	m0 := &UserCanAddOrganizationMemberResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthorizedRoles = b.AuthorizedRoles
+	x.AuthorizedRoles = b.AuthorizedRoles
 	return m0
 }
 
 type UserCanUpdateOrganizationMemberRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization for which to check
+	// whether the user is authorized.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UserCanUpdateOrganizationMemberRequest) Reset() {
@@ -533,13 +547,13 @@ func (x *UserCanUpdateOrganizationMemberRequest) ProtoReflect() protoreflect.Mes
 
 func (x *UserCanUpdateOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UserCanUpdateOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 type UserCanUpdateOrganizationMemberRequest_builder struct {
@@ -554,15 +568,17 @@ func (b0 UserCanUpdateOrganizationMemberRequest_builder) Build() *UserCanUpdateO
 	m0 := &UserCanUpdateOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.OrganizationId = b.OrganizationId
 	return m0
 }
 
 type UserCanUpdateOrganizationMemberResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AuthorizedRoles []OrganizationRole     `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"authorized_roles,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The list of roles that the user is authorized to update (from and to), empty list means the user is
+	// not authorized to update any members' role.
+	AuthorizedRoles []OrganizationRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"authorized_roles,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UserCanUpdateOrganizationMemberResponse) Reset() {
@@ -592,13 +608,13 @@ func (x *UserCanUpdateOrganizationMemberResponse) ProtoReflect() protoreflect.Me
 
 func (x *UserCanUpdateOrganizationMemberResponse) GetAuthorizedRoles() []OrganizationRole {
 	if x != nil {
-		return x.xxx_hidden_AuthorizedRoles
+		return x.AuthorizedRoles
 	}
 	return nil
 }
 
 func (x *UserCanUpdateOrganizationMemberResponse) SetAuthorizedRoles(v []OrganizationRole) {
-	x.xxx_hidden_AuthorizedRoles = v
+	x.AuthorizedRoles = v
 }
 
 type UserCanUpdateOrganizationMemberResponse_builder struct {
@@ -613,15 +629,17 @@ func (b0 UserCanUpdateOrganizationMemberResponse_builder) Build() *UserCanUpdate
 	m0 := &UserCanUpdateOrganizationMemberResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthorizedRoles = b.AuthorizedRoles
+	x.AuthorizedRoles = b.AuthorizedRoles
 	return m0
 }
 
 type UserCanRemoveOrganizationMemberRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization for which to check
+	// whether the user is authorized.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UserCanRemoveOrganizationMemberRequest) Reset() {
@@ -651,13 +669,13 @@ func (x *UserCanRemoveOrganizationMemberRequest) ProtoReflect() protoreflect.Mes
 
 func (x *UserCanRemoveOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UserCanRemoveOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 type UserCanRemoveOrganizationMemberRequest_builder struct {
@@ -672,15 +690,17 @@ func (b0 UserCanRemoveOrganizationMemberRequest_builder) Build() *UserCanRemoveO
 	m0 := &UserCanRemoveOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.OrganizationId = b.OrganizationId
 	return m0
 }
 
 type UserCanRemoveOrganizationMemberResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AuthorizedRoles []OrganizationRole     `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"authorized_roles,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The list of roles that the user is authorized to remove, empty list means the user is
+	// not authorized to remove any members.
+	AuthorizedRoles []OrganizationRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"authorized_roles,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UserCanRemoveOrganizationMemberResponse) Reset() {
@@ -710,13 +730,13 @@ func (x *UserCanRemoveOrganizationMemberResponse) ProtoReflect() protoreflect.Me
 
 func (x *UserCanRemoveOrganizationMemberResponse) GetAuthorizedRoles() []OrganizationRole {
 	if x != nil {
-		return x.xxx_hidden_AuthorizedRoles
+		return x.AuthorizedRoles
 	}
 	return nil
 }
 
 func (x *UserCanRemoveOrganizationMemberResponse) SetAuthorizedRoles(v []OrganizationRole) {
-	x.xxx_hidden_AuthorizedRoles = v
+	x.AuthorizedRoles = v
 }
 
 type UserCanRemoveOrganizationMemberResponse_builder struct {
@@ -731,15 +751,17 @@ func (b0 UserCanRemoveOrganizationMemberResponse_builder) Build() *UserCanRemove
 	m0 := &UserCanRemoveOrganizationMemberResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthorizedRoles = b.AuthorizedRoles
+	x.AuthorizedRoles = b.AuthorizedRoles
 	return m0
 }
 
 type UserCanDeleteOrganizationRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the organization for which to check
+	// whether the user is authorized.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UserCanDeleteOrganizationRequest) Reset() {
@@ -769,13 +791,13 @@ func (x *UserCanDeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UserCanDeleteOrganizationRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UserCanDeleteOrganizationRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 type UserCanDeleteOrganizationRequest_builder struct {
@@ -790,15 +812,15 @@ func (b0 UserCanDeleteOrganizationRequest_builder) Build() *UserCanDeleteOrganiz
 	m0 := &UserCanDeleteOrganizationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.OrganizationId = b.OrganizationId
 	return m0
 }
 
 type UserCanDeleteOrganizationResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanDeleteOrganizationResponse) Reset() {
@@ -828,13 +850,13 @@ func (x *UserCanDeleteOrganizationResponse) ProtoReflect() protoreflect.Message 
 
 func (x *UserCanDeleteOrganizationResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanDeleteOrganizationResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanDeleteOrganizationResponse_builder struct {
@@ -847,15 +869,17 @@ func (b0 UserCanDeleteOrganizationResponse_builder) Build() *UserCanDeleteOrgani
 	m0 := &UserCanDeleteOrganizationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanDeleteRepositoryRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which to check
+	// whether the user is authorized.
+	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanDeleteRepositoryRequest) Reset() {
@@ -885,13 +909,13 @@ func (x *UserCanDeleteRepositoryRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UserCanDeleteRepositoryRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *UserCanDeleteRepositoryRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 type UserCanDeleteRepositoryRequest_builder struct {
@@ -906,15 +930,15 @@ func (b0 UserCanDeleteRepositoryRequest_builder) Build() *UserCanDeleteRepositor
 	m0 := &UserCanDeleteRepositoryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.RepositoryId = b.RepositoryId
 	return m0
 }
 
 type UserCanDeleteRepositoryResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanDeleteRepositoryResponse) Reset() {
@@ -944,13 +968,13 @@ func (x *UserCanDeleteRepositoryResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UserCanDeleteRepositoryResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanDeleteRepositoryResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanDeleteRepositoryResponse_builder struct {
@@ -963,12 +987,12 @@ func (b0 UserCanDeleteRepositoryResponse_builder) Build() *UserCanDeleteReposito
 	m0 := &UserCanDeleteRepositoryResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanDeleteUserRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1011,10 +1035,10 @@ func (b0 UserCanDeleteUserRequest_builder) Build() *UserCanDeleteUserRequest {
 }
 
 type UserCanDeleteUserResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanDeleteUserResponse) Reset() {
@@ -1044,13 +1068,13 @@ func (x *UserCanDeleteUserResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UserCanDeleteUserResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanDeleteUserResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanDeleteUserResponse_builder struct {
@@ -1063,12 +1087,12 @@ func (b0 UserCanDeleteUserResponse_builder) Build() *UserCanDeleteUserResponse {
 	m0 := &UserCanDeleteUserResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanSeeServerAdminPanelRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1111,10 +1135,10 @@ func (b0 UserCanSeeServerAdminPanelRequest_builder) Build() *UserCanSeeServerAdm
 }
 
 type UserCanSeeServerAdminPanelResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanSeeServerAdminPanelResponse) Reset() {
@@ -1144,13 +1168,13 @@ func (x *UserCanSeeServerAdminPanelResponse) ProtoReflect() protoreflect.Message
 
 func (x *UserCanSeeServerAdminPanelResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanSeeServerAdminPanelResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanSeeServerAdminPanelResponse_builder struct {
@@ -1163,15 +1187,17 @@ func (b0 UserCanSeeServerAdminPanelResponse_builder) Build() *UserCanSeeServerAd
 	m0 := &UserCanSeeServerAdminPanelResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 
 type UserCanManageRepositoryContributorsRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which to check
+	// whether the user is authorized.
+	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanManageRepositoryContributorsRequest) Reset() {
@@ -1201,13 +1227,13 @@ func (x *UserCanManageRepositoryContributorsRequest) ProtoReflect() protoreflect
 
 func (x *UserCanManageRepositoryContributorsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *UserCanManageRepositoryContributorsRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 type UserCanManageRepositoryContributorsRequest_builder struct {
@@ -1222,15 +1248,17 @@ func (b0 UserCanManageRepositoryContributorsRequest_builder) Build() *UserCanMan
 	m0 := &UserCanManageRepositoryContributorsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.RepositoryId = b.RepositoryId
 	return m0
 }
 
 type UserCanManageRepositoryContributorsResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AuthorizedRoles []RepositoryRole       `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"authorized_roles,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The list of roles that the user is authorized to manage, empty list means the user is
+	// not authorized to manage any contributors.
+	AuthorizedRoles []RepositoryRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"authorized_roles,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UserCanManageRepositoryContributorsResponse) Reset() {
@@ -1260,13 +1288,13 @@ func (x *UserCanManageRepositoryContributorsResponse) ProtoReflect() protoreflec
 
 func (x *UserCanManageRepositoryContributorsResponse) GetAuthorizedRoles() []RepositoryRole {
 	if x != nil {
-		return x.xxx_hidden_AuthorizedRoles
+		return x.AuthorizedRoles
 	}
 	return nil
 }
 
 func (x *UserCanManageRepositoryContributorsResponse) SetAuthorizedRoles(v []RepositoryRole) {
-	x.xxx_hidden_AuthorizedRoles = v
+	x.AuthorizedRoles = v
 }
 
 type UserCanManageRepositoryContributorsResponse_builder struct {
@@ -1281,15 +1309,17 @@ func (b0 UserCanManageRepositoryContributorsResponse_builder) Build() *UserCanMa
 	m0 := &UserCanManageRepositoryContributorsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_AuthorizedRoles = b.AuthorizedRoles
+	x.AuthorizedRoles = b.AuthorizedRoles
 	return m0
 }
 
 type UserCanReviewCommitsRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the repository for which to check
+	// whether the user is authorized.
+	RepositoryId  string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanReviewCommitsRequest) Reset() {
@@ -1319,13 +1349,13 @@ func (x *UserCanReviewCommitsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UserCanReviewCommitsRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryId
+		return x.RepositoryId
 	}
 	return ""
 }
 
 func (x *UserCanReviewCommitsRequest) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
+	x.RepositoryId = v
 }
 
 type UserCanReviewCommitsRequest_builder struct {
@@ -1340,15 +1370,15 @@ func (b0 UserCanReviewCommitsRequest_builder) Build() *UserCanReviewCommitsReque
 	m0 := &UserCanReviewCommitsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.RepositoryId = b.RepositoryId
 	return m0
 }
 
 type UserCanReviewCommitsResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Authorized bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserCanReviewCommitsResponse) Reset() {
@@ -1378,13 +1408,13 @@ func (x *UserCanReviewCommitsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UserCanReviewCommitsResponse) GetAuthorized() bool {
 	if x != nil {
-		return x.xxx_hidden_Authorized
+		return x.Authorized
 	}
 	return false
 }
 
 func (x *UserCanReviewCommitsResponse) SetAuthorized(v bool) {
-	x.xxx_hidden_Authorized = v
+	x.Authorized = v
 }
 
 type UserCanReviewCommitsResponse_builder struct {
@@ -1397,7 +1427,7 @@ func (b0 UserCanReviewCommitsResponse_builder) Build() *UserCanReviewCommitsResp
 	m0 := &UserCanReviewCommitsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Authorized = b.Authorized
+	x.Authorized = b.Authorized
 	return m0
 }
 

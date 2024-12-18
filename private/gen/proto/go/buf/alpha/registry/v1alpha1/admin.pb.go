@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/admin.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -128,14 +130,12 @@ func (x CollisionType) Number() protoreflect.EnumNumber {
 }
 
 type BreakingChangePolicy struct {
-	state                             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled                bool                   `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
-	xxx_hidden_IgnoreUnstablePackages bool                   `protobuf:"varint,2,opt,name=ignore_unstable_packages,json=ignoreUnstablePackages,proto3,oneof" json:"ignore_unstable_packages,omitempty"`
-	xxx_hidden_Category               BreakingChangeCategory `protobuf:"varint,3,opt,name=category,proto3,enum=buf.alpha.registry.v1alpha1.BreakingChangeCategory" json:"category,omitempty"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
+	Enabled                *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
+	IgnoreUnstablePackages *bool                  `protobuf:"varint,2,opt,name=ignore_unstable_packages,json=ignoreUnstablePackages,proto3,oneof" json:"ignore_unstable_packages,omitempty"`
+	Category               BreakingChangeCategory `protobuf:"varint,3,opt,name=category,proto3,enum=buf.alpha.registry.v1alpha1.BreakingChangeCategory" json:"category,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BreakingChangePolicy) Reset() {
@@ -164,62 +164,58 @@ func (x *BreakingChangePolicy) ProtoReflect() protoreflect.Message {
 }
 
 func (x *BreakingChangePolicy) GetEnabled() bool {
-	if x != nil {
-		return x.xxx_hidden_Enabled
+	if x != nil && x.Enabled != nil {
+		return *x.Enabled
 	}
 	return false
 }
 
 func (x *BreakingChangePolicy) GetIgnoreUnstablePackages() bool {
-	if x != nil {
-		return x.xxx_hidden_IgnoreUnstablePackages
+	if x != nil && x.IgnoreUnstablePackages != nil {
+		return *x.IgnoreUnstablePackages
 	}
 	return false
 }
 
 func (x *BreakingChangePolicy) GetCategory() BreakingChangeCategory {
 	if x != nil {
-		return x.xxx_hidden_Category
+		return x.Category
 	}
 	return BreakingChangeCategory_BREAKING_CHANGE_CATEGORY_UNSPECIFIED
 }
 
 func (x *BreakingChangePolicy) SetEnabled(v bool) {
-	x.xxx_hidden_Enabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Enabled = &v
 }
 
 func (x *BreakingChangePolicy) SetIgnoreUnstablePackages(v bool) {
-	x.xxx_hidden_IgnoreUnstablePackages = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.IgnoreUnstablePackages = &v
 }
 
 func (x *BreakingChangePolicy) SetCategory(v BreakingChangeCategory) {
-	x.xxx_hidden_Category = v
+	x.Category = v
 }
 
 func (x *BreakingChangePolicy) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Enabled != nil
 }
 
 func (x *BreakingChangePolicy) HasIgnoreUnstablePackages() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.IgnoreUnstablePackages != nil
 }
 
 func (x *BreakingChangePolicy) ClearEnabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enabled = false
+	x.Enabled = nil
 }
 
 func (x *BreakingChangePolicy) ClearIgnoreUnstablePackages() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IgnoreUnstablePackages = false
+	x.IgnoreUnstablePackages = nil
 }
 
 type BreakingChangePolicy_builder struct {
@@ -234,24 +230,19 @@ func (b0 BreakingChangePolicy_builder) Build() *BreakingChangePolicy {
 	m0 := &BreakingChangePolicy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Enabled = *b.Enabled
-	}
-	if b.IgnoreUnstablePackages != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_IgnoreUnstablePackages = *b.IgnoreUnstablePackages
-	}
-	x.xxx_hidden_Category = b.Category
+	x.Enabled = b.Enabled
+	x.IgnoreUnstablePackages = b.IgnoreUnstablePackages
+	x.Category = b.Category
 	return m0
 }
 
 // UniquenessPolicy is the policy for uniqueness on the server.
 type UniquenessPolicy struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Whether uniqueness policy is enforced.
+	Enabled       bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UniquenessPolicy) Reset() {
@@ -281,13 +272,13 @@ func (x *UniquenessPolicy) ProtoReflect() protoreflect.Message {
 
 func (x *UniquenessPolicy) GetEnabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Enabled
+		return x.Enabled
 	}
 	return false
 }
 
 func (x *UniquenessPolicy) SetEnabled(v bool) {
-	x.xxx_hidden_Enabled = v
+	x.Enabled = v
 }
 
 type UniquenessPolicy_builder struct {
@@ -301,16 +292,18 @@ func (b0 UniquenessPolicy_builder) Build() *UniquenessPolicy {
 	m0 := &UniquenessPolicy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Enabled = b.Enabled
+	x.Enabled = b.Enabled
 	return m0
 }
 
 // ReviewFlowGracePeriodPolicy is the policy for the review flow grace period on the server.
 type ReviewFlowGracePeriodPolicy struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DurationSeconds uint32                 `protobuf:"varint,1,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The number of seconds of the grace period.
+	// Set to zero to disable the grace period.
+	DurationSeconds uint32 `protobuf:"varint,1,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ReviewFlowGracePeriodPolicy) Reset() {
@@ -340,13 +333,13 @@ func (x *ReviewFlowGracePeriodPolicy) ProtoReflect() protoreflect.Message {
 
 func (x *ReviewFlowGracePeriodPolicy) GetDurationSeconds() uint32 {
 	if x != nil {
-		return x.xxx_hidden_DurationSeconds
+		return x.DurationSeconds
 	}
 	return 0
 }
 
 func (x *ReviewFlowGracePeriodPolicy) SetDurationSeconds(v uint32) {
-	x.xxx_hidden_DurationSeconds = v
+	x.DurationSeconds = v
 }
 
 type ReviewFlowGracePeriodPolicy_builder struct {
@@ -361,19 +354,24 @@ func (b0 ReviewFlowGracePeriodPolicy_builder) Build() *ReviewFlowGracePeriodPoli
 	m0 := &ReviewFlowGracePeriodPolicy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_DurationSeconds = b.DurationSeconds
+	x.DurationSeconds = b.DurationSeconds
 	return m0
 }
 
 // Collision is a collision that has occurred.
 type Collision struct {
-	state                               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Reference                string                 `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
-	xxx_hidden_Type                     CollisionType          `protobuf:"varint,2,opt,name=type,proto3,enum=buf.alpha.registry.v1alpha1.CollisionType" json:"type,omitempty"`
-	xxx_hidden_Sources                  *[]*CollisionSource    `protobuf:"bytes,3,rep,name=sources,proto3" json:"sources,omitempty"`
-	xxx_hidden_HasOtherCollisionSources bool                   `protobuf:"varint,4,opt,name=has_other_collision_sources,json=hasOtherCollisionSources,proto3" json:"has_other_collision_sources,omitempty"`
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The reference that has collisions.
+	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
+	// The type of collision.
+	Type CollisionType `protobuf:"varint,2,opt,name=type,proto3,enum=buf.alpha.registry.v1alpha1.CollisionType" json:"type,omitempty"`
+	// The sources of the collision that the user is authorized to see.
+	Sources []*CollisionSource `protobuf:"bytes,3,rep,name=sources,proto3" json:"sources,omitempty"`
+	// Whether there are other collision sources that the user is not authorized to see.
+	// The user should contact a server admin for more information about these collisions.
+	HasOtherCollisionSources bool `protobuf:"varint,4,opt,name=has_other_collision_sources,json=hasOtherCollisionSources,proto3" json:"has_other_collision_sources,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Collision) Reset() {
@@ -403,48 +401,46 @@ func (x *Collision) ProtoReflect() protoreflect.Message {
 
 func (x *Collision) GetReference() string {
 	if x != nil {
-		return x.xxx_hidden_Reference
+		return x.Reference
 	}
 	return ""
 }
 
 func (x *Collision) GetType() CollisionType {
 	if x != nil {
-		return x.xxx_hidden_Type
+		return x.Type
 	}
 	return CollisionType_COLLISION_TYPE_UNSPECIFIED
 }
 
 func (x *Collision) GetSources() []*CollisionSource {
 	if x != nil {
-		if x.xxx_hidden_Sources != nil {
-			return *x.xxx_hidden_Sources
-		}
+		return x.Sources
 	}
 	return nil
 }
 
 func (x *Collision) GetHasOtherCollisionSources() bool {
 	if x != nil {
-		return x.xxx_hidden_HasOtherCollisionSources
+		return x.HasOtherCollisionSources
 	}
 	return false
 }
 
 func (x *Collision) SetReference(v string) {
-	x.xxx_hidden_Reference = v
+	x.Reference = v
 }
 
 func (x *Collision) SetType(v CollisionType) {
-	x.xxx_hidden_Type = v
+	x.Type = v
 }
 
 func (x *Collision) SetSources(v []*CollisionSource) {
-	x.xxx_hidden_Sources = &v
+	x.Sources = v
 }
 
 func (x *Collision) SetHasOtherCollisionSources(v bool) {
-	x.xxx_hidden_HasOtherCollisionSources = v
+	x.HasOtherCollisionSources = v
 }
 
 type Collision_builder struct {
@@ -465,21 +461,24 @@ func (b0 Collision_builder) Build() *Collision {
 	m0 := &Collision{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Reference = b.Reference
-	x.xxx_hidden_Type = b.Type
-	x.xxx_hidden_Sources = &b.Sources
-	x.xxx_hidden_HasOtherCollisionSources = b.HasOtherCollisionSources
+	x.Reference = b.Reference
+	x.Type = b.Type
+	x.Sources = b.Sources
+	x.HasOtherCollisionSources = b.HasOtherCollisionSources
 	return m0
 }
 
 // CollisionSource is the source of a collision
 type CollisionSource struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OwnerName      string                 `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	xxx_hidden_RepositoryName string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	xxx_hidden_Path           string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The name of the owner of the source.
+	OwnerName string `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	// The name of the repository of the source.
+	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	// The path of the file that is the source of the collision.
+	Path          string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollisionSource) Reset() {
@@ -509,35 +508,35 @@ func (x *CollisionSource) ProtoReflect() protoreflect.Message {
 
 func (x *CollisionSource) GetOwnerName() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerName
+		return x.OwnerName
 	}
 	return ""
 }
 
 func (x *CollisionSource) GetRepositoryName() string {
 	if x != nil {
-		return x.xxx_hidden_RepositoryName
+		return x.RepositoryName
 	}
 	return ""
 }
 
 func (x *CollisionSource) GetPath() string {
 	if x != nil {
-		return x.xxx_hidden_Path
+		return x.Path
 	}
 	return ""
 }
 
 func (x *CollisionSource) SetOwnerName(v string) {
-	x.xxx_hidden_OwnerName = v
+	x.OwnerName = v
 }
 
 func (x *CollisionSource) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
+	x.RepositoryName = v
 }
 
 func (x *CollisionSource) SetPath(v string) {
-	x.xxx_hidden_Path = v
+	x.Path = v
 }
 
 type CollisionSource_builder struct {
@@ -555,9 +554,9 @@ func (b0 CollisionSource_builder) Build() *CollisionSource {
 	m0 := &CollisionSource{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OwnerName = b.OwnerName
-	x.xxx_hidden_RepositoryName = b.RepositoryName
-	x.xxx_hidden_Path = b.Path
+	x.OwnerName = b.OwnerName
+	x.RepositoryName = b.RepositoryName
+	x.Path = b.Path
 	return m0
 }
 
@@ -565,14 +564,19 @@ func (b0 CollisionSource_builder) Build() *CollisionSource {
 // for every organizations repositories within a single tenant BSR instance
 // for a given month and year.
 type MonthlyUsage struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Month             uint32                 `protobuf:"varint,1,opt,name=month,proto3" json:"month,omitempty"`
-	xxx_hidden_Year              uint32                 `protobuf:"varint,2,opt,name=year,proto3" json:"year,omitempty"`
-	xxx_hidden_TotalMessageTypes uint32                 `protobuf:"varint,3,opt,name=total_message_types,json=totalMessageTypes,proto3" json:"total_message_types,omitempty"`
-	xxx_hidden_TotalEnumTypes    uint32                 `protobuf:"varint,4,opt,name=total_enum_types,json=totalEnumTypes,proto3" json:"total_enum_types,omitempty"`
-	xxx_hidden_TotalMethodTypes  uint32                 `protobuf:"varint,5,opt,name=total_method_types,json=totalMethodTypes,proto3" json:"total_method_types,omitempty"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The month, between 1 and 12.
+	Month uint32 `protobuf:"varint,1,opt,name=month,proto3" json:"month,omitempty"`
+	// The year, between 2020 and the current year.
+	Year uint32 `protobuf:"varint,2,opt,name=year,proto3" json:"year,omitempty"`
+	// The total amount of message types for the month and year.
+	TotalMessageTypes uint32 `protobuf:"varint,3,opt,name=total_message_types,json=totalMessageTypes,proto3" json:"total_message_types,omitempty"`
+	// The total amount of enum types for the month and year.
+	TotalEnumTypes uint32 `protobuf:"varint,4,opt,name=total_enum_types,json=totalEnumTypes,proto3" json:"total_enum_types,omitempty"`
+	// The total amount of method types for the month and year.
+	TotalMethodTypes uint32 `protobuf:"varint,5,opt,name=total_method_types,json=totalMethodTypes,proto3" json:"total_method_types,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *MonthlyUsage) Reset() {
@@ -602,57 +606,57 @@ func (x *MonthlyUsage) ProtoReflect() protoreflect.Message {
 
 func (x *MonthlyUsage) GetMonth() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Month
+		return x.Month
 	}
 	return 0
 }
 
 func (x *MonthlyUsage) GetYear() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Year
+		return x.Year
 	}
 	return 0
 }
 
 func (x *MonthlyUsage) GetTotalMessageTypes() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TotalMessageTypes
+		return x.TotalMessageTypes
 	}
 	return 0
 }
 
 func (x *MonthlyUsage) GetTotalEnumTypes() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TotalEnumTypes
+		return x.TotalEnumTypes
 	}
 	return 0
 }
 
 func (x *MonthlyUsage) GetTotalMethodTypes() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TotalMethodTypes
+		return x.TotalMethodTypes
 	}
 	return 0
 }
 
 func (x *MonthlyUsage) SetMonth(v uint32) {
-	x.xxx_hidden_Month = v
+	x.Month = v
 }
 
 func (x *MonthlyUsage) SetYear(v uint32) {
-	x.xxx_hidden_Year = v
+	x.Year = v
 }
 
 func (x *MonthlyUsage) SetTotalMessageTypes(v uint32) {
-	x.xxx_hidden_TotalMessageTypes = v
+	x.TotalMessageTypes = v
 }
 
 func (x *MonthlyUsage) SetTotalEnumTypes(v uint32) {
-	x.xxx_hidden_TotalEnumTypes = v
+	x.TotalEnumTypes = v
 }
 
 func (x *MonthlyUsage) SetTotalMethodTypes(v uint32) {
-	x.xxx_hidden_TotalMethodTypes = v
+	x.TotalMethodTypes = v
 }
 
 type MonthlyUsage_builder struct {
@@ -674,19 +678,19 @@ func (b0 MonthlyUsage_builder) Build() *MonthlyUsage {
 	m0 := &MonthlyUsage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Month = b.Month
-	x.xxx_hidden_Year = b.Year
-	x.xxx_hidden_TotalMessageTypes = b.TotalMessageTypes
-	x.xxx_hidden_TotalEnumTypes = b.TotalEnumTypes
-	x.xxx_hidden_TotalMethodTypes = b.TotalMethodTypes
+	x.Month = b.Month
+	x.Year = b.Year
+	x.TotalMessageTypes = b.TotalMessageTypes
+	x.TotalEnumTypes = b.TotalEnumTypes
+	x.TotalMethodTypes = b.TotalMethodTypes
 	return m0
 }
 
 type ForceDeleteUserRequest struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ForceDeleteUserRequest) Reset() {
@@ -716,13 +720,13 @@ func (x *ForceDeleteUserRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ForceDeleteUserRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *ForceDeleteUserRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 type ForceDeleteUserRequest_builder struct {
@@ -735,17 +739,20 @@ func (b0 ForceDeleteUserRequest_builder) Build() *ForceDeleteUserRequest {
 	m0 := &ForceDeleteUserRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
+	x.UserId = b.UserId
 	return m0
 }
 
 type ForceDeleteUserResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	xxx_hidden_Organizations *[]*Organization       `protobuf:"bytes,2,rep,name=organizations,proto3" json:"organizations,omitempty"`
-	xxx_hidden_Repositories  *[]*Repository         `protobuf:"bytes,3,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The deleted user.
+	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	// The deleted organizations.
+	Organizations []*Organization `protobuf:"bytes,2,rep,name=organizations,proto3" json:"organizations,omitempty"`
+	// The deleted repositories.
+	Repositories  []*Repository `protobuf:"bytes,3,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ForceDeleteUserResponse) Reset() {
@@ -775,50 +782,46 @@ func (x *ForceDeleteUserResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ForceDeleteUserResponse) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *ForceDeleteUserResponse) GetOrganizations() []*Organization {
 	if x != nil {
-		if x.xxx_hidden_Organizations != nil {
-			return *x.xxx_hidden_Organizations
-		}
+		return x.Organizations
 	}
 	return nil
 }
 
 func (x *ForceDeleteUserResponse) GetRepositories() []*Repository {
 	if x != nil {
-		if x.xxx_hidden_Repositories != nil {
-			return *x.xxx_hidden_Repositories
-		}
+		return x.Repositories
 	}
 	return nil
 }
 
 func (x *ForceDeleteUserResponse) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *ForceDeleteUserResponse) SetOrganizations(v []*Organization) {
-	x.xxx_hidden_Organizations = &v
+	x.Organizations = v
 }
 
 func (x *ForceDeleteUserResponse) SetRepositories(v []*Repository) {
-	x.xxx_hidden_Repositories = &v
+	x.Repositories = v
 }
 
 func (x *ForceDeleteUserResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *ForceDeleteUserResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type ForceDeleteUserResponse_builder struct {
@@ -836,18 +839,18 @@ func (b0 ForceDeleteUserResponse_builder) Build() *ForceDeleteUserResponse {
 	m0 := &ForceDeleteUserResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
-	x.xxx_hidden_Organizations = &b.Organizations
-	x.xxx_hidden_Repositories = &b.Repositories
+	x.User = b.User
+	x.Organizations = b.Organizations
+	x.Repositories = b.Repositories
 	return m0
 }
 
 type UpdateUserVerificationStatusRequest struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId             string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	xxx_hidden_VerificationStatus VerificationStatus     `protobuf:"varint,2,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
+	UserId             string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	VerificationStatus VerificationStatus     `protobuf:"varint,2,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpdateUserVerificationStatusRequest) Reset() {
@@ -877,24 +880,24 @@ func (x *UpdateUserVerificationStatusRequest) ProtoReflect() protoreflect.Messag
 
 func (x *UpdateUserVerificationStatusRequest) GetUserId() string {
 	if x != nil {
-		return x.xxx_hidden_UserId
+		return x.UserId
 	}
 	return ""
 }
 
 func (x *UpdateUserVerificationStatusRequest) GetVerificationStatus() VerificationStatus {
 	if x != nil {
-		return x.xxx_hidden_VerificationStatus
+		return x.VerificationStatus
 	}
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 func (x *UpdateUserVerificationStatusRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
+	x.UserId = v
 }
 
 func (x *UpdateUserVerificationStatusRequest) SetVerificationStatus(v VerificationStatus) {
-	x.xxx_hidden_VerificationStatus = v
+	x.VerificationStatus = v
 }
 
 type UpdateUserVerificationStatusRequest_builder struct {
@@ -908,13 +911,13 @@ func (b0 UpdateUserVerificationStatusRequest_builder) Build() *UpdateUserVerific
 	m0 := &UpdateUserVerificationStatusRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
-	x.xxx_hidden_VerificationStatus = b.VerificationStatus
+	x.UserId = b.UserId
+	x.VerificationStatus = b.VerificationStatus
 	return m0
 }
 
 type UpdateUserVerificationStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -957,11 +960,11 @@ func (b0 UpdateUserVerificationStatusResponse_builder) Build() *UpdateUserVerifi
 }
 
 type UpdateOrganizationVerificationStatusRequest struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId     string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	xxx_hidden_VerificationStatus VerificationStatus     `protobuf:"varint,2,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
+	OrganizationId     string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	VerificationStatus VerificationStatus     `protobuf:"varint,2,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpdateOrganizationVerificationStatusRequest) Reset() {
@@ -991,24 +994,24 @@ func (x *UpdateOrganizationVerificationStatusRequest) ProtoReflect() protoreflec
 
 func (x *UpdateOrganizationVerificationStatusRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.xxx_hidden_OrganizationId
+		return x.OrganizationId
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationVerificationStatusRequest) GetVerificationStatus() VerificationStatus {
 	if x != nil {
-		return x.xxx_hidden_VerificationStatus
+		return x.VerificationStatus
 	}
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 func (x *UpdateOrganizationVerificationStatusRequest) SetOrganizationId(v string) {
-	x.xxx_hidden_OrganizationId = v
+	x.OrganizationId = v
 }
 
 func (x *UpdateOrganizationVerificationStatusRequest) SetVerificationStatus(v VerificationStatus) {
-	x.xxx_hidden_VerificationStatus = v
+	x.VerificationStatus = v
 }
 
 type UpdateOrganizationVerificationStatusRequest_builder struct {
@@ -1022,13 +1025,13 @@ func (b0 UpdateOrganizationVerificationStatusRequest_builder) Build() *UpdateOrg
 	m0 := &UpdateOrganizationVerificationStatusRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OrganizationId = b.OrganizationId
-	x.xxx_hidden_VerificationStatus = b.VerificationStatus
+	x.OrganizationId = b.OrganizationId
+	x.VerificationStatus = b.VerificationStatus
 	return m0
 }
 
 type UpdateOrganizationVerificationStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1071,10 +1074,10 @@ func (b0 UpdateOrganizationVerificationStatusResponse_builder) Build() *UpdateOr
 }
 
 type CreateMachineUserRequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Username string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateMachineUserRequest) Reset() {
@@ -1104,13 +1107,13 @@ func (x *CreateMachineUserRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateMachineUserRequest) GetUsername() string {
 	if x != nil {
-		return x.xxx_hidden_Username
+		return x.Username
 	}
 	return ""
 }
 
 func (x *CreateMachineUserRequest) SetUsername(v string) {
-	x.xxx_hidden_Username = v
+	x.Username = v
 }
 
 type CreateMachineUserRequest_builder struct {
@@ -1123,15 +1126,15 @@ func (b0 CreateMachineUserRequest_builder) Build() *CreateMachineUserRequest {
 	m0 := &CreateMachineUserRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Username = b.Username
+	x.Username = b.Username
 	return m0
 }
 
 type CreateMachineUserResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateMachineUserResponse) Reset() {
@@ -1161,24 +1164,24 @@ func (x *CreateMachineUserResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateMachineUserResponse) GetUser() *User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *CreateMachineUserResponse) SetUser(v *User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *CreateMachineUserResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *CreateMachineUserResponse) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 type CreateMachineUserResponse_builder struct {
@@ -1191,12 +1194,12 @@ func (b0 CreateMachineUserResponse_builder) Build() *CreateMachineUserResponse {
 	m0 := &CreateMachineUserResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_User = b.User
+	x.User = b.User
 	return m0
 }
 
 type GetBreakingChangePolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1239,10 +1242,10 @@ func (b0 GetBreakingChangePolicyRequest_builder) Build() *GetBreakingChangePolic
 }
 
 type GetBreakingChangePolicyResponse struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Policy *BreakingChangePolicy  `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Policy        *BreakingChangePolicy  `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetBreakingChangePolicyResponse) Reset() {
@@ -1272,24 +1275,24 @@ func (x *GetBreakingChangePolicyResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetBreakingChangePolicyResponse) GetPolicy() *BreakingChangePolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		return x.Policy
 	}
 	return nil
 }
 
 func (x *GetBreakingChangePolicyResponse) SetPolicy(v *BreakingChangePolicy) {
-	x.xxx_hidden_Policy = v
+	x.Policy = v
 }
 
 func (x *GetBreakingChangePolicyResponse) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return x.Policy != nil
 }
 
 func (x *GetBreakingChangePolicyResponse) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	x.Policy = nil
 }
 
 type GetBreakingChangePolicyResponse_builder struct {
@@ -1302,15 +1305,15 @@ func (b0 GetBreakingChangePolicyResponse_builder) Build() *GetBreakingChangePoli
 	m0 := &GetBreakingChangePolicyResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	x.Policy = b.Policy
 	return m0
 }
 
 type UpdateBreakingChangePolicyRequest struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Policy *BreakingChangePolicy  `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Policy        *BreakingChangePolicy  `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateBreakingChangePolicyRequest) Reset() {
@@ -1340,24 +1343,24 @@ func (x *UpdateBreakingChangePolicyRequest) ProtoReflect() protoreflect.Message 
 
 func (x *UpdateBreakingChangePolicyRequest) GetPolicy() *BreakingChangePolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		return x.Policy
 	}
 	return nil
 }
 
 func (x *UpdateBreakingChangePolicyRequest) SetPolicy(v *BreakingChangePolicy) {
-	x.xxx_hidden_Policy = v
+	x.Policy = v
 }
 
 func (x *UpdateBreakingChangePolicyRequest) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return x.Policy != nil
 }
 
 func (x *UpdateBreakingChangePolicyRequest) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	x.Policy = nil
 }
 
 type UpdateBreakingChangePolicyRequest_builder struct {
@@ -1370,12 +1373,12 @@ func (b0 UpdateBreakingChangePolicyRequest_builder) Build() *UpdateBreakingChang
 	m0 := &UpdateBreakingChangePolicyRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	x.Policy = b.Policy
 	return m0
 }
 
 type UpdateBreakingChangePolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1418,7 +1421,7 @@ func (b0 UpdateBreakingChangePolicyResponse_builder) Build() *UpdateBreakingChan
 }
 
 type GetUniquenessPolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1461,11 +1464,14 @@ func (b0 GetUniquenessPolicyRequest_builder) Build() *GetUniquenessPolicyRequest
 }
 
 type GetUniquenessPolicyResponse struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Policy               *UniquenessPolicy      `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	xxx_hidden_BackfillTaskComplete bool                   `protobuf:"varint,2,opt,name=backfill_task_complete,json=backfillTaskComplete,proto3" json:"backfill_task_complete,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The current uniqueness policy settings.
+	Policy *UniquenessPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// Reports the status of the backfill task, which can be executed by the server admin with the
+	// RunServerUniquenessBackfillTask RPC.
+	BackfillTaskComplete bool `protobuf:"varint,2,opt,name=backfill_task_complete,json=backfillTaskComplete,proto3" json:"backfill_task_complete,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetUniquenessPolicyResponse) Reset() {
@@ -1495,35 +1501,35 @@ func (x *GetUniquenessPolicyResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUniquenessPolicyResponse) GetPolicy() *UniquenessPolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		return x.Policy
 	}
 	return nil
 }
 
 func (x *GetUniquenessPolicyResponse) GetBackfillTaskComplete() bool {
 	if x != nil {
-		return x.xxx_hidden_BackfillTaskComplete
+		return x.BackfillTaskComplete
 	}
 	return false
 }
 
 func (x *GetUniquenessPolicyResponse) SetPolicy(v *UniquenessPolicy) {
-	x.xxx_hidden_Policy = v
+	x.Policy = v
 }
 
 func (x *GetUniquenessPolicyResponse) SetBackfillTaskComplete(v bool) {
-	x.xxx_hidden_BackfillTaskComplete = v
+	x.BackfillTaskComplete = v
 }
 
 func (x *GetUniquenessPolicyResponse) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return x.Policy != nil
 }
 
 func (x *GetUniquenessPolicyResponse) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	x.Policy = nil
 }
 
 type GetUniquenessPolicyResponse_builder struct {
@@ -1540,16 +1546,16 @@ func (b0 GetUniquenessPolicyResponse_builder) Build() *GetUniquenessPolicyRespon
 	m0 := &GetUniquenessPolicyResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
-	x.xxx_hidden_BackfillTaskComplete = b.BackfillTaskComplete
+	x.Policy = b.Policy
+	x.BackfillTaskComplete = b.BackfillTaskComplete
 	return m0
 }
 
 type UpdateUniquenessPolicyRequest struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Policy *UniquenessPolicy      `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Policy        *UniquenessPolicy      `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateUniquenessPolicyRequest) Reset() {
@@ -1579,24 +1585,24 @@ func (x *UpdateUniquenessPolicyRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateUniquenessPolicyRequest) GetPolicy() *UniquenessPolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		return x.Policy
 	}
 	return nil
 }
 
 func (x *UpdateUniquenessPolicyRequest) SetPolicy(v *UniquenessPolicy) {
-	x.xxx_hidden_Policy = v
+	x.Policy = v
 }
 
 func (x *UpdateUniquenessPolicyRequest) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return x.Policy != nil
 }
 
 func (x *UpdateUniquenessPolicyRequest) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	x.Policy = nil
 }
 
 type UpdateUniquenessPolicyRequest_builder struct {
@@ -1609,12 +1615,12 @@ func (b0 UpdateUniquenessPolicyRequest_builder) Build() *UpdateUniquenessPolicyR
 	m0 := &UpdateUniquenessPolicyRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	x.Policy = b.Policy
 	return m0
 }
 
 type UpdateUniquenessPolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1657,12 +1663,22 @@ func (b0 UpdateUniquenessPolicyResponse_builder) Build() *UpdateUniquenessPolicy
 }
 
 type ListServerUniquenessCollisionsRequest struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PageToken     string                 `protobuf:"bytes,1,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	xxx_hidden_PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	xxx_hidden_CollisionType CollisionType          `protobuf:"varint,3,opt,name=collision_type,json=collisionType,proto3,enum=buf.alpha.registry.v1alpha1.CollisionType" json:"collision_type,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Token of the page to retrieve. If not specified, the first page of
+	// results will be returned. Use the value obtained from `next_page_token`
+	// in the previous response in order to request the next page of results.
+	PageToken string `protobuf:"bytes,1,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	// Number of elements to retrieve in a single page.
+	// When too large a page is requested, the server may decide to further
+	// limit the number of returned resources.
+	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The desired collision type to filter by.
+	// This must be specified. Only collisions of the specified type will be returned,
+	// continue to page through results until no more collisions of the specified
+	// type are returned.
+	CollisionType CollisionType `protobuf:"varint,3,opt,name=collision_type,json=collisionType,proto3,enum=buf.alpha.registry.v1alpha1.CollisionType" json:"collision_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListServerUniquenessCollisionsRequest) Reset() {
@@ -1692,35 +1708,35 @@ func (x *ListServerUniquenessCollisionsRequest) ProtoReflect() protoreflect.Mess
 
 func (x *ListServerUniquenessCollisionsRequest) GetPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_PageToken
+		return x.PageToken
 	}
 	return ""
 }
 
 func (x *ListServerUniquenessCollisionsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.xxx_hidden_PageSize
+		return x.PageSize
 	}
 	return 0
 }
 
 func (x *ListServerUniquenessCollisionsRequest) GetCollisionType() CollisionType {
 	if x != nil {
-		return x.xxx_hidden_CollisionType
+		return x.CollisionType
 	}
 	return CollisionType_COLLISION_TYPE_UNSPECIFIED
 }
 
 func (x *ListServerUniquenessCollisionsRequest) SetPageToken(v string) {
-	x.xxx_hidden_PageToken = v
+	x.PageToken = v
 }
 
 func (x *ListServerUniquenessCollisionsRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
+	x.PageSize = v
 }
 
 func (x *ListServerUniquenessCollisionsRequest) SetCollisionType(v CollisionType) {
-	x.xxx_hidden_CollisionType = v
+	x.CollisionType = v
 }
 
 type ListServerUniquenessCollisionsRequest_builder struct {
@@ -1745,18 +1761,23 @@ func (b0 ListServerUniquenessCollisionsRequest_builder) Build() *ListServerUniqu
 	m0 := &ListServerUniquenessCollisionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_CollisionType = b.CollisionType
+	x.PageToken = b.PageToken
+	x.PageSize = b.PageSize
+	x.CollisionType = b.CollisionType
 	return m0
 }
 
 type ListServerUniquenessCollisionsResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Collisions    *[]*Collision          `protobuf:"bytes,1,rep,name=collisions,proto3" json:"collisions,omitempty"`
-	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The collisions.
+	Collisions []*Collision `protobuf:"bytes,1,rep,name=collisions,proto3" json:"collisions,omitempty"`
+	// Pagination token used to retrieve the next page of results.
+	// Pass the content of this string as the `page_token` attribute of
+	// the next request. `next_page_token` is not returned for the last
+	// page.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListServerUniquenessCollisionsResponse) Reset() {
@@ -1786,26 +1807,24 @@ func (x *ListServerUniquenessCollisionsResponse) ProtoReflect() protoreflect.Mes
 
 func (x *ListServerUniquenessCollisionsResponse) GetCollisions() []*Collision {
 	if x != nil {
-		if x.xxx_hidden_Collisions != nil {
-			return *x.xxx_hidden_Collisions
-		}
+		return x.Collisions
 	}
 	return nil
 }
 
 func (x *ListServerUniquenessCollisionsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.xxx_hidden_NextPageToken
+		return x.NextPageToken
 	}
 	return ""
 }
 
 func (x *ListServerUniquenessCollisionsResponse) SetCollisions(v []*Collision) {
-	x.xxx_hidden_Collisions = &v
+	x.Collisions = v
 }
 
 func (x *ListServerUniquenessCollisionsResponse) SetNextPageToken(v string) {
-	x.xxx_hidden_NextPageToken = v
+	x.NextPageToken = v
 }
 
 type ListServerUniquenessCollisionsResponse_builder struct {
@@ -1824,13 +1843,13 @@ func (b0 ListServerUniquenessCollisionsResponse_builder) Build() *ListServerUniq
 	m0 := &ListServerUniquenessCollisionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Collisions = &b.Collisions
-	x.xxx_hidden_NextPageToken = b.NextPageToken
+	x.Collisions = b.Collisions
+	x.NextPageToken = b.NextPageToken
 	return m0
 }
 
 type RunServerUniquenessBackfillTaskRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1873,7 +1892,7 @@ func (b0 RunServerUniquenessBackfillTaskRequest_builder) Build() *RunServerUniqu
 }
 
 type RunServerUniquenessBackfillTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1916,7 +1935,7 @@ func (b0 RunServerUniquenessBackfillTaskResponse_builder) Build() *RunServerUniq
 }
 
 type GetReviewFlowGracePeriodPolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1959,10 +1978,11 @@ func (b0 GetReviewFlowGracePeriodPolicyRequest_builder) Build() *GetReviewFlowGr
 }
 
 type GetReviewFlowGracePeriodPolicyResponse struct {
-	state             protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Policy *ReviewFlowGracePeriodPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The current grace period policy settings.
+	Policy        *ReviewFlowGracePeriodPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetReviewFlowGracePeriodPolicyResponse) Reset() {
@@ -1992,24 +2012,24 @@ func (x *GetReviewFlowGracePeriodPolicyResponse) ProtoReflect() protoreflect.Mes
 
 func (x *GetReviewFlowGracePeriodPolicyResponse) GetPolicy() *ReviewFlowGracePeriodPolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		return x.Policy
 	}
 	return nil
 }
 
 func (x *GetReviewFlowGracePeriodPolicyResponse) SetPolicy(v *ReviewFlowGracePeriodPolicy) {
-	x.xxx_hidden_Policy = v
+	x.Policy = v
 }
 
 func (x *GetReviewFlowGracePeriodPolicyResponse) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return x.Policy != nil
 }
 
 func (x *GetReviewFlowGracePeriodPolicyResponse) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	x.Policy = nil
 }
 
 type GetReviewFlowGracePeriodPolicyResponse_builder struct {
@@ -2023,15 +2043,16 @@ func (b0 GetReviewFlowGracePeriodPolicyResponse_builder) Build() *GetReviewFlowG
 	m0 := &GetReviewFlowGracePeriodPolicyResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	x.Policy = b.Policy
 	return m0
 }
 
 type UpdateReviewFlowGracePeriodPolicyRequest struct {
-	state             protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Policy *ReviewFlowGracePeriodPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The new grace period policy settings.
+	Policy        *ReviewFlowGracePeriodPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateReviewFlowGracePeriodPolicyRequest) Reset() {
@@ -2061,24 +2082,24 @@ func (x *UpdateReviewFlowGracePeriodPolicyRequest) ProtoReflect() protoreflect.M
 
 func (x *UpdateReviewFlowGracePeriodPolicyRequest) GetPolicy() *ReviewFlowGracePeriodPolicy {
 	if x != nil {
-		return x.xxx_hidden_Policy
+		return x.Policy
 	}
 	return nil
 }
 
 func (x *UpdateReviewFlowGracePeriodPolicyRequest) SetPolicy(v *ReviewFlowGracePeriodPolicy) {
-	x.xxx_hidden_Policy = v
+	x.Policy = v
 }
 
 func (x *UpdateReviewFlowGracePeriodPolicyRequest) HasPolicy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Policy != nil
+	return x.Policy != nil
 }
 
 func (x *UpdateReviewFlowGracePeriodPolicyRequest) ClearPolicy() {
-	x.xxx_hidden_Policy = nil
+	x.Policy = nil
 }
 
 type UpdateReviewFlowGracePeriodPolicyRequest_builder struct {
@@ -2092,12 +2113,12 @@ func (b0 UpdateReviewFlowGracePeriodPolicyRequest_builder) Build() *UpdateReview
 	m0 := &UpdateReviewFlowGracePeriodPolicyRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Policy = b.Policy
+	x.Policy = b.Policy
 	return m0
 }
 
 type UpdateReviewFlowGracePeriodPolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2140,11 +2161,13 @@ func (b0 UpdateReviewFlowGracePeriodPolicyResponse_builder) Build() *UpdateRevie
 }
 
 type GetClusterUsageRequest struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_StartTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	xxx_hidden_EndTime   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The timestamp of the beginning time of a date range.
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// The timestamp of the ending time of a date range.
+	EndTime       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetClusterUsageRequest) Reset() {
@@ -2174,46 +2197,46 @@ func (x *GetClusterUsageRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetClusterUsageRequest) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_StartTime
+		return x.StartTime
 	}
 	return nil
 }
 
 func (x *GetClusterUsageRequest) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_EndTime
+		return x.EndTime
 	}
 	return nil
 }
 
 func (x *GetClusterUsageRequest) SetStartTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_StartTime = v
+	x.StartTime = v
 }
 
 func (x *GetClusterUsageRequest) SetEndTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_EndTime = v
+	x.EndTime = v
 }
 
 func (x *GetClusterUsageRequest) HasStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_StartTime != nil
+	return x.StartTime != nil
 }
 
 func (x *GetClusterUsageRequest) HasEndTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_EndTime != nil
+	return x.EndTime != nil
 }
 
 func (x *GetClusterUsageRequest) ClearStartTime() {
-	x.xxx_hidden_StartTime = nil
+	x.StartTime = nil
 }
 
 func (x *GetClusterUsageRequest) ClearEndTime() {
-	x.xxx_hidden_EndTime = nil
+	x.EndTime = nil
 }
 
 type GetClusterUsageRequest_builder struct {
@@ -2229,16 +2252,16 @@ func (b0 GetClusterUsageRequest_builder) Build() *GetClusterUsageRequest {
 	m0 := &GetClusterUsageRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_StartTime = b.StartTime
-	x.xxx_hidden_EndTime = b.EndTime
+	x.StartTime = b.StartTime
+	x.EndTime = b.EndTime
 	return m0
 }
 
 type GetClusterUsageResponse struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Usage *[]*MonthlyUsage       `protobuf:"bytes,1,rep,name=usage,proto3" json:"usage,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Usage         []*MonthlyUsage        `protobuf:"bytes,1,rep,name=usage,proto3" json:"usage,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetClusterUsageResponse) Reset() {
@@ -2268,15 +2291,13 @@ func (x *GetClusterUsageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetClusterUsageResponse) GetUsage() []*MonthlyUsage {
 	if x != nil {
-		if x.xxx_hidden_Usage != nil {
-			return *x.xxx_hidden_Usage
-		}
+		return x.Usage
 	}
 	return nil
 }
 
 func (x *GetClusterUsageResponse) SetUsage(v []*MonthlyUsage) {
-	x.xxx_hidden_Usage = &v
+	x.Usage = v
 }
 
 type GetClusterUsageResponse_builder struct {
@@ -2289,7 +2310,7 @@ func (b0 GetClusterUsageResponse_builder) Build() *GetClusterUsageResponse {
 	m0 := &GetClusterUsageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Usage = &b.Usage
+	x.Usage = b.Usage
 	return m0
 }
 

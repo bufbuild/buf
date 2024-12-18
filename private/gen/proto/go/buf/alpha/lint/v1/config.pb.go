@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/lint/v1/config.proto
 
+//go:build !protoopaque
+
 package lintv1
 
 import (
@@ -41,20 +43,36 @@ const (
 // The rule and category IDs are not encoded as enums in this package because we may want to support custom rule
 // and category IDs in the future. Callers will need to resolve the rule and category ID strings.
 type Config struct {
-	state                                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Version                              string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	xxx_hidden_UseIds                               []string               `protobuf:"bytes,2,rep,name=use_ids,json=useIds,proto3" json:"use_ids,omitempty"`
-	xxx_hidden_ExceptIds                            []string               `protobuf:"bytes,3,rep,name=except_ids,json=exceptIds,proto3" json:"except_ids,omitempty"`
-	xxx_hidden_IgnorePaths                          []string               `protobuf:"bytes,4,rep,name=ignore_paths,json=ignorePaths,proto3" json:"ignore_paths,omitempty"`
-	xxx_hidden_IgnoreIdPaths                        *[]*IDPaths            `protobuf:"bytes,5,rep,name=ignore_id_paths,json=ignoreIdPaths,proto3" json:"ignore_id_paths,omitempty"`
-	xxx_hidden_EnumZeroValueSuffix                  string                 `protobuf:"bytes,6,opt,name=enum_zero_value_suffix,json=enumZeroValueSuffix,proto3" json:"enum_zero_value_suffix,omitempty"`
-	xxx_hidden_RpcAllowSameRequestResponse          bool                   `protobuf:"varint,7,opt,name=rpc_allow_same_request_response,json=rpcAllowSameRequestResponse,proto3" json:"rpc_allow_same_request_response,omitempty"`
-	xxx_hidden_RpcAllowGoogleProtobufEmptyRequests  bool                   `protobuf:"varint,8,opt,name=rpc_allow_google_protobuf_empty_requests,json=rpcAllowGoogleProtobufEmptyRequests,proto3" json:"rpc_allow_google_protobuf_empty_requests,omitempty"`
-	xxx_hidden_RpcAllowGoogleProtobufEmptyResponses bool                   `protobuf:"varint,9,opt,name=rpc_allow_google_protobuf_empty_responses,json=rpcAllowGoogleProtobufEmptyResponses,proto3" json:"rpc_allow_google_protobuf_empty_responses,omitempty"`
-	xxx_hidden_ServiceSuffix                        string                 `protobuf:"bytes,10,opt,name=service_suffix,json=serviceSuffix,proto3" json:"service_suffix,omitempty"`
-	xxx_hidden_AllowCommentIgnores                  bool                   `protobuf:"varint,11,opt,name=allow_comment_ignores,json=allowCommentIgnores,proto3" json:"allow_comment_ignores,omitempty"`
-	unknownFields                                   protoimpl.UnknownFields
-	sizeCache                                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// version represents the version of the lint rule and category IDs that should be used with this config.
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	// use_ids lists the rule and/or category IDs that are included in the lint check.
+	UseIds []string `protobuf:"bytes,2,rep,name=use_ids,json=useIds,proto3" json:"use_ids,omitempty"`
+	// except_ids lists the rule and/or category IDs that are excluded from the lint check.
+	ExceptIds []string `protobuf:"bytes,3,rep,name=except_ids,json=exceptIds,proto3" json:"except_ids,omitempty"`
+	// ignore_paths lists the paths of directories and/or files that should be ignored by the lint check.
+	// All paths are relative to the root of the module.
+	IgnorePaths []string `protobuf:"bytes,4,rep,name=ignore_paths,json=ignorePaths,proto3" json:"ignore_paths,omitempty"`
+	// ignore_id_paths is a map of rule and/or category IDs to directory and/or file paths to exclude from the
+	// lint check. This corresponds with the ignore_only configuration key.
+	IgnoreIdPaths []*IDPaths `protobuf:"bytes,5,rep,name=ignore_id_paths,json=ignoreIdPaths,proto3" json:"ignore_id_paths,omitempty"`
+	// enum_zero_value_suffix controls the behavior of the ENUM_ZERO_VALUE lint rule ID. By default, this rule
+	// verifies that the zero value of all enums ends in _UNSPECIFIED. This config allows the user to override
+	// this value with the given string.
+	EnumZeroValueSuffix string `protobuf:"bytes,6,opt,name=enum_zero_value_suffix,json=enumZeroValueSuffix,proto3" json:"enum_zero_value_suffix,omitempty"`
+	// rpc_allow_same_request_response allows the same message type for both the request and response of an RPC.
+	RpcAllowSameRequestResponse bool `protobuf:"varint,7,opt,name=rpc_allow_same_request_response,json=rpcAllowSameRequestResponse,proto3" json:"rpc_allow_same_request_response,omitempty"`
+	// rpc_allow_google_protobuf_empty_requests allows the RPC requests to use the google.protobuf.Empty message.
+	RpcAllowGoogleProtobufEmptyRequests bool `protobuf:"varint,8,opt,name=rpc_allow_google_protobuf_empty_requests,json=rpcAllowGoogleProtobufEmptyRequests,proto3" json:"rpc_allow_google_protobuf_empty_requests,omitempty"`
+	// rpc_allow_google_protobuf_empty_responses allows the RPC responses to use the google.protobuf.Empty message.
+	RpcAllowGoogleProtobufEmptyResponses bool `protobuf:"varint,9,opt,name=rpc_allow_google_protobuf_empty_responses,json=rpcAllowGoogleProtobufEmptyResponses,proto3" json:"rpc_allow_google_protobuf_empty_responses,omitempty"`
+	// service_suffix applies to the SERVICE_SUFFIX rule ID. By default, the rule verifies that all service names
+	// end with the suffix Service. This allows users to override the value with the given string.
+	ServiceSuffix string `protobuf:"bytes,10,opt,name=service_suffix,json=serviceSuffix,proto3" json:"service_suffix,omitempty"`
+	// allow_comment_ignores turns on comment-driven ignores.
+	AllowCommentIgnores bool `protobuf:"varint,11,opt,name=allow_comment_ignores,json=allowCommentIgnores,proto3" json:"allow_comment_ignores,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -84,125 +102,123 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 func (x *Config) GetVersion() string {
 	if x != nil {
-		return x.xxx_hidden_Version
+		return x.Version
 	}
 	return ""
 }
 
 func (x *Config) GetUseIds() []string {
 	if x != nil {
-		return x.xxx_hidden_UseIds
+		return x.UseIds
 	}
 	return nil
 }
 
 func (x *Config) GetExceptIds() []string {
 	if x != nil {
-		return x.xxx_hidden_ExceptIds
+		return x.ExceptIds
 	}
 	return nil
 }
 
 func (x *Config) GetIgnorePaths() []string {
 	if x != nil {
-		return x.xxx_hidden_IgnorePaths
+		return x.IgnorePaths
 	}
 	return nil
 }
 
 func (x *Config) GetIgnoreIdPaths() []*IDPaths {
 	if x != nil {
-		if x.xxx_hidden_IgnoreIdPaths != nil {
-			return *x.xxx_hidden_IgnoreIdPaths
-		}
+		return x.IgnoreIdPaths
 	}
 	return nil
 }
 
 func (x *Config) GetEnumZeroValueSuffix() string {
 	if x != nil {
-		return x.xxx_hidden_EnumZeroValueSuffix
+		return x.EnumZeroValueSuffix
 	}
 	return ""
 }
 
 func (x *Config) GetRpcAllowSameRequestResponse() bool {
 	if x != nil {
-		return x.xxx_hidden_RpcAllowSameRequestResponse
+		return x.RpcAllowSameRequestResponse
 	}
 	return false
 }
 
 func (x *Config) GetRpcAllowGoogleProtobufEmptyRequests() bool {
 	if x != nil {
-		return x.xxx_hidden_RpcAllowGoogleProtobufEmptyRequests
+		return x.RpcAllowGoogleProtobufEmptyRequests
 	}
 	return false
 }
 
 func (x *Config) GetRpcAllowGoogleProtobufEmptyResponses() bool {
 	if x != nil {
-		return x.xxx_hidden_RpcAllowGoogleProtobufEmptyResponses
+		return x.RpcAllowGoogleProtobufEmptyResponses
 	}
 	return false
 }
 
 func (x *Config) GetServiceSuffix() string {
 	if x != nil {
-		return x.xxx_hidden_ServiceSuffix
+		return x.ServiceSuffix
 	}
 	return ""
 }
 
 func (x *Config) GetAllowCommentIgnores() bool {
 	if x != nil {
-		return x.xxx_hidden_AllowCommentIgnores
+		return x.AllowCommentIgnores
 	}
 	return false
 }
 
 func (x *Config) SetVersion(v string) {
-	x.xxx_hidden_Version = v
+	x.Version = v
 }
 
 func (x *Config) SetUseIds(v []string) {
-	x.xxx_hidden_UseIds = v
+	x.UseIds = v
 }
 
 func (x *Config) SetExceptIds(v []string) {
-	x.xxx_hidden_ExceptIds = v
+	x.ExceptIds = v
 }
 
 func (x *Config) SetIgnorePaths(v []string) {
-	x.xxx_hidden_IgnorePaths = v
+	x.IgnorePaths = v
 }
 
 func (x *Config) SetIgnoreIdPaths(v []*IDPaths) {
-	x.xxx_hidden_IgnoreIdPaths = &v
+	x.IgnoreIdPaths = v
 }
 
 func (x *Config) SetEnumZeroValueSuffix(v string) {
-	x.xxx_hidden_EnumZeroValueSuffix = v
+	x.EnumZeroValueSuffix = v
 }
 
 func (x *Config) SetRpcAllowSameRequestResponse(v bool) {
-	x.xxx_hidden_RpcAllowSameRequestResponse = v
+	x.RpcAllowSameRequestResponse = v
 }
 
 func (x *Config) SetRpcAllowGoogleProtobufEmptyRequests(v bool) {
-	x.xxx_hidden_RpcAllowGoogleProtobufEmptyRequests = v
+	x.RpcAllowGoogleProtobufEmptyRequests = v
 }
 
 func (x *Config) SetRpcAllowGoogleProtobufEmptyResponses(v bool) {
-	x.xxx_hidden_RpcAllowGoogleProtobufEmptyResponses = v
+	x.RpcAllowGoogleProtobufEmptyResponses = v
 }
 
 func (x *Config) SetServiceSuffix(v string) {
-	x.xxx_hidden_ServiceSuffix = v
+	x.ServiceSuffix = v
 }
 
 func (x *Config) SetAllowCommentIgnores(v bool) {
-	x.xxx_hidden_AllowCommentIgnores = v
+	x.AllowCommentIgnores = v
 }
 
 type Config_builder struct {
@@ -241,27 +257,27 @@ func (b0 Config_builder) Build() *Config {
 	m0 := &Config{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Version = b.Version
-	x.xxx_hidden_UseIds = b.UseIds
-	x.xxx_hidden_ExceptIds = b.ExceptIds
-	x.xxx_hidden_IgnorePaths = b.IgnorePaths
-	x.xxx_hidden_IgnoreIdPaths = &b.IgnoreIdPaths
-	x.xxx_hidden_EnumZeroValueSuffix = b.EnumZeroValueSuffix
-	x.xxx_hidden_RpcAllowSameRequestResponse = b.RpcAllowSameRequestResponse
-	x.xxx_hidden_RpcAllowGoogleProtobufEmptyRequests = b.RpcAllowGoogleProtobufEmptyRequests
-	x.xxx_hidden_RpcAllowGoogleProtobufEmptyResponses = b.RpcAllowGoogleProtobufEmptyResponses
-	x.xxx_hidden_ServiceSuffix = b.ServiceSuffix
-	x.xxx_hidden_AllowCommentIgnores = b.AllowCommentIgnores
+	x.Version = b.Version
+	x.UseIds = b.UseIds
+	x.ExceptIds = b.ExceptIds
+	x.IgnorePaths = b.IgnorePaths
+	x.IgnoreIdPaths = b.IgnoreIdPaths
+	x.EnumZeroValueSuffix = b.EnumZeroValueSuffix
+	x.RpcAllowSameRequestResponse = b.RpcAllowSameRequestResponse
+	x.RpcAllowGoogleProtobufEmptyRequests = b.RpcAllowGoogleProtobufEmptyRequests
+	x.RpcAllowGoogleProtobufEmptyResponses = b.RpcAllowGoogleProtobufEmptyResponses
+	x.ServiceSuffix = b.ServiceSuffix
+	x.AllowCommentIgnores = b.AllowCommentIgnores
 	return m0
 }
 
 // IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.
 type IDPaths struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	xxx_hidden_Paths []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IDPaths) Reset() {
@@ -291,24 +307,24 @@ func (x *IDPaths) ProtoReflect() protoreflect.Message {
 
 func (x *IDPaths) GetId() string {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.Id
 	}
 	return ""
 }
 
 func (x *IDPaths) GetPaths() []string {
 	if x != nil {
-		return x.xxx_hidden_Paths
+		return x.Paths
 	}
 	return nil
 }
 
 func (x *IDPaths) SetId(v string) {
-	x.xxx_hidden_Id = v
+	x.Id = v
 }
 
 func (x *IDPaths) SetPaths(v []string) {
-	x.xxx_hidden_Paths = v
+	x.Paths = v
 }
 
 type IDPaths_builder struct {
@@ -322,8 +338,8 @@ func (b0 IDPaths_builder) Build() *IDPaths {
 	m0 := &IDPaths{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_Paths = b.Paths
+	x.Id = b.Id
+	x.Paths = b.Paths
 	return m0
 }
 

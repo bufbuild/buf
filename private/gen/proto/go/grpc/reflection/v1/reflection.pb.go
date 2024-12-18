@@ -25,6 +25,8 @@
 // 	protoc        (unknown)
 // source: grpc/reflection/v1/reflection.proto
 
+//go:build !protoopaque
+
 package reflectionv1
 
 import (
@@ -42,11 +44,22 @@ const (
 
 // The message sent by the client when calling ServerReflectionInfo method.
 type ServerReflectionRequest struct {
-	state                     protoimpl.MessageState                   `protogen:"opaque.v1"`
-	xxx_hidden_Host           string                                   `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
-	xxx_hidden_MessageRequest isServerReflectionRequest_MessageRequest `protobuf_oneof:"message_request"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Host  string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// To use reflection service, the client should set one of the following
+	// fields in message_request. The server distinguishes requests by their
+	// defined field and then handles them using corresponding methods.
+	//
+	// Types that are valid to be assigned to MessageRequest:
+	//
+	//	*ServerReflectionRequest_FileByFilename
+	//	*ServerReflectionRequest_FileContainingSymbol
+	//	*ServerReflectionRequest_FileContainingExtension
+	//	*ServerReflectionRequest_AllExtensionNumbersOfType
+	//	*ServerReflectionRequest_ListServices
+	MessageRequest isServerReflectionRequest_MessageRequest `protobuf_oneof:"message_request"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ServerReflectionRequest) Reset() {
@@ -76,14 +89,21 @@ func (x *ServerReflectionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ServerReflectionRequest) GetHost() string {
 	if x != nil {
-		return x.xxx_hidden_Host
+		return x.Host
 	}
 	return ""
 }
 
+func (x *ServerReflectionRequest) GetMessageRequest() isServerReflectionRequest_MessageRequest {
+	if x != nil {
+		return x.MessageRequest
+	}
+	return nil
+}
+
 func (x *ServerReflectionRequest) GetFileByFilename() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileByFilename); ok {
+		if x, ok := x.MessageRequest.(*ServerReflectionRequest_FileByFilename); ok {
 			return x.FileByFilename
 		}
 	}
@@ -92,7 +112,7 @@ func (x *ServerReflectionRequest) GetFileByFilename() string {
 
 func (x *ServerReflectionRequest) GetFileContainingSymbol() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileContainingSymbol); ok {
+		if x, ok := x.MessageRequest.(*ServerReflectionRequest_FileContainingSymbol); ok {
 			return x.FileContainingSymbol
 		}
 	}
@@ -101,7 +121,7 @@ func (x *ServerReflectionRequest) GetFileContainingSymbol() string {
 
 func (x *ServerReflectionRequest) GetFileContainingExtension() *ExtensionRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileContainingExtension); ok {
+		if x, ok := x.MessageRequest.(*ServerReflectionRequest_FileContainingExtension); ok {
 			return x.FileContainingExtension
 		}
 	}
@@ -110,7 +130,7 @@ func (x *ServerReflectionRequest) GetFileContainingExtension() *ExtensionRequest
 
 func (x *ServerReflectionRequest) GetAllExtensionNumbersOfType() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_AllExtensionNumbersOfType); ok {
+		if x, ok := x.MessageRequest.(*ServerReflectionRequest_AllExtensionNumbersOfType); ok {
 			return x.AllExtensionNumbersOfType
 		}
 	}
@@ -119,7 +139,7 @@ func (x *ServerReflectionRequest) GetAllExtensionNumbersOfType() string {
 
 func (x *ServerReflectionRequest) GetListServices() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_ListServices); ok {
+		if x, ok := x.MessageRequest.(*ServerReflectionRequest_ListServices); ok {
 			return x.ListServices
 		}
 	}
@@ -127,45 +147,45 @@ func (x *ServerReflectionRequest) GetListServices() string {
 }
 
 func (x *ServerReflectionRequest) SetHost(v string) {
-	x.xxx_hidden_Host = v
+	x.Host = v
 }
 
 func (x *ServerReflectionRequest) SetFileByFilename(v string) {
-	x.xxx_hidden_MessageRequest = &serverReflectionRequest_FileByFilename{v}
+	x.MessageRequest = &ServerReflectionRequest_FileByFilename{v}
 }
 
 func (x *ServerReflectionRequest) SetFileContainingSymbol(v string) {
-	x.xxx_hidden_MessageRequest = &serverReflectionRequest_FileContainingSymbol{v}
+	x.MessageRequest = &ServerReflectionRequest_FileContainingSymbol{v}
 }
 
 func (x *ServerReflectionRequest) SetFileContainingExtension(v *ExtensionRequest) {
 	if v == nil {
-		x.xxx_hidden_MessageRequest = nil
+		x.MessageRequest = nil
 		return
 	}
-	x.xxx_hidden_MessageRequest = &serverReflectionRequest_FileContainingExtension{v}
+	x.MessageRequest = &ServerReflectionRequest_FileContainingExtension{v}
 }
 
 func (x *ServerReflectionRequest) SetAllExtensionNumbersOfType(v string) {
-	x.xxx_hidden_MessageRequest = &serverReflectionRequest_AllExtensionNumbersOfType{v}
+	x.MessageRequest = &ServerReflectionRequest_AllExtensionNumbersOfType{v}
 }
 
 func (x *ServerReflectionRequest) SetListServices(v string) {
-	x.xxx_hidden_MessageRequest = &serverReflectionRequest_ListServices{v}
+	x.MessageRequest = &ServerReflectionRequest_ListServices{v}
 }
 
 func (x *ServerReflectionRequest) HasMessageRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MessageRequest != nil
+	return x.MessageRequest != nil
 }
 
 func (x *ServerReflectionRequest) HasFileByFilename() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileByFilename)
+	_, ok := x.MessageRequest.(*ServerReflectionRequest_FileByFilename)
 	return ok
 }
 
@@ -173,7 +193,7 @@ func (x *ServerReflectionRequest) HasFileContainingSymbol() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileContainingSymbol)
+	_, ok := x.MessageRequest.(*ServerReflectionRequest_FileContainingSymbol)
 	return ok
 }
 
@@ -181,7 +201,7 @@ func (x *ServerReflectionRequest) HasFileContainingExtension() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileContainingExtension)
+	_, ok := x.MessageRequest.(*ServerReflectionRequest_FileContainingExtension)
 	return ok
 }
 
@@ -189,7 +209,7 @@ func (x *ServerReflectionRequest) HasAllExtensionNumbersOfType() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_AllExtensionNumbersOfType)
+	_, ok := x.MessageRequest.(*ServerReflectionRequest_AllExtensionNumbersOfType)
 	return ok
 }
 
@@ -197,41 +217,41 @@ func (x *ServerReflectionRequest) HasListServices() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_ListServices)
+	_, ok := x.MessageRequest.(*ServerReflectionRequest_ListServices)
 	return ok
 }
 
 func (x *ServerReflectionRequest) ClearMessageRequest() {
-	x.xxx_hidden_MessageRequest = nil
+	x.MessageRequest = nil
 }
 
 func (x *ServerReflectionRequest) ClearFileByFilename() {
-	if _, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileByFilename); ok {
-		x.xxx_hidden_MessageRequest = nil
+	if _, ok := x.MessageRequest.(*ServerReflectionRequest_FileByFilename); ok {
+		x.MessageRequest = nil
 	}
 }
 
 func (x *ServerReflectionRequest) ClearFileContainingSymbol() {
-	if _, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileContainingSymbol); ok {
-		x.xxx_hidden_MessageRequest = nil
+	if _, ok := x.MessageRequest.(*ServerReflectionRequest_FileContainingSymbol); ok {
+		x.MessageRequest = nil
 	}
 }
 
 func (x *ServerReflectionRequest) ClearFileContainingExtension() {
-	if _, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_FileContainingExtension); ok {
-		x.xxx_hidden_MessageRequest = nil
+	if _, ok := x.MessageRequest.(*ServerReflectionRequest_FileContainingExtension); ok {
+		x.MessageRequest = nil
 	}
 }
 
 func (x *ServerReflectionRequest) ClearAllExtensionNumbersOfType() {
-	if _, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_AllExtensionNumbersOfType); ok {
-		x.xxx_hidden_MessageRequest = nil
+	if _, ok := x.MessageRequest.(*ServerReflectionRequest_AllExtensionNumbersOfType); ok {
+		x.MessageRequest = nil
 	}
 }
 
 func (x *ServerReflectionRequest) ClearListServices() {
-	if _, ok := x.xxx_hidden_MessageRequest.(*serverReflectionRequest_ListServices); ok {
-		x.xxx_hidden_MessageRequest = nil
+	if _, ok := x.MessageRequest.(*ServerReflectionRequest_ListServices); ok {
+		x.MessageRequest = nil
 	}
 }
 
@@ -246,16 +266,16 @@ func (x *ServerReflectionRequest) WhichMessageRequest() case_ServerReflectionReq
 	if x == nil {
 		return ServerReflectionRequest_MessageRequest_not_set_case
 	}
-	switch x.xxx_hidden_MessageRequest.(type) {
-	case *serverReflectionRequest_FileByFilename:
+	switch x.MessageRequest.(type) {
+	case *ServerReflectionRequest_FileByFilename:
 		return ServerReflectionRequest_FileByFilename_case
-	case *serverReflectionRequest_FileContainingSymbol:
+	case *ServerReflectionRequest_FileContainingSymbol:
 		return ServerReflectionRequest_FileContainingSymbol_case
-	case *serverReflectionRequest_FileContainingExtension:
+	case *ServerReflectionRequest_FileContainingExtension:
 		return ServerReflectionRequest_FileContainingExtension_case
-	case *serverReflectionRequest_AllExtensionNumbersOfType:
+	case *ServerReflectionRequest_AllExtensionNumbersOfType:
 		return ServerReflectionRequest_AllExtensionNumbersOfType_case
-	case *serverReflectionRequest_ListServices:
+	case *ServerReflectionRequest_ListServices:
 		return ServerReflectionRequest_ListServices_case
 	default:
 		return ServerReflectionRequest_MessageRequest_not_set_case
@@ -270,7 +290,7 @@ type ServerReflectionRequest_builder struct {
 	// fields in message_request. The server distinguishes requests by their
 	// defined field and then handles them using corresponding methods.
 
-	// Fields of oneof xxx_hidden_MessageRequest:
+	// Fields of oneof MessageRequest:
 	// Find a proto file by the file name.
 	FileByFilename *string
 	// Find the proto file that declares the given fully-qualified symbol name.
@@ -292,28 +312,28 @@ type ServerReflectionRequest_builder struct {
 	// List the full names of registered services. The content will not be
 	// checked.
 	ListServices *string
-	// -- end of xxx_hidden_MessageRequest
+	// -- end of MessageRequest
 }
 
 func (b0 ServerReflectionRequest_builder) Build() *ServerReflectionRequest {
 	m0 := &ServerReflectionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Host = b.Host
+	x.Host = b.Host
 	if b.FileByFilename != nil {
-		x.xxx_hidden_MessageRequest = &serverReflectionRequest_FileByFilename{*b.FileByFilename}
+		x.MessageRequest = &ServerReflectionRequest_FileByFilename{*b.FileByFilename}
 	}
 	if b.FileContainingSymbol != nil {
-		x.xxx_hidden_MessageRequest = &serverReflectionRequest_FileContainingSymbol{*b.FileContainingSymbol}
+		x.MessageRequest = &ServerReflectionRequest_FileContainingSymbol{*b.FileContainingSymbol}
 	}
 	if b.FileContainingExtension != nil {
-		x.xxx_hidden_MessageRequest = &serverReflectionRequest_FileContainingExtension{b.FileContainingExtension}
+		x.MessageRequest = &ServerReflectionRequest_FileContainingExtension{b.FileContainingExtension}
 	}
 	if b.AllExtensionNumbersOfType != nil {
-		x.xxx_hidden_MessageRequest = &serverReflectionRequest_AllExtensionNumbersOfType{*b.AllExtensionNumbersOfType}
+		x.MessageRequest = &ServerReflectionRequest_AllExtensionNumbersOfType{*b.AllExtensionNumbersOfType}
 	}
 	if b.ListServices != nil {
-		x.xxx_hidden_MessageRequest = &serverReflectionRequest_ListServices{*b.ListServices}
+		x.MessageRequest = &ServerReflectionRequest_ListServices{*b.ListServices}
 	}
 	return m0
 }
@@ -332,25 +352,25 @@ type isServerReflectionRequest_MessageRequest interface {
 	isServerReflectionRequest_MessageRequest()
 }
 
-type serverReflectionRequest_FileByFilename struct {
+type ServerReflectionRequest_FileByFilename struct {
 	// Find a proto file by the file name.
 	FileByFilename string `protobuf:"bytes,3,opt,name=file_by_filename,json=fileByFilename,proto3,oneof"`
 }
 
-type serverReflectionRequest_FileContainingSymbol struct {
+type ServerReflectionRequest_FileContainingSymbol struct {
 	// Find the proto file that declares the given fully-qualified symbol name.
 	// This field should be a fully-qualified symbol name
 	// (e.g. <package>.<service>[.<method>] or <package>.<type>).
 	FileContainingSymbol string `protobuf:"bytes,4,opt,name=file_containing_symbol,json=fileContainingSymbol,proto3,oneof"`
 }
 
-type serverReflectionRequest_FileContainingExtension struct {
+type ServerReflectionRequest_FileContainingExtension struct {
 	// Find the proto file which defines an extension extending the given
 	// message type with the given field number.
 	FileContainingExtension *ExtensionRequest `protobuf:"bytes,5,opt,name=file_containing_extension,json=fileContainingExtension,proto3,oneof"`
 }
 
-type serverReflectionRequest_AllExtensionNumbersOfType struct {
+type ServerReflectionRequest_AllExtensionNumbersOfType struct {
 	// Finds the tag numbers used by all known extensions of the given message
 	// type, and appends them to ExtensionNumberResponse in an undefined order.
 	// Its corresponding method is best-effort: it's not guaranteed that the
@@ -362,31 +382,32 @@ type serverReflectionRequest_AllExtensionNumbersOfType struct {
 	AllExtensionNumbersOfType string `protobuf:"bytes,6,opt,name=all_extension_numbers_of_type,json=allExtensionNumbersOfType,proto3,oneof"`
 }
 
-type serverReflectionRequest_ListServices struct {
+type ServerReflectionRequest_ListServices struct {
 	// List the full names of registered services. The content will not be
 	// checked.
 	ListServices string `protobuf:"bytes,7,opt,name=list_services,json=listServices,proto3,oneof"`
 }
 
-func (*serverReflectionRequest_FileByFilename) isServerReflectionRequest_MessageRequest() {}
+func (*ServerReflectionRequest_FileByFilename) isServerReflectionRequest_MessageRequest() {}
 
-func (*serverReflectionRequest_FileContainingSymbol) isServerReflectionRequest_MessageRequest() {}
+func (*ServerReflectionRequest_FileContainingSymbol) isServerReflectionRequest_MessageRequest() {}
 
-func (*serverReflectionRequest_FileContainingExtension) isServerReflectionRequest_MessageRequest() {}
+func (*ServerReflectionRequest_FileContainingExtension) isServerReflectionRequest_MessageRequest() {}
 
-func (*serverReflectionRequest_AllExtensionNumbersOfType) isServerReflectionRequest_MessageRequest() {
+func (*ServerReflectionRequest_AllExtensionNumbersOfType) isServerReflectionRequest_MessageRequest() {
 }
 
-func (*serverReflectionRequest_ListServices) isServerReflectionRequest_MessageRequest() {}
+func (*ServerReflectionRequest_ListServices) isServerReflectionRequest_MessageRequest() {}
 
 // The type name and extension number sent by the client when requesting
 // file_containing_extension.
 type ExtensionRequest struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ContainingType  string                 `protobuf:"bytes,1,opt,name=containing_type,json=containingType,proto3" json:"containing_type,omitempty"`
-	xxx_hidden_ExtensionNumber int32                  `protobuf:"varint,2,opt,name=extension_number,json=extensionNumber,proto3" json:"extension_number,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Fully-qualified type name. The format should be <package>.<type>
+	ContainingType  string `protobuf:"bytes,1,opt,name=containing_type,json=containingType,proto3" json:"containing_type,omitempty"`
+	ExtensionNumber int32  `protobuf:"varint,2,opt,name=extension_number,json=extensionNumber,proto3" json:"extension_number,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ExtensionRequest) Reset() {
@@ -416,24 +437,24 @@ func (x *ExtensionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ExtensionRequest) GetContainingType() string {
 	if x != nil {
-		return x.xxx_hidden_ContainingType
+		return x.ContainingType
 	}
 	return ""
 }
 
 func (x *ExtensionRequest) GetExtensionNumber() int32 {
 	if x != nil {
-		return x.xxx_hidden_ExtensionNumber
+		return x.ExtensionNumber
 	}
 	return 0
 }
 
 func (x *ExtensionRequest) SetContainingType(v string) {
-	x.xxx_hidden_ContainingType = v
+	x.ContainingType = v
 }
 
 func (x *ExtensionRequest) SetExtensionNumber(v int32) {
-	x.xxx_hidden_ExtensionNumber = v
+	x.ExtensionNumber = v
 }
 
 type ExtensionRequest_builder struct {
@@ -448,19 +469,28 @@ func (b0 ExtensionRequest_builder) Build() *ExtensionRequest {
 	m0 := &ExtensionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ContainingType = b.ContainingType
-	x.xxx_hidden_ExtensionNumber = b.ExtensionNumber
+	x.ContainingType = b.ContainingType
+	x.ExtensionNumber = b.ExtensionNumber
 	return m0
 }
 
 // The message sent by the server to answer ServerReflectionInfo method.
 type ServerReflectionResponse struct {
-	state                      protoimpl.MessageState                     `protogen:"opaque.v1"`
-	xxx_hidden_ValidHost       string                                     `protobuf:"bytes,1,opt,name=valid_host,json=validHost,proto3" json:"valid_host,omitempty"`
-	xxx_hidden_OriginalRequest *ServerReflectionRequest                   `protobuf:"bytes,2,opt,name=original_request,json=originalRequest,proto3" json:"original_request,omitempty"`
-	xxx_hidden_MessageResponse isServerReflectionResponse_MessageResponse `protobuf_oneof:"message_response"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState   `protogen:"hybrid.v1"`
+	ValidHost       string                   `protobuf:"bytes,1,opt,name=valid_host,json=validHost,proto3" json:"valid_host,omitempty"`
+	OriginalRequest *ServerReflectionRequest `protobuf:"bytes,2,opt,name=original_request,json=originalRequest,proto3" json:"original_request,omitempty"`
+	// The server sets one of the following fields according to the message_request
+	// in the request.
+	//
+	// Types that are valid to be assigned to MessageResponse:
+	//
+	//	*ServerReflectionResponse_FileDescriptorResponse
+	//	*ServerReflectionResponse_AllExtensionNumbersResponse
+	//	*ServerReflectionResponse_ListServicesResponse
+	//	*ServerReflectionResponse_ErrorResponse
+	MessageResponse isServerReflectionResponse_MessageResponse `protobuf_oneof:"message_response"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ServerReflectionResponse) Reset() {
@@ -490,21 +520,28 @@ func (x *ServerReflectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ServerReflectionResponse) GetValidHost() string {
 	if x != nil {
-		return x.xxx_hidden_ValidHost
+		return x.ValidHost
 	}
 	return ""
 }
 
 func (x *ServerReflectionResponse) GetOriginalRequest() *ServerReflectionRequest {
 	if x != nil {
-		return x.xxx_hidden_OriginalRequest
+		return x.OriginalRequest
+	}
+	return nil
+}
+
+func (x *ServerReflectionResponse) GetMessageResponse() isServerReflectionResponse_MessageResponse {
+	if x != nil {
+		return x.MessageResponse
 	}
 	return nil
 }
 
 func (x *ServerReflectionResponse) GetFileDescriptorResponse() *FileDescriptorResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_FileDescriptorResponse); ok {
+		if x, ok := x.MessageResponse.(*ServerReflectionResponse_FileDescriptorResponse); ok {
 			return x.FileDescriptorResponse
 		}
 	}
@@ -513,7 +550,7 @@ func (x *ServerReflectionResponse) GetFileDescriptorResponse() *FileDescriptorRe
 
 func (x *ServerReflectionResponse) GetAllExtensionNumbersResponse() *ExtensionNumberResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_AllExtensionNumbersResponse); ok {
+		if x, ok := x.MessageResponse.(*ServerReflectionResponse_AllExtensionNumbersResponse); ok {
 			return x.AllExtensionNumbersResponse
 		}
 	}
@@ -522,7 +559,7 @@ func (x *ServerReflectionResponse) GetAllExtensionNumbersResponse() *ExtensionNu
 
 func (x *ServerReflectionResponse) GetListServicesResponse() *ListServiceResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_ListServicesResponse); ok {
+		if x, ok := x.MessageResponse.(*ServerReflectionResponse_ListServicesResponse); ok {
 			return x.ListServicesResponse
 		}
 	}
@@ -531,7 +568,7 @@ func (x *ServerReflectionResponse) GetListServicesResponse() *ListServiceRespons
 
 func (x *ServerReflectionResponse) GetErrorResponse() *ErrorResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_ErrorResponse); ok {
+		if x, ok := x.MessageResponse.(*ServerReflectionResponse_ErrorResponse); ok {
 			return x.ErrorResponse
 		}
 	}
@@ -539,64 +576,64 @@ func (x *ServerReflectionResponse) GetErrorResponse() *ErrorResponse {
 }
 
 func (x *ServerReflectionResponse) SetValidHost(v string) {
-	x.xxx_hidden_ValidHost = v
+	x.ValidHost = v
 }
 
 func (x *ServerReflectionResponse) SetOriginalRequest(v *ServerReflectionRequest) {
-	x.xxx_hidden_OriginalRequest = v
+	x.OriginalRequest = v
 }
 
 func (x *ServerReflectionResponse) SetFileDescriptorResponse(v *FileDescriptorResponse) {
 	if v == nil {
-		x.xxx_hidden_MessageResponse = nil
+		x.MessageResponse = nil
 		return
 	}
-	x.xxx_hidden_MessageResponse = &serverReflectionResponse_FileDescriptorResponse{v}
+	x.MessageResponse = &ServerReflectionResponse_FileDescriptorResponse{v}
 }
 
 func (x *ServerReflectionResponse) SetAllExtensionNumbersResponse(v *ExtensionNumberResponse) {
 	if v == nil {
-		x.xxx_hidden_MessageResponse = nil
+		x.MessageResponse = nil
 		return
 	}
-	x.xxx_hidden_MessageResponse = &serverReflectionResponse_AllExtensionNumbersResponse{v}
+	x.MessageResponse = &ServerReflectionResponse_AllExtensionNumbersResponse{v}
 }
 
 func (x *ServerReflectionResponse) SetListServicesResponse(v *ListServiceResponse) {
 	if v == nil {
-		x.xxx_hidden_MessageResponse = nil
+		x.MessageResponse = nil
 		return
 	}
-	x.xxx_hidden_MessageResponse = &serverReflectionResponse_ListServicesResponse{v}
+	x.MessageResponse = &ServerReflectionResponse_ListServicesResponse{v}
 }
 
 func (x *ServerReflectionResponse) SetErrorResponse(v *ErrorResponse) {
 	if v == nil {
-		x.xxx_hidden_MessageResponse = nil
+		x.MessageResponse = nil
 		return
 	}
-	x.xxx_hidden_MessageResponse = &serverReflectionResponse_ErrorResponse{v}
+	x.MessageResponse = &ServerReflectionResponse_ErrorResponse{v}
 }
 
 func (x *ServerReflectionResponse) HasOriginalRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_OriginalRequest != nil
+	return x.OriginalRequest != nil
 }
 
 func (x *ServerReflectionResponse) HasMessageResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_MessageResponse != nil
+	return x.MessageResponse != nil
 }
 
 func (x *ServerReflectionResponse) HasFileDescriptorResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_FileDescriptorResponse)
+	_, ok := x.MessageResponse.(*ServerReflectionResponse_FileDescriptorResponse)
 	return ok
 }
 
@@ -604,7 +641,7 @@ func (x *ServerReflectionResponse) HasAllExtensionNumbersResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_AllExtensionNumbersResponse)
+	_, ok := x.MessageResponse.(*ServerReflectionResponse_AllExtensionNumbersResponse)
 	return ok
 }
 
@@ -612,7 +649,7 @@ func (x *ServerReflectionResponse) HasListServicesResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_ListServicesResponse)
+	_, ok := x.MessageResponse.(*ServerReflectionResponse_ListServicesResponse)
 	return ok
 }
 
@@ -620,39 +657,39 @@ func (x *ServerReflectionResponse) HasErrorResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_ErrorResponse)
+	_, ok := x.MessageResponse.(*ServerReflectionResponse_ErrorResponse)
 	return ok
 }
 
 func (x *ServerReflectionResponse) ClearOriginalRequest() {
-	x.xxx_hidden_OriginalRequest = nil
+	x.OriginalRequest = nil
 }
 
 func (x *ServerReflectionResponse) ClearMessageResponse() {
-	x.xxx_hidden_MessageResponse = nil
+	x.MessageResponse = nil
 }
 
 func (x *ServerReflectionResponse) ClearFileDescriptorResponse() {
-	if _, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_FileDescriptorResponse); ok {
-		x.xxx_hidden_MessageResponse = nil
+	if _, ok := x.MessageResponse.(*ServerReflectionResponse_FileDescriptorResponse); ok {
+		x.MessageResponse = nil
 	}
 }
 
 func (x *ServerReflectionResponse) ClearAllExtensionNumbersResponse() {
-	if _, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_AllExtensionNumbersResponse); ok {
-		x.xxx_hidden_MessageResponse = nil
+	if _, ok := x.MessageResponse.(*ServerReflectionResponse_AllExtensionNumbersResponse); ok {
+		x.MessageResponse = nil
 	}
 }
 
 func (x *ServerReflectionResponse) ClearListServicesResponse() {
-	if _, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_ListServicesResponse); ok {
-		x.xxx_hidden_MessageResponse = nil
+	if _, ok := x.MessageResponse.(*ServerReflectionResponse_ListServicesResponse); ok {
+		x.MessageResponse = nil
 	}
 }
 
 func (x *ServerReflectionResponse) ClearErrorResponse() {
-	if _, ok := x.xxx_hidden_MessageResponse.(*serverReflectionResponse_ErrorResponse); ok {
-		x.xxx_hidden_MessageResponse = nil
+	if _, ok := x.MessageResponse.(*ServerReflectionResponse_ErrorResponse); ok {
+		x.MessageResponse = nil
 	}
 }
 
@@ -666,14 +703,14 @@ func (x *ServerReflectionResponse) WhichMessageResponse() case_ServerReflectionR
 	if x == nil {
 		return ServerReflectionResponse_MessageResponse_not_set_case
 	}
-	switch x.xxx_hidden_MessageResponse.(type) {
-	case *serverReflectionResponse_FileDescriptorResponse:
+	switch x.MessageResponse.(type) {
+	case *ServerReflectionResponse_FileDescriptorResponse:
 		return ServerReflectionResponse_FileDescriptorResponse_case
-	case *serverReflectionResponse_AllExtensionNumbersResponse:
+	case *ServerReflectionResponse_AllExtensionNumbersResponse:
 		return ServerReflectionResponse_AllExtensionNumbersResponse_case
-	case *serverReflectionResponse_ListServicesResponse:
+	case *ServerReflectionResponse_ListServicesResponse:
 		return ServerReflectionResponse_ListServicesResponse_case
-	case *serverReflectionResponse_ErrorResponse:
+	case *ServerReflectionResponse_ErrorResponse:
 		return ServerReflectionResponse_ErrorResponse_case
 	default:
 		return ServerReflectionResponse_MessageResponse_not_set_case
@@ -688,7 +725,7 @@ type ServerReflectionResponse_builder struct {
 	// The server sets one of the following fields according to the message_request
 	// in the request.
 
-	// Fields of oneof xxx_hidden_MessageResponse:
+	// Fields of oneof MessageResponse:
 	// This message is used to answer file_by_filename, file_containing_symbol,
 	// file_containing_extension requests with transitive dependencies.
 	// As the repeated label is not allowed in oneof fields, we use a
@@ -702,26 +739,26 @@ type ServerReflectionResponse_builder struct {
 	ListServicesResponse *ListServiceResponse
 	// This message is used when an error occurs.
 	ErrorResponse *ErrorResponse
-	// -- end of xxx_hidden_MessageResponse
+	// -- end of MessageResponse
 }
 
 func (b0 ServerReflectionResponse_builder) Build() *ServerReflectionResponse {
 	m0 := &ServerReflectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ValidHost = b.ValidHost
-	x.xxx_hidden_OriginalRequest = b.OriginalRequest
+	x.ValidHost = b.ValidHost
+	x.OriginalRequest = b.OriginalRequest
 	if b.FileDescriptorResponse != nil {
-		x.xxx_hidden_MessageResponse = &serverReflectionResponse_FileDescriptorResponse{b.FileDescriptorResponse}
+		x.MessageResponse = &ServerReflectionResponse_FileDescriptorResponse{b.FileDescriptorResponse}
 	}
 	if b.AllExtensionNumbersResponse != nil {
-		x.xxx_hidden_MessageResponse = &serverReflectionResponse_AllExtensionNumbersResponse{b.AllExtensionNumbersResponse}
+		x.MessageResponse = &ServerReflectionResponse_AllExtensionNumbersResponse{b.AllExtensionNumbersResponse}
 	}
 	if b.ListServicesResponse != nil {
-		x.xxx_hidden_MessageResponse = &serverReflectionResponse_ListServicesResponse{b.ListServicesResponse}
+		x.MessageResponse = &ServerReflectionResponse_ListServicesResponse{b.ListServicesResponse}
 	}
 	if b.ErrorResponse != nil {
-		x.xxx_hidden_MessageResponse = &serverReflectionResponse_ErrorResponse{b.ErrorResponse}
+		x.MessageResponse = &ServerReflectionResponse_ErrorResponse{b.ErrorResponse}
 	}
 	return m0
 }
@@ -740,7 +777,7 @@ type isServerReflectionResponse_MessageResponse interface {
 	isServerReflectionResponse_MessageResponse()
 }
 
-type serverReflectionResponse_FileDescriptorResponse struct {
+type ServerReflectionResponse_FileDescriptorResponse struct {
 	// This message is used to answer file_by_filename, file_containing_symbol,
 	// file_containing_extension requests with transitive dependencies.
 	// As the repeated label is not allowed in oneof fields, we use a
@@ -750,39 +787,42 @@ type serverReflectionResponse_FileDescriptorResponse struct {
 	FileDescriptorResponse *FileDescriptorResponse `protobuf:"bytes,4,opt,name=file_descriptor_response,json=fileDescriptorResponse,proto3,oneof"`
 }
 
-type serverReflectionResponse_AllExtensionNumbersResponse struct {
+type ServerReflectionResponse_AllExtensionNumbersResponse struct {
 	// This message is used to answer all_extension_numbers_of_type requests.
 	AllExtensionNumbersResponse *ExtensionNumberResponse `protobuf:"bytes,5,opt,name=all_extension_numbers_response,json=allExtensionNumbersResponse,proto3,oneof"`
 }
 
-type serverReflectionResponse_ListServicesResponse struct {
+type ServerReflectionResponse_ListServicesResponse struct {
 	// This message is used to answer list_services requests.
 	ListServicesResponse *ListServiceResponse `protobuf:"bytes,6,opt,name=list_services_response,json=listServicesResponse,proto3,oneof"`
 }
 
-type serverReflectionResponse_ErrorResponse struct {
+type ServerReflectionResponse_ErrorResponse struct {
 	// This message is used when an error occurs.
 	ErrorResponse *ErrorResponse `protobuf:"bytes,7,opt,name=error_response,json=errorResponse,proto3,oneof"`
 }
 
-func (*serverReflectionResponse_FileDescriptorResponse) isServerReflectionResponse_MessageResponse() {
+func (*ServerReflectionResponse_FileDescriptorResponse) isServerReflectionResponse_MessageResponse() {
 }
 
-func (*serverReflectionResponse_AllExtensionNumbersResponse) isServerReflectionResponse_MessageResponse() {
+func (*ServerReflectionResponse_AllExtensionNumbersResponse) isServerReflectionResponse_MessageResponse() {
 }
 
-func (*serverReflectionResponse_ListServicesResponse) isServerReflectionResponse_MessageResponse() {}
+func (*ServerReflectionResponse_ListServicesResponse) isServerReflectionResponse_MessageResponse() {}
 
-func (*serverReflectionResponse_ErrorResponse) isServerReflectionResponse_MessageResponse() {}
+func (*ServerReflectionResponse_ErrorResponse) isServerReflectionResponse_MessageResponse() {}
 
 // Serialized FileDescriptorProto messages sent by the server answering
 // a file_by_filename, file_containing_symbol, or file_containing_extension
 // request.
 type FileDescriptorResponse struct {
-	state                          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileDescriptorProto [][]byte               `protobuf:"bytes,1,rep,name=file_descriptor_proto,json=fileDescriptorProto,proto3" json:"file_descriptor_proto,omitempty"`
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Serialized FileDescriptorProto messages. We avoid taking a dependency on
+	// descriptor.proto, which uses proto2 only features, by making them opaque
+	// bytes instead.
+	FileDescriptorProto [][]byte `protobuf:"bytes,1,rep,name=file_descriptor_proto,json=fileDescriptorProto,proto3" json:"file_descriptor_proto,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *FileDescriptorResponse) Reset() {
@@ -812,13 +852,13 @@ func (x *FileDescriptorResponse) ProtoReflect() protoreflect.Message {
 
 func (x *FileDescriptorResponse) GetFileDescriptorProto() [][]byte {
 	if x != nil {
-		return x.xxx_hidden_FileDescriptorProto
+		return x.FileDescriptorProto
 	}
 	return nil
 }
 
 func (x *FileDescriptorResponse) SetFileDescriptorProto(v [][]byte) {
-	x.xxx_hidden_FileDescriptorProto = v
+	x.FileDescriptorProto = v
 }
 
 type FileDescriptorResponse_builder struct {
@@ -834,18 +874,20 @@ func (b0 FileDescriptorResponse_builder) Build() *FileDescriptorResponse {
 	m0 := &FileDescriptorResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FileDescriptorProto = b.FileDescriptorProto
+	x.FileDescriptorProto = b.FileDescriptorProto
 	return m0
 }
 
 // A list of extension numbers sent by the server answering
 // all_extension_numbers_of_type request.
 type ExtensionNumberResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_BaseTypeName    string                 `protobuf:"bytes,1,opt,name=base_type_name,json=baseTypeName,proto3" json:"base_type_name,omitempty"`
-	xxx_hidden_ExtensionNumber []int32                `protobuf:"varint,2,rep,packed,name=extension_number,json=extensionNumber,proto3" json:"extension_number,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Full name of the base type, including the package name. The format
+	// is <package>.<type>
+	BaseTypeName    string  `protobuf:"bytes,1,opt,name=base_type_name,json=baseTypeName,proto3" json:"base_type_name,omitempty"`
+	ExtensionNumber []int32 `protobuf:"varint,2,rep,packed,name=extension_number,json=extensionNumber,proto3" json:"extension_number,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ExtensionNumberResponse) Reset() {
@@ -875,24 +917,24 @@ func (x *ExtensionNumberResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExtensionNumberResponse) GetBaseTypeName() string {
 	if x != nil {
-		return x.xxx_hidden_BaseTypeName
+		return x.BaseTypeName
 	}
 	return ""
 }
 
 func (x *ExtensionNumberResponse) GetExtensionNumber() []int32 {
 	if x != nil {
-		return x.xxx_hidden_ExtensionNumber
+		return x.ExtensionNumber
 	}
 	return nil
 }
 
 func (x *ExtensionNumberResponse) SetBaseTypeName(v string) {
-	x.xxx_hidden_BaseTypeName = v
+	x.BaseTypeName = v
 }
 
 func (x *ExtensionNumberResponse) SetExtensionNumber(v []int32) {
-	x.xxx_hidden_ExtensionNumber = v
+	x.ExtensionNumber = v
 }
 
 type ExtensionNumberResponse_builder struct {
@@ -908,17 +950,19 @@ func (b0 ExtensionNumberResponse_builder) Build() *ExtensionNumberResponse {
 	m0 := &ExtensionNumberResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_BaseTypeName = b.BaseTypeName
-	x.xxx_hidden_ExtensionNumber = b.ExtensionNumber
+	x.BaseTypeName = b.BaseTypeName
+	x.ExtensionNumber = b.ExtensionNumber
 	return m0
 }
 
 // A list of ServiceResponse sent by the server answering list_services request.
 type ListServiceResponse struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Service *[]*ServiceResponse    `protobuf:"bytes,1,rep,name=service,proto3" json:"service,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The information of each service may be expanded in the future, so we use
+	// ServiceResponse message to encapsulate it.
+	Service       []*ServiceResponse `protobuf:"bytes,1,rep,name=service,proto3" json:"service,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListServiceResponse) Reset() {
@@ -948,15 +992,13 @@ func (x *ListServiceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListServiceResponse) GetService() []*ServiceResponse {
 	if x != nil {
-		if x.xxx_hidden_Service != nil {
-			return *x.xxx_hidden_Service
-		}
+		return x.Service
 	}
 	return nil
 }
 
 func (x *ListServiceResponse) SetService(v []*ServiceResponse) {
-	x.xxx_hidden_Service = &v
+	x.Service = v
 }
 
 type ListServiceResponse_builder struct {
@@ -971,17 +1013,19 @@ func (b0 ListServiceResponse_builder) Build() *ListServiceResponse {
 	m0 := &ListServiceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Service = &b.Service
+	x.Service = b.Service
 	return m0
 }
 
 // The information of a single service used by ListServiceResponse to answer
 // list_services request.
 type ServiceResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Full name of a registered service, including its package name. The format
+	// is <package>.<service>
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ServiceResponse) Reset() {
@@ -1011,13 +1055,13 @@ func (x *ServiceResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceResponse) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ServiceResponse) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 type ServiceResponse_builder struct {
@@ -1032,17 +1076,18 @@ func (b0 ServiceResponse_builder) Build() *ServiceResponse {
 	m0 := &ServiceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
+	x.Name = b.Name
 	return m0
 }
 
 // The error code and error message sent by the server when an error occurs.
 type ErrorResponse struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ErrorCode    int32                  `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	xxx_hidden_ErrorMessage string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// This field uses the error codes defined in grpc::StatusCode.
+	ErrorCode     int32  `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	ErrorMessage  string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ErrorResponse) Reset() {
@@ -1072,24 +1117,24 @@ func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ErrorResponse) GetErrorCode() int32 {
 	if x != nil {
-		return x.xxx_hidden_ErrorCode
+		return x.ErrorCode
 	}
 	return 0
 }
 
 func (x *ErrorResponse) GetErrorMessage() string {
 	if x != nil {
-		return x.xxx_hidden_ErrorMessage
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *ErrorResponse) SetErrorCode(v int32) {
-	x.xxx_hidden_ErrorCode = v
+	x.ErrorCode = v
 }
 
 func (x *ErrorResponse) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = v
+	x.ErrorMessage = v
 }
 
 type ErrorResponse_builder struct {
@@ -1104,8 +1149,8 @@ func (b0 ErrorResponse_builder) Build() *ErrorResponse {
 	m0 := &ErrorResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ErrorCode = b.ErrorCode
-	x.xxx_hidden_ErrorMessage = b.ErrorMessage
+	x.ErrorCode = b.ErrorCode
+	x.ErrorMessage = b.ErrorMessage
 	return m0
 }
 
@@ -1265,17 +1310,17 @@ func file_grpc_reflection_v1_reflection_proto_init() {
 		return
 	}
 	file_grpc_reflection_v1_reflection_proto_msgTypes[0].OneofWrappers = []any{
-		(*serverReflectionRequest_FileByFilename)(nil),
-		(*serverReflectionRequest_FileContainingSymbol)(nil),
-		(*serverReflectionRequest_FileContainingExtension)(nil),
-		(*serverReflectionRequest_AllExtensionNumbersOfType)(nil),
-		(*serverReflectionRequest_ListServices)(nil),
+		(*ServerReflectionRequest_FileByFilename)(nil),
+		(*ServerReflectionRequest_FileContainingSymbol)(nil),
+		(*ServerReflectionRequest_FileContainingExtension)(nil),
+		(*ServerReflectionRequest_AllExtensionNumbersOfType)(nil),
+		(*ServerReflectionRequest_ListServices)(nil),
 	}
 	file_grpc_reflection_v1_reflection_proto_msgTypes[2].OneofWrappers = []any{
-		(*serverReflectionResponse_FileDescriptorResponse)(nil),
-		(*serverReflectionResponse_AllExtensionNumbersResponse)(nil),
-		(*serverReflectionResponse_ListServicesResponse)(nil),
-		(*serverReflectionResponse_ErrorResponse)(nil),
+		(*ServerReflectionResponse_FileDescriptorResponse)(nil),
+		(*ServerReflectionResponse_AllExtensionNumbersResponse)(nil),
+		(*ServerReflectionResponse_ListServicesResponse)(nil),
+		(*ServerReflectionResponse_ErrorResponse)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: google/protobuf/java_features.proto
 
+//go:build !protoopaque
+
 package protobuf
 
 import (
@@ -86,13 +88,15 @@ func (x JavaFeatures_Utf8Validation) Number() protoreflect.EnumNumber {
 }
 
 type JavaFeatures struct {
-	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_LegacyClosedEnum bool                        `protobuf:"varint,1,opt,name=legacy_closed_enum,json=legacyClosedEnum" json:"legacy_closed_enum,omitempty"`
-	xxx_hidden_Utf8Validation   JavaFeatures_Utf8Validation `protobuf:"varint,2,opt,name=utf8_validation,json=utf8Validation,enum=pb.JavaFeatures_Utf8Validation" json:"utf8_validation,omitempty"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Whether or not to treat an enum field as closed.  This option is only
+	// applicable to enum fields, and will be removed in the future.  It is
+	// consistent with the legacy behavior of using proto3 enum types for proto2
+	// fields.
+	LegacyClosedEnum *bool                        `protobuf:"varint,1,opt,name=legacy_closed_enum,json=legacyClosedEnum" json:"legacy_closed_enum,omitempty"`
+	Utf8Validation   *JavaFeatures_Utf8Validation `protobuf:"varint,2,opt,name=utf8_validation,json=utf8Validation,enum=pb.JavaFeatures_Utf8Validation" json:"utf8_validation,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *JavaFeatures) Reset() {
@@ -121,53 +125,47 @@ func (x *JavaFeatures) ProtoReflect() protoreflect.Message {
 }
 
 func (x *JavaFeatures) GetLegacyClosedEnum() bool {
-	if x != nil {
-		return x.xxx_hidden_LegacyClosedEnum
+	if x != nil && x.LegacyClosedEnum != nil {
+		return *x.LegacyClosedEnum
 	}
 	return false
 }
 
 func (x *JavaFeatures) GetUtf8Validation() JavaFeatures_Utf8Validation {
-	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Utf8Validation
-		}
+	if x != nil && x.Utf8Validation != nil {
+		return *x.Utf8Validation
 	}
 	return JavaFeatures_UTF8_VALIDATION_UNKNOWN
 }
 
 func (x *JavaFeatures) SetLegacyClosedEnum(v bool) {
-	x.xxx_hidden_LegacyClosedEnum = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.LegacyClosedEnum = &v
 }
 
 func (x *JavaFeatures) SetUtf8Validation(v JavaFeatures_Utf8Validation) {
-	x.xxx_hidden_Utf8Validation = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Utf8Validation = &v
 }
 
 func (x *JavaFeatures) HasLegacyClosedEnum() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.LegacyClosedEnum != nil
 }
 
 func (x *JavaFeatures) HasUtf8Validation() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Utf8Validation != nil
 }
 
 func (x *JavaFeatures) ClearLegacyClosedEnum() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_LegacyClosedEnum = false
+	x.LegacyClosedEnum = nil
 }
 
 func (x *JavaFeatures) ClearUtf8Validation() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Utf8Validation = JavaFeatures_UTF8_VALIDATION_UNKNOWN
+	x.Utf8Validation = nil
 }
 
 type JavaFeatures_builder struct {
@@ -185,14 +183,8 @@ func (b0 JavaFeatures_builder) Build() *JavaFeatures {
 	m0 := &JavaFeatures{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.LegacyClosedEnum != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_LegacyClosedEnum = *b.LegacyClosedEnum
-	}
-	if b.Utf8Validation != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Utf8Validation = *b.Utf8Validation
-	}
+	x.LegacyClosedEnum = b.LegacyClosedEnum
+	x.Utf8Validation = b.Utf8Validation
 	return m0
 }
 
