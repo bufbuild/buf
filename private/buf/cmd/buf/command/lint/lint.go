@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -122,15 +121,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
-		ctx,
-		input,
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
-	)
-	if err != nil {
-		return err
-	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -142,24 +132,22 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
+		ctx,
+		input,
+		wasmRuntime,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
+	)
+	if err != nil {
+		return err
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(
-			container.Logger(),
-			bufcheck.NewLocalRunnerProvider(
-				wasmRuntime,
-				bufplugin.NopPluginKeyProvider,
-				bufplugin.NopPluginDataProvider,
-			),
-			bufcheck.ClientWithStderr(container.Stderr()),
-		)
-		if err != nil {
-			return err
-		}
 		lintOptions := []bufcheck.LintOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
 		}
-		if err := client.Lint(
+		if err := checkClient.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,

@@ -1319,6 +1319,7 @@ func testLintWithOptions(
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
+		bufplugin.NopPluginKeyProvider,
 	).GetWorkspaceForBucket(
 		ctx,
 		readWriteBucket,

@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
@@ -77,12 +78,14 @@ func NewWorkspaceProvider(
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
 ) WorkspaceProvider {
 	return newWorkspaceProvider(
 		logger,
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
+		pluginKeyProvider,
 	)
 }
 
@@ -93,6 +96,10 @@ type workspaceProvider struct {
 	graphProvider      bufmodule.GraphProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 	commitProvider     bufmodule.CommitProvider
+
+	// pluginKeyProvider is only used for getting remote plugin keys for a single module
+	// when an override is specified.
+	pluginKeyProvider bufplugin.PluginKeyProvider
 }
 
 func newWorkspaceProvider(
@@ -100,12 +107,14 @@ func newWorkspaceProvider(
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
+	pluginKeyProvider bufplugin.PluginKeyProvider,
 ) *workspaceProvider {
 	return &workspaceProvider{
 		logger:             logger,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
+		pluginKeyProvider:  pluginKeyProvider,
 	}
 }
 
@@ -136,8 +145,11 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	targetModuleConfig := bufconfig.DefaultModuleConfigV1
 	// By default, there will be no plugin configs, however, similar to the lint and breaking
 	// configs, there may be an override, in which case, we need to populate the plugin configs
-	// from the override.
-	var pluginConfigs []bufconfig.PluginConfig
+	// from the override. Any remote plugin refs will be resolved by the pluginKeyProvider.
+	var (
+		pluginConfigs    []bufconfig.PluginConfig
+		remotePluginKeys []bufplugin.PluginKey
+	)
 	if config.configOverride != "" {
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
 		if err != nil {
@@ -150,7 +162,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		case 1:
 			// If we have a single ModuleConfig, we assume that regardless of whether or not
 			// This ModuleConfig has a name, that this is what the user intends to associate
-			// with the tqrget module. This also handles the v1 case - v1 buf.yamls will always
+			// with the target module. This also handles the v1 case - v1 buf.yamls will always
 			// only have a single ModuleConfig, and it was expected pre-refactor that regardless
 			// of if the ModuleConfig had a name associated with it or not, the lint and breaking
 			// config that came from it would be associated.
@@ -172,6 +184,27 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		}
 		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
 			pluginConfigs = bufYAMLFile.PluginConfigs()
+			// To support remote plugins when using a config override, we need to resolve the remote
+			// Refs to PluginKeys. We use the pluginKeyProvider to resolve any remote plugin Refs.
+			remotePluginRefs := slicesext.Filter(
+				slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+					return pluginConfig.Ref()
+				}),
+				func(ref bufparse.Ref) bool {
+					return ref != nil
+				},
+			)
+			if len(remotePluginRefs) > 0 {
+				var err error
+				remotePluginKeys, err = w.pluginKeyProvider.GetPluginKeysForPluginRefs(
+					ctx,
+					remotePluginRefs,
+					bufplugin.DigestTypeP1,
+				)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 
@@ -209,18 +242,18 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
+		remotePluginKeys,
 		nil,
 		false,
 	), nil
 }
 
-func (w *workspaceProvider) GetWorkspaceForBucket(
+func (w *workspaceProvider) getWorkspaceTargetingForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	options ...WorkspaceBucketOption,
-) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+) (*workspaceTargeting, error) {
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err
@@ -232,7 +265,7 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 			return nil, err
 		}
 	}
-	workspaceTargeting, err := newWorkspaceTargeting(
+	return newWorkspaceTargeting(
 		ctx,
 		w.logger,
 		config,
@@ -240,6 +273,21 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 		bucketTargeting,
 		overrideBufYAMLFile,
 		config.ignoreAndDisallowV1BufWorkYAMLs,
+	)
+}
+
+func (w *workspaceProvider) GetWorkspaceForBucket(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	bucketTargeting buftarget.BucketTargeting,
+	options ...WorkspaceBucketOption,
+) (Workspace, error) {
+	defer slogext.DebugProfile(w.logger)()
+	workspaceTargeting, err := w.getWorkspaceTargetingForBucket(
+		ctx,
+		bucket,
+		bucketTargeting,
+		options...,
 	)
 	if err != nil {
 		return nil, err
@@ -358,7 +406,8 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	return w.getWorkspaceForBucketModuleSet(
 		moduleSet,
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
-		nil,
+		nil, // No PluginConfigs for v1
+		nil, // No remote PluginKeys for v1
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -370,6 +419,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	v2Targeting *v2Targeting,
 ) (*workspace, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
+	var remotePluginKeys []bufplugin.PluginKey
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		bucket,
@@ -398,6 +448,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 				false,
 			)
 		}
+		remotePluginKeys = bufLockFile.RemotePluginKeys()
 	}
 	// Only check for duplicate module description in v2, which would be an user error, i.e.
 	// This is not a system error:
@@ -455,6 +506,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 		moduleSet,
 		v2Targeting.bucketIDToModuleConfig,
 		v2Targeting.bufYAMLFile.PluginConfigs(),
+		remotePluginKeys,
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -465,6 +517,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	moduleSet bufmodule.ModuleSet,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
 	pluginConfigs []bufconfig.PluginConfig,
+	remotePluginKeys []bufplugin.PluginKey,
 	// Expected to already be unique by FullName.
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
@@ -490,6 +543,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
+		remotePluginKeys,
 		configuredDepModuleRefs,
 		isV2,
 	), nil
