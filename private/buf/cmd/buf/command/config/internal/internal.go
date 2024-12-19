@@ -243,6 +243,14 @@ func lsRun(
 			return syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
 		var checkConfig bufconfig.CheckConfig
+		// We add all check configs (both lint and breaking) as related configs to check if plugins
+		// have rules configured.
+		// We allocated twice the size of moduleConfigs for both lint and breaking configs.
+		allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(moduleConfigs)*2)
+		for _, moduleConfig := range moduleConfigs {
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.LintConfig())
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.BreakingConfig())
+		}
 		switch ruleType {
 		case check.RuleTypeLint:
 			checkConfig = moduleConfig.LintConfig()
@@ -253,6 +261,7 @@ func lsRun(
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		rules, err = checkClient.ConfiguredRules(
 			ctx,
