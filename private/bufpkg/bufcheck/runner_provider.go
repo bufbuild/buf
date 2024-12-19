@@ -48,7 +48,7 @@ func newRunnerProvider(
 func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
 	switch pluginConfig.Type() {
 	case bufconfig.PluginConfigTypeLocal:
-		return pluginrpcutil.NewRunner(
+		return pluginrpcutil.NewLocalRunner(
 			pluginConfig.Name(),
 			pluginConfig.Args()...,
 		), nil

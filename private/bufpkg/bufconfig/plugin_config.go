@@ -75,18 +75,35 @@ func NewLocalPluginConfig(
 
 // NewLocalWasmPluginConfig returns a new PluginConfig for a local Wasm plugin.
 //
-// The first path argument is the path to the Wasm plugin and must end with .wasm.
-// The remaining path arguments are the arguments to the Wasm plugin. These are passed
-// to the Wasm plugin as command line arguments.
+// The name is the path to the Wasm plugin and must end with .wasm.
+// The args are the arguments to the Wasm plugin. These are passed to the Wasm plugin
+// as command line arguments.
 func NewLocalWasmPluginConfig(
 	name string,
 	options map[string]any,
-	path []string,
+	args []string,
 ) (PluginConfig, error) {
 	return newLocalWasmPluginConfig(
 		name,
 		options,
-		path,
+		args,
+	)
+}
+
+// NewRemoteWasmPluginConfig returns a new PluginConfig for a remote Wasm plugin.
+//
+// The pluginRef is the remote reference to the plugin.
+// The args are the arguments to the remote plugin. These are passed to the remote plugin
+// as command line arguments.
+func NewRemoteWasmPluginConfig(
+	pluginRef bufparse.Ref,
+	options map[string]any,
+	args []string,
+) (PluginConfig, error) {
+	return newRemotePluginConfig(
+		pluginRef,
+		options,
+		args,
 	)
 }
 
