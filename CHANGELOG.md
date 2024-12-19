@@ -14,6 +14,7 @@
 - Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
 - Move `buf registry module update` to `buf registry module settings update`. Command
   `buf registry module update` is now deprecated.
+- Support remote check plugins in `buf lint` and `buf breaking` commands.
 
 ## [v1.47.2] - 2024-11-14
 

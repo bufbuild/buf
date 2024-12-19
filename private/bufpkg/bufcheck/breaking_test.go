@@ -1313,6 +1313,7 @@ func testBreaking(
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
+		bufplugin.NopPluginKeyProvider,
 	)
 	previousWorkspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
