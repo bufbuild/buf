@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.48.0] - 2024-12-19
 
 - Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
@@ -1314,6 +1318,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.48.0...HEAD
 [v1.48.0]: https://github.com/bufbuild/buf/compare/v1.47.2...v1.48.0
 [v1.47.2]: https://github.com/bufbuild/buf/compare/v1.47.1...v1.47.2
 [v1.47.1]: https://github.com/bufbuild/buf/compare/v1.47.0...v1.47.1
