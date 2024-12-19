@@ -33,6 +33,7 @@ func rulesConfigForCheckConfig(
 	allRules []Rule,
 	allCategories []Category,
 	ruleType check.RuleType,
+	relatedCheckConfigs []bufconfig.CheckConfig,
 ) (*rulesConfig, error) {
 	return newRulesConfig(
 		checkConfig.UseIDsAndCategories(),
@@ -42,6 +43,7 @@ func rulesConfigForCheckConfig(
 		allRules,
 		allCategories,
 		ruleType,
+		relatedCheckConfigs,
 	)
 }
 
@@ -94,13 +96,9 @@ type rulesConfig struct {
 	//
 	// A plugin is unused if no rules from the plugin are configured.
 	//
-	// This map will *not* contain plugins that have Rules with RuleTypes other than the given
-	// RuleType. We need to account for this to properly print warnings. It is possible that
-	// a plugin is not used in the lint section, for example, but does have breaking rules configured.
-	// In client.Lint and client.Breaking, we only have the Lint or Breaking config, and we don't know
-	// the state of the other config. If a plugin is unused for lint, but has both lint and breaking
-	// Rules, we don't warn for this plugin, as it may have had rules configured in breaking that
-	// we haven't accounted for.
+	// The caller can provide additional related check configs to check if the plugin has rules
+	// configured. If the plugin has rules configured in any of the additional check configs
+	// provided, then we don't warn.
 	//
 	// The Rule IDs will be sorted.
 	// This will only contain RuleIDs of the given RuleType.
@@ -124,6 +122,7 @@ func newRulesConfig(
 	allRules []Rule,
 	allCategories []Category,
 	ruleType check.RuleType,
+	relatedCheckConfigs []bufconfig.CheckConfig,
 ) (*rulesConfig, error) {
 	allRulesForType := rulesForType(allRules, ruleType)
 	if len(allRulesForType) == 0 {
@@ -292,7 +291,6 @@ func newRulesConfig(
 		return nil, err
 	}
 
-	pluginNameToOtherRuleTypes := getPluginNameToOtherRuleTypes(allRules, ruleType)
 	// This map initially contains a map from plugin name to ALL Rule IDs, but we will
 	// then delete the used plugin names, and then delete the plugins with other rule types.
 	//
@@ -305,11 +303,31 @@ func newRulesConfig(
 			delete(unusedPluginNameToRuleIDs, pluginName)
 		}
 	}
-	for pluginName := range unusedPluginNameToRuleIDs {
-		// If the rule had other plugin types (see the comment on UnusedPluginNameToRuleIDs),
-		// delete the plugin name from the map
-		if _, ok := pluginNameToOtherRuleTypes[pluginName]; ok {
-			delete(unusedPluginNameToRuleIDs, pluginName)
+	// We check additional check configs. If rules are set in the related check configs, then
+	// the plugin is not considered unused. We check against all rules for all rule types.
+	allRuleIDToRule, err := getIDToRuleOrCategory(allRules)
+	if err != nil {
+		return nil, err
+	}
+	allRuleIDToCategoryIDs, err := getRuleIDToCategoryIDs(allRules)
+	if err != nil {
+		return nil, err
+	}
+	allCategoryIDToRuleIDs := getCategoryIDToRuleIDs(allRuleIDToCategoryIDs)
+	for _, checkConfig := range relatedCheckConfigs {
+		checkConfigUseRuleIDs, err := transformRuleOrCategoryIDsToRuleIDs(
+			checkConfig.UseIDsAndCategories(),
+			allRuleIDToCategoryIDs,
+			allCategoryIDToRuleIDs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		for _, checkConfigRuleID := range checkConfigUseRuleIDs {
+			// If a rule from a non-builtin plugin is found, then we remove it from the unused plugins.
+			if rule, ok := allRuleIDToRule[checkConfigRuleID]; rule.PluginName() != "" && ok {
+				delete(unusedPluginNameToRuleIDs, rule.PluginName())
+			}
 		}
 	}
 
@@ -420,23 +438,6 @@ func getIDToRuleOrCategory[R RuleOrCategory](ruleOrCategories []R) (map[string]R
 		m[ruleOrCategory.ID()] = ruleOrCategory
 	}
 	return m, nil
-}
-
-func getPluginNameToOtherRuleTypes(allRules []Rule, ruleType check.RuleType) map[string]map[check.RuleType]struct{} {
-	m := make(map[string]map[check.RuleType]struct{})
-	for _, rule := range allRules {
-		if pluginName := rule.PluginName(); pluginName != "" {
-			if rule.Type() != ruleType {
-				otherRuleTypes, ok := m[pluginName]
-				if !ok {
-					otherRuleTypes = make(map[check.RuleType]struct{})
-					m[pluginName] = otherRuleTypes
-				}
-				otherRuleTypes[rule.Type()] = struct{}{}
-			}
-		}
-	}
-	return m
 }
 
 func getPluginNameToRuleOrCategoryIDs[R RuleOrCategory](ruleOrCategories []R) map[string][]string {
