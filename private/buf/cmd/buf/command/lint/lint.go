@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
@@ -147,20 +146,12 @@ func run(
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	// We add all check configs (both lint and breaking) as related configs to check if plugins
 	// have rules configured.
-	allCheckConfigs := append(
-		slicesext.Map(
-			imageWithConfigs,
-			func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
-				return imageWithConfig.LintConfig()
-			},
-		),
-		slicesext.Map(
-			imageWithConfigs,
-			func(imageWithConfig bufctl.ImageWithConfig) bufconfig.CheckConfig {
-				return imageWithConfig.BreakingConfig()
-			},
-		)...,
-	)
+	// We allocated twice the size of imageWithConfigs for both lint and breaking configs.
+	allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(imageWithConfigs)*2)
+	for _, imageWithConfig := range imageWithConfigs {
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.LintConfig())
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
+	}
 	for _, imageWithConfig := range imageWithConfigs {
 		client, err := bufcheck.NewClient(
 			container.Logger(),

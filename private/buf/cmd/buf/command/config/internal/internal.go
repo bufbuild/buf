@@ -239,10 +239,12 @@ func lsRun(
 		var checkConfig bufconfig.CheckConfig
 		// We add all check configs (both lint and breaking) as related configs to check if plugins
 		// have rules configured.
-		allCheckConfigs := append(
-			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.LintConfig() }),
-			slicesext.Map(moduleConfigs, func(moduleConfig bufconfig.ModuleConfig) bufconfig.CheckConfig { return moduleConfig.BreakingConfig() })...,
-		)
+		// We allocated twice the size of moduleConfigs for both lint and breaking configs.
+		allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(moduleConfigs)*2)
+		for _, moduleConfig := range moduleConfigs {
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.LintConfig())
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.BreakingConfig())
+		}
 		switch ruleType {
 		case check.RuleTypeLint:
 			checkConfig = moduleConfig.LintConfig()
