@@ -589,7 +589,6 @@ func TestParseFlags(t *testing.T) {
 	}
 	for i, testCase := range testCases {
 		name := fmt.Sprintf("%d", i)
-		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			env, err := testParseFlags(name, testCase.Args)

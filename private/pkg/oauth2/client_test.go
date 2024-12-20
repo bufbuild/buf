@@ -91,7 +91,6 @@ func TestRegisterDevice(t *testing.T) {
 		err: fmt.Errorf("oauth2: %w: 501 not implemented", errors.ErrUnsupported),
 	}}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -156,7 +155,6 @@ func TestAuthorizeDevice(t *testing.T) {
 		},
 	}}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -263,7 +261,6 @@ func TestAccessDeviceToken(t *testing.T) {
 		},
 	}}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()

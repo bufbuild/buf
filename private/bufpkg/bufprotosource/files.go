@@ -56,7 +56,6 @@ func newFiles[F InputFile](
 	jobs := make([]func(context.Context) error, len(chunks))
 	var lock sync.Mutex
 	for i, indexedInputFileChunk := range chunks {
-		indexedInputFileChunk := indexedInputFileChunk
 		jobs[i] = func(ctx context.Context) error {
 			iIndexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFileChunk))
 			for _, indexedInputFile := range indexedInputFileChunk {

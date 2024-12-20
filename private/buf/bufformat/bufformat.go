@@ -49,7 +49,6 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 	}
 	jobs := make([]func(context.Context) error, len(paths))
 	for i, path := range paths {
-		path := path
 		jobs[i] = func(ctx context.Context) (retErr error) {
 			readObjectCloser, err := bucket.Get(ctx, path)
 			if err != nil {

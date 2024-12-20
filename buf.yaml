@@ -4,7 +4,7 @@ modules:
     name: buf.build/bufbuild/buf
 lint:
   use:
-    - DEFAULT
+    - STANDARD
     - UNARY_RPC
   disallow_comment_ignores: true
 breaking:
