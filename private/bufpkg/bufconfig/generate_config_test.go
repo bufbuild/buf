@@ -688,7 +688,6 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			parsedConfig, err := newGenerateConfigFromExternalFileV1(testcase.externalConfig)
@@ -764,7 +763,6 @@ func TestParseConfigFromExternalV1Fail(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			_, err := newGenerateConfigFromExternalFileV1(testcase.externalConfig)

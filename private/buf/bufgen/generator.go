@@ -253,8 +253,6 @@ func (g *generator) execPlugins(
 	}
 	// Batch for each remote.
 	for remote, indexedPluginConfigs := range remotePluginConfigTable {
-		remote := remote
-		indexedPluginConfigs := indexedPluginConfigs
 		if len(indexedPluginConfigs) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
 				results, err := g.execRemotePluginsV2(

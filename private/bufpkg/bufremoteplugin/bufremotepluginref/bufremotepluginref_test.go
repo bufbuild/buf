@@ -69,7 +69,6 @@ func TestPluginIdentityForStringError(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 			_, err := PluginIdentityForString(testCase.Input)

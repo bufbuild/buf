@@ -108,7 +108,6 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	}
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
 	for i, universalProtoCommit := range universalProtoCommits {
-		universalProtoCommit := universalProtoCommit
 		commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 		if err != nil {
 			return nil, err
