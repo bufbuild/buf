@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/webhook.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -82,15 +83,10 @@ func (x WebhookEvent) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use WebhookEvent.Descriptor instead.
-func (WebhookEvent) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{0}
-}
-
 // CreateWebhookRequest is the proto request representation of a
 // webhook request body.
 type CreateWebhookRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The event to subscribe to for the given repository.
 	WebhookEvent WebhookEvent `protobuf:"varint,1,opt,name=webhook_event,json=webhookEvent,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"webhook_event,omitempty"`
 	// The owner name of the repository in the corresponding subscription request.
@@ -128,11 +124,6 @@ func (x *CreateWebhookRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateWebhookRequest.ProtoReflect.Descriptor instead.
-func (*CreateWebhookRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *CreateWebhookRequest) GetWebhookEvent() WebhookEvent {
 	if x != nil {
 		return x.WebhookEvent
@@ -161,10 +152,50 @@ func (x *CreateWebhookRequest) GetCallbackUrl() string {
 	return ""
 }
 
+func (x *CreateWebhookRequest) SetWebhookEvent(v WebhookEvent) {
+	x.WebhookEvent = v
+}
+
+func (x *CreateWebhookRequest) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *CreateWebhookRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *CreateWebhookRequest) SetCallbackUrl(v string) {
+	x.CallbackUrl = v
+}
+
+type CreateWebhookRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The event to subscribe to for the given repository.
+	WebhookEvent WebhookEvent
+	// The owner name of the repository in the corresponding subscription request.
+	OwnerName string
+	// The repository name that the subscriber wishes create a subscription for.
+	RepositoryName string
+	// The subscriber's callback URL where notifications should be delivered.
+	CallbackUrl string
+}
+
+func (b0 CreateWebhookRequest_builder) Build() *CreateWebhookRequest {
+	m0 := &CreateWebhookRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.WebhookEvent = b.WebhookEvent
+	x.OwnerName = b.OwnerName
+	x.RepositoryName = b.RepositoryName
+	x.CallbackUrl = b.CallbackUrl
+	return m0
+}
+
 // CreateWebhookResponse is the proto response representation
 // of a webhook request.
 type CreateWebhookResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Created webhook subscription.
 	Webhook       *Webhook `protobuf:"bytes,1,opt,name=webhook,proto3" json:"webhook,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -196,11 +227,6 @@ func (x *CreateWebhookResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateWebhookResponse.ProtoReflect.Descriptor instead.
-func (*CreateWebhookResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *CreateWebhookResponse) GetWebhook() *Webhook {
 	if x != nil {
 		return x.Webhook
@@ -208,9 +234,39 @@ func (x *CreateWebhookResponse) GetWebhook() *Webhook {
 	return nil
 }
 
+func (x *CreateWebhookResponse) SetWebhook(v *Webhook) {
+	x.Webhook = v
+}
+
+func (x *CreateWebhookResponse) HasWebhook() bool {
+	if x == nil {
+		return false
+	}
+	return x.Webhook != nil
+}
+
+func (x *CreateWebhookResponse) ClearWebhook() {
+	x.Webhook = nil
+}
+
+type CreateWebhookResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Created webhook subscription.
+	Webhook *Webhook
+}
+
+func (b0 CreateWebhookResponse_builder) Build() *CreateWebhookResponse {
+	m0 := &CreateWebhookResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Webhook = b.Webhook
+	return m0
+}
+
 // DeleteWebhookRequest is the request for unsubscribing to a webhook.
 type DeleteWebhookRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The id of the webhook subscription to delete.
 	WebhookId     string `protobuf:"bytes,1,opt,name=webhook_id,json=webhookId,proto3" json:"webhook_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -242,11 +298,6 @@ func (x *DeleteWebhookRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteWebhookRequest.ProtoReflect.Descriptor instead.
-func (*DeleteWebhookRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *DeleteWebhookRequest) GetWebhookId() string {
 	if x != nil {
 		return x.WebhookId
@@ -254,10 +305,29 @@ func (x *DeleteWebhookRequest) GetWebhookId() string {
 	return ""
 }
 
+func (x *DeleteWebhookRequest) SetWebhookId(v string) {
+	x.WebhookId = v
+}
+
+type DeleteWebhookRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The id of the webhook subscription to delete.
+	WebhookId string
+}
+
+func (b0 DeleteWebhookRequest_builder) Build() *DeleteWebhookRequest {
+	m0 := &DeleteWebhookRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.WebhookId = b.WebhookId
+	return m0
+}
+
 // DeleteWebhookResponse is the response for unsubscribing
 // from a webhook.
 type DeleteWebhookResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -287,15 +357,22 @@ func (x *DeleteWebhookResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteWebhookResponse.ProtoReflect.Descriptor instead.
-func (*DeleteWebhookResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{3}
+type DeleteWebhookResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 DeleteWebhookResponse_builder) Build() *DeleteWebhookResponse {
+	m0 := &DeleteWebhookResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 // ListWebhooksRequest is the request to get the
 // list of subscribed webhooks for a given repository.
 type ListWebhooksRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The repository name given in the corresponding subscription request.
 	RepositoryName string `protobuf:"bytes,1,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// The owner associated with the repository.
@@ -331,11 +408,6 @@ func (x *ListWebhooksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListWebhooksRequest.ProtoReflect.Descriptor instead.
-func (*ListWebhooksRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *ListWebhooksRequest) GetRepositoryName() string {
 	if x != nil {
 		return x.RepositoryName
@@ -357,10 +429,43 @@ func (x *ListWebhooksRequest) GetPageToken() string {
 	return ""
 }
 
+func (x *ListWebhooksRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ListWebhooksRequest) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *ListWebhooksRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+type ListWebhooksRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The repository name given in the corresponding subscription request.
+	RepositoryName string
+	// The owner associated with the repository.
+	OwnerName string
+	// The page token for paginating.
+	PageToken string
+}
+
+func (b0 ListWebhooksRequest_builder) Build() *ListWebhooksRequest {
+	m0 := &ListWebhooksRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryName = b.RepositoryName
+	x.OwnerName = b.OwnerName
+	x.PageToken = b.PageToken
+	return m0
+}
+
 // ListWebhooksResponse is the response for the list of
 // subscribed webhooks for a given repository.
 type ListWebhooksResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The list of subscribed webhooks for a given repository.
 	Webhooks []*Webhook `protobuf:"bytes,1,rep,name=webhooks,proto3" json:"webhooks,omitempty"`
 	// The next page token for paginating.
@@ -394,11 +499,6 @@ func (x *ListWebhooksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListWebhooksResponse.ProtoReflect.Descriptor instead.
-func (*ListWebhooksResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *ListWebhooksResponse) GetWebhooks() []*Webhook {
 	if x != nil {
 		return x.Webhooks
@@ -413,9 +513,35 @@ func (x *ListWebhooksResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListWebhooksResponse) SetWebhooks(v []*Webhook) {
+	x.Webhooks = v
+}
+
+func (x *ListWebhooksResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListWebhooksResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The list of subscribed webhooks for a given repository.
+	Webhooks []*Webhook
+	// The next page token for paginating.
+	NextPageToken string
+}
+
+func (b0 ListWebhooksResponse_builder) Build() *ListWebhooksResponse {
+	m0 := &ListWebhooksResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Webhooks = b.Webhooks
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 // Webhook is the representation of a webhook repository event subscription.
 type Webhook struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The event associated with the subscription id.
 	Event WebhookEvent `protobuf:"varint,1,opt,name=event,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"event,omitempty"`
 	// The id of the associated subscription.
@@ -461,11 +587,6 @@ func (x *Webhook) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Webhook.ProtoReflect.Descriptor instead.
-func (*Webhook) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Webhook) GetEvent() WebhookEvent {
@@ -515,6 +636,93 @@ func (x *Webhook) GetCallbackUrl() string {
 		return x.CallbackUrl
 	}
 	return ""
+}
+
+func (x *Webhook) SetEvent(v WebhookEvent) {
+	x.Event = v
+}
+
+func (x *Webhook) SetWebhookId(v string) {
+	x.WebhookId = v
+}
+
+func (x *Webhook) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *Webhook) SetUpdateTime(v *timestamppb.Timestamp) {
+	x.UpdateTime = v
+}
+
+func (x *Webhook) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *Webhook) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *Webhook) SetCallbackUrl(v string) {
+	x.CallbackUrl = v
+}
+
+func (x *Webhook) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *Webhook) HasUpdateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.UpdateTime != nil
+}
+
+func (x *Webhook) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+func (x *Webhook) ClearUpdateTime() {
+	x.UpdateTime = nil
+}
+
+type Webhook_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The event associated with the subscription id.
+	Event WebhookEvent
+	// The id of the associated subscription.
+	WebhookId string
+	// The webhook creation timestamp.
+	CreateTime *timestamppb.Timestamp
+	// The webhook last updated timestamp.
+	UpdateTime *timestamppb.Timestamp
+	// The webhook repository name.
+	RepositoryName string
+	// The webhook repository owner name.
+	OwnerName string
+	// The subscriber's callback URL where notifications are delivered. Currently
+	// we only support Connect-powered backends with application/proto as the
+	// content type. Make sure that your URL ends with
+	// "/buf.alpha.webhook.v1alpha1.EventService/Event". For more information
+	// about Connect, see https://connectrpc.com.
+	CallbackUrl string
+}
+
+func (b0 Webhook_builder) Build() *Webhook {
+	m0 := &Webhook{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Event = b.Event
+	x.WebhookId = b.WebhookId
+	x.CreateTime = b.CreateTime
+	x.UpdateTime = b.UpdateTime
+	x.RepositoryName = b.RepositoryName
+	x.OwnerName = b.OwnerName
+	x.CallbackUrl = b.CallbackUrl
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_webhook_proto protoreflect.FileDescriptor
@@ -636,18 +844,6 @@ var file_buf_alpha_registry_v1alpha1_webhook_proto_rawDesc = []byte{
 	0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73,
 	0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescData = file_buf_alpha_registry_v1alpha1_webhook_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_webhook_proto_enumTypes = make([]protoimpl.EnumInfo, 1)

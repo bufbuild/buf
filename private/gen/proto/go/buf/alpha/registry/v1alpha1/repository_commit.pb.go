@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/repository_commit.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 )
 
 type RepositoryCommit struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// primary key, unique, immutable
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// immutable
@@ -95,11 +96,6 @@ func (x *RepositoryCommit) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RepositoryCommit.ProtoReflect.Descriptor instead.
-func (*RepositoryCommit) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RepositoryCommit) GetId() string {
@@ -193,8 +189,127 @@ func (x *RepositoryCommit) GetB5Digest() string {
 	return ""
 }
 
+func (x *RepositoryCommit) SetId(v string) {
+	x.Id = v
+}
+
+func (x *RepositoryCommit) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *RepositoryCommit) SetDigest(v string) {
+	x.Digest = v
+}
+
+func (x *RepositoryCommit) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositoryCommit) SetBranch(v string) {
+	x.Branch = v
+}
+
+func (x *RepositoryCommit) SetAuthor(v string) {
+	x.Author = v
+}
+
+func (x *RepositoryCommit) SetTags(v []*RepositoryTag) {
+	x.Tags = v
+}
+
+func (x *RepositoryCommit) SetDraftName(v string) {
+	x.DraftName = v
+}
+
+func (x *RepositoryCommit) SetSpdxLicenseId(v string) {
+	x.SpdxLicenseId = v
+}
+
+func (x *RepositoryCommit) SetManifestDigest(v string) {
+	x.ManifestDigest = v
+}
+
+func (x *RepositoryCommit) SetTagCount(v int64) {
+	x.TagCount = v
+}
+
+func (x *RepositoryCommit) SetGitCommitsCount(v int64) {
+	x.GitCommitsCount = v
+}
+
+func (x *RepositoryCommit) SetB5Digest(v string) {
+	x.B5Digest = v
+}
+
+func (x *RepositoryCommit) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *RepositoryCommit) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type RepositoryCommit_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// primary key, unique, immutable
+	Id string
+	// immutable
+	CreateTime *timestamppb.Timestamp
+	// The digest of the commit.
+	Digest string
+	// The name of the commit.
+	// This is what is referenced by users.
+	// Unique, immutable.
+	Name string
+	// The branch on which this commit was created.
+	Branch string
+	// The username of the user who authored this commit.
+	Author string
+	// The tags associated with this commit
+	Tags []*RepositoryTag
+	// The commit's draft name, if it is a draft commit.
+	DraftName string
+	// spdx_license_id is the license of the commit, based on the
+	// license file pushed, which should be one of the identifier defined in
+	// https://spdx.org/licenses, and will be not set if the license file is not
+	// presented or cannot be classified into a known license.
+	SpdxLicenseId string
+	// The manifest digest of the commit.
+	ManifestDigest string
+	// Number of tags associated with the commit.
+	TagCount int64
+	// Number of git commits with associated with the BSR commit.
+	GitCommitsCount int64
+	// The b5 digest of the commit.
+	B5Digest string
+}
+
+func (b0 RepositoryCommit_builder) Build() *RepositoryCommit {
+	m0 := &RepositoryCommit{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.Digest = b.Digest
+	x.Name = b.Name
+	x.Branch = b.Branch
+	x.Author = b.Author
+	x.Tags = b.Tags
+	x.DraftName = b.DraftName
+	x.SpdxLicenseId = b.SpdxLicenseId
+	x.ManifestDigest = b.ManifestDigest
+	x.TagCount = b.TagCount
+	x.GitCommitsCount = b.GitCommitsCount
+	x.B5Digest = b.B5Digest
+	return m0
+}
+
 type ListRepositoryCommitsByBranchRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository which the repository branch belongs to.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the repository branch belongs to.
@@ -235,11 +350,6 @@ func (x *ListRepositoryCommitsByBranchRequest) ProtoReflect() protoreflect.Messa
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListRepositoryCommitsByBranchRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryCommitsByBranchRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ListRepositoryCommitsByBranchRequest) GetRepositoryOwner() string {
@@ -284,8 +394,63 @@ func (x *ListRepositoryCommitsByBranchRequest) GetReverse() bool {
 	return false
 }
 
+func (x *ListRepositoryCommitsByBranchRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *ListRepositoryCommitsByBranchRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ListRepositoryCommitsByBranchRequest) SetRepositoryBranchName(v string) {
+	x.RepositoryBranchName = v
+}
+
+func (x *ListRepositoryCommitsByBranchRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryCommitsByBranchRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListRepositoryCommitsByBranchRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type ListRepositoryCommitsByBranchRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository which the repository branch belongs to.
+	RepositoryOwner string
+	// The name of the repository which the repository branch belongs to.
+	RepositoryName string
+	// The name of the repository branch whose commits should be listed.
+	RepositoryBranchName string
+	PageSize             uint32
+	// For now this is the id of he last commit returned in the previous page.
+	// This is directly set by the frontend when listing track history starting with a
+	// specific commit. If we page_token to be anything other than a commit id
+	// we need to change the frontend as well.
+	PageToken string
+	Reverse   bool
+}
+
+func (b0 ListRepositoryCommitsByBranchRequest_builder) Build() *ListRepositoryCommitsByBranchRequest {
+	m0 := &ListRepositoryCommitsByBranchRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.RepositoryBranchName = b.RepositoryBranchName
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type ListRepositoryCommitsByBranchResponse struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
+	state             protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryCommits []*RepositoryCommit    `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
 	NextPageToken     string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -317,11 +482,6 @@ func (x *ListRepositoryCommitsByBranchResponse) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryCommitsByBranchResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryCommitsByBranchResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *ListRepositoryCommitsByBranchResponse) GetRepositoryCommits() []*RepositoryCommit {
 	if x != nil {
 		return x.RepositoryCommits
@@ -336,8 +496,32 @@ func (x *ListRepositoryCommitsByBranchResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryCommitsByBranchResponse) SetRepositoryCommits(v []*RepositoryCommit) {
+	x.RepositoryCommits = v
+}
+
+func (x *ListRepositoryCommitsByBranchResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryCommitsByBranchResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryCommits []*RepositoryCommit
+	NextPageToken     string
+}
+
+func (b0 ListRepositoryCommitsByBranchResponse_builder) Build() *ListRepositoryCommitsByBranchResponse {
+	m0 := &ListRepositoryCommitsByBranchResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryCommits = b.RepositoryCommits
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type ListRepositoryCommitsByReferenceRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository which the repository reference belongs to.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the repository reference belongs to.
@@ -375,11 +559,6 @@ func (x *ListRepositoryCommitsByReferenceRequest) ProtoReflect() protoreflect.Me
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListRepositoryCommitsByReferenceRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryCommitsByReferenceRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListRepositoryCommitsByReferenceRequest) GetRepositoryOwner() string {
@@ -424,8 +603,60 @@ func (x *ListRepositoryCommitsByReferenceRequest) GetReverse() bool {
 	return false
 }
 
+func (x *ListRepositoryCommitsByReferenceRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *ListRepositoryCommitsByReferenceRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ListRepositoryCommitsByReferenceRequest) SetReference(v string) {
+	x.Reference = v
+}
+
+func (x *ListRepositoryCommitsByReferenceRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryCommitsByReferenceRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListRepositoryCommitsByReferenceRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type ListRepositoryCommitsByReferenceRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository which the repository reference belongs to.
+	RepositoryOwner string
+	// The name of the repository which the repository reference belongs to.
+	RepositoryName string
+	// The optional reference used to resolve repository commits. Can be a tag or commit.
+	// If unspecified, will use the repository's default_branch.
+	Reference string
+	PageSize  uint32
+	PageToken string
+	Reverse   bool
+}
+
+func (b0 ListRepositoryCommitsByReferenceRequest_builder) Build() *ListRepositoryCommitsByReferenceRequest {
+	m0 := &ListRepositoryCommitsByReferenceRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.Reference = b.Reference
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type ListRepositoryCommitsByReferenceResponse struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
+	state             protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryCommits []*RepositoryCommit    `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
 	NextPageToken     string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -457,11 +688,6 @@ func (x *ListRepositoryCommitsByReferenceResponse) ProtoReflect() protoreflect.M
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryCommitsByReferenceResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryCommitsByReferenceResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *ListRepositoryCommitsByReferenceResponse) GetRepositoryCommits() []*RepositoryCommit {
 	if x != nil {
 		return x.RepositoryCommits
@@ -476,8 +702,32 @@ func (x *ListRepositoryCommitsByReferenceResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryCommitsByReferenceResponse) SetRepositoryCommits(v []*RepositoryCommit) {
+	x.RepositoryCommits = v
+}
+
+func (x *ListRepositoryCommitsByReferenceResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryCommitsByReferenceResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryCommits []*RepositoryCommit
+	NextPageToken     string
+}
+
+func (b0 ListRepositoryCommitsByReferenceResponse_builder) Build() *ListRepositoryCommitsByReferenceResponse {
+	m0 := &ListRepositoryCommitsByReferenceResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryCommits = b.RepositoryCommits
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type GetRepositoryCommitByReferenceRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository which the reference belongs to.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the reference belongs to.
@@ -514,11 +764,6 @@ func (x *GetRepositoryCommitByReferenceRequest) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryCommitByReferenceRequest.ProtoReflect.Descriptor instead.
-func (*GetRepositoryCommitByReferenceRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *GetRepositoryCommitByReferenceRequest) GetRepositoryOwner() string {
 	if x != nil {
 		return x.RepositoryOwner
@@ -540,8 +785,42 @@ func (x *GetRepositoryCommitByReferenceRequest) GetReference() string {
 	return ""
 }
 
+func (x *GetRepositoryCommitByReferenceRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *GetRepositoryCommitByReferenceRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *GetRepositoryCommitByReferenceRequest) SetReference(v string) {
+	x.Reference = v
+}
+
+type GetRepositoryCommitByReferenceRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository which the reference belongs to.
+	RepositoryOwner string
+	// The name of the repository which the reference belongs to.
+	RepositoryName string
+	// The optional reference that should be resolved to a commit. Can be a tag or commit.
+	// If unspecified, will use the repository's default_branch.
+	Reference string
+}
+
+func (b0 GetRepositoryCommitByReferenceRequest_builder) Build() *GetRepositoryCommitByReferenceRequest {
+	m0 := &GetRepositoryCommitByReferenceRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.Reference = b.Reference
+	return m0
+}
+
 type GetRepositoryCommitByReferenceResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryCommit *RepositoryCommit      `protobuf:"bytes,1,opt,name=repository_commit,json=repositoryCommit,proto3" json:"repository_commit,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -572,11 +851,6 @@ func (x *GetRepositoryCommitByReferenceResponse) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryCommitByReferenceResponse.ProtoReflect.Descriptor instead.
-func (*GetRepositoryCommitByReferenceResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *GetRepositoryCommitByReferenceResponse) GetRepositoryCommit() *RepositoryCommit {
 	if x != nil {
 		return x.RepositoryCommit
@@ -584,8 +858,37 @@ func (x *GetRepositoryCommitByReferenceResponse) GetRepositoryCommit() *Reposito
 	return nil
 }
 
+func (x *GetRepositoryCommitByReferenceResponse) SetRepositoryCommit(v *RepositoryCommit) {
+	x.RepositoryCommit = v
+}
+
+func (x *GetRepositoryCommitByReferenceResponse) HasRepositoryCommit() bool {
+	if x == nil {
+		return false
+	}
+	return x.RepositoryCommit != nil
+}
+
+func (x *GetRepositoryCommitByReferenceResponse) ClearRepositoryCommit() {
+	x.RepositoryCommit = nil
+}
+
+type GetRepositoryCommitByReferenceResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryCommit *RepositoryCommit
+}
+
+func (b0 GetRepositoryCommitByReferenceResponse_builder) Build() *GetRepositoryCommitByReferenceResponse {
+	m0 := &GetRepositoryCommitByReferenceResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryCommit = b.RepositoryCommit
+	return m0
+}
+
 type ListRepositoryDraftCommitsRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository which the repository branch belongs to.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the repository branch belongs to.
@@ -624,11 +927,6 @@ func (x *ListRepositoryDraftCommitsRequest) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryDraftCommitsRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryDraftCommitsRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *ListRepositoryDraftCommitsRequest) GetRepositoryOwner() string {
 	if x != nil {
 		return x.RepositoryOwner
@@ -664,8 +962,54 @@ func (x *ListRepositoryDraftCommitsRequest) GetReverse() bool {
 	return false
 }
 
+func (x *ListRepositoryDraftCommitsRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *ListRepositoryDraftCommitsRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ListRepositoryDraftCommitsRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryDraftCommitsRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListRepositoryDraftCommitsRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type ListRepositoryDraftCommitsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository which the repository branch belongs to.
+	RepositoryOwner string
+	// The name of the repository which the repository branch belongs to.
+	RepositoryName string
+	PageSize       uint32
+	PageToken      string
+	// By default, draft commits are ordered by last update time descending.
+	// Reverse orders them ascending.
+	Reverse bool
+}
+
+func (b0 ListRepositoryDraftCommitsRequest_builder) Build() *ListRepositoryDraftCommitsRequest {
+	m0 := &ListRepositoryDraftCommitsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type ListRepositoryDraftCommitsResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Each commit will have draft_name set.
 	RepositoryCommits []*RepositoryCommit `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
 	NextPageToken     string              `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -698,11 +1042,6 @@ func (x *ListRepositoryDraftCommitsResponse) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryDraftCommitsResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryDraftCommitsResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *ListRepositoryDraftCommitsResponse) GetRepositoryCommits() []*RepositoryCommit {
 	if x != nil {
 		return x.RepositoryCommits
@@ -717,8 +1056,33 @@ func (x *ListRepositoryDraftCommitsResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryDraftCommitsResponse) SetRepositoryCommits(v []*RepositoryCommit) {
+	x.RepositoryCommits = v
+}
+
+func (x *ListRepositoryDraftCommitsResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryDraftCommitsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Each commit will have draft_name set.
+	RepositoryCommits []*RepositoryCommit
+	NextPageToken     string
+}
+
+func (b0 ListRepositoryDraftCommitsResponse_builder) Build() *ListRepositoryDraftCommitsResponse {
+	m0 := &ListRepositoryDraftCommitsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryCommits = b.RepositoryCommits
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type DeleteRepositoryDraftCommitRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository which the repository branch belongs to.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the repository branch belongs to.
@@ -754,11 +1118,6 @@ func (x *DeleteRepositoryDraftCommitRequest) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteRepositoryDraftCommitRequest.ProtoReflect.Descriptor instead.
-func (*DeleteRepositoryDraftCommitRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{9}
-}
-
 func (x *DeleteRepositoryDraftCommitRequest) GetRepositoryOwner() string {
 	if x != nil {
 		return x.RepositoryOwner
@@ -780,8 +1139,41 @@ func (x *DeleteRepositoryDraftCommitRequest) GetDraftName() string {
 	return ""
 }
 
+func (x *DeleteRepositoryDraftCommitRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *DeleteRepositoryDraftCommitRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *DeleteRepositoryDraftCommitRequest) SetDraftName(v string) {
+	x.DraftName = v
+}
+
+type DeleteRepositoryDraftCommitRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository which the repository branch belongs to.
+	RepositoryOwner string
+	// The name of the repository which the repository branch belongs to.
+	RepositoryName string
+	// The name of the draft to delete.
+	DraftName string
+}
+
+func (b0 DeleteRepositoryDraftCommitRequest_builder) Build() *DeleteRepositoryDraftCommitRequest {
+	m0 := &DeleteRepositoryDraftCommitRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.DraftName = b.DraftName
+	return m0
+}
+
 type DeleteRepositoryDraftCommitResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -811,9 +1203,16 @@ func (x *DeleteRepositoryDraftCommitResponse) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteRepositoryDraftCommitResponse.ProtoReflect.Descriptor instead.
-func (*DeleteRepositoryDraftCommitResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{10}
+type DeleteRepositoryDraftCommitResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 DeleteRepositoryDraftCommitResponse_builder) Build() *DeleteRepositoryDraftCommitResponse {
+	m0 := &DeleteRepositoryDraftCommitResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_repository_commit_proto protoreflect.FileDescriptor
@@ -1044,18 +1443,6 @@ var file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDesc = []byte{
 	0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
 	0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescData = file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes = make([]protoimpl.MessageInfo, 11)

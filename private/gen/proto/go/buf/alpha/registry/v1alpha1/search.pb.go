@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/search.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -94,11 +95,6 @@ func (x SearchFilter) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use SearchFilter.Descriptor instead.
-func (SearchFilter) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{0}
-}
-
 type OrderBy int32
 
 const (
@@ -144,11 +140,6 @@ func (OrderBy) Type() protoreflect.EnumType {
 
 func (x OrderBy) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use OrderBy.Descriptor instead.
-func (OrderBy) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{1}
 }
 
 // SearchModuleElementType is the protobuf element type of a fully qualified name in a module element search result.
@@ -203,11 +194,6 @@ func (x SearchModuleElementType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use SearchModuleElementType.Descriptor instead.
-func (SearchModuleElementType) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{2}
-}
-
 type SearchModuleContentFilter int32
 
 const (
@@ -254,13 +240,8 @@ func (x SearchModuleContentFilter) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use SearchModuleContentFilter.Descriptor instead.
-func (SearchModuleContentFilter) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{3}
-}
-
 type RepositorySearchResult struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the user or organization
@@ -304,11 +285,6 @@ func (x *RepositorySearchResult) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RepositorySearchResult.ProtoReflect.Descriptor instead.
-func (*RepositorySearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RepositorySearchResult) GetId() string {
@@ -374,8 +350,92 @@ func (x *RepositorySearchResult) GetLatestCommitTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *RepositorySearchResult) SetId(v string) {
+	x.Id = v
+}
+
+func (x *RepositorySearchResult) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositorySearchResult) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *RepositorySearchResult) SetVisibility(v Visibility) {
+	x.Visibility = v
+}
+
+func (x *RepositorySearchResult) SetDeprecated(v bool) {
+	x.Deprecated = v
+}
+
+func (x *RepositorySearchResult) SetLatestSpdxLicenseId(v string) {
+	x.LatestSpdxLicenseId = v
+}
+
+func (x *RepositorySearchResult) SetOwnerVerificationStatus(v VerificationStatus) {
+	x.OwnerVerificationStatus = v
+}
+
+func (x *RepositorySearchResult) SetUrl(v string) {
+	x.Url = v
+}
+
+func (x *RepositorySearchResult) SetLatestCommitTime(v *timestamppb.Timestamp) {
+	x.LatestCommitTime = v
+}
+
+func (x *RepositorySearchResult) HasLatestCommitTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.LatestCommitTime != nil
+}
+
+func (x *RepositorySearchResult) ClearLatestCommitTime() {
+	x.LatestCommitTime = nil
+}
+
+type RepositorySearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id   string
+	Name string
+	// The name of the user or organization
+	// who is the owner of this repository.
+	Owner string
+	// The visibility of the repository.
+	Visibility Visibility
+	Deprecated bool
+	// The SPDX license ID of the latest main commit in the repository.
+	LatestSpdxLicenseId string
+	// The verification status of the owner of the repository.
+	OwnerVerificationStatus VerificationStatus
+	// The user configurable URL in the description of the repository.
+	Url string
+	// The commit time of the latest main commit in the repository.
+	LatestCommitTime *timestamppb.Timestamp
+}
+
+func (b0 RepositorySearchResult_builder) Build() *RepositorySearchResult {
+	m0 := &RepositorySearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Owner = b.Owner
+	x.Visibility = b.Visibility
+	x.Deprecated = b.Deprecated
+	x.LatestSpdxLicenseId = b.LatestSpdxLicenseId
+	x.OwnerVerificationStatus = b.OwnerVerificationStatus
+	x.Url = b.Url
+	x.LatestCommitTime = b.LatestCommitTime
+	return m0
+}
+
 type OrganizationSearchResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
@@ -408,11 +468,6 @@ func (x *OrganizationSearchResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OrganizationSearchResult.ProtoReflect.Descriptor instead.
-func (*OrganizationSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *OrganizationSearchResult) GetId() string {
 	if x != nil {
 		return x.Id
@@ -434,8 +489,49 @@ func (x *OrganizationSearchResult) GetCreateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *OrganizationSearchResult) SetId(v string) {
+	x.Id = v
+}
+
+func (x *OrganizationSearchResult) SetName(v string) {
+	x.Name = v
+}
+
+func (x *OrganizationSearchResult) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *OrganizationSearchResult) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *OrganizationSearchResult) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type OrganizationSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         string
+	Name       string
+	CreateTime *timestamppb.Timestamp
+}
+
+func (b0 OrganizationSearchResult_builder) Build() *OrganizationSearchResult {
+	m0 := &OrganizationSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Name = b.Name
+	x.CreateTime = b.CreateTime
+	return m0
+}
+
 type UserSearchResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Deactivated   bool                   `protobuf:"varint,3,opt,name=deactivated,proto3" json:"deactivated,omitempty"`
@@ -469,11 +565,6 @@ func (x *UserSearchResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UserSearchResult.ProtoReflect.Descriptor instead.
-func (*UserSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *UserSearchResult) GetId() string {
 	if x != nil {
 		return x.Id
@@ -502,8 +593,55 @@ func (x *UserSearchResult) GetCreateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *UserSearchResult) SetId(v string) {
+	x.Id = v
+}
+
+func (x *UserSearchResult) SetUsername(v string) {
+	x.Username = v
+}
+
+func (x *UserSearchResult) SetDeactivated(v bool) {
+	x.Deactivated = v
+}
+
+func (x *UserSearchResult) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *UserSearchResult) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *UserSearchResult) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type UserSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id          string
+	Username    string
+	Deactivated bool
+	CreateTime  *timestamppb.Timestamp
+}
+
+func (b0 UserSearchResult_builder) Build() *UserSearchResult {
+	m0 := &UserSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Username = b.Username
+	x.Deactivated = b.Deactivated
+	x.CreateTime = b.CreateTime
+	return m0
+}
+
 type TeamSearchResult struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	OrganizationName string                 `protobuf:"bytes,3,opt,name=organization_name,json=organizationName,proto3" json:"organization_name,omitempty"`
@@ -536,11 +674,6 @@ func (x *TeamSearchResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TeamSearchResult.ProtoReflect.Descriptor instead.
-func (*TeamSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *TeamSearchResult) GetId() string {
 	if x != nil {
 		return x.Id
@@ -562,8 +695,38 @@ func (x *TeamSearchResult) GetOrganizationName() string {
 	return ""
 }
 
+func (x *TeamSearchResult) SetId(v string) {
+	x.Id = v
+}
+
+func (x *TeamSearchResult) SetName(v string) {
+	x.Name = v
+}
+
+func (x *TeamSearchResult) SetOrganizationName(v string) {
+	x.OrganizationName = v
+}
+
+type TeamSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id               string
+	Name             string
+	OrganizationName string
+}
+
+func (b0 TeamSearchResult_builder) Build() *TeamSearchResult {
+	m0 := &TeamSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Name = b.Name
+	x.OrganizationName = b.OrganizationName
+	return m0
+}
+
 type CuratedPluginSearchResult struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the user or organization
@@ -605,11 +768,6 @@ func (x *CuratedPluginSearchResult) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CuratedPluginSearchResult.ProtoReflect.Descriptor instead.
-func (*CuratedPluginSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CuratedPluginSearchResult) GetId() string {
@@ -668,8 +826,85 @@ func (x *CuratedPluginSearchResult) GetCreateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *CuratedPluginSearchResult) SetId(v string) {
+	x.Id = v
+}
+
+func (x *CuratedPluginSearchResult) SetName(v string) {
+	x.Name = v
+}
+
+func (x *CuratedPluginSearchResult) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *CuratedPluginSearchResult) SetDeprecated(v bool) {
+	x.Deprecated = v
+}
+
+func (x *CuratedPluginSearchResult) SetDescription(v string) {
+	x.Description = v
+}
+
+func (x *CuratedPluginSearchResult) SetRegistryType(v PluginRegistryType) {
+	x.RegistryType = v
+}
+
+func (x *CuratedPluginSearchResult) SetOutputLanguages(v []PluginLanguage) {
+	x.OutputLanguages = v
+}
+
+func (x *CuratedPluginSearchResult) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *CuratedPluginSearchResult) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *CuratedPluginSearchResult) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type CuratedPluginSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id   string
+	Name string
+	// The name of the user or organization
+	// who is the owner of this plugin.
+	Owner      string
+	Deprecated bool
+	// The description of the plugin and it's functionality.
+	Description string
+	// The registry type of the plugin.
+	RegistryType PluginRegistryType
+	// The output languages supported by the plugin.
+	OutputLanguages []PluginLanguage
+	// The plugins creation timestamp.
+	CreateTime *timestamppb.Timestamp
+}
+
+func (b0 CuratedPluginSearchResult_builder) Build() *CuratedPluginSearchResult {
+	m0 := &CuratedPluginSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Owner = b.Owner
+	x.Deprecated = b.Deprecated
+	x.Description = b.Description
+	x.RegistryType = b.RegistryType
+	x.OutputLanguages = b.OutputLanguages
+	x.CreateTime = b.CreateTime
+	return m0
+}
+
 type ModuleElementSearchResult struct {
-	state                   protoimpl.MessageState  `protogen:"open.v1"`
+	state                   protoimpl.MessageState  `protogen:"hybrid.v1"`
 	RepositoryId            string                  `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	RepositoryOwner         string                  `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	RepositoryName          string                  `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
@@ -704,11 +939,6 @@ func (x *ModuleElementSearchResult) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ModuleElementSearchResult.ProtoReflect.Descriptor instead.
-func (*ModuleElementSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ModuleElementSearchResult) GetRepositoryId() string {
@@ -760,8 +990,62 @@ func (x *ModuleElementSearchResult) GetSearchModuleElementType() SearchModuleEle
 	return SearchModuleElementType_SEARCH_MODULE_ELEMENT_TYPE_UNSPECIFIED
 }
 
+func (x *ModuleElementSearchResult) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ModuleElementSearchResult) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *ModuleElementSearchResult) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ModuleElementSearchResult) SetProtoFilePath(v string) {
+	x.ProtoFilePath = v
+}
+
+func (x *ModuleElementSearchResult) SetFullyQualifiedName(v string) {
+	x.FullyQualifiedName = v
+}
+
+func (x *ModuleElementSearchResult) SetPackageName(v string) {
+	x.PackageName = v
+}
+
+func (x *ModuleElementSearchResult) SetSearchModuleElementType(v SearchModuleElementType) {
+	x.SearchModuleElementType = v
+}
+
+type ModuleElementSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryId            string
+	RepositoryOwner         string
+	RepositoryName          string
+	ProtoFilePath           string
+	FullyQualifiedName      string
+	PackageName             string
+	SearchModuleElementType SearchModuleElementType
+}
+
+func (b0 ModuleElementSearchResult_builder) Build() *ModuleElementSearchResult {
+	m0 := &ModuleElementSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.ProtoFilePath = b.ProtoFilePath
+	x.FullyQualifiedName = b.FullyQualifiedName
+	x.PackageName = b.PackageName
+	x.SearchModuleElementType = b.SearchModuleElementType
+	return m0
+}
+
 type ModuleFileSearchResult struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
@@ -795,11 +1079,6 @@ func (x *ModuleFileSearchResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ModuleFileSearchResult.ProtoReflect.Descriptor instead.
-func (*ModuleFileSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *ModuleFileSearchResult) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -828,8 +1107,44 @@ func (x *ModuleFileSearchResult) GetProtoFilePath() string {
 	return ""
 }
 
+func (x *ModuleFileSearchResult) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ModuleFileSearchResult) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *ModuleFileSearchResult) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ModuleFileSearchResult) SetProtoFilePath(v string) {
+	x.ProtoFilePath = v
+}
+
+type ModuleFileSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryId    string
+	RepositoryOwner string
+	RepositoryName  string
+	ProtoFilePath   string
+}
+
+func (b0 ModuleFileSearchResult_builder) Build() *ModuleFileSearchResult {
+	m0 := &ModuleFileSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.ProtoFilePath = b.ProtoFilePath
+	return m0
+}
+
 type SearchResult struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Types that are valid to be assigned to Item:
 	//
 	//	*SearchResult_Repository
@@ -867,11 +1182,6 @@ func (x *SearchResult) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SearchResult.ProtoReflect.Descriptor instead.
-func (*SearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SearchResult) GetItem() isSearchResult_Item {
@@ -944,6 +1254,256 @@ func (x *SearchResult) GetModuleFile() *ModuleFileSearchResult {
 	return nil
 }
 
+func (x *SearchResult) SetRepository(v *RepositorySearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_Repository{v}
+}
+
+func (x *SearchResult) SetOrganization(v *OrganizationSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_Organization{v}
+}
+
+func (x *SearchResult) SetUser(v *UserSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_User{v}
+}
+
+func (x *SearchResult) SetTeam(v *TeamSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_Team{v}
+}
+
+func (x *SearchResult) SetCuratedPlugin(v *CuratedPluginSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_CuratedPlugin{v}
+}
+
+func (x *SearchResult) SetModuleElement(v *ModuleElementSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_ModuleElement{v}
+}
+
+func (x *SearchResult) SetModuleFile(v *ModuleFileSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchResult_ModuleFile{v}
+}
+
+func (x *SearchResult) HasItem() bool {
+	if x == nil {
+		return false
+	}
+	return x.Item != nil
+}
+
+func (x *SearchResult) HasRepository() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_Repository)
+	return ok
+}
+
+func (x *SearchResult) HasOrganization() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_Organization)
+	return ok
+}
+
+func (x *SearchResult) HasUser() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_User)
+	return ok
+}
+
+func (x *SearchResult) HasTeam() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_Team)
+	return ok
+}
+
+func (x *SearchResult) HasCuratedPlugin() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_CuratedPlugin)
+	return ok
+}
+
+func (x *SearchResult) HasModuleElement() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_ModuleElement)
+	return ok
+}
+
+func (x *SearchResult) HasModuleFile() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchResult_ModuleFile)
+	return ok
+}
+
+func (x *SearchResult) ClearItem() {
+	x.Item = nil
+}
+
+func (x *SearchResult) ClearRepository() {
+	if _, ok := x.Item.(*SearchResult_Repository); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchResult) ClearOrganization() {
+	if _, ok := x.Item.(*SearchResult_Organization); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchResult) ClearUser() {
+	if _, ok := x.Item.(*SearchResult_User); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchResult) ClearTeam() {
+	if _, ok := x.Item.(*SearchResult_Team); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchResult) ClearCuratedPlugin() {
+	if _, ok := x.Item.(*SearchResult_CuratedPlugin); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchResult) ClearModuleElement() {
+	if _, ok := x.Item.(*SearchResult_ModuleElement); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchResult) ClearModuleFile() {
+	if _, ok := x.Item.(*SearchResult_ModuleFile); ok {
+		x.Item = nil
+	}
+}
+
+const SearchResult_Item_not_set_case case_SearchResult_Item = 0
+const SearchResult_Repository_case case_SearchResult_Item = 1
+const SearchResult_Organization_case case_SearchResult_Item = 2
+const SearchResult_User_case case_SearchResult_Item = 3
+const SearchResult_Team_case case_SearchResult_Item = 4
+const SearchResult_CuratedPlugin_case case_SearchResult_Item = 7
+const SearchResult_ModuleElement_case case_SearchResult_Item = 8
+const SearchResult_ModuleFile_case case_SearchResult_Item = 9
+
+func (x *SearchResult) WhichItem() case_SearchResult_Item {
+	if x == nil {
+		return SearchResult_Item_not_set_case
+	}
+	switch x.Item.(type) {
+	case *SearchResult_Repository:
+		return SearchResult_Repository_case
+	case *SearchResult_Organization:
+		return SearchResult_Organization_case
+	case *SearchResult_User:
+		return SearchResult_User_case
+	case *SearchResult_Team:
+		return SearchResult_Team_case
+	case *SearchResult_CuratedPlugin:
+		return SearchResult_CuratedPlugin_case
+	case *SearchResult_ModuleElement:
+		return SearchResult_ModuleElement_case
+	case *SearchResult_ModuleFile:
+		return SearchResult_ModuleFile_case
+	default:
+		return SearchResult_Item_not_set_case
+	}
+}
+
+type SearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof Item:
+	Repository    *RepositorySearchResult
+	Organization  *OrganizationSearchResult
+	User          *UserSearchResult
+	Team          *TeamSearchResult
+	CuratedPlugin *CuratedPluginSearchResult
+	ModuleElement *ModuleElementSearchResult
+	ModuleFile    *ModuleFileSearchResult
+	// -- end of Item
+}
+
+func (b0 SearchResult_builder) Build() *SearchResult {
+	m0 := &SearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Repository != nil {
+		x.Item = &SearchResult_Repository{b.Repository}
+	}
+	if b.Organization != nil {
+		x.Item = &SearchResult_Organization{b.Organization}
+	}
+	if b.User != nil {
+		x.Item = &SearchResult_User{b.User}
+	}
+	if b.Team != nil {
+		x.Item = &SearchResult_Team{b.Team}
+	}
+	if b.CuratedPlugin != nil {
+		x.Item = &SearchResult_CuratedPlugin{b.CuratedPlugin}
+	}
+	if b.ModuleElement != nil {
+		x.Item = &SearchResult_ModuleElement{b.ModuleElement}
+	}
+	if b.ModuleFile != nil {
+		x.Item = &SearchResult_ModuleFile{b.ModuleFile}
+	}
+	return m0
+}
+
+type case_SearchResult_Item protoreflect.FieldNumber
+
+func (x case_SearchResult_Item) String() string {
+	md := file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isSearchResult_Item interface {
 	isSearchResult_Item()
 }
@@ -991,7 +1551,7 @@ func (*SearchResult_ModuleElement) isSearchResult_Item() {}
 func (*SearchResult_ModuleFile) isSearchResult_Item() {}
 
 type ElementSearchResult struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryId       string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	RepositoryOwner    string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	RepositoryName     string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
@@ -1032,11 +1592,6 @@ func (x *ElementSearchResult) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ElementSearchResult.ProtoReflect.Descriptor instead.
-func (*ElementSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ElementSearchResult) GetRepositoryId() string {
@@ -1126,6 +1681,228 @@ func (x *ElementSearchResult) GetFileExtension() *FileExtension {
 	return nil
 }
 
+func (x *ElementSearchResult) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ElementSearchResult) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *ElementSearchResult) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *ElementSearchResult) SetProtoFilePath(v string) {
+	x.ProtoFilePath = v
+}
+
+func (x *ElementSearchResult) SetFullyQualifiedName(v string) {
+	x.FullyQualifiedName = v
+}
+
+func (x *ElementSearchResult) SetService(v *Service) {
+	if v == nil {
+		x.Document = nil
+		return
+	}
+	x.Document = &ElementSearchResult_Service{v}
+}
+
+func (x *ElementSearchResult) SetMethod(v *Method) {
+	if v == nil {
+		x.Document = nil
+		return
+	}
+	x.Document = &ElementSearchResult_Method{v}
+}
+
+func (x *ElementSearchResult) SetEnum(v *Enum) {
+	if v == nil {
+		x.Document = nil
+		return
+	}
+	x.Document = &ElementSearchResult_Enum{v}
+}
+
+func (x *ElementSearchResult) SetMessage(v *Message) {
+	if v == nil {
+		x.Document = nil
+		return
+	}
+	x.Document = &ElementSearchResult_Message{v}
+}
+
+func (x *ElementSearchResult) SetFileExtension(v *FileExtension) {
+	if v == nil {
+		x.Document = nil
+		return
+	}
+	x.Document = &ElementSearchResult_FileExtension{v}
+}
+
+func (x *ElementSearchResult) HasDocument() bool {
+	if x == nil {
+		return false
+	}
+	return x.Document != nil
+}
+
+func (x *ElementSearchResult) HasService() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Document.(*ElementSearchResult_Service)
+	return ok
+}
+
+func (x *ElementSearchResult) HasMethod() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Document.(*ElementSearchResult_Method)
+	return ok
+}
+
+func (x *ElementSearchResult) HasEnum() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Document.(*ElementSearchResult_Enum)
+	return ok
+}
+
+func (x *ElementSearchResult) HasMessage() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Document.(*ElementSearchResult_Message)
+	return ok
+}
+
+func (x *ElementSearchResult) HasFileExtension() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Document.(*ElementSearchResult_FileExtension)
+	return ok
+}
+
+func (x *ElementSearchResult) ClearDocument() {
+	x.Document = nil
+}
+
+func (x *ElementSearchResult) ClearService() {
+	if _, ok := x.Document.(*ElementSearchResult_Service); ok {
+		x.Document = nil
+	}
+}
+
+func (x *ElementSearchResult) ClearMethod() {
+	if _, ok := x.Document.(*ElementSearchResult_Method); ok {
+		x.Document = nil
+	}
+}
+
+func (x *ElementSearchResult) ClearEnum() {
+	if _, ok := x.Document.(*ElementSearchResult_Enum); ok {
+		x.Document = nil
+	}
+}
+
+func (x *ElementSearchResult) ClearMessage() {
+	if _, ok := x.Document.(*ElementSearchResult_Message); ok {
+		x.Document = nil
+	}
+}
+
+func (x *ElementSearchResult) ClearFileExtension() {
+	if _, ok := x.Document.(*ElementSearchResult_FileExtension); ok {
+		x.Document = nil
+	}
+}
+
+const ElementSearchResult_Document_not_set_case case_ElementSearchResult_Document = 0
+const ElementSearchResult_Service_case case_ElementSearchResult_Document = 6
+const ElementSearchResult_Method_case case_ElementSearchResult_Document = 7
+const ElementSearchResult_Enum_case case_ElementSearchResult_Document = 8
+const ElementSearchResult_Message_case case_ElementSearchResult_Document = 9
+const ElementSearchResult_FileExtension_case case_ElementSearchResult_Document = 10
+
+func (x *ElementSearchResult) WhichDocument() case_ElementSearchResult_Document {
+	if x == nil {
+		return ElementSearchResult_Document_not_set_case
+	}
+	switch x.Document.(type) {
+	case *ElementSearchResult_Service:
+		return ElementSearchResult_Service_case
+	case *ElementSearchResult_Method:
+		return ElementSearchResult_Method_case
+	case *ElementSearchResult_Enum:
+		return ElementSearchResult_Enum_case
+	case *ElementSearchResult_Message:
+		return ElementSearchResult_Message_case
+	case *ElementSearchResult_FileExtension:
+		return ElementSearchResult_FileExtension_case
+	default:
+		return ElementSearchResult_Document_not_set_case
+	}
+}
+
+type ElementSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryId       string
+	RepositoryOwner    string
+	RepositoryName     string
+	ProtoFilePath      string
+	FullyQualifiedName string
+	// Fields of oneof Document:
+	Service       *Service
+	Method        *Method
+	Enum          *Enum
+	Message       *Message
+	FileExtension *FileExtension
+	// -- end of Document
+}
+
+func (b0 ElementSearchResult_builder) Build() *ElementSearchResult {
+	m0 := &ElementSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.ProtoFilePath = b.ProtoFilePath
+	x.FullyQualifiedName = b.FullyQualifiedName
+	if b.Service != nil {
+		x.Document = &ElementSearchResult_Service{b.Service}
+	}
+	if b.Method != nil {
+		x.Document = &ElementSearchResult_Method{b.Method}
+	}
+	if b.Enum != nil {
+		x.Document = &ElementSearchResult_Enum{b.Enum}
+	}
+	if b.Message != nil {
+		x.Document = &ElementSearchResult_Message{b.Message}
+	}
+	if b.FileExtension != nil {
+		x.Document = &ElementSearchResult_FileExtension{b.FileExtension}
+	}
+	return m0
+}
+
+type case_ElementSearchResult_Document protoreflect.FieldNumber
+
+func (x case_ElementSearchResult_Document) String() string {
+	md := file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isElementSearchResult_Document interface {
 	isElementSearchResult_Document()
 }
@@ -1161,7 +1938,7 @@ func (*ElementSearchResult_Message) isElementSearchResult_Document() {}
 func (*ElementSearchResult_FileExtension) isElementSearchResult_Document() {}
 
 type FileSearchResult struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
@@ -1194,11 +1971,6 @@ func (x *FileSearchResult) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FileSearchResult.ProtoReflect.Descriptor instead.
-func (*FileSearchResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FileSearchResult) GetRepositoryId() string {
@@ -1236,8 +2008,53 @@ func (x *FileSearchResult) GetContent() []byte {
 	return nil
 }
 
+func (x *FileSearchResult) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *FileSearchResult) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *FileSearchResult) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *FileSearchResult) SetProtoFilePath(v string) {
+	x.ProtoFilePath = v
+}
+
+func (x *FileSearchResult) SetContent(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.Content = v
+}
+
+type FileSearchResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryId    string
+	RepositoryOwner string
+	RepositoryName  string
+	ProtoFilePath   string
+	Content         []byte
+}
+
+func (b0 FileSearchResult_builder) Build() *FileSearchResult {
+	m0 := &FileSearchResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.ProtoFilePath = b.ProtoFilePath
+	x.Content = b.Content
+	return m0
+}
+
 type SearchModuleContentResult struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Types that are valid to be assigned to Item:
 	//
 	//	*SearchModuleContentResult_Element
@@ -1272,11 +2089,6 @@ func (x *SearchModuleContentResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchModuleContentResult.ProtoReflect.Descriptor instead.
-func (*SearchModuleContentResult) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{10}
-}
-
 func (x *SearchModuleContentResult) GetItem() isSearchModuleContentResult_Item {
 	if x != nil {
 		return x.Item
@@ -1302,6 +2114,111 @@ func (x *SearchModuleContentResult) GetFile() *FileSearchResult {
 	return nil
 }
 
+func (x *SearchModuleContentResult) SetElement(v *ElementSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchModuleContentResult_Element{v}
+}
+
+func (x *SearchModuleContentResult) SetFile(v *FileSearchResult) {
+	if v == nil {
+		x.Item = nil
+		return
+	}
+	x.Item = &SearchModuleContentResult_File{v}
+}
+
+func (x *SearchModuleContentResult) HasItem() bool {
+	if x == nil {
+		return false
+	}
+	return x.Item != nil
+}
+
+func (x *SearchModuleContentResult) HasElement() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchModuleContentResult_Element)
+	return ok
+}
+
+func (x *SearchModuleContentResult) HasFile() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.Item.(*SearchModuleContentResult_File)
+	return ok
+}
+
+func (x *SearchModuleContentResult) ClearItem() {
+	x.Item = nil
+}
+
+func (x *SearchModuleContentResult) ClearElement() {
+	if _, ok := x.Item.(*SearchModuleContentResult_Element); ok {
+		x.Item = nil
+	}
+}
+
+func (x *SearchModuleContentResult) ClearFile() {
+	if _, ok := x.Item.(*SearchModuleContentResult_File); ok {
+		x.Item = nil
+	}
+}
+
+const SearchModuleContentResult_Item_not_set_case case_SearchModuleContentResult_Item = 0
+const SearchModuleContentResult_Element_case case_SearchModuleContentResult_Item = 1
+const SearchModuleContentResult_File_case case_SearchModuleContentResult_Item = 2
+
+func (x *SearchModuleContentResult) WhichItem() case_SearchModuleContentResult_Item {
+	if x == nil {
+		return SearchModuleContentResult_Item_not_set_case
+	}
+	switch x.Item.(type) {
+	case *SearchModuleContentResult_Element:
+		return SearchModuleContentResult_Element_case
+	case *SearchModuleContentResult_File:
+		return SearchModuleContentResult_File_case
+	default:
+		return SearchModuleContentResult_Item_not_set_case
+	}
+}
+
+type SearchModuleContentResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof Item:
+	Element *ElementSearchResult
+	File    *FileSearchResult
+	// -- end of Item
+}
+
+func (b0 SearchModuleContentResult_builder) Build() *SearchModuleContentResult {
+	m0 := &SearchModuleContentResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Element != nil {
+		x.Item = &SearchModuleContentResult_Element{b.Element}
+	}
+	if b.File != nil {
+		x.Item = &SearchModuleContentResult_File{b.File}
+	}
+	return m0
+}
+
+type case_SearchModuleContentResult_Item protoreflect.FieldNumber
+
+func (x case_SearchModuleContentResult_Item) String() string {
+	md := file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isSearchModuleContentResult_Item interface {
 	isSearchModuleContentResult_Item()
 }
@@ -1319,7 +2236,7 @@ func (*SearchModuleContentResult_Element) isSearchModuleContentResult_Item() {}
 func (*SearchModuleContentResult_File) isSearchModuleContentResult_Item() {}
 
 type SearchRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The search string.
 	Query    string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -1358,11 +2275,6 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
-func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{11}
-}
-
 func (x *SearchRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
@@ -1391,8 +2303,49 @@ func (x *SearchRequest) GetFilters() []SearchFilter {
 	return nil
 }
 
+func (x *SearchRequest) SetQuery(v string) {
+	x.Query = v
+}
+
+func (x *SearchRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *SearchRequest) SetPageToken(v uint32) {
+	x.PageToken = v
+}
+
+func (x *SearchRequest) SetFilters(v []SearchFilter) {
+	x.Filters = v
+}
+
+type SearchRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The search string.
+	Query    string
+	PageSize uint32
+	// The first page is returned if this is 0.
+	PageToken uint32
+	// Empty list means show all. Supplying one or more enums will
+	// limit the search to only the requested resources.
+	// Supplying all possible enums is equivalent to empty list of filters.
+	Filters []SearchFilter
+}
+
+func (b0 SearchRequest_builder) Build() *SearchRequest {
+	m0 := &SearchRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Query = b.Query
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Filters = b.Filters
+	return m0
+}
+
 type SearchResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	SearchResults []*SearchResult        `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3" json:"search_results,omitempty"`
 	// There are no more pages if this is 0.
 	NextPageToken uint32 `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -1425,11 +2378,6 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
-func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{12}
-}
-
 func (x *SearchResponse) GetSearchResults() []*SearchResult {
 	if x != nil {
 		return x.SearchResults
@@ -1444,8 +2392,33 @@ func (x *SearchResponse) GetNextPageToken() uint32 {
 	return 0
 }
 
+func (x *SearchResponse) SetSearchResults(v []*SearchResult) {
+	x.SearchResults = v
+}
+
+func (x *SearchResponse) SetNextPageToken(v uint32) {
+	x.NextPageToken = v
+}
+
+type SearchResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SearchResults []*SearchResult
+	// There are no more pages if this is 0.
+	NextPageToken uint32
+}
+
+func (b0 SearchResponse_builder) Build() *SearchResponse {
+	m0 := &SearchResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.SearchResults = b.SearchResults
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type SearchTagRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository.
@@ -1486,11 +2459,6 @@ func (x *SearchTagRequest) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SearchTagRequest.ProtoReflect.Descriptor instead.
-func (*SearchTagRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SearchTagRequest) GetRepositoryOwner() string {
@@ -1542,8 +2510,68 @@ func (x *SearchTagRequest) GetReverse() bool {
 	return false
 }
 
+func (x *SearchTagRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *SearchTagRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *SearchTagRequest) SetQuery(v string) {
+	x.Query = v
+}
+
+func (x *SearchTagRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *SearchTagRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *SearchTagRequest) SetOrderBy(v OrderBy) {
+	x.OrderBy = v
+}
+
+func (x *SearchTagRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type SearchTagRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository.
+	RepositoryOwner string
+	// The name of the repository.
+	RepositoryName string
+	// The search string.
+	Query    string
+	PageSize uint32
+	// The first page is returned if this is empty.
+	PageToken string
+	// The field to order results by.
+	OrderBy OrderBy
+	// Reverse orders results in descending order.
+	Reverse bool
+}
+
+func (b0 SearchTagRequest_builder) Build() *SearchTagRequest {
+	m0 := &SearchTagRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.Query = b.Query
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.OrderBy = b.OrderBy
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type SearchTagResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryTags []*RepositoryTag       `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -1576,11 +2604,6 @@ func (x *SearchTagResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchTagResponse.ProtoReflect.Descriptor instead.
-func (*SearchTagResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{14}
-}
-
 func (x *SearchTagResponse) GetRepositoryTags() []*RepositoryTag {
 	if x != nil {
 		return x.RepositoryTags
@@ -1595,8 +2618,33 @@ func (x *SearchTagResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *SearchTagResponse) SetRepositoryTags(v []*RepositoryTag) {
+	x.RepositoryTags = v
+}
+
+func (x *SearchTagResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type SearchTagResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryTags []*RepositoryTag
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 SearchTagResponse_builder) Build() *SearchTagResponse {
+	m0 := &SearchTagResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryTags = b.RepositoryTags
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type SearchDraftRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The owner of the repository.
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository.
@@ -1637,11 +2685,6 @@ func (x *SearchDraftRequest) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SearchDraftRequest.ProtoReflect.Descriptor instead.
-func (*SearchDraftRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SearchDraftRequest) GetRepositoryOwner() string {
@@ -1693,8 +2736,68 @@ func (x *SearchDraftRequest) GetReverse() bool {
 	return false
 }
 
+func (x *SearchDraftRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+func (x *SearchDraftRequest) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *SearchDraftRequest) SetQuery(v string) {
+	x.Query = v
+}
+
+func (x *SearchDraftRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *SearchDraftRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *SearchDraftRequest) SetOrderBy(v OrderBy) {
+	x.OrderBy = v
+}
+
+func (x *SearchDraftRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type SearchDraftRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The owner of the repository.
+	RepositoryOwner string
+	// The name of the repository.
+	RepositoryName string
+	// The search string.
+	Query    string
+	PageSize uint32
+	// The first page is returned if this is empty.
+	PageToken string
+	// The field to order results by.
+	OrderBy OrderBy
+	// Reverse orders results in descending order.
+	Reverse bool
+}
+
+func (b0 SearchDraftRequest_builder) Build() *SearchDraftRequest {
+	m0 := &SearchDraftRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryOwner = b.RepositoryOwner
+	x.RepositoryName = b.RepositoryName
+	x.Query = b.Query
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.OrderBy = b.OrderBy
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type SearchDraftResponse struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
+	state             protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryCommits []*RepositoryCommit    `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -1727,11 +2830,6 @@ func (x *SearchDraftResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchDraftResponse.ProtoReflect.Descriptor instead.
-func (*SearchDraftResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{16}
-}
-
 func (x *SearchDraftResponse) GetRepositoryCommits() []*RepositoryCommit {
 	if x != nil {
 		return x.RepositoryCommits
@@ -1746,8 +2844,33 @@ func (x *SearchDraftResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *SearchDraftResponse) SetRepositoryCommits(v []*RepositoryCommit) {
+	x.RepositoryCommits = v
+}
+
+func (x *SearchDraftResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type SearchDraftResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryCommits []*RepositoryCommit
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 SearchDraftResponse_builder) Build() *SearchDraftResponse {
+	m0 := &SearchDraftResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryCommits = b.RepositoryCommits
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type SearchModuleContentRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The search string.
 	Query    string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -1789,11 +2912,6 @@ func (x *SearchModuleContentRequest) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SearchModuleContentRequest.ProtoReflect.Descriptor instead.
-func (*SearchModuleContentRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SearchModuleContentRequest) GetQuery() string {
@@ -1838,8 +2956,64 @@ func (x *SearchModuleContentRequest) GetRepositoryOwner() string {
 	return ""
 }
 
+func (x *SearchModuleContentRequest) SetQuery(v string) {
+	x.Query = v
+}
+
+func (x *SearchModuleContentRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *SearchModuleContentRequest) SetPageToken(v uint32) {
+	x.PageToken = v
+}
+
+func (x *SearchModuleContentRequest) SetFilters(v []SearchModuleContentFilter) {
+	x.Filters = v
+}
+
+func (x *SearchModuleContentRequest) SetRepositoryFullName(v string) {
+	x.RepositoryFullName = v
+}
+
+func (x *SearchModuleContentRequest) SetRepositoryOwner(v string) {
+	x.RepositoryOwner = v
+}
+
+type SearchModuleContentRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The search string.
+	Query    string
+	PageSize uint32
+	// The first page is returned if this is 0.
+	PageToken uint32
+	// Empty list means show all. Supplying one or more enums will
+	// limit the search to only the requested resources.
+	// Supplying all possible enums is equivalent to empty list of filters.
+	Filters []SearchModuleContentFilter
+	// Optional, if provided the search results will be limited to the provided repository.
+	RepositoryFullName string
+	// Optional, if provided the search results will be limited to the provided owner,
+	// ignored if repository_full_name is provided.
+	RepositoryOwner string
+}
+
+func (b0 SearchModuleContentRequest_builder) Build() *SearchModuleContentRequest {
+	m0 := &SearchModuleContentRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Query = b.Query
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Filters = b.Filters
+	x.RepositoryFullName = b.RepositoryFullName
+	x.RepositoryOwner = b.RepositoryOwner
+	return m0
+}
+
 type SearchModuleContentResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
 	SearchResults []*SearchModuleContentResult `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3" json:"search_results,omitempty"`
 	// There are no more pages if this is 0.
 	NextPageToken uint32 `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -1872,11 +3046,6 @@ func (x *SearchModuleContentResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchModuleContentResponse.ProtoReflect.Descriptor instead.
-func (*SearchModuleContentResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP(), []int{18}
-}
-
 func (x *SearchModuleContentResponse) GetSearchResults() []*SearchModuleContentResult {
 	if x != nil {
 		return x.SearchResults
@@ -1889,6 +3058,31 @@ func (x *SearchModuleContentResponse) GetNextPageToken() uint32 {
 		return x.NextPageToken
 	}
 	return 0
+}
+
+func (x *SearchModuleContentResponse) SetSearchResults(v []*SearchModuleContentResult) {
+	x.SearchResults = v
+}
+
+func (x *SearchModuleContentResponse) SetNextPageToken(v uint32) {
+	x.NextPageToken = v
+}
+
+type SearchModuleContentResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SearchResults []*SearchModuleContentResult
+	// There are no more pages if this is 0.
+	NextPageToken uint32
+}
+
+func (b0 SearchModuleContentResponse_builder) Build() *SearchModuleContentResponse {
+	m0 := &SearchModuleContentResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.SearchResults = b.SearchResults
+	x.NextPageToken = b.NextPageToken
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_search_proto protoreflect.FileDescriptor
@@ -2335,18 +3529,6 @@ var file_buf_alpha_registry_v1alpha1_search_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68,
 	0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61,
 	0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_search_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_search_proto_rawDescData = file_buf_alpha_registry_v1alpha1_search_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_search_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_search_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_search_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_search_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_search_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 4)

@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/recommendation.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -38,7 +39,7 @@ const (
 // RecommendedRepository is the information about a repository needed to link to
 // its owner page.
 type RecommendedRepository struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Owner         string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
@@ -71,11 +72,6 @@ func (x *RecommendedRepository) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RecommendedRepository.ProtoReflect.Descriptor instead.
-func (*RecommendedRepository) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RecommendedRepository) GetOwner() string {
@@ -113,9 +109,62 @@ func (x *RecommendedRepository) GetRepositoryId() string {
 	return ""
 }
 
+func (x *RecommendedRepository) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *RecommendedRepository) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RecommendedRepository) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *RecommendedRepository) SetDescription(v string) {
+	x.Description = v
+}
+
+func (x *RecommendedRepository) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *RecommendedRepository) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *RecommendedRepository) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type RecommendedRepository_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Owner        string
+	Name         string
+	CreateTime   *timestamppb.Timestamp
+	Description  string
+	RepositoryId string
+}
+
+func (b0 RecommendedRepository_builder) Build() *RecommendedRepository {
+	m0 := &RecommendedRepository{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Owner = b.Owner
+	x.Name = b.Name
+	x.CreateTime = b.CreateTime
+	x.Description = b.Description
+	x.RepositoryId = b.RepositoryId
+	return m0
+}
+
 // SetRecommendedResource is the information needed to configure a resource recommendation
 type SetRecommendedResource struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Owner         string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -147,11 +196,6 @@ func (x *SetRecommendedResource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetRecommendedResource.ProtoReflect.Descriptor instead.
-func (*SetRecommendedResource) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *SetRecommendedResource) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -166,8 +210,32 @@ func (x *SetRecommendedResource) GetName() string {
 	return ""
 }
 
+func (x *SetRecommendedResource) SetOwner(v string) {
+	x.Owner = v
+}
+
+func (x *SetRecommendedResource) SetName(v string) {
+	x.Name = v
+}
+
+type SetRecommendedResource_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Owner string
+	Name  string
+}
+
+func (b0 SetRecommendedResource_builder) Build() *SetRecommendedResource {
+	m0 := &SetRecommendedResource{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Owner = b.Owner
+	x.Name = b.Name
+	return m0
+}
+
 type RecommendedRepositoriesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -197,13 +265,20 @@ func (x *RecommendedRepositoriesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecommendedRepositoriesRequest.ProtoReflect.Descriptor instead.
-func (*RecommendedRepositoriesRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{2}
+type RecommendedRepositoriesRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 RecommendedRepositoriesRequest_builder) Build() *RecommendedRepositoriesRequest {
+	m0 := &RecommendedRepositoriesRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type RecommendedRepositoriesResponse struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
+	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
 	Repositories  []*RecommendedRepository `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -234,11 +309,6 @@ func (x *RecommendedRepositoriesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecommendedRepositoriesResponse.ProtoReflect.Descriptor instead.
-func (*RecommendedRepositoriesResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *RecommendedRepositoriesResponse) GetRepositories() []*RecommendedRepository {
 	if x != nil {
 		return x.Repositories
@@ -246,8 +316,26 @@ func (x *RecommendedRepositoriesResponse) GetRepositories() []*RecommendedReposi
 	return nil
 }
 
+func (x *RecommendedRepositoriesResponse) SetRepositories(v []*RecommendedRepository) {
+	x.Repositories = v
+}
+
+type RecommendedRepositoriesResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Repositories []*RecommendedRepository
+}
+
+func (b0 RecommendedRepositoriesResponse_builder) Build() *RecommendedRepositoriesResponse {
+	m0 := &RecommendedRepositoriesResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Repositories = b.Repositories
+	return m0
+}
+
 type ListRecommendedResourcesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -277,13 +365,20 @@ func (x *ListRecommendedResourcesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRecommendedResourcesRequest.ProtoReflect.Descriptor instead.
-func (*ListRecommendedResourcesRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{4}
+type ListRecommendedResourcesRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 ListRecommendedResourcesRequest_builder) Build() *ListRecommendedResourcesRequest {
+	m0 := &ListRecommendedResourcesRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type ListRecommendedResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Resources     []*Resource            `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -314,11 +409,6 @@ func (x *ListRecommendedResourcesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRecommendedResourcesResponse.ProtoReflect.Descriptor instead.
-func (*ListRecommendedResourcesResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *ListRecommendedResourcesResponse) GetResources() []*Resource {
 	if x != nil {
 		return x.Resources
@@ -326,8 +416,26 @@ func (x *ListRecommendedResourcesResponse) GetResources() []*Resource {
 	return nil
 }
 
+func (x *ListRecommendedResourcesResponse) SetResources(v []*Resource) {
+	x.Resources = v
+}
+
+type ListRecommendedResourcesResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Resources []*Resource
+}
+
+func (b0 ListRecommendedResourcesResponse_builder) Build() *ListRecommendedResourcesResponse {
+	m0 := &ListRecommendedResourcesResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Resources = b.Resources
+	return m0
+}
+
 type SetRecommendedResourcesRequest struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
 	Resources     []*SetRecommendedResource `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -358,11 +466,6 @@ func (x *SetRecommendedResourcesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetRecommendedResourcesRequest.ProtoReflect.Descriptor instead.
-func (*SetRecommendedResourcesRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *SetRecommendedResourcesRequest) GetResources() []*SetRecommendedResource {
 	if x != nil {
 		return x.Resources
@@ -370,8 +473,26 @@ func (x *SetRecommendedResourcesRequest) GetResources() []*SetRecommendedResourc
 	return nil
 }
 
+func (x *SetRecommendedResourcesRequest) SetResources(v []*SetRecommendedResource) {
+	x.Resources = v
+}
+
+type SetRecommendedResourcesRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Resources []*SetRecommendedResource
+}
+
+func (b0 SetRecommendedResourcesRequest_builder) Build() *SetRecommendedResourcesRequest {
+	m0 := &SetRecommendedResourcesRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Resources = b.Resources
+	return m0
+}
+
 type SetRecommendedResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -401,9 +522,16 @@ func (x *SetRecommendedResourcesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetRecommendedResourcesResponse.ProtoReflect.Descriptor instead.
-func (*SetRecommendedResourcesResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{7}
+type SetRecommendedResourcesResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 SetRecommendedResourcesResponse_builder) Build() *SetRecommendedResourcesResponse {
+	m0 := &SetRecommendedResourcesResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_recommendation_proto protoreflect.FileDescriptor
@@ -514,18 +642,6 @@ var file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDesc = []byte{
 	0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73,
 	0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescData = file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_recommendation_proto_msgTypes = make([]protoimpl.MessageInfo, 8)

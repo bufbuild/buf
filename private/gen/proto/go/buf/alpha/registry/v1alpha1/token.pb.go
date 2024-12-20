@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/token.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 )
 
 type Token struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	ExpireTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
@@ -70,11 +71,6 @@ func (x *Token) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Token.ProtoReflect.Descriptor instead.
-func (*Token) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *Token) GetId() string {
 	if x != nil {
 		return x.Id
@@ -103,8 +99,66 @@ func (x *Token) GetNote() string {
 	return ""
 }
 
+func (x *Token) SetId(v string) {
+	x.Id = v
+}
+
+func (x *Token) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *Token) SetExpireTime(v *timestamppb.Timestamp) {
+	x.ExpireTime = v
+}
+
+func (x *Token) SetNote(v string) {
+	x.Note = v
+}
+
+func (x *Token) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *Token) HasExpireTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.ExpireTime != nil
+}
+
+func (x *Token) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+func (x *Token) ClearExpireTime() {
+	x.ExpireTime = nil
+}
+
+type Token_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         string
+	CreateTime *timestamppb.Timestamp
+	ExpireTime *timestamppb.Timestamp
+	Note       string
+}
+
+func (b0 Token_builder) Build() *Token {
+	m0 := &Token{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.ExpireTime = b.ExpireTime
+	x.Note = b.Note
+	return m0
+}
+
 type CreateTokenRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	Note  string                 `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
 	// The time until which the token should be valid.
 	// Must be in the future. May be null for no expiry.
@@ -142,11 +196,6 @@ func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateTokenRequest.ProtoReflect.Descriptor instead.
-func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *CreateTokenRequest) GetNote() string {
 	if x != nil {
 		return x.Note
@@ -168,8 +217,54 @@ func (x *CreateTokenRequest) GetUserId() string {
 	return ""
 }
 
+func (x *CreateTokenRequest) SetNote(v string) {
+	x.Note = v
+}
+
+func (x *CreateTokenRequest) SetExpireTime(v *timestamppb.Timestamp) {
+	x.ExpireTime = v
+}
+
+func (x *CreateTokenRequest) SetUserId(v string) {
+	x.UserId = v
+}
+
+func (x *CreateTokenRequest) HasExpireTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.ExpireTime != nil
+}
+
+func (x *CreateTokenRequest) ClearExpireTime() {
+	x.ExpireTime = nil
+}
+
+type CreateTokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Note string
+	// The time until which the token should be valid.
+	// Must be in the future. May be null for no expiry.
+	ExpireTime *timestamppb.Timestamp
+	// The ID of the user to create a new token, can only be
+	// the user who perform this action, or a machine user.
+	// Default to the user who perform this action if this is empty.
+	UserId string
+}
+
+func (b0 CreateTokenRequest_builder) Build() *CreateTokenRequest {
+	m0 := &CreateTokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Note = b.Note
+	x.ExpireTime = b.ExpireTime
+	x.UserId = b.UserId
+	return m0
+}
+
 type CreateTokenResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The plaintext token to use for authentication.
 	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -201,11 +296,6 @@ func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateTokenResponse.ProtoReflect.Descriptor instead.
-func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *CreateTokenResponse) GetToken() string {
 	if x != nil {
 		return x.Token
@@ -213,8 +303,27 @@ func (x *CreateTokenResponse) GetToken() string {
 	return ""
 }
 
+func (x *CreateTokenResponse) SetToken(v string) {
+	x.Token = v
+}
+
+type CreateTokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The plaintext token to use for authentication.
+	Token string
+}
+
+func (b0 CreateTokenResponse_builder) Build() *CreateTokenResponse {
+	m0 := &CreateTokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Token = b.Token
+	return m0
+}
+
 type GetTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	TokenId       string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -245,11 +354,6 @@ func (x *GetTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTokenRequest.ProtoReflect.Descriptor instead.
-func (*GetTokenRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *GetTokenRequest) GetTokenId() string {
 	if x != nil {
 		return x.TokenId
@@ -257,8 +361,26 @@ func (x *GetTokenRequest) GetTokenId() string {
 	return ""
 }
 
+func (x *GetTokenRequest) SetTokenId(v string) {
+	x.TokenId = v
+}
+
+type GetTokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	TokenId string
+}
+
+func (b0 GetTokenRequest_builder) Build() *GetTokenRequest {
+	m0 := &GetTokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.TokenId = b.TokenId
+	return m0
+}
+
 type GetTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Token         *Token                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -289,11 +411,6 @@ func (x *GetTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTokenResponse.ProtoReflect.Descriptor instead.
-func (*GetTokenResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *GetTokenResponse) GetToken() *Token {
 	if x != nil {
 		return x.Token
@@ -301,8 +418,37 @@ func (x *GetTokenResponse) GetToken() *Token {
 	return nil
 }
 
+func (x *GetTokenResponse) SetToken(v *Token) {
+	x.Token = v
+}
+
+func (x *GetTokenResponse) HasToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.Token != nil
+}
+
+func (x *GetTokenResponse) ClearToken() {
+	x.Token = nil
+}
+
+type GetTokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Token *Token
+}
+
+func (b0 GetTokenResponse_builder) Build() *GetTokenResponse {
+	m0 := &GetTokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Token = b.Token
+	return m0
+}
+
 type ListTokensRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
 	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
@@ -340,11 +486,6 @@ func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTokensRequest.ProtoReflect.Descriptor instead.
-func (*ListTokensRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *ListTokensRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -373,8 +514,48 @@ func (x *ListTokensRequest) GetUserId() string {
 	return ""
 }
 
+func (x *ListTokensRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListTokensRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListTokensRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+func (x *ListTokensRequest) SetUserId(v string) {
+	x.UserId = v
+}
+
+type ListTokensRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	PageSize uint32
+	// The first page is returned if this is empty.
+	PageToken string
+	Reverse   bool
+	// The ID of the user to list tokens, can only be
+	// the user who perform this action, or a machine user.
+	// Default to the user who perform this action if this is empty.
+	UserId string
+}
+
+func (b0 ListTokensRequest_builder) Build() *ListTokensRequest {
+	m0 := &ListTokensRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	x.UserId = b.UserId
+	return m0
+}
+
 type ListTokensResponse struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
+	state  protoimpl.MessageState `protogen:"hybrid.v1"`
 	Tokens []*Token               `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -407,11 +588,6 @@ func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTokensResponse.ProtoReflect.Descriptor instead.
-func (*ListTokensResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *ListTokensResponse) GetTokens() []*Token {
 	if x != nil {
 		return x.Tokens
@@ -426,8 +602,33 @@ func (x *ListTokensResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListTokensResponse) SetTokens(v []*Token) {
+	x.Tokens = v
+}
+
+func (x *ListTokensResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListTokensResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Tokens []*Token
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 ListTokensResponse_builder) Build() *ListTokensResponse {
+	m0 := &ListTokensResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Tokens = b.Tokens
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type DeleteTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	TokenId       string                 `protobuf:"bytes,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -458,11 +659,6 @@ func (x *DeleteTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteTokenRequest.ProtoReflect.Descriptor instead.
-func (*DeleteTokenRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *DeleteTokenRequest) GetTokenId() string {
 	if x != nil {
 		return x.TokenId
@@ -470,8 +666,26 @@ func (x *DeleteTokenRequest) GetTokenId() string {
 	return ""
 }
 
+func (x *DeleteTokenRequest) SetTokenId(v string) {
+	x.TokenId = v
+}
+
+type DeleteTokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	TokenId string
+}
+
+func (b0 DeleteTokenRequest_builder) Build() *DeleteTokenRequest {
+	m0 := &DeleteTokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.TokenId = b.TokenId
+	return m0
+}
+
 type DeleteTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,9 +715,16 @@ func (x *DeleteTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteTokenResponse.ProtoReflect.Descriptor instead.
-func (*DeleteTokenResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP(), []int{8}
+type DeleteTokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 DeleteTokenResponse_builder) Build() *DeleteTokenResponse {
+	m0 := &DeleteTokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_token_proto protoreflect.FileDescriptor
@@ -613,18 +834,6 @@ var file_buf_alpha_registry_v1alpha1_token_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68,
 	0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61,
 	0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_token_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_token_proto_rawDescData = file_buf_alpha_registry_v1alpha1_token_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_token_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_token_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_token_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_token_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_token_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_token_proto_msgTypes = make([]protoimpl.MessageInfo, 9)

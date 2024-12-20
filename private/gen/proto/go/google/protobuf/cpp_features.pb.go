@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: google/protobuf/cpp_features.proto
 
+//go:build !protoopaque
+
 package protobuf
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -82,23 +83,8 @@ func (x CppFeatures_StringType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Do not use.
-func (x *CppFeatures_StringType) UnmarshalJSON(b []byte) error {
-	num, err := protoimpl.X.UnmarshalJSONEnum(x.Descriptor(), b)
-	if err != nil {
-		return err
-	}
-	*x = CppFeatures_StringType(num)
-	return nil
-}
-
-// Deprecated: Use CppFeatures_StringType.Descriptor instead.
-func (CppFeatures_StringType) EnumDescriptor() ([]byte, []int) {
-	return file_google_protobuf_cpp_features_proto_rawDescGZIP(), []int{0, 0}
-}
-
 type CppFeatures struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Whether or not to treat an enum field as closed.  This option is only
 	// applicable to enum fields, and will be removed in the future.  It is
 	// consistent with the legacy behavior of using proto3 enum types for proto2
@@ -134,11 +120,6 @@ func (x *CppFeatures) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CppFeatures.ProtoReflect.Descriptor instead.
-func (*CppFeatures) Descriptor() ([]byte, []int) {
-	return file_google_protobuf_cpp_features_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *CppFeatures) GetLegacyClosedEnum() bool {
 	if x != nil && x.LegacyClosedEnum != nil {
 		return *x.LegacyClosedEnum
@@ -151,6 +132,56 @@ func (x *CppFeatures) GetStringType() CppFeatures_StringType {
 		return *x.StringType
 	}
 	return CppFeatures_STRING_TYPE_UNKNOWN
+}
+
+func (x *CppFeatures) SetLegacyClosedEnum(v bool) {
+	x.LegacyClosedEnum = &v
+}
+
+func (x *CppFeatures) SetStringType(v CppFeatures_StringType) {
+	x.StringType = &v
+}
+
+func (x *CppFeatures) HasLegacyClosedEnum() bool {
+	if x == nil {
+		return false
+	}
+	return x.LegacyClosedEnum != nil
+}
+
+func (x *CppFeatures) HasStringType() bool {
+	if x == nil {
+		return false
+	}
+	return x.StringType != nil
+}
+
+func (x *CppFeatures) ClearLegacyClosedEnum() {
+	x.LegacyClosedEnum = nil
+}
+
+func (x *CppFeatures) ClearStringType() {
+	x.StringType = nil
+}
+
+type CppFeatures_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Whether or not to treat an enum field as closed.  This option is only
+	// applicable to enum fields, and will be removed in the future.  It is
+	// consistent with the legacy behavior of using proto3 enum types for proto2
+	// fields.
+	LegacyClosedEnum *bool
+	StringType       *CppFeatures_StringType
+}
+
+func (b0 CppFeatures_builder) Build() *CppFeatures {
+	m0 := &CppFeatures{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.LegacyClosedEnum = b.LegacyClosedEnum
+	x.StringType = b.StringType
+	return m0
 }
 
 var file_google_protobuf_cpp_features_proto_extTypes = []protoimpl.ExtensionInfo{
@@ -211,18 +242,6 @@ var file_google_protobuf_cpp_features_proto_rawDesc = []byte{
 	0x75, 0x66, 0x2e, 0x46, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x53, 0x65, 0x74, 0x18, 0xe8, 0x07,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x70, 0x70, 0x46, 0x65, 0x61,
 	0x74, 0x75, 0x72, 0x65, 0x73, 0x52, 0x03, 0x63, 0x70, 0x70,
-}
-
-var (
-	file_google_protobuf_cpp_features_proto_rawDescOnce sync.Once
-	file_google_protobuf_cpp_features_proto_rawDescData = file_google_protobuf_cpp_features_proto_rawDesc
-)
-
-func file_google_protobuf_cpp_features_proto_rawDescGZIP() []byte {
-	file_google_protobuf_cpp_features_proto_rawDescOnce.Do(func() {
-		file_google_protobuf_cpp_features_proto_rawDescData = protoimpl.X.CompressGZIP(file_google_protobuf_cpp_features_proto_rawDescData)
-	})
-	return file_google_protobuf_cpp_features_proto_rawDescData
 }
 
 var file_google_protobuf_cpp_features_proto_enumTypes = make([]protoimpl.EnumInfo, 1)

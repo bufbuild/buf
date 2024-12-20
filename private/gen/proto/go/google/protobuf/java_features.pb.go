@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: google/protobuf/java_features.proto
 
+//go:build !protoopaque
+
 package protobuf
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -86,23 +87,8 @@ func (x JavaFeatures_Utf8Validation) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Do not use.
-func (x *JavaFeatures_Utf8Validation) UnmarshalJSON(b []byte) error {
-	num, err := protoimpl.X.UnmarshalJSONEnum(x.Descriptor(), b)
-	if err != nil {
-		return err
-	}
-	*x = JavaFeatures_Utf8Validation(num)
-	return nil
-}
-
-// Deprecated: Use JavaFeatures_Utf8Validation.Descriptor instead.
-func (JavaFeatures_Utf8Validation) EnumDescriptor() ([]byte, []int) {
-	return file_google_protobuf_java_features_proto_rawDescGZIP(), []int{0, 0}
-}
-
 type JavaFeatures struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Whether or not to treat an enum field as closed.  This option is only
 	// applicable to enum fields, and will be removed in the future.  It is
 	// consistent with the legacy behavior of using proto3 enum types for proto2
@@ -138,11 +124,6 @@ func (x *JavaFeatures) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use JavaFeatures.ProtoReflect.Descriptor instead.
-func (*JavaFeatures) Descriptor() ([]byte, []int) {
-	return file_google_protobuf_java_features_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *JavaFeatures) GetLegacyClosedEnum() bool {
 	if x != nil && x.LegacyClosedEnum != nil {
 		return *x.LegacyClosedEnum
@@ -155,6 +136,56 @@ func (x *JavaFeatures) GetUtf8Validation() JavaFeatures_Utf8Validation {
 		return *x.Utf8Validation
 	}
 	return JavaFeatures_UTF8_VALIDATION_UNKNOWN
+}
+
+func (x *JavaFeatures) SetLegacyClosedEnum(v bool) {
+	x.LegacyClosedEnum = &v
+}
+
+func (x *JavaFeatures) SetUtf8Validation(v JavaFeatures_Utf8Validation) {
+	x.Utf8Validation = &v
+}
+
+func (x *JavaFeatures) HasLegacyClosedEnum() bool {
+	if x == nil {
+		return false
+	}
+	return x.LegacyClosedEnum != nil
+}
+
+func (x *JavaFeatures) HasUtf8Validation() bool {
+	if x == nil {
+		return false
+	}
+	return x.Utf8Validation != nil
+}
+
+func (x *JavaFeatures) ClearLegacyClosedEnum() {
+	x.LegacyClosedEnum = nil
+}
+
+func (x *JavaFeatures) ClearUtf8Validation() {
+	x.Utf8Validation = nil
+}
+
+type JavaFeatures_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Whether or not to treat an enum field as closed.  This option is only
+	// applicable to enum fields, and will be removed in the future.  It is
+	// consistent with the legacy behavior of using proto3 enum types for proto2
+	// fields.
+	LegacyClosedEnum *bool
+	Utf8Validation   *JavaFeatures_Utf8Validation
+}
+
+func (b0 JavaFeatures_builder) Build() *JavaFeatures {
+	m0 := &JavaFeatures{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.LegacyClosedEnum = b.LegacyClosedEnum
+	x.Utf8Validation = b.Utf8Validation
+	return m0
 }
 
 var file_google_protobuf_java_features_proto_extTypes = []protoimpl.ExtensionInfo{
@@ -231,18 +262,6 @@ var file_google_protobuf_java_features_proto_rawDesc = []byte{
 	0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x42, 0x11, 0x4a, 0x61, 0x76, 0x61, 0x46, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73,
 	0x50, 0x72, 0x6f, 0x74, 0x6f,
-}
-
-var (
-	file_google_protobuf_java_features_proto_rawDescOnce sync.Once
-	file_google_protobuf_java_features_proto_rawDescData = file_google_protobuf_java_features_proto_rawDesc
-)
-
-func file_google_protobuf_java_features_proto_rawDescGZIP() []byte {
-	file_google_protobuf_java_features_proto_rawDescOnce.Do(func() {
-		file_google_protobuf_java_features_proto_rawDescData = protoimpl.X.CompressGZIP(file_google_protobuf_java_features_proto_rawDescData)
-	})
-	return file_google_protobuf_java_features_proto_rawDescData
 }
 
 var file_google_protobuf_java_features_proto_enumTypes = make([]protoimpl.EnumInfo, 1)

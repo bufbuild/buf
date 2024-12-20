@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/admin.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -80,11 +81,6 @@ func (x BreakingChangeCategory) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use BreakingChangeCategory.Descriptor instead.
-func (BreakingChangeCategory) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{0}
-}
-
 // CollisionType is the type of collisions that can occur.
 type CollisionType int32
 
@@ -133,13 +129,8 @@ func (x CollisionType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use CollisionType.Descriptor instead.
-func (CollisionType) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{1}
-}
-
 type BreakingChangePolicy struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
+	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
 	Enabled                *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
 	IgnoreUnstablePackages *bool                  `protobuf:"varint,2,opt,name=ignore_unstable_packages,json=ignoreUnstablePackages,proto3,oneof" json:"ignore_unstable_packages,omitempty"`
 	Category               BreakingChangeCategory `protobuf:"varint,3,opt,name=category,proto3,enum=buf.alpha.registry.v1alpha1.BreakingChangeCategory" json:"category,omitempty"`
@@ -172,11 +163,6 @@ func (x *BreakingChangePolicy) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BreakingChangePolicy.ProtoReflect.Descriptor instead.
-func (*BreakingChangePolicy) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *BreakingChangePolicy) GetEnabled() bool {
 	if x != nil && x.Enabled != nil {
 		return *x.Enabled
@@ -198,9 +184,61 @@ func (x *BreakingChangePolicy) GetCategory() BreakingChangeCategory {
 	return BreakingChangeCategory_BREAKING_CHANGE_CATEGORY_UNSPECIFIED
 }
 
+func (x *BreakingChangePolicy) SetEnabled(v bool) {
+	x.Enabled = &v
+}
+
+func (x *BreakingChangePolicy) SetIgnoreUnstablePackages(v bool) {
+	x.IgnoreUnstablePackages = &v
+}
+
+func (x *BreakingChangePolicy) SetCategory(v BreakingChangeCategory) {
+	x.Category = v
+}
+
+func (x *BreakingChangePolicy) HasEnabled() bool {
+	if x == nil {
+		return false
+	}
+	return x.Enabled != nil
+}
+
+func (x *BreakingChangePolicy) HasIgnoreUnstablePackages() bool {
+	if x == nil {
+		return false
+	}
+	return x.IgnoreUnstablePackages != nil
+}
+
+func (x *BreakingChangePolicy) ClearEnabled() {
+	x.Enabled = nil
+}
+
+func (x *BreakingChangePolicy) ClearIgnoreUnstablePackages() {
+	x.IgnoreUnstablePackages = nil
+}
+
+type BreakingChangePolicy_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Enabled                *bool
+	IgnoreUnstablePackages *bool
+	Category               BreakingChangeCategory
+}
+
+func (b0 BreakingChangePolicy_builder) Build() *BreakingChangePolicy {
+	m0 := &BreakingChangePolicy{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Enabled = b.Enabled
+	x.IgnoreUnstablePackages = b.IgnoreUnstablePackages
+	x.Category = b.Category
+	return m0
+}
+
 // UniquenessPolicy is the policy for uniqueness on the server.
 type UniquenessPolicy struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Whether uniqueness policy is enforced.
 	Enabled       bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -232,11 +270,6 @@ func (x *UniquenessPolicy) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UniquenessPolicy.ProtoReflect.Descriptor instead.
-func (*UniquenessPolicy) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *UniquenessPolicy) GetEnabled() bool {
 	if x != nil {
 		return x.Enabled
@@ -244,9 +277,28 @@ func (x *UniquenessPolicy) GetEnabled() bool {
 	return false
 }
 
+func (x *UniquenessPolicy) SetEnabled(v bool) {
+	x.Enabled = v
+}
+
+type UniquenessPolicy_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Whether uniqueness policy is enforced.
+	Enabled bool
+}
+
+func (b0 UniquenessPolicy_builder) Build() *UniquenessPolicy {
+	m0 := &UniquenessPolicy{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Enabled = b.Enabled
+	return m0
+}
+
 // ReviewFlowGracePeriodPolicy is the policy for the review flow grace period on the server.
 type ReviewFlowGracePeriodPolicy struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The number of seconds of the grace period.
 	// Set to zero to disable the grace period.
 	DurationSeconds uint32 `protobuf:"varint,1,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
@@ -279,11 +331,6 @@ func (x *ReviewFlowGracePeriodPolicy) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReviewFlowGracePeriodPolicy.ProtoReflect.Descriptor instead.
-func (*ReviewFlowGracePeriodPolicy) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *ReviewFlowGracePeriodPolicy) GetDurationSeconds() uint32 {
 	if x != nil {
 		return x.DurationSeconds
@@ -291,9 +338,29 @@ func (x *ReviewFlowGracePeriodPolicy) GetDurationSeconds() uint32 {
 	return 0
 }
 
+func (x *ReviewFlowGracePeriodPolicy) SetDurationSeconds(v uint32) {
+	x.DurationSeconds = v
+}
+
+type ReviewFlowGracePeriodPolicy_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The number of seconds of the grace period.
+	// Set to zero to disable the grace period.
+	DurationSeconds uint32
+}
+
+func (b0 ReviewFlowGracePeriodPolicy_builder) Build() *ReviewFlowGracePeriodPolicy {
+	m0 := &ReviewFlowGracePeriodPolicy{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.DurationSeconds = b.DurationSeconds
+	return m0
+}
+
 // Collision is a collision that has occurred.
 type Collision struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The reference that has collisions.
 	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	// The type of collision.
@@ -332,11 +399,6 @@ func (x *Collision) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Collision.ProtoReflect.Descriptor instead.
-func (*Collision) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *Collision) GetReference() string {
 	if x != nil {
 		return x.Reference
@@ -365,9 +427,50 @@ func (x *Collision) GetHasOtherCollisionSources() bool {
 	return false
 }
 
+func (x *Collision) SetReference(v string) {
+	x.Reference = v
+}
+
+func (x *Collision) SetType(v CollisionType) {
+	x.Type = v
+}
+
+func (x *Collision) SetSources(v []*CollisionSource) {
+	x.Sources = v
+}
+
+func (x *Collision) SetHasOtherCollisionSources(v bool) {
+	x.HasOtherCollisionSources = v
+}
+
+type Collision_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The reference that has collisions.
+	Reference string
+	// The type of collision.
+	Type CollisionType
+	// The sources of the collision that the user is authorized to see.
+	Sources []*CollisionSource
+	// Whether there are other collision sources that the user is not authorized to see.
+	// The user should contact a server admin for more information about these collisions.
+	HasOtherCollisionSources bool
+}
+
+func (b0 Collision_builder) Build() *Collision {
+	m0 := &Collision{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Reference = b.Reference
+	x.Type = b.Type
+	x.Sources = b.Sources
+	x.HasOtherCollisionSources = b.HasOtherCollisionSources
+	return m0
+}
+
 // CollisionSource is the source of a collision
 type CollisionSource struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The name of the owner of the source.
 	OwnerName string `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
 	// The name of the repository of the source.
@@ -403,11 +506,6 @@ func (x *CollisionSource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CollisionSource.ProtoReflect.Descriptor instead.
-func (*CollisionSource) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *CollisionSource) GetOwnerName() string {
 	if x != nil {
 		return x.OwnerName
@@ -429,11 +527,44 @@ func (x *CollisionSource) GetPath() string {
 	return ""
 }
 
+func (x *CollisionSource) SetOwnerName(v string) {
+	x.OwnerName = v
+}
+
+func (x *CollisionSource) SetRepositoryName(v string) {
+	x.RepositoryName = v
+}
+
+func (x *CollisionSource) SetPath(v string) {
+	x.Path = v
+}
+
+type CollisionSource_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The name of the owner of the source.
+	OwnerName string
+	// The name of the repository of the source.
+	RepositoryName string
+	// The path of the file that is the source of the collision.
+	Path string
+}
+
+func (b0 CollisionSource_builder) Build() *CollisionSource {
+	m0 := &CollisionSource{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OwnerName = b.OwnerName
+	x.RepositoryName = b.RepositoryName
+	x.Path = b.Path
+	return m0
+}
+
 // MonthlyUsage contains the total amount of message, enum and services types
 // for every organizations repositories within a single tenant BSR instance
 // for a given month and year.
 type MonthlyUsage struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The month, between 1 and 12.
 	Month uint32 `protobuf:"varint,1,opt,name=month,proto3" json:"month,omitempty"`
 	// The year, between 2020 and the current year.
@@ -473,11 +604,6 @@ func (x *MonthlyUsage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MonthlyUsage.ProtoReflect.Descriptor instead.
-func (*MonthlyUsage) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *MonthlyUsage) GetMonth() uint32 {
 	if x != nil {
 		return x.Month
@@ -513,8 +639,55 @@ func (x *MonthlyUsage) GetTotalMethodTypes() uint32 {
 	return 0
 }
 
+func (x *MonthlyUsage) SetMonth(v uint32) {
+	x.Month = v
+}
+
+func (x *MonthlyUsage) SetYear(v uint32) {
+	x.Year = v
+}
+
+func (x *MonthlyUsage) SetTotalMessageTypes(v uint32) {
+	x.TotalMessageTypes = v
+}
+
+func (x *MonthlyUsage) SetTotalEnumTypes(v uint32) {
+	x.TotalEnumTypes = v
+}
+
+func (x *MonthlyUsage) SetTotalMethodTypes(v uint32) {
+	x.TotalMethodTypes = v
+}
+
+type MonthlyUsage_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The month, between 1 and 12.
+	Month uint32
+	// The year, between 2020 and the current year.
+	Year uint32
+	// The total amount of message types for the month and year.
+	TotalMessageTypes uint32
+	// The total amount of enum types for the month and year.
+	TotalEnumTypes uint32
+	// The total amount of method types for the month and year.
+	TotalMethodTypes uint32
+}
+
+func (b0 MonthlyUsage_builder) Build() *MonthlyUsage {
+	m0 := &MonthlyUsage{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Month = b.Month
+	x.Year = b.Year
+	x.TotalMessageTypes = b.TotalMessageTypes
+	x.TotalEnumTypes = b.TotalEnumTypes
+	x.TotalMethodTypes = b.TotalMethodTypes
+	return m0
+}
+
 type ForceDeleteUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -545,11 +718,6 @@ func (x *ForceDeleteUserRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ForceDeleteUserRequest.ProtoReflect.Descriptor instead.
-func (*ForceDeleteUserRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *ForceDeleteUserRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
@@ -557,8 +725,26 @@ func (x *ForceDeleteUserRequest) GetUserId() string {
 	return ""
 }
 
+func (x *ForceDeleteUserRequest) SetUserId(v string) {
+	x.UserId = v
+}
+
+type ForceDeleteUserRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId string
+}
+
+func (b0 ForceDeleteUserRequest_builder) Build() *ForceDeleteUserRequest {
+	m0 := &ForceDeleteUserRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.UserId = b.UserId
+	return m0
+}
+
 type ForceDeleteUserResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The deleted user.
 	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	// The deleted organizations.
@@ -594,11 +780,6 @@ func (x *ForceDeleteUserResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ForceDeleteUserResponse.ProtoReflect.Descriptor instead.
-func (*ForceDeleteUserResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *ForceDeleteUserResponse) GetUser() *User {
 	if x != nil {
 		return x.User
@@ -620,8 +801,52 @@ func (x *ForceDeleteUserResponse) GetRepositories() []*Repository {
 	return nil
 }
 
+func (x *ForceDeleteUserResponse) SetUser(v *User) {
+	x.User = v
+}
+
+func (x *ForceDeleteUserResponse) SetOrganizations(v []*Organization) {
+	x.Organizations = v
+}
+
+func (x *ForceDeleteUserResponse) SetRepositories(v []*Repository) {
+	x.Repositories = v
+}
+
+func (x *ForceDeleteUserResponse) HasUser() bool {
+	if x == nil {
+		return false
+	}
+	return x.User != nil
+}
+
+func (x *ForceDeleteUserResponse) ClearUser() {
+	x.User = nil
+}
+
+type ForceDeleteUserResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The deleted user.
+	User *User
+	// The deleted organizations.
+	Organizations []*Organization
+	// The deleted repositories.
+	Repositories []*Repository
+}
+
+func (b0 ForceDeleteUserResponse_builder) Build() *ForceDeleteUserResponse {
+	m0 := &ForceDeleteUserResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.User = b.User
+	x.Organizations = b.Organizations
+	x.Repositories = b.Repositories
+	return m0
+}
+
 type UpdateUserVerificationStatusRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
 	UserId             string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	VerificationStatus VerificationStatus     `protobuf:"varint,2,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
 	unknownFields      protoimpl.UnknownFields
@@ -653,11 +878,6 @@ func (x *UpdateUserVerificationStatusRequest) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateUserVerificationStatusRequest.ProtoReflect.Descriptor instead.
-func (*UpdateUserVerificationStatusRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *UpdateUserVerificationStatusRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
@@ -672,8 +892,32 @@ func (x *UpdateUserVerificationStatusRequest) GetVerificationStatus() Verificati
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
+func (x *UpdateUserVerificationStatusRequest) SetUserId(v string) {
+	x.UserId = v
+}
+
+func (x *UpdateUserVerificationStatusRequest) SetVerificationStatus(v VerificationStatus) {
+	x.VerificationStatus = v
+}
+
+type UpdateUserVerificationStatusRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId             string
+	VerificationStatus VerificationStatus
+}
+
+func (b0 UpdateUserVerificationStatusRequest_builder) Build() *UpdateUserVerificationStatusRequest {
+	m0 := &UpdateUserVerificationStatusRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.UserId = b.UserId
+	x.VerificationStatus = b.VerificationStatus
+	return m0
+}
+
 type UpdateUserVerificationStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -703,13 +947,20 @@ func (x *UpdateUserVerificationStatusResponse) ProtoReflect() protoreflect.Messa
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateUserVerificationStatusResponse.ProtoReflect.Descriptor instead.
-func (*UpdateUserVerificationStatusResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{9}
+type UpdateUserVerificationStatusResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 UpdateUserVerificationStatusResponse_builder) Build() *UpdateUserVerificationStatusResponse {
+	m0 := &UpdateUserVerificationStatusResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type UpdateOrganizationVerificationStatusRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
 	OrganizationId     string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	VerificationStatus VerificationStatus     `protobuf:"varint,2,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
 	unknownFields      protoimpl.UnknownFields
@@ -741,11 +992,6 @@ func (x *UpdateOrganizationVerificationStatusRequest) ProtoReflect() protoreflec
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateOrganizationVerificationStatusRequest.ProtoReflect.Descriptor instead.
-func (*UpdateOrganizationVerificationStatusRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{10}
-}
-
 func (x *UpdateOrganizationVerificationStatusRequest) GetOrganizationId() string {
 	if x != nil {
 		return x.OrganizationId
@@ -760,8 +1006,32 @@ func (x *UpdateOrganizationVerificationStatusRequest) GetVerificationStatus() Ve
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
+func (x *UpdateOrganizationVerificationStatusRequest) SetOrganizationId(v string) {
+	x.OrganizationId = v
+}
+
+func (x *UpdateOrganizationVerificationStatusRequest) SetVerificationStatus(v VerificationStatus) {
+	x.VerificationStatus = v
+}
+
+type UpdateOrganizationVerificationStatusRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	OrganizationId     string
+	VerificationStatus VerificationStatus
+}
+
+func (b0 UpdateOrganizationVerificationStatusRequest_builder) Build() *UpdateOrganizationVerificationStatusRequest {
+	m0 := &UpdateOrganizationVerificationStatusRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.OrganizationId = b.OrganizationId
+	x.VerificationStatus = b.VerificationStatus
+	return m0
+}
+
 type UpdateOrganizationVerificationStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -791,13 +1061,20 @@ func (x *UpdateOrganizationVerificationStatusResponse) ProtoReflect() protorefle
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateOrganizationVerificationStatusResponse.ProtoReflect.Descriptor instead.
-func (*UpdateOrganizationVerificationStatusResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{11}
+type UpdateOrganizationVerificationStatusResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 UpdateOrganizationVerificationStatusResponse_builder) Build() *UpdateOrganizationVerificationStatusResponse {
+	m0 := &UpdateOrganizationVerificationStatusResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type CreateMachineUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -828,11 +1105,6 @@ func (x *CreateMachineUserRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateMachineUserRequest.ProtoReflect.Descriptor instead.
-func (*CreateMachineUserRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{12}
-}
-
 func (x *CreateMachineUserRequest) GetUsername() string {
 	if x != nil {
 		return x.Username
@@ -840,8 +1112,26 @@ func (x *CreateMachineUserRequest) GetUsername() string {
 	return ""
 }
 
+func (x *CreateMachineUserRequest) SetUsername(v string) {
+	x.Username = v
+}
+
+type CreateMachineUserRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Username string
+}
+
+func (b0 CreateMachineUserRequest_builder) Build() *CreateMachineUserRequest {
+	m0 := &CreateMachineUserRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Username = b.Username
+	return m0
+}
+
 type CreateMachineUserResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -872,11 +1162,6 @@ func (x *CreateMachineUserResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateMachineUserResponse.ProtoReflect.Descriptor instead.
-func (*CreateMachineUserResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{13}
-}
-
 func (x *CreateMachineUserResponse) GetUser() *User {
 	if x != nil {
 		return x.User
@@ -884,8 +1169,37 @@ func (x *CreateMachineUserResponse) GetUser() *User {
 	return nil
 }
 
+func (x *CreateMachineUserResponse) SetUser(v *User) {
+	x.User = v
+}
+
+func (x *CreateMachineUserResponse) HasUser() bool {
+	if x == nil {
+		return false
+	}
+	return x.User != nil
+}
+
+func (x *CreateMachineUserResponse) ClearUser() {
+	x.User = nil
+}
+
+type CreateMachineUserResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	User *User
+}
+
+func (b0 CreateMachineUserResponse_builder) Build() *CreateMachineUserResponse {
+	m0 := &CreateMachineUserResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.User = b.User
+	return m0
+}
+
 type GetBreakingChangePolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -915,13 +1229,20 @@ func (x *GetBreakingChangePolicyRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBreakingChangePolicyRequest.ProtoReflect.Descriptor instead.
-func (*GetBreakingChangePolicyRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{14}
+type GetBreakingChangePolicyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 GetBreakingChangePolicyRequest_builder) Build() *GetBreakingChangePolicyRequest {
+	m0 := &GetBreakingChangePolicyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetBreakingChangePolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Policy        *BreakingChangePolicy  `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -952,11 +1273,6 @@ func (x *GetBreakingChangePolicyResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBreakingChangePolicyResponse.ProtoReflect.Descriptor instead.
-func (*GetBreakingChangePolicyResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{15}
-}
-
 func (x *GetBreakingChangePolicyResponse) GetPolicy() *BreakingChangePolicy {
 	if x != nil {
 		return x.Policy
@@ -964,8 +1280,37 @@ func (x *GetBreakingChangePolicyResponse) GetPolicy() *BreakingChangePolicy {
 	return nil
 }
 
+func (x *GetBreakingChangePolicyResponse) SetPolicy(v *BreakingChangePolicy) {
+	x.Policy = v
+}
+
+func (x *GetBreakingChangePolicyResponse) HasPolicy() bool {
+	if x == nil {
+		return false
+	}
+	return x.Policy != nil
+}
+
+func (x *GetBreakingChangePolicyResponse) ClearPolicy() {
+	x.Policy = nil
+}
+
+type GetBreakingChangePolicyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Policy *BreakingChangePolicy
+}
+
+func (b0 GetBreakingChangePolicyResponse_builder) Build() *GetBreakingChangePolicyResponse {
+	m0 := &GetBreakingChangePolicyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Policy = b.Policy
+	return m0
+}
+
 type UpdateBreakingChangePolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Policy        *BreakingChangePolicy  `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -996,11 +1341,6 @@ func (x *UpdateBreakingChangePolicyRequest) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateBreakingChangePolicyRequest.ProtoReflect.Descriptor instead.
-func (*UpdateBreakingChangePolicyRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{16}
-}
-
 func (x *UpdateBreakingChangePolicyRequest) GetPolicy() *BreakingChangePolicy {
 	if x != nil {
 		return x.Policy
@@ -1008,8 +1348,37 @@ func (x *UpdateBreakingChangePolicyRequest) GetPolicy() *BreakingChangePolicy {
 	return nil
 }
 
+func (x *UpdateBreakingChangePolicyRequest) SetPolicy(v *BreakingChangePolicy) {
+	x.Policy = v
+}
+
+func (x *UpdateBreakingChangePolicyRequest) HasPolicy() bool {
+	if x == nil {
+		return false
+	}
+	return x.Policy != nil
+}
+
+func (x *UpdateBreakingChangePolicyRequest) ClearPolicy() {
+	x.Policy = nil
+}
+
+type UpdateBreakingChangePolicyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Policy *BreakingChangePolicy
+}
+
+func (b0 UpdateBreakingChangePolicyRequest_builder) Build() *UpdateBreakingChangePolicyRequest {
+	m0 := &UpdateBreakingChangePolicyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Policy = b.Policy
+	return m0
+}
+
 type UpdateBreakingChangePolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1039,13 +1408,20 @@ func (x *UpdateBreakingChangePolicyResponse) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateBreakingChangePolicyResponse.ProtoReflect.Descriptor instead.
-func (*UpdateBreakingChangePolicyResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{17}
+type UpdateBreakingChangePolicyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 UpdateBreakingChangePolicyResponse_builder) Build() *UpdateBreakingChangePolicyResponse {
+	m0 := &UpdateBreakingChangePolicyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetUniquenessPolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1075,13 +1451,20 @@ func (x *GetUniquenessPolicyRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUniquenessPolicyRequest.ProtoReflect.Descriptor instead.
-func (*GetUniquenessPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{18}
+type GetUniquenessPolicyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 GetUniquenessPolicyRequest_builder) Build() *GetUniquenessPolicyRequest {
+	m0 := &GetUniquenessPolicyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetUniquenessPolicyResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The current uniqueness policy settings.
 	Policy *UniquenessPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	// Reports the status of the backfill task, which can be executed by the server admin with the
@@ -1116,11 +1499,6 @@ func (x *GetUniquenessPolicyResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUniquenessPolicyResponse.ProtoReflect.Descriptor instead.
-func (*GetUniquenessPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{19}
-}
-
 func (x *GetUniquenessPolicyResponse) GetPolicy() *UniquenessPolicy {
 	if x != nil {
 		return x.Policy
@@ -1135,8 +1513,46 @@ func (x *GetUniquenessPolicyResponse) GetBackfillTaskComplete() bool {
 	return false
 }
 
+func (x *GetUniquenessPolicyResponse) SetPolicy(v *UniquenessPolicy) {
+	x.Policy = v
+}
+
+func (x *GetUniquenessPolicyResponse) SetBackfillTaskComplete(v bool) {
+	x.BackfillTaskComplete = v
+}
+
+func (x *GetUniquenessPolicyResponse) HasPolicy() bool {
+	if x == nil {
+		return false
+	}
+	return x.Policy != nil
+}
+
+func (x *GetUniquenessPolicyResponse) ClearPolicy() {
+	x.Policy = nil
+}
+
+type GetUniquenessPolicyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The current uniqueness policy settings.
+	Policy *UniquenessPolicy
+	// Reports the status of the backfill task, which can be executed by the server admin with the
+	// RunServerUniquenessBackfillTask RPC.
+	BackfillTaskComplete bool
+}
+
+func (b0 GetUniquenessPolicyResponse_builder) Build() *GetUniquenessPolicyResponse {
+	m0 := &GetUniquenessPolicyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Policy = b.Policy
+	x.BackfillTaskComplete = b.BackfillTaskComplete
+	return m0
+}
+
 type UpdateUniquenessPolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Policy        *UniquenessPolicy      `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1167,11 +1583,6 @@ func (x *UpdateUniquenessPolicyRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateUniquenessPolicyRequest.ProtoReflect.Descriptor instead.
-func (*UpdateUniquenessPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{20}
-}
-
 func (x *UpdateUniquenessPolicyRequest) GetPolicy() *UniquenessPolicy {
 	if x != nil {
 		return x.Policy
@@ -1179,8 +1590,37 @@ func (x *UpdateUniquenessPolicyRequest) GetPolicy() *UniquenessPolicy {
 	return nil
 }
 
+func (x *UpdateUniquenessPolicyRequest) SetPolicy(v *UniquenessPolicy) {
+	x.Policy = v
+}
+
+func (x *UpdateUniquenessPolicyRequest) HasPolicy() bool {
+	if x == nil {
+		return false
+	}
+	return x.Policy != nil
+}
+
+func (x *UpdateUniquenessPolicyRequest) ClearPolicy() {
+	x.Policy = nil
+}
+
+type UpdateUniquenessPolicyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Policy *UniquenessPolicy
+}
+
+func (b0 UpdateUniquenessPolicyRequest_builder) Build() *UpdateUniquenessPolicyRequest {
+	m0 := &UpdateUniquenessPolicyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Policy = b.Policy
+	return m0
+}
+
 type UpdateUniquenessPolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1210,13 +1650,20 @@ func (x *UpdateUniquenessPolicyResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateUniquenessPolicyResponse.ProtoReflect.Descriptor instead.
-func (*UpdateUniquenessPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{21}
+type UpdateUniquenessPolicyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 UpdateUniquenessPolicyResponse_builder) Build() *UpdateUniquenessPolicyResponse {
+	m0 := &UpdateUniquenessPolicyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type ListServerUniquenessCollisionsRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// Token of the page to retrieve. If not specified, the first page of
 	// results will be returned. Use the value obtained from `next_page_token`
 	// in the previous response in order to request the next page of results.
@@ -1259,11 +1706,6 @@ func (x *ListServerUniquenessCollisionsRequest) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListServerUniquenessCollisionsRequest.ProtoReflect.Descriptor instead.
-func (*ListServerUniquenessCollisionsRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{22}
-}
-
 func (x *ListServerUniquenessCollisionsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -1285,8 +1727,48 @@ func (x *ListServerUniquenessCollisionsRequest) GetCollisionType() CollisionType
 	return CollisionType_COLLISION_TYPE_UNSPECIFIED
 }
 
+func (x *ListServerUniquenessCollisionsRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListServerUniquenessCollisionsRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListServerUniquenessCollisionsRequest) SetCollisionType(v CollisionType) {
+	x.CollisionType = v
+}
+
+type ListServerUniquenessCollisionsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Token of the page to retrieve. If not specified, the first page of
+	// results will be returned. Use the value obtained from `next_page_token`
+	// in the previous response in order to request the next page of results.
+	PageToken string
+	// Number of elements to retrieve in a single page.
+	// When too large a page is requested, the server may decide to further
+	// limit the number of returned resources.
+	PageSize uint32
+	// The desired collision type to filter by.
+	// This must be specified. Only collisions of the specified type will be returned,
+	// continue to page through results until no more collisions of the specified
+	// type are returned.
+	CollisionType CollisionType
+}
+
+func (b0 ListServerUniquenessCollisionsRequest_builder) Build() *ListServerUniquenessCollisionsRequest {
+	m0 := &ListServerUniquenessCollisionsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.PageToken = b.PageToken
+	x.PageSize = b.PageSize
+	x.CollisionType = b.CollisionType
+	return m0
+}
+
 type ListServerUniquenessCollisionsResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The collisions.
 	Collisions []*Collision `protobuf:"bytes,1,rep,name=collisions,proto3" json:"collisions,omitempty"`
 	// Pagination token used to retrieve the next page of results.
@@ -1323,11 +1805,6 @@ func (x *ListServerUniquenessCollisionsResponse) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListServerUniquenessCollisionsResponse.ProtoReflect.Descriptor instead.
-func (*ListServerUniquenessCollisionsResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{23}
-}
-
 func (x *ListServerUniquenessCollisionsResponse) GetCollisions() []*Collision {
 	if x != nil {
 		return x.Collisions
@@ -1342,8 +1819,37 @@ func (x *ListServerUniquenessCollisionsResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListServerUniquenessCollisionsResponse) SetCollisions(v []*Collision) {
+	x.Collisions = v
+}
+
+func (x *ListServerUniquenessCollisionsResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListServerUniquenessCollisionsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The collisions.
+	Collisions []*Collision
+	// Pagination token used to retrieve the next page of results.
+	// Pass the content of this string as the `page_token` attribute of
+	// the next request. `next_page_token` is not returned for the last
+	// page.
+	NextPageToken string
+}
+
+func (b0 ListServerUniquenessCollisionsResponse_builder) Build() *ListServerUniquenessCollisionsResponse {
+	m0 := &ListServerUniquenessCollisionsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Collisions = b.Collisions
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type RunServerUniquenessBackfillTaskRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1373,13 +1879,20 @@ func (x *RunServerUniquenessBackfillTaskRequest) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RunServerUniquenessBackfillTaskRequest.ProtoReflect.Descriptor instead.
-func (*RunServerUniquenessBackfillTaskRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{24}
+type RunServerUniquenessBackfillTaskRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 RunServerUniquenessBackfillTaskRequest_builder) Build() *RunServerUniquenessBackfillTaskRequest {
+	m0 := &RunServerUniquenessBackfillTaskRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type RunServerUniquenessBackfillTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1409,13 +1922,20 @@ func (x *RunServerUniquenessBackfillTaskResponse) ProtoReflect() protoreflect.Me
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RunServerUniquenessBackfillTaskResponse.ProtoReflect.Descriptor instead.
-func (*RunServerUniquenessBackfillTaskResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{25}
+type RunServerUniquenessBackfillTaskResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 RunServerUniquenessBackfillTaskResponse_builder) Build() *RunServerUniquenessBackfillTaskResponse {
+	m0 := &RunServerUniquenessBackfillTaskResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetReviewFlowGracePeriodPolicyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1445,13 +1965,20 @@ func (x *GetReviewFlowGracePeriodPolicyRequest) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetReviewFlowGracePeriodPolicyRequest.ProtoReflect.Descriptor instead.
-func (*GetReviewFlowGracePeriodPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{26}
+type GetReviewFlowGracePeriodPolicyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 GetReviewFlowGracePeriodPolicyRequest_builder) Build() *GetReviewFlowGracePeriodPolicyRequest {
+	m0 := &GetReviewFlowGracePeriodPolicyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetReviewFlowGracePeriodPolicyResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The current grace period policy settings.
 	Policy        *ReviewFlowGracePeriodPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1483,11 +2010,6 @@ func (x *GetReviewFlowGracePeriodPolicyResponse) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetReviewFlowGracePeriodPolicyResponse.ProtoReflect.Descriptor instead.
-func (*GetReviewFlowGracePeriodPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{27}
-}
-
 func (x *GetReviewFlowGracePeriodPolicyResponse) GetPolicy() *ReviewFlowGracePeriodPolicy {
 	if x != nil {
 		return x.Policy
@@ -1495,8 +2017,38 @@ func (x *GetReviewFlowGracePeriodPolicyResponse) GetPolicy() *ReviewFlowGracePer
 	return nil
 }
 
+func (x *GetReviewFlowGracePeriodPolicyResponse) SetPolicy(v *ReviewFlowGracePeriodPolicy) {
+	x.Policy = v
+}
+
+func (x *GetReviewFlowGracePeriodPolicyResponse) HasPolicy() bool {
+	if x == nil {
+		return false
+	}
+	return x.Policy != nil
+}
+
+func (x *GetReviewFlowGracePeriodPolicyResponse) ClearPolicy() {
+	x.Policy = nil
+}
+
+type GetReviewFlowGracePeriodPolicyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The current grace period policy settings.
+	Policy *ReviewFlowGracePeriodPolicy
+}
+
+func (b0 GetReviewFlowGracePeriodPolicyResponse_builder) Build() *GetReviewFlowGracePeriodPolicyResponse {
+	m0 := &GetReviewFlowGracePeriodPolicyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Policy = b.Policy
+	return m0
+}
+
 type UpdateReviewFlowGracePeriodPolicyRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The new grace period policy settings.
 	Policy        *ReviewFlowGracePeriodPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1528,11 +2080,6 @@ func (x *UpdateReviewFlowGracePeriodPolicyRequest) ProtoReflect() protoreflect.M
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateReviewFlowGracePeriodPolicyRequest.ProtoReflect.Descriptor instead.
-func (*UpdateReviewFlowGracePeriodPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{28}
-}
-
 func (x *UpdateReviewFlowGracePeriodPolicyRequest) GetPolicy() *ReviewFlowGracePeriodPolicy {
 	if x != nil {
 		return x.Policy
@@ -1540,8 +2087,38 @@ func (x *UpdateReviewFlowGracePeriodPolicyRequest) GetPolicy() *ReviewFlowGraceP
 	return nil
 }
 
+func (x *UpdateReviewFlowGracePeriodPolicyRequest) SetPolicy(v *ReviewFlowGracePeriodPolicy) {
+	x.Policy = v
+}
+
+func (x *UpdateReviewFlowGracePeriodPolicyRequest) HasPolicy() bool {
+	if x == nil {
+		return false
+	}
+	return x.Policy != nil
+}
+
+func (x *UpdateReviewFlowGracePeriodPolicyRequest) ClearPolicy() {
+	x.Policy = nil
+}
+
+type UpdateReviewFlowGracePeriodPolicyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The new grace period policy settings.
+	Policy *ReviewFlowGracePeriodPolicy
+}
+
+func (b0 UpdateReviewFlowGracePeriodPolicyRequest_builder) Build() *UpdateReviewFlowGracePeriodPolicyRequest {
+	m0 := &UpdateReviewFlowGracePeriodPolicyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Policy = b.Policy
+	return m0
+}
+
 type UpdateReviewFlowGracePeriodPolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1571,13 +2148,20 @@ func (x *UpdateReviewFlowGracePeriodPolicyResponse) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateReviewFlowGracePeriodPolicyResponse.ProtoReflect.Descriptor instead.
-func (*UpdateReviewFlowGracePeriodPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{29}
+type UpdateReviewFlowGracePeriodPolicyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 UpdateReviewFlowGracePeriodPolicyResponse_builder) Build() *UpdateReviewFlowGracePeriodPolicyResponse {
+	m0 := &UpdateReviewFlowGracePeriodPolicyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetClusterUsageRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The timestamp of the beginning time of a date range.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp of the ending time of a date range.
@@ -1611,11 +2195,6 @@ func (x *GetClusterUsageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetClusterUsageRequest.ProtoReflect.Descriptor instead.
-func (*GetClusterUsageRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{30}
-}
-
 func (x *GetClusterUsageRequest) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
@@ -1630,8 +2209,56 @@ func (x *GetClusterUsageRequest) GetEndTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *GetClusterUsageRequest) SetStartTime(v *timestamppb.Timestamp) {
+	x.StartTime = v
+}
+
+func (x *GetClusterUsageRequest) SetEndTime(v *timestamppb.Timestamp) {
+	x.EndTime = v
+}
+
+func (x *GetClusterUsageRequest) HasStartTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.StartTime != nil
+}
+
+func (x *GetClusterUsageRequest) HasEndTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.EndTime != nil
+}
+
+func (x *GetClusterUsageRequest) ClearStartTime() {
+	x.StartTime = nil
+}
+
+func (x *GetClusterUsageRequest) ClearEndTime() {
+	x.EndTime = nil
+}
+
+type GetClusterUsageRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The timestamp of the beginning time of a date range.
+	StartTime *timestamppb.Timestamp
+	// The timestamp of the ending time of a date range.
+	EndTime *timestamppb.Timestamp
+}
+
+func (b0 GetClusterUsageRequest_builder) Build() *GetClusterUsageRequest {
+	m0 := &GetClusterUsageRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.StartTime = b.StartTime
+	x.EndTime = b.EndTime
+	return m0
+}
+
 type GetClusterUsageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	Usage         []*MonthlyUsage        `protobuf:"bytes,1,rep,name=usage,proto3" json:"usage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1662,16 +2289,29 @@ func (x *GetClusterUsageResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetClusterUsageResponse.ProtoReflect.Descriptor instead.
-func (*GetClusterUsageResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP(), []int{31}
-}
-
 func (x *GetClusterUsageResponse) GetUsage() []*MonthlyUsage {
 	if x != nil {
 		return x.Usage
 	}
 	return nil
+}
+
+func (x *GetClusterUsageResponse) SetUsage(v []*MonthlyUsage) {
+	x.Usage = v
+}
+
+type GetClusterUsageResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Usage []*MonthlyUsage
+}
+
+func (b0 GetClusterUsageResponse_builder) Build() *GetClusterUsageResponse {
+	m0 := &GetClusterUsageResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Usage = b.Usage
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_admin_proto protoreflect.FileDescriptor
@@ -2075,18 +2715,6 @@ var file_buf_alpha_registry_v1alpha1_admin_proto_rawDesc = []byte{
 	0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a,
 	0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_admin_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_admin_proto_rawDescData = file_buf_alpha_registry_v1alpha1_admin_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_admin_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_admin_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_admin_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_admin_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_admin_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_admin_proto_enumTypes = make([]protoimpl.EnumInfo, 2)

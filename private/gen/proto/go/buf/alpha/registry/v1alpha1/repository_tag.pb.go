@@ -18,6 +18,8 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/repository_tag.proto
 
+//go:build !protoopaque
+
 package registryv1alpha1
 
 import (
@@ -25,7 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 )
 
 type RepositoryTag struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// primary key, unique.
 	// tags are based on labels, so if a label has been moved, the ID will point to the
 	// updated entry in the labels table.
@@ -80,11 +81,6 @@ func (x *RepositoryTag) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RepositoryTag.ProtoReflect.Descriptor instead.
-func (*RepositoryTag) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *RepositoryTag) GetId() string {
 	if x != nil {
 		return x.Id
@@ -120,8 +116,70 @@ func (x *RepositoryTag) GetAuthor() string {
 	return ""
 }
 
+func (x *RepositoryTag) SetId(v string) {
+	x.Id = v
+}
+
+func (x *RepositoryTag) SetCreateTime(v *timestamppb.Timestamp) {
+	x.CreateTime = v
+}
+
+func (x *RepositoryTag) SetName(v string) {
+	x.Name = v
+}
+
+func (x *RepositoryTag) SetCommitName(v string) {
+	x.CommitName = v
+}
+
+func (x *RepositoryTag) SetAuthor(v string) {
+	x.Author = v
+}
+
+func (x *RepositoryTag) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.CreateTime != nil
+}
+
+func (x *RepositoryTag) ClearCreateTime() {
+	x.CreateTime = nil
+}
+
+type RepositoryTag_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// primary key, unique.
+	// tags are based on labels, so if a label has been moved, the ID will point to the
+	// updated entry in the labels table.
+	Id string
+	// immutable
+	CreateTime *timestamppb.Timestamp
+	// We reserve field number '3' for the update_time.
+	// google.protobuf.Timestamp update_time = 3;
+	// The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+	Name string
+	// The name of the commit this tag belongs to.
+	CommitName string
+	// The username of the author of the tag.
+	Author string
+}
+
+func (b0 RepositoryTag_builder) Build() *RepositoryTag {
+	m0 := &RepositoryTag{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.Id = b.Id
+	x.CreateTime = b.CreateTime
+	x.Name = b.Name
+	x.CommitName = b.CommitName
+	x.Author = b.Author
+	return m0
+}
+
 type GetRepositoryTagRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository this tag belongs to.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// The name of the repository tag to get, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
@@ -155,11 +213,6 @@ func (x *GetRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryTagRequest.ProtoReflect.Descriptor instead.
-func (*GetRepositoryTagRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *GetRepositoryTagRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -174,8 +227,34 @@ func (x *GetRepositoryTagRequest) GetName() string {
 	return ""
 }
 
+func (x *GetRepositoryTagRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *GetRepositoryTagRequest) SetName(v string) {
+	x.Name = v
+}
+
+type GetRepositoryTagRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository this tag belongs to.
+	RepositoryId string
+	// The name of the repository tag to get, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+	Name string
+}
+
+func (b0 GetRepositoryTagRequest_builder) Build() *GetRepositoryTagRequest {
+	m0 := &GetRepositoryTagRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.Name = b.Name
+	return m0
+}
+
 type GetRepositoryTagResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -206,11 +285,6 @@ func (x *GetRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryTagResponse.ProtoReflect.Descriptor instead.
-func (*GetRepositoryTagResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *GetRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	if x != nil {
 		return x.RepositoryTag
@@ -218,8 +292,37 @@ func (x *GetRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	return nil
 }
 
+func (x *GetRepositoryTagResponse) SetRepositoryTag(v *RepositoryTag) {
+	x.RepositoryTag = v
+}
+
+func (x *GetRepositoryTagResponse) HasRepositoryTag() bool {
+	if x == nil {
+		return false
+	}
+	return x.RepositoryTag != nil
+}
+
+func (x *GetRepositoryTagResponse) ClearRepositoryTag() {
+	x.RepositoryTag = nil
+}
+
+type GetRepositoryTagResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryTag *RepositoryTag
+}
+
+func (b0 GetRepositoryTagResponse_builder) Build() *GetRepositoryTagResponse {
+	m0 := &GetRepositoryTagResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryTag = b.RepositoryTag
+	return m0
+}
+
 type CreateRepositoryTagRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository this tag should be created on.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
@@ -255,11 +358,6 @@ func (x *CreateRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateRepositoryTagRequest.ProtoReflect.Descriptor instead.
-func (*CreateRepositoryTagRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *CreateRepositoryTagRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -281,8 +379,41 @@ func (x *CreateRepositoryTagRequest) GetCommitName() string {
 	return ""
 }
 
+func (x *CreateRepositoryTagRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *CreateRepositoryTagRequest) SetName(v string) {
+	x.Name = v
+}
+
+func (x *CreateRepositoryTagRequest) SetCommitName(v string) {
+	x.CommitName = v
+}
+
+type CreateRepositoryTagRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository this tag should be created on.
+	RepositoryId string
+	// The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+	Name string
+	// The name of the commit this tag should be created for.
+	CommitName string
+}
+
+func (b0 CreateRepositoryTagRequest_builder) Build() *CreateRepositoryTagRequest {
+	m0 := &CreateRepositoryTagRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.Name = b.Name
+	x.CommitName = b.CommitName
+	return m0
+}
+
 type CreateRepositoryTagResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -313,11 +444,6 @@ func (x *CreateRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateRepositoryTagResponse.ProtoReflect.Descriptor instead.
-func (*CreateRepositoryTagResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *CreateRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	if x != nil {
 		return x.RepositoryTag
@@ -325,8 +451,37 @@ func (x *CreateRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	return nil
 }
 
+func (x *CreateRepositoryTagResponse) SetRepositoryTag(v *RepositoryTag) {
+	x.RepositoryTag = v
+}
+
+func (x *CreateRepositoryTagResponse) HasRepositoryTag() bool {
+	if x == nil {
+		return false
+	}
+	return x.RepositoryTag != nil
+}
+
+func (x *CreateRepositoryTagResponse) ClearRepositoryTag() {
+	x.RepositoryTag = nil
+}
+
+type CreateRepositoryTagResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryTag *RepositoryTag
+}
+
+func (b0 CreateRepositoryTagResponse_builder) Build() *CreateRepositoryTagResponse {
+	m0 := &CreateRepositoryTagResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryTag = b.RepositoryTag
+	return m0
+}
+
 type UpdateRepositoryTagRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository this tag belongs to.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// The name of the repository tag, to update e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
@@ -362,11 +517,6 @@ func (x *UpdateRepositoryTagRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateRepositoryTagRequest.ProtoReflect.Descriptor instead.
-func (*UpdateRepositoryTagRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *UpdateRepositoryTagRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -388,8 +538,52 @@ func (x *UpdateRepositoryTagRequest) GetCommitName() string {
 	return ""
 }
 
+func (x *UpdateRepositoryTagRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *UpdateRepositoryTagRequest) SetName(v string) {
+	x.Name = v
+}
+
+func (x *UpdateRepositoryTagRequest) SetCommitName(v string) {
+	x.CommitName = &v
+}
+
+func (x *UpdateRepositoryTagRequest) HasCommitName() bool {
+	if x == nil {
+		return false
+	}
+	return x.CommitName != nil
+}
+
+func (x *UpdateRepositoryTagRequest) ClearCommitName() {
+	x.CommitName = nil
+}
+
+type UpdateRepositoryTagRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository this tag belongs to.
+	RepositoryId string
+	// The name of the repository tag, to update e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+	Name string
+	// The name of the commit this tag should reference.
+	CommitName *string
+}
+
+func (b0 UpdateRepositoryTagRequest_builder) Build() *UpdateRepositoryTagRequest {
+	m0 := &UpdateRepositoryTagRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.Name = b.Name
+	x.CommitName = b.CommitName
+	return m0
+}
+
 type UpdateRepositoryTagResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryTag *RepositoryTag         `protobuf:"bytes,1,opt,name=repository_tag,json=repositoryTag,proto3" json:"repository_tag,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -420,11 +614,6 @@ func (x *UpdateRepositoryTagResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateRepositoryTagResponse.ProtoReflect.Descriptor instead.
-func (*UpdateRepositoryTagResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *UpdateRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	if x != nil {
 		return x.RepositoryTag
@@ -432,8 +621,37 @@ func (x *UpdateRepositoryTagResponse) GetRepositoryTag() *RepositoryTag {
 	return nil
 }
 
+func (x *UpdateRepositoryTagResponse) SetRepositoryTag(v *RepositoryTag) {
+	x.RepositoryTag = v
+}
+
+func (x *UpdateRepositoryTagResponse) HasRepositoryTag() bool {
+	if x == nil {
+		return false
+	}
+	return x.RepositoryTag != nil
+}
+
+func (x *UpdateRepositoryTagResponse) ClearRepositoryTag() {
+	x.RepositoryTag = nil
+}
+
+type UpdateRepositoryTagResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryTag *RepositoryTag
+}
+
+func (b0 UpdateRepositoryTagResponse_builder) Build() *UpdateRepositoryTagResponse {
+	m0 := &UpdateRepositoryTagResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryTag = b.RepositoryTag
+	return m0
+}
+
 type ListRepositoryTagsRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository whose tags should be listed.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	PageSize     uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -469,11 +687,6 @@ func (x *ListRepositoryTagsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryTagsRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryTagsRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *ListRepositoryTagsRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -502,8 +715,46 @@ func (x *ListRepositoryTagsRequest) GetReverse() bool {
 	return false
 }
 
+func (x *ListRepositoryTagsRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ListRepositoryTagsRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryTagsRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListRepositoryTagsRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type ListRepositoryTagsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository whose tags should be listed.
+	RepositoryId string
+	PageSize     uint32
+	// The first page is returned if this is empty.
+	PageToken string
+	Reverse   bool
+}
+
+func (b0 ListRepositoryTagsRequest_builder) Build() *ListRepositoryTagsRequest {
+	m0 := &ListRepositoryTagsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type ListRepositoryTagsResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryTags []*RepositoryTag       `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -536,11 +787,6 @@ func (x *ListRepositoryTagsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryTagsResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryTagsResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *ListRepositoryTagsResponse) GetRepositoryTags() []*RepositoryTag {
 	if x != nil {
 		return x.RepositoryTags
@@ -555,8 +801,33 @@ func (x *ListRepositoryTagsResponse) GetNextPageToken() string {
 	return ""
 }
 
+func (x *ListRepositoryTagsResponse) SetRepositoryTags(v []*RepositoryTag) {
+	x.RepositoryTags = v
+}
+
+func (x *ListRepositoryTagsResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryTagsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryTags []*RepositoryTag
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 ListRepositoryTagsResponse_builder) Build() *ListRepositoryTagsResponse {
+	m0 := &ListRepositoryTagsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryTags = b.RepositoryTags
+	x.NextPageToken = b.NextPageToken
+	return m0
+}
+
 type ListRepositoryTagsForReferenceRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
 	// The ID of the repository whose tags should be listed.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// Optional reference (if unspecified, will use the repository's default_branch).
@@ -594,11 +865,6 @@ func (x *ListRepositoryTagsForReferenceRequest) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryTagsForReferenceRequest.ProtoReflect.Descriptor instead.
-func (*ListRepositoryTagsForReferenceRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{9}
-}
-
 func (x *ListRepositoryTagsForReferenceRequest) GetRepositoryId() string {
 	if x != nil {
 		return x.RepositoryId
@@ -634,8 +900,53 @@ func (x *ListRepositoryTagsForReferenceRequest) GetReverse() bool {
 	return false
 }
 
+func (x *ListRepositoryTagsForReferenceRequest) SetRepositoryId(v string) {
+	x.RepositoryId = v
+}
+
+func (x *ListRepositoryTagsForReferenceRequest) SetReference(v string) {
+	x.Reference = v
+}
+
+func (x *ListRepositoryTagsForReferenceRequest) SetPageSize(v uint32) {
+	x.PageSize = v
+}
+
+func (x *ListRepositoryTagsForReferenceRequest) SetPageToken(v string) {
+	x.PageToken = v
+}
+
+func (x *ListRepositoryTagsForReferenceRequest) SetReverse(v bool) {
+	x.Reverse = v
+}
+
+type ListRepositoryTagsForReferenceRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository whose tags should be listed.
+	RepositoryId string
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string
+	PageSize  uint32
+	// The first page is returned if this is empty.
+	PageToken string
+	Reverse   bool
+}
+
+func (b0 ListRepositoryTagsForReferenceRequest_builder) Build() *ListRepositoryTagsForReferenceRequest {
+	m0 := &ListRepositoryTagsForReferenceRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryId = b.RepositoryId
+	x.Reference = b.Reference
+	x.PageSize = b.PageSize
+	x.PageToken = b.PageToken
+	x.Reverse = b.Reverse
+	return m0
+}
+
 type ListRepositoryTagsForReferenceResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
 	RepositoryTags []*RepositoryTag       `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
 	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -668,11 +979,6 @@ func (x *ListRepositoryTagsForReferenceResponse) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRepositoryTagsForReferenceResponse.ProtoReflect.Descriptor instead.
-func (*ListRepositoryTagsForReferenceResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP(), []int{10}
-}
-
 func (x *ListRepositoryTagsForReferenceResponse) GetRepositoryTags() []*RepositoryTag {
 	if x != nil {
 		return x.RepositoryTags
@@ -685,6 +991,31 @@ func (x *ListRepositoryTagsForReferenceResponse) GetNextPageToken() string {
 		return x.NextPageToken
 	}
 	return ""
+}
+
+func (x *ListRepositoryTagsForReferenceResponse) SetRepositoryTags(v []*RepositoryTag) {
+	x.RepositoryTags = v
+}
+
+func (x *ListRepositoryTagsForReferenceResponse) SetNextPageToken(v string) {
+	x.NextPageToken = v
+}
+
+type ListRepositoryTagsForReferenceResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RepositoryTags []*RepositoryTag
+	// There are no more pages if this is empty.
+	NextPageToken string
+}
+
+func (b0 ListRepositoryTagsForReferenceResponse_builder) Build() *ListRepositoryTagsForReferenceResponse {
+	m0 := &ListRepositoryTagsForReferenceResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.RepositoryTags = b.RepositoryTags
+	x.NextPageToken = b.NextPageToken
+	return m0
 }
 
 var File_buf_alpha_registry_v1alpha1_repository_tag_proto protoreflect.FileDescriptor
@@ -860,18 +1191,6 @@ var file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDesc = []byte{
 	0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a,
 	0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x33,
-}
-
-var (
-	file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescOnce sync.Once
-	file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescData = file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDesc
-)
-
-func file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescGZIP() []byte {
-	file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescOnce.Do(func() {
-		file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescData = protoimpl.X.CompressGZIP(file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescData)
-	})
-	return file_buf_alpha_registry_v1alpha1_repository_tag_proto_rawDescData
 }
 
 var file_buf_alpha_registry_v1alpha1_repository_tag_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
