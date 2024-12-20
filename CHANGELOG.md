@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `--only-changes` flag to `buf registry {module,plugin} commit list` to filter
+  out commits that have no digest changes.
 
 ## [v1.48.0] - 2024-12-19
 
