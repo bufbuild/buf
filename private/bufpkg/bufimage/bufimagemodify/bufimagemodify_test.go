@@ -150,9 +150,7 @@ func TestModifyImage(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		for _, includeSourceInfo := range []bool{true, false} {
-			includeSourceInfo := includeSourceInfo
 			t.Run(testcase.description, func(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToFullName, includeSourceInfo)
@@ -550,10 +548,8 @@ func TestModifyImageFile(
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		for _, includeSourceInfo := range []bool{true, false} {
 			// TODO FUTURE: we are only testing sweep here, no need to test both include and exclude source info
-			includeSourceInfo := includeSourceInfo
 			t.Run(testcase.description, func(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToFullName, includeSourceInfo)
@@ -744,7 +740,6 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			override, err := stringOverrideFromConfig(

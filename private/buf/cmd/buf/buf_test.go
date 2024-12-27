@@ -1345,7 +1345,6 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 	t.Parallel()
 
 	for _, version := range bufconfig.AllFileVersions {
-		version := version
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
 			// Do not need any custom lint/breaking plugins here.
@@ -1384,7 +1383,6 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 			require.NoError(t, err)
 
 			for deprecatedRule := range deprecations {
-				deprecatedRule := deprecatedRule
 				t.Run(deprecatedRule, func(t *testing.T) {
 					t.Parallel()
 					ids := getRuleIDsFromLsBreaking(t, version.String(), []string{"PACKAGE"}, []string{deprecatedRule})

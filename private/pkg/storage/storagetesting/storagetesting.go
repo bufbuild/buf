@@ -183,7 +183,6 @@ func RunTestSuite(
 		".",
 		"./",
 	} {
-		prefix := prefix
 		t.Run(fmt.Sprintf("root-%q", prefix), func(t *testing.T) {
 			t.Parallel()
 			readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
@@ -905,7 +904,6 @@ func RunTestSuite(
 			},
 		},
 	} {
-		testCase := testCase
 		if testCase.stripComponentCount == 0 {
 			t.Run(fmt.Sprintf("copy-%s", testCase.name), func(t *testing.T) {
 				t.Parallel()

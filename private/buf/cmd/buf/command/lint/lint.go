@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -122,15 +122,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
-		ctx,
-		input,
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.Config),
-	)
-	if err != nil {
-		return err
-	}
 	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
 	if err != nil {
 		return err
@@ -142,24 +133,31 @@ func run(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
+		ctx,
+		input,
+		wasmRuntime,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
+	)
+	if err != nil {
+		return err
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
+	// We add all check configs (both lint and breaking) as related configs to check if plugins
+	// have rules configured.
+	// We allocated twice the size of imageWithConfigs for both lint and breaking configs.
+	allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(imageWithConfigs)*2)
 	for _, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(
-			container.Logger(),
-			bufcheck.NewLocalRunnerProvider(
-				wasmRuntime,
-				bufplugin.NopPluginKeyProvider,
-				bufplugin.NopPluginDataProvider,
-			),
-			bufcheck.ClientWithStderr(container.Stderr()),
-		)
-		if err != nil {
-			return err
-		}
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.LintConfig())
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
+	}
+	for _, imageWithConfig := range imageWithConfigs {
 		lintOptions := []bufcheck.LintOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
-		if err := client.Lint(
+		if err := checkClient.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,

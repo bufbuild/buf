@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.48.0] - 2024-12-19
+
 - Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
 - Breaking analysis support for `buf beta lsp`.
 - Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
@@ -14,6 +18,7 @@
 - Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
 - Move `buf registry module update` to `buf registry module settings update`. Command
   `buf registry module update` is now deprecated.
+- Support remote check plugins in `buf lint` and `buf breaking` commands.
 
 ## [v1.47.2] - 2024-11-14
 
@@ -1313,7 +1318,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.47.2...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.48.0...HEAD
+[v1.48.0]: https://github.com/bufbuild/buf/compare/v1.47.2...v1.48.0
 [v1.47.2]: https://github.com/bufbuild/buf/compare/v1.47.1...v1.47.2
 [v1.47.1]: https://github.com/bufbuild/buf/compare/v1.47.0...v1.47.1
 [v1.47.0]: https://github.com/bufbuild/buf/compare/v1.46.0...v1.47.0

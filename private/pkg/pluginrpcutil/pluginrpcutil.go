@@ -22,8 +22,11 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
-// NewRunner returns a new pluginrpc.Runner for the program name.
-func NewRunner(programName string, programArgs ...string) pluginrpc.Runner {
+// NewLocalRunner returns a new pluginrpc.Runner for the local program.
+//
+// The programName is the path or name of the program. Any program args are passed to
+// the program when it is run. The programArgs may be nil.
+func NewLocalRunner(programName string, programArgs ...string) pluginrpc.Runner {
 	return newRunner(programName, programArgs...)
 }
 

@@ -48,13 +48,13 @@ linters:
     - bidichk
     - bodyclose
     - containedctx
+    - copyloopvar
     # - contextcheck
     - decorder
     # - depguard
     - dogsled
     - errcheck
     - exhaustruct
-    - exportloopref
     - forbidigo
     - forcetypeassert
     - gci

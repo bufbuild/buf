@@ -127,6 +127,25 @@ type ConfiguredRulesOption interface {
 	applyToConfiguredRules(*configuredRulesOptions)
 }
 
+// LintBreakingAndConfiguredRulesOption is an option for Lint, Breaking, and ConfiguredRules.
+type LintBreakingAndConfiguredRulesOption interface {
+	LintOption
+	BreakingOption
+	ConfiguredRulesOption
+}
+
+// WithRelatedCheckConfigs returns a new LintBreakingAndConfiguredRulesOption that allows
+// the caller to provide additional related check configs. This allows the client to check
+// for unused plugins across related check configs and provide users with a warning if the
+// plugin is unused in all check configs.
+//
+// The default is to only check the configs provided to the client for Lint, Breaking, or ConfiguredRules.
+func WithRelatedCheckConfigs(relatedCheckConfigs ...bufconfig.CheckConfig) LintBreakingAndConfiguredRulesOption {
+	return &relatedCheckConfigsOption{
+		relatedCheckConfigs: relatedCheckConfigs,
+	}
+}
+
 // AllRulesOption is an option for AllRules.
 type AllRulesOption interface {
 	applyToAllRules(*allRulesOptions)
@@ -170,7 +189,8 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 	return r(pluginConfig)
 }
 
-// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
+// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime and
+// the given plugin providers.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
@@ -182,6 +202,10 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 //   - bufconfig.PluginConfigTypeRemoteWasm
 //
 // If the PluginConfigType is not supported, an error is returned.
+// To disable support for Wasm plugins, set wasmRuntime to wasm.UnimplementedRuntime.
+// To disable support for bufconfig.PluginConfigTypeRemoteWasm Plugins, set
+// pluginKeyProvider and pluginDataProvider to bufplugin.NopPluginKeyProvider
+// and bufplugin.NopPluginDataProvider.
 func NewLocalRunnerProvider(
 	wasmRuntime wasm.Runtime,
 	pluginKeyProvider bufplugin.PluginKeyProvider,

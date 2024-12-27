@@ -25,11 +25,11 @@ import (
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -43,7 +43,7 @@ func Serve(
 	wktBucket storage.ReadBucket,
 	container appext.Container,
 	controller bufctl.Controller,
-	checkClient bufcheck.Client,
+	wasmRuntime wasm.Runtime,
 	stream jsonrpc2.Stream,
 ) (jsonrpc2.Conn, error) {
 	// The LSP protocol deals with absolute filesystem paths. This requires us to
@@ -68,7 +68,7 @@ func Serve(
 		container:   container,
 		logger:      container.Logger(),
 		controller:  controller,
-		checkClient: checkClient,
+		wasmRuntime: wasmRuntime,
 		rootBucket:  bucket,
 		wktBucket:   wktBucket,
 	}
@@ -96,7 +96,7 @@ type lsp struct {
 
 	logger      *slog.Logger
 	controller  bufctl.Controller
-	checkClient bufcheck.Client
+	wasmRuntime wasm.Runtime
 	rootBucket  storage.ReadBucket
 	fileManager *fileManager
 

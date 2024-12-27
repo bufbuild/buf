@@ -22,9 +22,9 @@ import (
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -162,7 +162,6 @@ func lsRun(
 			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", configuredOnlyFlagName, modulePathFlagName)
 		}
 	}
-
 	configOverride := flags.Config
 	if flags.Version != "" {
 		configOverride = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
@@ -195,19 +194,26 @@ func lsRun(
 	defer func() {
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
-	client, err := bufcheck.NewClient(
-		container.Logger(),
-		bufcheck.NewLocalRunnerProvider(
-			wasmRuntime,
-			bufplugin.NopPluginKeyProvider,
-			bufplugin.NopPluginDataProvider,
-		),
-		bufcheck.ClientWithStderr(container.Stderr()),
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		".",
+		bufctl.WithConfigOverride(configOverride),
 	)
 	if err != nil {
 		return err
 	}
-
+	checkClient, err := controller.GetCheckClientForWorkspace(
+		ctx,
+		workspace,
+		wasmRuntime,
+	)
+	if err != nil {
+		return err
+	}
 	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
@@ -237,6 +243,14 @@ func lsRun(
 			return syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
 		var checkConfig bufconfig.CheckConfig
+		// We add all check configs (both lint and breaking) as related configs to check if plugins
+		// have rules configured.
+		// We allocated twice the size of moduleConfigs for both lint and breaking configs.
+		allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(moduleConfigs)*2)
+		for _, moduleConfig := range moduleConfigs {
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.LintConfig())
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.BreakingConfig())
+		}
 		switch ruleType {
 		case check.RuleTypeLint:
 			checkConfig = moduleConfig.LintConfig()
@@ -247,8 +261,9 @@ func lsRun(
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
-		rules, err = client.ConfiguredRules(
+		rules, err = checkClient.ConfiguredRules(
 			ctx,
 			ruleType,
 			checkConfig,
@@ -261,7 +276,7 @@ func lsRun(
 		allRulesOptions := []bufcheck.AllRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
 		}
-		rules, err = client.AllRules(
+		rules, err = checkClient.AllRules(
 			ctx,
 			ruleType,
 			bufYAMLFile.FileVersion(),

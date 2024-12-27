@@ -63,8 +63,9 @@ type file struct {
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 
-	workspace bufworkspace.Workspace
-	module    bufmodule.Module
+	workspace   bufworkspace.Workspace
+	module      bufmodule.Module
+	checkClient bufcheck.Client
 
 	againstStrategy againstStrategy
 	againstGitRef   string
@@ -394,6 +395,13 @@ func (f *file) FindModule(ctx context.Context) {
 		return
 	}
 
+	// Get the check client for this workspace.
+	checkClient, err := f.lsp.controller.GetCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
+	if err != nil {
+		f.lsp.logger.Warn("could not get check client", slogext.ErrorAttr(err))
+		return
+	}
+
 	// Figure out which module this file belongs to.
 	var module bufmodule.Module
 	for _, mod := range workspace.Modules() {
@@ -421,6 +429,7 @@ func (f *file) FindModule(ctx context.Context) {
 
 	f.workspace = workspace
 	f.module = module
+	f.checkClient = checkClient
 }
 
 // IndexImports finds URIs for all of the files imported by this file.
@@ -664,9 +673,13 @@ func (f *file) RunLints(ctx context.Context) bool {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
 		return false
 	}
+	if f.checkClient == nil {
+		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
+		return false
+	}
 
 	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, f.module.FullName()))
-	return f.appendLintErrors("buf lint", f.lsp.checkClient.Lint(
+	return f.appendLintErrors("buf lint", f.checkClient.Lint(
 		ctx,
 		f.workspace.GetLintConfigForOpaqueID(f.module.OpaqueID()),
 		f.image,
@@ -687,9 +700,13 @@ func (f *file) RunBreaking(ctx context.Context) bool {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find --against image for %q", f.uri))
 		return false
 	}
+	if f.checkClient == nil {
+		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
+		return false
+	}
 
 	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, f.module.FullName()))
-	return f.appendLintErrors("buf breaking", f.lsp.checkClient.Breaking(
+	return f.appendLintErrors("buf breaking", f.checkClient.Breaking(
 		ctx,
 		f.workspace.GetBreakingConfigForOpaqueID(f.module.OpaqueID()),
 		f.image,

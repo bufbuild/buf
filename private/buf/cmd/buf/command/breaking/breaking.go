@@ -24,8 +24,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -162,11 +162,23 @@ func run(
 	if err != nil {
 		return err
 	}
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		input,
+		wasmRuntime,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
 	)
@@ -184,9 +196,10 @@ func run(
 	}
 	// Do not exclude imports here. bufcheck's Client requires all imports.
 	// Use bufcheck's BreakingWithExcludeImports.
-	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	againstImageWithConfigs, _, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		flags.Against,
+		wasm.UnimplementedRuntime,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.AgainstConfig),
 	)
@@ -206,38 +219,24 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
-	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
-	if err != nil {
-		return err
+	// We add all check configs (both lint and breaking) as related configs to check if plugins
+	// have rules configured.
+	// We allocated twice the size of imageWithConfigs for both lint and breaking configs.
+	allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(imageWithConfigs)*2)
+	for _, imageWithConfig := range imageWithConfigs {
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.LintConfig())
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
 	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
-	}()
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		client, err := bufcheck.NewClient(
-			container.Logger(),
-			bufcheck.NewLocalRunnerProvider(
-				wasmRuntime,
-				bufplugin.NopPluginKeyProvider,
-				bufplugin.NopPluginDataProvider,
-			),
-			bufcheck.ClientWithStderr(container.Stderr()),
-		)
-		if err != nil {
-			return err
-		}
 		breakingOptions := []bufcheck.BreakingOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 		}
-		if err := client.Breaking(
+		if err := checkClient.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
 			imageWithConfig,
