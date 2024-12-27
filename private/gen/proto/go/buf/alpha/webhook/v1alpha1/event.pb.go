@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/webhook/v1alpha1/event.proto
 
-//go:build !protoopaque
-
 package webhookv1alpha1
 
 import (
@@ -40,14 +38,11 @@ const (
 // EventRequest is the request payload that will be sent to the customer
 // that is subscribed to webhook events in the BSR.
 type EventRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The webhook event that was triggered. This event is the same one that is
-	// registered when creating a webhook in the BSR.
-	Event v1alpha1.WebhookEvent `protobuf:"varint,1,opt,name=event,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"event,omitempty"`
-	// The event payload of the event was triggered.
-	Payload       *EventPayload `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event   v1alpha1.WebhookEvent  `protobuf:"varint,1,opt,name=event,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"event,omitempty"`
+	xxx_hidden_Payload *EventPayload          `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *EventRequest) Reset() {
@@ -77,35 +72,35 @@ func (x *EventRequest) ProtoReflect() protoreflect.Message {
 
 func (x *EventRequest) GetEvent() v1alpha1.WebhookEvent {
 	if x != nil {
-		return x.Event
+		return x.xxx_hidden_Event
 	}
 	return v1alpha1.WebhookEvent(0)
 }
 
 func (x *EventRequest) GetPayload() *EventPayload {
 	if x != nil {
-		return x.Payload
+		return x.xxx_hidden_Payload
 	}
 	return nil
 }
 
 func (x *EventRequest) SetEvent(v v1alpha1.WebhookEvent) {
-	x.Event = v
+	x.xxx_hidden_Event = v
 }
 
 func (x *EventRequest) SetPayload(v *EventPayload) {
-	x.Payload = v
+	x.xxx_hidden_Payload = v
 }
 
 func (x *EventRequest) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.Payload != nil
+	return x.xxx_hidden_Payload != nil
 }
 
 func (x *EventRequest) ClearPayload() {
-	x.Payload = nil
+	x.xxx_hidden_Payload = nil
 }
 
 type EventRequest_builder struct {
@@ -122,21 +117,18 @@ func (b0 EventRequest_builder) Build() *EventRequest {
 	m0 := &EventRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Event = b.Event
-	x.Payload = b.Payload
+	x.xxx_hidden_Event = b.Event
+	x.xxx_hidden_Payload = b.Payload
 	return m0
 }
 
 // EventPayload contains the actual event payload for all possible
 // webhook event types.
 type EventPayload struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Payload:
-	//
-	//	*EventPayload_RepositoryPush
-	Payload       isEventPayload_Payload `protobuf_oneof:"payload"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Payload isEventPayload_Payload `protobuf_oneof:"payload"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *EventPayload) Reset() {
@@ -164,16 +156,9 @@ func (x *EventPayload) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *EventPayload) GetPayload() isEventPayload_Payload {
-	if x != nil {
-		return x.Payload
-	}
-	return nil
-}
-
 func (x *EventPayload) GetRepositoryPush() *RepositoryPushEvent {
 	if x != nil {
-		if x, ok := x.Payload.(*EventPayload_RepositoryPush); ok {
+		if x, ok := x.xxx_hidden_Payload.(*eventPayload_RepositoryPush); ok {
 			return x.RepositoryPush
 		}
 	}
@@ -182,34 +167,34 @@ func (x *EventPayload) GetRepositoryPush() *RepositoryPushEvent {
 
 func (x *EventPayload) SetRepositoryPush(v *RepositoryPushEvent) {
 	if v == nil {
-		x.Payload = nil
+		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.Payload = &EventPayload_RepositoryPush{v}
+	x.xxx_hidden_Payload = &eventPayload_RepositoryPush{v}
 }
 
 func (x *EventPayload) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.Payload != nil
+	return x.xxx_hidden_Payload != nil
 }
 
 func (x *EventPayload) HasRepositoryPush() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Payload.(*EventPayload_RepositoryPush)
+	_, ok := x.xxx_hidden_Payload.(*eventPayload_RepositoryPush)
 	return ok
 }
 
 func (x *EventPayload) ClearPayload() {
-	x.Payload = nil
+	x.xxx_hidden_Payload = nil
 }
 
 func (x *EventPayload) ClearRepositoryPush() {
-	if _, ok := x.Payload.(*EventPayload_RepositoryPush); ok {
-		x.Payload = nil
+	if _, ok := x.xxx_hidden_Payload.(*eventPayload_RepositoryPush); ok {
+		x.xxx_hidden_Payload = nil
 	}
 }
 
@@ -220,8 +205,8 @@ func (x *EventPayload) WhichPayload() case_EventPayload_Payload {
 	if x == nil {
 		return EventPayload_Payload_not_set_case
 	}
-	switch x.Payload.(type) {
-	case *EventPayload_RepositoryPush:
+	switch x.xxx_hidden_Payload.(type) {
+	case *eventPayload_RepositoryPush:
 		return EventPayload_RepositoryPush_case
 	default:
 		return EventPayload_Payload_not_set_case
@@ -231,9 +216,9 @@ func (x *EventPayload) WhichPayload() case_EventPayload_Payload {
 type EventPayload_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Payload:
+	// Fields of oneof xxx_hidden_Payload:
 	RepositoryPush *RepositoryPushEvent
-	// -- end of Payload
+	// -- end of xxx_hidden_Payload
 }
 
 func (b0 EventPayload_builder) Build() *EventPayload {
@@ -241,7 +226,7 @@ func (b0 EventPayload_builder) Build() *EventPayload {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.RepositoryPush != nil {
-		x.Payload = &EventPayload_RepositoryPush{b.RepositoryPush}
+		x.xxx_hidden_Payload = &eventPayload_RepositoryPush{b.RepositoryPush}
 	}
 	return m0
 }
@@ -260,15 +245,15 @@ type isEventPayload_Payload interface {
 	isEventPayload_Payload()
 }
 
-type EventPayload_RepositoryPush struct {
+type eventPayload_RepositoryPush struct {
 	RepositoryPush *RepositoryPushEvent `protobuf:"bytes,1,opt,name=repository_push,json=repositoryPush,proto3,oneof"`
 }
 
-func (*EventPayload_RepositoryPush) isEventPayload_Payload() {}
+func (*eventPayload_RepositoryPush) isEventPayload_Payload() {}
 
 // EventResponse is the empty response payload from the customer to Buf.
 type EventResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -312,15 +297,12 @@ func (b0 EventResponse_builder) Build() *EventResponse {
 
 // Payload for the event WEBHOOK_EVENT_REPOSITORY_PUSH.
 type RepositoryPushEvent struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The timestamp of the commit push.
-	EventTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
-	// The repository commit that was pushed.
-	RepositoryCommit *v1alpha1.RepositoryCommit `protobuf:"bytes,2,opt,name=repository_commit,json=repositoryCommit,proto3" json:"repository_commit,omitempty"`
-	// The repository that was pushed.
-	Repository    *v1alpha1.Repository `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_EventTime        *timestamppb.Timestamp     `protobuf:"bytes,1,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	xxx_hidden_RepositoryCommit *v1alpha1.RepositoryCommit `protobuf:"bytes,2,opt,name=repository_commit,json=repositoryCommit,proto3" json:"repository_commit,omitempty"`
+	xxx_hidden_Repository       *v1alpha1.Repository       `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *RepositoryPushEvent) Reset() {
@@ -350,68 +332,68 @@ func (x *RepositoryPushEvent) ProtoReflect() protoreflect.Message {
 
 func (x *RepositoryPushEvent) GetEventTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.EventTime
+		return x.xxx_hidden_EventTime
 	}
 	return nil
 }
 
 func (x *RepositoryPushEvent) GetRepositoryCommit() *v1alpha1.RepositoryCommit {
 	if x != nil {
-		return x.RepositoryCommit
+		return x.xxx_hidden_RepositoryCommit
 	}
 	return nil
 }
 
 func (x *RepositoryPushEvent) GetRepository() *v1alpha1.Repository {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return nil
 }
 
 func (x *RepositoryPushEvent) SetEventTime(v *timestamppb.Timestamp) {
-	x.EventTime = v
+	x.xxx_hidden_EventTime = v
 }
 
 func (x *RepositoryPushEvent) SetRepositoryCommit(v *v1alpha1.RepositoryCommit) {
-	x.RepositoryCommit = v
+	x.xxx_hidden_RepositoryCommit = v
 }
 
 func (x *RepositoryPushEvent) SetRepository(v *v1alpha1.Repository) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *RepositoryPushEvent) HasEventTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.EventTime != nil
+	return x.xxx_hidden_EventTime != nil
 }
 
 func (x *RepositoryPushEvent) HasRepositoryCommit() bool {
 	if x == nil {
 		return false
 	}
-	return x.RepositoryCommit != nil
+	return x.xxx_hidden_RepositoryCommit != nil
 }
 
 func (x *RepositoryPushEvent) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.Repository != nil
+	return x.xxx_hidden_Repository != nil
 }
 
 func (x *RepositoryPushEvent) ClearEventTime() {
-	x.EventTime = nil
+	x.xxx_hidden_EventTime = nil
 }
 
 func (x *RepositoryPushEvent) ClearRepositoryCommit() {
-	x.RepositoryCommit = nil
+	x.xxx_hidden_RepositoryCommit = nil
 }
 
 func (x *RepositoryPushEvent) ClearRepository() {
-	x.Repository = nil
+	x.xxx_hidden_Repository = nil
 }
 
 type RepositoryPushEvent_builder struct {
@@ -429,9 +411,9 @@ func (b0 RepositoryPushEvent_builder) Build() *RepositoryPushEvent {
 	m0 := &RepositoryPushEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.EventTime = b.EventTime
-	x.RepositoryCommit = b.RepositoryCommit
-	x.Repository = b.Repository
+	x.xxx_hidden_EventTime = b.EventTime
+	x.xxx_hidden_RepositoryCommit = b.RepositoryCommit
+	x.xxx_hidden_Repository = b.Repository
 	return m0
 }
 
@@ -547,7 +529,7 @@ func file_buf_alpha_webhook_v1alpha1_event_proto_init() {
 		return
 	}
 	file_buf_alpha_webhook_v1alpha1_event_proto_msgTypes[1].OneofWrappers = []any{
-		(*EventPayload_RepositoryPush)(nil),
+		(*eventPayload_RepositoryPush)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

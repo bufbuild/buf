@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/webhook.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -86,17 +84,13 @@ func (x WebhookEvent) Number() protoreflect.EnumNumber {
 // CreateWebhookRequest is the proto request representation of a
 // webhook request body.
 type CreateWebhookRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The event to subscribe to for the given repository.
-	WebhookEvent WebhookEvent `protobuf:"varint,1,opt,name=webhook_event,json=webhookEvent,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"webhook_event,omitempty"`
-	// The owner name of the repository in the corresponding subscription request.
-	OwnerName string `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	// The repository name that the subscriber wishes create a subscription for.
-	RepositoryName string `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The subscriber's callback URL where notifications should be delivered.
-	CallbackUrl   string `protobuf:"bytes,4,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_WebhookEvent   WebhookEvent           `protobuf:"varint,1,opt,name=webhook_event,json=webhookEvent,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"webhook_event,omitempty"`
+	xxx_hidden_OwnerName      string                 `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	xxx_hidden_RepositoryName string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_CallbackUrl    string                 `protobuf:"bytes,4,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *CreateWebhookRequest) Reset() {
@@ -126,46 +120,46 @@ func (x *CreateWebhookRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateWebhookRequest) GetWebhookEvent() WebhookEvent {
 	if x != nil {
-		return x.WebhookEvent
+		return x.xxx_hidden_WebhookEvent
 	}
 	return WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED
 }
 
 func (x *CreateWebhookRequest) GetOwnerName() string {
 	if x != nil {
-		return x.OwnerName
+		return x.xxx_hidden_OwnerName
 	}
 	return ""
 }
 
 func (x *CreateWebhookRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *CreateWebhookRequest) GetCallbackUrl() string {
 	if x != nil {
-		return x.CallbackUrl
+		return x.xxx_hidden_CallbackUrl
 	}
 	return ""
 }
 
 func (x *CreateWebhookRequest) SetWebhookEvent(v WebhookEvent) {
-	x.WebhookEvent = v
+	x.xxx_hidden_WebhookEvent = v
 }
 
 func (x *CreateWebhookRequest) SetOwnerName(v string) {
-	x.OwnerName = v
+	x.xxx_hidden_OwnerName = v
 }
 
 func (x *CreateWebhookRequest) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *CreateWebhookRequest) SetCallbackUrl(v string) {
-	x.CallbackUrl = v
+	x.xxx_hidden_CallbackUrl = v
 }
 
 type CreateWebhookRequest_builder struct {
@@ -185,21 +179,20 @@ func (b0 CreateWebhookRequest_builder) Build() *CreateWebhookRequest {
 	m0 := &CreateWebhookRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.WebhookEvent = b.WebhookEvent
-	x.OwnerName = b.OwnerName
-	x.RepositoryName = b.RepositoryName
-	x.CallbackUrl = b.CallbackUrl
+	x.xxx_hidden_WebhookEvent = b.WebhookEvent
+	x.xxx_hidden_OwnerName = b.OwnerName
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_CallbackUrl = b.CallbackUrl
 	return m0
 }
 
 // CreateWebhookResponse is the proto response representation
 // of a webhook request.
 type CreateWebhookResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Created webhook subscription.
-	Webhook       *Webhook `protobuf:"bytes,1,opt,name=webhook,proto3" json:"webhook,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Webhook *Webhook               `protobuf:"bytes,1,opt,name=webhook,proto3" json:"webhook,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateWebhookResponse) Reset() {
@@ -229,24 +222,24 @@ func (x *CreateWebhookResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateWebhookResponse) GetWebhook() *Webhook {
 	if x != nil {
-		return x.Webhook
+		return x.xxx_hidden_Webhook
 	}
 	return nil
 }
 
 func (x *CreateWebhookResponse) SetWebhook(v *Webhook) {
-	x.Webhook = v
+	x.xxx_hidden_Webhook = v
 }
 
 func (x *CreateWebhookResponse) HasWebhook() bool {
 	if x == nil {
 		return false
 	}
-	return x.Webhook != nil
+	return x.xxx_hidden_Webhook != nil
 }
 
 func (x *CreateWebhookResponse) ClearWebhook() {
-	x.Webhook = nil
+	x.xxx_hidden_Webhook = nil
 }
 
 type CreateWebhookResponse_builder struct {
@@ -260,17 +253,16 @@ func (b0 CreateWebhookResponse_builder) Build() *CreateWebhookResponse {
 	m0 := &CreateWebhookResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Webhook = b.Webhook
+	x.xxx_hidden_Webhook = b.Webhook
 	return m0
 }
 
 // DeleteWebhookRequest is the request for unsubscribing to a webhook.
 type DeleteWebhookRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The id of the webhook subscription to delete.
-	WebhookId     string `protobuf:"bytes,1,opt,name=webhook_id,json=webhookId,proto3" json:"webhook_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_WebhookId string                 `protobuf:"bytes,1,opt,name=webhook_id,json=webhookId,proto3" json:"webhook_id,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *DeleteWebhookRequest) Reset() {
@@ -300,13 +292,13 @@ func (x *DeleteWebhookRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteWebhookRequest) GetWebhookId() string {
 	if x != nil {
-		return x.WebhookId
+		return x.xxx_hidden_WebhookId
 	}
 	return ""
 }
 
 func (x *DeleteWebhookRequest) SetWebhookId(v string) {
-	x.WebhookId = v
+	x.xxx_hidden_WebhookId = v
 }
 
 type DeleteWebhookRequest_builder struct {
@@ -320,14 +312,14 @@ func (b0 DeleteWebhookRequest_builder) Build() *DeleteWebhookRequest {
 	m0 := &DeleteWebhookRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.WebhookId = b.WebhookId
+	x.xxx_hidden_WebhookId = b.WebhookId
 	return m0
 }
 
 // DeleteWebhookResponse is the response for unsubscribing
 // from a webhook.
 type DeleteWebhookResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -372,15 +364,12 @@ func (b0 DeleteWebhookResponse_builder) Build() *DeleteWebhookResponse {
 // ListWebhooksRequest is the request to get the
 // list of subscribed webhooks for a given repository.
 type ListWebhooksRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The repository name given in the corresponding subscription request.
-	RepositoryName string `protobuf:"bytes,1,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The owner associated with the repository.
-	OwnerName string `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	// The page token for paginating.
-	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryName string                 `protobuf:"bytes,1,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_OwnerName      string                 `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	xxx_hidden_PageToken      string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ListWebhooksRequest) Reset() {
@@ -410,35 +399,35 @@ func (x *ListWebhooksRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListWebhooksRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *ListWebhooksRequest) GetOwnerName() string {
 	if x != nil {
-		return x.OwnerName
+		return x.xxx_hidden_OwnerName
 	}
 	return ""
 }
 
 func (x *ListWebhooksRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListWebhooksRequest) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *ListWebhooksRequest) SetOwnerName(v string) {
-	x.OwnerName = v
+	x.xxx_hidden_OwnerName = v
 }
 
 func (x *ListWebhooksRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 type ListWebhooksRequest_builder struct {
@@ -456,22 +445,20 @@ func (b0 ListWebhooksRequest_builder) Build() *ListWebhooksRequest {
 	m0 := &ListWebhooksRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryName = b.RepositoryName
-	x.OwnerName = b.OwnerName
-	x.PageToken = b.PageToken
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_OwnerName = b.OwnerName
+	x.xxx_hidden_PageToken = b.PageToken
 	return m0
 }
 
 // ListWebhooksResponse is the response for the list of
 // subscribed webhooks for a given repository.
 type ListWebhooksResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The list of subscribed webhooks for a given repository.
-	Webhooks []*Webhook `protobuf:"bytes,1,rep,name=webhooks,proto3" json:"webhooks,omitempty"`
-	// The next page token for paginating.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Webhooks      *[]*Webhook            `protobuf:"bytes,1,rep,name=webhooks,proto3" json:"webhooks,omitempty"`
+	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListWebhooksResponse) Reset() {
@@ -501,24 +488,26 @@ func (x *ListWebhooksResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListWebhooksResponse) GetWebhooks() []*Webhook {
 	if x != nil {
-		return x.Webhooks
+		if x.xxx_hidden_Webhooks != nil {
+			return *x.xxx_hidden_Webhooks
+		}
 	}
 	return nil
 }
 
 func (x *ListWebhooksResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListWebhooksResponse) SetWebhooks(v []*Webhook) {
-	x.Webhooks = v
+	x.xxx_hidden_Webhooks = &v
 }
 
 func (x *ListWebhooksResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListWebhooksResponse_builder struct {
@@ -534,34 +523,23 @@ func (b0 ListWebhooksResponse_builder) Build() *ListWebhooksResponse {
 	m0 := &ListWebhooksResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Webhooks = b.Webhooks
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Webhooks = &b.Webhooks
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 // Webhook is the representation of a webhook repository event subscription.
 type Webhook struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The event associated with the subscription id.
-	Event WebhookEvent `protobuf:"varint,1,opt,name=event,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"event,omitempty"`
-	// The id of the associated subscription.
-	WebhookId string `protobuf:"bytes,2,opt,name=webhook_id,json=webhookId,proto3" json:"webhook_id,omitempty"`
-	// The webhook creation timestamp.
-	CreateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// The webhook last updated timestamp.
-	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	// The webhook repository name.
-	RepositoryName string `protobuf:"bytes,5,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The webhook repository owner name.
-	OwnerName string `protobuf:"bytes,6,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	// The subscriber's callback URL where notifications are delivered. Currently
-	// we only support Connect-powered backends with application/proto as the
-	// content type. Make sure that your URL ends with
-	// "/buf.alpha.webhook.v1alpha1.EventService/Event". For more information
-	// about Connect, see https://connectrpc.com.
-	CallbackUrl   string `protobuf:"bytes,7,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event          WebhookEvent           `protobuf:"varint,1,opt,name=event,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"event,omitempty"`
+	xxx_hidden_WebhookId      string                 `protobuf:"bytes,2,opt,name=webhook_id,json=webhookId,proto3" json:"webhook_id,omitempty"`
+	xxx_hidden_CreateTime     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_UpdateTime     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	xxx_hidden_RepositoryName string                 `protobuf:"bytes,5,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_OwnerName      string                 `protobuf:"bytes,6,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	xxx_hidden_CallbackUrl    string                 `protobuf:"bytes,7,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *Webhook) Reset() {
@@ -591,101 +569,101 @@ func (x *Webhook) ProtoReflect() protoreflect.Message {
 
 func (x *Webhook) GetEvent() WebhookEvent {
 	if x != nil {
-		return x.Event
+		return x.xxx_hidden_Event
 	}
 	return WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED
 }
 
 func (x *Webhook) GetWebhookId() string {
 	if x != nil {
-		return x.WebhookId
+		return x.xxx_hidden_WebhookId
 	}
 	return ""
 }
 
 func (x *Webhook) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *Webhook) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.UpdateTime
+		return x.xxx_hidden_UpdateTime
 	}
 	return nil
 }
 
 func (x *Webhook) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *Webhook) GetOwnerName() string {
 	if x != nil {
-		return x.OwnerName
+		return x.xxx_hidden_OwnerName
 	}
 	return ""
 }
 
 func (x *Webhook) GetCallbackUrl() string {
 	if x != nil {
-		return x.CallbackUrl
+		return x.xxx_hidden_CallbackUrl
 	}
 	return ""
 }
 
 func (x *Webhook) SetEvent(v WebhookEvent) {
-	x.Event = v
+	x.xxx_hidden_Event = v
 }
 
 func (x *Webhook) SetWebhookId(v string) {
-	x.WebhookId = v
+	x.xxx_hidden_WebhookId = v
 }
 
 func (x *Webhook) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *Webhook) SetUpdateTime(v *timestamppb.Timestamp) {
-	x.UpdateTime = v
+	x.xxx_hidden_UpdateTime = v
 }
 
 func (x *Webhook) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *Webhook) SetOwnerName(v string) {
-	x.OwnerName = v
+	x.xxx_hidden_OwnerName = v
 }
 
 func (x *Webhook) SetCallbackUrl(v string) {
-	x.CallbackUrl = v
+	x.xxx_hidden_CallbackUrl = v
 }
 
 func (x *Webhook) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *Webhook) HasUpdateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdateTime != nil
+	return x.xxx_hidden_UpdateTime != nil
 }
 
 func (x *Webhook) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 func (x *Webhook) ClearUpdateTime() {
-	x.UpdateTime = nil
+	x.xxx_hidden_UpdateTime = nil
 }
 
 type Webhook_builder struct {
@@ -715,13 +693,13 @@ func (b0 Webhook_builder) Build() *Webhook {
 	m0 := &Webhook{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Event = b.Event
-	x.WebhookId = b.WebhookId
-	x.CreateTime = b.CreateTime
-	x.UpdateTime = b.UpdateTime
-	x.RepositoryName = b.RepositoryName
-	x.OwnerName = b.OwnerName
-	x.CallbackUrl = b.CallbackUrl
+	x.xxx_hidden_Event = b.Event
+	x.xxx_hidden_WebhookId = b.WebhookId
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_UpdateTime = b.UpdateTime
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_OwnerName = b.OwnerName
+	x.xxx_hidden_CallbackUrl = b.CallbackUrl
 	return m0
 }
 

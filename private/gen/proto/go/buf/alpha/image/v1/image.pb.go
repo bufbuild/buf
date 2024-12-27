@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/image/v1/image.proto
 
-//go:build !protoopaque
-
 package imagev1
 
 import (
@@ -40,10 +38,10 @@ const (
 //
 // See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 type Image struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	File          []*ImageFile           `protobuf:"bytes,1,rep,name=file" json:"file,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_File *[]*ImageFile          `protobuf:"bytes,1,rep,name=file" json:"file,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Image) Reset() {
@@ -73,13 +71,15 @@ func (x *Image) ProtoReflect() protoreflect.Message {
 
 func (x *Image) GetFile() []*ImageFile {
 	if x != nil {
-		return x.File
+		if x.xxx_hidden_File != nil {
+			return *x.xxx_hidden_File
+		}
 	}
 	return nil
 }
 
 func (x *Image) SetFile(v []*ImageFile) {
-	x.File = v
+	x.xxx_hidden_File = &v
 }
 
 type Image_builder struct {
@@ -92,7 +92,7 @@ func (b0 Image_builder) Build() *Image {
 	m0 := &Image{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.File = b.File
+	x.xxx_hidden_File = &b.File
 	return m0
 }
 
@@ -104,29 +104,25 @@ func (b0 Image_builder) Build() *Image {
 //
 // See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 type ImageFile struct {
-	state            protoimpl.MessageState                 `protogen:"hybrid.v1"`
-	Name             *string                                `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Package          *string                                `protobuf:"bytes,2,opt,name=package" json:"package,omitempty"`
-	Dependency       []string                               `protobuf:"bytes,3,rep,name=dependency" json:"dependency,omitempty"`
-	PublicDependency []int32                                `protobuf:"varint,10,rep,name=public_dependency,json=publicDependency" json:"public_dependency,omitempty"`
-	WeakDependency   []int32                                `protobuf:"varint,11,rep,name=weak_dependency,json=weakDependency" json:"weak_dependency,omitempty"`
-	MessageType      []*descriptorpb.DescriptorProto        `protobuf:"bytes,4,rep,name=message_type,json=messageType" json:"message_type,omitempty"`
-	EnumType         []*descriptorpb.EnumDescriptorProto    `protobuf:"bytes,5,rep,name=enum_type,json=enumType" json:"enum_type,omitempty"`
-	Service          []*descriptorpb.ServiceDescriptorProto `protobuf:"bytes,6,rep,name=service" json:"service,omitempty"`
-	Extension        []*descriptorpb.FieldDescriptorProto   `protobuf:"bytes,7,rep,name=extension" json:"extension,omitempty"`
-	Options          *descriptorpb.FileOptions              `protobuf:"bytes,8,opt,name=options" json:"options,omitempty"`
-	SourceCodeInfo   *descriptorpb.SourceCodeInfo           `protobuf:"bytes,9,opt,name=source_code_info,json=sourceCodeInfo" json:"source_code_info,omitempty"`
-	Syntax           *string                                `protobuf:"bytes,12,opt,name=syntax" json:"syntax,omitempty"`
-	Edition          *descriptorpb.Edition                  `protobuf:"varint,14,opt,name=edition,enum=google.protobuf.Edition" json:"edition,omitempty"`
-	// buf_extension contains buf-specific extensions to FileDescriptorProtos.
-	//
-	// The prefixed name and high tag value is used to all but guarantee there
-	// will never be any conflict with Google's FileDescriptorProto definition.
-	// The definition of a FileDescriptorProto has not changed in years, so
-	// we're not too worried about a conflict here.
-	BufExtension  *ImageFileExtension `protobuf:"bytes,8042,opt,name=buf_extension,json=bufExtension" json:"buf_extension,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Name             *string                                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	xxx_hidden_Package          *string                                 `protobuf:"bytes,2,opt,name=package" json:"package,omitempty"`
+	xxx_hidden_Dependency       []string                                `protobuf:"bytes,3,rep,name=dependency" json:"dependency,omitempty"`
+	xxx_hidden_PublicDependency []int32                                 `protobuf:"varint,10,rep,name=public_dependency,json=publicDependency" json:"public_dependency,omitempty"`
+	xxx_hidden_WeakDependency   []int32                                 `protobuf:"varint,11,rep,name=weak_dependency,json=weakDependency" json:"weak_dependency,omitempty"`
+	xxx_hidden_MessageType      *[]*descriptorpb.DescriptorProto        `protobuf:"bytes,4,rep,name=message_type,json=messageType" json:"message_type,omitempty"`
+	xxx_hidden_EnumType         *[]*descriptorpb.EnumDescriptorProto    `protobuf:"bytes,5,rep,name=enum_type,json=enumType" json:"enum_type,omitempty"`
+	xxx_hidden_Service          *[]*descriptorpb.ServiceDescriptorProto `protobuf:"bytes,6,rep,name=service" json:"service,omitempty"`
+	xxx_hidden_Extension        *[]*descriptorpb.FieldDescriptorProto   `protobuf:"bytes,7,rep,name=extension" json:"extension,omitempty"`
+	xxx_hidden_Options          *descriptorpb.FileOptions               `protobuf:"bytes,8,opt,name=options" json:"options,omitempty"`
+	xxx_hidden_SourceCodeInfo   *descriptorpb.SourceCodeInfo            `protobuf:"bytes,9,opt,name=source_code_info,json=sourceCodeInfo" json:"source_code_info,omitempty"`
+	xxx_hidden_Syntax           *string                                 `protobuf:"bytes,12,opt,name=syntax" json:"syntax,omitempty"`
+	xxx_hidden_Edition          descriptorpb.Edition                    `protobuf:"varint,14,opt,name=edition,enum=google.protobuf.Edition" json:"edition,omitempty"`
+	xxx_hidden_BufExtension     *ImageFileExtension                     `protobuf:"bytes,8042,opt,name=buf_extension,json=bufExtension" json:"buf_extension,omitempty"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *ImageFile) Reset() {
@@ -155,234 +151,261 @@ func (x *ImageFile) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ImageFile) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageFile) GetPackage() string {
-	if x != nil && x.Package != nil {
-		return *x.Package
+	if x != nil {
+		if x.xxx_hidden_Package != nil {
+			return *x.xxx_hidden_Package
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageFile) GetDependency() []string {
 	if x != nil {
-		return x.Dependency
+		return x.xxx_hidden_Dependency
 	}
 	return nil
 }
 
 func (x *ImageFile) GetPublicDependency() []int32 {
 	if x != nil {
-		return x.PublicDependency
+		return x.xxx_hidden_PublicDependency
 	}
 	return nil
 }
 
 func (x *ImageFile) GetWeakDependency() []int32 {
 	if x != nil {
-		return x.WeakDependency
+		return x.xxx_hidden_WeakDependency
 	}
 	return nil
 }
 
 func (x *ImageFile) GetMessageType() []*descriptorpb.DescriptorProto {
 	if x != nil {
-		return x.MessageType
+		if x.xxx_hidden_MessageType != nil {
+			return *x.xxx_hidden_MessageType
+		}
 	}
 	return nil
 }
 
 func (x *ImageFile) GetEnumType() []*descriptorpb.EnumDescriptorProto {
 	if x != nil {
-		return x.EnumType
+		if x.xxx_hidden_EnumType != nil {
+			return *x.xxx_hidden_EnumType
+		}
 	}
 	return nil
 }
 
 func (x *ImageFile) GetService() []*descriptorpb.ServiceDescriptorProto {
 	if x != nil {
-		return x.Service
+		if x.xxx_hidden_Service != nil {
+			return *x.xxx_hidden_Service
+		}
 	}
 	return nil
 }
 
 func (x *ImageFile) GetExtension() []*descriptorpb.FieldDescriptorProto {
 	if x != nil {
-		return x.Extension
+		if x.xxx_hidden_Extension != nil {
+			return *x.xxx_hidden_Extension
+		}
 	}
 	return nil
 }
 
 func (x *ImageFile) GetOptions() *descriptorpb.FileOptions {
 	if x != nil {
-		return x.Options
+		return x.xxx_hidden_Options
 	}
 	return nil
 }
 
 func (x *ImageFile) GetSourceCodeInfo() *descriptorpb.SourceCodeInfo {
 	if x != nil {
-		return x.SourceCodeInfo
+		return x.xxx_hidden_SourceCodeInfo
 	}
 	return nil
 }
 
 func (x *ImageFile) GetSyntax() string {
-	if x != nil && x.Syntax != nil {
-		return *x.Syntax
+	if x != nil {
+		if x.xxx_hidden_Syntax != nil {
+			return *x.xxx_hidden_Syntax
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ImageFile) GetEdition() descriptorpb.Edition {
-	if x != nil && x.Edition != nil {
-		return *x.Edition
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
+			return x.xxx_hidden_Edition
+		}
 	}
 	return descriptorpb.Edition(0)
 }
 
 func (x *ImageFile) GetBufExtension() *ImageFileExtension {
 	if x != nil {
-		return x.BufExtension
+		return x.xxx_hidden_BufExtension
 	}
 	return nil
 }
 
 func (x *ImageFile) SetName(v string) {
-	x.Name = &v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
 }
 
 func (x *ImageFile) SetPackage(v string) {
-	x.Package = &v
+	x.xxx_hidden_Package = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
 }
 
 func (x *ImageFile) SetDependency(v []string) {
-	x.Dependency = v
+	x.xxx_hidden_Dependency = v
 }
 
 func (x *ImageFile) SetPublicDependency(v []int32) {
-	x.PublicDependency = v
+	x.xxx_hidden_PublicDependency = v
 }
 
 func (x *ImageFile) SetWeakDependency(v []int32) {
-	x.WeakDependency = v
+	x.xxx_hidden_WeakDependency = v
 }
 
 func (x *ImageFile) SetMessageType(v []*descriptorpb.DescriptorProto) {
-	x.MessageType = v
+	x.xxx_hidden_MessageType = &v
 }
 
 func (x *ImageFile) SetEnumType(v []*descriptorpb.EnumDescriptorProto) {
-	x.EnumType = v
+	x.xxx_hidden_EnumType = &v
 }
 
 func (x *ImageFile) SetService(v []*descriptorpb.ServiceDescriptorProto) {
-	x.Service = v
+	x.xxx_hidden_Service = &v
 }
 
 func (x *ImageFile) SetExtension(v []*descriptorpb.FieldDescriptorProto) {
-	x.Extension = v
+	x.xxx_hidden_Extension = &v
 }
 
 func (x *ImageFile) SetOptions(v *descriptorpb.FileOptions) {
-	x.Options = v
+	x.xxx_hidden_Options = v
 }
 
 func (x *ImageFile) SetSourceCodeInfo(v *descriptorpb.SourceCodeInfo) {
-	x.SourceCodeInfo = v
+	x.xxx_hidden_SourceCodeInfo = v
 }
 
 func (x *ImageFile) SetSyntax(v string) {
-	x.Syntax = &v
+	x.xxx_hidden_Syntax = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 14)
 }
 
 func (x *ImageFile) SetEdition(v descriptorpb.Edition) {
-	x.Edition = &v
+	x.xxx_hidden_Edition = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 14)
 }
 
 func (x *ImageFile) SetBufExtension(v *ImageFileExtension) {
-	x.BufExtension = v
+	x.xxx_hidden_BufExtension = v
 }
 
 func (x *ImageFile) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImageFile) HasPackage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Package != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ImageFile) HasOptions() bool {
 	if x == nil {
 		return false
 	}
-	return x.Options != nil
+	return x.xxx_hidden_Options != nil
 }
 
 func (x *ImageFile) HasSourceCodeInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.SourceCodeInfo != nil
+	return x.xxx_hidden_SourceCodeInfo != nil
 }
 
 func (x *ImageFile) HasSyntax() bool {
 	if x == nil {
 		return false
 	}
-	return x.Syntax != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *ImageFile) HasEdition() bool {
 	if x == nil {
 		return false
 	}
-	return x.Edition != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
 }
 
 func (x *ImageFile) HasBufExtension() bool {
 	if x == nil {
 		return false
 	}
-	return x.BufExtension != nil
+	return x.xxx_hidden_BufExtension != nil
 }
 
 func (x *ImageFile) ClearName() {
-	x.Name = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ImageFile) ClearPackage() {
-	x.Package = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Package = nil
 }
 
 func (x *ImageFile) ClearOptions() {
-	x.Options = nil
+	x.xxx_hidden_Options = nil
 }
 
 func (x *ImageFile) ClearSourceCodeInfo() {
-	x.SourceCodeInfo = nil
+	x.xxx_hidden_SourceCodeInfo = nil
 }
 
 func (x *ImageFile) ClearSyntax() {
-	x.Syntax = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	x.xxx_hidden_Syntax = nil
 }
 
 func (x *ImageFile) ClearEdition() {
-	x.Edition = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
+	x.xxx_hidden_Edition = descriptorpb.Edition_EDITION_UNKNOWN
 }
 
 func (x *ImageFile) ClearBufExtension() {
-	x.BufExtension = nil
+	x.xxx_hidden_BufExtension = nil
 }
 
 type ImageFile_builder struct {
@@ -414,20 +437,32 @@ func (b0 ImageFile_builder) Build() *ImageFile {
 	m0 := &ImageFile{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Package = b.Package
-	x.Dependency = b.Dependency
-	x.PublicDependency = b.PublicDependency
-	x.WeakDependency = b.WeakDependency
-	x.MessageType = b.MessageType
-	x.EnumType = b.EnumType
-	x.Service = b.Service
-	x.Extension = b.Extension
-	x.Options = b.Options
-	x.SourceCodeInfo = b.SourceCodeInfo
-	x.Syntax = b.Syntax
-	x.Edition = b.Edition
-	x.BufExtension = b.BufExtension
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Package != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
+		x.xxx_hidden_Package = b.Package
+	}
+	x.xxx_hidden_Dependency = b.Dependency
+	x.xxx_hidden_PublicDependency = b.PublicDependency
+	x.xxx_hidden_WeakDependency = b.WeakDependency
+	x.xxx_hidden_MessageType = &b.MessageType
+	x.xxx_hidden_EnumType = &b.EnumType
+	x.xxx_hidden_Service = &b.Service
+	x.xxx_hidden_Extension = &b.Extension
+	x.xxx_hidden_Options = b.Options
+	x.xxx_hidden_SourceCodeInfo = b.SourceCodeInfo
+	if b.Syntax != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 14)
+		x.xxx_hidden_Syntax = b.Syntax
+	}
+	if b.Edition != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 14)
+		x.xxx_hidden_Edition = *b.Edition
+	}
+	x.xxx_hidden_BufExtension = b.BufExtension
 	return m0
 }
 
@@ -438,45 +473,15 @@ func (b0 ImageFile_builder) Build() *ImageFile {
 // by protoc, and so that we can add fields in a freeform manner without
 // worrying about conflicts with FileDescriptorProto.
 type ImageFileExtension struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// is_import denotes whether this file is considered an "import".
-	//
-	// An import is a file which was not derived from the local source files.
-	// There are two cases where this could be true:
-	//
-	// 1. A Well-Known Type included from the compiler.
-	// 2. A file that was included from a Buf module dependency.
-	//
-	// We use "import" as this matches with the protoc concept of
-	// --include_imports, however import is a bit of an overloaded term.
-	//
-	// This will always be set.
-	IsImport *bool `protobuf:"varint,1,opt,name=is_import,json=isImport" json:"is_import,omitempty"`
-	// ModuleInfo contains information about the Buf module this file belongs to.
-	//
-	// This field is optional and will not be set if the module is not known.
-	ModuleInfo *ModuleInfo `protobuf:"bytes,2,opt,name=module_info,json=moduleInfo" json:"module_info,omitempty"`
-	// is_syntax_unspecified denotes whether the file did not have a syntax
-	// explicitly specified.
-	//
-	// Per the FileDescriptorProto spec, it would be fine in this case to just
-	// leave the syntax field unset to denote this and to set the syntax field
-	// to "proto2" if it is specified. However, protoc does not set the syntax
-	// field if it was "proto2", and plugins may (incorrectly) depend on this.
-	// We also want to maintain consistency with protoc as much as possible.
-	// So instead, we have this field which will denote whether syntax was not
-	// specified.
-	//
-	// This will always be set.
-	IsSyntaxUnspecified *bool `protobuf:"varint,3,opt,name=is_syntax_unspecified,json=isSyntaxUnspecified" json:"is_syntax_unspecified,omitempty"`
-	// unused_dependency are the indexes within the dependency field on
-	// FileDescriptorProto for those dependencies that are not used.
-	//
-	// This matches the shape of the public_dependency and weak_dependency
-	// fields.
-	UnusedDependency []int32 `protobuf:"varint,4,rep,name=unused_dependency,json=unusedDependency" json:"unused_dependency,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_IsImport            bool                   `protobuf:"varint,1,opt,name=is_import,json=isImport" json:"is_import,omitempty"`
+	xxx_hidden_ModuleInfo          *ModuleInfo            `protobuf:"bytes,2,opt,name=module_info,json=moduleInfo" json:"module_info,omitempty"`
+	xxx_hidden_IsSyntaxUnspecified bool                   `protobuf:"varint,3,opt,name=is_syntax_unspecified,json=isSyntaxUnspecified" json:"is_syntax_unspecified,omitempty"`
+	xxx_hidden_UnusedDependency    []int32                `protobuf:"varint,4,rep,name=unused_dependency,json=unusedDependency" json:"unused_dependency,omitempty"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *ImageFileExtension) Reset() {
@@ -505,80 +510,84 @@ func (x *ImageFileExtension) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ImageFileExtension) GetIsImport() bool {
-	if x != nil && x.IsImport != nil {
-		return *x.IsImport
+	if x != nil {
+		return x.xxx_hidden_IsImport
 	}
 	return false
 }
 
 func (x *ImageFileExtension) GetModuleInfo() *ModuleInfo {
 	if x != nil {
-		return x.ModuleInfo
+		return x.xxx_hidden_ModuleInfo
 	}
 	return nil
 }
 
 func (x *ImageFileExtension) GetIsSyntaxUnspecified() bool {
-	if x != nil && x.IsSyntaxUnspecified != nil {
-		return *x.IsSyntaxUnspecified
+	if x != nil {
+		return x.xxx_hidden_IsSyntaxUnspecified
 	}
 	return false
 }
 
 func (x *ImageFileExtension) GetUnusedDependency() []int32 {
 	if x != nil {
-		return x.UnusedDependency
+		return x.xxx_hidden_UnusedDependency
 	}
 	return nil
 }
 
 func (x *ImageFileExtension) SetIsImport(v bool) {
-	x.IsImport = &v
+	x.xxx_hidden_IsImport = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *ImageFileExtension) SetModuleInfo(v *ModuleInfo) {
-	x.ModuleInfo = v
+	x.xxx_hidden_ModuleInfo = v
 }
 
 func (x *ImageFileExtension) SetIsSyntaxUnspecified(v bool) {
-	x.IsSyntaxUnspecified = &v
+	x.xxx_hidden_IsSyntaxUnspecified = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *ImageFileExtension) SetUnusedDependency(v []int32) {
-	x.UnusedDependency = v
+	x.xxx_hidden_UnusedDependency = v
 }
 
 func (x *ImageFileExtension) HasIsImport() bool {
 	if x == nil {
 		return false
 	}
-	return x.IsImport != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ImageFileExtension) HasModuleInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleInfo != nil
+	return x.xxx_hidden_ModuleInfo != nil
 }
 
 func (x *ImageFileExtension) HasIsSyntaxUnspecified() bool {
 	if x == nil {
 		return false
 	}
-	return x.IsSyntaxUnspecified != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ImageFileExtension) ClearIsImport() {
-	x.IsImport = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_IsImport = false
 }
 
 func (x *ImageFileExtension) ClearModuleInfo() {
-	x.ModuleInfo = nil
+	x.xxx_hidden_ModuleInfo = nil
 }
 
 func (x *ImageFileExtension) ClearIsSyntaxUnspecified() {
-	x.IsSyntaxUnspecified = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_IsSyntaxUnspecified = false
 }
 
 type ImageFileExtension_builder struct {
@@ -626,27 +635,29 @@ func (b0 ImageFileExtension_builder) Build() *ImageFileExtension {
 	m0 := &ImageFileExtension{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.IsImport = b.IsImport
-	x.ModuleInfo = b.ModuleInfo
-	x.IsSyntaxUnspecified = b.IsSyntaxUnspecified
-	x.UnusedDependency = b.UnusedDependency
+	if b.IsImport != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_IsImport = *b.IsImport
+	}
+	x.xxx_hidden_ModuleInfo = b.ModuleInfo
+	if b.IsSyntaxUnspecified != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_IsSyntaxUnspecified = *b.IsSyntaxUnspecified
+	}
+	x.xxx_hidden_UnusedDependency = b.UnusedDependency
 	return m0
 }
 
 // ModuleInfo contains information about a Buf module that an ImageFile
 // belongs to.
 type ModuleInfo struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// name is the name of the Buf module.
-	//
-	// This will always be set.
-	Name *ModuleName `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	// commit is the repository commit.
-	//
-	// This field is optional and will not be set if the commit is not known.
-	Commit        *string `protobuf:"bytes,2,opt,name=commit" json:"commit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *ModuleName            `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	xxx_hidden_Commit      *string                `protobuf:"bytes,2,opt,name=commit" json:"commit,omitempty"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ModuleInfo) Reset() {
@@ -676,46 +687,51 @@ func (x *ModuleInfo) ProtoReflect() protoreflect.Message {
 
 func (x *ModuleInfo) GetName() *ModuleName {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return nil
 }
 
 func (x *ModuleInfo) GetCommit() string {
-	if x != nil && x.Commit != nil {
-		return *x.Commit
+	if x != nil {
+		if x.xxx_hidden_Commit != nil {
+			return *x.xxx_hidden_Commit
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ModuleInfo) SetName(v *ModuleName) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *ModuleInfo) SetCommit(v string) {
-	x.Commit = &v
+	x.xxx_hidden_Commit = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
 }
 
 func (x *ModuleInfo) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.Name != nil
+	return x.xxx_hidden_Name != nil
 }
 
 func (x *ModuleInfo) HasCommit() bool {
 	if x == nil {
 		return false
 	}
-	return x.Commit != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ModuleInfo) ClearName() {
-	x.Name = nil
+	x.xxx_hidden_Name = nil
 }
 
 func (x *ModuleInfo) ClearCommit() {
-	x.Commit = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Commit = nil
 }
 
 type ModuleInfo_builder struct {
@@ -735,8 +751,11 @@ func (b0 ModuleInfo_builder) Build() *ModuleInfo {
 	m0 := &ModuleInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Commit = b.Commit
+	x.xxx_hidden_Name = b.Name
+	if b.Commit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Commit = b.Commit
+	}
 	return m0
 }
 
@@ -744,12 +763,14 @@ func (b0 ModuleInfo_builder) Build() *ModuleInfo {
 //
 // All fields will always be set.
 type ModuleName struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Remote        *string                `protobuf:"bytes,1,opt,name=remote" json:"remote,omitempty"`
-	Owner         *string                `protobuf:"bytes,2,opt,name=owner" json:"owner,omitempty"`
-	Repository    *string                `protobuf:"bytes,3,opt,name=repository" json:"repository,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Remote      *string                `protobuf:"bytes,1,opt,name=remote" json:"remote,omitempty"`
+	xxx_hidden_Owner       *string                `protobuf:"bytes,2,opt,name=owner" json:"owner,omitempty"`
+	xxx_hidden_Repository  *string                `protobuf:"bytes,3,opt,name=repository" json:"repository,omitempty"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ModuleName) Reset() {
@@ -778,69 +799,84 @@ func (x *ModuleName) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ModuleName) GetRemote() string {
-	if x != nil && x.Remote != nil {
-		return *x.Remote
+	if x != nil {
+		if x.xxx_hidden_Remote != nil {
+			return *x.xxx_hidden_Remote
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ModuleName) GetOwner() string {
-	if x != nil && x.Owner != nil {
-		return *x.Owner
+	if x != nil {
+		if x.xxx_hidden_Owner != nil {
+			return *x.xxx_hidden_Owner
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ModuleName) GetRepository() string {
-	if x != nil && x.Repository != nil {
-		return *x.Repository
+	if x != nil {
+		if x.xxx_hidden_Repository != nil {
+			return *x.xxx_hidden_Repository
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *ModuleName) SetRemote(v string) {
-	x.Remote = &v
+	x.xxx_hidden_Remote = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *ModuleName) SetOwner(v string) {
-	x.Owner = &v
+	x.xxx_hidden_Owner = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *ModuleName) SetRepository(v string) {
-	x.Repository = &v
+	x.xxx_hidden_Repository = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
 }
 
 func (x *ModuleName) HasRemote() bool {
 	if x == nil {
 		return false
 	}
-	return x.Remote != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
 func (x *ModuleName) HasOwner() bool {
 	if x == nil {
 		return false
 	}
-	return x.Owner != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *ModuleName) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	return x.Repository != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *ModuleName) ClearRemote() {
-	x.Remote = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Remote = nil
 }
 
 func (x *ModuleName) ClearOwner() {
-	x.Owner = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Owner = nil
 }
 
 func (x *ModuleName) ClearRepository() {
-	x.Repository = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Repository = nil
 }
 
 type ModuleName_builder struct {
@@ -855,9 +891,18 @@ func (b0 ModuleName_builder) Build() *ModuleName {
 	m0 := &ModuleName{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Remote = b.Remote
-	x.Owner = b.Owner
-	x.Repository = b.Repository
+	if b.Remote != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_Remote = b.Remote
+	}
+	if b.Owner != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_Owner = b.Owner
+	}
+	if b.Repository != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Repository = b.Repository
+	}
 	return m0
 }
 

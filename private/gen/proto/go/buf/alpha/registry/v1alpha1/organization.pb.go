@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/organization.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -37,24 +35,16 @@ const (
 )
 
 type Organization struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// primary key, unique, immutable
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// immutable
-	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// mutable
-	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	// unique, mutable
-	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
-	// description is the user configurable description of the organization.
-	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	// url is the user configurable URL in the description of the organization,
-	// always included the scheme and will not have a #fragment suffix.
-	Url string `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`
-	// verification status of the organization, configurable by server admin.
-	VerificationStatus VerificationStatus `protobuf:"varint,7,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_CreateTime         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_UpdateTime         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	xxx_hidden_Name               string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	xxx_hidden_Url                string                 `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`
+	xxx_hidden_VerificationStatus VerificationStatus     `protobuf:"varint,7,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *Organization) Reset() {
@@ -84,101 +74,101 @@ func (x *Organization) ProtoReflect() protoreflect.Message {
 
 func (x *Organization) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *Organization) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *Organization) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.UpdateTime
+		return x.xxx_hidden_UpdateTime
 	}
 	return nil
 }
 
 func (x *Organization) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *Organization) GetDescription() string {
 	if x != nil {
-		return x.Description
+		return x.xxx_hidden_Description
 	}
 	return ""
 }
 
 func (x *Organization) GetUrl() string {
 	if x != nil {
-		return x.Url
+		return x.xxx_hidden_Url
 	}
 	return ""
 }
 
 func (x *Organization) GetVerificationStatus() VerificationStatus {
 	if x != nil {
-		return x.VerificationStatus
+		return x.xxx_hidden_VerificationStatus
 	}
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 func (x *Organization) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *Organization) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *Organization) SetUpdateTime(v *timestamppb.Timestamp) {
-	x.UpdateTime = v
+	x.xxx_hidden_UpdateTime = v
 }
 
 func (x *Organization) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *Organization) SetDescription(v string) {
-	x.Description = v
+	x.xxx_hidden_Description = v
 }
 
 func (x *Organization) SetUrl(v string) {
-	x.Url = v
+	x.xxx_hidden_Url = v
 }
 
 func (x *Organization) SetVerificationStatus(v VerificationStatus) {
-	x.VerificationStatus = v
+	x.xxx_hidden_VerificationStatus = v
 }
 
 func (x *Organization) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *Organization) HasUpdateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdateTime != nil
+	return x.xxx_hidden_UpdateTime != nil
 }
 
 func (x *Organization) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 func (x *Organization) ClearUpdateTime() {
-	x.UpdateTime = nil
+	x.xxx_hidden_UpdateTime = nil
 }
 
 type Organization_builder struct {
@@ -205,24 +195,24 @@ func (b0 Organization_builder) Build() *Organization {
 	m0 := &Organization{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.CreateTime = b.CreateTime
-	x.UpdateTime = b.UpdateTime
-	x.Name = b.Name
-	x.Description = b.Description
-	x.Url = b.Url
-	x.VerificationStatus = b.VerificationStatus
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_UpdateTime = b.UpdateTime
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Description = b.Description
+	x.xxx_hidden_Url = b.Url
+	x.xxx_hidden_VerificationStatus = b.VerificationStatus
 	return m0
 }
 
 // OrganizationMembership is a nested structure that contains
 // the organization and user membership information on that organization.
 type OrganizationMembership struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	Organization     *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
-	OrganizationRole OrganizationRole       `protobuf:"varint,2,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Organization     *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
+	xxx_hidden_OrganizationRole OrganizationRole       `protobuf:"varint,2,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *OrganizationMembership) Reset() {
@@ -252,35 +242,35 @@ func (x *OrganizationMembership) ProtoReflect() protoreflect.Message {
 
 func (x *OrganizationMembership) GetOrganization() *Organization {
 	if x != nil {
-		return x.Organization
+		return x.xxx_hidden_Organization
 	}
 	return nil
 }
 
 func (x *OrganizationMembership) GetOrganizationRole() OrganizationRole {
 	if x != nil {
-		return x.OrganizationRole
+		return x.xxx_hidden_OrganizationRole
 	}
 	return OrganizationRole_ORGANIZATION_ROLE_UNSPECIFIED
 }
 
 func (x *OrganizationMembership) SetOrganization(v *Organization) {
-	x.Organization = v
+	x.xxx_hidden_Organization = v
 }
 
 func (x *OrganizationMembership) SetOrganizationRole(v OrganizationRole) {
-	x.OrganizationRole = v
+	x.xxx_hidden_OrganizationRole = v
 }
 
 func (x *OrganizationMembership) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	return x.Organization != nil
+	return x.xxx_hidden_Organization != nil
 }
 
 func (x *OrganizationMembership) ClearOrganization() {
-	x.Organization = nil
+	x.xxx_hidden_Organization = nil
 }
 
 type OrganizationMembership_builder struct {
@@ -294,14 +284,14 @@ func (b0 OrganizationMembership_builder) Build() *OrganizationMembership {
 	m0 := &OrganizationMembership{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Organization = b.Organization
-	x.OrganizationRole = b.OrganizationRole
+	x.xxx_hidden_Organization = b.Organization
+	x.xxx_hidden_OrganizationRole = b.OrganizationRole
 	return m0
 }
 
 type GetOrganizationRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -333,13 +323,13 @@ func (x *GetOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetOrganizationRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *GetOrganizationRequest) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 type GetOrganizationRequest_builder struct {
@@ -352,15 +342,15 @@ func (b0 GetOrganizationRequest_builder) Build() *GetOrganizationRequest {
 	m0 := &GetOrganizationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
+	x.xxx_hidden_Id = b.Id
 	return m0
 }
 
 type GetOrganizationResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Organization  *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Organization *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetOrganizationResponse) Reset() {
@@ -390,24 +380,24 @@ func (x *GetOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetOrganizationResponse) GetOrganization() *Organization {
 	if x != nil {
-		return x.Organization
+		return x.xxx_hidden_Organization
 	}
 	return nil
 }
 
 func (x *GetOrganizationResponse) SetOrganization(v *Organization) {
-	x.Organization = v
+	x.xxx_hidden_Organization = v
 }
 
 func (x *GetOrganizationResponse) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	return x.Organization != nil
+	return x.xxx_hidden_Organization != nil
 }
 
 func (x *GetOrganizationResponse) ClearOrganization() {
-	x.Organization = nil
+	x.xxx_hidden_Organization = nil
 }
 
 type GetOrganizationResponse_builder struct {
@@ -420,15 +410,15 @@ func (b0 GetOrganizationResponse_builder) Build() *GetOrganizationResponse {
 	m0 := &GetOrganizationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Organization = b.Organization
+	x.xxx_hidden_Organization = b.Organization
 	return m0
 }
 
 type GetOrganizationByNameRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetOrganizationByNameRequest) Reset() {
@@ -458,13 +448,13 @@ func (x *GetOrganizationByNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetOrganizationByNameRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GetOrganizationByNameRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type GetOrganizationByNameRequest_builder struct {
@@ -477,15 +467,15 @@ func (b0 GetOrganizationByNameRequest_builder) Build() *GetOrganizationByNameReq
 	m0 := &GetOrganizationByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type GetOrganizationByNameResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Organization  *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Organization *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetOrganizationByNameResponse) Reset() {
@@ -515,24 +505,24 @@ func (x *GetOrganizationByNameResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetOrganizationByNameResponse) GetOrganization() *Organization {
 	if x != nil {
-		return x.Organization
+		return x.xxx_hidden_Organization
 	}
 	return nil
 }
 
 func (x *GetOrganizationByNameResponse) SetOrganization(v *Organization) {
-	x.Organization = v
+	x.xxx_hidden_Organization = v
 }
 
 func (x *GetOrganizationByNameResponse) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	return x.Organization != nil
+	return x.xxx_hidden_Organization != nil
 }
 
 func (x *GetOrganizationByNameResponse) ClearOrganization() {
-	x.Organization = nil
+	x.xxx_hidden_Organization = nil
 }
 
 type GetOrganizationByNameResponse_builder struct {
@@ -545,18 +535,17 @@ func (b0 GetOrganizationByNameResponse_builder) Build() *GetOrganizationByNameRe
 	m0 := &GetOrganizationByNameResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Organization = b.Organization
+	x.xxx_hidden_Organization = b.Organization
 	return m0
 }
 
 type ListOrganizationsRequest struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse       bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse   bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListOrganizationsRequest) Reset() {
@@ -586,35 +575,35 @@ func (x *ListOrganizationsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListOrganizationsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListOrganizationsRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListOrganizationsRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListOrganizationsRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListOrganizationsRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListOrganizationsRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type ListOrganizationsRequest_builder struct {
@@ -630,19 +619,18 @@ func (b0 ListOrganizationsRequest_builder) Build() *ListOrganizationsRequest {
 	m0 := &ListOrganizationsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 type ListOrganizationsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Organizations []*Organization        `protobuf:"bytes,1,rep,name=organizations,proto3" json:"organizations,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Organizations *[]*Organization       `protobuf:"bytes,1,rep,name=organizations,proto3" json:"organizations,omitempty"`
+	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListOrganizationsResponse) Reset() {
@@ -672,24 +660,26 @@ func (x *ListOrganizationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListOrganizationsResponse) GetOrganizations() []*Organization {
 	if x != nil {
-		return x.Organizations
+		if x.xxx_hidden_Organizations != nil {
+			return *x.xxx_hidden_Organizations
+		}
 	}
 	return nil
 }
 
 func (x *ListOrganizationsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListOrganizationsResponse) SetOrganizations(v []*Organization) {
-	x.Organizations = v
+	x.xxx_hidden_Organizations = &v
 }
 
 func (x *ListOrganizationsResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListOrganizationsResponse_builder struct {
@@ -704,21 +694,19 @@ func (b0 ListOrganizationsResponse_builder) Build() *ListOrganizationsResponse {
 	m0 := &ListOrganizationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Organizations = b.Organizations
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Organizations = &b.Organizations
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type ListUserOrganizationsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the user whose organizations should be listed.
-	UserId   string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse       bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	xxx_hidden_PageSize  uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse   bool                   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListUserOrganizationsRequest) Reset() {
@@ -748,46 +736,46 @@ func (x *ListUserOrganizationsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListUserOrganizationsRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *ListUserOrganizationsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListUserOrganizationsRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListUserOrganizationsRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListUserOrganizationsRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 func (x *ListUserOrganizationsRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListUserOrganizationsRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListUserOrganizationsRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type ListUserOrganizationsRequest_builder struct {
@@ -805,20 +793,19 @@ func (b0 ListUserOrganizationsRequest_builder) Build() *ListUserOrganizationsReq
 	m0 := &ListUserOrganizationsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UserId = b.UserId
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 type ListUserOrganizationsResponse struct {
-	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
-	Organizations []*OrganizationMembership `protobuf:"bytes,1,rep,name=organizations,proto3" json:"organizations,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Organizations *[]*OrganizationMembership `protobuf:"bytes,1,rep,name=organizations,proto3" json:"organizations,omitempty"`
+	xxx_hidden_NextPageToken string                     `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListUserOrganizationsResponse) Reset() {
@@ -848,24 +835,26 @@ func (x *ListUserOrganizationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListUserOrganizationsResponse) GetOrganizations() []*OrganizationMembership {
 	if x != nil {
-		return x.Organizations
+		if x.xxx_hidden_Organizations != nil {
+			return *x.xxx_hidden_Organizations
+		}
 	}
 	return nil
 }
 
 func (x *ListUserOrganizationsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListUserOrganizationsResponse) SetOrganizations(v []*OrganizationMembership) {
-	x.Organizations = v
+	x.xxx_hidden_Organizations = &v
 }
 
 func (x *ListUserOrganizationsResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListUserOrganizationsResponse_builder struct {
@@ -880,19 +869,17 @@ func (b0 ListUserOrganizationsResponse_builder) Build() *ListUserOrganizationsRe
 	m0 := &ListUserOrganizationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Organizations = b.Organizations
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Organizations = &b.Organizations
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type GetUserOrganizationRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the user whose membership should be retrieved.
-	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The ID of the organization.
-	OrganizationId string `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId         string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *GetUserOrganizationRequest) Reset() {
@@ -922,24 +909,24 @@ func (x *GetUserOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserOrganizationRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *GetUserOrganizationRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *GetUserOrganizationRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 func (x *GetUserOrganizationRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 type GetUserOrganizationRequest_builder struct {
@@ -955,16 +942,16 @@ func (b0 GetUserOrganizationRequest_builder) Build() *GetUserOrganizationRequest
 	m0 := &GetUserOrganizationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.UserId = b.UserId
-	x.OrganizationId = b.OrganizationId
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_OrganizationId = b.OrganizationId
 	return m0
 }
 
 type GetUserOrganizationResponse struct {
-	state                  protoimpl.MessageState  `protogen:"hybrid.v1"`
-	OrganizationMembership *OrganizationMembership `protobuf:"bytes,1,opt,name=organization_membership,json=organizationMembership,proto3" json:"organization_membership,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationMembership *OrganizationMembership `protobuf:"bytes,1,opt,name=organization_membership,json=organizationMembership,proto3" json:"organization_membership,omitempty"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *GetUserOrganizationResponse) Reset() {
@@ -994,24 +981,24 @@ func (x *GetUserOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUserOrganizationResponse) GetOrganizationMembership() *OrganizationMembership {
 	if x != nil {
-		return x.OrganizationMembership
+		return x.xxx_hidden_OrganizationMembership
 	}
 	return nil
 }
 
 func (x *GetUserOrganizationResponse) SetOrganizationMembership(v *OrganizationMembership) {
-	x.OrganizationMembership = v
+	x.xxx_hidden_OrganizationMembership = v
 }
 
 func (x *GetUserOrganizationResponse) HasOrganizationMembership() bool {
 	if x == nil {
 		return false
 	}
-	return x.OrganizationMembership != nil
+	return x.xxx_hidden_OrganizationMembership != nil
 }
 
 func (x *GetUserOrganizationResponse) ClearOrganizationMembership() {
-	x.OrganizationMembership = nil
+	x.xxx_hidden_OrganizationMembership = nil
 }
 
 type GetUserOrganizationResponse_builder struct {
@@ -1024,16 +1011,15 @@ func (b0 GetUserOrganizationResponse_builder) Build() *GetUserOrganizationRespon
 	m0 := &GetUserOrganizationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationMembership = b.OrganizationMembership
+	x.xxx_hidden_OrganizationMembership = b.OrganizationMembership
 	return m0
 }
 
 type CreateOrganizationRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Must be unique across organizations.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateOrganizationRequest) Reset() {
@@ -1063,13 +1049,13 @@ func (x *CreateOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateOrganizationRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CreateOrganizationRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type CreateOrganizationRequest_builder struct {
@@ -1083,15 +1069,15 @@ func (b0 CreateOrganizationRequest_builder) Build() *CreateOrganizationRequest {
 	m0 := &CreateOrganizationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type CreateOrganizationResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Organization  *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Organization *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CreateOrganizationResponse) Reset() {
@@ -1121,24 +1107,24 @@ func (x *CreateOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateOrganizationResponse) GetOrganization() *Organization {
 	if x != nil {
-		return x.Organization
+		return x.xxx_hidden_Organization
 	}
 	return nil
 }
 
 func (x *CreateOrganizationResponse) SetOrganization(v *Organization) {
-	x.Organization = v
+	x.xxx_hidden_Organization = v
 }
 
 func (x *CreateOrganizationResponse) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	return x.Organization != nil
+	return x.xxx_hidden_Organization != nil
 }
 
 func (x *CreateOrganizationResponse) ClearOrganization() {
-	x.Organization = nil
+	x.xxx_hidden_Organization = nil
 }
 
 type CreateOrganizationResponse_builder struct {
@@ -1151,13 +1137,13 @@ func (b0 CreateOrganizationResponse_builder) Build() *CreateOrganizationResponse
 	m0 := &CreateOrganizationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Organization = b.Organization
+	x.xxx_hidden_Organization = b.Organization
 	return m0
 }
 
 type DeleteOrganizationRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1189,13 +1175,13 @@ func (x *DeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteOrganizationRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *DeleteOrganizationRequest) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 type DeleteOrganizationRequest_builder struct {
@@ -1208,12 +1194,12 @@ func (b0 DeleteOrganizationRequest_builder) Build() *DeleteOrganizationRequest {
 	m0 := &DeleteOrganizationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
+	x.xxx_hidden_Id = b.Id
 	return m0
 }
 
 type DeleteOrganizationResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1256,10 +1242,10 @@ func (b0 DeleteOrganizationResponse_builder) Build() *DeleteOrganizationResponse
 }
 
 type DeleteOrganizationByNameRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DeleteOrganizationByNameRequest) Reset() {
@@ -1289,13 +1275,13 @@ func (x *DeleteOrganizationByNameRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteOrganizationByNameRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *DeleteOrganizationByNameRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type DeleteOrganizationByNameRequest_builder struct {
@@ -1308,12 +1294,12 @@ func (b0 DeleteOrganizationByNameRequest_builder) Build() *DeleteOrganizationByN
 	m0 := &DeleteOrganizationByNameRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type DeleteOrganizationByNameResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1356,15 +1342,12 @@ func (b0 DeleteOrganizationByNameResponse_builder) Build() *DeleteOrganizationBy
 }
 
 type AddOrganizationMemberRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which the user will be added to.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// The ID of the user for which to be added to the organization.
-	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The new role of the user in the organization.
-	OrganizationRole OrganizationRole `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId   string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_UserId           string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	xxx_hidden_OrganizationRole OrganizationRole       `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *AddOrganizationMemberRequest) Reset() {
@@ -1394,35 +1377,35 @@ func (x *AddOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 
 func (x *AddOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *AddOrganizationMemberRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *AddOrganizationMemberRequest) GetOrganizationRole() OrganizationRole {
 	if x != nil {
-		return x.OrganizationRole
+		return x.xxx_hidden_OrganizationRole
 	}
 	return OrganizationRole_ORGANIZATION_ROLE_UNSPECIFIED
 }
 
 func (x *AddOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *AddOrganizationMemberRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 func (x *AddOrganizationMemberRequest) SetOrganizationRole(v OrganizationRole) {
-	x.OrganizationRole = v
+	x.xxx_hidden_OrganizationRole = v
 }
 
 type AddOrganizationMemberRequest_builder struct {
@@ -1440,14 +1423,14 @@ func (b0 AddOrganizationMemberRequest_builder) Build() *AddOrganizationMemberReq
 	m0 := &AddOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.UserId = b.UserId
-	x.OrganizationRole = b.OrganizationRole
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_OrganizationRole = b.OrganizationRole
 	return m0
 }
 
 type AddOrganizationMemberResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1490,15 +1473,12 @@ func (b0 AddOrganizationMemberResponse_builder) Build() *AddOrganizationMemberRe
 }
 
 type UpdateOrganizationMemberRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which the member belongs to.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// The ID of the user for which to be updated the role.
-	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The new role of the user in the organization.
-	OrganizationRole OrganizationRole `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId   string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_UserId           string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	xxx_hidden_OrganizationRole OrganizationRole       `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *UpdateOrganizationMemberRequest) Reset() {
@@ -1528,35 +1508,35 @@ func (x *UpdateOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationMemberRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationMemberRequest) GetOrganizationRole() OrganizationRole {
 	if x != nil {
-		return x.OrganizationRole
+		return x.xxx_hidden_OrganizationRole
 	}
 	return OrganizationRole_ORGANIZATION_ROLE_UNSPECIFIED
 }
 
 func (x *UpdateOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *UpdateOrganizationMemberRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 func (x *UpdateOrganizationMemberRequest) SetOrganizationRole(v OrganizationRole) {
-	x.OrganizationRole = v
+	x.xxx_hidden_OrganizationRole = v
 }
 
 type UpdateOrganizationMemberRequest_builder struct {
@@ -1574,14 +1554,14 @@ func (b0 UpdateOrganizationMemberRequest_builder) Build() *UpdateOrganizationMem
 	m0 := &UpdateOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.UserId = b.UserId
-	x.OrganizationRole = b.OrganizationRole
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_OrganizationRole = b.OrganizationRole
 	return m0
 }
 
 type UpdateOrganizationMemberResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1624,13 +1604,11 @@ func (b0 UpdateOrganizationMemberResponse_builder) Build() *UpdateOrganizationMe
 }
 
 type RemoveOrganizationMemberRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which the member belongs to.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// The ID of the user for which to be removed the role.
-	UserId        string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *RemoveOrganizationMemberRequest) Reset() {
@@ -1660,24 +1638,24 @@ func (x *RemoveOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 
 func (x *RemoveOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *RemoveOrganizationMemberRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *RemoveOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *RemoveOrganizationMemberRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 type RemoveOrganizationMemberRequest_builder struct {
@@ -1693,13 +1671,13 @@ func (b0 RemoveOrganizationMemberRequest_builder) Build() *RemoveOrganizationMem
 	m0 := &RemoveOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.UserId = b.UserId
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_UserId = b.UserId
 	return m0
 }
 
 type RemoveOrganizationMemberResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1742,16 +1720,12 @@ func (b0 RemoveOrganizationMemberResponse_builder) Build() *RemoveOrganizationMe
 }
 
 type SetOrganizationMemberRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which the user's role will be set.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// The ID of the user whose role will be set.
-	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The role to assign to the user.
-	// Setting UNSPECIFIED means removing the user's role.
-	OrganizationRole OrganizationRole `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId   string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_UserId           string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	xxx_hidden_OrganizationRole OrganizationRole       `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *SetOrganizationMemberRequest) Reset() {
@@ -1781,35 +1755,35 @@ func (x *SetOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SetOrganizationMemberRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *SetOrganizationMemberRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *SetOrganizationMemberRequest) GetOrganizationRole() OrganizationRole {
 	if x != nil {
-		return x.OrganizationRole
+		return x.xxx_hidden_OrganizationRole
 	}
 	return OrganizationRole_ORGANIZATION_ROLE_UNSPECIFIED
 }
 
 func (x *SetOrganizationMemberRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *SetOrganizationMemberRequest) SetUserId(v string) {
-	x.UserId = v
+	x.xxx_hidden_UserId = v
 }
 
 func (x *SetOrganizationMemberRequest) SetOrganizationRole(v OrganizationRole) {
-	x.OrganizationRole = v
+	x.xxx_hidden_OrganizationRole = v
 }
 
 type SetOrganizationMemberRequest_builder struct {
@@ -1828,14 +1802,14 @@ func (b0 SetOrganizationMemberRequest_builder) Build() *SetOrganizationMemberReq
 	m0 := &SetOrganizationMemberRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.UserId = b.UserId
-	x.OrganizationRole = b.OrganizationRole
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_OrganizationRole = b.OrganizationRole
 	return m0
 }
 
 type SetOrganizationMemberResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1878,11 +1852,10 @@ func (b0 SetOrganizationMemberResponse_builder) Build() *SetOrganizationMemberRe
 }
 
 type GetOrganizationSettingsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which to get the settings.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *GetOrganizationSettingsRequest) Reset() {
@@ -1912,13 +1885,13 @@ func (x *GetOrganizationSettingsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetOrganizationSettingsRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *GetOrganizationSettingsRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 type GetOrganizationSettingsRequest_builder struct {
@@ -1932,19 +1905,17 @@ func (b0 GetOrganizationSettingsRequest_builder) Build() *GetOrganizationSetting
 	m0 := &GetOrganizationSettingsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
+	x.xxx_hidden_OrganizationId = b.OrganizationId
 	return m0
 }
 
 type GetOrganizationSettingsResponse struct {
-	state              protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryBaseRole RepositoryRole         `protobuf:"varint,1,opt,name=repository_base_role,json=repositoryBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_base_role,omitempty"`
-	// The number of members in the organization.
-	MembersCount uint32 `protobuf:"varint,4,opt,name=members_count,json=membersCount,proto3" json:"members_count,omitempty"`
-	// The IdP groups associated with the organization.
-	IdpGroups     []string `protobuf:"bytes,5,rep,name=idp_groups,json=idpGroups,proto3" json:"idp_groups,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryBaseRole RepositoryRole         `protobuf:"varint,1,opt,name=repository_base_role,json=repositoryBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_base_role,omitempty"`
+	xxx_hidden_MembersCount       uint32                 `protobuf:"varint,4,opt,name=members_count,json=membersCount,proto3" json:"members_count,omitempty"`
+	xxx_hidden_IdpGroups          []string               `protobuf:"bytes,5,rep,name=idp_groups,json=idpGroups,proto3" json:"idp_groups,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *GetOrganizationSettingsResponse) Reset() {
@@ -1974,35 +1945,35 @@ func (x *GetOrganizationSettingsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetOrganizationSettingsResponse) GetRepositoryBaseRole() RepositoryRole {
 	if x != nil {
-		return x.RepositoryBaseRole
+		return x.xxx_hidden_RepositoryBaseRole
 	}
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
 func (x *GetOrganizationSettingsResponse) GetMembersCount() uint32 {
 	if x != nil {
-		return x.MembersCount
+		return x.xxx_hidden_MembersCount
 	}
 	return 0
 }
 
 func (x *GetOrganizationSettingsResponse) GetIdpGroups() []string {
 	if x != nil {
-		return x.IdpGroups
+		return x.xxx_hidden_IdpGroups
 	}
 	return nil
 }
 
 func (x *GetOrganizationSettingsResponse) SetRepositoryBaseRole(v RepositoryRole) {
-	x.RepositoryBaseRole = v
+	x.xxx_hidden_RepositoryBaseRole = v
 }
 
 func (x *GetOrganizationSettingsResponse) SetMembersCount(v uint32) {
-	x.MembersCount = v
+	x.xxx_hidden_MembersCount = v
 }
 
 func (x *GetOrganizationSettingsResponse) SetIdpGroups(v []string) {
-	x.IdpGroups = v
+	x.xxx_hidden_IdpGroups = v
 }
 
 type GetOrganizationSettingsResponse_builder struct {
@@ -2019,24 +1990,22 @@ func (b0 GetOrganizationSettingsResponse_builder) Build() *GetOrganizationSettin
 	m0 := &GetOrganizationSettingsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryBaseRole = b.RepositoryBaseRole
-	x.MembersCount = b.MembersCount
-	x.IdpGroups = b.IdpGroups
+	x.xxx_hidden_RepositoryBaseRole = b.RepositoryBaseRole
+	x.xxx_hidden_MembersCount = b.MembersCount
+	x.xxx_hidden_IdpGroups = b.IdpGroups
 	return m0
 }
 
 type UpdateOrganizationSettingsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which to update the base roles.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// optional, no update to this base role will be made if this is unspecified.
-	RepositoryBaseRole RepositoryRole `protobuf:"varint,2,opt,name=repository_base_role,json=repositoryBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_base_role,omitempty"`
-	// optional, update to description will only be made when this is present
-	Description *string `protobuf:"bytes,5,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	// optional, update to url will only be made when this is present
-	Url           *string `protobuf:"bytes,6,opt,name=url,proto3,oneof" json:"url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId     string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_RepositoryBaseRole RepositoryRole         `protobuf:"varint,2,opt,name=repository_base_role,json=repositoryBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_base_role,omitempty"`
+	xxx_hidden_Description        *string                `protobuf:"bytes,5,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	xxx_hidden_Url                *string                `protobuf:"bytes,6,opt,name=url,proto3,oneof" json:"url,omitempty"`
+	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
+	XXX_presence                  [1]uint32
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *UpdateOrganizationSettingsRequest) Reset() {
@@ -2066,68 +2035,78 @@ func (x *UpdateOrganizationSettingsRequest) ProtoReflect() protoreflect.Message 
 
 func (x *UpdateOrganizationSettingsRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationSettingsRequest) GetRepositoryBaseRole() RepositoryRole {
 	if x != nil {
-		return x.RepositoryBaseRole
+		return x.xxx_hidden_RepositoryBaseRole
 	}
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
 func (x *UpdateOrganizationSettingsRequest) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
+	if x != nil {
+		if x.xxx_hidden_Description != nil {
+			return *x.xxx_hidden_Description
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationSettingsRequest) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
+	if x != nil {
+		if x.xxx_hidden_Url != nil {
+			return *x.xxx_hidden_Url
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationSettingsRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *UpdateOrganizationSettingsRequest) SetRepositoryBaseRole(v RepositoryRole) {
-	x.RepositoryBaseRole = v
+	x.xxx_hidden_RepositoryBaseRole = v
 }
 
 func (x *UpdateOrganizationSettingsRequest) SetDescription(v string) {
-	x.Description = &v
+	x.xxx_hidden_Description = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *UpdateOrganizationSettingsRequest) SetUrl(v string) {
-	x.Url = &v
+	x.xxx_hidden_Url = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *UpdateOrganizationSettingsRequest) HasDescription() bool {
 	if x == nil {
 		return false
 	}
-	return x.Description != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *UpdateOrganizationSettingsRequest) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return x.Url != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *UpdateOrganizationSettingsRequest) ClearDescription() {
-	x.Description = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Description = nil
 }
 
 func (x *UpdateOrganizationSettingsRequest) ClearUrl() {
-	x.Url = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Url = nil
 }
 
 type UpdateOrganizationSettingsRequest_builder struct {
@@ -2147,15 +2126,21 @@ func (b0 UpdateOrganizationSettingsRequest_builder) Build() *UpdateOrganizationS
 	m0 := &UpdateOrganizationSettingsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.RepositoryBaseRole = b.RepositoryBaseRole
-	x.Description = b.Description
-	x.Url = b.Url
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_RepositoryBaseRole = b.RepositoryBaseRole
+	if b.Description != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_Description = b.Description
+	}
+	if b.Url != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_Url = b.Url
+	}
 	return m0
 }
 
 type UpdateOrganizationSettingsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2198,13 +2183,11 @@ func (b0 UpdateOrganizationSettingsResponse_builder) Build() *UpdateOrganization
 }
 
 type AddOrganizationGroupRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which to add the group.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// The name of the group to add.
-	GroupName     string `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_GroupName      string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *AddOrganizationGroupRequest) Reset() {
@@ -2234,24 +2217,24 @@ func (x *AddOrganizationGroupRequest) ProtoReflect() protoreflect.Message {
 
 func (x *AddOrganizationGroupRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *AddOrganizationGroupRequest) GetGroupName() string {
 	if x != nil {
-		return x.GroupName
+		return x.xxx_hidden_GroupName
 	}
 	return ""
 }
 
 func (x *AddOrganizationGroupRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *AddOrganizationGroupRequest) SetGroupName(v string) {
-	x.GroupName = v
+	x.xxx_hidden_GroupName = v
 }
 
 type AddOrganizationGroupRequest_builder struct {
@@ -2267,13 +2250,13 @@ func (b0 AddOrganizationGroupRequest_builder) Build() *AddOrganizationGroupReque
 	m0 := &AddOrganizationGroupRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.GroupName = b.GroupName
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_GroupName = b.GroupName
 	return m0
 }
 
 type AddOrganizationGroupResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2316,13 +2299,11 @@ func (b0 AddOrganizationGroupResponse_builder) Build() *AddOrganizationGroupResp
 }
 
 type RemoveOrganizationGroupRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the organization for which to remove the group.
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	// The name of the group to remove.
-	GroupName     string `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	xxx_hidden_GroupName      string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *RemoveOrganizationGroupRequest) Reset() {
@@ -2352,24 +2333,24 @@ func (x *RemoveOrganizationGroupRequest) ProtoReflect() protoreflect.Message {
 
 func (x *RemoveOrganizationGroupRequest) GetOrganizationId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.xxx_hidden_OrganizationId
 	}
 	return ""
 }
 
 func (x *RemoveOrganizationGroupRequest) GetGroupName() string {
 	if x != nil {
-		return x.GroupName
+		return x.xxx_hidden_GroupName
 	}
 	return ""
 }
 
 func (x *RemoveOrganizationGroupRequest) SetOrganizationId(v string) {
-	x.OrganizationId = v
+	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *RemoveOrganizationGroupRequest) SetGroupName(v string) {
-	x.GroupName = v
+	x.xxx_hidden_GroupName = v
 }
 
 type RemoveOrganizationGroupRequest_builder struct {
@@ -2385,13 +2366,13 @@ func (b0 RemoveOrganizationGroupRequest_builder) Build() *RemoveOrganizationGrou
 	m0 := &RemoveOrganizationGroupRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.OrganizationId = b.OrganizationId
-	x.GroupName = b.GroupName
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	x.xxx_hidden_GroupName = b.GroupName
 	return m0
 }
 
 type RemoveOrganizationGroupResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

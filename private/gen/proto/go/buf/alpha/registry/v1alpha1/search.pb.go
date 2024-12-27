@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/search.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -241,25 +239,18 @@ func (x SearchModuleContentFilter) Number() protoreflect.EnumNumber {
 }
 
 type RepositorySearchResult struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The name of the user or organization
-	// who is the owner of this repository.
-	Owner string `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The visibility of the repository.
-	Visibility Visibility `protobuf:"varint,4,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
-	Deprecated bool       `protobuf:"varint,5,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	// The SPDX license ID of the latest main commit in the repository.
-	LatestSpdxLicenseId string `protobuf:"bytes,6,opt,name=latest_spdx_license_id,json=latestSpdxLicenseId,proto3" json:"latest_spdx_license_id,omitempty"`
-	// The verification status of the owner of the repository.
-	OwnerVerificationStatus VerificationStatus `protobuf:"varint,7,opt,name=owner_verification_status,json=ownerVerificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"owner_verification_status,omitempty"`
-	// The user configurable URL in the description of the repository.
-	Url string `protobuf:"bytes,8,opt,name=url,proto3" json:"url,omitempty"`
-	// The commit time of the latest main commit in the repository.
-	LatestCommitTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=latest_commit_time,json=latestCommitTime,proto3" json:"latest_commit_time,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Name                    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Owner                   string                 `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Visibility              Visibility             `protobuf:"varint,4,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
+	xxx_hidden_Deprecated              bool                   `protobuf:"varint,5,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	xxx_hidden_LatestSpdxLicenseId     string                 `protobuf:"bytes,6,opt,name=latest_spdx_license_id,json=latestSpdxLicenseId,proto3" json:"latest_spdx_license_id,omitempty"`
+	xxx_hidden_OwnerVerificationStatus VerificationStatus     `protobuf:"varint,7,opt,name=owner_verification_status,json=ownerVerificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"owner_verification_status,omitempty"`
+	xxx_hidden_Url                     string                 `protobuf:"bytes,8,opt,name=url,proto3" json:"url,omitempty"`
+	xxx_hidden_LatestCommitTime        *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=latest_commit_time,json=latestCommitTime,proto3" json:"latest_commit_time,omitempty"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *RepositorySearchResult) Reset() {
@@ -289,112 +280,112 @@ func (x *RepositorySearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *RepositorySearchResult) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *RepositorySearchResult) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *RepositorySearchResult) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *RepositorySearchResult) GetVisibility() Visibility {
 	if x != nil {
-		return x.Visibility
+		return x.xxx_hidden_Visibility
 	}
 	return Visibility_VISIBILITY_UNSPECIFIED
 }
 
 func (x *RepositorySearchResult) GetDeprecated() bool {
 	if x != nil {
-		return x.Deprecated
+		return x.xxx_hidden_Deprecated
 	}
 	return false
 }
 
 func (x *RepositorySearchResult) GetLatestSpdxLicenseId() string {
 	if x != nil {
-		return x.LatestSpdxLicenseId
+		return x.xxx_hidden_LatestSpdxLicenseId
 	}
 	return ""
 }
 
 func (x *RepositorySearchResult) GetOwnerVerificationStatus() VerificationStatus {
 	if x != nil {
-		return x.OwnerVerificationStatus
+		return x.xxx_hidden_OwnerVerificationStatus
 	}
 	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 func (x *RepositorySearchResult) GetUrl() string {
 	if x != nil {
-		return x.Url
+		return x.xxx_hidden_Url
 	}
 	return ""
 }
 
 func (x *RepositorySearchResult) GetLatestCommitTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LatestCommitTime
+		return x.xxx_hidden_LatestCommitTime
 	}
 	return nil
 }
 
 func (x *RepositorySearchResult) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *RepositorySearchResult) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *RepositorySearchResult) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *RepositorySearchResult) SetVisibility(v Visibility) {
-	x.Visibility = v
+	x.xxx_hidden_Visibility = v
 }
 
 func (x *RepositorySearchResult) SetDeprecated(v bool) {
-	x.Deprecated = v
+	x.xxx_hidden_Deprecated = v
 }
 
 func (x *RepositorySearchResult) SetLatestSpdxLicenseId(v string) {
-	x.LatestSpdxLicenseId = v
+	x.xxx_hidden_LatestSpdxLicenseId = v
 }
 
 func (x *RepositorySearchResult) SetOwnerVerificationStatus(v VerificationStatus) {
-	x.OwnerVerificationStatus = v
+	x.xxx_hidden_OwnerVerificationStatus = v
 }
 
 func (x *RepositorySearchResult) SetUrl(v string) {
-	x.Url = v
+	x.xxx_hidden_Url = v
 }
 
 func (x *RepositorySearchResult) SetLatestCommitTime(v *timestamppb.Timestamp) {
-	x.LatestCommitTime = v
+	x.xxx_hidden_LatestCommitTime = v
 }
 
 func (x *RepositorySearchResult) HasLatestCommitTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.LatestCommitTime != nil
+	return x.xxx_hidden_LatestCommitTime != nil
 }
 
 func (x *RepositorySearchResult) ClearLatestCommitTime() {
-	x.LatestCommitTime = nil
+	x.xxx_hidden_LatestCommitTime = nil
 }
 
 type RepositorySearchResult_builder struct {
@@ -422,25 +413,25 @@ func (b0 RepositorySearchResult_builder) Build() *RepositorySearchResult {
 	m0 := &RepositorySearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Owner = b.Owner
-	x.Visibility = b.Visibility
-	x.Deprecated = b.Deprecated
-	x.LatestSpdxLicenseId = b.LatestSpdxLicenseId
-	x.OwnerVerificationStatus = b.OwnerVerificationStatus
-	x.Url = b.Url
-	x.LatestCommitTime = b.LatestCommitTime
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Visibility = b.Visibility
+	x.xxx_hidden_Deprecated = b.Deprecated
+	x.xxx_hidden_LatestSpdxLicenseId = b.LatestSpdxLicenseId
+	x.xxx_hidden_OwnerVerificationStatus = b.OwnerVerificationStatus
+	x.xxx_hidden_Url = b.Url
+	x.xxx_hidden_LatestCommitTime = b.LatestCommitTime
 	return m0
 }
 
 type OrganizationSearchResult struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *OrganizationSearchResult) Reset() {
@@ -470,46 +461,46 @@ func (x *OrganizationSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *OrganizationSearchResult) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *OrganizationSearchResult) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *OrganizationSearchResult) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *OrganizationSearchResult) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *OrganizationSearchResult) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *OrganizationSearchResult) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *OrganizationSearchResult) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *OrganizationSearchResult) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 type OrganizationSearchResult_builder struct {
@@ -524,20 +515,20 @@ func (b0 OrganizationSearchResult_builder) Build() *OrganizationSearchResult {
 	m0 := &OrganizationSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.CreateTime = b.CreateTime
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CreateTime = b.CreateTime
 	return m0
 }
 
 type UserSearchResult struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Deactivated   bool                   `protobuf:"varint,3,opt,name=deactivated,proto3" json:"deactivated,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Username    string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	xxx_hidden_Deactivated bool                   `protobuf:"varint,3,opt,name=deactivated,proto3" json:"deactivated,omitempty"`
+	xxx_hidden_CreateTime  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UserSearchResult) Reset() {
@@ -567,57 +558,57 @@ func (x *UserSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *UserSearchResult) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *UserSearchResult) GetUsername() string {
 	if x != nil {
-		return x.Username
+		return x.xxx_hidden_Username
 	}
 	return ""
 }
 
 func (x *UserSearchResult) GetDeactivated() bool {
 	if x != nil {
-		return x.Deactivated
+		return x.xxx_hidden_Deactivated
 	}
 	return false
 }
 
 func (x *UserSearchResult) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *UserSearchResult) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *UserSearchResult) SetUsername(v string) {
-	x.Username = v
+	x.xxx_hidden_Username = v
 }
 
 func (x *UserSearchResult) SetDeactivated(v bool) {
-	x.Deactivated = v
+	x.xxx_hidden_Deactivated = v
 }
 
 func (x *UserSearchResult) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *UserSearchResult) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *UserSearchResult) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 type UserSearchResult_builder struct {
@@ -633,20 +624,20 @@ func (b0 UserSearchResult_builder) Build() *UserSearchResult {
 	m0 := &UserSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Username = b.Username
-	x.Deactivated = b.Deactivated
-	x.CreateTime = b.CreateTime
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Username = b.Username
+	x.xxx_hidden_Deactivated = b.Deactivated
+	x.xxx_hidden_CreateTime = b.CreateTime
 	return m0
 }
 
 type TeamSearchResult struct {
-	state            protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	OrganizationName string                 `protobuf:"bytes,3,opt,name=organization_name,json=organizationName,proto3" json:"organization_name,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_OrganizationName string                 `protobuf:"bytes,3,opt,name=organization_name,json=organizationName,proto3" json:"organization_name,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *TeamSearchResult) Reset() {
@@ -676,35 +667,35 @@ func (x *TeamSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *TeamSearchResult) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *TeamSearchResult) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *TeamSearchResult) GetOrganizationName() string {
 	if x != nil {
-		return x.OrganizationName
+		return x.xxx_hidden_OrganizationName
 	}
 	return ""
 }
 
 func (x *TeamSearchResult) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *TeamSearchResult) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *TeamSearchResult) SetOrganizationName(v string) {
-	x.OrganizationName = v
+	x.xxx_hidden_OrganizationName = v
 }
 
 type TeamSearchResult_builder struct {
@@ -719,30 +710,24 @@ func (b0 TeamSearchResult_builder) Build() *TeamSearchResult {
 	m0 := &TeamSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.OrganizationName = b.OrganizationName
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_OrganizationName = b.OrganizationName
 	return m0
 }
 
 type CuratedPluginSearchResult struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The name of the user or organization
-	// who is the owner of this plugin.
-	Owner      string `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
-	Deprecated bool   `protobuf:"varint,4,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	// The description of the plugin and it's functionality.
-	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	// The registry type of the plugin.
-	RegistryType PluginRegistryType `protobuf:"varint,6,opt,name=registry_type,json=registryType,proto3,enum=buf.alpha.registry.v1alpha1.PluginRegistryType" json:"registry_type,omitempty"`
-	// The output languages supported by the plugin.
-	OutputLanguages []PluginLanguage `protobuf:"varint,7,rep,packed,name=output_languages,json=outputLanguages,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"output_languages,omitempty"`
-	// The plugins creation timestamp.
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Owner           string                 `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Deprecated      bool                   `protobuf:"varint,4,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	xxx_hidden_Description     string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	xxx_hidden_RegistryType    PluginRegistryType     `protobuf:"varint,6,opt,name=registry_type,json=registryType,proto3,enum=buf.alpha.registry.v1alpha1.PluginRegistryType" json:"registry_type,omitempty"`
+	xxx_hidden_OutputLanguages []PluginLanguage       `protobuf:"varint,7,rep,packed,name=output_languages,json=outputLanguages,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"output_languages,omitempty"`
+	xxx_hidden_CreateTime      *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *CuratedPluginSearchResult) Reset() {
@@ -772,101 +757,101 @@ func (x *CuratedPluginSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *CuratedPluginSearchResult) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *CuratedPluginSearchResult) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CuratedPluginSearchResult) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *CuratedPluginSearchResult) GetDeprecated() bool {
 	if x != nil {
-		return x.Deprecated
+		return x.xxx_hidden_Deprecated
 	}
 	return false
 }
 
 func (x *CuratedPluginSearchResult) GetDescription() string {
 	if x != nil {
-		return x.Description
+		return x.xxx_hidden_Description
 	}
 	return ""
 }
 
 func (x *CuratedPluginSearchResult) GetRegistryType() PluginRegistryType {
 	if x != nil {
-		return x.RegistryType
+		return x.xxx_hidden_RegistryType
 	}
 	return PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED
 }
 
 func (x *CuratedPluginSearchResult) GetOutputLanguages() []PluginLanguage {
 	if x != nil {
-		return x.OutputLanguages
+		return x.xxx_hidden_OutputLanguages
 	}
 	return nil
 }
 
 func (x *CuratedPluginSearchResult) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *CuratedPluginSearchResult) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *CuratedPluginSearchResult) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CuratedPluginSearchResult) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *CuratedPluginSearchResult) SetDeprecated(v bool) {
-	x.Deprecated = v
+	x.xxx_hidden_Deprecated = v
 }
 
 func (x *CuratedPluginSearchResult) SetDescription(v string) {
-	x.Description = v
+	x.xxx_hidden_Description = v
 }
 
 func (x *CuratedPluginSearchResult) SetRegistryType(v PluginRegistryType) {
-	x.RegistryType = v
+	x.xxx_hidden_RegistryType = v
 }
 
 func (x *CuratedPluginSearchResult) SetOutputLanguages(v []PluginLanguage) {
-	x.OutputLanguages = v
+	x.xxx_hidden_OutputLanguages = v
 }
 
 func (x *CuratedPluginSearchResult) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *CuratedPluginSearchResult) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *CuratedPluginSearchResult) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 type CuratedPluginSearchResult_builder struct {
@@ -892,28 +877,28 @@ func (b0 CuratedPluginSearchResult_builder) Build() *CuratedPluginSearchResult {
 	m0 := &CuratedPluginSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Name = b.Name
-	x.Owner = b.Owner
-	x.Deprecated = b.Deprecated
-	x.Description = b.Description
-	x.RegistryType = b.RegistryType
-	x.OutputLanguages = b.OutputLanguages
-	x.CreateTime = b.CreateTime
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Deprecated = b.Deprecated
+	x.xxx_hidden_Description = b.Description
+	x.xxx_hidden_RegistryType = b.RegistryType
+	x.xxx_hidden_OutputLanguages = b.OutputLanguages
+	x.xxx_hidden_CreateTime = b.CreateTime
 	return m0
 }
 
 type ModuleElementSearchResult struct {
-	state                   protoimpl.MessageState  `protogen:"hybrid.v1"`
-	RepositoryId            string                  `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	RepositoryOwner         string                  `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	RepositoryName          string                  `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	ProtoFilePath           string                  `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
-	FullyQualifiedName      string                  `protobuf:"bytes,5,opt,name=fully_qualified_name,json=fullyQualifiedName,proto3" json:"fully_qualified_name,omitempty"`
-	PackageName             string                  `protobuf:"bytes,6,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
-	SearchModuleElementType SearchModuleElementType `protobuf:"varint,7,opt,name=search_module_element_type,json=searchModuleElementType,proto3,enum=buf.alpha.registry.v1alpha1.SearchModuleElementType" json:"search_module_element_type,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId            string                  `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_RepositoryOwner         string                  `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName          string                  `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_ProtoFilePath           string                  `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
+	xxx_hidden_FullyQualifiedName      string                  `protobuf:"bytes,5,opt,name=fully_qualified_name,json=fullyQualifiedName,proto3" json:"fully_qualified_name,omitempty"`
+	xxx_hidden_PackageName             string                  `protobuf:"bytes,6,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
+	xxx_hidden_SearchModuleElementType SearchModuleElementType `protobuf:"varint,7,opt,name=search_module_element_type,json=searchModuleElementType,proto3,enum=buf.alpha.registry.v1alpha1.SearchModuleElementType" json:"search_module_element_type,omitempty"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *ModuleElementSearchResult) Reset() {
@@ -943,79 +928,79 @@ func (x *ModuleElementSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *ModuleElementSearchResult) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ModuleElementSearchResult) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *ModuleElementSearchResult) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *ModuleElementSearchResult) GetProtoFilePath() string {
 	if x != nil {
-		return x.ProtoFilePath
+		return x.xxx_hidden_ProtoFilePath
 	}
 	return ""
 }
 
 func (x *ModuleElementSearchResult) GetFullyQualifiedName() string {
 	if x != nil {
-		return x.FullyQualifiedName
+		return x.xxx_hidden_FullyQualifiedName
 	}
 	return ""
 }
 
 func (x *ModuleElementSearchResult) GetPackageName() string {
 	if x != nil {
-		return x.PackageName
+		return x.xxx_hidden_PackageName
 	}
 	return ""
 }
 
 func (x *ModuleElementSearchResult) GetSearchModuleElementType() SearchModuleElementType {
 	if x != nil {
-		return x.SearchModuleElementType
+		return x.xxx_hidden_SearchModuleElementType
 	}
 	return SearchModuleElementType_SEARCH_MODULE_ELEMENT_TYPE_UNSPECIFIED
 }
 
 func (x *ModuleElementSearchResult) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *ModuleElementSearchResult) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *ModuleElementSearchResult) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *ModuleElementSearchResult) SetProtoFilePath(v string) {
-	x.ProtoFilePath = v
+	x.xxx_hidden_ProtoFilePath = v
 }
 
 func (x *ModuleElementSearchResult) SetFullyQualifiedName(v string) {
-	x.FullyQualifiedName = v
+	x.xxx_hidden_FullyQualifiedName = v
 }
 
 func (x *ModuleElementSearchResult) SetPackageName(v string) {
-	x.PackageName = v
+	x.xxx_hidden_PackageName = v
 }
 
 func (x *ModuleElementSearchResult) SetSearchModuleElementType(v SearchModuleElementType) {
-	x.SearchModuleElementType = v
+	x.xxx_hidden_SearchModuleElementType = v
 }
 
 type ModuleElementSearchResult_builder struct {
@@ -1034,24 +1019,24 @@ func (b0 ModuleElementSearchResult_builder) Build() *ModuleElementSearchResult {
 	m0 := &ModuleElementSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.ProtoFilePath = b.ProtoFilePath
-	x.FullyQualifiedName = b.FullyQualifiedName
-	x.PackageName = b.PackageName
-	x.SearchModuleElementType = b.SearchModuleElementType
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_ProtoFilePath = b.ProtoFilePath
+	x.xxx_hidden_FullyQualifiedName = b.FullyQualifiedName
+	x.xxx_hidden_PackageName = b.PackageName
+	x.xxx_hidden_SearchModuleElementType = b.SearchModuleElementType
 	return m0
 }
 
 type ModuleFileSearchResult struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	ProtoFilePath   string                 `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_ProtoFilePath   string                 `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ModuleFileSearchResult) Reset() {
@@ -1081,46 +1066,46 @@ func (x *ModuleFileSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *ModuleFileSearchResult) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ModuleFileSearchResult) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *ModuleFileSearchResult) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *ModuleFileSearchResult) GetProtoFilePath() string {
 	if x != nil {
-		return x.ProtoFilePath
+		return x.xxx_hidden_ProtoFilePath
 	}
 	return ""
 }
 
 func (x *ModuleFileSearchResult) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *ModuleFileSearchResult) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *ModuleFileSearchResult) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *ModuleFileSearchResult) SetProtoFilePath(v string) {
-	x.ProtoFilePath = v
+	x.xxx_hidden_ProtoFilePath = v
 }
 
 type ModuleFileSearchResult_builder struct {
@@ -1136,27 +1121,18 @@ func (b0 ModuleFileSearchResult_builder) Build() *ModuleFileSearchResult {
 	m0 := &ModuleFileSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.ProtoFilePath = b.ProtoFilePath
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_ProtoFilePath = b.ProtoFilePath
 	return m0
 }
 
 type SearchResult struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Item:
-	//
-	//	*SearchResult_Repository
-	//	*SearchResult_Organization
-	//	*SearchResult_User
-	//	*SearchResult_Team
-	//	*SearchResult_CuratedPlugin
-	//	*SearchResult_ModuleElement
-	//	*SearchResult_ModuleFile
-	Item          isSearchResult_Item `protobuf_oneof:"item"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Item isSearchResult_Item    `protobuf_oneof:"item"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SearchResult) Reset() {
@@ -1184,16 +1160,9 @@ func (x *SearchResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *SearchResult) GetItem() isSearchResult_Item {
-	if x != nil {
-		return x.Item
-	}
-	return nil
-}
-
 func (x *SearchResult) GetRepository() *RepositorySearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_Repository); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_Repository); ok {
 			return x.Repository
 		}
 	}
@@ -1202,7 +1171,7 @@ func (x *SearchResult) GetRepository() *RepositorySearchResult {
 
 func (x *SearchResult) GetOrganization() *OrganizationSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_Organization); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_Organization); ok {
 			return x.Organization
 		}
 	}
@@ -1211,7 +1180,7 @@ func (x *SearchResult) GetOrganization() *OrganizationSearchResult {
 
 func (x *SearchResult) GetUser() *UserSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_User); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_User); ok {
 			return x.User
 		}
 	}
@@ -1220,7 +1189,7 @@ func (x *SearchResult) GetUser() *UserSearchResult {
 
 func (x *SearchResult) GetTeam() *TeamSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_Team); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_Team); ok {
 			return x.Team
 		}
 	}
@@ -1229,7 +1198,7 @@ func (x *SearchResult) GetTeam() *TeamSearchResult {
 
 func (x *SearchResult) GetCuratedPlugin() *CuratedPluginSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_CuratedPlugin); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_CuratedPlugin); ok {
 			return x.CuratedPlugin
 		}
 	}
@@ -1238,7 +1207,7 @@ func (x *SearchResult) GetCuratedPlugin() *CuratedPluginSearchResult {
 
 func (x *SearchResult) GetModuleElement() *ModuleElementSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_ModuleElement); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_ModuleElement); ok {
 			return x.ModuleElement
 		}
 	}
@@ -1247,7 +1216,7 @@ func (x *SearchResult) GetModuleElement() *ModuleElementSearchResult {
 
 func (x *SearchResult) GetModuleFile() *ModuleFileSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchResult_ModuleFile); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchResult_ModuleFile); ok {
 			return x.ModuleFile
 		}
 	}
@@ -1256,72 +1225,72 @@ func (x *SearchResult) GetModuleFile() *ModuleFileSearchResult {
 
 func (x *SearchResult) SetRepository(v *RepositorySearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_Repository{v}
+	x.xxx_hidden_Item = &searchResult_Repository{v}
 }
 
 func (x *SearchResult) SetOrganization(v *OrganizationSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_Organization{v}
+	x.xxx_hidden_Item = &searchResult_Organization{v}
 }
 
 func (x *SearchResult) SetUser(v *UserSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_User{v}
+	x.xxx_hidden_Item = &searchResult_User{v}
 }
 
 func (x *SearchResult) SetTeam(v *TeamSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_Team{v}
+	x.xxx_hidden_Item = &searchResult_Team{v}
 }
 
 func (x *SearchResult) SetCuratedPlugin(v *CuratedPluginSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_CuratedPlugin{v}
+	x.xxx_hidden_Item = &searchResult_CuratedPlugin{v}
 }
 
 func (x *SearchResult) SetModuleElement(v *ModuleElementSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_ModuleElement{v}
+	x.xxx_hidden_Item = &searchResult_ModuleElement{v}
 }
 
 func (x *SearchResult) SetModuleFile(v *ModuleFileSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchResult_ModuleFile{v}
+	x.xxx_hidden_Item = &searchResult_ModuleFile{v}
 }
 
 func (x *SearchResult) HasItem() bool {
 	if x == nil {
 		return false
 	}
-	return x.Item != nil
+	return x.xxx_hidden_Item != nil
 }
 
 func (x *SearchResult) HasRepository() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_Repository)
+	_, ok := x.xxx_hidden_Item.(*searchResult_Repository)
 	return ok
 }
 
@@ -1329,7 +1298,7 @@ func (x *SearchResult) HasOrganization() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_Organization)
+	_, ok := x.xxx_hidden_Item.(*searchResult_Organization)
 	return ok
 }
 
@@ -1337,7 +1306,7 @@ func (x *SearchResult) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_User)
+	_, ok := x.xxx_hidden_Item.(*searchResult_User)
 	return ok
 }
 
@@ -1345,7 +1314,7 @@ func (x *SearchResult) HasTeam() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_Team)
+	_, ok := x.xxx_hidden_Item.(*searchResult_Team)
 	return ok
 }
 
@@ -1353,7 +1322,7 @@ func (x *SearchResult) HasCuratedPlugin() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_CuratedPlugin)
+	_, ok := x.xxx_hidden_Item.(*searchResult_CuratedPlugin)
 	return ok
 }
 
@@ -1361,7 +1330,7 @@ func (x *SearchResult) HasModuleElement() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_ModuleElement)
+	_, ok := x.xxx_hidden_Item.(*searchResult_ModuleElement)
 	return ok
 }
 
@@ -1369,53 +1338,53 @@ func (x *SearchResult) HasModuleFile() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchResult_ModuleFile)
+	_, ok := x.xxx_hidden_Item.(*searchResult_ModuleFile)
 	return ok
 }
 
 func (x *SearchResult) ClearItem() {
-	x.Item = nil
+	x.xxx_hidden_Item = nil
 }
 
 func (x *SearchResult) ClearRepository() {
-	if _, ok := x.Item.(*SearchResult_Repository); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_Repository); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchResult) ClearOrganization() {
-	if _, ok := x.Item.(*SearchResult_Organization); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_Organization); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchResult) ClearUser() {
-	if _, ok := x.Item.(*SearchResult_User); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_User); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchResult) ClearTeam() {
-	if _, ok := x.Item.(*SearchResult_Team); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_Team); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchResult) ClearCuratedPlugin() {
-	if _, ok := x.Item.(*SearchResult_CuratedPlugin); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_CuratedPlugin); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchResult) ClearModuleElement() {
-	if _, ok := x.Item.(*SearchResult_ModuleElement); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_ModuleElement); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchResult) ClearModuleFile() {
-	if _, ok := x.Item.(*SearchResult_ModuleFile); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchResult_ModuleFile); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
@@ -1432,20 +1401,20 @@ func (x *SearchResult) WhichItem() case_SearchResult_Item {
 	if x == nil {
 		return SearchResult_Item_not_set_case
 	}
-	switch x.Item.(type) {
-	case *SearchResult_Repository:
+	switch x.xxx_hidden_Item.(type) {
+	case *searchResult_Repository:
 		return SearchResult_Repository_case
-	case *SearchResult_Organization:
+	case *searchResult_Organization:
 		return SearchResult_Organization_case
-	case *SearchResult_User:
+	case *searchResult_User:
 		return SearchResult_User_case
-	case *SearchResult_Team:
+	case *searchResult_Team:
 		return SearchResult_Team_case
-	case *SearchResult_CuratedPlugin:
+	case *searchResult_CuratedPlugin:
 		return SearchResult_CuratedPlugin_case
-	case *SearchResult_ModuleElement:
+	case *searchResult_ModuleElement:
 		return SearchResult_ModuleElement_case
-	case *SearchResult_ModuleFile:
+	case *searchResult_ModuleFile:
 		return SearchResult_ModuleFile_case
 	default:
 		return SearchResult_Item_not_set_case
@@ -1455,7 +1424,7 @@ func (x *SearchResult) WhichItem() case_SearchResult_Item {
 type SearchResult_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Item:
+	// Fields of oneof xxx_hidden_Item:
 	Repository    *RepositorySearchResult
 	Organization  *OrganizationSearchResult
 	User          *UserSearchResult
@@ -1463,7 +1432,7 @@ type SearchResult_builder struct {
 	CuratedPlugin *CuratedPluginSearchResult
 	ModuleElement *ModuleElementSearchResult
 	ModuleFile    *ModuleFileSearchResult
-	// -- end of Item
+	// -- end of xxx_hidden_Item
 }
 
 func (b0 SearchResult_builder) Build() *SearchResult {
@@ -1471,25 +1440,25 @@ func (b0 SearchResult_builder) Build() *SearchResult {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Repository != nil {
-		x.Item = &SearchResult_Repository{b.Repository}
+		x.xxx_hidden_Item = &searchResult_Repository{b.Repository}
 	}
 	if b.Organization != nil {
-		x.Item = &SearchResult_Organization{b.Organization}
+		x.xxx_hidden_Item = &searchResult_Organization{b.Organization}
 	}
 	if b.User != nil {
-		x.Item = &SearchResult_User{b.User}
+		x.xxx_hidden_Item = &searchResult_User{b.User}
 	}
 	if b.Team != nil {
-		x.Item = &SearchResult_Team{b.Team}
+		x.xxx_hidden_Item = &searchResult_Team{b.Team}
 	}
 	if b.CuratedPlugin != nil {
-		x.Item = &SearchResult_CuratedPlugin{b.CuratedPlugin}
+		x.xxx_hidden_Item = &searchResult_CuratedPlugin{b.CuratedPlugin}
 	}
 	if b.ModuleElement != nil {
-		x.Item = &SearchResult_ModuleElement{b.ModuleElement}
+		x.xxx_hidden_Item = &searchResult_ModuleElement{b.ModuleElement}
 	}
 	if b.ModuleFile != nil {
-		x.Item = &SearchResult_ModuleFile{b.ModuleFile}
+		x.xxx_hidden_Item = &searchResult_ModuleFile{b.ModuleFile}
 	}
 	return m0
 }
@@ -1508,65 +1477,58 @@ type isSearchResult_Item interface {
 	isSearchResult_Item()
 }
 
-type SearchResult_Repository struct {
+type searchResult_Repository struct {
 	Repository *RepositorySearchResult `protobuf:"bytes,1,opt,name=repository,proto3,oneof"`
 }
 
-type SearchResult_Organization struct {
+type searchResult_Organization struct {
 	Organization *OrganizationSearchResult `protobuf:"bytes,2,opt,name=organization,proto3,oneof"`
 }
 
-type SearchResult_User struct {
+type searchResult_User struct {
 	User *UserSearchResult `protobuf:"bytes,3,opt,name=user,proto3,oneof"`
 }
 
-type SearchResult_Team struct {
+type searchResult_Team struct {
 	Team *TeamSearchResult `protobuf:"bytes,4,opt,name=team,proto3,oneof"`
 }
 
-type SearchResult_CuratedPlugin struct {
+type searchResult_CuratedPlugin struct {
 	CuratedPlugin *CuratedPluginSearchResult `protobuf:"bytes,7,opt,name=curated_plugin,json=curatedPlugin,proto3,oneof"`
 }
 
-type SearchResult_ModuleElement struct {
+type searchResult_ModuleElement struct {
 	ModuleElement *ModuleElementSearchResult `protobuf:"bytes,8,opt,name=module_element,json=moduleElement,proto3,oneof"`
 }
 
-type SearchResult_ModuleFile struct {
+type searchResult_ModuleFile struct {
 	ModuleFile *ModuleFileSearchResult `protobuf:"bytes,9,opt,name=module_file,json=moduleFile,proto3,oneof"`
 }
 
-func (*SearchResult_Repository) isSearchResult_Item() {}
+func (*searchResult_Repository) isSearchResult_Item() {}
 
-func (*SearchResult_Organization) isSearchResult_Item() {}
+func (*searchResult_Organization) isSearchResult_Item() {}
 
-func (*SearchResult_User) isSearchResult_Item() {}
+func (*searchResult_User) isSearchResult_Item() {}
 
-func (*SearchResult_Team) isSearchResult_Item() {}
+func (*searchResult_Team) isSearchResult_Item() {}
 
-func (*SearchResult_CuratedPlugin) isSearchResult_Item() {}
+func (*searchResult_CuratedPlugin) isSearchResult_Item() {}
 
-func (*SearchResult_ModuleElement) isSearchResult_Item() {}
+func (*searchResult_ModuleElement) isSearchResult_Item() {}
 
-func (*SearchResult_ModuleFile) isSearchResult_Item() {}
+func (*searchResult_ModuleFile) isSearchResult_Item() {}
 
 type ElementSearchResult struct {
-	state              protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryId       string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	RepositoryOwner    string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	RepositoryName     string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	ProtoFilePath      string                 `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
-	FullyQualifiedName string                 `protobuf:"bytes,5,opt,name=fully_qualified_name,json=fullyQualifiedName,proto3" json:"fully_qualified_name,omitempty"`
-	// Types that are valid to be assigned to Document:
-	//
-	//	*ElementSearchResult_Service
-	//	*ElementSearchResult_Method
-	//	*ElementSearchResult_Enum
-	//	*ElementSearchResult_Message
-	//	*ElementSearchResult_FileExtension
-	Document      isElementSearchResult_Document `protobuf_oneof:"document"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                         protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId       string                         `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_RepositoryOwner    string                         `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName     string                         `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_ProtoFilePath      string                         `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
+	xxx_hidden_FullyQualifiedName string                         `protobuf:"bytes,5,opt,name=fully_qualified_name,json=fullyQualifiedName,proto3" json:"fully_qualified_name,omitempty"`
+	xxx_hidden_Document           isElementSearchResult_Document `protobuf_oneof:"document"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *ElementSearchResult) Reset() {
@@ -1596,49 +1558,42 @@ func (x *ElementSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *ElementSearchResult) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *ElementSearchResult) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *ElementSearchResult) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *ElementSearchResult) GetProtoFilePath() string {
 	if x != nil {
-		return x.ProtoFilePath
+		return x.xxx_hidden_ProtoFilePath
 	}
 	return ""
 }
 
 func (x *ElementSearchResult) GetFullyQualifiedName() string {
 	if x != nil {
-		return x.FullyQualifiedName
+		return x.xxx_hidden_FullyQualifiedName
 	}
 	return ""
 }
 
-func (x *ElementSearchResult) GetDocument() isElementSearchResult_Document {
-	if x != nil {
-		return x.Document
-	}
-	return nil
-}
-
 func (x *ElementSearchResult) GetService() *Service {
 	if x != nil {
-		if x, ok := x.Document.(*ElementSearchResult_Service); ok {
+		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Service); ok {
 			return x.Service
 		}
 	}
@@ -1647,7 +1602,7 @@ func (x *ElementSearchResult) GetService() *Service {
 
 func (x *ElementSearchResult) GetMethod() *Method {
 	if x != nil {
-		if x, ok := x.Document.(*ElementSearchResult_Method); ok {
+		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Method); ok {
 			return x.Method
 		}
 	}
@@ -1656,7 +1611,7 @@ func (x *ElementSearchResult) GetMethod() *Method {
 
 func (x *ElementSearchResult) GetEnum() *Enum {
 	if x != nil {
-		if x, ok := x.Document.(*ElementSearchResult_Enum); ok {
+		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Enum); ok {
 			return x.Enum
 		}
 	}
@@ -1665,7 +1620,7 @@ func (x *ElementSearchResult) GetEnum() *Enum {
 
 func (x *ElementSearchResult) GetMessage() *Message {
 	if x != nil {
-		if x, ok := x.Document.(*ElementSearchResult_Message); ok {
+		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Message); ok {
 			return x.Message
 		}
 	}
@@ -1674,7 +1629,7 @@ func (x *ElementSearchResult) GetMessage() *Message {
 
 func (x *ElementSearchResult) GetFileExtension() *FileExtension {
 	if x != nil {
-		if x, ok := x.Document.(*ElementSearchResult_FileExtension); ok {
+		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_FileExtension); ok {
 			return x.FileExtension
 		}
 	}
@@ -1682,77 +1637,77 @@ func (x *ElementSearchResult) GetFileExtension() *FileExtension {
 }
 
 func (x *ElementSearchResult) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *ElementSearchResult) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *ElementSearchResult) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *ElementSearchResult) SetProtoFilePath(v string) {
-	x.ProtoFilePath = v
+	x.xxx_hidden_ProtoFilePath = v
 }
 
 func (x *ElementSearchResult) SetFullyQualifiedName(v string) {
-	x.FullyQualifiedName = v
+	x.xxx_hidden_FullyQualifiedName = v
 }
 
 func (x *ElementSearchResult) SetService(v *Service) {
 	if v == nil {
-		x.Document = nil
+		x.xxx_hidden_Document = nil
 		return
 	}
-	x.Document = &ElementSearchResult_Service{v}
+	x.xxx_hidden_Document = &elementSearchResult_Service{v}
 }
 
 func (x *ElementSearchResult) SetMethod(v *Method) {
 	if v == nil {
-		x.Document = nil
+		x.xxx_hidden_Document = nil
 		return
 	}
-	x.Document = &ElementSearchResult_Method{v}
+	x.xxx_hidden_Document = &elementSearchResult_Method{v}
 }
 
 func (x *ElementSearchResult) SetEnum(v *Enum) {
 	if v == nil {
-		x.Document = nil
+		x.xxx_hidden_Document = nil
 		return
 	}
-	x.Document = &ElementSearchResult_Enum{v}
+	x.xxx_hidden_Document = &elementSearchResult_Enum{v}
 }
 
 func (x *ElementSearchResult) SetMessage(v *Message) {
 	if v == nil {
-		x.Document = nil
+		x.xxx_hidden_Document = nil
 		return
 	}
-	x.Document = &ElementSearchResult_Message{v}
+	x.xxx_hidden_Document = &elementSearchResult_Message{v}
 }
 
 func (x *ElementSearchResult) SetFileExtension(v *FileExtension) {
 	if v == nil {
-		x.Document = nil
+		x.xxx_hidden_Document = nil
 		return
 	}
-	x.Document = &ElementSearchResult_FileExtension{v}
+	x.xxx_hidden_Document = &elementSearchResult_FileExtension{v}
 }
 
 func (x *ElementSearchResult) HasDocument() bool {
 	if x == nil {
 		return false
 	}
-	return x.Document != nil
+	return x.xxx_hidden_Document != nil
 }
 
 func (x *ElementSearchResult) HasService() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Document.(*ElementSearchResult_Service)
+	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Service)
 	return ok
 }
 
@@ -1760,7 +1715,7 @@ func (x *ElementSearchResult) HasMethod() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Document.(*ElementSearchResult_Method)
+	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Method)
 	return ok
 }
 
@@ -1768,7 +1723,7 @@ func (x *ElementSearchResult) HasEnum() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Document.(*ElementSearchResult_Enum)
+	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Enum)
 	return ok
 }
 
@@ -1776,7 +1731,7 @@ func (x *ElementSearchResult) HasMessage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Document.(*ElementSearchResult_Message)
+	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Message)
 	return ok
 }
 
@@ -1784,41 +1739,41 @@ func (x *ElementSearchResult) HasFileExtension() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Document.(*ElementSearchResult_FileExtension)
+	_, ok := x.xxx_hidden_Document.(*elementSearchResult_FileExtension)
 	return ok
 }
 
 func (x *ElementSearchResult) ClearDocument() {
-	x.Document = nil
+	x.xxx_hidden_Document = nil
 }
 
 func (x *ElementSearchResult) ClearService() {
-	if _, ok := x.Document.(*ElementSearchResult_Service); ok {
-		x.Document = nil
+	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Service); ok {
+		x.xxx_hidden_Document = nil
 	}
 }
 
 func (x *ElementSearchResult) ClearMethod() {
-	if _, ok := x.Document.(*ElementSearchResult_Method); ok {
-		x.Document = nil
+	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Method); ok {
+		x.xxx_hidden_Document = nil
 	}
 }
 
 func (x *ElementSearchResult) ClearEnum() {
-	if _, ok := x.Document.(*ElementSearchResult_Enum); ok {
-		x.Document = nil
+	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Enum); ok {
+		x.xxx_hidden_Document = nil
 	}
 }
 
 func (x *ElementSearchResult) ClearMessage() {
-	if _, ok := x.Document.(*ElementSearchResult_Message); ok {
-		x.Document = nil
+	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Message); ok {
+		x.xxx_hidden_Document = nil
 	}
 }
 
 func (x *ElementSearchResult) ClearFileExtension() {
-	if _, ok := x.Document.(*ElementSearchResult_FileExtension); ok {
-		x.Document = nil
+	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_FileExtension); ok {
+		x.xxx_hidden_Document = nil
 	}
 }
 
@@ -1833,16 +1788,16 @@ func (x *ElementSearchResult) WhichDocument() case_ElementSearchResult_Document 
 	if x == nil {
 		return ElementSearchResult_Document_not_set_case
 	}
-	switch x.Document.(type) {
-	case *ElementSearchResult_Service:
+	switch x.xxx_hidden_Document.(type) {
+	case *elementSearchResult_Service:
 		return ElementSearchResult_Service_case
-	case *ElementSearchResult_Method:
+	case *elementSearchResult_Method:
 		return ElementSearchResult_Method_case
-	case *ElementSearchResult_Enum:
+	case *elementSearchResult_Enum:
 		return ElementSearchResult_Enum_case
-	case *ElementSearchResult_Message:
+	case *elementSearchResult_Message:
 		return ElementSearchResult_Message_case
-	case *ElementSearchResult_FileExtension:
+	case *elementSearchResult_FileExtension:
 		return ElementSearchResult_FileExtension_case
 	default:
 		return ElementSearchResult_Document_not_set_case
@@ -1857,38 +1812,38 @@ type ElementSearchResult_builder struct {
 	RepositoryName     string
 	ProtoFilePath      string
 	FullyQualifiedName string
-	// Fields of oneof Document:
+	// Fields of oneof xxx_hidden_Document:
 	Service       *Service
 	Method        *Method
 	Enum          *Enum
 	Message       *Message
 	FileExtension *FileExtension
-	// -- end of Document
+	// -- end of xxx_hidden_Document
 }
 
 func (b0 ElementSearchResult_builder) Build() *ElementSearchResult {
 	m0 := &ElementSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.ProtoFilePath = b.ProtoFilePath
-	x.FullyQualifiedName = b.FullyQualifiedName
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_ProtoFilePath = b.ProtoFilePath
+	x.xxx_hidden_FullyQualifiedName = b.FullyQualifiedName
 	if b.Service != nil {
-		x.Document = &ElementSearchResult_Service{b.Service}
+		x.xxx_hidden_Document = &elementSearchResult_Service{b.Service}
 	}
 	if b.Method != nil {
-		x.Document = &ElementSearchResult_Method{b.Method}
+		x.xxx_hidden_Document = &elementSearchResult_Method{b.Method}
 	}
 	if b.Enum != nil {
-		x.Document = &ElementSearchResult_Enum{b.Enum}
+		x.xxx_hidden_Document = &elementSearchResult_Enum{b.Enum}
 	}
 	if b.Message != nil {
-		x.Document = &ElementSearchResult_Message{b.Message}
+		x.xxx_hidden_Document = &elementSearchResult_Message{b.Message}
 	}
 	if b.FileExtension != nil {
-		x.Document = &ElementSearchResult_FileExtension{b.FileExtension}
+		x.xxx_hidden_Document = &elementSearchResult_FileExtension{b.FileExtension}
 	}
 	return m0
 }
@@ -1907,45 +1862,45 @@ type isElementSearchResult_Document interface {
 	isElementSearchResult_Document()
 }
 
-type ElementSearchResult_Service struct {
+type elementSearchResult_Service struct {
 	Service *Service `protobuf:"bytes,6,opt,name=service,proto3,oneof"`
 }
 
-type ElementSearchResult_Method struct {
+type elementSearchResult_Method struct {
 	Method *Method `protobuf:"bytes,7,opt,name=method,proto3,oneof"`
 }
 
-type ElementSearchResult_Enum struct {
+type elementSearchResult_Enum struct {
 	Enum *Enum `protobuf:"bytes,8,opt,name=enum,proto3,oneof"`
 }
 
-type ElementSearchResult_Message struct {
+type elementSearchResult_Message struct {
 	Message *Message `protobuf:"bytes,9,opt,name=message,proto3,oneof"`
 }
 
-type ElementSearchResult_FileExtension struct {
+type elementSearchResult_FileExtension struct {
 	FileExtension *FileExtension `protobuf:"bytes,10,opt,name=file_extension,json=fileExtension,proto3,oneof"`
 }
 
-func (*ElementSearchResult_Service) isElementSearchResult_Document() {}
+func (*elementSearchResult_Service) isElementSearchResult_Document() {}
 
-func (*ElementSearchResult_Method) isElementSearchResult_Document() {}
+func (*elementSearchResult_Method) isElementSearchResult_Document() {}
 
-func (*ElementSearchResult_Enum) isElementSearchResult_Document() {}
+func (*elementSearchResult_Enum) isElementSearchResult_Document() {}
 
-func (*ElementSearchResult_Message) isElementSearchResult_Document() {}
+func (*elementSearchResult_Message) isElementSearchResult_Document() {}
 
-func (*ElementSearchResult_FileExtension) isElementSearchResult_Document() {}
+func (*elementSearchResult_FileExtension) isElementSearchResult_Document() {}
 
 type FileSearchResult struct {
-	state           protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	ProtoFilePath   string                 `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
-	Content         []byte                 `protobuf:"bytes,5,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_ProtoFilePath   string                 `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3" json:"proto_file_path,omitempty"`
+	xxx_hidden_Content         []byte                 `protobuf:"bytes,5,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *FileSearchResult) Reset() {
@@ -1975,60 +1930,60 @@ func (x *FileSearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *FileSearchResult) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *FileSearchResult) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *FileSearchResult) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *FileSearchResult) GetProtoFilePath() string {
 	if x != nil {
-		return x.ProtoFilePath
+		return x.xxx_hidden_ProtoFilePath
 	}
 	return ""
 }
 
 func (x *FileSearchResult) GetContent() []byte {
 	if x != nil {
-		return x.Content
+		return x.xxx_hidden_Content
 	}
 	return nil
 }
 
 func (x *FileSearchResult) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *FileSearchResult) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *FileSearchResult) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *FileSearchResult) SetProtoFilePath(v string) {
-	x.ProtoFilePath = v
+	x.xxx_hidden_ProtoFilePath = v
 }
 
 func (x *FileSearchResult) SetContent(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.Content = v
+	x.xxx_hidden_Content = v
 }
 
 type FileSearchResult_builder struct {
@@ -2045,23 +2000,19 @@ func (b0 FileSearchResult_builder) Build() *FileSearchResult {
 	m0 := &FileSearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryId = b.RepositoryId
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.ProtoFilePath = b.ProtoFilePath
-	x.Content = b.Content
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_ProtoFilePath = b.ProtoFilePath
+	x.xxx_hidden_Content = b.Content
 	return m0
 }
 
 type SearchModuleContentResult struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to Item:
-	//
-	//	*SearchModuleContentResult_Element
-	//	*SearchModuleContentResult_File
-	Item          isSearchModuleContentResult_Item `protobuf_oneof:"item"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Item isSearchModuleContentResult_Item `protobuf_oneof:"item"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SearchModuleContentResult) Reset() {
@@ -2089,16 +2040,9 @@ func (x *SearchModuleContentResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *SearchModuleContentResult) GetItem() isSearchModuleContentResult_Item {
-	if x != nil {
-		return x.Item
-	}
-	return nil
-}
-
 func (x *SearchModuleContentResult) GetElement() *ElementSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchModuleContentResult_Element); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchModuleContentResult_Element); ok {
 			return x.Element
 		}
 	}
@@ -2107,7 +2051,7 @@ func (x *SearchModuleContentResult) GetElement() *ElementSearchResult {
 
 func (x *SearchModuleContentResult) GetFile() *FileSearchResult {
 	if x != nil {
-		if x, ok := x.Item.(*SearchModuleContentResult_File); ok {
+		if x, ok := x.xxx_hidden_Item.(*searchModuleContentResult_File); ok {
 			return x.File
 		}
 	}
@@ -2116,32 +2060,32 @@ func (x *SearchModuleContentResult) GetFile() *FileSearchResult {
 
 func (x *SearchModuleContentResult) SetElement(v *ElementSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchModuleContentResult_Element{v}
+	x.xxx_hidden_Item = &searchModuleContentResult_Element{v}
 }
 
 func (x *SearchModuleContentResult) SetFile(v *FileSearchResult) {
 	if v == nil {
-		x.Item = nil
+		x.xxx_hidden_Item = nil
 		return
 	}
-	x.Item = &SearchModuleContentResult_File{v}
+	x.xxx_hidden_Item = &searchModuleContentResult_File{v}
 }
 
 func (x *SearchModuleContentResult) HasItem() bool {
 	if x == nil {
 		return false
 	}
-	return x.Item != nil
+	return x.xxx_hidden_Item != nil
 }
 
 func (x *SearchModuleContentResult) HasElement() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchModuleContentResult_Element)
+	_, ok := x.xxx_hidden_Item.(*searchModuleContentResult_Element)
 	return ok
 }
 
@@ -2149,23 +2093,23 @@ func (x *SearchModuleContentResult) HasFile() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.Item.(*SearchModuleContentResult_File)
+	_, ok := x.xxx_hidden_Item.(*searchModuleContentResult_File)
 	return ok
 }
 
 func (x *SearchModuleContentResult) ClearItem() {
-	x.Item = nil
+	x.xxx_hidden_Item = nil
 }
 
 func (x *SearchModuleContentResult) ClearElement() {
-	if _, ok := x.Item.(*SearchModuleContentResult_Element); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchModuleContentResult_Element); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
 func (x *SearchModuleContentResult) ClearFile() {
-	if _, ok := x.Item.(*SearchModuleContentResult_File); ok {
-		x.Item = nil
+	if _, ok := x.xxx_hidden_Item.(*searchModuleContentResult_File); ok {
+		x.xxx_hidden_Item = nil
 	}
 }
 
@@ -2177,10 +2121,10 @@ func (x *SearchModuleContentResult) WhichItem() case_SearchModuleContentResult_I
 	if x == nil {
 		return SearchModuleContentResult_Item_not_set_case
 	}
-	switch x.Item.(type) {
-	case *SearchModuleContentResult_Element:
+	switch x.xxx_hidden_Item.(type) {
+	case *searchModuleContentResult_Element:
 		return SearchModuleContentResult_Element_case
-	case *SearchModuleContentResult_File:
+	case *searchModuleContentResult_File:
 		return SearchModuleContentResult_File_case
 	default:
 		return SearchModuleContentResult_Item_not_set_case
@@ -2190,10 +2134,10 @@ func (x *SearchModuleContentResult) WhichItem() case_SearchModuleContentResult_I
 type SearchModuleContentResult_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof Item:
+	// Fields of oneof xxx_hidden_Item:
 	Element *ElementSearchResult
 	File    *FileSearchResult
-	// -- end of Item
+	// -- end of xxx_hidden_Item
 }
 
 func (b0 SearchModuleContentResult_builder) Build() *SearchModuleContentResult {
@@ -2201,10 +2145,10 @@ func (b0 SearchModuleContentResult_builder) Build() *SearchModuleContentResult {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Element != nil {
-		x.Item = &SearchModuleContentResult_Element{b.Element}
+		x.xxx_hidden_Item = &searchModuleContentResult_Element{b.Element}
 	}
 	if b.File != nil {
-		x.Item = &SearchModuleContentResult_File{b.File}
+		x.xxx_hidden_Item = &searchModuleContentResult_File{b.File}
 	}
 	return m0
 }
@@ -2223,31 +2167,26 @@ type isSearchModuleContentResult_Item interface {
 	isSearchModuleContentResult_Item()
 }
 
-type SearchModuleContentResult_Element struct {
+type searchModuleContentResult_Element struct {
 	Element *ElementSearchResult `protobuf:"bytes,1,opt,name=element,proto3,oneof"`
 }
 
-type SearchModuleContentResult_File struct {
+type searchModuleContentResult_File struct {
 	File *FileSearchResult `protobuf:"bytes,2,opt,name=file,proto3,oneof"`
 }
 
-func (*SearchModuleContentResult_Element) isSearchModuleContentResult_Item() {}
+func (*searchModuleContentResult_Element) isSearchModuleContentResult_Item() {}
 
-func (*SearchModuleContentResult_File) isSearchModuleContentResult_Item() {}
+func (*searchModuleContentResult_File) isSearchModuleContentResult_Item() {}
 
 type SearchRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The search string.
-	Query    string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is 0.
-	PageToken uint32 `protobuf:"varint,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// Empty list means show all. Supplying one or more enums will
-	// limit the search to only the requested resources.
-	// Supplying all possible enums is equivalent to empty list of filters.
-	Filters       []SearchFilter `protobuf:"varint,4,rep,packed,name=filters,proto3,enum=buf.alpha.registry.v1alpha1.SearchFilter" json:"filters,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Query     string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	xxx_hidden_PageSize  uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken uint32                 `protobuf:"varint,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Filters   []SearchFilter         `protobuf:"varint,4,rep,packed,name=filters,proto3,enum=buf.alpha.registry.v1alpha1.SearchFilter" json:"filters,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *SearchRequest) Reset() {
@@ -2277,46 +2216,46 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SearchRequest) GetQuery() string {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return ""
 }
 
 func (x *SearchRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *SearchRequest) GetPageToken() uint32 {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return 0
 }
 
 func (x *SearchRequest) GetFilters() []SearchFilter {
 	if x != nil {
-		return x.Filters
+		return x.xxx_hidden_Filters
 	}
 	return nil
 }
 
 func (x *SearchRequest) SetQuery(v string) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *SearchRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *SearchRequest) SetPageToken(v uint32) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *SearchRequest) SetFilters(v []SearchFilter) {
-	x.Filters = v
+	x.xxx_hidden_Filters = v
 }
 
 type SearchRequest_builder struct {
@@ -2337,20 +2276,19 @@ func (b0 SearchRequest_builder) Build() *SearchRequest {
 	m0 := &SearchRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Filters = b.Filters
+	x.xxx_hidden_Query = b.Query
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Filters = b.Filters
 	return m0
 }
 
 type SearchResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	SearchResults []*SearchResult        `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3" json:"search_results,omitempty"`
-	// There are no more pages if this is 0.
-	NextPageToken uint32 `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SearchResults *[]*SearchResult       `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3" json:"search_results,omitempty"`
+	xxx_hidden_NextPageToken uint32                 `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SearchResponse) Reset() {
@@ -2380,24 +2318,26 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchResponse) GetSearchResults() []*SearchResult {
 	if x != nil {
-		return x.SearchResults
+		if x.xxx_hidden_SearchResults != nil {
+			return *x.xxx_hidden_SearchResults
+		}
 	}
 	return nil
 }
 
 func (x *SearchResponse) GetNextPageToken() uint32 {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return 0
 }
 
 func (x *SearchResponse) SetSearchResults(v []*SearchResult) {
-	x.SearchResults = v
+	x.xxx_hidden_SearchResults = &v
 }
 
 func (x *SearchResponse) SetNextPageToken(v uint32) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type SearchResponse_builder struct {
@@ -2412,28 +2352,22 @@ func (b0 SearchResponse_builder) Build() *SearchResponse {
 	m0 := &SearchResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SearchResults = b.SearchResults
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_SearchResults = &b.SearchResults
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type SearchTagRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the repository.
-	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	// The name of the repository.
-	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The search string.
-	Query    string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
-	PageSize uint32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// The field to order results by.
-	OrderBy OrderBy `protobuf:"varint,6,opt,name=order_by,json=orderBy,proto3,enum=buf.alpha.registry.v1alpha1.OrderBy" json:"order_by,omitempty"`
-	// Reverse orders results in descending order.
-	Reverse       bool `protobuf:"varint,7,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_Query           string                 `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	xxx_hidden_PageSize        uint32                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken       string                 `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_OrderBy         OrderBy                `protobuf:"varint,6,opt,name=order_by,json=orderBy,proto3,enum=buf.alpha.registry.v1alpha1.OrderBy" json:"order_by,omitempty"`
+	xxx_hidden_Reverse         bool                   `protobuf:"varint,7,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *SearchTagRequest) Reset() {
@@ -2463,79 +2397,79 @@ func (x *SearchTagRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SearchTagRequest) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *SearchTagRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *SearchTagRequest) GetQuery() string {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return ""
 }
 
 func (x *SearchTagRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *SearchTagRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *SearchTagRequest) GetOrderBy() OrderBy {
 	if x != nil {
-		return x.OrderBy
+		return x.xxx_hidden_OrderBy
 	}
 	return OrderBy_ORDER_BY_UNSPECIFIED
 }
 
 func (x *SearchTagRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *SearchTagRequest) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *SearchTagRequest) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *SearchTagRequest) SetQuery(v string) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *SearchTagRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *SearchTagRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *SearchTagRequest) SetOrderBy(v OrderBy) {
-	x.OrderBy = v
+	x.xxx_hidden_OrderBy = v
 }
 
 func (x *SearchTagRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type SearchTagRequest_builder struct {
@@ -2560,23 +2494,22 @@ func (b0 SearchTagRequest_builder) Build() *SearchTagRequest {
 	m0 := &SearchTagRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.Query = b.Query
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.OrderBy = b.OrderBy
-	x.Reverse = b.Reverse
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_Query = b.Query
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_OrderBy = b.OrderBy
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 type SearchTagResponse struct {
-	state          protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryTags []*RepositoryTag       `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryTags *[]*RepositoryTag      `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
+	xxx_hidden_NextPageToken  string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *SearchTagResponse) Reset() {
@@ -2606,24 +2539,26 @@ func (x *SearchTagResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchTagResponse) GetRepositoryTags() []*RepositoryTag {
 	if x != nil {
-		return x.RepositoryTags
+		if x.xxx_hidden_RepositoryTags != nil {
+			return *x.xxx_hidden_RepositoryTags
+		}
 	}
 	return nil
 }
 
 func (x *SearchTagResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *SearchTagResponse) SetRepositoryTags(v []*RepositoryTag) {
-	x.RepositoryTags = v
+	x.xxx_hidden_RepositoryTags = &v
 }
 
 func (x *SearchTagResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type SearchTagResponse_builder struct {
@@ -2638,28 +2573,22 @@ func (b0 SearchTagResponse_builder) Build() *SearchTagResponse {
 	m0 := &SearchTagResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryTags = b.RepositoryTags
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_RepositoryTags = &b.RepositoryTags
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type SearchDraftRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the repository.
-	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	// The name of the repository.
-	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The search string.
-	Query    string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
-	PageSize uint32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// The field to order results by.
-	OrderBy OrderBy `protobuf:"varint,6,opt,name=order_by,json=orderBy,proto3,enum=buf.alpha.registry.v1alpha1.OrderBy" json:"order_by,omitempty"`
-	// Reverse orders results in descending order.
-	Reverse       bool `protobuf:"varint,7,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_Query           string                 `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	xxx_hidden_PageSize        uint32                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken       string                 `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_OrderBy         OrderBy                `protobuf:"varint,6,opt,name=order_by,json=orderBy,proto3,enum=buf.alpha.registry.v1alpha1.OrderBy" json:"order_by,omitempty"`
+	xxx_hidden_Reverse         bool                   `protobuf:"varint,7,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *SearchDraftRequest) Reset() {
@@ -2689,79 +2618,79 @@ func (x *SearchDraftRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SearchDraftRequest) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *SearchDraftRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *SearchDraftRequest) GetQuery() string {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return ""
 }
 
 func (x *SearchDraftRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *SearchDraftRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *SearchDraftRequest) GetOrderBy() OrderBy {
 	if x != nil {
-		return x.OrderBy
+		return x.xxx_hidden_OrderBy
 	}
 	return OrderBy_ORDER_BY_UNSPECIFIED
 }
 
 func (x *SearchDraftRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *SearchDraftRequest) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *SearchDraftRequest) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *SearchDraftRequest) SetQuery(v string) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *SearchDraftRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *SearchDraftRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *SearchDraftRequest) SetOrderBy(v OrderBy) {
-	x.OrderBy = v
+	x.xxx_hidden_OrderBy = v
 }
 
 func (x *SearchDraftRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type SearchDraftRequest_builder struct {
@@ -2786,23 +2715,22 @@ func (b0 SearchDraftRequest_builder) Build() *SearchDraftRequest {
 	m0 := &SearchDraftRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.Query = b.Query
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.OrderBy = b.OrderBy
-	x.Reverse = b.Reverse
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_Query = b.Query
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_OrderBy = b.OrderBy
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 type SearchDraftResponse struct {
-	state             protoimpl.MessageState `protogen:"hybrid.v1"`
-	RepositoryCommits []*RepositoryCommit    `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryCommits *[]*RepositoryCommit   `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
+	xxx_hidden_NextPageToken     string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *SearchDraftResponse) Reset() {
@@ -2832,24 +2760,26 @@ func (x *SearchDraftResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchDraftResponse) GetRepositoryCommits() []*RepositoryCommit {
 	if x != nil {
-		return x.RepositoryCommits
+		if x.xxx_hidden_RepositoryCommits != nil {
+			return *x.xxx_hidden_RepositoryCommits
+		}
 	}
 	return nil
 }
 
 func (x *SearchDraftResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *SearchDraftResponse) SetRepositoryCommits(v []*RepositoryCommit) {
-	x.RepositoryCommits = v
+	x.xxx_hidden_RepositoryCommits = &v
 }
 
 func (x *SearchDraftResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type SearchDraftResponse_builder struct {
@@ -2864,29 +2794,21 @@ func (b0 SearchDraftResponse_builder) Build() *SearchDraftResponse {
 	m0 := &SearchDraftResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryCommits = b.RepositoryCommits
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_RepositoryCommits = &b.RepositoryCommits
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type SearchModuleContentRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The search string.
-	Query    string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is 0.
-	PageToken uint32 `protobuf:"varint,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// Empty list means show all. Supplying one or more enums will
-	// limit the search to only the requested resources.
-	// Supplying all possible enums is equivalent to empty list of filters.
-	Filters []SearchModuleContentFilter `protobuf:"varint,4,rep,packed,name=filters,proto3,enum=buf.alpha.registry.v1alpha1.SearchModuleContentFilter" json:"filters,omitempty"`
-	// Optional, if provided the search results will be limited to the provided repository.
-	RepositoryFullName string `protobuf:"bytes,5,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
-	// Optional, if provided the search results will be limited to the provided owner,
-	// ignored if repository_full_name is provided.
-	RepositoryOwner string `protobuf:"bytes,6,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                         protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Query              string                      `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	xxx_hidden_PageSize           uint32                      `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken          uint32                      `protobuf:"varint,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Filters            []SearchModuleContentFilter `protobuf:"varint,4,rep,packed,name=filters,proto3,enum=buf.alpha.registry.v1alpha1.SearchModuleContentFilter" json:"filters,omitempty"`
+	xxx_hidden_RepositoryFullName string                      `protobuf:"bytes,5,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
+	xxx_hidden_RepositoryOwner    string                      `protobuf:"bytes,6,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *SearchModuleContentRequest) Reset() {
@@ -2916,68 +2838,68 @@ func (x *SearchModuleContentRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SearchModuleContentRequest) GetQuery() string {
 	if x != nil {
-		return x.Query
+		return x.xxx_hidden_Query
 	}
 	return ""
 }
 
 func (x *SearchModuleContentRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *SearchModuleContentRequest) GetPageToken() uint32 {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return 0
 }
 
 func (x *SearchModuleContentRequest) GetFilters() []SearchModuleContentFilter {
 	if x != nil {
-		return x.Filters
+		return x.xxx_hidden_Filters
 	}
 	return nil
 }
 
 func (x *SearchModuleContentRequest) GetRepositoryFullName() string {
 	if x != nil {
-		return x.RepositoryFullName
+		return x.xxx_hidden_RepositoryFullName
 	}
 	return ""
 }
 
 func (x *SearchModuleContentRequest) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *SearchModuleContentRequest) SetQuery(v string) {
-	x.Query = v
+	x.xxx_hidden_Query = v
 }
 
 func (x *SearchModuleContentRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *SearchModuleContentRequest) SetPageToken(v uint32) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *SearchModuleContentRequest) SetFilters(v []SearchModuleContentFilter) {
-	x.Filters = v
+	x.xxx_hidden_Filters = v
 }
 
 func (x *SearchModuleContentRequest) SetRepositoryFullName(v string) {
-	x.RepositoryFullName = v
+	x.xxx_hidden_RepositoryFullName = v
 }
 
 func (x *SearchModuleContentRequest) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 type SearchModuleContentRequest_builder struct {
@@ -3003,22 +2925,21 @@ func (b0 SearchModuleContentRequest_builder) Build() *SearchModuleContentRequest
 	m0 := &SearchModuleContentRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Query = b.Query
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Filters = b.Filters
-	x.RepositoryFullName = b.RepositoryFullName
-	x.RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_Query = b.Query
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Filters = b.Filters
+	x.xxx_hidden_RepositoryFullName = b.RepositoryFullName
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
 	return m0
 }
 
 type SearchModuleContentResponse struct {
-	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
-	SearchResults []*SearchModuleContentResult `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3" json:"search_results,omitempty"`
-	// There are no more pages if this is 0.
-	NextPageToken uint32 `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_SearchResults *[]*SearchModuleContentResult `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3" json:"search_results,omitempty"`
+	xxx_hidden_NextPageToken uint32                        `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SearchModuleContentResponse) Reset() {
@@ -3048,24 +2969,26 @@ func (x *SearchModuleContentResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchModuleContentResponse) GetSearchResults() []*SearchModuleContentResult {
 	if x != nil {
-		return x.SearchResults
+		if x.xxx_hidden_SearchResults != nil {
+			return *x.xxx_hidden_SearchResults
+		}
 	}
 	return nil
 }
 
 func (x *SearchModuleContentResponse) GetNextPageToken() uint32 {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return 0
 }
 
 func (x *SearchModuleContentResponse) SetSearchResults(v []*SearchModuleContentResult) {
-	x.SearchResults = v
+	x.xxx_hidden_SearchResults = &v
 }
 
 func (x *SearchModuleContentResponse) SetNextPageToken(v uint32) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type SearchModuleContentResponse_builder struct {
@@ -3080,8 +3003,8 @@ func (b0 SearchModuleContentResponse_builder) Build() *SearchModuleContentRespon
 	m0 := &SearchModuleContentResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.SearchResults = b.SearchResults
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_SearchResults = &b.SearchResults
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
@@ -3629,24 +3552,24 @@ func file_buf_alpha_registry_v1alpha1_search_proto_init() {
 	file_buf_alpha_registry_v1alpha1_repository_tag_proto_init()
 	file_buf_alpha_registry_v1alpha1_verification_status_proto_init()
 	file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[7].OneofWrappers = []any{
-		(*SearchResult_Repository)(nil),
-		(*SearchResult_Organization)(nil),
-		(*SearchResult_User)(nil),
-		(*SearchResult_Team)(nil),
-		(*SearchResult_CuratedPlugin)(nil),
-		(*SearchResult_ModuleElement)(nil),
-		(*SearchResult_ModuleFile)(nil),
+		(*searchResult_Repository)(nil),
+		(*searchResult_Organization)(nil),
+		(*searchResult_User)(nil),
+		(*searchResult_Team)(nil),
+		(*searchResult_CuratedPlugin)(nil),
+		(*searchResult_ModuleElement)(nil),
+		(*searchResult_ModuleFile)(nil),
 	}
 	file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8].OneofWrappers = []any{
-		(*ElementSearchResult_Service)(nil),
-		(*ElementSearchResult_Method)(nil),
-		(*ElementSearchResult_Enum)(nil),
-		(*ElementSearchResult_Message)(nil),
-		(*ElementSearchResult_FileExtension)(nil),
+		(*elementSearchResult_Service)(nil),
+		(*elementSearchResult_Method)(nil),
+		(*elementSearchResult_Enum)(nil),
+		(*elementSearchResult_Message)(nil),
+		(*elementSearchResult_FileExtension)(nil),
 	}
 	file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10].OneofWrappers = []any{
-		(*SearchModuleContentResult_Element)(nil),
-		(*SearchModuleContentResult_File)(nil),
+		(*searchModuleContentResult_Element)(nil),
+		(*searchModuleContentResult_File)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

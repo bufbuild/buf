@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/studio.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -82,17 +80,13 @@ func (x StudioAgentProtocol) Number() protoreflect.EnumNumber {
 
 // StudioAgentPreset is the information about an agent preset in the Studio.
 type StudioAgentPreset struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The agent URL in the Studio.
-	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	// The optional alias of the agent URL.
-	Alias string `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
-	// The protocol the agent should use to forward requests.
-	Protocol StudioAgentProtocol `protobuf:"varint,3,opt,name=protocol,proto3,enum=buf.alpha.registry.v1alpha1.StudioAgentProtocol" json:"protocol,omitempty"`
-	// The URL of the target host.
-	TargetUrl     string `protobuf:"bytes,4,opt,name=target_url,json=targetUrl,proto3" json:"target_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Url       string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	xxx_hidden_Alias     string                 `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
+	xxx_hidden_Protocol  StudioAgentProtocol    `protobuf:"varint,3,opt,name=protocol,proto3,enum=buf.alpha.registry.v1alpha1.StudioAgentProtocol" json:"protocol,omitempty"`
+	xxx_hidden_TargetUrl string                 `protobuf:"bytes,4,opt,name=target_url,json=targetUrl,proto3" json:"target_url,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *StudioAgentPreset) Reset() {
@@ -122,46 +116,46 @@ func (x *StudioAgentPreset) ProtoReflect() protoreflect.Message {
 
 func (x *StudioAgentPreset) GetUrl() string {
 	if x != nil {
-		return x.Url
+		return x.xxx_hidden_Url
 	}
 	return ""
 }
 
 func (x *StudioAgentPreset) GetAlias() string {
 	if x != nil {
-		return x.Alias
+		return x.xxx_hidden_Alias
 	}
 	return ""
 }
 
 func (x *StudioAgentPreset) GetProtocol() StudioAgentProtocol {
 	if x != nil {
-		return x.Protocol
+		return x.xxx_hidden_Protocol
 	}
 	return StudioAgentProtocol_STUDIO_AGENT_PROTOCOL_UNSPECIFIED
 }
 
 func (x *StudioAgentPreset) GetTargetUrl() string {
 	if x != nil {
-		return x.TargetUrl
+		return x.xxx_hidden_TargetUrl
 	}
 	return ""
 }
 
 func (x *StudioAgentPreset) SetUrl(v string) {
-	x.Url = v
+	x.xxx_hidden_Url = v
 }
 
 func (x *StudioAgentPreset) SetAlias(v string) {
-	x.Alias = v
+	x.xxx_hidden_Alias = v
 }
 
 func (x *StudioAgentPreset) SetProtocol(v StudioAgentProtocol) {
-	x.Protocol = v
+	x.xxx_hidden_Protocol = v
 }
 
 func (x *StudioAgentPreset) SetTargetUrl(v string) {
-	x.TargetUrl = v
+	x.xxx_hidden_TargetUrl = v
 }
 
 type StudioAgentPreset_builder struct {
@@ -181,15 +175,15 @@ func (b0 StudioAgentPreset_builder) Build() *StudioAgentPreset {
 	m0 := &StudioAgentPreset{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Url = b.Url
-	x.Alias = b.Alias
-	x.Protocol = b.Protocol
-	x.TargetUrl = b.TargetUrl
+	x.xxx_hidden_Url = b.Url
+	x.xxx_hidden_Alias = b.Alias
+	x.xxx_hidden_Protocol = b.Protocol
+	x.xxx_hidden_TargetUrl = b.TargetUrl
 	return m0
 }
 
 type ListStudioAgentPresetsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -232,10 +226,10 @@ func (b0 ListStudioAgentPresetsRequest_builder) Build() *ListStudioAgentPresetsR
 }
 
 type ListStudioAgentPresetsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Agents        []*StudioAgentPreset   `protobuf:"bytes,1,rep,name=agents,proto3" json:"agents,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Agents *[]*StudioAgentPreset  `protobuf:"bytes,1,rep,name=agents,proto3" json:"agents,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ListStudioAgentPresetsResponse) Reset() {
@@ -265,13 +259,15 @@ func (x *ListStudioAgentPresetsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListStudioAgentPresetsResponse) GetAgents() []*StudioAgentPreset {
 	if x != nil {
-		return x.Agents
+		if x.xxx_hidden_Agents != nil {
+			return *x.xxx_hidden_Agents
+		}
 	}
 	return nil
 }
 
 func (x *ListStudioAgentPresetsResponse) SetAgents(v []*StudioAgentPreset) {
-	x.Agents = v
+	x.xxx_hidden_Agents = &v
 }
 
 type ListStudioAgentPresetsResponse_builder struct {
@@ -284,15 +280,15 @@ func (b0 ListStudioAgentPresetsResponse_builder) Build() *ListStudioAgentPresets
 	m0 := &ListStudioAgentPresetsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Agents = b.Agents
+	x.xxx_hidden_Agents = &b.Agents
 	return m0
 }
 
 type SetStudioAgentPresetsRequest struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Agents        []*StudioAgentPreset   `protobuf:"bytes,1,rep,name=agents,proto3" json:"agents,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Agents *[]*StudioAgentPreset  `protobuf:"bytes,1,rep,name=agents,proto3" json:"agents,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SetStudioAgentPresetsRequest) Reset() {
@@ -322,13 +318,15 @@ func (x *SetStudioAgentPresetsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SetStudioAgentPresetsRequest) GetAgents() []*StudioAgentPreset {
 	if x != nil {
-		return x.Agents
+		if x.xxx_hidden_Agents != nil {
+			return *x.xxx_hidden_Agents
+		}
 	}
 	return nil
 }
 
 func (x *SetStudioAgentPresetsRequest) SetAgents(v []*StudioAgentPreset) {
-	x.Agents = v
+	x.xxx_hidden_Agents = &v
 }
 
 type SetStudioAgentPresetsRequest_builder struct {
@@ -341,12 +339,12 @@ func (b0 SetStudioAgentPresetsRequest_builder) Build() *SetStudioAgentPresetsReq
 	m0 := &SetStudioAgentPresetsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Agents = b.Agents
+	x.xxx_hidden_Agents = &b.Agents
 	return m0
 }
 
 type SetStudioAgentPresetsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
