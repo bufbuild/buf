@@ -385,16 +385,16 @@ func (g *generator) execRemotePluginsV2(
 	response, err := codeGenerationService.GenerateCode(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GenerateCodeRequest{
+			registryv1alpha1.GenerateCodeRequest_builder{
 				Image:    protoImage,
 				Requests: requests,
-			},
+			}.Build(),
 		),
 	)
 	if err != nil {
 		return nil, err
 	}
-	responses := response.Msg.Responses
+	responses := response.Msg.GetResponses()
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}
@@ -433,12 +433,12 @@ func getPluginGenerationRequest(
 		// Only include parameters if they're not empty.
 		options = []string{pluginConfig.Opt()}
 	}
-	return &registryv1alpha1.PluginGenerationRequest{
+	return registryv1alpha1.PluginGenerationRequest_builder{
 		PluginReference:       curatedPluginReference,
 		Options:               options,
 		IncludeImports:        &includeImports,
 		IncludeWellKnownTypes: &includeWellKnownTypes,
-	}, nil
+	}.Build(), nil
 }
 
 // validateResponses verifies that a response is set for each of the

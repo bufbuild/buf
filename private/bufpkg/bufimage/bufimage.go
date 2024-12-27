@@ -364,7 +364,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	}
 	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
-	resolver := protoencoding.NewLazyResolver(protoImage.File...)
+	resolver := protoencoding.NewLazyResolver(protoImage.GetFile()...)
 	if !newImageOptions.noReparse {
 		if err := reparseImageProto(protoImage, resolver, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
@@ -373,8 +373,8 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	if err := validateProtoImage(protoImage); err != nil {
 		return nil, err
 	}
-	imageFiles := make([]ImageFile, len(protoImage.File))
-	for i, protoImageFile := range protoImage.File {
+	imageFiles := make([]ImageFile, len(protoImage.GetFile()))
+	for i, protoImageFile := range protoImage.GetFile() {
 		var isImport bool
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
@@ -435,9 +435,9 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, opt
 		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil, "")
 	}
 	image, err := NewImageForProto(
-		&imagev1.Image{
+		imagev1.Image_builder{
 			File: protoImageFiles,
-		},
+		}.Build(),
 		options...,
 	)
 	if err != nil {
@@ -559,15 +559,15 @@ func ImageByDir(image Image) ([]Image, error) {
 // ImageToProtoImage returns a new ProtoImage for the Image.
 func ImageToProtoImage(image Image) (*imagev1.Image, error) {
 	imageFiles := image.Files()
-	protoImage := &imagev1.Image{
+	protoImage := imagev1.Image_builder{
 		File: make([]*imagev1.ImageFile, len(imageFiles)),
-	}
+	}.Build()
 	for i, imageFile := range imageFiles {
 		protoImageFile, err := imageFileToProtoImageFile(imageFile)
 		if err != nil {
 			return nil, err
 		}
-		protoImage.File[i] = protoImageFile
+		protoImage.GetFile()[i] = protoImageFile
 	}
 	return protoImage, nil
 }
@@ -686,19 +686,19 @@ func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolve
 		}
 		tracker.findUsedImports(protoImage)
 		// Now we can populated list of unused dependencies
-		for _, file := range protoImage.File {
-			bufExt := file.BufExtension
+		for _, file := range protoImage.GetFile() {
+			bufExt := file.GetBufExtension()
 			if bufExt == nil {
 				bufExt = &imagev1.ImageFileExtension{}
-				file.BufExtension = bufExt
+				file.SetBufExtension(bufExt)
 			}
-			bufExt.UnusedDependency = nil // reset
+			bufExt.SetUnusedDependency(nil) // reset
 			usedImports := tracker.used[file.GetName()]
-			for i, dep := range file.Dependency {
+			for i, dep := range file.GetDependency() {
 				if _, ok := usedImports[dep]; !ok {
 					// it's fine if it's public
 					isPublic := false
-					for _, publicDepIndex := range file.PublicDependency {
+					for _, publicDepIndex := range file.GetPublicDependency() {
 						if i == int(publicDepIndex) {
 							isPublic = true
 							break
@@ -710,7 +710,7 @@ func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolve
 						if i > math.MaxInt32 || i < math.MinInt32 {
 							return fmt.Errorf("unused dependency index out-of-bounds for int32 conversion: %v", i)
 						}
-						bufExt.UnusedDependency = append(bufExt.UnusedDependency, int32(i))
+						bufExt.SetUnusedDependency(append(bufExt.GetUnusedDependency(), int32(i)))
 					}
 				}
 			}

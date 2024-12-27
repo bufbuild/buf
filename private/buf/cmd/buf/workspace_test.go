@@ -1725,11 +1725,11 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 
 	filesToCheck := slicesext.ToStructMap(slicesext.MapKeysToSlice(expectedFilePathToInfo))
 
-	for _, imageFile := range outputImage.File {
+	for _, imageFile := range outputImage.GetFile() {
 		filePath := imageFile.GetName()
 		expectedFileInfo, ok := expectedFilePathToInfo[filePath]
 		require.Truef(t, ok, "unexpected file in the image built: %s", filePath)
-		require.Equal(t, expectedFileInfo.isImport, imageFile.BufExtension.GetIsImport())
+		require.Equal(t, expectedFileInfo.isImport, imageFile.GetBufExtension().GetIsImport())
 		if expectedFileInfo.moduleFullName != "" {
 			moduleName := imageFile.GetBufExtension().GetModuleInfo().GetName()
 			require.NotNil(t, moduleName)

@@ -47,10 +47,10 @@ func (p *tokenTextPrinter) PrintTokens(ctx context.Context, tokens ...*registryv
 		func(tabWriter TabWriter) error {
 			for _, token := range tokens {
 				if err := tabWriter.Write(
-					token.Id,
-					token.Note,
-					token.CreateTime.AsTime().Format(time.RFC3339),
-					token.ExpireTime.AsTime().Format(time.RFC3339),
+					token.GetId(),
+					token.GetNote(),
+					token.GetCreateTime().AsTime().Format(time.RFC3339),
+					token.GetExpireTime().AsTime().Format(time.RFC3339),
 				); err != nil {
 					return err
 				}

@@ -85,9 +85,9 @@ func checkStringLenRangeDontShrink(
 	againstField protoreflect.FieldDescriptor,
 ) error {
 	againstConstraints := resolver.DefaultResolver{}.ResolveFieldConstraints(againstField)
-	if againstStringRules := againstConstraints.GetString_(); againstStringRules != nil {
+	if againstStringRules := againstConstraints.GetString(); againstStringRules != nil {
 		constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(field)
-		if stringRules := constraints.GetString_(); stringRules != nil {
+		if stringRules := constraints.GetString(); stringRules != nil {
 			if againstStringRules.MinLen != nil && stringRules.MinLen != nil && stringRules.GetMinLen() > againstStringRules.GetMinLen() {
 				responseWriter.AddAnnotation(
 					check.WithDescriptor(field),
@@ -128,7 +128,7 @@ func checkValidateIDDashless(
 		return nil
 	}
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
-	if stringConstraints := constraints.GetString_(); stringConstraints == nil || !stringConstraints.GetTuuid() {
+	if stringConstraints := constraints.GetString(); stringConstraints == nil || !stringConstraints.GetTuuid() {
 		missingRuleName := "(buf.validate.field).string.tuuid"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
 			missingRuleName = "(buf.validate.field).repeated.items.string.tuuid"

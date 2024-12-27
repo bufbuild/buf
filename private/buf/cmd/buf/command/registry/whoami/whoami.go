@@ -100,7 +100,7 @@ func run(
 		}
 		return err
 	}
-	user := currentUserResponse.Msg.User
+	user := currentUserResponse.Msg.GetUser()
 	if user == nil {
 		return fmt.Errorf(
 			`No user is logged in to %s. Run %q to refresh your credentials. If you have the %s environment variable set, ensure that the token is valid.`,
@@ -117,7 +117,7 @@ func run(
 	// an error, so do not need a default case for this switch.
 	switch format {
 	case bufprint.FormatText:
-		_, err = fmt.Fprintf(container.Stdout(), "Logged in as %s.\n", user.Username)
+		_, err = fmt.Fprintf(container.Stdout(), "Logged in as %s.\n", user.GetUsername())
 		return err
 	case bufprint.FormatJSON:
 		return bufprint.PrintEntity(

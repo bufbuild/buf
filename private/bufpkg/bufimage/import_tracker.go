@@ -46,7 +46,7 @@ func (t *importTracker) markUsed(importer *imagev1.ImageFile, element string) {
 		fileImports = map[string]struct{}{}
 		t.used[importer.GetName()] = fileImports
 	}
-	for _, depPath := range importer.Dependency {
+	for _, depPath := range importer.GetDependency() {
 		if importedFile == depPath {
 			// Found it!
 			fileImports[depPath] = struct{}{}
@@ -54,7 +54,7 @@ func (t *importTracker) markUsed(importer *imagev1.ImageFile, element string) {
 		}
 	}
 	// Not in any imports. So see if it is publicly imported.
-	for _, depPath := range importer.Dependency {
+	for _, depPath := range importer.GetDependency() {
 		depFile, err := t.resolver.FindFileByPath(depPath)
 		if err != nil {
 			// Shouldn't be possible... bail.
@@ -86,22 +86,22 @@ func (t *importTracker) publiclyImports(file protoreflect.FileDescriptor, import
 }
 
 func (t *importTracker) findUsedImports(protoImage *imagev1.Image) {
-	for _, file := range protoImage.File {
-		if len(file.Dependency) == 0 {
+	for _, file := range protoImage.GetFile() {
+		if len(file.GetDependency()) == 0 {
 			// no imports so nothing to do
 			continue
 		}
-		t.findUsedImportsInOptions(file, file.Options)
-		for _, msg := range file.MessageType {
+		t.findUsedImportsInOptions(file, file.GetOptions())
+		for _, msg := range file.GetMessageType() {
 			t.findUsedImportsInMessage(file, msg)
 		}
-		for _, enum := range file.EnumType {
+		for _, enum := range file.GetEnumType() {
 			t.findUsedImportsInEnum(file, enum)
 		}
-		for _, ext := range file.Extension {
+		for _, ext := range file.GetExtension() {
 			t.findUsedImportsInField(file, ext)
 		}
-		for _, svc := range file.Service {
+		for _, svc := range file.GetService() {
 			t.findUsedImportsInOptions(file, svc.Options)
 			for _, method := range svc.Method {
 				t.findUsedImportsInOptions(file, method.Options)

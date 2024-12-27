@@ -125,13 +125,13 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	request := connect.NewRequest(bytes.NewBuffer(envelopeRequest.GetBody()))
-	for _, header := range envelopeRequest.Headers {
-		if _, ok := i.DisallowedHeaders[textproto.CanonicalMIMEHeaderKey(header.Key)]; ok {
-			http.Error(w, fmt.Sprintf("header %q disallowed by agent", header.Key), http.StatusBadRequest)
+	for _, header := range envelopeRequest.GetHeaders() {
+		if _, ok := i.DisallowedHeaders[textproto.CanonicalMIMEHeaderKey(header.GetKey())]; ok {
+			http.Error(w, fmt.Sprintf("header %q disallowed by agent", header.GetKey()), http.StatusBadRequest)
 			return
 		}
-		for _, value := range header.Value {
-			request.Header().Add(header.Key, value)
+		for _, value := range header.GetValue() {
+			request.Header().Add(header.GetKey(), value)
 		}
 	}
 	for fromHeader, toHeader := range i.ForwardHeaders {
@@ -193,11 +193,11 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
-			i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
+			i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
 				// connectErr.Meta contains the trailers for the
 				// caller to find out the error details.
 				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
-			})
+			}.Build())
 			return
 		}
 		i.Logger.Warn(
@@ -207,11 +207,11 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
+	i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
 		Headers:  goHeadersToProtoHeaders(response.Header()),
 		Body:     response.Msg.Bytes(),
 		Trailers: goHeadersToProtoHeaders(response.Trailer()),
-	})
+	}.Build())
 }
 
 func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOption, error) {
@@ -261,10 +261,10 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 func goHeadersToProtoHeaders(in http.Header) []*studiov1alpha1.Headers {
 	var out []*studiov1alpha1.Headers
 	for k, v := range in {
-		out = append(out, &studiov1alpha1.Headers{
+		out = append(out, studiov1alpha1.Headers_builder{
 			Key:   k,
 			Value: v,
-		})
+		}.Build())
 	}
 	return out
 }
