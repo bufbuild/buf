@@ -9,7 +9,7 @@ plugins:
     out: private/gen/proto/go
     opt:
       - paths=source_relative
-      - default_api_level=API_OPAQUE
+      - default_api_level=API_HYBRID
       - Mgoogle/protobuf/cpp_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
       - Mgoogle/protobuf/java_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
 inputs:
@@ -17,7 +17,7 @@ inputs:
   - module: buf.build/grpc/grpc
     types:
       - grpc.reflection.v1.ServerReflection
-  - module: buf.build/protocolbuffers/wellknowntypes:v27.0
+  - module: buf.build/protocolbuffers/wellknowntypes:v29.1
     paths:
      - google/protobuf/cpp_features.proto
      - google/protobuf/java_features.proto
