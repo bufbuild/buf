@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/jsonschema.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -36,17 +34,13 @@ const (
 )
 
 type GetJSONSchemaRequest struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Optional reference (if unspecified, will use the repository's default_branch).
-	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	// A fully qualified name of the type to generate a JSONSchema for, e.g.
-	// "pkg.foo.Bar". The type needs to resolve in the referenced module or any of
-	// its dependencies. Currently only messages types are supported.
-	TypeName      string `protobuf:"bytes,4,opt,name=type_name,json=typeName,proto3" json:"type_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	xxx_hidden_TypeName   string                 `protobuf:"bytes,4,opt,name=type_name,json=typeName,proto3" json:"type_name,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetJSONSchemaRequest) Reset() {
@@ -76,46 +70,46 @@ func (x *GetJSONSchemaRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetJSONSchemaRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *GetJSONSchemaRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *GetJSONSchemaRequest) GetReference() string {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return ""
 }
 
 func (x *GetJSONSchemaRequest) GetTypeName() string {
 	if x != nil {
-		return x.TypeName
+		return x.xxx_hidden_TypeName
 	}
 	return ""
 }
 
 func (x *GetJSONSchemaRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *GetJSONSchemaRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *GetJSONSchemaRequest) SetReference(v string) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 func (x *GetJSONSchemaRequest) SetTypeName(v string) {
-	x.TypeName = v
+	x.xxx_hidden_TypeName = v
 }
 
 type GetJSONSchemaRequest_builder struct {
@@ -135,22 +129,18 @@ func (b0 GetJSONSchemaRequest_builder) Build() *GetJSONSchemaRequest {
 	m0 := &GetJSONSchemaRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Reference = b.Reference
-	x.TypeName = b.TypeName
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Reference = b.Reference
+	x.xxx_hidden_TypeName = b.TypeName
 	return m0
 }
 
 type GetJSONSchemaResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// A json schema representing what the json encoded payload for type_name
-	// should conform to. This schema is an approximation to be used by editors
-	// for validation and autocompletion, not a lossless representation of the
-	// type's descriptor.
-	JsonSchema    []byte `protobuf:"bytes,1,opt,name=json_schema,json=jsonSchema,proto3" json:"json_schema,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_JsonSchema []byte                 `protobuf:"bytes,1,opt,name=json_schema,json=jsonSchema,proto3" json:"json_schema,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetJSONSchemaResponse) Reset() {
@@ -180,7 +170,7 @@ func (x *GetJSONSchemaResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetJSONSchemaResponse) GetJsonSchema() []byte {
 	if x != nil {
-		return x.JsonSchema
+		return x.xxx_hidden_JsonSchema
 	}
 	return nil
 }
@@ -189,7 +179,7 @@ func (x *GetJSONSchemaResponse) SetJsonSchema(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.JsonSchema = v
+	x.xxx_hidden_JsonSchema = v
 }
 
 type GetJSONSchemaResponse_builder struct {
@@ -206,7 +196,7 @@ func (b0 GetJSONSchemaResponse_builder) Build() *GetJSONSchemaResponse {
 	m0 := &GetJSONSchemaResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.JsonSchema = b.JsonSchema
+	x.xxx_hidden_JsonSchema = b.JsonSchema
 	return m0
 }
 

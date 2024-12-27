@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/git_metadata.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -38,15 +36,12 @@ const (
 
 // GitIdentity is a Git user identity, typically either an author or a committer.
 type GitIdentity struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Name is the name of the Git identity. This is not the BSR user's username.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Email is the email of the Git identity. This is not the BSR user's email.
-	Email string `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	// Time is the time at which this identity was captured.
-	Time          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Email string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	xxx_hidden_Time  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GitIdentity) Reset() {
@@ -76,46 +71,46 @@ func (x *GitIdentity) ProtoReflect() protoreflect.Message {
 
 func (x *GitIdentity) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GitIdentity) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *GitIdentity) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Time
+		return x.xxx_hidden_Time
 	}
 	return nil
 }
 
 func (x *GitIdentity) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *GitIdentity) SetEmail(v string) {
-	x.Email = v
+	x.xxx_hidden_Email = v
 }
 
 func (x *GitIdentity) SetTime(v *timestamppb.Timestamp) {
-	x.Time = v
+	x.xxx_hidden_Time = v
 }
 
 func (x *GitIdentity) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.Time != nil
+	return x.xxx_hidden_Time != nil
 }
 
 func (x *GitIdentity) ClearTime() {
-	x.Time = nil
+	x.xxx_hidden_Time = nil
 }
 
 type GitIdentity_builder struct {
@@ -133,9 +128,9 @@ func (b0 GitIdentity_builder) Build() *GitIdentity {
 	m0 := &GitIdentity{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Email = b.Email
-	x.Time = b.Time
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_Time = b.Time
 	return m0
 }
 
@@ -143,17 +138,12 @@ func (b0 GitIdentity_builder) Build() *GitIdentity {
 // This always includes the hash.
 // The author and/or committer user identities are included when available.
 type GitCommitInformation struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Hash is the SHA1 hash of the git commit.
-	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
-	// Author is metadata associated with the author of the git commit.
-	// This may not always be available, so it is not always populated.
-	Author *GitIdentity `protobuf:"bytes,2,opt,name=author,proto3" json:"author,omitempty"`
-	// Committer is the metadata associated with the committer of the git commit.
-	// This may not always be available, so it is not always populated.
-	Committer     *GitIdentity `protobuf:"bytes,3,opt,name=committer,proto3" json:"committer,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Hash      string                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	xxx_hidden_Author    *GitIdentity           `protobuf:"bytes,2,opt,name=author,proto3" json:"author,omitempty"`
+	xxx_hidden_Committer *GitIdentity           `protobuf:"bytes,3,opt,name=committer,proto3" json:"committer,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GitCommitInformation) Reset() {
@@ -183,57 +173,57 @@ func (x *GitCommitInformation) ProtoReflect() protoreflect.Message {
 
 func (x *GitCommitInformation) GetHash() string {
 	if x != nil {
-		return x.Hash
+		return x.xxx_hidden_Hash
 	}
 	return ""
 }
 
 func (x *GitCommitInformation) GetAuthor() *GitIdentity {
 	if x != nil {
-		return x.Author
+		return x.xxx_hidden_Author
 	}
 	return nil
 }
 
 func (x *GitCommitInformation) GetCommitter() *GitIdentity {
 	if x != nil {
-		return x.Committer
+		return x.xxx_hidden_Committer
 	}
 	return nil
 }
 
 func (x *GitCommitInformation) SetHash(v string) {
-	x.Hash = v
+	x.xxx_hidden_Hash = v
 }
 
 func (x *GitCommitInformation) SetAuthor(v *GitIdentity) {
-	x.Author = v
+	x.xxx_hidden_Author = v
 }
 
 func (x *GitCommitInformation) SetCommitter(v *GitIdentity) {
-	x.Committer = v
+	x.xxx_hidden_Committer = v
 }
 
 func (x *GitCommitInformation) HasAuthor() bool {
 	if x == nil {
 		return false
 	}
-	return x.Author != nil
+	return x.xxx_hidden_Author != nil
 }
 
 func (x *GitCommitInformation) HasCommitter() bool {
 	if x == nil {
 		return false
 	}
-	return x.Committer != nil
+	return x.xxx_hidden_Committer != nil
 }
 
 func (x *GitCommitInformation) ClearAuthor() {
-	x.Author = nil
+	x.xxx_hidden_Author = nil
 }
 
 func (x *GitCommitInformation) ClearCommitter() {
-	x.Committer = nil
+	x.xxx_hidden_Committer = nil
 }
 
 type GitCommitInformation_builder struct {
@@ -253,9 +243,9 @@ func (b0 GitCommitInformation_builder) Build() *GitCommitInformation {
 	m0 := &GitCommitInformation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Hash = b.Hash
-	x.Author = b.Author
-	x.Committer = b.Committer
+	x.xxx_hidden_Hash = b.Hash
+	x.xxx_hidden_Author = b.Author
+	x.xxx_hidden_Committer = b.Committer
 	return m0
 }
 

@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/module.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -39,13 +37,12 @@ const (
 //
 // It does not include a remote.
 type LocalModuleReference struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// either branch or commit
-	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *LocalModuleReference) Reset() {
@@ -75,35 +72,35 @@ func (x *LocalModuleReference) ProtoReflect() protoreflect.Message {
 
 func (x *LocalModuleReference) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *LocalModuleReference) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *LocalModuleReference) GetReference() string {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return ""
 }
 
 func (x *LocalModuleReference) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *LocalModuleReference) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *LocalModuleReference) SetReference(v string) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 type LocalModuleReference_builder struct {
@@ -119,9 +116,9 @@ func (b0 LocalModuleReference_builder) Build() *LocalModuleReference {
 	m0 := &LocalModuleReference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Reference = b.Reference
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Reference = b.Reference
 	return m0
 }
 
@@ -129,14 +126,13 @@ func (b0 LocalModuleReference_builder) Build() *LocalModuleReference {
 //
 // It does not include a remote.
 type LocalModulePin struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Commit     string                 `protobuf:"bytes,4,opt,name=commit,proto3" json:"commit,omitempty"`
-	// Module's manifest digest. Replacement for previous b1/b3 digests.
-	ManifestDigest string `protobuf:"bytes,6,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner          string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository     string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Commit         string                 `protobuf:"bytes,4,opt,name=commit,proto3" json:"commit,omitempty"`
+	xxx_hidden_ManifestDigest string                 `protobuf:"bytes,6,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *LocalModulePin) Reset() {
@@ -166,46 +162,46 @@ func (x *LocalModulePin) ProtoReflect() protoreflect.Message {
 
 func (x *LocalModulePin) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *LocalModulePin) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *LocalModulePin) GetCommit() string {
 	if x != nil {
-		return x.Commit
+		return x.xxx_hidden_Commit
 	}
 	return ""
 }
 
 func (x *LocalModulePin) GetManifestDigest() string {
 	if x != nil {
-		return x.ManifestDigest
+		return x.xxx_hidden_ManifestDigest
 	}
 	return ""
 }
 
 func (x *LocalModulePin) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *LocalModulePin) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *LocalModulePin) SetCommit(v string) {
-	x.Commit = v
+	x.xxx_hidden_Commit = v
 }
 
 func (x *LocalModulePin) SetManifestDigest(v string) {
-	x.ManifestDigest = v
+	x.xxx_hidden_ManifestDigest = v
 }
 
 type LocalModulePin_builder struct {
@@ -222,10 +218,10 @@ func (b0 LocalModulePin_builder) Build() *LocalModulePin {
 	m0 := &LocalModulePin{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Commit = b.Commit
-	x.ManifestDigest = b.ManifestDigest
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Commit = b.Commit
+	x.xxx_hidden_ManifestDigest = b.ManifestDigest
 	return m0
 }
 

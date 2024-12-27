@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/plugin_curation.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -461,21 +459,12 @@ func (x DotnetTargetFramework) Number() protoreflect.EnumNumber {
 
 // GoConfig is the configuration for a Go plugin.
 type GoConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Optionally define the runtime libraries for the plugin.
-	RuntimeLibraries []*GoConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	// The minimum Go version required by the plugin.
-	MinimumVersion string `protobuf:"bytes,2,opt,name=minimum_version,json=minimumVersion,proto3" json:"minimum_version,omitempty"`
-	// Optionally specifies an alternate base plugin like "remote/org/go-multi" instead of the default
-	// "remote/protocolbuffers/go". If provided, the name must match one of the plugin dependencies in
-	// the top-level deps field.
-	//
-	// This affects how imports are resolved - the specified plugin's import path will be used as the
-	// base path for all generated code, replacing the default protocolbuffers/go import paths. Used
-	// when depending on non-default BSR plugins.
-	BasePlugin    string `protobuf:"bytes,3,opt,name=base_plugin,json=basePlugin,proto3" json:"base_plugin,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_RuntimeLibraries *[]*GoConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	xxx_hidden_MinimumVersion   string                      `protobuf:"bytes,2,opt,name=minimum_version,json=minimumVersion,proto3" json:"minimum_version,omitempty"`
+	xxx_hidden_BasePlugin       string                      `protobuf:"bytes,3,opt,name=base_plugin,json=basePlugin,proto3" json:"base_plugin,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *GoConfig) Reset() {
@@ -505,35 +494,37 @@ func (x *GoConfig) ProtoReflect() protoreflect.Message {
 
 func (x *GoConfig) GetRuntimeLibraries() []*GoConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *GoConfig) GetMinimumVersion() string {
 	if x != nil {
-		return x.MinimumVersion
+		return x.xxx_hidden_MinimumVersion
 	}
 	return ""
 }
 
 func (x *GoConfig) GetBasePlugin() string {
 	if x != nil {
-		return x.BasePlugin
+		return x.xxx_hidden_BasePlugin
 	}
 	return ""
 }
 
 func (x *GoConfig) SetRuntimeLibraries(v []*GoConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 func (x *GoConfig) SetMinimumVersion(v string) {
-	x.MinimumVersion = v
+	x.xxx_hidden_MinimumVersion = v
 }
 
 func (x *GoConfig) SetBasePlugin(v string) {
-	x.BasePlugin = v
+	x.xxx_hidden_BasePlugin = v
 }
 
 type GoConfig_builder struct {
@@ -557,30 +548,20 @@ func (b0 GoConfig_builder) Build() *GoConfig {
 	m0 := &GoConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RuntimeLibraries = b.RuntimeLibraries
-	x.MinimumVersion = b.MinimumVersion
-	x.BasePlugin = b.BasePlugin
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
+	x.xxx_hidden_MinimumVersion = b.MinimumVersion
+	x.xxx_hidden_BasePlugin = b.BasePlugin
 	return m0
 }
 
 // NPMConfig is the configuration for a JavaScript NPM plugin.
 type NPMConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Optionally define the runtime libraries for the plugin.
-	RuntimeLibraries []*NPMConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	// Optionally define a configuration for rewriting import paths, a feature mainly
-	// used for remote code generation in the BSR npm registry, which makes it possible
-	// to serve the output of a BSR module and a plugin in an individual package.
-	//
-	// All plugins based on @bufbuild/protoplugin support the option "rewrite_imports".
-	// Setting this value, i.e. "connectweb.js" or "pb.js", informs the BSR npm registry
-	// that the plugin supports import rewrites with the given import suffix.
-	RewriteImportPathSuffix string `protobuf:"bytes,2,opt,name=rewrite_import_path_suffix,json=rewriteImportPathSuffix,proto3" json:"rewrite_import_path_suffix,omitempty"`
-	// The import style used for the "type" field in the package.json file.
-	// This exists to support legacy plugins that require "commonjs" support.
-	ImportStyle   NPMImportStyle `protobuf:"varint,3,opt,name=import_style,json=importStyle,proto3,enum=buf.alpha.registry.v1alpha1.NPMImportStyle" json:"import_style,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                              protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_RuntimeLibraries        *[]*NPMConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	xxx_hidden_RewriteImportPathSuffix string                       `protobuf:"bytes,2,opt,name=rewrite_import_path_suffix,json=rewriteImportPathSuffix,proto3" json:"rewrite_import_path_suffix,omitempty"`
+	xxx_hidden_ImportStyle             NPMImportStyle               `protobuf:"varint,3,opt,name=import_style,json=importStyle,proto3,enum=buf.alpha.registry.v1alpha1.NPMImportStyle" json:"import_style,omitempty"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *NPMConfig) Reset() {
@@ -610,35 +591,37 @@ func (x *NPMConfig) ProtoReflect() protoreflect.Message {
 
 func (x *NPMConfig) GetRuntimeLibraries() []*NPMConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *NPMConfig) GetRewriteImportPathSuffix() string {
 	if x != nil {
-		return x.RewriteImportPathSuffix
+		return x.xxx_hidden_RewriteImportPathSuffix
 	}
 	return ""
 }
 
 func (x *NPMConfig) GetImportStyle() NPMImportStyle {
 	if x != nil {
-		return x.ImportStyle
+		return x.xxx_hidden_ImportStyle
 	}
 	return NPMImportStyle_NPM_IMPORT_STYLE_UNSPECIFIED
 }
 
 func (x *NPMConfig) SetRuntimeLibraries(v []*NPMConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 func (x *NPMConfig) SetRewriteImportPathSuffix(v string) {
-	x.RewriteImportPathSuffix = v
+	x.xxx_hidden_RewriteImportPathSuffix = v
 }
 
 func (x *NPMConfig) SetImportStyle(v NPMImportStyle) {
-	x.ImportStyle = v
+	x.xxx_hidden_ImportStyle = v
 }
 
 type NPMConfig_builder struct {
@@ -663,23 +646,20 @@ func (b0 NPMConfig_builder) Build() *NPMConfig {
 	m0 := &NPMConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RuntimeLibraries = b.RuntimeLibraries
-	x.RewriteImportPathSuffix = b.RewriteImportPathSuffix
-	x.ImportStyle = b.ImportStyle
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
+	x.xxx_hidden_RewriteImportPathSuffix = b.RewriteImportPathSuffix
+	x.xxx_hidden_ImportStyle = b.ImportStyle
 	return m0
 }
 
 // MavenConfig is the configuration for a Maven plugin.
 type MavenConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Optionally define the runtime libraries for the plugin.
-	RuntimeLibraries []*MavenConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	// Settings for the Java/Kotlin compiler used to compile the generated code.
-	Compiler *MavenConfig_CompilerConfig `protobuf:"bytes,2,opt,name=compiler,proto3" json:"compiler,omitempty"`
-	// Optional additional runtimes supported by the plugin.
-	AdditionalRuntimes []*MavenConfig_RuntimeConfig `protobuf:"bytes,3,rep,name=additional_runtimes,json=additionalRuntimes,proto3" json:"additional_runtimes,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                         protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_RuntimeLibraries   *[]*MavenConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	xxx_hidden_Compiler           *MavenConfig_CompilerConfig    `protobuf:"bytes,2,opt,name=compiler,proto3" json:"compiler,omitempty"`
+	xxx_hidden_AdditionalRuntimes *[]*MavenConfig_RuntimeConfig  `protobuf:"bytes,3,rep,name=additional_runtimes,json=additionalRuntimes,proto3" json:"additional_runtimes,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *MavenConfig) Reset() {
@@ -709,46 +689,50 @@ func (x *MavenConfig) ProtoReflect() protoreflect.Message {
 
 func (x *MavenConfig) GetRuntimeLibraries() []*MavenConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *MavenConfig) GetCompiler() *MavenConfig_CompilerConfig {
 	if x != nil {
-		return x.Compiler
+		return x.xxx_hidden_Compiler
 	}
 	return nil
 }
 
 func (x *MavenConfig) GetAdditionalRuntimes() []*MavenConfig_RuntimeConfig {
 	if x != nil {
-		return x.AdditionalRuntimes
+		if x.xxx_hidden_AdditionalRuntimes != nil {
+			return *x.xxx_hidden_AdditionalRuntimes
+		}
 	}
 	return nil
 }
 
 func (x *MavenConfig) SetRuntimeLibraries(v []*MavenConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 func (x *MavenConfig) SetCompiler(v *MavenConfig_CompilerConfig) {
-	x.Compiler = v
+	x.xxx_hidden_Compiler = v
 }
 
 func (x *MavenConfig) SetAdditionalRuntimes(v []*MavenConfig_RuntimeConfig) {
-	x.AdditionalRuntimes = v
+	x.xxx_hidden_AdditionalRuntimes = &v
 }
 
 func (x *MavenConfig) HasCompiler() bool {
 	if x == nil {
 		return false
 	}
-	return x.Compiler != nil
+	return x.xxx_hidden_Compiler != nil
 }
 
 func (x *MavenConfig) ClearCompiler() {
-	x.Compiler = nil
+	x.xxx_hidden_Compiler = nil
 }
 
 type MavenConfig_builder struct {
@@ -766,21 +750,19 @@ func (b0 MavenConfig_builder) Build() *MavenConfig {
 	m0 := &MavenConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RuntimeLibraries = b.RuntimeLibraries
-	x.Compiler = b.Compiler
-	x.AdditionalRuntimes = b.AdditionalRuntimes
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
+	x.xxx_hidden_Compiler = b.Compiler
+	x.xxx_hidden_AdditionalRuntimes = &b.AdditionalRuntimes
 	return m0
 }
 
 // NugetConfig is the configuration for a NuGet C# plugin.
 type NugetConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Target frameworks to build. At least one target framework is required.
-	TargetFrameworks []DotnetTargetFramework `protobuf:"varint,1,rep,packed,name=target_frameworks,json=targetFrameworks,proto3,enum=buf.alpha.registry.v1alpha1.DotnetTargetFramework" json:"target_frameworks,omitempty"`
-	// Optional runtime libraries required by the plugin's generated code.
-	RuntimeLibraries []*NugetConfig_RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_TargetFrameworks []DotnetTargetFramework        `protobuf:"varint,1,rep,packed,name=target_frameworks,json=targetFrameworks,proto3,enum=buf.alpha.registry.v1alpha1.DotnetTargetFramework" json:"target_frameworks,omitempty"`
+	xxx_hidden_RuntimeLibraries *[]*NugetConfig_RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *NugetConfig) Reset() {
@@ -810,24 +792,26 @@ func (x *NugetConfig) ProtoReflect() protoreflect.Message {
 
 func (x *NugetConfig) GetTargetFrameworks() []DotnetTargetFramework {
 	if x != nil {
-		return x.TargetFrameworks
+		return x.xxx_hidden_TargetFrameworks
 	}
 	return nil
 }
 
 func (x *NugetConfig) GetRuntimeLibraries() []*NugetConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *NugetConfig) SetTargetFrameworks(v []DotnetTargetFramework) {
-	x.TargetFrameworks = v
+	x.xxx_hidden_TargetFrameworks = v
 }
 
 func (x *NugetConfig) SetRuntimeLibraries(v []*NugetConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 type NugetConfig_builder struct {
@@ -843,14 +827,14 @@ func (b0 NugetConfig_builder) Build() *NugetConfig {
 	m0 := &NugetConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.TargetFrameworks = b.TargetFrameworks
-	x.RuntimeLibraries = b.RuntimeLibraries
+	x.xxx_hidden_TargetFrameworks = b.TargetFrameworks
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
 	return m0
 }
 
 // CmakeConfig is the configuration for a Cmake C++ plugin.
 type CmakeConfig struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -893,11 +877,10 @@ func (b0 CmakeConfig_builder) Build() *CmakeConfig {
 }
 
 type SwiftConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Optionally define the runtime libraries for the plugin.
-	RuntimeLibraries []*SwiftConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_RuntimeLibraries *[]*SwiftConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *SwiftConfig) Reset() {
@@ -927,13 +910,15 @@ func (x *SwiftConfig) ProtoReflect() protoreflect.Message {
 
 func (x *SwiftConfig) GetRuntimeLibraries() []*SwiftConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *SwiftConfig) SetRuntimeLibraries(v []*SwiftConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 type SwiftConfig_builder struct {
@@ -947,24 +932,17 @@ func (b0 SwiftConfig_builder) Build() *SwiftConfig {
 	m0 := &SwiftConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RuntimeLibraries = b.RuntimeLibraries
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
 	return m0
 }
 
 type PythonConfig struct {
-	state            protoimpl.MessageState         `protogen:"hybrid.v1"`
-	RuntimeLibraries []*PythonConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	// requires_python is a PEP 440 Version Specifier that specifies the value of
-	// the `Requires-Python` field in a metadata file.
-	//
-	// Ref:
-	// - https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python
-	// - https://peps.python.org/pep-0440/
-	RequiresPython string `protobuf:"bytes,2,opt,name=requires_python,json=requiresPython,proto3" json:"requires_python,omitempty"`
-	// package_type is the PythonPackageType that this plugin generates.
-	PackageType   PythonPackageType `protobuf:"varint,3,opt,name=package_type,json=packageType,proto3,enum=buf.alpha.registry.v1alpha1.PythonPackageType" json:"package_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_RuntimeLibraries *[]*PythonConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	xxx_hidden_RequiresPython   string                          `protobuf:"bytes,2,opt,name=requires_python,json=requiresPython,proto3" json:"requires_python,omitempty"`
+	xxx_hidden_PackageType      PythonPackageType               `protobuf:"varint,3,opt,name=package_type,json=packageType,proto3,enum=buf.alpha.registry.v1alpha1.PythonPackageType" json:"package_type,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *PythonConfig) Reset() {
@@ -994,35 +972,37 @@ func (x *PythonConfig) ProtoReflect() protoreflect.Message {
 
 func (x *PythonConfig) GetRuntimeLibraries() []*PythonConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *PythonConfig) GetRequiresPython() string {
 	if x != nil {
-		return x.RequiresPython
+		return x.xxx_hidden_RequiresPython
 	}
 	return ""
 }
 
 func (x *PythonConfig) GetPackageType() PythonPackageType {
 	if x != nil {
-		return x.PackageType
+		return x.xxx_hidden_PackageType
 	}
 	return PythonPackageType_PYTHON_PACKAGE_TYPE_UNSPECIFIED
 }
 
 func (x *PythonConfig) SetRuntimeLibraries(v []*PythonConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 func (x *PythonConfig) SetRequiresPython(v string) {
-	x.RequiresPython = v
+	x.xxx_hidden_RequiresPython = v
 }
 
 func (x *PythonConfig) SetPackageType(v PythonPackageType) {
-	x.PackageType = v
+	x.xxx_hidden_PackageType = v
 }
 
 type PythonConfig_builder struct {
@@ -1044,22 +1024,19 @@ func (b0 PythonConfig_builder) Build() *PythonConfig {
 	m0 := &PythonConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RuntimeLibraries = b.RuntimeLibraries
-	x.RequiresPython = b.RequiresPython
-	x.PackageType = b.PackageType
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
+	x.xxx_hidden_RequiresPython = b.RequiresPython
+	x.xxx_hidden_PackageType = b.PackageType
 	return m0
 }
 
 // CargoConfig specifies the Cargo Registry configuration for a Rust plugin.
 type CargoConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// rust_version specifies the minimum supported Rust version (MSRV) for the generated crate.
-	// Ref: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
-	RustVersion string `protobuf:"bytes,1,opt,name=rust_version,json=rustVersion,proto3" json:"rust_version,omitempty"`
-	// runtime_libraries specifies the runtime dependencies for the generated crate. Optional.
-	RuntimeLibraries []*CargoConfig_RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_RustVersion      string                         `protobuf:"bytes,1,opt,name=rust_version,json=rustVersion,proto3" json:"rust_version,omitempty"`
+	xxx_hidden_RuntimeLibraries *[]*CargoConfig_RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *CargoConfig) Reset() {
@@ -1089,24 +1066,26 @@ func (x *CargoConfig) ProtoReflect() protoreflect.Message {
 
 func (x *CargoConfig) GetRustVersion() string {
 	if x != nil {
-		return x.RustVersion
+		return x.xxx_hidden_RustVersion
 	}
 	return ""
 }
 
 func (x *CargoConfig) GetRuntimeLibraries() []*CargoConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *CargoConfig) SetRustVersion(v string) {
-	x.RustVersion = v
+	x.xxx_hidden_RustVersion = v
 }
 
 func (x *CargoConfig) SetRuntimeLibraries(v []*CargoConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 type CargoConfig_builder struct {
@@ -1123,30 +1102,18 @@ func (b0 CargoConfig_builder) Build() *CargoConfig {
 	m0 := &CargoConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RustVersion = b.RustVersion
-	x.RuntimeLibraries = b.RuntimeLibraries
+	x.xxx_hidden_RustVersion = b.RustVersion
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
 	return m0
 }
 
 // RegistryConfig is the configuration for the remote registry of a plugin.
 type RegistryConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Types that are valid to be assigned to RegistryConfig:
-	//
-	//	*RegistryConfig_GoConfig
-	//	*RegistryConfig_NpmConfig
-	//	*RegistryConfig_MavenConfig
-	//	*RegistryConfig_SwiftConfig
-	//	*RegistryConfig_PythonConfig
-	//	*RegistryConfig_CargoConfig
-	//	*RegistryConfig_NugetConfig
-	//	*RegistryConfig_CmakeConfig
-	RegistryConfig isRegistryConfig_RegistryConfig `protobuf_oneof:"registry_config"`
-	// The options to pass to the plugin. These will
-	// be merged into a single, comma-separated string.
-	Options       []string `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_RegistryConfig isRegistryConfig_RegistryConfig `protobuf_oneof:"registry_config"`
+	xxx_hidden_Options        []string                        `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *RegistryConfig) Reset() {
@@ -1174,16 +1141,9 @@ func (x *RegistryConfig) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *RegistryConfig) GetRegistryConfig() isRegistryConfig_RegistryConfig {
-	if x != nil {
-		return x.RegistryConfig
-	}
-	return nil
-}
-
 func (x *RegistryConfig) GetGoConfig() *GoConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_GoConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_GoConfig); ok {
 			return x.GoConfig
 		}
 	}
@@ -1192,7 +1152,7 @@ func (x *RegistryConfig) GetGoConfig() *GoConfig {
 
 func (x *RegistryConfig) GetNpmConfig() *NPMConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_NpmConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_NpmConfig); ok {
 			return x.NpmConfig
 		}
 	}
@@ -1201,7 +1161,7 @@ func (x *RegistryConfig) GetNpmConfig() *NPMConfig {
 
 func (x *RegistryConfig) GetMavenConfig() *MavenConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_MavenConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_MavenConfig); ok {
 			return x.MavenConfig
 		}
 	}
@@ -1210,7 +1170,7 @@ func (x *RegistryConfig) GetMavenConfig() *MavenConfig {
 
 func (x *RegistryConfig) GetSwiftConfig() *SwiftConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_SwiftConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_SwiftConfig); ok {
 			return x.SwiftConfig
 		}
 	}
@@ -1219,7 +1179,7 @@ func (x *RegistryConfig) GetSwiftConfig() *SwiftConfig {
 
 func (x *RegistryConfig) GetPythonConfig() *PythonConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_PythonConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_PythonConfig); ok {
 			return x.PythonConfig
 		}
 	}
@@ -1228,7 +1188,7 @@ func (x *RegistryConfig) GetPythonConfig() *PythonConfig {
 
 func (x *RegistryConfig) GetCargoConfig() *CargoConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_CargoConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_CargoConfig); ok {
 			return x.CargoConfig
 		}
 	}
@@ -1237,7 +1197,7 @@ func (x *RegistryConfig) GetCargoConfig() *CargoConfig {
 
 func (x *RegistryConfig) GetNugetConfig() *NugetConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_NugetConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_NugetConfig); ok {
 			return x.NugetConfig
 		}
 	}
@@ -1246,7 +1206,7 @@ func (x *RegistryConfig) GetNugetConfig() *NugetConfig {
 
 func (x *RegistryConfig) GetCmakeConfig() *CmakeConfig {
 	if x != nil {
-		if x, ok := x.RegistryConfig.(*RegistryConfig_CmakeConfig); ok {
+		if x, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_CmakeConfig); ok {
 			return x.CmakeConfig
 		}
 	}
@@ -1255,91 +1215,91 @@ func (x *RegistryConfig) GetCmakeConfig() *CmakeConfig {
 
 func (x *RegistryConfig) GetOptions() []string {
 	if x != nil {
-		return x.Options
+		return x.xxx_hidden_Options
 	}
 	return nil
 }
 
 func (x *RegistryConfig) SetGoConfig(v *GoConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_GoConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_GoConfig{v}
 }
 
 func (x *RegistryConfig) SetNpmConfig(v *NPMConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_NpmConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_NpmConfig{v}
 }
 
 func (x *RegistryConfig) SetMavenConfig(v *MavenConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_MavenConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_MavenConfig{v}
 }
 
 func (x *RegistryConfig) SetSwiftConfig(v *SwiftConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_SwiftConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_SwiftConfig{v}
 }
 
 func (x *RegistryConfig) SetPythonConfig(v *PythonConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_PythonConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_PythonConfig{v}
 }
 
 func (x *RegistryConfig) SetCargoConfig(v *CargoConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_CargoConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_CargoConfig{v}
 }
 
 func (x *RegistryConfig) SetNugetConfig(v *NugetConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_NugetConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_NugetConfig{v}
 }
 
 func (x *RegistryConfig) SetCmakeConfig(v *CmakeConfig) {
 	if v == nil {
-		x.RegistryConfig = nil
+		x.xxx_hidden_RegistryConfig = nil
 		return
 	}
-	x.RegistryConfig = &RegistryConfig_CmakeConfig{v}
+	x.xxx_hidden_RegistryConfig = &registryConfig_CmakeConfig{v}
 }
 
 func (x *RegistryConfig) SetOptions(v []string) {
-	x.Options = v
+	x.xxx_hidden_Options = v
 }
 
 func (x *RegistryConfig) HasRegistryConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.RegistryConfig != nil
+	return x.xxx_hidden_RegistryConfig != nil
 }
 
 func (x *RegistryConfig) HasGoConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_GoConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_GoConfig)
 	return ok
 }
 
@@ -1347,7 +1307,7 @@ func (x *RegistryConfig) HasNpmConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_NpmConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_NpmConfig)
 	return ok
 }
 
@@ -1355,7 +1315,7 @@ func (x *RegistryConfig) HasMavenConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_MavenConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_MavenConfig)
 	return ok
 }
 
@@ -1363,7 +1323,7 @@ func (x *RegistryConfig) HasSwiftConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_SwiftConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_SwiftConfig)
 	return ok
 }
 
@@ -1371,7 +1331,7 @@ func (x *RegistryConfig) HasPythonConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_PythonConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_PythonConfig)
 	return ok
 }
 
@@ -1379,7 +1339,7 @@ func (x *RegistryConfig) HasCargoConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_CargoConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_CargoConfig)
 	return ok
 }
 
@@ -1387,7 +1347,7 @@ func (x *RegistryConfig) HasNugetConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_NugetConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_NugetConfig)
 	return ok
 }
 
@@ -1395,59 +1355,59 @@ func (x *RegistryConfig) HasCmakeConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.RegistryConfig.(*RegistryConfig_CmakeConfig)
+	_, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_CmakeConfig)
 	return ok
 }
 
 func (x *RegistryConfig) ClearRegistryConfig() {
-	x.RegistryConfig = nil
+	x.xxx_hidden_RegistryConfig = nil
 }
 
 func (x *RegistryConfig) ClearGoConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_GoConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_GoConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearNpmConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_NpmConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_NpmConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearMavenConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_MavenConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_MavenConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearSwiftConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_SwiftConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_SwiftConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearPythonConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_PythonConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_PythonConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearCargoConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_CargoConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_CargoConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearNugetConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_NugetConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_NugetConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
 func (x *RegistryConfig) ClearCmakeConfig() {
-	if _, ok := x.RegistryConfig.(*RegistryConfig_CmakeConfig); ok {
-		x.RegistryConfig = nil
+	if _, ok := x.xxx_hidden_RegistryConfig.(*registryConfig_CmakeConfig); ok {
+		x.xxx_hidden_RegistryConfig = nil
 	}
 }
 
@@ -1465,22 +1425,22 @@ func (x *RegistryConfig) WhichRegistryConfig() case_RegistryConfig_RegistryConfi
 	if x == nil {
 		return RegistryConfig_RegistryConfig_not_set_case
 	}
-	switch x.RegistryConfig.(type) {
-	case *RegistryConfig_GoConfig:
+	switch x.xxx_hidden_RegistryConfig.(type) {
+	case *registryConfig_GoConfig:
 		return RegistryConfig_GoConfig_case
-	case *RegistryConfig_NpmConfig:
+	case *registryConfig_NpmConfig:
 		return RegistryConfig_NpmConfig_case
-	case *RegistryConfig_MavenConfig:
+	case *registryConfig_MavenConfig:
 		return RegistryConfig_MavenConfig_case
-	case *RegistryConfig_SwiftConfig:
+	case *registryConfig_SwiftConfig:
 		return RegistryConfig_SwiftConfig_case
-	case *RegistryConfig_PythonConfig:
+	case *registryConfig_PythonConfig:
 		return RegistryConfig_PythonConfig_case
-	case *RegistryConfig_CargoConfig:
+	case *registryConfig_CargoConfig:
 		return RegistryConfig_CargoConfig_case
-	case *RegistryConfig_NugetConfig:
+	case *registryConfig_NugetConfig:
 		return RegistryConfig_NugetConfig_case
-	case *RegistryConfig_CmakeConfig:
+	case *registryConfig_CmakeConfig:
 		return RegistryConfig_CmakeConfig_case
 	default:
 		return RegistryConfig_RegistryConfig_not_set_case
@@ -1490,7 +1450,7 @@ func (x *RegistryConfig) WhichRegistryConfig() case_RegistryConfig_RegistryConfi
 type RegistryConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof RegistryConfig:
+	// Fields of oneof xxx_hidden_RegistryConfig:
 	GoConfig     *GoConfig
 	NpmConfig    *NPMConfig
 	MavenConfig  *MavenConfig
@@ -1499,7 +1459,7 @@ type RegistryConfig_builder struct {
 	CargoConfig  *CargoConfig
 	NugetConfig  *NugetConfig
 	CmakeConfig  *CmakeConfig
-	// -- end of RegistryConfig
+	// -- end of xxx_hidden_RegistryConfig
 	// The options to pass to the plugin. These will
 	// be merged into a single, comma-separated string.
 	Options []string
@@ -1510,30 +1470,30 @@ func (b0 RegistryConfig_builder) Build() *RegistryConfig {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.GoConfig != nil {
-		x.RegistryConfig = &RegistryConfig_GoConfig{b.GoConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_GoConfig{b.GoConfig}
 	}
 	if b.NpmConfig != nil {
-		x.RegistryConfig = &RegistryConfig_NpmConfig{b.NpmConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_NpmConfig{b.NpmConfig}
 	}
 	if b.MavenConfig != nil {
-		x.RegistryConfig = &RegistryConfig_MavenConfig{b.MavenConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_MavenConfig{b.MavenConfig}
 	}
 	if b.SwiftConfig != nil {
-		x.RegistryConfig = &RegistryConfig_SwiftConfig{b.SwiftConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_SwiftConfig{b.SwiftConfig}
 	}
 	if b.PythonConfig != nil {
-		x.RegistryConfig = &RegistryConfig_PythonConfig{b.PythonConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_PythonConfig{b.PythonConfig}
 	}
 	if b.CargoConfig != nil {
-		x.RegistryConfig = &RegistryConfig_CargoConfig{b.CargoConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_CargoConfig{b.CargoConfig}
 	}
 	if b.NugetConfig != nil {
-		x.RegistryConfig = &RegistryConfig_NugetConfig{b.NugetConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_NugetConfig{b.NugetConfig}
 	}
 	if b.CmakeConfig != nil {
-		x.RegistryConfig = &RegistryConfig_CmakeConfig{b.CmakeConfig}
+		x.xxx_hidden_RegistryConfig = &registryConfig_CmakeConfig{b.CmakeConfig}
 	}
-	x.Options = b.Options
+	x.xxx_hidden_Options = b.Options
 	return m0
 }
 
@@ -1551,66 +1511,62 @@ type isRegistryConfig_RegistryConfig interface {
 	isRegistryConfig_RegistryConfig()
 }
 
-type RegistryConfig_GoConfig struct {
+type registryConfig_GoConfig struct {
 	GoConfig *GoConfig `protobuf:"bytes,1,opt,name=go_config,json=goConfig,proto3,oneof"`
 }
 
-type RegistryConfig_NpmConfig struct {
+type registryConfig_NpmConfig struct {
 	NpmConfig *NPMConfig `protobuf:"bytes,2,opt,name=npm_config,json=npmConfig,proto3,oneof"`
 }
 
-type RegistryConfig_MavenConfig struct {
+type registryConfig_MavenConfig struct {
 	MavenConfig *MavenConfig `protobuf:"bytes,3,opt,name=maven_config,json=mavenConfig,proto3,oneof"`
 }
 
-type RegistryConfig_SwiftConfig struct {
+type registryConfig_SwiftConfig struct {
 	SwiftConfig *SwiftConfig `protobuf:"bytes,4,opt,name=swift_config,json=swiftConfig,proto3,oneof"`
 }
 
-type RegistryConfig_PythonConfig struct {
+type registryConfig_PythonConfig struct {
 	PythonConfig *PythonConfig `protobuf:"bytes,5,opt,name=python_config,json=pythonConfig,proto3,oneof"`
 }
 
-type RegistryConfig_CargoConfig struct {
+type registryConfig_CargoConfig struct {
 	CargoConfig *CargoConfig `protobuf:"bytes,6,opt,name=cargo_config,json=cargoConfig,proto3,oneof"`
 }
 
-type RegistryConfig_NugetConfig struct {
+type registryConfig_NugetConfig struct {
 	NugetConfig *NugetConfig `protobuf:"bytes,7,opt,name=nuget_config,json=nugetConfig,proto3,oneof"`
 }
 
-type RegistryConfig_CmakeConfig struct {
+type registryConfig_CmakeConfig struct {
 	CmakeConfig *CmakeConfig `protobuf:"bytes,8,opt,name=cmake_config,json=cmakeConfig,proto3,oneof"`
 }
 
-func (*RegistryConfig_GoConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_GoConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_NpmConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_NpmConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_MavenConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_MavenConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_SwiftConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_SwiftConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_PythonConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_PythonConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_CargoConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_CargoConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_NugetConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_NugetConfig) isRegistryConfig_RegistryConfig() {}
 
-func (*RegistryConfig_CmakeConfig) isRegistryConfig_RegistryConfig() {}
+func (*registryConfig_CmakeConfig) isRegistryConfig_RegistryConfig() {}
 
 type CuratedPluginReference struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the plugin, i.e. "library".
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the plugin, i.e. "connect-go".
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Semver-formatted plugin version.
-	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// The revision for this plugin version.
-	Revision      uint32 `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner    string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Version  string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Revision uint32                 `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CuratedPluginReference) Reset() {
@@ -1640,46 +1596,46 @@ func (x *CuratedPluginReference) ProtoReflect() protoreflect.Message {
 
 func (x *CuratedPluginReference) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *CuratedPluginReference) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CuratedPluginReference) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *CuratedPluginReference) GetRevision() uint32 {
 	if x != nil {
-		return x.Revision
+		return x.xxx_hidden_Revision
 	}
 	return 0
 }
 
 func (x *CuratedPluginReference) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *CuratedPluginReference) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CuratedPluginReference) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *CuratedPluginReference) SetRevision(v uint32) {
-	x.Revision = v
+	x.xxx_hidden_Revision = v
 }
 
 type CuratedPluginReference_builder struct {
@@ -1699,66 +1655,40 @@ func (b0 CuratedPluginReference_builder) Build() *CuratedPluginReference {
 	m0 := &CuratedPluginReference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.Version = b.Version
-	x.Revision = b.Revision
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Revision = b.Revision
 	return m0
 }
 
 // CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
 type CuratedPlugin struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of the plugin, which uniquely identifies the plugin.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The owner of the plugin, i.e. "library".
-	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the plugin, i.e. "connect-go".
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// The optional registry type of the plugin.
-	RegistryType PluginRegistryType `protobuf:"varint,4,opt,name=registry_type,json=registryType,proto3,enum=buf.alpha.registry.v1alpha1.PluginRegistryType" json:"registry_type,omitempty"`
-	// Semver-formatted plugin version.
-	Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
-	// The full container image digest associated with this plugin version including
-	// the algorithm.
-	// Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
-	ContainerImageDigest string `protobuf:"bytes,6,opt,name=container_image_digest,json=containerImageDigest,proto3" json:"container_image_digest,omitempty"`
-	// The creation time of the plugin.
-	CreateTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// List of plugin dependencies.
-	Dependencies []*CuratedPluginReference `protobuf:"bytes,9,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
-	// Optionally specify the URL leading to the source code of the plugin, if available.
-	SourceUrl string `protobuf:"bytes,10,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	// Optionally specify a brief description of the plugin functionality.
-	Description string `protobuf:"bytes,11,opt,name=description,proto3" json:"description,omitempty"`
-	// The configuration for the remote registry of the plugin.
-	RegistryConfig *RegistryConfig `protobuf:"bytes,12,opt,name=registry_config,json=registryConfig,proto3" json:"registry_config,omitempty"`
-	// The revision for this plugin version.
-	Revision uint32 `protobuf:"varint,13,opt,name=revision,proto3" json:"revision,omitempty"`
-	// The output languages supported by the plugin.
-	OutputLanguages []PluginLanguage `protobuf:"varint,14,rep,packed,name=output_languages,json=outputLanguages,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"output_languages,omitempty"`
-	// spdx_license_id is the license of the plugin, which should be one of the identifiers
-	// defined in https://spdx.org/licenses
-	SpdxLicenseId string `protobuf:"bytes,15,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
-	// license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
-	LicenseUrl string `protobuf:"bytes,16,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
-	// verified indicates the plugin has been verified. Verification is a property
-	// of the BSR and cannot be set by end-users.
-	Verified bool `protobuf:"varint,17,opt,name=verified,proto3" json:"verified,omitempty"`
-	// Visibility indicates whether the plugin is public or private.
-	Visibility CuratedPluginVisibility `protobuf:"varint,18,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.CuratedPluginVisibility" json:"visibility,omitempty"`
-	// Deprecated indicates whether the plugin is deprecated.
-	Deprecated bool `protobuf:"varint,19,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	// Optionally specify a message to be displayed when the plugin is deprecated.
-	DeprecationMessage string `protobuf:"bytes,20,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
-	// The URL leading to the integration guide of the plugin, if available.
-	IntegrationGuideUrl string `protobuf:"bytes,21,opt,name=integration_guide_url,json=integrationGuideUrl,proto3" json:"integration_guide_url,omitempty"`
-	// The configurable documentation of the Plugin.
-	Doc string `protobuf:"bytes,22,opt,name=doc,proto3" json:"doc,omitempty"`
-	// The collections the Plugin belongs to.
-	Collections   []*PluginCollection `protobuf:"bytes,23,rep,name=collections,proto3" json:"collections,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                           protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Id                   string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Owner                string                     `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name                 string                     `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_RegistryType         PluginRegistryType         `protobuf:"varint,4,opt,name=registry_type,json=registryType,proto3,enum=buf.alpha.registry.v1alpha1.PluginRegistryType" json:"registry_type,omitempty"`
+	xxx_hidden_Version              string                     `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_ContainerImageDigest string                     `protobuf:"bytes,6,opt,name=container_image_digest,json=containerImageDigest,proto3" json:"container_image_digest,omitempty"`
+	xxx_hidden_CreateTime           *timestamppb.Timestamp     `protobuf:"bytes,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_Dependencies         *[]*CuratedPluginReference `protobuf:"bytes,9,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
+	xxx_hidden_SourceUrl            string                     `protobuf:"bytes,10,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	xxx_hidden_Description          string                     `protobuf:"bytes,11,opt,name=description,proto3" json:"description,omitempty"`
+	xxx_hidden_RegistryConfig       *RegistryConfig            `protobuf:"bytes,12,opt,name=registry_config,json=registryConfig,proto3" json:"registry_config,omitempty"`
+	xxx_hidden_Revision             uint32                     `protobuf:"varint,13,opt,name=revision,proto3" json:"revision,omitempty"`
+	xxx_hidden_OutputLanguages      []PluginLanguage           `protobuf:"varint,14,rep,packed,name=output_languages,json=outputLanguages,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"output_languages,omitempty"`
+	xxx_hidden_SpdxLicenseId        string                     `protobuf:"bytes,15,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
+	xxx_hidden_LicenseUrl           string                     `protobuf:"bytes,16,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
+	xxx_hidden_Verified             bool                       `protobuf:"varint,17,opt,name=verified,proto3" json:"verified,omitempty"`
+	xxx_hidden_Visibility           CuratedPluginVisibility    `protobuf:"varint,18,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.CuratedPluginVisibility" json:"visibility,omitempty"`
+	xxx_hidden_Deprecated           bool                       `protobuf:"varint,19,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	xxx_hidden_DeprecationMessage   string                     `protobuf:"bytes,20,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
+	xxx_hidden_IntegrationGuideUrl  string                     `protobuf:"bytes,21,opt,name=integration_guide_url,json=integrationGuideUrl,proto3" json:"integration_guide_url,omitempty"`
+	xxx_hidden_Doc                  string                     `protobuf:"bytes,22,opt,name=doc,proto3" json:"doc,omitempty"`
+	xxx_hidden_Collections          *[]*PluginCollection       `protobuf:"bytes,23,rep,name=collections,proto3" json:"collections,omitempty"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *CuratedPlugin) Reset() {
@@ -1788,266 +1718,270 @@ func (x *CuratedPlugin) ProtoReflect() protoreflect.Message {
 
 func (x *CuratedPlugin) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetRegistryType() PluginRegistryType {
 	if x != nil {
-		return x.RegistryType
+		return x.xxx_hidden_RegistryType
 	}
 	return PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED
 }
 
 func (x *CuratedPlugin) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetContainerImageDigest() string {
 	if x != nil {
-		return x.ContainerImageDigest
+		return x.xxx_hidden_ContainerImageDigest
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *CuratedPlugin) GetDependencies() []*CuratedPluginReference {
 	if x != nil {
-		return x.Dependencies
+		if x.xxx_hidden_Dependencies != nil {
+			return *x.xxx_hidden_Dependencies
+		}
 	}
 	return nil
 }
 
 func (x *CuratedPlugin) GetSourceUrl() string {
 	if x != nil {
-		return x.SourceUrl
+		return x.xxx_hidden_SourceUrl
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetDescription() string {
 	if x != nil {
-		return x.Description
+		return x.xxx_hidden_Description
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetRegistryConfig() *RegistryConfig {
 	if x != nil {
-		return x.RegistryConfig
+		return x.xxx_hidden_RegistryConfig
 	}
 	return nil
 }
 
 func (x *CuratedPlugin) GetRevision() uint32 {
 	if x != nil {
-		return x.Revision
+		return x.xxx_hidden_Revision
 	}
 	return 0
 }
 
 func (x *CuratedPlugin) GetOutputLanguages() []PluginLanguage {
 	if x != nil {
-		return x.OutputLanguages
+		return x.xxx_hidden_OutputLanguages
 	}
 	return nil
 }
 
 func (x *CuratedPlugin) GetSpdxLicenseId() string {
 	if x != nil {
-		return x.SpdxLicenseId
+		return x.xxx_hidden_SpdxLicenseId
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetLicenseUrl() string {
 	if x != nil {
-		return x.LicenseUrl
+		return x.xxx_hidden_LicenseUrl
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetVerified() bool {
 	if x != nil {
-		return x.Verified
+		return x.xxx_hidden_Verified
 	}
 	return false
 }
 
 func (x *CuratedPlugin) GetVisibility() CuratedPluginVisibility {
 	if x != nil {
-		return x.Visibility
+		return x.xxx_hidden_Visibility
 	}
 	return CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_UNSPECIFIED
 }
 
 func (x *CuratedPlugin) GetDeprecated() bool {
 	if x != nil {
-		return x.Deprecated
+		return x.xxx_hidden_Deprecated
 	}
 	return false
 }
 
 func (x *CuratedPlugin) GetDeprecationMessage() string {
 	if x != nil {
-		return x.DeprecationMessage
+		return x.xxx_hidden_DeprecationMessage
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetIntegrationGuideUrl() string {
 	if x != nil {
-		return x.IntegrationGuideUrl
+		return x.xxx_hidden_IntegrationGuideUrl
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetDoc() string {
 	if x != nil {
-		return x.Doc
+		return x.xxx_hidden_Doc
 	}
 	return ""
 }
 
 func (x *CuratedPlugin) GetCollections() []*PluginCollection {
 	if x != nil {
-		return x.Collections
+		if x.xxx_hidden_Collections != nil {
+			return *x.xxx_hidden_Collections
+		}
 	}
 	return nil
 }
 
 func (x *CuratedPlugin) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *CuratedPlugin) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *CuratedPlugin) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CuratedPlugin) SetRegistryType(v PluginRegistryType) {
-	x.RegistryType = v
+	x.xxx_hidden_RegistryType = v
 }
 
 func (x *CuratedPlugin) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *CuratedPlugin) SetContainerImageDigest(v string) {
-	x.ContainerImageDigest = v
+	x.xxx_hidden_ContainerImageDigest = v
 }
 
 func (x *CuratedPlugin) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *CuratedPlugin) SetDependencies(v []*CuratedPluginReference) {
-	x.Dependencies = v
+	x.xxx_hidden_Dependencies = &v
 }
 
 func (x *CuratedPlugin) SetSourceUrl(v string) {
-	x.SourceUrl = v
+	x.xxx_hidden_SourceUrl = v
 }
 
 func (x *CuratedPlugin) SetDescription(v string) {
-	x.Description = v
+	x.xxx_hidden_Description = v
 }
 
 func (x *CuratedPlugin) SetRegistryConfig(v *RegistryConfig) {
-	x.RegistryConfig = v
+	x.xxx_hidden_RegistryConfig = v
 }
 
 func (x *CuratedPlugin) SetRevision(v uint32) {
-	x.Revision = v
+	x.xxx_hidden_Revision = v
 }
 
 func (x *CuratedPlugin) SetOutputLanguages(v []PluginLanguage) {
-	x.OutputLanguages = v
+	x.xxx_hidden_OutputLanguages = v
 }
 
 func (x *CuratedPlugin) SetSpdxLicenseId(v string) {
-	x.SpdxLicenseId = v
+	x.xxx_hidden_SpdxLicenseId = v
 }
 
 func (x *CuratedPlugin) SetLicenseUrl(v string) {
-	x.LicenseUrl = v
+	x.xxx_hidden_LicenseUrl = v
 }
 
 func (x *CuratedPlugin) SetVerified(v bool) {
-	x.Verified = v
+	x.xxx_hidden_Verified = v
 }
 
 func (x *CuratedPlugin) SetVisibility(v CuratedPluginVisibility) {
-	x.Visibility = v
+	x.xxx_hidden_Visibility = v
 }
 
 func (x *CuratedPlugin) SetDeprecated(v bool) {
-	x.Deprecated = v
+	x.xxx_hidden_Deprecated = v
 }
 
 func (x *CuratedPlugin) SetDeprecationMessage(v string) {
-	x.DeprecationMessage = v
+	x.xxx_hidden_DeprecationMessage = v
 }
 
 func (x *CuratedPlugin) SetIntegrationGuideUrl(v string) {
-	x.IntegrationGuideUrl = v
+	x.xxx_hidden_IntegrationGuideUrl = v
 }
 
 func (x *CuratedPlugin) SetDoc(v string) {
-	x.Doc = v
+	x.xxx_hidden_Doc = v
 }
 
 func (x *CuratedPlugin) SetCollections(v []*PluginCollection) {
-	x.Collections = v
+	x.xxx_hidden_Collections = &v
 }
 
 func (x *CuratedPlugin) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *CuratedPlugin) HasRegistryConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.RegistryConfig != nil
+	return x.xxx_hidden_RegistryConfig != nil
 }
 
 func (x *CuratedPlugin) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 func (x *CuratedPlugin) ClearRegistryConfig() {
-	x.RegistryConfig = nil
+	x.xxx_hidden_RegistryConfig = nil
 }
 
 type CuratedPlugin_builder struct {
@@ -2107,38 +2041,37 @@ func (b0 CuratedPlugin_builder) Build() *CuratedPlugin {
 	m0 := &CuratedPlugin{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.RegistryType = b.RegistryType
-	x.Version = b.Version
-	x.ContainerImageDigest = b.ContainerImageDigest
-	x.CreateTime = b.CreateTime
-	x.Dependencies = b.Dependencies
-	x.SourceUrl = b.SourceUrl
-	x.Description = b.Description
-	x.RegistryConfig = b.RegistryConfig
-	x.Revision = b.Revision
-	x.OutputLanguages = b.OutputLanguages
-	x.SpdxLicenseId = b.SpdxLicenseId
-	x.LicenseUrl = b.LicenseUrl
-	x.Verified = b.Verified
-	x.Visibility = b.Visibility
-	x.Deprecated = b.Deprecated
-	x.DeprecationMessage = b.DeprecationMessage
-	x.IntegrationGuideUrl = b.IntegrationGuideUrl
-	x.Doc = b.Doc
-	x.Collections = b.Collections
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_RegistryType = b.RegistryType
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_ContainerImageDigest = b.ContainerImageDigest
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_Dependencies = &b.Dependencies
+	x.xxx_hidden_SourceUrl = b.SourceUrl
+	x.xxx_hidden_Description = b.Description
+	x.xxx_hidden_RegistryConfig = b.RegistryConfig
+	x.xxx_hidden_Revision = b.Revision
+	x.xxx_hidden_OutputLanguages = b.OutputLanguages
+	x.xxx_hidden_SpdxLicenseId = b.SpdxLicenseId
+	x.xxx_hidden_LicenseUrl = b.LicenseUrl
+	x.xxx_hidden_Verified = b.Verified
+	x.xxx_hidden_Visibility = b.Visibility
+	x.xxx_hidden_Deprecated = b.Deprecated
+	x.xxx_hidden_DeprecationMessage = b.DeprecationMessage
+	x.xxx_hidden_IntegrationGuideUrl = b.IntegrationGuideUrl
+	x.xxx_hidden_Doc = b.Doc
+	x.xxx_hidden_Collections = &b.Collections
 	return m0
 }
 
 // Plugin collections group related plugins, organizing them by functionality or ecosystem.
 type PluginCollection struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the collection.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PluginCollection) Reset() {
@@ -2168,13 +2101,13 @@ func (x *PluginCollection) ProtoReflect() protoreflect.Message {
 
 func (x *PluginCollection) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *PluginCollection) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 type PluginCollection_builder struct {
@@ -2188,29 +2121,18 @@ func (b0 PluginCollection_builder) Build() *PluginCollection {
 	m0 := &PluginCollection{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
+	x.xxx_hidden_Name = b.Name
 	return m0
 }
 
 type GenerateCodeRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The image to run plugins against to generate the desired file outputs.
-	//
-	// All image files that are not imports and not well-known types will be generated.
-	// If you want to filter what files are generated, modify the image.
-	// If you want to include imports, set include_imports.
-	Image    *v1.Image                  `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
-	Requests []*PluginGenerationRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
-	// Include imports from the Image in generation. If include_imports is also set
-	// in one of requests, use the request's value for that plugin.
-	IncludeImports bool `protobuf:"varint,3,opt,name=include_imports,json=includeImports,proto3" json:"include_imports,omitempty"`
-	// Include Well-Known Types from the Image in generation.
-	//
-	// include_imports must be set if include_well_known_types is set. If include_well_known_types
-	// is also set in one of requests, use the request's value for that plugin.
-	IncludeWellKnownTypes bool `protobuf:"varint,4,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3" json:"include_well_known_types,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Image                 *v1.Image                   `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	xxx_hidden_Requests              *[]*PluginGenerationRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
+	xxx_hidden_IncludeImports        bool                        `protobuf:"varint,3,opt,name=include_imports,json=includeImports,proto3" json:"include_imports,omitempty"`
+	xxx_hidden_IncludeWellKnownTypes bool                        `protobuf:"varint,4,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3" json:"include_well_known_types,omitempty"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *GenerateCodeRequest) Reset() {
@@ -2240,57 +2162,59 @@ func (x *GenerateCodeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GenerateCodeRequest) GetImage() *v1.Image {
 	if x != nil {
-		return x.Image
+		return x.xxx_hidden_Image
 	}
 	return nil
 }
 
 func (x *GenerateCodeRequest) GetRequests() []*PluginGenerationRequest {
 	if x != nil {
-		return x.Requests
+		if x.xxx_hidden_Requests != nil {
+			return *x.xxx_hidden_Requests
+		}
 	}
 	return nil
 }
 
 func (x *GenerateCodeRequest) GetIncludeImports() bool {
 	if x != nil {
-		return x.IncludeImports
+		return x.xxx_hidden_IncludeImports
 	}
 	return false
 }
 
 func (x *GenerateCodeRequest) GetIncludeWellKnownTypes() bool {
 	if x != nil {
-		return x.IncludeWellKnownTypes
+		return x.xxx_hidden_IncludeWellKnownTypes
 	}
 	return false
 }
 
 func (x *GenerateCodeRequest) SetImage(v *v1.Image) {
-	x.Image = v
+	x.xxx_hidden_Image = v
 }
 
 func (x *GenerateCodeRequest) SetRequests(v []*PluginGenerationRequest) {
-	x.Requests = v
+	x.xxx_hidden_Requests = &v
 }
 
 func (x *GenerateCodeRequest) SetIncludeImports(v bool) {
-	x.IncludeImports = v
+	x.xxx_hidden_IncludeImports = v
 }
 
 func (x *GenerateCodeRequest) SetIncludeWellKnownTypes(v bool) {
-	x.IncludeWellKnownTypes = v
+	x.xxx_hidden_IncludeWellKnownTypes = v
 }
 
 func (x *GenerateCodeRequest) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.Image != nil
+	return x.xxx_hidden_Image != nil
 }
 
 func (x *GenerateCodeRequest) ClearImage() {
-	x.Image = nil
+	x.xxx_hidden_Image = nil
 }
 
 type GenerateCodeRequest_builder struct {
@@ -2317,20 +2241,18 @@ func (b0 GenerateCodeRequest_builder) Build() *GenerateCodeRequest {
 	m0 := &GenerateCodeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Image = b.Image
-	x.Requests = b.Requests
-	x.IncludeImports = b.IncludeImports
-	x.IncludeWellKnownTypes = b.IncludeWellKnownTypes
+	x.xxx_hidden_Image = b.Image
+	x.xxx_hidden_Requests = &b.Requests
+	x.xxx_hidden_IncludeImports = b.IncludeImports
+	x.xxx_hidden_IncludeWellKnownTypes = b.IncludeWellKnownTypes
 	return m0
 }
 
 type GenerateCodeResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Responses from each plugin execution.
-	// The order of each response matches the order in the GenerateCodeRequest.
-	Responses     []*PluginGenerationResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Responses *[]*PluginGenerationResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GenerateCodeResponse) Reset() {
@@ -2360,13 +2282,15 @@ func (x *GenerateCodeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GenerateCodeResponse) GetResponses() []*PluginGenerationResponse {
 	if x != nil {
-		return x.Responses
+		if x.xxx_hidden_Responses != nil {
+			return *x.xxx_hidden_Responses
+		}
 	}
 	return nil
 }
 
 func (x *GenerateCodeResponse) SetResponses(v []*PluginGenerationResponse) {
-	x.Responses = v
+	x.xxx_hidden_Responses = &v
 }
 
 type GenerateCodeResponse_builder struct {
@@ -2381,26 +2305,21 @@ func (b0 GenerateCodeResponse_builder) Build() *GenerateCodeResponse {
 	m0 := &GenerateCodeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Responses = b.Responses
+	x.xxx_hidden_Responses = &b.Responses
 	return m0
 }
 
 // Request for performing code generation using the specified plugin.
 type PluginGenerationRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin to execute.
-	PluginReference *CuratedPluginReference `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The options to pass to the plugin. These will
-	// be merged into a single, comma-separated string.
-	Options []string `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty"`
-	// Include imports from the Image in generation.
-	IncludeImports *bool `protobuf:"varint,3,opt,name=include_imports,json=includeImports,proto3,oneof" json:"include_imports,omitempty"`
-	// Include Well-Known Types from the Image in generation.
-	//
-	// include_imports must be set if include_well_known_types is set.
-	IncludeWellKnownTypes *bool `protobuf:"varint,4,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3,oneof" json:"include_well_known_types,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference       *CuratedPluginReference `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_Options               []string                `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty"`
+	xxx_hidden_IncludeImports        bool                    `protobuf:"varint,3,opt,name=include_imports,json=includeImports,proto3,oneof" json:"include_imports,omitempty"`
+	xxx_hidden_IncludeWellKnownTypes bool                    `protobuf:"varint,4,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3,oneof" json:"include_well_known_types,omitempty"`
+	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
+	XXX_presence                     [1]uint32
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *PluginGenerationRequest) Reset() {
@@ -2430,79 +2349,83 @@ func (x *PluginGenerationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PluginGenerationRequest) GetPluginReference() *CuratedPluginReference {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *PluginGenerationRequest) GetOptions() []string {
 	if x != nil {
-		return x.Options
+		return x.xxx_hidden_Options
 	}
 	return nil
 }
 
 func (x *PluginGenerationRequest) GetIncludeImports() bool {
-	if x != nil && x.IncludeImports != nil {
-		return *x.IncludeImports
+	if x != nil {
+		return x.xxx_hidden_IncludeImports
 	}
 	return false
 }
 
 func (x *PluginGenerationRequest) GetIncludeWellKnownTypes() bool {
-	if x != nil && x.IncludeWellKnownTypes != nil {
-		return *x.IncludeWellKnownTypes
+	if x != nil {
+		return x.xxx_hidden_IncludeWellKnownTypes
 	}
 	return false
 }
 
 func (x *PluginGenerationRequest) SetPluginReference(v *CuratedPluginReference) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *PluginGenerationRequest) SetOptions(v []string) {
-	x.Options = v
+	x.xxx_hidden_Options = v
 }
 
 func (x *PluginGenerationRequest) SetIncludeImports(v bool) {
-	x.IncludeImports = &v
+	x.xxx_hidden_IncludeImports = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
 func (x *PluginGenerationRequest) SetIncludeWellKnownTypes(v bool) {
-	x.IncludeWellKnownTypes = &v
+	x.xxx_hidden_IncludeWellKnownTypes = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
 }
 
 func (x *PluginGenerationRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *PluginGenerationRequest) HasIncludeImports() bool {
 	if x == nil {
 		return false
 	}
-	return x.IncludeImports != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *PluginGenerationRequest) HasIncludeWellKnownTypes() bool {
 	if x == nil {
 		return false
 	}
-	return x.IncludeWellKnownTypes != nil
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *PluginGenerationRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *PluginGenerationRequest) ClearIncludeImports() {
-	x.IncludeImports = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_IncludeImports = false
 }
 
 func (x *PluginGenerationRequest) ClearIncludeWellKnownTypes() {
-	x.IncludeWellKnownTypes = nil
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_IncludeWellKnownTypes = false
 }
 
 type PluginGenerationRequest_builder struct {
@@ -2525,20 +2448,25 @@ func (b0 PluginGenerationRequest_builder) Build() *PluginGenerationRequest {
 	m0 := &PluginGenerationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.Options = b.Options
-	x.IncludeImports = b.IncludeImports
-	x.IncludeWellKnownTypes = b.IncludeWellKnownTypes
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_Options = b.Options
+	if b.IncludeImports != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		x.xxx_hidden_IncludeImports = *b.IncludeImports
+	}
+	if b.IncludeWellKnownTypes != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
+		x.xxx_hidden_IncludeWellKnownTypes = *b.IncludeWellKnownTypes
+	}
 	return m0
 }
 
 // Response from code generation for a given plugin.
 type PluginGenerationResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Generated code from the plugin.
-	Response      *pluginpb.CodeGeneratorResponse `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Response *pluginpb.CodeGeneratorResponse `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *PluginGenerationResponse) Reset() {
@@ -2568,24 +2496,24 @@ func (x *PluginGenerationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PluginGenerationResponse) GetResponse() *pluginpb.CodeGeneratorResponse {
 	if x != nil {
-		return x.Response
+		return x.xxx_hidden_Response
 	}
 	return nil
 }
 
 func (x *PluginGenerationResponse) SetResponse(v *pluginpb.CodeGeneratorResponse) {
-	x.Response = v
+	x.xxx_hidden_Response = v
 }
 
 func (x *PluginGenerationResponse) HasResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.Response != nil
+	return x.xxx_hidden_Response != nil
 }
 
 func (x *PluginGenerationResponse) ClearResponse() {
-	x.Response = nil
+	x.xxx_hidden_Response = nil
 }
 
 type PluginGenerationResponse_builder struct {
@@ -2599,21 +2527,17 @@ func (b0 PluginGenerationResponse_builder) Build() *PluginGenerationResponse {
 	m0 := &PluginGenerationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Response = b.Response
+	x.xxx_hidden_Response = b.Response
 	return m0
 }
 
 type DeleteCuratedPluginRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the plugin to delete.
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the plugin to delete.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Version is the plugin version and is optional. If this field is not set then delete all versions,
-	// otherwise delete only the specified version which includes all revisions.
-	Version       string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner   string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Version string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DeleteCuratedPluginRequest) Reset() {
@@ -2643,35 +2567,35 @@ func (x *DeleteCuratedPluginRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteCuratedPluginRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *DeleteCuratedPluginRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *DeleteCuratedPluginRequest) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *DeleteCuratedPluginRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *DeleteCuratedPluginRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *DeleteCuratedPluginRequest) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type DeleteCuratedPluginRequest_builder struct {
@@ -2690,14 +2614,14 @@ func (b0 DeleteCuratedPluginRequest_builder) Build() *DeleteCuratedPluginRequest
 	m0 := &DeleteCuratedPluginRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.Version = b.Version
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type DeleteCuratedPluginResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2740,44 +2664,25 @@ func (b0 DeleteCuratedPluginResponse_builder) Build() *DeleteCuratedPluginRespon
 }
 
 type CreateCuratedPluginRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the plugin, i.e. "library".
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the plugin, i.e. "connect-go".
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The optional registry type of the plugin.
-	RegistryType PluginRegistryType `protobuf:"varint,3,opt,name=registry_type,json=registryType,proto3,enum=buf.alpha.registry.v1alpha1.PluginRegistryType" json:"registry_type,omitempty"`
-	// Semver-formatted plugin version.
-	Version string `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
-	// The full container image digest associated with this plugin version including
-	// the algorithm.
-	// Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
-	ContainerImageDigest string `protobuf:"bytes,5,opt,name=container_image_digest,json=containerImageDigest,proto3" json:"container_image_digest,omitempty"`
-	// List of plugin dependencies.
-	Dependencies []*CuratedPluginReference `protobuf:"bytes,7,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
-	// The URL leading to the source code of the plugin, if available.
-	SourceUrl string `protobuf:"bytes,8,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	// A brief description of the plugin functionality.
-	Description string `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	// The configuration for the remote registry of the plugin.
-	RegistryConfig *RegistryConfig `protobuf:"bytes,12,opt,name=registry_config,json=registryConfig,proto3" json:"registry_config,omitempty"`
-	// The revision for this plugin version.
-	Revision uint32 `protobuf:"varint,13,opt,name=revision,proto3" json:"revision,omitempty"`
-	// The output languages supported by the plugin.
-	OutputLanguages []PluginLanguage `protobuf:"varint,14,rep,packed,name=output_languages,json=outputLanguages,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"output_languages,omitempty"`
-	// spdx_license_id is the license of the plugin, which should be one of the identifiers
-	// defined in https://spdx.org/licenses
-	SpdxLicenseId string `protobuf:"bytes,15,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
-	// license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
-	LicenseUrl string `protobuf:"bytes,16,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
-	// Visibility indicates whether the plugin is public or private.
-	Visibility CuratedPluginVisibility `protobuf:"varint,17,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.CuratedPluginVisibility" json:"visibility,omitempty"`
-	// The URL leading to the integration guide of the plugin, if available.
-	IntegrationGuideUrl string `protobuf:"bytes,18,opt,name=integration_guide_url,json=integrationGuideUrl,proto3" json:"integration_guide_url,omitempty"`
-	// The deprecation status of the plugin.
-	Deprecated    bool `protobuf:"varint,19,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                           protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_Owner                string                     `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name                 string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_RegistryType         PluginRegistryType         `protobuf:"varint,3,opt,name=registry_type,json=registryType,proto3,enum=buf.alpha.registry.v1alpha1.PluginRegistryType" json:"registry_type,omitempty"`
+	xxx_hidden_Version              string                     `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_ContainerImageDigest string                     `protobuf:"bytes,5,opt,name=container_image_digest,json=containerImageDigest,proto3" json:"container_image_digest,omitempty"`
+	xxx_hidden_Dependencies         *[]*CuratedPluginReference `protobuf:"bytes,7,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
+	xxx_hidden_SourceUrl            string                     `protobuf:"bytes,8,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	xxx_hidden_Description          string                     `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	xxx_hidden_RegistryConfig       *RegistryConfig            `protobuf:"bytes,12,opt,name=registry_config,json=registryConfig,proto3" json:"registry_config,omitempty"`
+	xxx_hidden_Revision             uint32                     `protobuf:"varint,13,opt,name=revision,proto3" json:"revision,omitempty"`
+	xxx_hidden_OutputLanguages      []PluginLanguage           `protobuf:"varint,14,rep,packed,name=output_languages,json=outputLanguages,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"output_languages,omitempty"`
+	xxx_hidden_SpdxLicenseId        string                     `protobuf:"bytes,15,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
+	xxx_hidden_LicenseUrl           string                     `protobuf:"bytes,16,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
+	xxx_hidden_Visibility           CuratedPluginVisibility    `protobuf:"varint,17,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.CuratedPluginVisibility" json:"visibility,omitempty"`
+	xxx_hidden_IntegrationGuideUrl  string                     `protobuf:"bytes,18,opt,name=integration_guide_url,json=integrationGuideUrl,proto3" json:"integration_guide_url,omitempty"`
+	xxx_hidden_Deprecated           bool                       `protobuf:"varint,19,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *CreateCuratedPluginRequest) Reset() {
@@ -2807,189 +2712,191 @@ func (x *CreateCuratedPluginRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCuratedPluginRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetRegistryType() PluginRegistryType {
 	if x != nil {
-		return x.RegistryType
+		return x.xxx_hidden_RegistryType
 	}
 	return PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED
 }
 
 func (x *CreateCuratedPluginRequest) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetContainerImageDigest() string {
 	if x != nil {
-		return x.ContainerImageDigest
+		return x.xxx_hidden_ContainerImageDigest
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetDependencies() []*CuratedPluginReference {
 	if x != nil {
-		return x.Dependencies
+		if x.xxx_hidden_Dependencies != nil {
+			return *x.xxx_hidden_Dependencies
+		}
 	}
 	return nil
 }
 
 func (x *CreateCuratedPluginRequest) GetSourceUrl() string {
 	if x != nil {
-		return x.SourceUrl
+		return x.xxx_hidden_SourceUrl
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetDescription() string {
 	if x != nil {
-		return x.Description
+		return x.xxx_hidden_Description
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetRegistryConfig() *RegistryConfig {
 	if x != nil {
-		return x.RegistryConfig
+		return x.xxx_hidden_RegistryConfig
 	}
 	return nil
 }
 
 func (x *CreateCuratedPluginRequest) GetRevision() uint32 {
 	if x != nil {
-		return x.Revision
+		return x.xxx_hidden_Revision
 	}
 	return 0
 }
 
 func (x *CreateCuratedPluginRequest) GetOutputLanguages() []PluginLanguage {
 	if x != nil {
-		return x.OutputLanguages
+		return x.xxx_hidden_OutputLanguages
 	}
 	return nil
 }
 
 func (x *CreateCuratedPluginRequest) GetSpdxLicenseId() string {
 	if x != nil {
-		return x.SpdxLicenseId
+		return x.xxx_hidden_SpdxLicenseId
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetLicenseUrl() string {
 	if x != nil {
-		return x.LicenseUrl
+		return x.xxx_hidden_LicenseUrl
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetVisibility() CuratedPluginVisibility {
 	if x != nil {
-		return x.Visibility
+		return x.xxx_hidden_Visibility
 	}
 	return CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_UNSPECIFIED
 }
 
 func (x *CreateCuratedPluginRequest) GetIntegrationGuideUrl() string {
 	if x != nil {
-		return x.IntegrationGuideUrl
+		return x.xxx_hidden_IntegrationGuideUrl
 	}
 	return ""
 }
 
 func (x *CreateCuratedPluginRequest) GetDeprecated() bool {
 	if x != nil {
-		return x.Deprecated
+		return x.xxx_hidden_Deprecated
 	}
 	return false
 }
 
 func (x *CreateCuratedPluginRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *CreateCuratedPluginRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CreateCuratedPluginRequest) SetRegistryType(v PluginRegistryType) {
-	x.RegistryType = v
+	x.xxx_hidden_RegistryType = v
 }
 
 func (x *CreateCuratedPluginRequest) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *CreateCuratedPluginRequest) SetContainerImageDigest(v string) {
-	x.ContainerImageDigest = v
+	x.xxx_hidden_ContainerImageDigest = v
 }
 
 func (x *CreateCuratedPluginRequest) SetDependencies(v []*CuratedPluginReference) {
-	x.Dependencies = v
+	x.xxx_hidden_Dependencies = &v
 }
 
 func (x *CreateCuratedPluginRequest) SetSourceUrl(v string) {
-	x.SourceUrl = v
+	x.xxx_hidden_SourceUrl = v
 }
 
 func (x *CreateCuratedPluginRequest) SetDescription(v string) {
-	x.Description = v
+	x.xxx_hidden_Description = v
 }
 
 func (x *CreateCuratedPluginRequest) SetRegistryConfig(v *RegistryConfig) {
-	x.RegistryConfig = v
+	x.xxx_hidden_RegistryConfig = v
 }
 
 func (x *CreateCuratedPluginRequest) SetRevision(v uint32) {
-	x.Revision = v
+	x.xxx_hidden_Revision = v
 }
 
 func (x *CreateCuratedPluginRequest) SetOutputLanguages(v []PluginLanguage) {
-	x.OutputLanguages = v
+	x.xxx_hidden_OutputLanguages = v
 }
 
 func (x *CreateCuratedPluginRequest) SetSpdxLicenseId(v string) {
-	x.SpdxLicenseId = v
+	x.xxx_hidden_SpdxLicenseId = v
 }
 
 func (x *CreateCuratedPluginRequest) SetLicenseUrl(v string) {
-	x.LicenseUrl = v
+	x.xxx_hidden_LicenseUrl = v
 }
 
 func (x *CreateCuratedPluginRequest) SetVisibility(v CuratedPluginVisibility) {
-	x.Visibility = v
+	x.xxx_hidden_Visibility = v
 }
 
 func (x *CreateCuratedPluginRequest) SetIntegrationGuideUrl(v string) {
-	x.IntegrationGuideUrl = v
+	x.xxx_hidden_IntegrationGuideUrl = v
 }
 
 func (x *CreateCuratedPluginRequest) SetDeprecated(v bool) {
-	x.Deprecated = v
+	x.xxx_hidden_Deprecated = v
 }
 
 func (x *CreateCuratedPluginRequest) HasRegistryConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.RegistryConfig != nil
+	return x.xxx_hidden_RegistryConfig != nil
 }
 
 func (x *CreateCuratedPluginRequest) ClearRegistryConfig() {
-	x.RegistryConfig = nil
+	x.xxx_hidden_RegistryConfig = nil
 }
 
 type CreateCuratedPluginRequest_builder struct {
@@ -3036,31 +2943,30 @@ func (b0 CreateCuratedPluginRequest_builder) Build() *CreateCuratedPluginRequest
 	m0 := &CreateCuratedPluginRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.RegistryType = b.RegistryType
-	x.Version = b.Version
-	x.ContainerImageDigest = b.ContainerImageDigest
-	x.Dependencies = b.Dependencies
-	x.SourceUrl = b.SourceUrl
-	x.Description = b.Description
-	x.RegistryConfig = b.RegistryConfig
-	x.Revision = b.Revision
-	x.OutputLanguages = b.OutputLanguages
-	x.SpdxLicenseId = b.SpdxLicenseId
-	x.LicenseUrl = b.LicenseUrl
-	x.Visibility = b.Visibility
-	x.IntegrationGuideUrl = b.IntegrationGuideUrl
-	x.Deprecated = b.Deprecated
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_RegistryType = b.RegistryType
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_ContainerImageDigest = b.ContainerImageDigest
+	x.xxx_hidden_Dependencies = &b.Dependencies
+	x.xxx_hidden_SourceUrl = b.SourceUrl
+	x.xxx_hidden_Description = b.Description
+	x.xxx_hidden_RegistryConfig = b.RegistryConfig
+	x.xxx_hidden_Revision = b.Revision
+	x.xxx_hidden_OutputLanguages = b.OutputLanguages
+	x.xxx_hidden_SpdxLicenseId = b.SpdxLicenseId
+	x.xxx_hidden_LicenseUrl = b.LicenseUrl
+	x.xxx_hidden_Visibility = b.Visibility
+	x.xxx_hidden_IntegrationGuideUrl = b.IntegrationGuideUrl
+	x.xxx_hidden_Deprecated = b.Deprecated
 	return m0
 }
 
 type CreateCuratedPluginResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The created plugin.
-	Configuration *CuratedPlugin `protobuf:"bytes,1,opt,name=configuration,proto3" json:"configuration,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Configuration *CuratedPlugin         `protobuf:"bytes,1,opt,name=configuration,proto3" json:"configuration,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *CreateCuratedPluginResponse) Reset() {
@@ -3090,24 +2996,24 @@ func (x *CreateCuratedPluginResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCuratedPluginResponse) GetConfiguration() *CuratedPlugin {
 	if x != nil {
-		return x.Configuration
+		return x.xxx_hidden_Configuration
 	}
 	return nil
 }
 
 func (x *CreateCuratedPluginResponse) SetConfiguration(v *CuratedPlugin) {
-	x.Configuration = v
+	x.xxx_hidden_Configuration = v
 }
 
 func (x *CreateCuratedPluginResponse) HasConfiguration() bool {
 	if x == nil {
 		return false
 	}
-	return x.Configuration != nil
+	return x.xxx_hidden_Configuration != nil
 }
 
 func (x *CreateCuratedPluginResponse) ClearConfiguration() {
-	x.Configuration = nil
+	x.xxx_hidden_Configuration = nil
 }
 
 type CreateCuratedPluginResponse_builder struct {
@@ -3121,22 +3027,19 @@ func (b0 CreateCuratedPluginResponse_builder) Build() *CreateCuratedPluginRespon
 	m0 := &CreateCuratedPluginResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Configuration = b.Configuration
+	x.xxx_hidden_Configuration = b.Configuration
 	return m0
 }
 
 type ListCuratedPluginsRequest struct {
-	state    protoimpl.MessageState `protogen:"hybrid.v1"`
-	PageSize uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is empty.
-	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	// If true, will only return plugins which support remote packages (registry_type is set).
-	SupportsRemotePackages bool `protobuf:"varint,4,opt,name=supports_remote_packages,json=supportsRemotePackages,proto3" json:"supports_remote_packages,omitempty"`
-	// If true, will include deprecated plugins.
-	IncludeDeprecated bool `protobuf:"varint,5,opt,name=include_deprecated,json=includeDeprecated,proto3" json:"include_deprecated,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PageSize               uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken              string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse                bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	xxx_hidden_SupportsRemotePackages bool                   `protobuf:"varint,4,opt,name=supports_remote_packages,json=supportsRemotePackages,proto3" json:"supports_remote_packages,omitempty"`
+	xxx_hidden_IncludeDeprecated      bool                   `protobuf:"varint,5,opt,name=include_deprecated,json=includeDeprecated,proto3" json:"include_deprecated,omitempty"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *ListCuratedPluginsRequest) Reset() {
@@ -3166,57 +3069,57 @@ func (x *ListCuratedPluginsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListCuratedPluginsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListCuratedPluginsRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListCuratedPluginsRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListCuratedPluginsRequest) GetSupportsRemotePackages() bool {
 	if x != nil {
-		return x.SupportsRemotePackages
+		return x.xxx_hidden_SupportsRemotePackages
 	}
 	return false
 }
 
 func (x *ListCuratedPluginsRequest) GetIncludeDeprecated() bool {
 	if x != nil {
-		return x.IncludeDeprecated
+		return x.xxx_hidden_IncludeDeprecated
 	}
 	return false
 }
 
 func (x *ListCuratedPluginsRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListCuratedPluginsRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListCuratedPluginsRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 func (x *ListCuratedPluginsRequest) SetSupportsRemotePackages(v bool) {
-	x.SupportsRemotePackages = v
+	x.xxx_hidden_SupportsRemotePackages = v
 }
 
 func (x *ListCuratedPluginsRequest) SetIncludeDeprecated(v bool) {
-	x.IncludeDeprecated = v
+	x.xxx_hidden_IncludeDeprecated = v
 }
 
 type ListCuratedPluginsRequest_builder struct {
@@ -3236,21 +3139,20 @@ func (b0 ListCuratedPluginsRequest_builder) Build() *ListCuratedPluginsRequest {
 	m0 := &ListCuratedPluginsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
-	x.SupportsRemotePackages = b.SupportsRemotePackages
-	x.IncludeDeprecated = b.IncludeDeprecated
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
+	x.xxx_hidden_SupportsRemotePackages = b.SupportsRemotePackages
+	x.xxx_hidden_IncludeDeprecated = b.IncludeDeprecated
 	return m0
 }
 
 type ListCuratedPluginsResponse struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Plugins []*CuratedPlugin       `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
-	// There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Plugins       *[]*CuratedPlugin      `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
+	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListCuratedPluginsResponse) Reset() {
@@ -3280,24 +3182,26 @@ func (x *ListCuratedPluginsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListCuratedPluginsResponse) GetPlugins() []*CuratedPlugin {
 	if x != nil {
-		return x.Plugins
+		if x.xxx_hidden_Plugins != nil {
+			return *x.xxx_hidden_Plugins
+		}
 	}
 	return nil
 }
 
 func (x *ListCuratedPluginsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListCuratedPluginsResponse) SetPlugins(v []*CuratedPlugin) {
-	x.Plugins = v
+	x.xxx_hidden_Plugins = &v
 }
 
 func (x *ListCuratedPluginsResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListCuratedPluginsResponse_builder struct {
@@ -3312,29 +3216,20 @@ func (b0 ListCuratedPluginsResponse_builder) Build() *ListCuratedPluginsResponse
 	m0 := &ListCuratedPluginsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Plugins = b.Plugins
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Plugins = &b.Plugins
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 type GetLatestCuratedPluginRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the plugin, i.e. "library".
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the plugin, i.e. "connect-go".
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Both version (semver-formatted) and revision are optional, which means
-	// return the latest plugin.
-	// If version is set, but revision is omitted, then return the latest
-	// revision for that version.
-	// If version and revision are both set, return specific plugin.
-	// It is an error to set a revision without a corresponding version.
-	Version  string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	Revision uint32 `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
-	// If true, will only return versions (and revisions) which support remote packages (registry_type is set).
-	SupportsRemotePackages bool `protobuf:"varint,5,opt,name=supports_remote_packages,json=supportsRemotePackages,proto3" json:"supports_remote_packages,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner                  string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name                   string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Version                string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Revision               uint32                 `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
+	xxx_hidden_SupportsRemotePackages bool                   `protobuf:"varint,5,opt,name=supports_remote_packages,json=supportsRemotePackages,proto3" json:"supports_remote_packages,omitempty"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *GetLatestCuratedPluginRequest) Reset() {
@@ -3364,57 +3259,57 @@ func (x *GetLatestCuratedPluginRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetLatestCuratedPluginRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *GetLatestCuratedPluginRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GetLatestCuratedPluginRequest) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetLatestCuratedPluginRequest) GetRevision() uint32 {
 	if x != nil {
-		return x.Revision
+		return x.xxx_hidden_Revision
 	}
 	return 0
 }
 
 func (x *GetLatestCuratedPluginRequest) GetSupportsRemotePackages() bool {
 	if x != nil {
-		return x.SupportsRemotePackages
+		return x.xxx_hidden_SupportsRemotePackages
 	}
 	return false
 }
 
 func (x *GetLatestCuratedPluginRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *GetLatestCuratedPluginRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *GetLatestCuratedPluginRequest) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *GetLatestCuratedPluginRequest) SetRevision(v uint32) {
-	x.Revision = v
+	x.xxx_hidden_Revision = v
 }
 
 func (x *GetLatestCuratedPluginRequest) SetSupportsRemotePackages(v bool) {
-	x.SupportsRemotePackages = v
+	x.xxx_hidden_SupportsRemotePackages = v
 }
 
 type GetLatestCuratedPluginRequest_builder struct {
@@ -3440,21 +3335,20 @@ func (b0 GetLatestCuratedPluginRequest_builder) Build() *GetLatestCuratedPluginR
 	m0 := &GetLatestCuratedPluginRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.Version = b.Version
-	x.Revision = b.Revision
-	x.SupportsRemotePackages = b.SupportsRemotePackages
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Revision = b.Revision
+	x.xxx_hidden_SupportsRemotePackages = b.SupportsRemotePackages
 	return m0
 }
 
 type GetLatestCuratedPluginResponse struct {
-	state  protoimpl.MessageState `protogen:"hybrid.v1"`
-	Plugin *CuratedPlugin         `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
-	// versions is a semver-sorted list in descending order.
-	Versions      []*CuratedPluginVersionRevisions `protobuf:"bytes,2,rep,name=versions,proto3" json:"versions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState            `protogen:"opaque.v1"`
+	xxx_hidden_Plugin   *CuratedPlugin                    `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
+	xxx_hidden_Versions *[]*CuratedPluginVersionRevisions `protobuf:"bytes,2,rep,name=versions,proto3" json:"versions,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetLatestCuratedPluginResponse) Reset() {
@@ -3484,35 +3378,37 @@ func (x *GetLatestCuratedPluginResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetLatestCuratedPluginResponse) GetPlugin() *CuratedPlugin {
 	if x != nil {
-		return x.Plugin
+		return x.xxx_hidden_Plugin
 	}
 	return nil
 }
 
 func (x *GetLatestCuratedPluginResponse) GetVersions() []*CuratedPluginVersionRevisions {
 	if x != nil {
-		return x.Versions
+		if x.xxx_hidden_Versions != nil {
+			return *x.xxx_hidden_Versions
+		}
 	}
 	return nil
 }
 
 func (x *GetLatestCuratedPluginResponse) SetPlugin(v *CuratedPlugin) {
-	x.Plugin = v
+	x.xxx_hidden_Plugin = v
 }
 
 func (x *GetLatestCuratedPluginResponse) SetVersions(v []*CuratedPluginVersionRevisions) {
-	x.Versions = v
+	x.xxx_hidden_Versions = &v
 }
 
 func (x *GetLatestCuratedPluginResponse) HasPlugin() bool {
 	if x == nil {
 		return false
 	}
-	return x.Plugin != nil
+	return x.xxx_hidden_Plugin != nil
 }
 
 func (x *GetLatestCuratedPluginResponse) ClearPlugin() {
-	x.Plugin = nil
+	x.xxx_hidden_Plugin = nil
 }
 
 type GetLatestCuratedPluginResponse_builder struct {
@@ -3527,18 +3423,17 @@ func (b0 GetLatestCuratedPluginResponse_builder) Build() *GetLatestCuratedPlugin
 	m0 := &GetLatestCuratedPluginResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Plugin = b.Plugin
-	x.Versions = b.Versions
+	x.xxx_hidden_Plugin = b.Plugin
+	x.xxx_hidden_Versions = &b.Versions
 	return m0
 }
 
 type CuratedPluginVersionRevisions struct {
-	state   protoimpl.MessageState `protogen:"hybrid.v1"`
-	Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// revisions is a sorted list in descending order.
-	Revisions     []uint32 `protobuf:"varint,2,rep,packed,name=revisions,proto3" json:"revisions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version   string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Revisions []uint32               `protobuf:"varint,2,rep,packed,name=revisions,proto3" json:"revisions,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CuratedPluginVersionRevisions) Reset() {
@@ -3568,24 +3463,24 @@ func (x *CuratedPluginVersionRevisions) ProtoReflect() protoreflect.Message {
 
 func (x *CuratedPluginVersionRevisions) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *CuratedPluginVersionRevisions) GetRevisions() []uint32 {
 	if x != nil {
-		return x.Revisions
+		return x.xxx_hidden_Revisions
 	}
 	return nil
 }
 
 func (x *CuratedPluginVersionRevisions) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *CuratedPluginVersionRevisions) SetRevisions(v []uint32) {
-	x.Revisions = v
+	x.xxx_hidden_Revisions = v
 }
 
 type CuratedPluginVersionRevisions_builder struct {
@@ -3600,20 +3495,18 @@ func (b0 CuratedPluginVersionRevisions_builder) Build() *CuratedPluginVersionRev
 	m0 := &CuratedPluginVersionRevisions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
-	x.Revisions = b.Revisions
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Revisions = b.Revisions
 	return m0
 }
 
 // RuntimeLibrary describes the runtime library dependency of the generated code.
 type GoConfig_RuntimeLibrary struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the runtime library module, i.e. "google.golang.org/protobuf".
-	Module string `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
-	// The version of the runtime library, i.e. "v1.27.1".
-	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Module  string                 `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
+	xxx_hidden_Version string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GoConfig_RuntimeLibrary) Reset() {
@@ -3643,24 +3536,24 @@ func (x *GoConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *GoConfig_RuntimeLibrary) GetModule() string {
 	if x != nil {
-		return x.Module
+		return x.xxx_hidden_Module
 	}
 	return ""
 }
 
 func (x *GoConfig_RuntimeLibrary) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GoConfig_RuntimeLibrary) SetModule(v string) {
-	x.Module = v
+	x.xxx_hidden_Module = v
 }
 
 func (x *GoConfig_RuntimeLibrary) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GoConfig_RuntimeLibrary_builder struct {
@@ -3676,20 +3569,18 @@ func (b0 GoConfig_RuntimeLibrary_builder) Build() *GoConfig_RuntimeLibrary {
 	m0 := &GoConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Module = b.Module
-	x.Version = b.Version
+	x.xxx_hidden_Module = b.Module
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 // RuntimeLibrary describes the runtime library dependency of the generated code.
 type NPMConfig_RuntimeLibrary struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the runtime library package, i.e. "@grpc/grpc-js".
-	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
-	// The version of the runtime library, i.e. "^1.27.1".
-	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Package string                 `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
+	xxx_hidden_Version string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *NPMConfig_RuntimeLibrary) Reset() {
@@ -3719,24 +3610,24 @@ func (x *NPMConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *NPMConfig_RuntimeLibrary) GetPackage() string {
 	if x != nil {
-		return x.Package
+		return x.xxx_hidden_Package
 	}
 	return ""
 }
 
 func (x *NPMConfig_RuntimeLibrary) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *NPMConfig_RuntimeLibrary) SetPackage(v string) {
-	x.Package = v
+	x.xxx_hidden_Package = v
 }
 
 func (x *NPMConfig_RuntimeLibrary) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type NPMConfig_RuntimeLibrary_builder struct {
@@ -3752,21 +3643,21 @@ func (b0 NPMConfig_RuntimeLibrary_builder) Build() *NPMConfig_RuntimeLibrary {
 	m0 := &NPMConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Package = b.Package
-	x.Version = b.Version
+	x.xxx_hidden_Package = b.Package
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 // RuntimeLibrary describes a runtime dependency of the generated code.
 type MavenConfig_RuntimeLibrary struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	ArtifactId    string                 `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
-	Version       string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	Classifier    string                 `protobuf:"bytes,4,opt,name=classifier,proto3" json:"classifier,omitempty"`
-	Extension     string                 `protobuf:"bytes,5,opt,name=extension,proto3" json:"extension,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_GroupId    string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	xxx_hidden_ArtifactId string                 `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
+	xxx_hidden_Version    string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Classifier string                 `protobuf:"bytes,4,opt,name=classifier,proto3" json:"classifier,omitempty"`
+	xxx_hidden_Extension  string                 `protobuf:"bytes,5,opt,name=extension,proto3" json:"extension,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *MavenConfig_RuntimeLibrary) Reset() {
@@ -3796,57 +3687,57 @@ func (x *MavenConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *MavenConfig_RuntimeLibrary) GetGroupId() string {
 	if x != nil {
-		return x.GroupId
+		return x.xxx_hidden_GroupId
 	}
 	return ""
 }
 
 func (x *MavenConfig_RuntimeLibrary) GetArtifactId() string {
 	if x != nil {
-		return x.ArtifactId
+		return x.xxx_hidden_ArtifactId
 	}
 	return ""
 }
 
 func (x *MavenConfig_RuntimeLibrary) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *MavenConfig_RuntimeLibrary) GetClassifier() string {
 	if x != nil {
-		return x.Classifier
+		return x.xxx_hidden_Classifier
 	}
 	return ""
 }
 
 func (x *MavenConfig_RuntimeLibrary) GetExtension() string {
 	if x != nil {
-		return x.Extension
+		return x.xxx_hidden_Extension
 	}
 	return ""
 }
 
 func (x *MavenConfig_RuntimeLibrary) SetGroupId(v string) {
-	x.GroupId = v
+	x.xxx_hidden_GroupId = v
 }
 
 func (x *MavenConfig_RuntimeLibrary) SetArtifactId(v string) {
-	x.ArtifactId = v
+	x.xxx_hidden_ArtifactId = v
 }
 
 func (x *MavenConfig_RuntimeLibrary) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *MavenConfig_RuntimeLibrary) SetClassifier(v string) {
-	x.Classifier = v
+	x.xxx_hidden_Classifier = v
 }
 
 func (x *MavenConfig_RuntimeLibrary) SetExtension(v string) {
-	x.Extension = v
+	x.xxx_hidden_Extension = v
 }
 
 type MavenConfig_RuntimeLibrary_builder struct {
@@ -3863,21 +3754,21 @@ func (b0 MavenConfig_RuntimeLibrary_builder) Build() *MavenConfig_RuntimeLibrary
 	m0 := &MavenConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.GroupId = b.GroupId
-	x.ArtifactId = b.ArtifactId
-	x.Version = b.Version
-	x.Classifier = b.Classifier
-	x.Extension = b.Extension
+	x.xxx_hidden_GroupId = b.GroupId
+	x.xxx_hidden_ArtifactId = b.ArtifactId
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Classifier = b.Classifier
+	x.xxx_hidden_Extension = b.Extension
 	return m0
 }
 
 // CompilerConfig contains configuration for the Java and/or Kotlin compiler used when compiling the generated code.
 type MavenConfig_CompilerConfig struct {
-	state         protoimpl.MessageState            `protogen:"hybrid.v1"`
-	Java          *MavenConfig_CompilerJavaConfig   `protobuf:"bytes,1,opt,name=java,proto3" json:"java,omitempty"`
-	Kotlin        *MavenConfig_CompilerKotlinConfig `protobuf:"bytes,2,opt,name=kotlin,proto3" json:"kotlin,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState            `protogen:"opaque.v1"`
+	xxx_hidden_Java   *MavenConfig_CompilerJavaConfig   `protobuf:"bytes,1,opt,name=java,proto3" json:"java,omitempty"`
+	xxx_hidden_Kotlin *MavenConfig_CompilerKotlinConfig `protobuf:"bytes,2,opt,name=kotlin,proto3" json:"kotlin,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *MavenConfig_CompilerConfig) Reset() {
@@ -3907,46 +3798,46 @@ func (x *MavenConfig_CompilerConfig) ProtoReflect() protoreflect.Message {
 
 func (x *MavenConfig_CompilerConfig) GetJava() *MavenConfig_CompilerJavaConfig {
 	if x != nil {
-		return x.Java
+		return x.xxx_hidden_Java
 	}
 	return nil
 }
 
 func (x *MavenConfig_CompilerConfig) GetKotlin() *MavenConfig_CompilerKotlinConfig {
 	if x != nil {
-		return x.Kotlin
+		return x.xxx_hidden_Kotlin
 	}
 	return nil
 }
 
 func (x *MavenConfig_CompilerConfig) SetJava(v *MavenConfig_CompilerJavaConfig) {
-	x.Java = v
+	x.xxx_hidden_Java = v
 }
 
 func (x *MavenConfig_CompilerConfig) SetKotlin(v *MavenConfig_CompilerKotlinConfig) {
-	x.Kotlin = v
+	x.xxx_hidden_Kotlin = v
 }
 
 func (x *MavenConfig_CompilerConfig) HasJava() bool {
 	if x == nil {
 		return false
 	}
-	return x.Java != nil
+	return x.xxx_hidden_Java != nil
 }
 
 func (x *MavenConfig_CompilerConfig) HasKotlin() bool {
 	if x == nil {
 		return false
 	}
-	return x.Kotlin != nil
+	return x.xxx_hidden_Kotlin != nil
 }
 
 func (x *MavenConfig_CompilerConfig) ClearJava() {
-	x.Java = nil
+	x.xxx_hidden_Java = nil
 }
 
 func (x *MavenConfig_CompilerConfig) ClearKotlin() {
-	x.Kotlin = nil
+	x.xxx_hidden_Kotlin = nil
 }
 
 type MavenConfig_CompilerConfig_builder struct {
@@ -3960,24 +3851,20 @@ func (b0 MavenConfig_CompilerConfig_builder) Build() *MavenConfig_CompilerConfig
 	m0 := &MavenConfig_CompilerConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Java = b.Java
-	x.Kotlin = b.Kotlin
+	x.xxx_hidden_Java = b.Java
+	x.xxx_hidden_Kotlin = b.Kotlin
 	return m0
 }
 
 // CompilerJavaConfig contains settings for the Java compiler.
 type MavenConfig_CompilerJavaConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// File encoding (default: UTF-8).
-	Encoding string `protobuf:"bytes,1,opt,name=encoding,proto3" json:"encoding,omitempty"`
-	// Release version (default: 8).
-	Release int32 `protobuf:"varint,2,opt,name=release,proto3" json:"release,omitempty"`
-	// Source version (default: 8).
-	Source int32 `protobuf:"varint,3,opt,name=source,proto3" json:"source,omitempty"`
-	// Target version (default: 8).
-	Target        int32 `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Encoding string                 `protobuf:"bytes,1,opt,name=encoding,proto3" json:"encoding,omitempty"`
+	xxx_hidden_Release  int32                  `protobuf:"varint,2,opt,name=release,proto3" json:"release,omitempty"`
+	xxx_hidden_Source   int32                  `protobuf:"varint,3,opt,name=source,proto3" json:"source,omitempty"`
+	xxx_hidden_Target   int32                  `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *MavenConfig_CompilerJavaConfig) Reset() {
@@ -4007,46 +3894,46 @@ func (x *MavenConfig_CompilerJavaConfig) ProtoReflect() protoreflect.Message {
 
 func (x *MavenConfig_CompilerJavaConfig) GetEncoding() string {
 	if x != nil {
-		return x.Encoding
+		return x.xxx_hidden_Encoding
 	}
 	return ""
 }
 
 func (x *MavenConfig_CompilerJavaConfig) GetRelease() int32 {
 	if x != nil {
-		return x.Release
+		return x.xxx_hidden_Release
 	}
 	return 0
 }
 
 func (x *MavenConfig_CompilerJavaConfig) GetSource() int32 {
 	if x != nil {
-		return x.Source
+		return x.xxx_hidden_Source
 	}
 	return 0
 }
 
 func (x *MavenConfig_CompilerJavaConfig) GetTarget() int32 {
 	if x != nil {
-		return x.Target
+		return x.xxx_hidden_Target
 	}
 	return 0
 }
 
 func (x *MavenConfig_CompilerJavaConfig) SetEncoding(v string) {
-	x.Encoding = v
+	x.xxx_hidden_Encoding = v
 }
 
 func (x *MavenConfig_CompilerJavaConfig) SetRelease(v int32) {
-	x.Release = v
+	x.xxx_hidden_Release = v
 }
 
 func (x *MavenConfig_CompilerJavaConfig) SetSource(v int32) {
-	x.Source = v
+	x.xxx_hidden_Source = v
 }
 
 func (x *MavenConfig_CompilerJavaConfig) SetTarget(v int32) {
-	x.Target = v
+	x.xxx_hidden_Target = v
 }
 
 type MavenConfig_CompilerJavaConfig_builder struct {
@@ -4066,26 +3953,22 @@ func (b0 MavenConfig_CompilerJavaConfig_builder) Build() *MavenConfig_CompilerJa
 	m0 := &MavenConfig_CompilerJavaConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Encoding = b.Encoding
-	x.Release = b.Release
-	x.Source = b.Source
-	x.Target = b.Target
+	x.xxx_hidden_Encoding = b.Encoding
+	x.xxx_hidden_Release = b.Release
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_Target = b.Target
 	return m0
 }
 
 // CompilerKotlinConfig contains settings for the Kotlin compiler.
 type MavenConfig_CompilerKotlinConfig struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Version of the Kotlin compiler used to compile the generated code.
-	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// Version of the Kotlin API to target.
-	ApiVersion string `protobuf:"bytes,2,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
-	// Target version of the JVM bytecode (default: 1.8).
-	JvmTarget string `protobuf:"bytes,3,opt,name=jvm_target,json=jvmTarget,proto3" json:"jvm_target,omitempty"`
-	// Kotlin language version used for source compatibility.
-	LanguageVersion string `protobuf:"bytes,4,opt,name=language_version,json=languageVersion,proto3" json:"language_version,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version         string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_ApiVersion      string                 `protobuf:"bytes,2,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
+	xxx_hidden_JvmTarget       string                 `protobuf:"bytes,3,opt,name=jvm_target,json=jvmTarget,proto3" json:"jvm_target,omitempty"`
+	xxx_hidden_LanguageVersion string                 `protobuf:"bytes,4,opt,name=language_version,json=languageVersion,proto3" json:"language_version,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) Reset() {
@@ -4115,46 +3998,46 @@ func (x *MavenConfig_CompilerKotlinConfig) ProtoReflect() protoreflect.Message {
 
 func (x *MavenConfig_CompilerKotlinConfig) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) GetApiVersion() string {
 	if x != nil {
-		return x.ApiVersion
+		return x.xxx_hidden_ApiVersion
 	}
 	return ""
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) GetJvmTarget() string {
 	if x != nil {
-		return x.JvmTarget
+		return x.xxx_hidden_JvmTarget
 	}
 	return ""
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) GetLanguageVersion() string {
 	if x != nil {
-		return x.LanguageVersion
+		return x.xxx_hidden_LanguageVersion
 	}
 	return ""
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) SetApiVersion(v string) {
-	x.ApiVersion = v
+	x.xxx_hidden_ApiVersion = v
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) SetJvmTarget(v string) {
-	x.JvmTarget = v
+	x.xxx_hidden_JvmTarget = v
 }
 
 func (x *MavenConfig_CompilerKotlinConfig) SetLanguageVersion(v string) {
-	x.LanguageVersion = v
+	x.xxx_hidden_LanguageVersion = v
 }
 
 type MavenConfig_CompilerKotlinConfig_builder struct {
@@ -4174,24 +4057,22 @@ func (b0 MavenConfig_CompilerKotlinConfig_builder) Build() *MavenConfig_Compiler
 	m0 := &MavenConfig_CompilerKotlinConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
-	x.ApiVersion = b.ApiVersion
-	x.JvmTarget = b.JvmTarget
-	x.LanguageVersion = b.LanguageVersion
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_ApiVersion = b.ApiVersion
+	x.xxx_hidden_JvmTarget = b.JvmTarget
+	x.xxx_hidden_LanguageVersion = b.LanguageVersion
 	return m0
 }
 
 // RuntimeConfig allows configuring additional runtimes (like the 'lite' runtime).
 // They can use different runtime dependencies and plugin options.
 type MavenConfig_RuntimeConfig struct {
-	state            protoimpl.MessageState        `protogen:"hybrid.v1"`
-	Name             string                        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	RuntimeLibraries []*MavenConfig_RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	// The options to pass to the plugin. These will
-	// be merged into a single, comma-separated string.
-	Options       []string `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Name             string                         `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_RuntimeLibraries *[]*MavenConfig_RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	xxx_hidden_Options          []string                       `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *MavenConfig_RuntimeConfig) Reset() {
@@ -4221,35 +4102,37 @@ func (x *MavenConfig_RuntimeConfig) ProtoReflect() protoreflect.Message {
 
 func (x *MavenConfig_RuntimeConfig) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *MavenConfig_RuntimeConfig) GetRuntimeLibraries() []*MavenConfig_RuntimeLibrary {
 	if x != nil {
-		return x.RuntimeLibraries
+		if x.xxx_hidden_RuntimeLibraries != nil {
+			return *x.xxx_hidden_RuntimeLibraries
+		}
 	}
 	return nil
 }
 
 func (x *MavenConfig_RuntimeConfig) GetOptions() []string {
 	if x != nil {
-		return x.Options
+		return x.xxx_hidden_Options
 	}
 	return nil
 }
 
 func (x *MavenConfig_RuntimeConfig) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *MavenConfig_RuntimeConfig) SetRuntimeLibraries(v []*MavenConfig_RuntimeLibrary) {
-	x.RuntimeLibraries = v
+	x.xxx_hidden_RuntimeLibraries = &v
 }
 
 func (x *MavenConfig_RuntimeConfig) SetOptions(v []string) {
-	x.Options = v
+	x.xxx_hidden_Options = v
 }
 
 type MavenConfig_RuntimeConfig_builder struct {
@@ -4266,26 +4149,21 @@ func (b0 MavenConfig_RuntimeConfig_builder) Build() *MavenConfig_RuntimeConfig {
 	m0 := &MavenConfig_RuntimeConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.RuntimeLibraries = b.RuntimeLibraries
-	x.Options = b.Options
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_RuntimeLibraries = &b.RuntimeLibraries
+	x.xxx_hidden_Options = b.Options
 	return m0
 }
 
 // RuntimeLibrary describes a NuGet package dependency of the generated code.
 // Ref: https://learn.microsoft.com/en-us/dotnet/core/tools/dependencies#the-packagereference-element
 type NugetConfig_RuntimeLibrary struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the NuGet package (also known as the package ID).
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The version of the NuGet package (supports ranges).
-	// Ref: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	// Optional target frameworks. If specified, these dependencies will be
-	// conditionally added when building for the specified target framework.
-	TargetFrameworks []DotnetTargetFramework `protobuf:"varint,3,rep,packed,name=target_frameworks,json=targetFrameworks,proto3,enum=buf.alpha.registry.v1alpha1.DotnetTargetFramework" json:"target_frameworks,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                       protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Name             string                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Version          string                  `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_TargetFrameworks []DotnetTargetFramework `protobuf:"varint,3,rep,packed,name=target_frameworks,json=targetFrameworks,proto3,enum=buf.alpha.registry.v1alpha1.DotnetTargetFramework" json:"target_frameworks,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *NugetConfig_RuntimeLibrary) Reset() {
@@ -4315,35 +4193,35 @@ func (x *NugetConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *NugetConfig_RuntimeLibrary) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *NugetConfig_RuntimeLibrary) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *NugetConfig_RuntimeLibrary) GetTargetFrameworks() []DotnetTargetFramework {
 	if x != nil {
-		return x.TargetFrameworks
+		return x.xxx_hidden_TargetFrameworks
 	}
 	return nil
 }
 
 func (x *NugetConfig_RuntimeLibrary) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *NugetConfig_RuntimeLibrary) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *NugetConfig_RuntimeLibrary) SetTargetFrameworks(v []DotnetTargetFramework) {
-	x.TargetFrameworks = v
+	x.xxx_hidden_TargetFrameworks = v
 }
 
 type NugetConfig_RuntimeLibrary_builder struct {
@@ -4363,29 +4241,23 @@ func (b0 NugetConfig_RuntimeLibrary_builder) Build() *NugetConfig_RuntimeLibrary
 	m0 := &NugetConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Version = b.Version
-	x.TargetFrameworks = b.TargetFrameworks
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_TargetFrameworks = b.TargetFrameworks
 	return m0
 }
 
 // RuntimeLibrary describes a runtime library dependency of the generated code.
 type SwiftConfig_RuntimeLibrary struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The source of the runtime library package, e.g. https://github.com/apple/swift-protobuf.git.
-	Source string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
-	// The name of the runtime library package, e.g. "swift-protobuf".
-	Package string `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
-	// The version of the runtime library, e.g. "1.21.0".
-	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// The products exported by the runtime library, e.g. "SwiftProtobuf".
-	Products []string `protobuf:"bytes,4,rep,name=products,proto3" json:"products,omitempty"`
-	// The minimum compatible platform versions of the runtime library.
-	Platforms []*SwiftConfig_RuntimeLibrary_Platform `protobuf:"bytes,5,rep,name=platforms,proto3" json:"platforms,omitempty"`
-	// The supported Swift language versions of the runtime library, e.g. ".v5".
-	SwiftVersions []string `protobuf:"bytes,6,rep,name=swift_versions,json=swiftVersions,proto3" json:"swift_versions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState                  `protogen:"opaque.v1"`
+	xxx_hidden_Source        string                                  `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	xxx_hidden_Package       string                                  `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
+	xxx_hidden_Version       string                                  `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Products      []string                                `protobuf:"bytes,4,rep,name=products,proto3" json:"products,omitempty"`
+	xxx_hidden_Platforms     *[]*SwiftConfig_RuntimeLibrary_Platform `protobuf:"bytes,5,rep,name=platforms,proto3" json:"platforms,omitempty"`
+	xxx_hidden_SwiftVersions []string                                `protobuf:"bytes,6,rep,name=swift_versions,json=swiftVersions,proto3" json:"swift_versions,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SwiftConfig_RuntimeLibrary) Reset() {
@@ -4415,68 +4287,70 @@ func (x *SwiftConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *SwiftConfig_RuntimeLibrary) GetSource() string {
 	if x != nil {
-		return x.Source
+		return x.xxx_hidden_Source
 	}
 	return ""
 }
 
 func (x *SwiftConfig_RuntimeLibrary) GetPackage() string {
 	if x != nil {
-		return x.Package
+		return x.xxx_hidden_Package
 	}
 	return ""
 }
 
 func (x *SwiftConfig_RuntimeLibrary) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *SwiftConfig_RuntimeLibrary) GetProducts() []string {
 	if x != nil {
-		return x.Products
+		return x.xxx_hidden_Products
 	}
 	return nil
 }
 
 func (x *SwiftConfig_RuntimeLibrary) GetPlatforms() []*SwiftConfig_RuntimeLibrary_Platform {
 	if x != nil {
-		return x.Platforms
+		if x.xxx_hidden_Platforms != nil {
+			return *x.xxx_hidden_Platforms
+		}
 	}
 	return nil
 }
 
 func (x *SwiftConfig_RuntimeLibrary) GetSwiftVersions() []string {
 	if x != nil {
-		return x.SwiftVersions
+		return x.xxx_hidden_SwiftVersions
 	}
 	return nil
 }
 
 func (x *SwiftConfig_RuntimeLibrary) SetSource(v string) {
-	x.Source = v
+	x.xxx_hidden_Source = v
 }
 
 func (x *SwiftConfig_RuntimeLibrary) SetPackage(v string) {
-	x.Package = v
+	x.xxx_hidden_Package = v
 }
 
 func (x *SwiftConfig_RuntimeLibrary) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *SwiftConfig_RuntimeLibrary) SetProducts(v []string) {
-	x.Products = v
+	x.xxx_hidden_Products = v
 }
 
 func (x *SwiftConfig_RuntimeLibrary) SetPlatforms(v []*SwiftConfig_RuntimeLibrary_Platform) {
-	x.Platforms = v
+	x.xxx_hidden_Platforms = &v
 }
 
 func (x *SwiftConfig_RuntimeLibrary) SetSwiftVersions(v []string) {
-	x.SwiftVersions = v
+	x.xxx_hidden_SwiftVersions = v
 }
 
 type SwiftConfig_RuntimeLibrary_builder struct {
@@ -4500,24 +4374,22 @@ func (b0 SwiftConfig_RuntimeLibrary_builder) Build() *SwiftConfig_RuntimeLibrary
 	m0 := &SwiftConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Source = b.Source
-	x.Package = b.Package
-	x.Version = b.Version
-	x.Products = b.Products
-	x.Platforms = b.Platforms
-	x.SwiftVersions = b.SwiftVersions
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_Package = b.Package
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Products = b.Products
+	x.xxx_hidden_Platforms = &b.Platforms
+	x.xxx_hidden_SwiftVersions = b.SwiftVersions
 	return m0
 }
 
 // The minimum compatible platform versions of the runtime library.
 type SwiftConfig_RuntimeLibrary_Platform struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The name of the platform.
-	Name SwiftPlatformType `protobuf:"varint,1,opt,name=name,proto3,enum=buf.alpha.registry.v1alpha1.SwiftPlatformType" json:"name,omitempty"`
-	// The minimum compatible version of the platform.
-	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name    SwiftPlatformType      `protobuf:"varint,1,opt,name=name,proto3,enum=buf.alpha.registry.v1alpha1.SwiftPlatformType" json:"name,omitempty"`
+	xxx_hidden_Version string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) Reset() {
@@ -4547,24 +4419,24 @@ func (x *SwiftConfig_RuntimeLibrary_Platform) ProtoReflect() protoreflect.Messag
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) GetName() SwiftPlatformType {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return SwiftPlatformType_SWIFT_PLATFORM_TYPE_UNSPECIFIED
 }
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) SetName(v SwiftPlatformType) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *SwiftConfig_RuntimeLibrary_Platform) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type SwiftConfig_RuntimeLibrary_Platform_builder struct {
@@ -4580,18 +4452,16 @@ func (b0 SwiftConfig_RuntimeLibrary_Platform_builder) Build() *SwiftConfig_Runti
 	m0 := &SwiftConfig_RuntimeLibrary_Platform{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.Version = b.Version
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type PythonConfig_RuntimeLibrary struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// dependency_specification is a PEP 508 Dependency Specification.
-	// Ref: https://peps.python.org/pep-0508/
-	DependencySpecification string `protobuf:"bytes,1,opt,name=dependency_specification,json=dependencySpecification,proto3" json:"dependency_specification,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DependencySpecification string                 `protobuf:"bytes,1,opt,name=dependency_specification,json=dependencySpecification,proto3" json:"dependency_specification,omitempty"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *PythonConfig_RuntimeLibrary) Reset() {
@@ -4621,13 +4491,13 @@ func (x *PythonConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *PythonConfig_RuntimeLibrary) GetDependencySpecification() string {
 	if x != nil {
-		return x.DependencySpecification
+		return x.xxx_hidden_DependencySpecification
 	}
 	return ""
 }
 
 func (x *PythonConfig_RuntimeLibrary) SetDependencySpecification(v string) {
-	x.DependencySpecification = v
+	x.xxx_hidden_DependencySpecification = v
 }
 
 type PythonConfig_RuntimeLibrary_builder struct {
@@ -4642,7 +4512,7 @@ func (b0 PythonConfig_RuntimeLibrary_builder) Build() *PythonConfig_RuntimeLibra
 	m0 := &PythonConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.DependencySpecification = b.DependencySpecification
+	x.xxx_hidden_DependencySpecification = b.DependencySpecification
 	return m0
 }
 
@@ -4651,17 +4521,13 @@ func (b0 PythonConfig_RuntimeLibrary_builder) Build() *PythonConfig_RuntimeLibra
 // fields that are irrelevant for Generated SDKs.
 // Ref: https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
 type CargoConfig_RuntimeLibrary struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// name specifies the name of the dependency.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// version_requirement specifies the version requirement of the dependency.
-	VersionRequirement string `protobuf:"bytes,2,opt,name=version_requirement,json=versionRequirement,proto3" json:"version_requirement,omitempty"`
-	// default_features specifies whether or not default features will be enabled for the dependency.
-	DefaultFeatures bool `protobuf:"varint,3,opt,name=default_features,json=defaultFeatures,proto3" json:"default_features,omitempty"`
-	// features specifies the features enabled for the dependency.
-	Features      []string `protobuf:"bytes,4,rep,name=features,proto3" json:"features,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name               string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_VersionRequirement string                 `protobuf:"bytes,2,opt,name=version_requirement,json=versionRequirement,proto3" json:"version_requirement,omitempty"`
+	xxx_hidden_DefaultFeatures    bool                   `protobuf:"varint,3,opt,name=default_features,json=defaultFeatures,proto3" json:"default_features,omitempty"`
+	xxx_hidden_Features           []string               `protobuf:"bytes,4,rep,name=features,proto3" json:"features,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *CargoConfig_RuntimeLibrary) Reset() {
@@ -4691,46 +4557,46 @@ func (x *CargoConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
 
 func (x *CargoConfig_RuntimeLibrary) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CargoConfig_RuntimeLibrary) GetVersionRequirement() string {
 	if x != nil {
-		return x.VersionRequirement
+		return x.xxx_hidden_VersionRequirement
 	}
 	return ""
 }
 
 func (x *CargoConfig_RuntimeLibrary) GetDefaultFeatures() bool {
 	if x != nil {
-		return x.DefaultFeatures
+		return x.xxx_hidden_DefaultFeatures
 	}
 	return false
 }
 
 func (x *CargoConfig_RuntimeLibrary) GetFeatures() []string {
 	if x != nil {
-		return x.Features
+		return x.xxx_hidden_Features
 	}
 	return nil
 }
 
 func (x *CargoConfig_RuntimeLibrary) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CargoConfig_RuntimeLibrary) SetVersionRequirement(v string) {
-	x.VersionRequirement = v
+	x.xxx_hidden_VersionRequirement = v
 }
 
 func (x *CargoConfig_RuntimeLibrary) SetDefaultFeatures(v bool) {
-	x.DefaultFeatures = v
+	x.xxx_hidden_DefaultFeatures = v
 }
 
 func (x *CargoConfig_RuntimeLibrary) SetFeatures(v []string) {
-	x.Features = v
+	x.xxx_hidden_Features = v
 }
 
 type CargoConfig_RuntimeLibrary_builder struct {
@@ -4750,10 +4616,10 @@ func (b0 CargoConfig_RuntimeLibrary_builder) Build() *CargoConfig_RuntimeLibrary
 	m0 := &CargoConfig_RuntimeLibrary{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Name = b.Name
-	x.VersionRequirement = b.VersionRequirement
-	x.DefaultFeatures = b.DefaultFeatures
-	x.Features = b.Features
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_VersionRequirement = b.VersionRequirement
+	x.xxx_hidden_DefaultFeatures = b.DefaultFeatures
+	x.xxx_hidden_Features = b.Features
 	return m0
 }
 
@@ -5576,14 +5442,14 @@ func file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() {
 		return
 	}
 	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[8].OneofWrappers = []any{
-		(*RegistryConfig_GoConfig)(nil),
-		(*RegistryConfig_NpmConfig)(nil),
-		(*RegistryConfig_MavenConfig)(nil),
-		(*RegistryConfig_SwiftConfig)(nil),
-		(*RegistryConfig_PythonConfig)(nil),
-		(*RegistryConfig_CargoConfig)(nil),
-		(*RegistryConfig_NugetConfig)(nil),
-		(*RegistryConfig_CmakeConfig)(nil),
+		(*registryConfig_GoConfig)(nil),
+		(*registryConfig_NpmConfig)(nil),
+		(*registryConfig_MavenConfig)(nil),
+		(*registryConfig_SwiftConfig)(nil),
+		(*registryConfig_PythonConfig)(nil),
+		(*registryConfig_CargoConfig)(nil),
+		(*registryConfig_NugetConfig)(nil),
+		(*registryConfig_CmakeConfig)(nil),
 	}
 	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}

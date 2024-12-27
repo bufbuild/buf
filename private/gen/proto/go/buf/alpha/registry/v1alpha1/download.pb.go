@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/download.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -38,13 +36,12 @@ const (
 
 // DownloadRequest specifies the module to download.
 type DownloadRequest struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Optional reference (if unspecified, will use the repository's default_branch).
-	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *DownloadRequest) Reset() {
@@ -74,35 +71,35 @@ func (x *DownloadRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DownloadRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *DownloadRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *DownloadRequest) GetReference() string {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return ""
 }
 
 func (x *DownloadRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *DownloadRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *DownloadRequest) SetReference(v string) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 type DownloadRequest_builder struct {
@@ -118,18 +115,18 @@ func (b0 DownloadRequest_builder) Build() *DownloadRequest {
 	m0 := &DownloadRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Reference = b.Reference
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Reference = b.Reference
 	return m0
 }
 
 // DownloadResponse contains the remote module.
 type DownloadResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	Module        *v1alpha1.Module       `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Module *v1alpha1.Module       `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *DownloadResponse) Reset() {
@@ -159,24 +156,24 @@ func (x *DownloadResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DownloadResponse) GetModule() *v1alpha1.Module {
 	if x != nil {
-		return x.Module
+		return x.xxx_hidden_Module
 	}
 	return nil
 }
 
 func (x *DownloadResponse) SetModule(v *v1alpha1.Module) {
-	x.Module = v
+	x.xxx_hidden_Module = v
 }
 
 func (x *DownloadResponse) HasModule() bool {
 	if x == nil {
 		return false
 	}
-	return x.Module != nil
+	return x.xxx_hidden_Module != nil
 }
 
 func (x *DownloadResponse) ClearModule() {
-	x.Module = nil
+	x.xxx_hidden_Module = nil
 }
 
 type DownloadResponse_builder struct {
@@ -189,19 +186,18 @@ func (b0 DownloadResponse_builder) Build() *DownloadResponse {
 	m0 := &DownloadResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Module = b.Module
+	x.xxx_hidden_Module = b.Module
 	return m0
 }
 
 // DownloadManifestAndBlobsRequest specifies the module to download.
 type DownloadManifestAndBlobsRequest struct {
-	state      protoimpl.MessageState `protogen:"hybrid.v1"`
-	Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Optional reference (if unspecified, will use the repository's default_branch).
-	Reference     string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner      string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Repository string                 `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	xxx_hidden_Reference  string                 `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *DownloadManifestAndBlobsRequest) Reset() {
@@ -231,35 +227,35 @@ func (x *DownloadManifestAndBlobsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DownloadManifestAndBlobsRequest) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *DownloadManifestAndBlobsRequest) GetRepository() string {
 	if x != nil {
-		return x.Repository
+		return x.xxx_hidden_Repository
 	}
 	return ""
 }
 
 func (x *DownloadManifestAndBlobsRequest) GetReference() string {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return ""
 }
 
 func (x *DownloadManifestAndBlobsRequest) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *DownloadManifestAndBlobsRequest) SetRepository(v string) {
-	x.Repository = v
+	x.xxx_hidden_Repository = v
 }
 
 func (x *DownloadManifestAndBlobsRequest) SetReference(v string) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 type DownloadManifestAndBlobsRequest_builder struct {
@@ -275,28 +271,19 @@ func (b0 DownloadManifestAndBlobsRequest_builder) Build() *DownloadManifestAndBl
 	m0 := &DownloadManifestAndBlobsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Repository = b.Repository
-	x.Reference = b.Reference
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Repository = b.Repository
+	x.xxx_hidden_Reference = b.Reference
 	return m0
 }
 
 // DownloadManifestAndBlobsResponse is the returned resolved remote module.
 type DownloadManifestAndBlobsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// manifest is the manifest of the module's content.
-	// The content of the manifest blob is a text encoding of an ordered list of unique paths, each path encoded as:
-	//
-	//	<digest_type>:<digest>[SP][SP]<path>[LF]
-	//
-	// The only supported digest type is 'shake256'. The shake256 digest consists of 64 bytes of lowercase hex
-	// encoded output of SHAKE256.
-	Manifest *v1alpha1.Blob `protobuf:"bytes,1,opt,name=manifest,proto3" json:"manifest,omitempty"`
-	// blobs is a set of blobs that closes on the module's manifest to form the
-	// complete module's content.
-	Blobs         []*v1alpha1.Blob `protobuf:"bytes,2,rep,name=blobs,proto3" json:"blobs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Manifest *v1alpha1.Blob         `protobuf:"bytes,1,opt,name=manifest,proto3" json:"manifest,omitempty"`
+	xxx_hidden_Blobs    *[]*v1alpha1.Blob      `protobuf:"bytes,2,rep,name=blobs,proto3" json:"blobs,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *DownloadManifestAndBlobsResponse) Reset() {
@@ -326,35 +313,37 @@ func (x *DownloadManifestAndBlobsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DownloadManifestAndBlobsResponse) GetManifest() *v1alpha1.Blob {
 	if x != nil {
-		return x.Manifest
+		return x.xxx_hidden_Manifest
 	}
 	return nil
 }
 
 func (x *DownloadManifestAndBlobsResponse) GetBlobs() []*v1alpha1.Blob {
 	if x != nil {
-		return x.Blobs
+		if x.xxx_hidden_Blobs != nil {
+			return *x.xxx_hidden_Blobs
+		}
 	}
 	return nil
 }
 
 func (x *DownloadManifestAndBlobsResponse) SetManifest(v *v1alpha1.Blob) {
-	x.Manifest = v
+	x.xxx_hidden_Manifest = v
 }
 
 func (x *DownloadManifestAndBlobsResponse) SetBlobs(v []*v1alpha1.Blob) {
-	x.Blobs = v
+	x.xxx_hidden_Blobs = &v
 }
 
 func (x *DownloadManifestAndBlobsResponse) HasManifest() bool {
 	if x == nil {
 		return false
 	}
-	return x.Manifest != nil
+	return x.xxx_hidden_Manifest != nil
 }
 
 func (x *DownloadManifestAndBlobsResponse) ClearManifest() {
-	x.Manifest = nil
+	x.xxx_hidden_Manifest = nil
 }
 
 type DownloadManifestAndBlobsResponse_builder struct {
@@ -377,8 +366,8 @@ func (b0 DownloadManifestAndBlobsResponse_builder) Build() *DownloadManifestAndB
 	m0 := &DownloadManifestAndBlobsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Manifest = b.Manifest
-	x.Blobs = b.Blobs
+	x.xxx_hidden_Manifest = b.Manifest
+	x.xxx_hidden_Blobs = &b.Blobs
 	return m0
 }
 

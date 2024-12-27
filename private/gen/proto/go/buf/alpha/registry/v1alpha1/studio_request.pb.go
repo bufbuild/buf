@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/studio_request.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -92,32 +90,20 @@ func (x StudioProtocol) Number() protoreflect.EnumNumber {
 // CreateStudioRequestRequest is the proto request representation of the
 // CreateStudioRequest method.
 type CreateStudioRequestRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The linked BSR repository owner name (user or organization).
-	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	// The linked BSR repository name.
-	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The friendly name of this request.
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// The target base URL of this request.
-	TargetBaseUrl string `protobuf:"bytes,4,opt,name=target_base_url,json=targetBaseUrl,proto3" json:"target_base_url,omitempty"`
-	// The target service name as defined in the BSR repository.
-	Service string `protobuf:"bytes,5,opt,name=service,proto3" json:"service,omitempty"`
-	// The target RPC method name as defined in the BSR repository.
-	Method string `protobuf:"bytes,6,opt,name=method,proto3" json:"method,omitempty"`
-	// The request body as defined in Studio.
-	Body string `protobuf:"bytes,7,opt,name=body,proto3" json:"body,omitempty"`
-	// The request headers as defined in Studio.
-	Headers map[string]string `protobuf:"bytes,8,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Should this request include cookies from the Studio current session?
-	IncludeCookies bool `protobuf:"varint,9,opt,name=include_cookies,json=includeCookies,proto3" json:"include_cookies,omitempty"`
-	// The protocol that Studio uses to send this request.
-	Protocol StudioProtocol `protobuf:"varint,10,opt,name=protocol,proto3,enum=buf.alpha.registry.v1alpha1.StudioProtocol" json:"protocol,omitempty"`
-	// The agent url (if any) used by Studio to send the request. See
-	// https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
-	AgentUrl      string `protobuf:"bytes,11,opt,name=agent_url,json=agentUrl,proto3" json:"agent_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_Name            string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_TargetBaseUrl   string                 `protobuf:"bytes,4,opt,name=target_base_url,json=targetBaseUrl,proto3" json:"target_base_url,omitempty"`
+	xxx_hidden_Service         string                 `protobuf:"bytes,5,opt,name=service,proto3" json:"service,omitempty"`
+	xxx_hidden_Method          string                 `protobuf:"bytes,6,opt,name=method,proto3" json:"method,omitempty"`
+	xxx_hidden_Body            string                 `protobuf:"bytes,7,opt,name=body,proto3" json:"body,omitempty"`
+	xxx_hidden_Headers         map[string]string      `protobuf:"bytes,8,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_IncludeCookies  bool                   `protobuf:"varint,9,opt,name=include_cookies,json=includeCookies,proto3" json:"include_cookies,omitempty"`
+	xxx_hidden_Protocol        StudioProtocol         `protobuf:"varint,10,opt,name=protocol,proto3,enum=buf.alpha.registry.v1alpha1.StudioProtocol" json:"protocol,omitempty"`
+	xxx_hidden_AgentUrl        string                 `protobuf:"bytes,11,opt,name=agent_url,json=agentUrl,proto3" json:"agent_url,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *CreateStudioRequestRequest) Reset() {
@@ -147,123 +133,123 @@ func (x *CreateStudioRequestRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateStudioRequestRequest) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetTargetBaseUrl() string {
 	if x != nil {
-		return x.TargetBaseUrl
+		return x.xxx_hidden_TargetBaseUrl
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetService() string {
 	if x != nil {
-		return x.Service
+		return x.xxx_hidden_Service
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetMethod() string {
 	if x != nil {
-		return x.Method
+		return x.xxx_hidden_Method
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetBody() string {
 	if x != nil {
-		return x.Body
+		return x.xxx_hidden_Body
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) GetHeaders() map[string]string {
 	if x != nil {
-		return x.Headers
+		return x.xxx_hidden_Headers
 	}
 	return nil
 }
 
 func (x *CreateStudioRequestRequest) GetIncludeCookies() bool {
 	if x != nil {
-		return x.IncludeCookies
+		return x.xxx_hidden_IncludeCookies
 	}
 	return false
 }
 
 func (x *CreateStudioRequestRequest) GetProtocol() StudioProtocol {
 	if x != nil {
-		return x.Protocol
+		return x.xxx_hidden_Protocol
 	}
 	return StudioProtocol_STUDIO_PROTOCOL_UNSPECIFIED
 }
 
 func (x *CreateStudioRequestRequest) GetAgentUrl() string {
 	if x != nil {
-		return x.AgentUrl
+		return x.xxx_hidden_AgentUrl
 	}
 	return ""
 }
 
 func (x *CreateStudioRequestRequest) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *CreateStudioRequestRequest) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *CreateStudioRequestRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *CreateStudioRequestRequest) SetTargetBaseUrl(v string) {
-	x.TargetBaseUrl = v
+	x.xxx_hidden_TargetBaseUrl = v
 }
 
 func (x *CreateStudioRequestRequest) SetService(v string) {
-	x.Service = v
+	x.xxx_hidden_Service = v
 }
 
 func (x *CreateStudioRequestRequest) SetMethod(v string) {
-	x.Method = v
+	x.xxx_hidden_Method = v
 }
 
 func (x *CreateStudioRequestRequest) SetBody(v string) {
-	x.Body = v
+	x.xxx_hidden_Body = v
 }
 
 func (x *CreateStudioRequestRequest) SetHeaders(v map[string]string) {
-	x.Headers = v
+	x.xxx_hidden_Headers = v
 }
 
 func (x *CreateStudioRequestRequest) SetIncludeCookies(v bool) {
-	x.IncludeCookies = v
+	x.xxx_hidden_IncludeCookies = v
 }
 
 func (x *CreateStudioRequestRequest) SetProtocol(v StudioProtocol) {
-	x.Protocol = v
+	x.xxx_hidden_Protocol = v
 }
 
 func (x *CreateStudioRequestRequest) SetAgentUrl(v string) {
-	x.AgentUrl = v
+	x.xxx_hidden_AgentUrl = v
 }
 
 type CreateStudioRequestRequest_builder struct {
@@ -298,27 +284,26 @@ func (b0 CreateStudioRequestRequest_builder) Build() *CreateStudioRequestRequest
 	m0 := &CreateStudioRequestRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.Name = b.Name
-	x.TargetBaseUrl = b.TargetBaseUrl
-	x.Service = b.Service
-	x.Method = b.Method
-	x.Body = b.Body
-	x.Headers = b.Headers
-	x.IncludeCookies = b.IncludeCookies
-	x.Protocol = b.Protocol
-	x.AgentUrl = b.AgentUrl
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_TargetBaseUrl = b.TargetBaseUrl
+	x.xxx_hidden_Service = b.Service
+	x.xxx_hidden_Method = b.Method
+	x.xxx_hidden_Body = b.Body
+	x.xxx_hidden_Headers = b.Headers
+	x.xxx_hidden_IncludeCookies = b.IncludeCookies
+	x.xxx_hidden_Protocol = b.Protocol
+	x.xxx_hidden_AgentUrl = b.AgentUrl
 	return m0
 }
 
 // CreateStudioRequestResponse returns the created StudioRequest.
 type CreateStudioRequestResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// Created Studio Request.
-	CreatedRequest *StudioRequest `protobuf:"bytes,1,opt,name=created_request,json=createdRequest,proto3" json:"created_request,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CreatedRequest *StudioRequest         `protobuf:"bytes,1,opt,name=created_request,json=createdRequest,proto3" json:"created_request,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *CreateStudioRequestResponse) Reset() {
@@ -348,24 +333,24 @@ func (x *CreateStudioRequestResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateStudioRequestResponse) GetCreatedRequest() *StudioRequest {
 	if x != nil {
-		return x.CreatedRequest
+		return x.xxx_hidden_CreatedRequest
 	}
 	return nil
 }
 
 func (x *CreateStudioRequestResponse) SetCreatedRequest(v *StudioRequest) {
-	x.CreatedRequest = v
+	x.xxx_hidden_CreatedRequest = v
 }
 
 func (x *CreateStudioRequestResponse) HasCreatedRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreatedRequest != nil
+	return x.xxx_hidden_CreatedRequest != nil
 }
 
 func (x *CreateStudioRequestResponse) ClearCreatedRequest() {
-	x.CreatedRequest = nil
+	x.xxx_hidden_CreatedRequest = nil
 }
 
 type CreateStudioRequestResponse_builder struct {
@@ -379,20 +364,18 @@ func (b0 CreateStudioRequestResponse_builder) Build() *CreateStudioRequestRespon
 	m0 := &CreateStudioRequestResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.CreatedRequest = b.CreatedRequest
+	x.xxx_hidden_CreatedRequest = b.CreatedRequest
 	return m0
 }
 
 // RenameStudioRequestRequest is the proto request representation of the
 // RenameStudioRequest method.
 type RenameStudioRequestRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The Studio Request ID that will be renamed.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The new name for the request.
-	NewName       string `protobuf:"bytes,2,opt,name=new_name,json=newName,proto3" json:"new_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_NewName string                 `protobuf:"bytes,2,opt,name=new_name,json=newName,proto3" json:"new_name,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *RenameStudioRequestRequest) Reset() {
@@ -422,24 +405,24 @@ func (x *RenameStudioRequestRequest) ProtoReflect() protoreflect.Message {
 
 func (x *RenameStudioRequestRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *RenameStudioRequestRequest) GetNewName() string {
 	if x != nil {
-		return x.NewName
+		return x.xxx_hidden_NewName
 	}
 	return ""
 }
 
 func (x *RenameStudioRequestRequest) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *RenameStudioRequestRequest) SetNewName(v string) {
-	x.NewName = v
+	x.xxx_hidden_NewName = v
 }
 
 type RenameStudioRequestRequest_builder struct {
@@ -455,14 +438,14 @@ func (b0 RenameStudioRequestRequest_builder) Build() *RenameStudioRequestRequest
 	m0 := &RenameStudioRequestRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.NewName = b.NewName
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_NewName = b.NewName
 	return m0
 }
 
 // RenameStudioRequestResponse returns empty on successful renaming.
 type RenameStudioRequestResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -507,9 +490,8 @@ func (b0 RenameStudioRequestResponse_builder) Build() *RenameStudioRequestRespon
 // DeleteStudioRequestRequest is the proto request representation of the
 // DeleteStudioRequest method.
 type DeleteStudioRequestRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The Studio Request ID that will be deleted.
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -541,13 +523,13 @@ func (x *DeleteStudioRequestRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteStudioRequestRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *DeleteStudioRequestRequest) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 type DeleteStudioRequestRequest_builder struct {
@@ -561,13 +543,13 @@ func (b0 DeleteStudioRequestRequest_builder) Build() *DeleteStudioRequestRequest
 	m0 := &DeleteStudioRequestRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
+	x.xxx_hidden_Id = b.Id
 	return m0
 }
 
 // DeleteStudioRequestResponse returns empty on successful deletions.
 type DeleteStudioRequestResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -612,16 +594,12 @@ func (b0 DeleteStudioRequestResponse_builder) Build() *DeleteStudioRequestRespon
 // ListStudioRequestsRequest is the proto request representation of the
 // ListStudioRequests method.
 type ListStudioRequestsRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The page size for listing studio requests, values between 1-250.
-	PageSize uint32 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The page token for paginating. The first page is returned if this is empty.
-	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// The listed studio requests are order by created time in ascending order.
-	// You can reverse that order setting this value to true.
-	Reverse       bool `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PageSize  uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	xxx_hidden_PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	xxx_hidden_Reverse   bool                   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListStudioRequestsRequest) Reset() {
@@ -651,35 +629,35 @@ func (x *ListStudioRequestsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListStudioRequestsRequest) GetPageSize() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.xxx_hidden_PageSize
 	}
 	return 0
 }
 
 func (x *ListStudioRequestsRequest) GetPageToken() string {
 	if x != nil {
-		return x.PageToken
+		return x.xxx_hidden_PageToken
 	}
 	return ""
 }
 
 func (x *ListStudioRequestsRequest) GetReverse() bool {
 	if x != nil {
-		return x.Reverse
+		return x.xxx_hidden_Reverse
 	}
 	return false
 }
 
 func (x *ListStudioRequestsRequest) SetPageSize(v uint32) {
-	x.PageSize = v
+	x.xxx_hidden_PageSize = v
 }
 
 func (x *ListStudioRequestsRequest) SetPageToken(v string) {
-	x.PageToken = v
+	x.xxx_hidden_PageToken = v
 }
 
 func (x *ListStudioRequestsRequest) SetReverse(v bool) {
-	x.Reverse = v
+	x.xxx_hidden_Reverse = v
 }
 
 type ListStudioRequestsRequest_builder struct {
@@ -698,22 +676,20 @@ func (b0 ListStudioRequestsRequest_builder) Build() *ListStudioRequestsRequest {
 	m0 := &ListStudioRequestsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PageSize = b.PageSize
-	x.PageToken = b.PageToken
-	x.Reverse = b.Reverse
+	x.xxx_hidden_PageSize = b.PageSize
+	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Reverse = b.Reverse
 	return m0
 }
 
 // ListStudioRequestsResponse is the proto response representation of the
 // ListStudioRequests method.
 type ListStudioRequestsResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The list of requests in the current page.
-	Requests []*StudioRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
-	// The requests' next page token. There are no more pages if this is empty.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Requests      *[]*StudioRequest      `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	xxx_hidden_NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ListStudioRequestsResponse) Reset() {
@@ -743,24 +719,26 @@ func (x *ListStudioRequestsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListStudioRequestsResponse) GetRequests() []*StudioRequest {
 	if x != nil {
-		return x.Requests
+		if x.xxx_hidden_Requests != nil {
+			return *x.xxx_hidden_Requests
+		}
 	}
 	return nil
 }
 
 func (x *ListStudioRequestsResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.xxx_hidden_NextPageToken
 	}
 	return ""
 }
 
 func (x *ListStudioRequestsResponse) SetRequests(v []*StudioRequest) {
-	x.Requests = v
+	x.xxx_hidden_Requests = &v
 }
 
 func (x *ListStudioRequestsResponse) SetNextPageToken(v string) {
-	x.NextPageToken = v
+	x.xxx_hidden_NextPageToken = v
 }
 
 type ListStudioRequestsResponse_builder struct {
@@ -776,50 +754,33 @@ func (b0 ListStudioRequestsResponse_builder) Build() *ListStudioRequestsResponse
 	m0 := &ListStudioRequestsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Requests = b.Requests
-	x.NextPageToken = b.NextPageToken
+	x.xxx_hidden_Requests = &b.Requests
+	x.xxx_hidden_NextPageToken = b.NextPageToken
 	return m0
 }
 
 // StudioRequest represents a saved request in Studio, that is synced to a BSR
 // user's profile.
 type StudioRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The ID of this Studio Request.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The request creation timestamp.
-	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// The request last updated timestamp.
-	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	// User ID who created and saved this request.
-	AuthorUserId string `protobuf:"bytes,4,opt,name=author_user_id,json=authorUserId,proto3" json:"author_user_id,omitempty"`
-	// BSR repository ID this request is linked to.
-	RepositoryId string `protobuf:"bytes,5,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The friendly name of this request.
-	Name string `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
-	// The target base URL of this request.
-	TargetBaseUrl string `protobuf:"bytes,7,opt,name=target_base_url,json=targetBaseUrl,proto3" json:"target_base_url,omitempty"`
-	// The BSR repository owner name (user or organization).
-	RepositoryOwner string `protobuf:"bytes,8,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
-	// The BSR repository name.
-	RepositoryName string `protobuf:"bytes,9,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The target service name as defined in the BSR repository.
-	Service string `protobuf:"bytes,10,opt,name=service,proto3" json:"service,omitempty"`
-	// The target RPC method name as defined in the BSR repository.
-	Method string `protobuf:"bytes,11,opt,name=method,proto3" json:"method,omitempty"`
-	// The request body as defined in Studio.
-	Body string `protobuf:"bytes,12,opt,name=body,proto3" json:"body,omitempty"`
-	// The request headers as defined in Studio.
-	Headers map[string]string `protobuf:"bytes,13,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Should this request include cookies from the Studio current session?
-	IncludeCookies bool `protobuf:"varint,14,opt,name=include_cookies,json=includeCookies,proto3" json:"include_cookies,omitempty"`
-	// The protocol that Studio uses to send this request.
-	Protocol StudioProtocol `protobuf:"varint,15,opt,name=protocol,proto3,enum=buf.alpha.registry.v1alpha1.StudioProtocol" json:"protocol,omitempty"`
-	// The agent url (if any) used by Studio to send the request. See
-	// https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
-	AgentUrl      string `protobuf:"bytes,16,opt,name=agent_url,json=agentUrl,proto3" json:"agent_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_CreateTime      *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	xxx_hidden_UpdateTime      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	xxx_hidden_AuthorUserId    string                 `protobuf:"bytes,4,opt,name=author_user_id,json=authorUserId,proto3" json:"author_user_id,omitempty"`
+	xxx_hidden_RepositoryId    string                 `protobuf:"bytes,5,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	xxx_hidden_Name            string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_TargetBaseUrl   string                 `protobuf:"bytes,7,opt,name=target_base_url,json=targetBaseUrl,proto3" json:"target_base_url,omitempty"`
+	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,8,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
+	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,9,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	xxx_hidden_Service         string                 `protobuf:"bytes,10,opt,name=service,proto3" json:"service,omitempty"`
+	xxx_hidden_Method          string                 `protobuf:"bytes,11,opt,name=method,proto3" json:"method,omitempty"`
+	xxx_hidden_Body            string                 `protobuf:"bytes,12,opt,name=body,proto3" json:"body,omitempty"`
+	xxx_hidden_Headers         map[string]string      `protobuf:"bytes,13,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_IncludeCookies  bool                   `protobuf:"varint,14,opt,name=include_cookies,json=includeCookies,proto3" json:"include_cookies,omitempty"`
+	xxx_hidden_Protocol        StudioProtocol         `protobuf:"varint,15,opt,name=protocol,proto3,enum=buf.alpha.registry.v1alpha1.StudioProtocol" json:"protocol,omitempty"`
+	xxx_hidden_AgentUrl        string                 `protobuf:"bytes,16,opt,name=agent_url,json=agentUrl,proto3" json:"agent_url,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *StudioRequest) Reset() {
@@ -849,200 +810,200 @@ func (x *StudioRequest) ProtoReflect() protoreflect.Message {
 
 func (x *StudioRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
 func (x *StudioRequest) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.UpdateTime
+		return x.xxx_hidden_UpdateTime
 	}
 	return nil
 }
 
 func (x *StudioRequest) GetAuthorUserId() string {
 	if x != nil {
-		return x.AuthorUserId
+		return x.xxx_hidden_AuthorUserId
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetRepositoryId() string {
 	if x != nil {
-		return x.RepositoryId
+		return x.xxx_hidden_RepositoryId
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetTargetBaseUrl() string {
 	if x != nil {
-		return x.TargetBaseUrl
+		return x.xxx_hidden_TargetBaseUrl
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetRepositoryOwner() string {
 	if x != nil {
-		return x.RepositoryOwner
+		return x.xxx_hidden_RepositoryOwner
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetRepositoryName() string {
 	if x != nil {
-		return x.RepositoryName
+		return x.xxx_hidden_RepositoryName
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetService() string {
 	if x != nil {
-		return x.Service
+		return x.xxx_hidden_Service
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetMethod() string {
 	if x != nil {
-		return x.Method
+		return x.xxx_hidden_Method
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetBody() string {
 	if x != nil {
-		return x.Body
+		return x.xxx_hidden_Body
 	}
 	return ""
 }
 
 func (x *StudioRequest) GetHeaders() map[string]string {
 	if x != nil {
-		return x.Headers
+		return x.xxx_hidden_Headers
 	}
 	return nil
 }
 
 func (x *StudioRequest) GetIncludeCookies() bool {
 	if x != nil {
-		return x.IncludeCookies
+		return x.xxx_hidden_IncludeCookies
 	}
 	return false
 }
 
 func (x *StudioRequest) GetProtocol() StudioProtocol {
 	if x != nil {
-		return x.Protocol
+		return x.xxx_hidden_Protocol
 	}
 	return StudioProtocol_STUDIO_PROTOCOL_UNSPECIFIED
 }
 
 func (x *StudioRequest) GetAgentUrl() string {
 	if x != nil {
-		return x.AgentUrl
+		return x.xxx_hidden_AgentUrl
 	}
 	return ""
 }
 
 func (x *StudioRequest) SetId(v string) {
-	x.Id = v
+	x.xxx_hidden_Id = v
 }
 
 func (x *StudioRequest) SetCreateTime(v *timestamppb.Timestamp) {
-	x.CreateTime = v
+	x.xxx_hidden_CreateTime = v
 }
 
 func (x *StudioRequest) SetUpdateTime(v *timestamppb.Timestamp) {
-	x.UpdateTime = v
+	x.xxx_hidden_UpdateTime = v
 }
 
 func (x *StudioRequest) SetAuthorUserId(v string) {
-	x.AuthorUserId = v
+	x.xxx_hidden_AuthorUserId = v
 }
 
 func (x *StudioRequest) SetRepositoryId(v string) {
-	x.RepositoryId = v
+	x.xxx_hidden_RepositoryId = v
 }
 
 func (x *StudioRequest) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *StudioRequest) SetTargetBaseUrl(v string) {
-	x.TargetBaseUrl = v
+	x.xxx_hidden_TargetBaseUrl = v
 }
 
 func (x *StudioRequest) SetRepositoryOwner(v string) {
-	x.RepositoryOwner = v
+	x.xxx_hidden_RepositoryOwner = v
 }
 
 func (x *StudioRequest) SetRepositoryName(v string) {
-	x.RepositoryName = v
+	x.xxx_hidden_RepositoryName = v
 }
 
 func (x *StudioRequest) SetService(v string) {
-	x.Service = v
+	x.xxx_hidden_Service = v
 }
 
 func (x *StudioRequest) SetMethod(v string) {
-	x.Method = v
+	x.xxx_hidden_Method = v
 }
 
 func (x *StudioRequest) SetBody(v string) {
-	x.Body = v
+	x.xxx_hidden_Body = v
 }
 
 func (x *StudioRequest) SetHeaders(v map[string]string) {
-	x.Headers = v
+	x.xxx_hidden_Headers = v
 }
 
 func (x *StudioRequest) SetIncludeCookies(v bool) {
-	x.IncludeCookies = v
+	x.xxx_hidden_IncludeCookies = v
 }
 
 func (x *StudioRequest) SetProtocol(v StudioProtocol) {
-	x.Protocol = v
+	x.xxx_hidden_Protocol = v
 }
 
 func (x *StudioRequest) SetAgentUrl(v string) {
-	x.AgentUrl = v
+	x.xxx_hidden_AgentUrl = v
 }
 
 func (x *StudioRequest) HasCreateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.CreateTime != nil
+	return x.xxx_hidden_CreateTime != nil
 }
 
 func (x *StudioRequest) HasUpdateTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.UpdateTime != nil
+	return x.xxx_hidden_UpdateTime != nil
 }
 
 func (x *StudioRequest) ClearCreateTime() {
-	x.CreateTime = nil
+	x.xxx_hidden_CreateTime = nil
 }
 
 func (x *StudioRequest) ClearUpdateTime() {
-	x.UpdateTime = nil
+	x.xxx_hidden_UpdateTime = nil
 }
 
 type StudioRequest_builder struct {
@@ -1087,22 +1048,22 @@ func (b0 StudioRequest_builder) Build() *StudioRequest {
 	m0 := &StudioRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Id = b.Id
-	x.CreateTime = b.CreateTime
-	x.UpdateTime = b.UpdateTime
-	x.AuthorUserId = b.AuthorUserId
-	x.RepositoryId = b.RepositoryId
-	x.Name = b.Name
-	x.TargetBaseUrl = b.TargetBaseUrl
-	x.RepositoryOwner = b.RepositoryOwner
-	x.RepositoryName = b.RepositoryName
-	x.Service = b.Service
-	x.Method = b.Method
-	x.Body = b.Body
-	x.Headers = b.Headers
-	x.IncludeCookies = b.IncludeCookies
-	x.Protocol = b.Protocol
-	x.AgentUrl = b.AgentUrl
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_UpdateTime = b.UpdateTime
+	x.xxx_hidden_AuthorUserId = b.AuthorUserId
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_TargetBaseUrl = b.TargetBaseUrl
+	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	x.xxx_hidden_Service = b.Service
+	x.xxx_hidden_Method = b.Method
+	x.xxx_hidden_Body = b.Body
+	x.xxx_hidden_Headers = b.Headers
+	x.xxx_hidden_IncludeCookies = b.IncludeCookies
+	x.xxx_hidden_Protocol = b.Protocol
+	x.xxx_hidden_AgentUrl = b.AgentUrl
 	return m0
 }
 

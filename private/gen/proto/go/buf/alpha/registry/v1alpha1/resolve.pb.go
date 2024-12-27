@@ -18,8 +18,6 @@
 // 	protoc        (unknown)
 // source: buf/alpha/registry/v1alpha1/resolve.proto
 
-//go:build !protoopaque
-
 package registryv1alpha1
 
 import (
@@ -87,21 +85,11 @@ func (x ResolvedReferenceType) Number() protoreflect.EnumNumber {
 }
 
 type GetModulePinsRequest struct {
-	state            protoimpl.MessageState      `protogen:"hybrid.v1"`
-	ModuleReferences []*v1alpha1.ModuleReference `protobuf:"bytes,1,rep,name=module_references,json=moduleReferences,proto3" json:"module_references,omitempty"`
-	// current_module_pins allows for partial dependency updates by letting clients
-	// send a request with the pins for their current module and only the
-	// identities of the dependencies they want to update in module_references.
-	//
-	// When resolving, if a client supplied module pin is:
-	//   - in the transitive closure of pins resolved from the module_references,
-	//     the client supplied module pin will be an extra candidate for tie
-	//     breaking.
-	//   - NOT in the in the transitive closure of pins resolved from the
-	//     module_references, it will be returned as is.
-	CurrentModulePins []*v1alpha1.ModulePin `protobuf:"bytes,2,rep,name=current_module_pins,json=currentModulePins,proto3" json:"current_module_pins,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                        protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_ModuleReferences  *[]*v1alpha1.ModuleReference `protobuf:"bytes,1,rep,name=module_references,json=moduleReferences,proto3" json:"module_references,omitempty"`
+	xxx_hidden_CurrentModulePins *[]*v1alpha1.ModulePin       `protobuf:"bytes,2,rep,name=current_module_pins,json=currentModulePins,proto3" json:"current_module_pins,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *GetModulePinsRequest) Reset() {
@@ -131,24 +119,28 @@ func (x *GetModulePinsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetModulePinsRequest) GetModuleReferences() []*v1alpha1.ModuleReference {
 	if x != nil {
-		return x.ModuleReferences
+		if x.xxx_hidden_ModuleReferences != nil {
+			return *x.xxx_hidden_ModuleReferences
+		}
 	}
 	return nil
 }
 
 func (x *GetModulePinsRequest) GetCurrentModulePins() []*v1alpha1.ModulePin {
 	if x != nil {
-		return x.CurrentModulePins
+		if x.xxx_hidden_CurrentModulePins != nil {
+			return *x.xxx_hidden_CurrentModulePins
+		}
 	}
 	return nil
 }
 
 func (x *GetModulePinsRequest) SetModuleReferences(v []*v1alpha1.ModuleReference) {
-	x.ModuleReferences = v
+	x.xxx_hidden_ModuleReferences = &v
 }
 
 func (x *GetModulePinsRequest) SetCurrentModulePins(v []*v1alpha1.ModulePin) {
-	x.CurrentModulePins = v
+	x.xxx_hidden_CurrentModulePins = &v
 }
 
 type GetModulePinsRequest_builder struct {
@@ -172,16 +164,16 @@ func (b0 GetModulePinsRequest_builder) Build() *GetModulePinsRequest {
 	m0 := &GetModulePinsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ModuleReferences = b.ModuleReferences
-	x.CurrentModulePins = b.CurrentModulePins
+	x.xxx_hidden_ModuleReferences = &b.ModuleReferences
+	x.xxx_hidden_CurrentModulePins = &b.CurrentModulePins
 	return m0
 }
 
 type GetModulePinsResponse struct {
-	state         protoimpl.MessageState `protogen:"hybrid.v1"`
-	ModulePins    []*v1alpha1.ModulePin  `protobuf:"bytes,1,rep,name=module_pins,json=modulePins,proto3" json:"module_pins,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ModulePins *[]*v1alpha1.ModulePin `protobuf:"bytes,1,rep,name=module_pins,json=modulePins,proto3" json:"module_pins,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetModulePinsResponse) Reset() {
@@ -211,13 +203,15 @@ func (x *GetModulePinsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetModulePinsResponse) GetModulePins() []*v1alpha1.ModulePin {
 	if x != nil {
-		return x.ModulePins
+		if x.xxx_hidden_ModulePins != nil {
+			return *x.xxx_hidden_ModulePins
+		}
 	}
 	return nil
 }
 
 func (x *GetModulePinsResponse) SetModulePins(v []*v1alpha1.ModulePin) {
-	x.ModulePins = v
+	x.xxx_hidden_ModulePins = &v
 }
 
 type GetModulePinsResponse_builder struct {
@@ -230,15 +224,15 @@ func (b0 GetModulePinsResponse_builder) Build() *GetModulePinsResponse {
 	m0 := &GetModulePinsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.ModulePins = b.ModulePins
+	x.xxx_hidden_ModulePins = &b.ModulePins
 	return m0
 }
 
 type GetLocalModulePinsRequest struct {
-	state                 protoimpl.MessageState  `protogen:"hybrid.v1"`
-	LocalModuleReferences []*LocalModuleReference `protobuf:"bytes,1,rep,name=local_module_references,json=localModuleReferences,proto3" json:"local_module_references,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_LocalModuleReferences *[]*LocalModuleReference `protobuf:"bytes,1,rep,name=local_module_references,json=localModuleReferences,proto3" json:"local_module_references,omitempty"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *GetLocalModulePinsRequest) Reset() {
@@ -268,13 +262,15 @@ func (x *GetLocalModulePinsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetLocalModulePinsRequest) GetLocalModuleReferences() []*LocalModuleReference {
 	if x != nil {
-		return x.LocalModuleReferences
+		if x.xxx_hidden_LocalModuleReferences != nil {
+			return *x.xxx_hidden_LocalModuleReferences
+		}
 	}
 	return nil
 }
 
 func (x *GetLocalModulePinsRequest) SetLocalModuleReferences(v []*LocalModuleReference) {
-	x.LocalModuleReferences = v
+	x.xxx_hidden_LocalModuleReferences = &v
 }
 
 type GetLocalModulePinsRequest_builder struct {
@@ -287,20 +283,17 @@ func (b0 GetLocalModulePinsRequest_builder) Build() *GetLocalModulePinsRequest {
 	m0 := &GetLocalModulePinsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LocalModuleReferences = b.LocalModuleReferences
+	x.xxx_hidden_LocalModuleReferences = &b.LocalModuleReferences
 	return m0
 }
 
 type LocalModuleResolveResult struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// A copy of the reference that was resolved.
-	Reference *LocalModuleReference `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
-	// The pin the reference resolved to.
-	Pin *LocalModulePin `protobuf:"bytes,2,opt,name=pin,proto3" json:"pin,omitempty"`
-	// The type the reference resolved as.
-	ResolvedReferenceType ResolvedReferenceType `protobuf:"varint,3,opt,name=resolved_reference_type,json=resolvedReferenceType,proto3,enum=buf.alpha.registry.v1alpha1.ResolvedReferenceType" json:"resolved_reference_type,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Reference             *LocalModuleReference  `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
+	xxx_hidden_Pin                   *LocalModulePin        `protobuf:"bytes,2,opt,name=pin,proto3" json:"pin,omitempty"`
+	xxx_hidden_ResolvedReferenceType ResolvedReferenceType  `protobuf:"varint,3,opt,name=resolved_reference_type,json=resolvedReferenceType,proto3,enum=buf.alpha.registry.v1alpha1.ResolvedReferenceType" json:"resolved_reference_type,omitempty"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *LocalModuleResolveResult) Reset() {
@@ -330,57 +323,57 @@ func (x *LocalModuleResolveResult) ProtoReflect() protoreflect.Message {
 
 func (x *LocalModuleResolveResult) GetReference() *LocalModuleReference {
 	if x != nil {
-		return x.Reference
+		return x.xxx_hidden_Reference
 	}
 	return nil
 }
 
 func (x *LocalModuleResolveResult) GetPin() *LocalModulePin {
 	if x != nil {
-		return x.Pin
+		return x.xxx_hidden_Pin
 	}
 	return nil
 }
 
 func (x *LocalModuleResolveResult) GetResolvedReferenceType() ResolvedReferenceType {
 	if x != nil {
-		return x.ResolvedReferenceType
+		return x.xxx_hidden_ResolvedReferenceType
 	}
 	return ResolvedReferenceType_RESOLVED_REFERENCE_TYPE_UNSPECIFIED
 }
 
 func (x *LocalModuleResolveResult) SetReference(v *LocalModuleReference) {
-	x.Reference = v
+	x.xxx_hidden_Reference = v
 }
 
 func (x *LocalModuleResolveResult) SetPin(v *LocalModulePin) {
-	x.Pin = v
+	x.xxx_hidden_Pin = v
 }
 
 func (x *LocalModuleResolveResult) SetResolvedReferenceType(v ResolvedReferenceType) {
-	x.ResolvedReferenceType = v
+	x.xxx_hidden_ResolvedReferenceType = v
 }
 
 func (x *LocalModuleResolveResult) HasReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.Reference != nil
+	return x.xxx_hidden_Reference != nil
 }
 
 func (x *LocalModuleResolveResult) HasPin() bool {
 	if x == nil {
 		return false
 	}
-	return x.Pin != nil
+	return x.xxx_hidden_Pin != nil
 }
 
 func (x *LocalModuleResolveResult) ClearReference() {
-	x.Reference = nil
+	x.xxx_hidden_Reference = nil
 }
 
 func (x *LocalModuleResolveResult) ClearPin() {
-	x.Pin = nil
+	x.xxx_hidden_Pin = nil
 }
 
 type LocalModuleResolveResult_builder struct {
@@ -398,21 +391,18 @@ func (b0 LocalModuleResolveResult_builder) Build() *LocalModuleResolveResult {
 	m0 := &LocalModuleResolveResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Reference = b.Reference
-	x.Pin = b.Pin
-	x.ResolvedReferenceType = b.ResolvedReferenceType
+	x.xxx_hidden_Reference = b.Reference
+	x.xxx_hidden_Pin = b.Pin
+	x.xxx_hidden_ResolvedReferenceType = b.ResolvedReferenceType
 	return m0
 }
 
 type GetLocalModulePinsResponse struct {
-	state                     protoimpl.MessageState      `protogen:"hybrid.v1"`
-	LocalModuleResolveResults []*LocalModuleResolveResult `protobuf:"bytes,1,rep,name=local_module_resolve_results,json=localModuleResolveResults,proto3" json:"local_module_resolve_results,omitempty"`
-	// dependencies are the dependencies of the LocalModulePins.
-	//
-	// This includes the transitive deps.
-	Dependencies  []*v1alpha1.ModulePin `protobuf:"bytes,2,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                                protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_LocalModuleResolveResults *[]*LocalModuleResolveResult `protobuf:"bytes,1,rep,name=local_module_resolve_results,json=localModuleResolveResults,proto3" json:"local_module_resolve_results,omitempty"`
+	xxx_hidden_Dependencies              *[]*v1alpha1.ModulePin       `protobuf:"bytes,2,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
+	unknownFields                        protoimpl.UnknownFields
+	sizeCache                            protoimpl.SizeCache
 }
 
 func (x *GetLocalModulePinsResponse) Reset() {
@@ -442,24 +432,28 @@ func (x *GetLocalModulePinsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetLocalModulePinsResponse) GetLocalModuleResolveResults() []*LocalModuleResolveResult {
 	if x != nil {
-		return x.LocalModuleResolveResults
+		if x.xxx_hidden_LocalModuleResolveResults != nil {
+			return *x.xxx_hidden_LocalModuleResolveResults
+		}
 	}
 	return nil
 }
 
 func (x *GetLocalModulePinsResponse) GetDependencies() []*v1alpha1.ModulePin {
 	if x != nil {
-		return x.Dependencies
+		if x.xxx_hidden_Dependencies != nil {
+			return *x.xxx_hidden_Dependencies
+		}
 	}
 	return nil
 }
 
 func (x *GetLocalModulePinsResponse) SetLocalModuleResolveResults(v []*LocalModuleResolveResult) {
-	x.LocalModuleResolveResults = v
+	x.xxx_hidden_LocalModuleResolveResults = &v
 }
 
 func (x *GetLocalModulePinsResponse) SetDependencies(v []*v1alpha1.ModulePin) {
-	x.Dependencies = v
+	x.xxx_hidden_Dependencies = &v
 }
 
 type GetLocalModulePinsResponse_builder struct {
@@ -476,19 +470,17 @@ func (b0 GetLocalModulePinsResponse_builder) Build() *GetLocalModulePinsResponse
 	m0 := &GetLocalModulePinsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.LocalModuleResolveResults = b.LocalModuleResolveResults
-	x.Dependencies = b.Dependencies
+	x.xxx_hidden_LocalModuleResolveResults = &b.LocalModuleResolveResults
+	x.xxx_hidden_Dependencies = &b.Dependencies
 	return m0
 }
 
 type GetGoVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetGoVersionRequest) Reset() {
@@ -518,46 +510,46 @@ func (x *GetGoVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetGoVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetGoVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetGoVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetGoVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetGoVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetGoVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetGoVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetGoVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetGoVersionRequest_builder struct {
@@ -573,17 +565,16 @@ func (b0 GetGoVersionRequest_builder) Build() *GetGoVersionRequest {
 	m0 := &GetGoVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetGoVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the go module proxy.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetGoVersionResponse) Reset() {
@@ -613,13 +604,13 @@ func (x *GetGoVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetGoVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetGoVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetGoVersionResponse_builder struct {
@@ -633,18 +624,16 @@ func (b0 GetGoVersionResponse_builder) Build() *GetGoVersionResponse {
 	m0 := &GetGoVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetMavenVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetMavenVersionRequest) Reset() {
@@ -674,46 +663,46 @@ func (x *GetMavenVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetMavenVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetMavenVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetMavenVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetMavenVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetMavenVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetMavenVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetMavenVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetMavenVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetMavenVersionRequest_builder struct {
@@ -729,17 +718,16 @@ func (b0 GetMavenVersionRequest_builder) Build() *GetMavenVersionRequest {
 	m0 := &GetMavenVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetMavenVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the maven repository.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetMavenVersionResponse) Reset() {
@@ -769,13 +757,13 @@ func (x *GetMavenVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetMavenVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetMavenVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetMavenVersionResponse_builder struct {
@@ -789,18 +777,16 @@ func (b0 GetMavenVersionResponse_builder) Build() *GetMavenVersionResponse {
 	m0 := &GetMavenVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetNPMVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetNPMVersionRequest) Reset() {
@@ -830,46 +816,46 @@ func (x *GetNPMVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetNPMVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetNPMVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetNPMVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetNPMVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetNPMVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetNPMVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetNPMVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetNPMVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetNPMVersionRequest_builder struct {
@@ -885,17 +871,16 @@ func (b0 GetNPMVersionRequest_builder) Build() *GetNPMVersionRequest {
 	m0 := &GetNPMVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetNPMVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the npm registry.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetNPMVersionResponse) Reset() {
@@ -925,13 +910,13 @@ func (x *GetNPMVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetNPMVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetNPMVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetNPMVersionResponse_builder struct {
@@ -945,18 +930,16 @@ func (b0 GetNPMVersionResponse_builder) Build() *GetNPMVersionResponse {
 	m0 := &GetNPMVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetSwiftVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetSwiftVersionRequest) Reset() {
@@ -986,46 +969,46 @@ func (x *GetSwiftVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetSwiftVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetSwiftVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetSwiftVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetSwiftVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetSwiftVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetSwiftVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetSwiftVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetSwiftVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetSwiftVersionRequest_builder struct {
@@ -1041,17 +1024,16 @@ func (b0 GetSwiftVersionRequest_builder) Build() *GetSwiftVersionRequest {
 	m0 := &GetSwiftVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetSwiftVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the swift registry.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetSwiftVersionResponse) Reset() {
@@ -1081,13 +1063,13 @@ func (x *GetSwiftVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSwiftVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetSwiftVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetSwiftVersionResponse_builder struct {
@@ -1101,18 +1083,16 @@ func (b0 GetSwiftVersionResponse_builder) Build() *GetSwiftVersionResponse {
 	m0 := &GetSwiftVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetPythonVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetPythonVersionRequest) Reset() {
@@ -1142,46 +1122,46 @@ func (x *GetPythonVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetPythonVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetPythonVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetPythonVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetPythonVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetPythonVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetPythonVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetPythonVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetPythonVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetPythonVersionRequest_builder struct {
@@ -1197,17 +1177,16 @@ func (b0 GetPythonVersionRequest_builder) Build() *GetPythonVersionRequest {
 	m0 := &GetPythonVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetPythonVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the python repository.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetPythonVersionResponse) Reset() {
@@ -1237,13 +1216,13 @@ func (x *GetPythonVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetPythonVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetPythonVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetPythonVersionResponse_builder struct {
@@ -1257,18 +1236,16 @@ func (b0 GetPythonVersionResponse_builder) Build() *GetPythonVersionResponse {
 	m0 := &GetPythonVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetCargoVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetCargoVersionRequest) Reset() {
@@ -1298,46 +1275,46 @@ func (x *GetCargoVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetCargoVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetCargoVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetCargoVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetCargoVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetCargoVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetCargoVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetCargoVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetCargoVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetCargoVersionRequest_builder struct {
@@ -1353,17 +1330,16 @@ func (b0 GetCargoVersionRequest_builder) Build() *GetCargoVersionRequest {
 	m0 := &GetCargoVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetCargoVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the cargo registry.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetCargoVersionResponse) Reset() {
@@ -1393,13 +1369,13 @@ func (x *GetCargoVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCargoVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetCargoVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetCargoVersionResponse_builder struct {
@@ -1413,18 +1389,16 @@ func (b0 GetCargoVersionResponse_builder) Build() *GetCargoVersionResponse {
 	m0 := &GetCargoVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetNugetVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetNugetVersionRequest) Reset() {
@@ -1454,46 +1428,46 @@ func (x *GetNugetVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetNugetVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetNugetVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetNugetVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetNugetVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetNugetVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetNugetVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetNugetVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetNugetVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetNugetVersionRequest_builder struct {
@@ -1509,17 +1483,16 @@ func (b0 GetNugetVersionRequest_builder) Build() *GetNugetVersionRequest {
 	m0 := &GetNugetVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetNugetVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the nuget registry.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetNugetVersionResponse) Reset() {
@@ -1549,13 +1522,13 @@ func (x *GetNugetVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetNugetVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetNugetVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetNugetVersionResponse_builder struct {
@@ -1569,18 +1542,16 @@ func (b0 GetNugetVersionResponse_builder) Build() *GetNugetVersionResponse {
 	m0 := &GetNugetVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 type GetCmakeVersionRequest struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The plugin reference to resolve.
-	PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
-	// The module reference to resolve.
-	ModuleReference *LocalModuleReference `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,1,opt,name=plugin_reference,json=pluginReference,proto3" json:"plugin_reference,omitempty"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,2,opt,name=module_reference,json=moduleReference,proto3" json:"module_reference,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetCmakeVersionRequest) Reset() {
@@ -1610,46 +1581,46 @@ func (x *GetCmakeVersionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetCmakeVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
 	if x != nil {
-		return x.PluginReference
+		return x.xxx_hidden_PluginReference
 	}
 	return nil
 }
 
 func (x *GetCmakeVersionRequest) GetModuleReference() *LocalModuleReference {
 	if x != nil {
-		return x.ModuleReference
+		return x.xxx_hidden_ModuleReference
 	}
 	return nil
 }
 
 func (x *GetCmakeVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
-	x.PluginReference = v
+	x.xxx_hidden_PluginReference = v
 }
 
 func (x *GetCmakeVersionRequest) SetModuleReference(v *LocalModuleReference) {
-	x.ModuleReference = v
+	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetCmakeVersionRequest) HasPluginReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.PluginReference != nil
+	return x.xxx_hidden_PluginReference != nil
 }
 
 func (x *GetCmakeVersionRequest) HasModuleReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.ModuleReference != nil
+	return x.xxx_hidden_ModuleReference != nil
 }
 
 func (x *GetCmakeVersionRequest) ClearPluginReference() {
-	x.PluginReference = nil
+	x.xxx_hidden_PluginReference = nil
 }
 
 func (x *GetCmakeVersionRequest) ClearModuleReference() {
-	x.ModuleReference = nil
+	x.xxx_hidden_ModuleReference = nil
 }
 
 type GetCmakeVersionRequest_builder struct {
@@ -1665,17 +1636,16 @@ func (b0 GetCmakeVersionRequest_builder) Build() *GetCmakeVersionRequest {
 	m0 := &GetCmakeVersionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.PluginReference = b.PluginReference
-	x.ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_ModuleReference = b.ModuleReference
 	return m0
 }
 
 type GetCmakeVersionResponse struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// version is the resolved version to be used with the cmake registry.
-	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Version string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetCmakeVersionResponse) Reset() {
@@ -1705,13 +1675,13 @@ func (x *GetCmakeVersionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCmakeVersionResponse) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetCmakeVersionResponse) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 type GetCmakeVersionResponse_builder struct {
@@ -1725,29 +1695,20 @@ func (b0 GetCmakeVersionResponse_builder) Build() *GetCmakeVersionResponse {
 	m0 := &GetCmakeVersionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Version = b.Version
+	x.xxx_hidden_Version = b.Version
 	return m0
 }
 
 // GetRemotePackageVersionPlugin is a plugin reference.
 // If the version is empty, this is a reference to the latest version.
 type GetRemotePackageVersionPlugin struct {
-	state protoimpl.MessageState `protogen:"hybrid.v1"`
-	// The owner of the plugin.
-	// example: bufbuild
-	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// The name of the plugin.
-	// example: connect-go
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The version of the plugin.
-	// If empty, this is a reference to the latest version.
-	// example: v1.0.0
-	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// The revision of the plugin version.
-	// example: 1
-	Revision      uint32 `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Owner    string                 `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	xxx_hidden_Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_Version  string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	xxx_hidden_Revision uint32                 `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetRemotePackageVersionPlugin) Reset() {
@@ -1777,46 +1738,46 @@ func (x *GetRemotePackageVersionPlugin) ProtoReflect() protoreflect.Message {
 
 func (x *GetRemotePackageVersionPlugin) GetOwner() string {
 	if x != nil {
-		return x.Owner
+		return x.xxx_hidden_Owner
 	}
 	return ""
 }
 
 func (x *GetRemotePackageVersionPlugin) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *GetRemotePackageVersionPlugin) GetVersion() string {
 	if x != nil {
-		return x.Version
+		return x.xxx_hidden_Version
 	}
 	return ""
 }
 
 func (x *GetRemotePackageVersionPlugin) GetRevision() uint32 {
 	if x != nil {
-		return x.Revision
+		return x.xxx_hidden_Revision
 	}
 	return 0
 }
 
 func (x *GetRemotePackageVersionPlugin) SetOwner(v string) {
-	x.Owner = v
+	x.xxx_hidden_Owner = v
 }
 
 func (x *GetRemotePackageVersionPlugin) SetName(v string) {
-	x.Name = v
+	x.xxx_hidden_Name = v
 }
 
 func (x *GetRemotePackageVersionPlugin) SetVersion(v string) {
-	x.Version = v
+	x.xxx_hidden_Version = v
 }
 
 func (x *GetRemotePackageVersionPlugin) SetRevision(v uint32) {
-	x.Revision = v
+	x.xxx_hidden_Revision = v
 }
 
 type GetRemotePackageVersionPlugin_builder struct {
@@ -1841,10 +1802,10 @@ func (b0 GetRemotePackageVersionPlugin_builder) Build() *GetRemotePackageVersion
 	m0 := &GetRemotePackageVersionPlugin{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.Owner = b.Owner
-	x.Name = b.Name
-	x.Version = b.Version
-	x.Revision = b.Revision
+	x.xxx_hidden_Owner = b.Owner
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Revision = b.Revision
 	return m0
 }
 
