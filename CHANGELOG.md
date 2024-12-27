@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf plugin push --label` to allow pushing a plugin with a label.
 
 ## [v1.48.0] - 2024-12-19
 
