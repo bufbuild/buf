@@ -277,7 +277,7 @@ func checkConstraintsForField(
 	case boolRulesFieldNumber:
 		// Bool rules only have `const` and does not need validating.
 	case stringRulesFieldNumber:
-		return checkStringRules(adder, fieldConstraints.GetString_())
+		return checkStringRules(adder, fieldConstraints.GetString())
 	case bytesRulesFieldNumber:
 		return checkBytesRules(adder, fieldConstraints.GetBytes())
 	case enumRulesFieldNumber:

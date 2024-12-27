@@ -55,7 +55,6 @@ func (g *generator) Generate(
 	)
 	jobs := make([]func(context.Context) error, len(codeGeneratorRequests))
 	for i, codeGeneratorRequest := range codeGeneratorRequests {
-		codeGeneratorRequest := codeGeneratorRequest
 		jobs[i] = func(ctx context.Context) error {
 			protopluginRequest, err := protoplugin.NewRequest(codeGeneratorRequest)
 			if err != nil {

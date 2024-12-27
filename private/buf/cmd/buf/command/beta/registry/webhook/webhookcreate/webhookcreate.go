@@ -124,18 +124,18 @@ func run(
 	resp, err := service.CreateWebhook(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.CreateWebhookRequest{
+			registryv1alpha1.CreateWebhookRequest_builder{
 				WebhookEvent:   registryv1alpha1.WebhookEvent(event),
 				OwnerName:      flags.OwnerName,
 				RepositoryName: flags.RepositoryName,
 				CallbackUrl:    flags.CallbackURL,
-			},
+			}.Build(),
 		),
 	)
 	if err != nil {
 		return err
 	}
-	webhookJSON, err := json.MarshalIndent(resp.Msg.Webhook, "", "\t")
+	webhookJSON, err := json.MarshalIndent(resp.Msg.GetWebhook(), "", "\t")
 	if err != nil {
 		return err
 	}

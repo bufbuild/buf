@@ -116,7 +116,6 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 	var lock sync.Mutex
 	var jobs []func(context.Context) error
 	for _, packageExpression := range depPackageExpressions {
-		packageExpression := packageExpression
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
@@ -132,7 +131,6 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 		)
 	}
 	for _, packageExpression := range packageExpressions {
-		packageExpression := packageExpression
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
@@ -147,7 +145,6 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 
 	jobs = make([]func(context.Context) error, 0)
 	for pkg := range depPackages {
-		pkg := pkg
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {

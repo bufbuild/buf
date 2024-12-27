@@ -73,13 +73,13 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 	defer agentServer.Close()
 
 	t.Run("content_type_grpc_proto", func(t *testing.T) {
-		requestProto := &studiov1alpha1.InvokeRequest{
+		requestProto := studiov1alpha1.InvokeRequest_builder{
 			Target: upstreamServer.URL + echoPath,
 			Headers: goHeadersToProtoHeaders(http.Header{
 				"Content-Type": []string{"application/grpc+proto"},
 			}),
 			Body: []byte("echothis"),
-		}
+		}.Build()
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
@@ -97,21 +97,21 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)
 		upstreamResponseHeaders := make(http.Header)
-		addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
-		addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.GetHeaders(), upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.GetTrailers(), upstreamResponseHeaders)
 		assert.Equal(t, "0", upstreamResponseHeaders.Get("grpc-status"))
-		assert.Equal(t, []byte("echo: echothis"), invokeResponse.Body)
+		assert.Equal(t, []byte("echo: echothis"), invokeResponse.GetBody())
 		assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
 	})
 
 	t.Run("content_type_application_proto", func(t *testing.T) {
-		requestProto := &studiov1alpha1.InvokeRequest{
+		requestProto := studiov1alpha1.InvokeRequest_builder{
 			Target: upstreamServer.URL + echoPath,
 			Headers: goHeadersToProtoHeaders(http.Header{
 				"Content-Type": []string{"application/proto"},
 			}),
 			Body: []byte("echothis"),
-		}
+		}.Build()
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
@@ -129,10 +129,10 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)
 		upstreamResponseHeaders := make(http.Header)
-		addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
-		addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.GetHeaders(), upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.GetTrailers(), upstreamResponseHeaders)
 		assert.Equal(t, "", upstreamResponseHeaders.Get("grpc-status"))
-		assert.Equal(t, []byte("echo: echothis"), invokeResponse.Body)
+		assert.Equal(t, []byte("echo: echothis"), invokeResponse.GetBody())
 		assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
 	})
 }
@@ -151,12 +151,12 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	defer agentServer.Close()
 
 	t.Run("forbidden_header", func(t *testing.T) {
-		requestProto := &studiov1alpha1.InvokeRequest{
+		requestProto := studiov1alpha1.InvokeRequest_builder{
 			Target: upstreamServer.URL + echoPath,
 			Headers: goHeadersToProtoHeaders(http.Header{
 				"forbidden-header": []string{"<tokens>"},
 			}),
-		}
+		}.Build()
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
@@ -168,13 +168,13 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	})
 
 	t.Run("error_response", func(t *testing.T) {
-		requestProto := &studiov1alpha1.InvokeRequest{
+		requestProto := studiov1alpha1.InvokeRequest_builder{
 			Target: upstreamServer.URL + errorPath,
 			Headers: goHeadersToProtoHeaders(http.Header{
 				"Content-Type": []string{"application/grpc"},
 			}),
 			Body: []byte("something"),
-		}
+		}.Build()
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
@@ -188,8 +188,8 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)
 		upstreamResponseHeaders := make(http.Header)
-		addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
-		addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.GetHeaders(), upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.GetTrailers(), upstreamResponseHeaders)
 		assert.Equal(t, strconv.Itoa(int(connect.CodeFailedPrecondition)), upstreamResponseHeaders.Get("grpc-status"))
 		assert.Equal(t, "something", upstreamResponseHeaders.Get("grpc-message"))
 	})
@@ -231,12 +231,12 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 			}
 		}()
 
-		requestProto := &studiov1alpha1.InvokeRequest{
+		requestProto := studiov1alpha1.InvokeRequest_builder{
 			Target: "http://" + listener.Addr().String(),
 			Headers: goHeadersToProtoHeaders(http.Header{
 				"Content-Type": []string{"application/grpc"},
 			}),
-		}
+		}.Build()
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
@@ -305,8 +305,8 @@ func protoUnmarshalBase64(t *testing.T, base64Bytes []byte, message proto.Messag
 
 func addProtoHeadersToGoHeader(fromHeaders []*studiov1alpha1.Headers, toHeaders http.Header) {
 	for _, meta := range fromHeaders {
-		for _, value := range meta.Value {
-			toHeaders.Add(meta.Key, value)
+		for _, value := range meta.GetValue() {
+			toHeaders.Add(meta.GetKey(), value)
 		}
 	}
 }

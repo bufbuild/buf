@@ -99,9 +99,9 @@ func run(
 	}
 	if _, err := service.DeleteToken(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteTokenRequest{
+		connect.NewRequest(registryv1alpha1.DeleteTokenRequest_builder{
 			TokenId: flags.TokenID,
-		}),
+		}.Build()),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewTokenNotFoundError(flags.TokenID)

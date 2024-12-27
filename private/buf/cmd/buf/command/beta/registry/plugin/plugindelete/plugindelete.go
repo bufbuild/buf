@@ -85,11 +85,11 @@ func run(
 	if _, err := service.DeleteCuratedPlugin(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.DeleteCuratedPluginRequest{
+			registryv1alpha1.DeleteCuratedPluginRequest_builder{
 				Owner:   pluginIdentity.Owner(),
 				Name:    pluginIdentity.Plugin(),
 				Version: version,
-			},
+			}.Build(),
 		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

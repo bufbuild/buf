@@ -239,12 +239,12 @@ func run(
 	latestPluginResp, err := service.GetLatestCuratedPlugin(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GetLatestCuratedPluginRequest{
+			registryv1alpha1.GetLatestCuratedPluginRequest_builder{
 				Owner:    pluginConfig.Name.Owner(),
 				Name:     pluginConfig.Name.Plugin(),
 				Version:  pluginConfig.PluginVersion,
 				Revision: 0, // get latest revision for the plugin version.
-			},
+			}.Build(),
 		),
 	)
 	var currentImageDigest string
@@ -255,8 +255,8 @@ func run(
 		}
 		nextRevision = 1
 	} else {
-		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
-		currentImageDigest = latestPluginResp.Msg.Plugin.ContainerImageDigest
+		nextRevision = latestPluginResp.Msg.GetPlugin().GetRevision() + 1
+		currentImageDigest = latestPluginResp.Msg.GetPlugin().GetContainerImageDigest()
 	}
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
@@ -307,9 +307,9 @@ func run(
 			slog.String("name", pluginConfig.Name.IdentityString()),
 			slog.String("digest", plugin.ContainerImageDigest()),
 		)
-		curatedPlugin = latestPluginResp.Msg.Plugin
+		curatedPlugin = latestPluginResp.Msg.GetPlugin()
 	} else {
-		curatedPlugin = createPluginResp.Msg.Configuration
+		curatedPlugin = createPluginResp.Msg.GetConfiguration()
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }
@@ -328,7 +328,7 @@ func createCuratedPluginRequest(
 	if err != nil {
 		return nil, err
 	}
-	return &registryv1alpha1.CreateCuratedPluginRequest{
+	return registryv1alpha1.CreateCuratedPluginRequest_builder{
 		Owner:                pluginConfig.Name.Owner(),
 		Name:                 pluginConfig.Name.Plugin(),
 		RegistryType:         bufremoteplugin.PluginToProtoPluginRegistryType(plugin),
@@ -345,7 +345,7 @@ func createCuratedPluginRequest(
 		Visibility:           visibility,
 		IntegrationGuideUrl:  pluginConfig.IntegrationGuideURL,
 		Deprecated:           pluginConfig.Deprecated,
-	}, nil
+	}.Build(), nil
 }
 
 func pushImage(

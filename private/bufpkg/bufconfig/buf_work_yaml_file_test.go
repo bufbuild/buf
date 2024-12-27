@@ -82,7 +82,6 @@ directories:
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			readBucket, err := storagemem.NewReadBucket(
@@ -130,7 +129,6 @@ func TestNewBufWorkYAMLFile(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			bufWorkYAMLFile, err := NewBufWorkYAMLFile(testcase.version, testcase.dirPaths)
@@ -189,7 +187,6 @@ func TestNewWorkYAMLFileFail(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			_, err := NewBufWorkYAMLFile(testcase.version, testcase.dirPaths)

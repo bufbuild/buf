@@ -32,20 +32,20 @@ import (
 
 func TestStripBufExtensionField(t *testing.T) {
 	t.Parallel()
-	file := &imagev1.ImageFile{
-		BufExtension: &imagev1.ImageFileExtension{
+	file := imagev1.ImageFile_builder{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			IsImport:         proto.Bool(true),
 			UnusedDependency: []int32{1, 3, 5},
-			ModuleInfo: &imagev1.ModuleInfo{
-				Name: &imagev1.ModuleName{
+			ModuleInfo: imagev1.ModuleInfo_builder{
+				Name: imagev1.ModuleName_builder{
 					Remote:     proto.String("buf.build"),
 					Owner:      proto.String("foo"),
 					Repository: proto.String("bar"),
-				},
+				}.Build(),
 				Commit: proto.String("1234981234123412341234"),
-			},
-		},
-	}
+			}.Build(),
+		}.Build(),
+	}.Build()
 	dataToBeStripped, err := protoencoding.NewWireMarshaler().Marshal(file)
 	require.NoError(t, err)
 

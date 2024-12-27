@@ -301,7 +301,6 @@ func readBufLockFile(
 		}
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))
 		for i, dep := range externalBufLockFile.Deps {
-			dep := dep
 			if dep.Remote == "" {
 				return nil, errors.New("remote missing")
 			}
@@ -355,7 +354,6 @@ func readBufLockFile(
 		}
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))
 		for i, dep := range externalBufLockFile.Deps {
-			dep := dep
 			if dep.Name == "" {
 				return nil, errors.New("no module name specified")
 			}
@@ -391,7 +389,6 @@ func readBufLockFile(
 		}
 		remotePluginKeys := make([]bufplugin.PluginKey, len(externalBufLockFile.Plugins))
 		for i, plugin := range externalBufLockFile.Plugins {
-			plugin := plugin
 			if plugin.Name == "" {
 				return nil, errors.New("no plugin name specified")
 			}

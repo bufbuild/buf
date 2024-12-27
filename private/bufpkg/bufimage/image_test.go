@@ -28,9 +28,9 @@ import (
 
 func TestCloneImage(t *testing.T) {
 	t.Parallel()
-	protoImage := &imagev1.Image{
+	protoImage := imagev1.Image_builder{
 		File: []*imagev1.ImageFile{
-			{
+			imagev1.ImageFile_builder{
 				Syntax:     proto.String("proto3"),
 				Name:       proto.String("a.proto"),
 				Dependency: []string{"b.proto", "c.proto"},
@@ -57,21 +57,21 @@ func TestCloneImage(t *testing.T) {
 						},
 					},
 				},
-				BufExtension: &imagev1.ImageFileExtension{
+				BufExtension: imagev1.ImageFileExtension_builder{
 					IsImport:            proto.Bool(false),
 					IsSyntaxUnspecified: proto.Bool(false),
 					UnusedDependency:    []int32{1},
-					ModuleInfo: &imagev1.ModuleInfo{
-						Name: &imagev1.ModuleName{
+					ModuleInfo: imagev1.ModuleInfo_builder{
+						Name: imagev1.ModuleName_builder{
 							Remote:     proto.String("buf.build"),
 							Owner:      proto.String("foo"),
 							Repository: proto.String("bar"),
-						},
+						}.Build(),
 						Commit: proto.String("9876543210fedcba9876543210fedcba"),
-					},
-				},
-			},
-			{
+					}.Build(),
+				}.Build(),
+			}.Build(),
+			imagev1.ImageFile_builder{
 				Syntax:  proto.String("proto3"),
 				Name:    proto.String("b.proto"),
 				Package: proto.String("abc.def"),
@@ -90,37 +90,37 @@ func TestCloneImage(t *testing.T) {
 						},
 					},
 				},
-				BufExtension: &imagev1.ImageFileExtension{
+				BufExtension: imagev1.ImageFileExtension_builder{
 					IsImport:            proto.Bool(true),
 					IsSyntaxUnspecified: proto.Bool(false),
-					ModuleInfo: &imagev1.ModuleInfo{
-						Name: &imagev1.ModuleName{
+					ModuleInfo: imagev1.ModuleInfo_builder{
+						Name: imagev1.ModuleName_builder{
 							Remote:     proto.String("buf.build"),
 							Owner:      proto.String("foo"),
 							Repository: proto.String("baz"),
-						},
+						}.Build(),
 						Commit: proto.String("0123456789abcdef0123456789abcdef"),
-					},
-				},
-			},
-			{
+					}.Build(),
+				}.Build(),
+			}.Build(),
+			imagev1.ImageFile_builder{
 				Syntax: proto.String("proto2"),
 				Name:   proto.String("c.proto"),
-				BufExtension: &imagev1.ImageFileExtension{
+				BufExtension: imagev1.ImageFileExtension_builder{
 					IsImport:            proto.Bool(true),
 					IsSyntaxUnspecified: proto.Bool(true),
-					ModuleInfo: &imagev1.ModuleInfo{
-						Name: &imagev1.ModuleName{
+					ModuleInfo: imagev1.ModuleInfo_builder{
+						Name: imagev1.ModuleName_builder{
 							Remote:     proto.String("buf.build"),
 							Owner:      proto.String("foo"),
 							Repository: proto.String("baz"),
-						},
+						}.Build(),
 						Commit: proto.String("0123456789abcdef0123456789abcdef"),
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	image, err := NewImageForProto(protoImage)
 	require.NoError(t, err)

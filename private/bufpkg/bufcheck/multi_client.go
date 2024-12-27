@@ -61,7 +61,6 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 	var jobs []func(context.Context) error
 	var lock sync.Mutex
 	for i, delegate := range c.checkClientSpecs {
-		delegate := delegate
 		// This is all ruleIDs for this client.
 		allDelegateRuleIDs := chunkedRuleIDs[i]
 		// This is the specific requested ruleIDs for this client

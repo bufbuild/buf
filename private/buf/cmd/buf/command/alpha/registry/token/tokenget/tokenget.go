@@ -101,9 +101,9 @@ func run(
 	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	resp, err := service.GetToken(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.GetTokenRequest{
+		connect.NewRequest(registryv1alpha1.GetTokenRequest_builder{
 			TokenId: flags.TokenID,
-		}),
+		}.Build()),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -115,5 +115,5 @@ func run(
 	if err != nil {
 		return syserror.Wrap(err)
 	}
-	return printer.PrintTokens(ctx, resp.Msg.Token)
+	return printer.PrintTokens(ctx, resp.Msg.GetToken())
 }

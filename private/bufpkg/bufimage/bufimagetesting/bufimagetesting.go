@@ -63,14 +63,14 @@ func NewProtoImageFile(
 	path string,
 	importPaths ...string,
 ) *imagev1.ImageFile {
-	return &imagev1.ImageFile{
+	return imagev1.ImageFile_builder{
 		Name:       proto.String(path),
 		Dependency: importPaths,
-		BufExtension: &imagev1.ImageFileExtension{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			IsImport:            proto.Bool(false),
 			IsSyntaxUnspecified: proto.Bool(false),
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 // NewProtoImageFileIsImport returns a new *imagev1.ImageFile for testing that is an import.
@@ -81,14 +81,14 @@ func NewProtoImageFileIsImport(
 	path string,
 	importPaths ...string,
 ) *imagev1.ImageFile {
-	return &imagev1.ImageFile{
+	return imagev1.ImageFile_builder{
 		Name:       proto.String(path),
 		Dependency: importPaths,
-		BufExtension: &imagev1.ImageFileExtension{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			IsImport:            proto.Bool(true),
 			IsSyntaxUnspecified: proto.Bool(false),
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 // AssertImageFilesEqual asserts the expected ImageFiles equal the actual ImageFiles.

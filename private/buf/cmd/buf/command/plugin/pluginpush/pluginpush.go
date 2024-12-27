@@ -187,6 +187,9 @@ func upload(
 			createPluginType,
 		))
 	}
+	if len(flags.Labels) > 0 {
+		options = append(options, bufplugin.UploadWithLabels(flags.Labels...))
+	}
 	commits, err := uploader.Upload(ctx, []bufplugin.Plugin{plugin}, options...)
 	if err != nil {
 		return nil, err

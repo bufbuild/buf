@@ -55,7 +55,6 @@ func TestDefaultsEqual(t *testing.T) {
 		},
 	}
 	for name, vals := range values {
-		name, vals := name, vals
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			for _, val := range vals {

@@ -335,7 +335,6 @@ func (a *uploader) Upload(
 	}
 	commits := make([]bufmodule.Commit, len(universalProtoCommits))
 	for i, universalProtoCommit := range universalProtoCommits {
-		universalProtoCommit := universalProtoCommit
 		// This is how we get the FullName without calling the ModuleService or OwnerService.
 		//
 		// We've maintained ordering throughout this function, so we can do this.
