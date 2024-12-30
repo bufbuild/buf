@@ -7,8 +7,8 @@ toolchain go1.23.4
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.1-20241031151143-70f632351282.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.1-20241127180247-a33202765966.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241210175624-28487aef65cd.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.1-20241210175624-28487aef65cd.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.17.0-20241227185654-946b6dd39b27.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.1-20241227185654-946b6dd39b27.1
 	buf.build/go/bufplugin v0.6.0
 	buf.build/go/protoyaml v0.3.1
 	buf.build/go/spdx v0.2.0
@@ -67,7 +67,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
-	github.com/containerd/ttrpc v1.2.6 // indirect
+	github.com/containerd/ttrpc v1.2.7 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
