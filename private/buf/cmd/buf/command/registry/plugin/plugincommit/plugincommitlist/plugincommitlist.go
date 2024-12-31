@@ -32,11 +32,11 @@ import (
 )
 
 const (
-	pageSizeFlagName    = "page-size"
-	pageTokenFlagName   = "page-token"
-	reverseFlagName     = "reverse"
-	formatFlagName      = "format"
-	onlyChangesFlagName = "only-changes"
+	pageSizeFlagName          = "page-size"
+	pageTokenFlagName         = "page-token"
+	reverseFlagName           = "reverse"
+	formatFlagName            = "format"
+	digestChangesOnlyFlagName = "digest-changes-only"
 
 	defaultPageSize = 10
 )
@@ -68,11 +68,11 @@ If no reference is specified, it lists all commits in this plugin.
 }
 
 type flags struct {
-	Format      string
-	PageSize    uint32
-	PageToken   string
-	Reverse     bool
-	OnlyChanges bool
+	Format            string
+	PageSize          uint32
+	PageToken         string
+	Reverse           bool
+	DigestChangesOnly bool
 }
 
 func newFlags() *flags {
@@ -105,10 +105,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
 	flagSet.BoolVar(
-		&f.OnlyChanges,
-		onlyChangesFlagName,
+		&f.DigestChangesOnly,
+		digestChangesOnlyFlagName,
 		false,
-		`Only commits with changed digests. By default, all commits are listed`,
+		`Only commits that have changed digests. By default, all commits are listed`,
 	)
 }
 
@@ -242,7 +242,7 @@ func run(
 					},
 				},
 				Order:                         labelHistoryOrder,
-				OnlyCommitsWithChangedDigests: flags.OnlyChanges,
+				OnlyCommitsWithChangedDigests: flags.DigestChangesOnly,
 			},
 		),
 	)
