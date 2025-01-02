@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Fix `buf plugin push --label` to allow pushing a plugin with a label.
+- Add `--digest-changes-only` flag to `buf registry {module,plugin} commit list` to filter
+  out commits that have no digest changes.
 
 ## [v1.48.0] - 2024-12-19
 
