@@ -42,7 +42,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2024
+LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 PROTOVALIDATE_VERSION := v0.8.1
 # Comment out to use released buf
