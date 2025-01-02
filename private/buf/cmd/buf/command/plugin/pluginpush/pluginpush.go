@@ -190,6 +190,9 @@ func upload(
 	if len(flags.Labels) > 0 {
 		options = append(options, bufplugin.UploadWithLabels(flags.Labels...))
 	}
+	if flags.SourceControlURL != "" {
+		options = append(options, bufplugin.UploadWithSourceControlURL(flags.SourceControlURL))
+	}
 	commits, err := uploader.Upload(ctx, []bufplugin.Plugin{plugin}, options...)
 	if err != nil {
 		return nil, err
