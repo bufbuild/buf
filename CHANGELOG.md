@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.49.0] - 2025-01-07
 
 - Fix `buf plugin push --label` to allow pushing a plugin with a label.
@@ -1322,6 +1326,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.49.0...HEAD
 [v1.49.0]: https://github.com/bufbuild/buf/compare/v1.48.0...v1.49.0
 [v1.48.0]: https://github.com/bufbuild/buf/compare/v1.47.2...v1.48.0
 [v1.47.2]: https://github.com/bufbuild/buf/compare/v1.47.1...v1.47.2
