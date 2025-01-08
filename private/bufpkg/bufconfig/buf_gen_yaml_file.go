@@ -280,7 +280,7 @@ type externalBufGenYAMLFileV1Beta1 struct {
 	Options externalGenerateManagedConfigV1Beta1  `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
-// externalGeneratePluginConfigV1Beta1 represents a single plugin conifg in a v1beta1 buf.gen.yaml file.
+// externalGeneratePluginConfigV1Beta1 represents a single plugin config in a v1beta1 buf.gen.yaml file.
 type externalGeneratePluginConfigV1Beta1 struct {
 	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
@@ -538,7 +538,7 @@ type externalManagedDisableConfigV2 struct {
 
 // externalManagedOverrideConfigV2 represents an override rule in managed mode in a v2 buf.gen.yaml file.
 type externalManagedOverrideConfigV2 struct {
-	// Exactly one of FileOpion and FieldOption must be set.
+	// Exactly one of FileOption and FieldOption must be set.
 	FileOption  string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
 	FieldOption string `json:"field_option,omitempty" yaml:"field_option,omitempty"`
 	Module      string `json:"module,omitempty" yaml:"module,omitempty"`

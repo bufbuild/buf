@@ -26,7 +26,7 @@ var (
 	globalLock        sync.RWMutex
 )
 
-// Parallelism returns the current parellism.
+// Parallelism returns the current parallelism.
 //
 // This defaults to the number of CPUs.
 func Parallelism() int {

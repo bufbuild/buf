@@ -188,7 +188,7 @@ func ModuleSetTargetOpaqueIDs(moduleSet ModuleSet) []string {
 	return modulesOpaqueIDs(ModuleSetTargetModules(moduleSet))
 }
 
-// ModuleSetNonTargetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// ModuleSetNonTargetOpaqueIDs is a convenience function that returns a slice of the OpaqueIDs of the
 // non-target Modules in the ModuleSet.
 //
 // Sorted.
@@ -196,7 +196,7 @@ func ModuleSetNonTargetOpaqueIDs(moduleSet ModuleSet) []string {
 	return modulesOpaqueIDs(ModuleSetNonTargetModules(moduleSet))
 }
 
-// ModuleSetLocalOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// ModuleSetLocalOpaqueIDs is a convenience function that returns a slice of the OpaqueIDs of the
 // local Modules in the ModuleSet.
 //
 // Sorted.
@@ -204,7 +204,7 @@ func ModuleSetLocalOpaqueIDs(moduleSet ModuleSet) []string {
 	return modulesOpaqueIDs(ModuleSetLocalModules(moduleSet))
 }
 
-// ModuleSetRemoteOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// ModuleSetRemoteOpaqueIDs is a convenience function that returns a slice of the OpaqueIDs of the
 // remote Modules in the ModuleSet.
 //
 // Sorted.

@@ -60,7 +60,7 @@ func NewGenerateManagedConfig(
 // A ManagedDisableRule is guaranteed to specify at least one of the two aspects.
 // i.e. At least one of Path, FullName, FieldName, FileOption and
 // FieldOption is not empty. A rule can disable all options for certain files/fields,
-// disable certains options for all files/fields, or disable certain options for
+// disable certain options for all files/fields, or disable certain options for
 // certain files/fields. To disable all options for all files/fields, turn off managed mode.
 type ManagedDisableRule interface {
 	// Path returns the file path, relative to its module, to disable managed mode for.
@@ -74,7 +74,7 @@ type ManagedDisableRule interface {
 	// FileOption returns the file option to disable managed mode for. This is
 	// guaranteed to be empty if FieldName is not empty.
 	FileOption() FileOption
-	// FieldOption returns the field option to disalbe managed mode for.
+	// FieldOption returns the field option to disable managed mode for.
 	FieldOption() FieldOption
 
 	isManagedDisableRule()

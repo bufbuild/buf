@@ -68,7 +68,7 @@ func (h *responseWriter) WriteResponse(
 	return nil
 }
 
-// applyInsertionPoint inserts the content of the given file at the insertion point that it specfiies.
+// applyInsertionPoint inserts the content of the given file at the insertion point that it specifies.
 // For more details on insertion points, see the following:
 //
 // https://github.com/protocolbuffers/protobuf/blob/f5bdd7cd56aa86612e166706ed8ef139db06edf2/src/google/protobuf/compiler/plugin.proto#L135-L171

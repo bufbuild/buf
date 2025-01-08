@@ -28,7 +28,7 @@ var errIsNotEmpty = errors.New("__is_not_empty__")
 
 // ReadPath is analogous to os.ReadFile.
 //
-// Returns an error that fufills IsNotExist if the path does not exist.
+// Returns an error that fulfills IsNotExist if the path does not exist.
 func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte, retErr error) {
 	readObject, err := readBucket.Get(ctx, path)
 	if err != nil {

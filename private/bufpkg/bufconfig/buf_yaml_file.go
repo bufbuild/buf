@@ -1282,7 +1282,7 @@ type externalBufYAMLFileV2 struct {
 	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
-// externalBufYAMLFileModuleV2 represents a single module configuation within a v2 buf.yaml file.
+// externalBufYAMLFileModuleV2 represents a single module configuration within a v2 buf.yaml file.
 type externalBufYAMLFileModuleV2 struct {
 	Path     string                                 `json:"path,omitempty" yaml:"path,omitempty"`
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
@@ -1292,7 +1292,7 @@ type externalBufYAMLFileModuleV2 struct {
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
-// externalBufYAMLFileBuildV1Beta1V1 represents build configuation within a v1 or
+// externalBufYAMLFileBuildV1Beta1V1 represents build configuration within a v1 or
 // v1beta1 buf.yaml file, which have the same shape except for roots.
 type externalBufYAMLFileBuildV1Beta1V1 struct {
 	// Roots are only valid in v1beta! Validate that this is not set for v1.
@@ -1300,7 +1300,7 @@ type externalBufYAMLFileBuildV1Beta1V1 struct {
 	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
-// externalBufYAMLFileLintV1Beta1V1 represents lint configuation within a v1beta1 or v1
+// externalBufYAMLFileLintV1Beta1V1 represents lint configuration within a v1beta1 or v1
 // buf.yaml file, which have the same shape.
 //
 // Note that the lint and breaking ids/categories DID change between versions, make
@@ -1338,7 +1338,7 @@ func (el externalBufYAMLFileLintV1Beta1V1) isEmpty() bool {
 		!el.DisableBuiltin
 }
 
-// externalBufYAMLFileLintV2 represents lint configuation within a  v2 buf.yaml file.
+// externalBufYAMLFileLintV2 represents lint configuration within a  v2 buf.yaml file.
 //
 // Note that the lint and breaking ids/categories DID change between versions, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
@@ -1372,7 +1372,7 @@ func (el externalBufYAMLFileLintV2) isEmpty() bool {
 		!el.DisableBuiltin
 }
 
-// externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
+// externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuration within a v1beta1, v1,
 // or v2 buf.yaml file, which have the same shape.
 //
 // Note that the lint and breaking ids/categories DID change between versions, make

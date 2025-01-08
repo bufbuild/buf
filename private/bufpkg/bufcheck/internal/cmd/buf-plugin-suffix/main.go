@@ -141,7 +141,7 @@ func main() {
 				},
 				{
 					ID:      categoryAttributesSuffixesID,
-					Purpose: "Check that all fields and enum values have valid suffixes and messages and enums with specific suffixes have no chnage.",
+					Purpose: "Check that all fields and enum values have valid suffixes and messages and enums with specific suffixes have no change.",
 				},
 			},
 		},

@@ -126,7 +126,7 @@ func (w *responseWriter) Close() error {
 			// whereas others aren't.
 			//
 			// Regardless, we stop at the first error so that
-			// we don't unncessarily write more results.
+			// we don't unnecessarily write more results.
 			return err
 		}
 	}

@@ -316,17 +316,17 @@ func replaceReadObjectCloserPath(readObjectCloser ReadObjectCloser, path string)
 }
 
 func replaceWriteObjectCloserExternalAndLocalPathsNotSupported(writeObjectCloser WriteObjectCloser) WriteObjectCloser {
-	return writeObjectCloserExternalAndLocalPathsNotSuppoted{writeObjectCloser}
+	return writeObjectCloserExternalAndLocalPathsNotSupported{writeObjectCloser}
 }
 
-type writeObjectCloserExternalAndLocalPathsNotSuppoted struct {
+type writeObjectCloserExternalAndLocalPathsNotSupported struct {
 	io.WriteCloser
 }
 
-func (writeObjectCloserExternalAndLocalPathsNotSuppoted) SetExternalPath(string) error {
+func (writeObjectCloserExternalAndLocalPathsNotSupported) SetExternalPath(string) error {
 	return ErrSetExternalPathUnsupported
 }
 
-func (writeObjectCloserExternalAndLocalPathsNotSuppoted) SetLocalPath(string) error {
+func (writeObjectCloserExternalAndLocalPathsNotSupported) SetLocalPath(string) error {
 	return ErrSetLocalPathUnsupported
 }

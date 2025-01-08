@@ -781,7 +781,7 @@ func (x *JSONOutputOptions) SetIncludeDefaults(v bool) {
 type JSONOutputOptions_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Enum fields will be emitted as numeric values. If false (the dafault), enum
+	// Enum fields will be emitted as numeric values. If false (the default), enum
 	// fields are emitted as strings that are the enum values' names.
 	UseEnumNumbers bool
 	// Includes fields that have their default values. This applies only to fields

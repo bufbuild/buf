@@ -17,7 +17,7 @@
 - Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
 - Breaking analysis support for `buf beta lsp`.
 - Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
-  determinisitic.
+  deterministic.
 - Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
   Only WebAssembly check plugins are supported at this time.
 - Add `buf plugin update` and `buf plugin prune` command to manage plugins in the `buf.lock`
@@ -855,7 +855,7 @@ curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-b
 ## [v0.56.0] - 2021-09-08
 
 - Cascade `ENUM_ZERO_VALUE_SUFFIX` comment ignores from the enum level.
-- Fix issue where `buf genarate --output` was not being respected in 0.55.0.
+- Fix issue where `buf generate --output` was not being respected in 0.55.0.
 
 ## [v0.55.0] - 2021-09-07
 
@@ -863,7 +863,7 @@ curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-b
 - Support `BUF_TOKEN` for authentication. `buf` will now look for a token in the `BUF_TOKEN` environment variable, falling back to `.netrc` as set via `buf login`.
 - Add support for using remote plugins with local source files.
 - Add per-file overrides for managed mode.
-- Fix issue with the module cache where multiple simulataneous downloads would result in a temporarily-corrupted cache.
+- Fix issue with the module cache where multiple simultaneous downloads would result in a temporarily-corrupted cache.
 - Hide verbose messaing behind the `--verbose` (`-v`) flag.
 - Add `--debug` flag to print out debug logging.
 

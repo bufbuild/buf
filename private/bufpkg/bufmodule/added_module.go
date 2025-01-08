@@ -370,7 +370,7 @@ func getUniqueSortedAddedModulesByOpaqueID(
 }
 
 // selectAddedModuleForOpaqueID selects the single addedModule that should be used for a list
-// of addedModules that all have ths same OpaqueID.
+// of addedModules that all have the same OpaqueID.
 //
 // Note from earlier, not deleting:
 //

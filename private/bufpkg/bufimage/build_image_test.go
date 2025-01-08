@@ -342,7 +342,7 @@ func TestModuleTargetFiles(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	testTagetImageFiles := func(t *testing.T, want []string, opaqueID ...string) {
+	testTargetImageFiles := func(t *testing.T, want []string, opaqueID ...string) {
 		targetModuleSet := moduleSet
 		if len(opaqueID) > 0 {
 			var err error
@@ -357,11 +357,11 @@ func TestModuleTargetFiles(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, want, testGetImageFilePaths(image))
 	}
-	testTagetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"})
-	testTagetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"}, "buf.build/foo/a")
-	testTagetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b")
-	testTagetImageFiles(t, []string{"c.proto"}, "buf.build/foo/c")
-	testTagetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b", "buf.build/foo/c")
+	testTargetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"})
+	testTargetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"}, "buf.build/foo/a")
+	testTargetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b")
+	testTargetImageFiles(t, []string{"c.proto"}, "buf.build/foo/c")
+	testTargetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b", "buf.build/foo/c")
 }
 
 func testCompare(t *testing.T, relDirPath string) {

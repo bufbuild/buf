@@ -53,7 +53,7 @@ func services(
 func service(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool) (state, []protoreflect.SourcePath, error) {
 	switch token {
 	case serviceNameTypeTag:
-		// The path for service name has already been added, can termiante here immediately.
+		// The path for service name has already been added, can terminate here immediately.
 		return nil, nil, nil
 	case serviceMethodsTypeTag:
 		// We check to make sure that the length of the source path contains at least the current

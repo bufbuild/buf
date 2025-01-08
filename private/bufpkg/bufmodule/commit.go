@@ -77,7 +77,7 @@ func newCommit(
 		// We need to preserve this, as if we do not, the new value for moduleKey
 		// will end up recursively calling itself when moduleKey.Digest() is called
 		// in the anonymous function. We could just extract moduleKeyDigestFunc := moduleKey.Digest
-		// and call that, but we make a variable to reference the original ModuleKey just for constency.
+		// and call that, but we make a variable to reference the original ModuleKey just for consistency.
 		originalModuleKey := moduleKey
 		moduleKey = newModuleKeyNoValidate(
 			originalModuleKey.FullName(),

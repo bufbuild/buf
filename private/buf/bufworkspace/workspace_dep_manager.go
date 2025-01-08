@@ -40,7 +40,7 @@ import (
 type WorkspaceDepManager interface {
 	// BufLockFileDigestType returns the DigestType that the buf.lock file expects.
 	BufLockFileDigestType() bufmodule.DigestType
-	// ExisingBufLockFileDepModuleKeys returns the ModuleKeys from the buf.lock file.
+	// ExistingBufLockFileDepModuleKeys returns the ModuleKeys from the buf.lock file.
 	ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error)
 	// ExistingBufLockFileRemotePluginKeys returns the PluginKeys from the buf.lock file.
 	ExistingBufLockFileRemotePluginKeys(ctx context.Context) ([]bufplugin.PluginKey, error)

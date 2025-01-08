@@ -205,7 +205,7 @@ func getProtosourceFiles(
 	if err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
-			// stderr since we do output to stdouot
+			// stderr since we do output to stdout
 			if err := bufanalysis.PrintFileAnnotationSet(
 				container.Stderr(),
 				fileAnnotationSet,
