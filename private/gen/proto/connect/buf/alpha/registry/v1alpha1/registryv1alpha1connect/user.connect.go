@@ -80,23 +80,6 @@ const (
 	UserServiceUpdateUserPluginPreferencesProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserPluginPreferences"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	userServiceServiceDescriptor                           = v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService")
-	userServiceCreateUserMethodDescriptor                  = userServiceServiceDescriptor.Methods().ByName("CreateUser")
-	userServiceGetUserMethodDescriptor                     = userServiceServiceDescriptor.Methods().ByName("GetUser")
-	userServiceGetUserByUsernameMethodDescriptor           = userServiceServiceDescriptor.Methods().ByName("GetUserByUsername")
-	userServiceListUsersMethodDescriptor                   = userServiceServiceDescriptor.Methods().ByName("ListUsers")
-	userServiceListOrganizationUsersMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("ListOrganizationUsers")
-	userServiceDeleteUserMethodDescriptor                  = userServiceServiceDescriptor.Methods().ByName("DeleteUser")
-	userServiceDeactivateUserMethodDescriptor              = userServiceServiceDescriptor.Methods().ByName("DeactivateUser")
-	userServiceUpdateUserServerRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("UpdateUserServerRole")
-	userServiceCountUsersMethodDescriptor                  = userServiceServiceDescriptor.Methods().ByName("CountUsers")
-	userServiceUpdateUserSettingsMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("UpdateUserSettings")
-	userServiceGetUserPluginPreferencesMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("GetUserPluginPreferences")
-	userServiceUpdateUserPluginPreferencesMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("UpdateUserPluginPreferences")
-)
-
 // UserServiceClient is a client for the buf.alpha.registry.v1alpha1.UserService service.
 type UserServiceClient interface {
 	// CreateUser creates a new user with the given username.
@@ -137,86 +120,87 @@ type UserServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) UserServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	userServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods()
 	return &userServiceClient{
 		createUser: connect.NewClient[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse](
 			httpClient,
 			baseURL+UserServiceCreateUserProcedure,
-			connect.WithSchema(userServiceCreateUserMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("CreateUser")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		getUser: connect.NewClient[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse](
 			httpClient,
 			baseURL+UserServiceGetUserProcedure,
-			connect.WithSchema(userServiceGetUserMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("GetUser")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getUserByUsername: connect.NewClient[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse](
 			httpClient,
 			baseURL+UserServiceGetUserByUsernameProcedure,
-			connect.WithSchema(userServiceGetUserByUsernameMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("GetUserByUsername")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listUsers: connect.NewClient[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse](
 			httpClient,
 			baseURL+UserServiceListUsersProcedure,
-			connect.WithSchema(userServiceListUsersMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("ListUsers")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listOrganizationUsers: connect.NewClient[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse](
 			httpClient,
 			baseURL+UserServiceListOrganizationUsersProcedure,
-			connect.WithSchema(userServiceListOrganizationUsersMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("ListOrganizationUsers")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		deleteUser: connect.NewClient[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse](
 			httpClient,
 			baseURL+UserServiceDeleteUserProcedure,
-			connect.WithSchema(userServiceDeleteUserMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("DeleteUser")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		deactivateUser: connect.NewClient[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse](
 			httpClient,
 			baseURL+UserServiceDeactivateUserProcedure,
-			connect.WithSchema(userServiceDeactivateUserMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("DeactivateUser")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		updateUserServerRole: connect.NewClient[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse](
 			httpClient,
 			baseURL+UserServiceUpdateUserServerRoleProcedure,
-			connect.WithSchema(userServiceUpdateUserServerRoleMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("UpdateUserServerRole")),
 			connect.WithClientOptions(opts...),
 		),
 		countUsers: connect.NewClient[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse](
 			httpClient,
 			baseURL+UserServiceCountUsersProcedure,
-			connect.WithSchema(userServiceCountUsersMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("CountUsers")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		updateUserSettings: connect.NewClient[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse](
 			httpClient,
 			baseURL+UserServiceUpdateUserSettingsProcedure,
-			connect.WithSchema(userServiceUpdateUserSettingsMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("UpdateUserSettings")),
 			connect.WithClientOptions(opts...),
 		),
 		getUserPluginPreferences: connect.NewClient[v1alpha1.GetUserPluginPreferencesRequest, v1alpha1.GetUserPluginPreferencesResponse](
 			httpClient,
 			baseURL+UserServiceGetUserPluginPreferencesProcedure,
-			connect.WithSchema(userServiceGetUserPluginPreferencesMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("GetUserPluginPreferences")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		updateUserPluginPreferences: connect.NewClient[v1alpha1.UpdateUserPluginPreferencesRequest, v1alpha1.UpdateUserPluginPreferencesResponse](
 			httpClient,
 			baseURL+UserServiceUpdateUserPluginPreferencesProcedure,
-			connect.WithSchema(userServiceUpdateUserPluginPreferencesMethodDescriptor),
+			connect.WithSchema(userServiceMethods.ByName("UpdateUserPluginPreferences")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -336,85 +320,86 @@ type UserServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	userServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods()
 	userServiceCreateUserHandler := connect.NewUnaryHandler(
 		UserServiceCreateUserProcedure,
 		svc.CreateUser,
-		connect.WithSchema(userServiceCreateUserMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("CreateUser")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceGetUserHandler := connect.NewUnaryHandler(
 		UserServiceGetUserProcedure,
 		svc.GetUser,
-		connect.WithSchema(userServiceGetUserMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("GetUser")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceGetUserByUsernameHandler := connect.NewUnaryHandler(
 		UserServiceGetUserByUsernameProcedure,
 		svc.GetUserByUsername,
-		connect.WithSchema(userServiceGetUserByUsernameMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("GetUserByUsername")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceListUsersHandler := connect.NewUnaryHandler(
 		UserServiceListUsersProcedure,
 		svc.ListUsers,
-		connect.WithSchema(userServiceListUsersMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("ListUsers")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceListOrganizationUsersHandler := connect.NewUnaryHandler(
 		UserServiceListOrganizationUsersProcedure,
 		svc.ListOrganizationUsers,
-		connect.WithSchema(userServiceListOrganizationUsersMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("ListOrganizationUsers")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceDeleteUserHandler := connect.NewUnaryHandler(
 		UserServiceDeleteUserProcedure,
 		svc.DeleteUser,
-		connect.WithSchema(userServiceDeleteUserMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("DeleteUser")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceDeactivateUserHandler := connect.NewUnaryHandler(
 		UserServiceDeactivateUserProcedure,
 		svc.DeactivateUser,
-		connect.WithSchema(userServiceDeactivateUserMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("DeactivateUser")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceUpdateUserServerRoleHandler := connect.NewUnaryHandler(
 		UserServiceUpdateUserServerRoleProcedure,
 		svc.UpdateUserServerRole,
-		connect.WithSchema(userServiceUpdateUserServerRoleMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("UpdateUserServerRole")),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceCountUsersHandler := connect.NewUnaryHandler(
 		UserServiceCountUsersProcedure,
 		svc.CountUsers,
-		connect.WithSchema(userServiceCountUsersMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("CountUsers")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceUpdateUserSettingsHandler := connect.NewUnaryHandler(
 		UserServiceUpdateUserSettingsProcedure,
 		svc.UpdateUserSettings,
-		connect.WithSchema(userServiceUpdateUserSettingsMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("UpdateUserSettings")),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceGetUserPluginPreferencesHandler := connect.NewUnaryHandler(
 		UserServiceGetUserPluginPreferencesProcedure,
 		svc.GetUserPluginPreferences,
-		connect.WithSchema(userServiceGetUserPluginPreferencesMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("GetUserPluginPreferences")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	userServiceUpdateUserPluginPreferencesHandler := connect.NewUnaryHandler(
 		UserServiceUpdateUserPluginPreferencesProcedure,
 		svc.UpdateUserPluginPreferences,
-		connect.WithSchema(userServiceUpdateUserPluginPreferencesMethodDescriptor),
+		connect.WithSchema(userServiceMethods.ByName("UpdateUserPluginPreferences")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
