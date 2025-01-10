@@ -51,12 +51,6 @@ const (
 	EventServiceEventProcedure = "/buf.alpha.webhook.v1alpha1.EventService/Event"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	eventServiceServiceDescriptor     = v1alpha1.File_buf_alpha_webhook_v1alpha1_event_proto.Services().ByName("EventService")
-	eventServiceEventMethodDescriptor = eventServiceServiceDescriptor.Methods().ByName("Event")
-)
-
 // EventServiceClient is a client for the buf.alpha.webhook.v1alpha1.EventService service.
 type EventServiceClient interface {
 	// Event is the rpc which receives webhook events.
@@ -72,11 +66,12 @@ type EventServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewEventServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) EventServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	eventServiceMethods := v1alpha1.File_buf_alpha_webhook_v1alpha1_event_proto.Services().ByName("EventService").Methods()
 	return &eventServiceClient{
 		event: connect.NewClient[v1alpha1.EventRequest, v1alpha1.EventResponse](
 			httpClient,
 			baseURL+EventServiceEventProcedure,
-			connect.WithSchema(eventServiceEventMethodDescriptor),
+			connect.WithSchema(eventServiceMethods.ByName("Event")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -104,10 +99,11 @@ type EventServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewEventServiceHandler(svc EventServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	eventServiceMethods := v1alpha1.File_buf_alpha_webhook_v1alpha1_event_proto.Services().ByName("EventService").Methods()
 	eventServiceEventHandler := connect.NewUnaryHandler(
 		EventServiceEventProcedure,
 		svc.Event,
-		connect.WithSchema(eventServiceEventMethodDescriptor),
+		connect.WithSchema(eventServiceMethods.ByName("Event")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.webhook.v1alpha1.EventService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -58,14 +58,6 @@ const (
 	RecommendationServiceSetRecommendedResourcesProcedure = "/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	recommendationServiceServiceDescriptor                        = v1alpha1.File_buf_alpha_registry_v1alpha1_recommendation_proto.Services().ByName("RecommendationService")
-	recommendationServiceRecommendedRepositoriesMethodDescriptor  = recommendationServiceServiceDescriptor.Methods().ByName("RecommendedRepositories")
-	recommendationServiceListRecommendedResourcesMethodDescriptor = recommendationServiceServiceDescriptor.Methods().ByName("ListRecommendedResources")
-	recommendationServiceSetRecommendedResourcesMethodDescriptor  = recommendationServiceServiceDescriptor.Methods().ByName("SetRecommendedResources")
-)
-
 // RecommendationServiceClient is a client for the buf.alpha.registry.v1alpha1.RecommendationService
 // service.
 type RecommendationServiceClient interface {
@@ -87,25 +79,26 @@ type RecommendationServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewRecommendationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RecommendationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	recommendationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_recommendation_proto.Services().ByName("RecommendationService").Methods()
 	return &recommendationServiceClient{
 		recommendedRepositories: connect.NewClient[v1alpha1.RecommendedRepositoriesRequest, v1alpha1.RecommendedRepositoriesResponse](
 			httpClient,
 			baseURL+RecommendationServiceRecommendedRepositoriesProcedure,
-			connect.WithSchema(recommendationServiceRecommendedRepositoriesMethodDescriptor),
+			connect.WithSchema(recommendationServiceMethods.ByName("RecommendedRepositories")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRecommendedResources: connect.NewClient[v1alpha1.ListRecommendedResourcesRequest, v1alpha1.ListRecommendedResourcesResponse](
 			httpClient,
 			baseURL+RecommendationServiceListRecommendedResourcesProcedure,
-			connect.WithSchema(recommendationServiceListRecommendedResourcesMethodDescriptor),
+			connect.WithSchema(recommendationServiceMethods.ByName("ListRecommendedResources")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		setRecommendedResources: connect.NewClient[v1alpha1.SetRecommendedResourcesRequest, v1alpha1.SetRecommendedResourcesResponse](
 			httpClient,
 			baseURL+RecommendationServiceSetRecommendedResourcesProcedure,
-			connect.WithSchema(recommendationServiceSetRecommendedResourcesMethodDescriptor),
+			connect.WithSchema(recommendationServiceMethods.ByName("SetRecommendedResources")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -154,24 +147,25 @@ type RecommendationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRecommendationServiceHandler(svc RecommendationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	recommendationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_recommendation_proto.Services().ByName("RecommendationService").Methods()
 	recommendationServiceRecommendedRepositoriesHandler := connect.NewUnaryHandler(
 		RecommendationServiceRecommendedRepositoriesProcedure,
 		svc.RecommendedRepositories,
-		connect.WithSchema(recommendationServiceRecommendedRepositoriesMethodDescriptor),
+		connect.WithSchema(recommendationServiceMethods.ByName("RecommendedRepositories")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	recommendationServiceListRecommendedResourcesHandler := connect.NewUnaryHandler(
 		RecommendationServiceListRecommendedResourcesProcedure,
 		svc.ListRecommendedResources,
-		connect.WithSchema(recommendationServiceListRecommendedResourcesMethodDescriptor),
+		connect.WithSchema(recommendationServiceMethods.ByName("ListRecommendedResources")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	recommendationServiceSetRecommendedResourcesHandler := connect.NewUnaryHandler(
 		RecommendationServiceSetRecommendedResourcesProcedure,
 		svc.SetRecommendedResources,
-		connect.WithSchema(recommendationServiceSetRecommendedResourcesMethodDescriptor),
+		connect.WithSchema(recommendationServiceMethods.ByName("SetRecommendedResources")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)

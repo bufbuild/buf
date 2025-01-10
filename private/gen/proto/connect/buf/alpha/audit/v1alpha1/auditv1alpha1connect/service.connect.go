@@ -52,12 +52,6 @@ const (
 	AuditServiceListAuditedEventsProcedure = "/buf.alpha.audit.v1alpha1.AuditService/ListAuditedEvents"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	auditServiceServiceDescriptor                 = v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService")
-	auditServiceListAuditedEventsMethodDescriptor = auditServiceServiceDescriptor.Methods().ByName("ListAuditedEvents")
-)
-
 // AuditServiceClient is a client for the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceClient interface {
 	// ListAuditedEvents lists audited events recorded in the BSR instance.
@@ -73,11 +67,12 @@ type AuditServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewAuditServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuditServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	auditServiceMethods := v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService").Methods()
 	return &auditServiceClient{
 		listAuditedEvents: connect.NewClient[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse](
 			httpClient,
 			baseURL+AuditServiceListAuditedEventsProcedure,
-			connect.WithSchema(auditServiceListAuditedEventsMethodDescriptor),
+			connect.WithSchema(auditServiceMethods.ByName("ListAuditedEvents")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -106,10 +101,11 @@ type AuditServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAuditServiceHandler(svc AuditServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	auditServiceMethods := v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService").Methods()
 	auditServiceListAuditedEventsHandler := connect.NewUnaryHandler(
 		AuditServiceListAuditedEventsProcedure,
 		svc.ListAuditedEvents,
-		connect.WithSchema(auditServiceListAuditedEventsMethodDescriptor),
+		connect.WithSchema(auditServiceMethods.ByName("ListAuditedEvents")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

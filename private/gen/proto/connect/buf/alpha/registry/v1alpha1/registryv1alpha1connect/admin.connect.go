@@ -88,24 +88,6 @@ const (
 	AdminServiceGetClusterUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetClusterUsage"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	adminServiceServiceDescriptor                                    = v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService")
-	adminServiceForceDeleteUserMethodDescriptor                      = adminServiceServiceDescriptor.Methods().ByName("ForceDeleteUser")
-	adminServiceUpdateUserVerificationStatusMethodDescriptor         = adminServiceServiceDescriptor.Methods().ByName("UpdateUserVerificationStatus")
-	adminServiceUpdateOrganizationVerificationStatusMethodDescriptor = adminServiceServiceDescriptor.Methods().ByName("UpdateOrganizationVerificationStatus")
-	adminServiceCreateMachineUserMethodDescriptor                    = adminServiceServiceDescriptor.Methods().ByName("CreateMachineUser")
-	adminServiceGetBreakingChangePolicyMethodDescriptor              = adminServiceServiceDescriptor.Methods().ByName("GetBreakingChangePolicy")
-	adminServiceUpdateBreakingChangePolicyMethodDescriptor           = adminServiceServiceDescriptor.Methods().ByName("UpdateBreakingChangePolicy")
-	adminServiceGetUniquenessPolicyMethodDescriptor                  = adminServiceServiceDescriptor.Methods().ByName("GetUniquenessPolicy")
-	adminServiceUpdateUniquenessPolicyMethodDescriptor               = adminServiceServiceDescriptor.Methods().ByName("UpdateUniquenessPolicy")
-	adminServiceListServerUniquenessCollisionsMethodDescriptor       = adminServiceServiceDescriptor.Methods().ByName("ListServerUniquenessCollisions")
-	adminServiceRunServerUniquenessBackfillTaskMethodDescriptor      = adminServiceServiceDescriptor.Methods().ByName("RunServerUniquenessBackfillTask")
-	adminServiceGetReviewFlowGracePeriodPolicyMethodDescriptor       = adminServiceServiceDescriptor.Methods().ByName("GetReviewFlowGracePeriodPolicy")
-	adminServiceUpdateReviewFlowGracePeriodPolicyMethodDescriptor    = adminServiceServiceDescriptor.Methods().ByName("UpdateReviewFlowGracePeriodPolicy")
-	adminServiceGetClusterUsageMethodDescriptor                      = adminServiceServiceDescriptor.Methods().ByName("GetClusterUsage")
-)
-
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceClient interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -150,89 +132,90 @@ type AdminServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AdminServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	adminServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods()
 	return &adminServiceClient{
 		forceDeleteUser: connect.NewClient[v1alpha1.ForceDeleteUserRequest, v1alpha1.ForceDeleteUserResponse](
 			httpClient,
 			baseURL+AdminServiceForceDeleteUserProcedure,
-			connect.WithSchema(adminServiceForceDeleteUserMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("ForceDeleteUser")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		updateUserVerificationStatus: connect.NewClient[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse](
 			httpClient,
 			baseURL+AdminServiceUpdateUserVerificationStatusProcedure,
-			connect.WithSchema(adminServiceUpdateUserVerificationStatusMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("UpdateUserVerificationStatus")),
 			connect.WithClientOptions(opts...),
 		),
 		updateOrganizationVerificationStatus: connect.NewClient[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse](
 			httpClient,
 			baseURL+AdminServiceUpdateOrganizationVerificationStatusProcedure,
-			connect.WithSchema(adminServiceUpdateOrganizationVerificationStatusMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("UpdateOrganizationVerificationStatus")),
 			connect.WithClientOptions(opts...),
 		),
 		createMachineUser: connect.NewClient[v1alpha1.CreateMachineUserRequest, v1alpha1.CreateMachineUserResponse](
 			httpClient,
 			baseURL+AdminServiceCreateMachineUserProcedure,
-			connect.WithSchema(adminServiceCreateMachineUserMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("CreateMachineUser")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		getBreakingChangePolicy: connect.NewClient[v1alpha1.GetBreakingChangePolicyRequest, v1alpha1.GetBreakingChangePolicyResponse](
 			httpClient,
 			baseURL+AdminServiceGetBreakingChangePolicyProcedure,
-			connect.WithSchema(adminServiceGetBreakingChangePolicyMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("GetBreakingChangePolicy")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		updateBreakingChangePolicy: connect.NewClient[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse](
 			httpClient,
 			baseURL+AdminServiceUpdateBreakingChangePolicyProcedure,
-			connect.WithSchema(adminServiceUpdateBreakingChangePolicyMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("UpdateBreakingChangePolicy")),
 			connect.WithClientOptions(opts...),
 		),
 		getUniquenessPolicy: connect.NewClient[v1alpha1.GetUniquenessPolicyRequest, v1alpha1.GetUniquenessPolicyResponse](
 			httpClient,
 			baseURL+AdminServiceGetUniquenessPolicyProcedure,
-			connect.WithSchema(adminServiceGetUniquenessPolicyMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("GetUniquenessPolicy")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		updateUniquenessPolicy: connect.NewClient[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse](
 			httpClient,
 			baseURL+AdminServiceUpdateUniquenessPolicyProcedure,
-			connect.WithSchema(adminServiceUpdateUniquenessPolicyMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("UpdateUniquenessPolicy")),
 			connect.WithClientOptions(opts...),
 		),
 		listServerUniquenessCollisions: connect.NewClient[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse](
 			httpClient,
 			baseURL+AdminServiceListServerUniquenessCollisionsProcedure,
-			connect.WithSchema(adminServiceListServerUniquenessCollisionsMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("ListServerUniquenessCollisions")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		runServerUniquenessBackfillTask: connect.NewClient[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse](
 			httpClient,
 			baseURL+AdminServiceRunServerUniquenessBackfillTaskProcedure,
-			connect.WithSchema(adminServiceRunServerUniquenessBackfillTaskMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("RunServerUniquenessBackfillTask")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		getReviewFlowGracePeriodPolicy: connect.NewClient[v1alpha1.GetReviewFlowGracePeriodPolicyRequest, v1alpha1.GetReviewFlowGracePeriodPolicyResponse](
 			httpClient,
 			baseURL+AdminServiceGetReviewFlowGracePeriodPolicyProcedure,
-			connect.WithSchema(adminServiceGetReviewFlowGracePeriodPolicyMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("GetReviewFlowGracePeriodPolicy")),
 			connect.WithClientOptions(opts...),
 		),
 		updateReviewFlowGracePeriodPolicy: connect.NewClient[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest, v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse](
 			httpClient,
 			baseURL+AdminServiceUpdateReviewFlowGracePeriodPolicyProcedure,
-			connect.WithSchema(adminServiceUpdateReviewFlowGracePeriodPolicyMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("UpdateReviewFlowGracePeriodPolicy")),
 			connect.WithClientOptions(opts...),
 		),
 		getClusterUsage: connect.NewClient[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse](
 			httpClient,
 			baseURL+AdminServiceGetClusterUsageProcedure,
-			connect.WithSchema(adminServiceGetClusterUsageMethodDescriptor),
+			connect.WithSchema(adminServiceMethods.ByName("GetClusterUsage")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -368,88 +351,89 @@ type AdminServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	adminServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods()
 	adminServiceForceDeleteUserHandler := connect.NewUnaryHandler(
 		AdminServiceForceDeleteUserProcedure,
 		svc.ForceDeleteUser,
-		connect.WithSchema(adminServiceForceDeleteUserMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("ForceDeleteUser")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceUpdateUserVerificationStatusHandler := connect.NewUnaryHandler(
 		AdminServiceUpdateUserVerificationStatusProcedure,
 		svc.UpdateUserVerificationStatus,
-		connect.WithSchema(adminServiceUpdateUserVerificationStatusMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("UpdateUserVerificationStatus")),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceUpdateOrganizationVerificationStatusHandler := connect.NewUnaryHandler(
 		AdminServiceUpdateOrganizationVerificationStatusProcedure,
 		svc.UpdateOrganizationVerificationStatus,
-		connect.WithSchema(adminServiceUpdateOrganizationVerificationStatusMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("UpdateOrganizationVerificationStatus")),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceCreateMachineUserHandler := connect.NewUnaryHandler(
 		AdminServiceCreateMachineUserProcedure,
 		svc.CreateMachineUser,
-		connect.WithSchema(adminServiceCreateMachineUserMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("CreateMachineUser")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceGetBreakingChangePolicyHandler := connect.NewUnaryHandler(
 		AdminServiceGetBreakingChangePolicyProcedure,
 		svc.GetBreakingChangePolicy,
-		connect.WithSchema(adminServiceGetBreakingChangePolicyMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("GetBreakingChangePolicy")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceUpdateBreakingChangePolicyHandler := connect.NewUnaryHandler(
 		AdminServiceUpdateBreakingChangePolicyProcedure,
 		svc.UpdateBreakingChangePolicy,
-		connect.WithSchema(adminServiceUpdateBreakingChangePolicyMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("UpdateBreakingChangePolicy")),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceGetUniquenessPolicyHandler := connect.NewUnaryHandler(
 		AdminServiceGetUniquenessPolicyProcedure,
 		svc.GetUniquenessPolicy,
-		connect.WithSchema(adminServiceGetUniquenessPolicyMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("GetUniquenessPolicy")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceUpdateUniquenessPolicyHandler := connect.NewUnaryHandler(
 		AdminServiceUpdateUniquenessPolicyProcedure,
 		svc.UpdateUniquenessPolicy,
-		connect.WithSchema(adminServiceUpdateUniquenessPolicyMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("UpdateUniquenessPolicy")),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceListServerUniquenessCollisionsHandler := connect.NewUnaryHandler(
 		AdminServiceListServerUniquenessCollisionsProcedure,
 		svc.ListServerUniquenessCollisions,
-		connect.WithSchema(adminServiceListServerUniquenessCollisionsMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("ListServerUniquenessCollisions")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceRunServerUniquenessBackfillTaskHandler := connect.NewUnaryHandler(
 		AdminServiceRunServerUniquenessBackfillTaskProcedure,
 		svc.RunServerUniquenessBackfillTask,
-		connect.WithSchema(adminServiceRunServerUniquenessBackfillTaskMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("RunServerUniquenessBackfillTask")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceGetReviewFlowGracePeriodPolicyHandler := connect.NewUnaryHandler(
 		AdminServiceGetReviewFlowGracePeriodPolicyProcedure,
 		svc.GetReviewFlowGracePeriodPolicy,
-		connect.WithSchema(adminServiceGetReviewFlowGracePeriodPolicyMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("GetReviewFlowGracePeriodPolicy")),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceUpdateReviewFlowGracePeriodPolicyHandler := connect.NewUnaryHandler(
 		AdminServiceUpdateReviewFlowGracePeriodPolicyProcedure,
 		svc.UpdateReviewFlowGracePeriodPolicy,
-		connect.WithSchema(adminServiceUpdateReviewFlowGracePeriodPolicyMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("UpdateReviewFlowGracePeriodPolicy")),
 		connect.WithHandlerOptions(opts...),
 	)
 	adminServiceGetClusterUsageHandler := connect.NewUnaryHandler(
 		AdminServiceGetClusterUsageProcedure,
 		svc.GetClusterUsage,
-		connect.WithSchema(adminServiceGetClusterUsageMethodDescriptor),
+		connect.WithSchema(adminServiceMethods.ByName("GetClusterUsage")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
