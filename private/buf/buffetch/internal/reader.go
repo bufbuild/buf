@@ -672,7 +672,7 @@ func getReadWriteBucketForOS(
 	// osRootBucketTargeting returns the information on whether or not a controlling
 	// workspace was found based on the inputDirPath.
 	//
-	// *** CONTROLLING WOKRSPACE FOUND ***
+	// *** CONTROLLING WORKSPACE FOUND ***
 	//
 	// In the case where a controlling workspace is found, we want to create a new bucket
 	// for the controlling workspace.
@@ -687,11 +687,11 @@ func getReadWriteBucketForOS(
 	//
 	// We do not need to remap the input dir, target paths, and target exclude paths
 	// returned by buftarget.BucketTargeting, because they are already relative to the
-	// controlling workpsace.
+	// controlling workspace.
 	//
-	// *** CONTROLLING WOKRSPACE NOT FOUND ***
+	// *** CONTROLLING WORKSPACE NOT FOUND ***
 	//
-	// In the case where a controlling workpsace is not found, we have three outcomes for
+	// In the case where a controlling workspace is not found, we have three outcomes for
 	// creating a new bucket.
 	// If the inputDirPath is an absolute path, we want to use an absolute path to the input
 	// path:

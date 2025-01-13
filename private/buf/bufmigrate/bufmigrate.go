@@ -43,7 +43,7 @@ type Migrator interface {
 	//     regardless whether these module directories are specified in moduleDirPaths. Same
 	//     behavior with multiple workspaces. For example, if workspace foo has directories
 	//     bar and baz, then specifying foo, foo + bar and foo + bar + baz are the same.
-	//   - If a workspace is specfied, and modules not from this workspace are specified, the
+	//   - If a workspace is specified, and modules not from this workspace are specified, the
 	//     buf.yaml will contain all directories from the workspace, as well as the module
 	//     directories specified.
 	//   - If only module directories are specified, then the buf.yaml will contain exactly

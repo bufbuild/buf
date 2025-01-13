@@ -87,7 +87,7 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 // If used with an image or module ref, this has no effect on the build, i.e. excludes are
 // not respected, and the module name is ignored. This matches old behavior.
 //
-// This implements the soon-to-be-deprected --config flag.
+// This implements the soon-to-be-deprecated --config flag.
 //
 // See bufconfig.GetBufYAMLFileForPrefixOrOverride for more details.
 //

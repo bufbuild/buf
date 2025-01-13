@@ -29,7 +29,7 @@ import (
 //
 // Tamper-proofing is done as part of every function.
 type PluginData interface {
-	// PluginKey used to downoad this PluginData.
+	// PluginKey used to download this PluginData.
 	//
 	// The Digest from this PluginKey is used for tamper-proofing. It will be checked
 	// against the actual data downloaded before Data() returns.

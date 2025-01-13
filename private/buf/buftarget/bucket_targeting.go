@@ -25,13 +25,13 @@ import (
 // BucketTargeting provides targeting information for the bucket based on any controlling
 // workspaces that have been found.
 type BucketTargeting interface {
-	// ControllingWorkpsace returns the information for the controlling workspace, if one was
+	// ControllingWorkspace returns the information for the controlling workspace, if one was
 	// found. If not found, then this will be nil.
 	ControllingWorkspace() ControllingWorkspace
 	// SubDirPath returns the input directory relative to the controlling workspace, if one
 	// was found, otherwise it is relative to the root of the bucket
 	SubDirPath() string
-	// TargetPaths returns the target paths relative to the controlling workpsace, if one was
+	// TargetPaths returns the target paths relative to the controlling workspace, if one was
 	// found, otherwise it is relative to the root of the bucket.
 	TargetPaths() []string
 	// TargetExcludePaths returns the target exclude paths relative to the controlling

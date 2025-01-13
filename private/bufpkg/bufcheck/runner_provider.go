@@ -129,7 +129,7 @@ func (r *remoteWasmPluginRunner) loadRunnerOnce(ctx context.Context) (pluginrpc.
 		runner, err := r.loadRunner(ctx)
 		if err != nil {
 			// The error isn't stored to avoid ctx cancellation issues. On the next call,
-			// the runner will be reloaded instead of returning the erorr.
+			// the runner will be reloaded instead of returning the error.
 			return nil, err
 		}
 		r.runner = runner

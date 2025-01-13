@@ -410,7 +410,7 @@ type BucketExtender interface {
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
 	// This will be set if a terminate file was found. If so, the actual Bucket will be
-	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
+	// the directory that contained this terminate file, and the subDirPath will be the sub-directory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
 }

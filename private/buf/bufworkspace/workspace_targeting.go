@@ -194,7 +194,7 @@ func v2WorkspaceTargeting(
 	bufYAMLFile bufconfig.BufYAMLFile,
 	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
 	// use the license/doc respectively at the workspace root for this module.
-	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
+	useWorkspaceLicenseDocIfNotFoundAtModule bool,
 ) (*workspaceTargeting, error) {
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -231,7 +231,7 @@ func v2WorkspaceTargeting(
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.SubDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
-		// In the future, it would be nice to handle this more elegently.
+		// In the future, it would be nice to handle this more elegantly.
 		if config.protoFileTargetPath != "" {
 			isTentativelyTargetModule = true
 		}
@@ -246,7 +246,7 @@ func v2WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
-			useWorkspaceLicenseDocIfNotFoundAtMoudle,
+			useWorkspaceLicenseDocIfNotFoundAtModule,
 		)
 		if err != nil {
 			return nil, err
@@ -338,7 +338,7 @@ func v1WorkspaceTargeting(
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.SubDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
-		// In the future, it would be nice to handle this more elegently.
+		// In the future, it would be nice to handle this more elegantly.
 		if config.protoFileTargetPath != "" {
 			isTentativelyTargetModule = true
 		}
@@ -569,7 +569,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	isTargetModule bool,
 	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
 	// use the license/doc respectively at the workspace root for this module.
-	useWorkspaceLicenseDocIfNotFoundAtMoudle bool,
+	useWorkspaceLicenseDocIfNotFoundAtModule bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
 		workspaceBucket,
@@ -645,7 +645,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	if err != nil {
 		return nil, nil, err
 	}
-	if useWorkspaceLicenseDocIfNotFoundAtMoudle {
+	if useWorkspaceLicenseDocIfNotFoundAtModule {
 		isModuleDocBucketEmpty, err := storage.IsEmpty(ctx, docStorageReadBucket, "")
 		if err != nil {
 			return nil, nil, err
@@ -838,7 +838,7 @@ func bucketIDsForModuleConfigsV2(moduleConfigs []bufconfig.ModuleConfig) []strin
 	// make sure each local module has a unique BucketID, which means we cannot use their DirPaths as
 	// BucketIDs directly. Instead, we append an index (1-indexed) to each DirPath to deduplicate, and
 	// each module's bucketID becomes "<path>[index]", except for the first one does not need the index
-	// and its bucketID is stil "<path>".
+	// and its bucketID is still "<path>".
 	// As an example, bucketIDs are shown for modules in the buf.yaml below:
 	// ...
 	// modules:

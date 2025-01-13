@@ -21,7 +21,7 @@ import (
 
 const (
 	messageNameTypeTag                 = int32(1)
-	mesasgeFieldsTypeTag               = int32(2)
+	messageFieldsTypeTag               = int32(2)
 	nestedMessagesTypeTag              = int32(3)
 	nestedEnumsTypeTag                 = int32(4)
 	messageOneOfsTypeTag               = int32(8)
@@ -77,7 +77,7 @@ func message(token int32, fullSourcePath protoreflect.SourcePath, index int, _ b
 	case messageNameTypeTag:
 		// The path for message name has already been added, can terminate here immediately.
 		return nil, nil, nil
-	case mesasgeFieldsTypeTag:
+	case messageFieldsTypeTag:
 		// We check to make sure that the length of the source path contains at least the current
 		// token and an index. This is because all source paths for fields are expected
 		// to have indices.

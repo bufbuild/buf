@@ -241,13 +241,13 @@ func run(
 		}
 	}
 	if flags.Create {
-		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
 			return err
 		}
 		uploadOptions = append(
 			uploadOptions,
-			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisibility, flags.CreateDefaultLabel),
 		)
 	}
 	if flags.SourceControlURL != "" {

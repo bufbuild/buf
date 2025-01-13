@@ -154,7 +154,7 @@ func (f *formatter) Indent(nextNode ast.Node) {
 // WriteString writes the given element to the generated output.
 //
 // This will not write indentation or newlines. Use P if you
-// want to emit identation or newlines.
+// want to emit indentation or newlines.
 func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
@@ -886,7 +886,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 		// If a label was not written, the multiline comments will be
 		// attached to the type.
 		if compoundIdentNode, ok := fieldNode.FldType.(*ast.CompoundIdentNode); ok {
-			f.writeCompountIdentForFieldName(compoundIdentNode)
+			f.writeCompoundIdentForFieldName(compoundIdentNode)
 		} else {
 			f.writeStart(fieldNode.FldType)
 		}
@@ -1500,7 +1500,7 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 	}
 }
 
-// writeCompountIdentForFieldName writes a compound identifier, but handles comments
+// writeCompoundIdentForFieldName writes a compound identifier, but handles comments
 // specially for field names.
 //
 // For example,
@@ -1509,7 +1509,7 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 //	  // These are comments attached to bar.
 //	  bar.v1.Bar bar = 1;
 //	}
-func (f *formatter) writeCompountIdentForFieldName(compoundIdentNode *ast.CompoundIdentNode) {
+func (f *formatter) writeCompoundIdentForFieldName(compoundIdentNode *ast.CompoundIdentNode) {
 	if compoundIdentNode.LeadingDot != nil {
 		f.writeStart(compoundIdentNode.LeadingDot)
 	}

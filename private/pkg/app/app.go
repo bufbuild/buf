@@ -108,7 +108,7 @@ func NewStdoutContainer(writer io.Writer) StdoutContainer {
 	return newStdoutContainer(writer)
 }
 
-// NewStdoutContainerForOS returns a new StdoutContainer for the operatoutg system.
+// NewStdoutContainerForOS returns a new StdoutContainer for the operating system.
 func NewStdoutContainerForOS() StdoutContainer {
 	return newStdoutContainer(os.Stdout)
 }
@@ -126,7 +126,7 @@ func NewStderrContainer(writer io.Writer) StderrContainer {
 	return newStderrContainer(writer)
 }
 
-// NewStderrContainerForOS returns a new StderrContainer for the operaterrg system.
+// NewStderrContainerForOS returns a new StderrContainer for the operating system.
 func NewStderrContainerForOS() StderrContainer {
 	return newStderrContainer(os.Stderr)
 }

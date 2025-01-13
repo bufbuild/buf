@@ -38,7 +38,7 @@ type Ref interface {
 	isRef()
 }
 
-// NewRef returns a new Ref for the given compoonents.
+// NewRef returns a new Ref for the given components.
 func NewRef(
 	registry string,
 	owner string,

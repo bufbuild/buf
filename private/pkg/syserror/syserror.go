@@ -15,7 +15,7 @@
 // Package syserror handles "system errors".
 //
 // A system error is an error that should never actually happen, and should be
-// propogated to the user as a bug in the codebase. System errors are generally
+// propagated to the user as a bug in the codebase. System errors are generally
 // defensive-programming assertions that we want to check for in our codebase.
 //
 // If a system error occurs, you may want to send a specialized help that says

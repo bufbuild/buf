@@ -1094,7 +1094,7 @@ func (b0 GetPackageDocumentationRequest_builder) Build() *GetPackageDocumentatio
 	return m0
 }
 
-// GetPackageDocumentationReponse returns the documentation for the requested package.
+// GetPackageDocumentationResponse returns the documentation for the requested package.
 type GetPackageDocumentationResponse struct {
 	state                           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_PackageDocumentation *PackageDocumentation  `protobuf:"bytes,1,opt,name=package_documentation,json=packageDocumentation,proto3" json:"package_documentation,omitempty"`
@@ -3546,7 +3546,7 @@ type Field_builder struct {
 	// It contains all the metadata for the import.
 	ImportModuleRef *ImportModuleRef
 	// Extendee is the name of the type that is being ext if the field is an extension.
-	// This is an empty string for fields that are not extenions.
+	// This is an empty string for fields that are not extensions.
 	Extendee string
 	// All options that are present on the field. This is a super-set of
 	// field_options and uses a dynamic representation so it can also

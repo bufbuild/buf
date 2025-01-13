@@ -100,7 +100,7 @@ type MessageRef interface {
 	MessageEncoding() MessageEncoding
 	// Path returns the path of the file.
 	//
-	// May be used for items such as YAML unmarshaling errors.
+	// May be used for items such as YAML unmarshalling errors.
 	Path() string
 	// UseProtoNames only applies for MessageEncodingYAML at this time.
 	UseProtoNames() bool

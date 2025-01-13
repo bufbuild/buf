@@ -1288,7 +1288,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 
 func TestWorkspaceDirOverlapFail(t *testing.T) {
 	t.Parallel()
-	// The buf.work.yaml file cannot specify overlapping diretories.
+	// The buf.work.yaml file cannot specify overlapping directories.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1611,7 +1611,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 	)
 }
 
-func TestWorkspaceWithTargettingModuleCommonParentDir(t *testing.T) {
+func TestWorkspaceWithTargetingModuleCommonParentDir(t *testing.T) {
 	workspaceDir := filepath.Join("testdata", "workspace", "success", "shared_parent_dir")
 	requireBuildOutputFilePaths(
 		t,

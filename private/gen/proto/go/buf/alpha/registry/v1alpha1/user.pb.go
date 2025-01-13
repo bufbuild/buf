@@ -502,7 +502,7 @@ func (x *UserPluginPreference) SetSelectedPlugins(v []string) {
 type UserPluginPreference_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The language that the user has indicidated as their preferred language for plugins.
+	// The language that the user has indicated as their preferred language for plugins.
 	SelectedLanguage PluginLanguage
 	// A list of plugin names selected by the user.
 	SelectedPlugins []string

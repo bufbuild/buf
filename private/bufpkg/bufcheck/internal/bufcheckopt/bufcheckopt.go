@@ -54,7 +54,7 @@ type OptionsSpec struct {
 	// Right now, this should just be []string{"buf:lint:ignore"}, however we do this as a proper option
 	// to maintain the client/server split we want; the server (ie the Rules) should not have the lint comment
 	// ignore strings as part of their logic, all lint comment ignore logic is a client-side concern. However,
-	// it is concievable that a COMMENT.* Rule might want to say "I don't want to consider this generic
+	// it is conceivable that a COMMENT.* Rule might want to say "I don't want to consider this generic
 	// line to be a comment", which is exclusive of the lint comment ignore logic. We could even potentially
 	// give users the ability to configure things to ignore as part of their buf.yaml configuration. So,
 	// this feels OK to expose here.

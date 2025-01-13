@@ -150,7 +150,7 @@ message GetPackageDocumentationRequest {
   string package_name = 4;
 }
 
-// GetPackageDocumentationReponse returns the documentation for the requested package.
+// GetPackageDocumentationResponse returns the documentation for the requested package.
 message GetPackageDocumentationResponse {
   PackageDocumentation package_documentation = 1;
 }
@@ -406,7 +406,7 @@ message Field {
   // It contains all the metadata for the import.
   ImportModuleRef import_module_ref = 8;
   // Extendee is the name of the type that is being ext if the field is an extension.
-  // This is an empty string for fields that are not extenions.
+  // This is an empty string for fields that are not extensions.
   string extendee = 9;
   // All options that are present on the field. This is a super-set of
   // field_options and uses a dynamic representation so it can also

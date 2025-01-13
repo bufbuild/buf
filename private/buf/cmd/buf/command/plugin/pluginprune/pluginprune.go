@@ -91,7 +91,7 @@ func prune(
 	}
 	var prunedBufLockPluginKeys []bufplugin.PluginKey
 	for _, existingRemotePluginKey := range existingRemotePluginKeys {
-		// Check if an existing plugin key from the buf.lock is confiugred in the buf.yaml.
+		// Check if an existing plugin key from the buf.lock is configured in the buf.yaml.
 		if _, ok := bufYAMLRemotePluginNames[existingRemotePluginKey.FullName().String()]; ok {
 			// If yes, then we keep it for the updated buf.lock.
 			prunedBufLockPluginKeys = append(prunedBufLockPluginKeys, existingRemotePluginKey)

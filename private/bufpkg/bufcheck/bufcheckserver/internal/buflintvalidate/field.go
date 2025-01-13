@@ -889,7 +889,7 @@ func checkExampleValues(
 					exampleValue,
 				)
 			default:
-				return syserror.Newf("expected key or value as sythetic field name for map entry's field name, got %q", fieldDescriptor.Name())
+				return syserror.Newf("expected key or value as synthetic field name for map entry's field name, got %q", fieldDescriptor.Name())
 			}
 			messageToValidate.Set(parentMapFieldDescriptor, protoreflect.ValueOfMap(mapEntry))
 		case fieldDescriptor.Enum() != nil:

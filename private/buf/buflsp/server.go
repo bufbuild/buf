@@ -93,15 +93,15 @@ func (s *server) Initialize(
 
 	// The LSP protocol library doesn't actually provide SemanticTokensOptions
 	// correctly.
-	type SematicTokensLegend struct {
+	type SemanticTokensLegend struct {
 		TokenTypes     []string `json:"tokenTypes"`
 		TokenModifiers []string `json:"tokenModifiers"`
 	}
 	type SemanticTokensOptions struct {
 		protocol.WorkDoneProgressOptions
 
-		Legend SematicTokensLegend `json:"legend"`
-		Full   bool                `json:"full"`
+		Legend SemanticTokensLegend `json:"legend"`
+		Full   bool                 `json:"full"`
 	}
 
 	return &protocol.InitializeResult{
@@ -125,7 +125,7 @@ func (s *server) Initialize(
 			HoverProvider:              true,
 			SemanticTokensProvider: &SemanticTokensOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
-				Legend: SematicTokensLegend{
+				Legend: SemanticTokensLegend{
 					TokenTypes:     semanticTypeLegend,
 					TokenModifiers: semanticModifierLegend,
 				},

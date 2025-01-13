@@ -255,7 +255,7 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileNoDelete,
 	}
-	// BreakingFileSameCsharpNamesapceRuleSpecBuilder is a rule spec builder.
+	// BreakingFileSameCsharpNamespaceRuleSpecBuilder is a rule spec builder.
 	BreakingFileSameCsharpNamespaceRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FILE_SAME_CSHARP_NAMESPACE",
 		Purpose: "Checks that files have the same value for the csharp_namespace option.",

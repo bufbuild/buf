@@ -103,7 +103,7 @@ type rulesConfig struct {
 	// The Rule IDs will be sorted.
 	// This will only contain RuleIDs of the given RuleType.
 	// There will be no empty key for plugin name (which means the Rule is builtin), that is
-	// builtin rules are not accounted for as unusued.
+	// builtin rules are not accounted for as unused.
 	//
 	// This can be used for warning messages.
 	UnusedPluginNameToRuleIDs map[string][]string
@@ -128,7 +128,7 @@ func newRulesConfig(
 	if len(allRulesForType) == 0 {
 		// This can happen with i.e. disable_builtin pretty easily.
 		//
-		// We return here so that we can do some syserror checking below for expecations
+		// We return here so that we can do some syserror checking below for expectations
 		// that certain variables are non-empty at certain points.
 		return &rulesConfig{
 			RuleType:                ruleType,
@@ -411,7 +411,7 @@ func warnReferencedDeprecatedIDsForIDType(
 	The concept of a default rule has been introduced. A default rule is a rule that will be run
 	if no rules are explicitly configured in your buf.yaml. Run buf config ls-lint-rules or
 	buf config ls-breaking-rules to see which rules are defaults. With this introduction, having a category
-	also named DEFAULT is confusing, as while it happpens that all the rules in the DEFAULT category
+	also named DEFAULT is confusing, as while it happens that all the rules in the DEFAULT category
 	are also default rules, the name has become overloaded.
 `
 		}

@@ -94,7 +94,7 @@ func TestModifyImage(t *testing.T) {
 					JavaPackage:        proto.String("com.foo.empty"),
 					// JavaStringCheckUtf8 is not modified by default
 					ObjcClassPrefix: proto.String("FEX"),
-					// OptimizeFor tries to modifiy this value to SPEED, which is already the default
+					// OptimizeFor tries to modify this value to SPEED, which is already the default
 					// Empty is a keyword in php
 					PhpMetadataNamespace: proto.String(`Foo\Empty_\GPBMetadata`),
 					PhpNamespace:         proto.String(`Foo\Empty_`),
@@ -106,7 +106,7 @@ func TestModifyImage(t *testing.T) {
 					JavaMultipleFiles:  proto.Bool(true),
 					JavaOuterClassname: proto.String("WithoutPackageProto"),
 					// JavaStringCheckUtf8 is not modified by default
-					// OptimizeFor tries to modifiy this value to SPEED, which is already the default
+					// OptimizeFor tries to modify this value to SPEED, which is already the default
 				},
 				"bar_all/with_package.proto": {
 					CcEnableArenas:       proto.Bool(true),

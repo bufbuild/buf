@@ -61,7 +61,7 @@ const (
 	privateVisibility = "private"
 )
 
-var allVisibiltyStrings = []string{
+var allVisibilityStrings = []string{
 	publicVisibility,
 	privateVisibility,
 }
@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibilityStrings)),
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 }
@@ -536,7 +536,7 @@ func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPlug
 	case privateVisibility:
 		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE, nil
 	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibilityStrings))
 	}
 }
 
