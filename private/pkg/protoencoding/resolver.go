@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/gofeaturespb"
 )
 
 const maxTagNumber = 536870911 // 2^29 - 1
@@ -247,4 +248,35 @@ func (emptyResolver) FindMessageByName(protoreflect.FullName) (protoreflect.Mess
 
 func (emptyResolver) FindMessageByURL(string) (protoreflect.MessageType, error) {
 	return nil, protoregistry.NotFound
+}
+
+type goFeaturesResolver struct {
+	protoregistry.Files
+	protoregistry.Types
+}
+
+func newGoFeaturesResolver() (*goFeaturesResolver, error) {
+	var protoregistryFiles protoregistry.Files
+	if err := protoregistryFiles.RegisterFile(
+		gofeaturespb.File_google_protobuf_go_features_proto,
+	); err != nil {
+		return nil, err
+	}
+
+	var protoregistryTypes protoregistry.Types
+	if err := protoregistryTypes.RegisterExtension(
+		gofeaturespb.E_Go.TypeDescriptor().Type(),
+	); err != nil {
+		return nil, err
+	}
+	if err := protoregistryTypes.RegisterMessage(
+		(&gofeaturespb.GoFeatures{}).ProtoReflect().Type(),
+	); err != nil {
+		return nil, err
+	}
+
+	return &goFeaturesResolver{
+		Files: protoregistryFiles,
+		Types: protoregistryTypes,
+	}, nil
 }

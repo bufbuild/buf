@@ -15,16 +15,61 @@
 package bufcheck
 
 import (
+	"slices"
+
 	descriptorv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/descriptor/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func imageToProtoFileDescriptors(image bufimage.Image) []*descriptorv1.FileDescriptor {
+func imageToProtoFileDescriptors(image bufimage.Image) ([]*descriptorv1.FileDescriptor, error) {
 	if image == nil {
-		return nil
+		return nil, nil
 	}
-	return slicesext.Map(image.Files(), imageToProtoFileDescriptor)
+	descriptors := slicesext.Map(image.Files(), imageToProtoFileDescriptor)
+	// We need to ensure that if a FileDescriptorProto includes a Go
+	// feature set extension, that it matches the runtime version in
+	// gofeaturespb. The runtime will use the gofeaturespb.E_Go extension
+	// type to determine how to parse the file. This must match the expected
+	// go type to avoid panics on getting the extension when using
+	// proto.GetExtension or protodesc.NewFiles. We therefore reparse all
+	// extensions if it may contain any Go feature set extensions.
+	// See the issue: https://github.com/golang/protobuf/issues/1669
+	const goFeaturesImportPath = "google/protobuf/go_features.proto"
+	var reparseDescriptors []*descriptorv1.FileDescriptor
+	for _, descriptor := range descriptors {
+		fileDescriptorProto := descriptor.FileDescriptorProto
+		// Trigger reparsing on any file that includes the gofeatures import.
+		if slices.Contains(fileDescriptorProto.Dependency, goFeaturesImportPath) {
+			reparseDescriptors = append(reparseDescriptors, descriptor)
+		}
+	}
+	if len(reparseDescriptors) == 0 {
+		return descriptors, nil
+	}
+	goFeaturesResolver, err := protoencoding.NewGoFeaturesResolver()
+	if err != nil {
+		return nil, err
+	}
+	resolver := protoencoding.CombineResolvers(
+		goFeaturesResolver,
+		protoencoding.NewLazyResolver(slicesext.Map(descriptors, func(fileDescriptor *descriptorv1.FileDescriptor) *descriptorpb.FileDescriptorProto {
+			return fileDescriptor.FileDescriptorProto
+		})...),
+	)
+	for _, descriptor := range reparseDescriptors {
+		// We clone the FileDescriptorProto to avoid modifying the original.
+		fileDescriptorProto := &descriptorpb.FileDescriptorProto{}
+		proto.Merge(fileDescriptorProto, descriptor.FileDescriptorProto)
+		if err := protoencoding.ReparseExtensions(resolver, fileDescriptorProto.ProtoReflect()); err != nil {
+			return nil, err
+		}
+		descriptor.FileDescriptorProto = fileDescriptorProto
+	}
+	return descriptors, nil
 }
 
 func imageToProtoFileDescriptor(imageFile bufimage.ImageFile) *descriptorv1.FileDescriptor {

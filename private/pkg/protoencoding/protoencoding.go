@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"sync"
+
 	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/proto"
@@ -25,6 +27,13 @@ import (
 
 // EmptyResolver is a resolver that never resolves any descriptors. All methods will return (nil, NotFound).
 var EmptyResolver Resolver = emptyResolver{}
+
+var (
+	// goFeaturesOnce is used to lazily create goFeaturesValue in NewGoFeaturesResolver.
+	goFeaturesOnce  sync.Once
+	goFeaturesValue *goFeaturesResolver
+	goFeaturesErr   error
+)
 
 // Resolver can resolve files, messages, enums, and extensions.
 type Resolver interface {
@@ -52,6 +61,15 @@ func NewLazyResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) Res
 	return &lazyResolver{fn: func() (Resolver, error) {
 		return newResolver(fileDescriptors...)
 	}}
+}
+
+// NewGoFeaturesResolver returns a new Resolver that resolves Go features to
+// the gofeaturespb package.
+func NewGoFeaturesResolver() (Resolver, error) {
+	goFeaturesOnce.Do(func() {
+		goFeaturesValue, goFeaturesErr = newGoFeaturesResolver()
+	})
+	return goFeaturesValue, goFeaturesErr
 }
 
 // CombineResolvers returns a resolver that uses all of the given resolvers. It

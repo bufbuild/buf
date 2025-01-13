@@ -26,9 +26,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/gofeaturespb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -125,4 +127,67 @@ func TestReparseExtensions(t *testing.T) {
 		return true
 	})
 	assert.Equal(t, 2, found)
+}
+
+func TestReparseExtensionsGoFeatures(t *testing.T) {
+	t.Parallel()
+
+	goFeaturesMessageDesc := gofeaturespb.File_google_protobuf_go_features_proto.Messages().ByName("GoFeatures")
+	dynamicGoFeatures := dynamicpb.NewMessage(goFeaturesMessageDesc)
+	dynamicGoFeatures.Set(
+		goFeaturesMessageDesc.Fields().ByName("api_level"),
+		protoreflect.ValueOfEnum(gofeaturespb.GoFeatures_API_OPAQUE.Number()),
+	)
+	assert.True(t, dynamicGoFeatures.IsValid())
+	dynamicExt := dynamicpb.NewExtensionType(gofeaturespb.E_Go.TypeDescriptor().Descriptor())
+
+	featureSet := &descriptorpb.FeatureSet{}
+	featureSetReflect := featureSet.ProtoReflect()
+	featureSetReflect.Set(
+		dynamicExt.TypeDescriptor(),
+		protoreflect.ValueOfMessage(dynamicGoFeatures),
+	)
+
+	// Validates the error conditions that cause this panic.
+	// See issue https://github.com/golang/protobuf/issues/1669
+	assert.Panics(t, func() {
+		proto.GetExtension(featureSet, gofeaturespb.E_Go)
+	})
+	descFileDesc, err := protoregistry.GlobalFiles.FindFileByPath("google/protobuf/descriptor.proto")
+	assert.NoError(t, err)
+	goFeaturesFileDesc, err := protoregistry.GlobalFiles.FindFileByPath("google/protobuf/go_features.proto")
+	assert.NoError(t, err)
+	fileDesc := &descriptorpb.FileDescriptorProto{
+		Name: proto.String("a.proto"),
+		Dependency: []string{
+			"google/protobuf/go_features.proto",
+		},
+		Edition: descriptorpb.Edition_EDITION_2023.Enum(),
+		Syntax:  proto.String("editions"),
+		Options: &descriptorpb.FileOptions{
+			Features: featureSet,
+		},
+	}
+	fileSet := &descriptorpb.FileDescriptorSet{
+		File: []*descriptorpb.FileDescriptorProto{
+			protodesc.ToFileDescriptorProto(descFileDesc),
+			protodesc.ToFileDescriptorProto(goFeaturesFileDesc),
+			fileDesc,
+		},
+	}
+	assert.Panics(t, func() {
+		// TODO: if this no longer panics, we can remove the code handling
+		// this workaround in bufcheck.imageToProtoFileDescriptors.
+		_, err := protodesc.NewFiles(fileSet)
+		assert.NoError(t, err)
+	})
+
+	// Run the resvoler to convert the extension.
+	goFeaturesResolver, err := newGoFeaturesResolver()
+	require.NoError(t, err)
+	err = ReparseExtensions(goFeaturesResolver, featureSetReflect)
+	require.NoError(t, err)
+	goFeatures, ok := proto.GetExtension(featureSet, gofeaturespb.E_Go).(*gofeaturespb.GoFeatures)
+	require.True(t, ok)
+	assert.Equal(t, goFeatures.GetApiLevel(), gofeaturespb.GoFeatures_API_OPAQUE)
 }

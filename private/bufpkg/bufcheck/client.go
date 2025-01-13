@@ -109,7 +109,12 @@ func (c *client) Lint(
 		return err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
-	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
+	protoFileDescriptors, err := imageToProtoFileDescriptors(image)
+	if err != nil {
+		// If a validated Image results in an error, this is a system error.
+		return syserror.Wrap(err)
+	}
+	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(protoFileDescriptors)
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
@@ -174,12 +179,22 @@ func (c *client) Breaking(
 		return err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
-	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
+	protoFileDescriptors, err := imageToProtoFileDescriptors(image)
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
 	}
-	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(againstImage))
+	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(protoFileDescriptors)
+	if err != nil {
+		// If a validated Image results in an error, this is a system error.
+		return syserror.Wrap(err)
+	}
+	againstProtoFileDescriptors, err := imageToProtoFileDescriptors(againstImage)
+	if err != nil {
+		// If a validated Image results in an error, this is a system error.
+		return syserror.Wrap(err)
+	}
+	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(againstProtoFileDescriptors)
 	if err != nil {
 		// If a validated Image results in an error, this is a system error.
 		return syserror.Wrap(err)
