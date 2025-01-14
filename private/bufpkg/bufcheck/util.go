@@ -15,6 +15,7 @@
 package bufcheck
 
 import (
+	"fmt"
 	"slices"
 
 	descriptorv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/descriptor/v1"
@@ -61,8 +62,10 @@ func imageToProtoFileDescriptors(image bufimage.Image) ([]*descriptorv1.FileDesc
 	)
 	for _, descriptor := range reparseDescriptors {
 		// We clone the FileDescriptorProto to avoid modifying the original.
-		fileDescriptorProto := &descriptorpb.FileDescriptorProto{}
-		proto.Merge(fileDescriptorProto, descriptor.FileDescriptorProto)
+		fileDescriptorProto, ok := proto.Clone(descriptor.FileDescriptorProto).(*descriptorpb.FileDescriptorProto)
+		if !ok {
+			return nil, fmt.Errorf("could not clone descriptor.FileDescriptorProto")
+		}
 		if err := protoencoding.ReparseExtensions(resolver, fileDescriptorProto.ProtoReflect()); err != nil {
 			return nil, err
 		}

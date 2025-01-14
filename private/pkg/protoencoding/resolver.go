@@ -256,27 +256,22 @@ type goFeaturesResolver struct {
 }
 
 func newGoFeaturesResolver() (*goFeaturesResolver, error) {
-	var protoregistryFiles protoregistry.Files
-	if err := protoregistryFiles.RegisterFile(
+	var resolver goFeaturesResolver
+	if err := resolver.Files.RegisterFile(
 		gofeaturespb.File_google_protobuf_go_features_proto,
 	); err != nil {
 		return nil, err
 	}
 
-	var protoregistryTypes protoregistry.Types
-	if err := protoregistryTypes.RegisterExtension(
+	if err := resolver.Types.RegisterExtension(
 		gofeaturespb.E_Go.TypeDescriptor().Type(),
 	); err != nil {
 		return nil, err
 	}
-	if err := protoregistryTypes.RegisterMessage(
+	if err := resolver.Types.RegisterMessage(
 		(&gofeaturespb.GoFeatures{}).ProtoReflect().Type(),
 	); err != nil {
 		return nil, err
 	}
-
-	return &goFeaturesResolver{
-		Files: protoregistryFiles,
-		Types: protoregistryTypes,
-	}, nil
+	return &resolver, nil
 }
