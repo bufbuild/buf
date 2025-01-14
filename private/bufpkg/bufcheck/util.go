@@ -57,9 +57,7 @@ func imageToProtoFileDescriptors(image bufimage.Image) ([]*descriptorv1.FileDesc
 	}
 	resolver := protoencoding.CombineResolvers(
 		goFeaturesResolver,
-		protoencoding.NewLazyResolver(slicesext.Map(descriptors, func(fileDescriptor *descriptorv1.FileDescriptor) *descriptorpb.FileDescriptorProto {
-			return fileDescriptor.FileDescriptorProto
-		})...),
+		image.Resolver(),
 	)
 	for _, descriptor := range reparseDescriptors {
 		// We clone the FileDescriptorProto to avoid modifying the original.
