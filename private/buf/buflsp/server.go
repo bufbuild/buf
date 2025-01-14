@@ -142,7 +142,12 @@ func (s *server) Initialized(
 	ctx context.Context,
 	params *protocol.InitializedParams,
 ) error {
-	if s.initParams.Load().Capabilities.Workspace.DidChangeConfiguration.DynamicRegistration {
+	workspaceCapabilities := s.initParams.Load().Capabilities.Workspace
+	if workspaceCapabilities == nil {
+		return nil
+	}
+	didChangeConfiguration := workspaceCapabilities.DidChangeConfiguration
+	if didChangeConfiguration != nil && didChangeConfiguration.DynamicRegistration {
 		// The error is logged for us by the client wrapper.
 		_ = s.client.RegisterCapability(ctx, &protocol.RegistrationParams{
 			Registrations: []protocol.Registration{
