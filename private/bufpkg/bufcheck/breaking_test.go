@@ -1262,6 +1262,14 @@ func TestRunBreakingWithCustomPlugins(t *testing.T) {
 	)
 }
 
+func TestRunBreakingWithEditionsGoFeatures(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_editions_go_features",
+	)
+}
+
 func testBreaking(
 	t *testing.T,
 	relDirPath string,
