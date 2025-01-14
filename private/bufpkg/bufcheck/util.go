@@ -31,12 +31,13 @@ func imageToProtoFileDescriptors(image bufimage.Image) ([]*descriptorv1.FileDesc
 	}
 	descriptors := slicesext.Map(image.Files(), imageToProtoFileDescriptor)
 	// We need to ensure that if a FileDescriptorProto includes a Go
-	// feature set extension, that it matches the runtime version in
-	// gofeaturespb. The runtime will use the gofeaturespb.E_Go extension
+	// feature set extension, that it matches the library version in
+	// gofeaturespb. The library will use the gofeaturespb.E_Go extension
 	// type to determine how to parse the file. This must match the expected
 	// go type to avoid panics on getting the extension when using
 	// proto.GetExtension or protodesc.NewFiles. We therefore reparse all
-	// extensions if it may contain any Go feature set extensions.
+	// extensions if it may contain any Go feature set extensions, with
+	// a resolver that includes the Go feature set resolver.
 	// See the issue: https://github.com/golang/protobuf/issues/1669
 	const goFeaturesImportPath = "google/protobuf/go_features.proto"
 	var reparseDescriptors []*descriptorv1.FileDescriptor
