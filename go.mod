@@ -5,10 +5,10 @@ go 1.22.0
 toolchain go1.23.4
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.2-20241031151143-70f632351282.1
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.2-20241127180247-a33202765966.1
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.3-20241031151143-70f632351282.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.3-20241127180247-a33202765966.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250106231242-56271afbd6ce.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.2-20250106231242-56271afbd6ce.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.3-20250106231242-56271afbd6ce.1
 	buf.build/go/bufplugin v0.6.0
 	buf.build/go/protoyaml v0.3.1
 	buf.build/go/spdx v0.2.0
@@ -53,7 +53,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.2-20241007202033-cf42259fcbfc.1 // indirect
+	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.3-20241007202033-cf42259fcbfc.1 // indirect
 	cel.dev/expr v0.19.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
