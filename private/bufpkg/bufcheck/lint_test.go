@@ -1270,6 +1270,15 @@ func TestRunLintCustomWasmPlugins(t *testing.T) {
 	)
 }
 
+func TestRunLintEditionsGoFeatures(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"editions_go_features",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,

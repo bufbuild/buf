@@ -24,7 +24,7 @@ import (
 )
 
 // Version is the version of github.com/protocolbuffers/protobuf used to extract the Well-Known Types.
-const Version = "29.1"
+const Version = "29.3"
 
 var (
 	// ReadBucket is the storage.ReadBucket with the static data generated for this package.
