@@ -207,6 +207,8 @@ type GitRef interface {
 	RecurseSubmodules() bool
 	// Will be empty instead of "." for root directory
 	SubDirPath() string
+	// Filter spec to use, see the --filter option in git rev-list.
+	Filter() string
 	gitRef()
 }
 
@@ -217,8 +219,9 @@ func NewGitRef(
 	depth uint32,
 	recurseSubmodules bool,
 	subDirPath string,
+	filter string,
 ) (GitRef, error) {
-	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath)
+	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath, filter)
 }
 
 // ModuleRef is a module reference.
@@ -353,6 +356,7 @@ func NewDirectParsedGitRef(
 	recurseSubmodules bool,
 	depth uint32,
 	subDirPath string,
+	filter string,
 ) ParsedGitRef {
 	return newDirectGitRef(
 		format,
@@ -362,6 +366,7 @@ func NewDirectParsedGitRef(
 		recurseSubmodules,
 		depth,
 		subDirPath,
+		filter,
 	)
 }
 
@@ -557,6 +562,9 @@ type RawRef struct {
 	// requested GitRef will be included when cloning the requested branch
 	// (or the repo's default branch if GitBranch is empty).
 	GitDepth uint32
+	// Only set for git formats.
+	// The filter spec to use, see the --filter option in git rev-list.
+	GitFilter string
 	// Only set for archive formats.
 	ArchiveStripComponents uint32
 	// Only set for proto file ref format.

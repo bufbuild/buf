@@ -142,6 +142,8 @@ func (a *refParser) getRawRef(
 			rawRef.GitCommitOrTag = value
 		case "ref":
 			rawRef.GitRef = value
+		case "filter":
+			rawRef.GitFilter = value
 		case "depth":
 			depth, err := parseGitDepth(value)
 			if err != nil {
@@ -519,6 +521,7 @@ func getGitRef(
 		rawRef.GitDepth,
 		rawRef.GitRecurseSubmodules,
 		rawRef.SubDirPath,
+		rawRef.GitFilter,
 	)
 }
 
