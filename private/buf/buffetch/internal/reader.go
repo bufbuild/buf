@@ -370,6 +370,8 @@ func (r *reader) getGitBucket(
 		git.CloneToBucketOptions{
 			Name:              gitRef.GitName(),
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
+			SubDir:            gitRef.SubDirPath(),
+			Filter:            gitRef.Filter(),
 		},
 	); err != nil {
 		return nil, nil, fmt.Errorf("could not clone %s: %v", gitURL, err)

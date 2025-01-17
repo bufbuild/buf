@@ -125,6 +125,21 @@ func (c *cloner) CloneToBucket(
 			return err
 		}
 	}
+
+	// Build the args for the fetch command.
+	fetchArgs := []string{}
+	fetchArgs = append(fetchArgs, gitConfigAuthArgs...)
+	fetchArgs = append(
+		fetchArgs,
+		"fetch",
+		"--depth", depthArg,
+		// Required on branches matching the current branch of git init.
+		"--update-head-ok",
+	)
+	if options.Filter != "" {
+		fetchArgs = append(fetchArgs, "--filter", options.Filter)
+	}
+
 	// First, try to fetch the fetchRef directly. If the ref is not found, we
 	// will try to fetch the fallback ref with a depth to allow resolving partial
 	// refs locally. If the fetch fails, we will return an error.
@@ -134,14 +149,7 @@ func (c *cloner) CloneToBucket(
 	if err := execext.Run(
 		ctx,
 		"git",
-		execext.WithArgs(append(
-			gitConfigAuthArgs,
-			"fetch",
-			"--depth", depthArg,
-			"--update-head-ok", // Required on branches matching the current branch of git init.
-			"origin",
-			fetchRef,
-		)...),
+		execext.WithArgs(append(fetchArgs, "origin", fetchRef)...),
 		execext.WithEnv(app.Environ(envContainer)),
 		execext.WithStderr(buffer),
 		execext.WithDir(baseDir.Path()),
@@ -156,14 +164,24 @@ func (c *cloner) CloneToBucket(
 		if err := execext.Run(
 			ctx,
 			"git",
-			execext.WithArgs(append(
-				gitConfigAuthArgs,
-				"fetch",
-				"--depth", depthArg,
-				"--update-head-ok", // Required on branches matching the current branch of git init.
-				"origin",
-				fallbackRef,
-			)...),
+			execext.WithArgs(append(fetchArgs, "origin", fallbackRef)...),
+			execext.WithEnv(app.Environ(envContainer)),
+			execext.WithStderr(buffer),
+			execext.WithDir(baseDir.Path()),
+		); err != nil {
+			return newGitCommandError(err, buffer)
+		}
+	}
+
+	// As a further optimization, if a filter is applied with a subdir, we run
+	// a sparse checkout to reduce the size of the working directory.
+	buffer.Reset()
+	if options.Filter != "" && options.SubDir != "" {
+		// Set the subdir for sparse checkout.
+		if err := execext.Run(
+			ctx,
+			"git",
+			execext.WithArgs("sparse-checkout", "set", options.SubDir),
 			execext.WithEnv(app.Environ(envContainer)),
 			execext.WithStderr(buffer),
 			execext.WithDir(baseDir.Path()),

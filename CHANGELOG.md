@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add input parameter `filter` for use with git inputs. This sets the filter
+  flag argument for the git fetch command.
 
 ## [v1.49.0] - 2025-01-07
 

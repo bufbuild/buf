@@ -104,6 +104,8 @@ type CloneToBucketOptions struct {
 	Matcher           storage.Matcher
 	Name              Name
 	RecurseSubmodules bool
+	SubDir            string
+	Filter            string
 }
 
 // NewCloner returns a new Cloner.
