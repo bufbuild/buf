@@ -5,11 +5,11 @@ go 1.22.0
 toolchain go1.23.4
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.3-20241031151143-70f632351282.1
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.3-20250121211742-6d880cc6cc8d.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.3-20241127180247-a33202765966.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250106231242-56271afbd6ce.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.3-20250106231242-56271afbd6ce.1
-	buf.build/go/bufplugin v0.6.0
+	buf.build/go/bufplugin v0.7.0
 	buf.build/go/protoyaml v0.3.1
 	buf.build/go/spdx v0.2.0
 	connectrpc.com/connect v1.18.1
@@ -124,7 +124,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250106144421-5f5ef82da422 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250115164207-1a7da9e5054f // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	google.golang.org/grpc v1.69.4 // indirect
 )
