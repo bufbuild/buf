@@ -41,6 +41,13 @@ type ModuleData interface {
 	// This bucket will only contain module files - it will be filtered via NewModuleData.
 	Bucket() (storage.ReadBucket, error)
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
+	//
+	// The declared dependencies are the same as that would appear in the buf.lock file.
+	// These include all direct and transitive dependencies. A Module constructed
+	// from this ModuleData as the target will require all Modules referenced by
+	// its DeclaredDepModuleKeys to be present in the ModuleSet.
+	//
+	// This is used for digest calculations. It is not used otherwise.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)
 
 	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
@@ -144,19 +151,10 @@ func newModuleData(
 				if err != nil {
 					return err
 				}
-				// This isn't the Digest as computed by the Module exactly, as the Module uses
-				// file imports to determine what the dependencies are. However, this is checking whether
-				// or not the digest of the returned information matches the digest we expected, which is
-				// what we need for this use case (tamper-proofing). What we are looking for is "does the
-				// digest from the ModuleKey match the files and dependencies returned from the remote
-				// provider of the ModuleData?" The mismatch case is that a file import changed/was removed,
-				// which may result in a different computed set of dependencies, but in this case, the
-				// actual files would have changed, which will result in a mismatched digest anyways, and
-				// tamper-proofing failing.
-				//
-				// This mismatch is a bit weird, however, and also results in us effectively computing
-				// the digest twice for any remote module: once here, and once within Module.Digest,
-				// which does have a slight performance hit.
+				// The B5 digest is calculated based on the declared dependencies.
+				// Dependencies are not required to be resolved to a Module to calculate the digest.
+				// Each declared dependent ModuleKey is a reference to a specific commit of a module
+				// that includes the dependencies expected Digest.
 				actualDigest, err = getB5DigestForBucketAndDepModuleKeys(ctx, bucket, declaredDepModuleKeys)
 				if err != nil {
 					return err

@@ -89,7 +89,6 @@ type ModuleSetBuilder interface {
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
 	// ModuleProvider for example with a buf build buf.build/foo/bar call, then this
-
 	// specific Module will be targeted, while its dependencies will not be.
 	//
 	// Returns the same ModuleSetBuilder.
@@ -144,9 +143,9 @@ func NewModuleSetForRemoteModule(
 	}
 	if err := graph.WalkNodes(
 		func(node ModuleKey, _ []ModuleKey, _ []ModuleKey) error {
-			if node.CommitID() != moduleKey.CommitID() {
+			if isTarget := node.CommitID() == moduleKey.CommitID(); !isTarget {
 				// Add the dependency ModuleKey with no path filters.
-				moduleSetBuilder.AddRemoteModule(node, false)
+				moduleSetBuilder.AddRemoteModule(node, isTarget)
 			}
 			return nil
 		},

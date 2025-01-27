@@ -161,101 +161,44 @@ func (a *addedModule) ToModule(
 		}
 		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
-	// Imagine the following scenario:
+	// getDeclaredDepModuleKeysB5 gets the declared dependencies for the specific Module.
 	//
-	//   module-a (local)
-	//     README.md
-	//     a.proto
-	//     b.proto
-	//   module-b:c1
-	//     README.md
-	//     c.proto
-	//     d.proto
-	//   module-b:c2
-	//     README.md
-	//     c.proto
-	//     d.proto
-	//   module-c:c1
-	//     e.proto
-	//     f.proto
-	//   module-c:c2
-	//     e.proto
-	//     f.proto
-	//     g.proto
+	// This is needed to calculate the digest for the Module. A Module constructed from this
+	// ModuleData as the target will require all Modules referenced by its DeclaredDepModuleKeys
+	// to be present in the ModuleSet.
 	//
-	// Then, you have this dependency graph:
+	// Modules that depend on this remote Module will include this Module and its data.
+	// However all the dependencies of the remote Module may not be present in the parents ModuleSet.
+	// As the target Module will use its direct dependencies to resolve the dependencies required.
+	// The digest of the remote Module is however, unchanged. It is calculated based on the contents
+	// and its declared dependencies, not the dependencies of the parent ModuleSet.
 	//
-	// module-a -> module-b:c1, module-c:c2
-	// module-b:c1 -> module-c:c1
+	// In contrast, a local Module dependency can be thought of as a ModuleKey at the latest commit.
+	// It will always use the bucket and declared dependencies, which may be resolved recursively
+	// for dependencies on other local Modules, to calculate its digest.
+	// This is the difference between the ModuleData digest calculation and the Module
+	// digest calculation. As remote Modules are required to have all their dependencies
+	// declared as ModuleKeys they can calculate their digest directly from the contents
+	// and declared dependencies, they do not need to recursively resolve digests.
 	//
-	// Note that module-b depends on an earlier commit of module-c than module-a does.
+	// For example, consider the following modules at commits with their declared dependencies:
+	// ```
+	// X:C1			(X has no dependencies)
+	// A:C1 -> X:C1		(A depends on X)
+	// B:C1 -> A:C1 ~> X:C1 (B depends on A, transitive dependency on X)
+	// A:C2			(A removes the dependency on X)
+	// C:C1 -> A:C2, B:C1	(C depends on A and B, X is not a dependency)
+	// ```
+	// The ModuleSet for C:C1 will include B:C1 and A:C2, but not A:C1 or X:C1.
+	// This is because for C:C1 it will use the direct dependencies to resolve its dependencies.
+	// A is required by both B:C1 and C:C1, the latest A:C2 is chosen.
 	//
-	// If we were to just use the dependencies in the ModuleSet to compute the digest, the following
-	// would happen as a calculation:
+	// The ModuleSet for B:C1 will include A:C1 and X:C1.
+	// When calculating the digest for B:C1 in the ModuleSet of C:C1, the ModuleSet
+	// ModuleDeps cannot be used to resolve the dependencies of B:C1. It must use
+	// the declared dependencies of B:C1, which are A:C1 and X:C1, not A:C2.
 	//
-	//   DIGEST(module-a) = digest(
-	//     // module-a contents
-	//     README.md,
-	//     a.proto,
-	//     b.proto,
-	//     // module-b:c1 digest
-	//     DIGEST(
-	//       README.md,
-	//       c.proto,
-	//       d.proto,
-	//       // module-c:c2 digest
-	//       DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//         g.proto,
-	//       ),
-	//     ),
-	//     // module-c:c2 digest
-	//     DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//         g.proto,
-	//     ),
-	//   )
-	//
-	// Note that to compute the digest of module-b:c1, we would actually use the digest of
-	// module-c:c2, as opposed to module-c:c1, since within the ModuleSet, we would resolve
-	// to use module-c:c2 instead of module-c:c1.
-	//
-	// We should be using module-c:c1 to compute the digest of module-b:c1:
-	//
-	//   DIGEST(module-a) = digest(
-	//     // module-a contents
-	//     README.md,
-	//     a.proto,
-	//     b.proto,
-	//     // module-b:c1 digest
-	//     DIGEST(
-	//       README.md,
-	//       c.proto,
-	//       d.proto,
-	//       // module-c:c1 digest
-	//       DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//       ),
-	//     ),
-	//     // module-c:c2 digest
-	//     DIGEST(
-	//         README.md,
-	//         e.proto,
-	//         f.proto,
-	//         g.proto,
-	//     ),
-	//   )
-	//
-	// To accomplish this, we need to take the dependencies of the declared ModuleKeys (ie what
-	// the Module actually says is in its buf.lock). This function enables us to do that for
-	// digest calculations. Within the Module, we say that if we get a remote Module, use the
-	// declared ModuleKeys instead of whatever Module we have resolved to for a given FullName.
+	// This is used for digest calculations. It is not used otherwise.
 	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
 		moduleData, err := getModuleData()
 		if err != nil {

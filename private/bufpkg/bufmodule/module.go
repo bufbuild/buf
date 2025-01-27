@@ -452,33 +452,31 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 			}
 			return getB4Digest(module.ctx, bucket, v1BufYAMLObjectData, v1BufLockObjectData)
 		case DigestTypeB5:
-			moduleDeps, err := module.ModuleDeps()
-			if err != nil {
-				return nil, err
-			}
-			// For remote modules to have consistent B5 digests, they must not change the digests of their
-			// dependencies based on the local workspace. Use the pruned b5 module keys from
-			// ModuleData.DeclaredDepModuleKeys to calculate the digest.
+			// B5 digests are calculated from the Module's content and its declared dependencies.
+			//
+			// Declared dependencies are all direct and transitive dependencies of the Module.
+			// For local Modules, the declared dependencies are resolved to the current ModuleSet.
+			// For remote Modules, the declared dependencies are the ModuleKeys of
+			// the direct and transitive dependencies of the Module at the specific commit.
+			//
+			// This is effectively the same. The local Modules have a declared dependency at the current commit,
+			// and the remote Modules have a declared dependency at a specific commit. Pushing up a local Module
+			// as a remote Module will result in the same Digest.
+			//
+			// See the comment on getDeclaredDepModuleKeysB5 for more information.
 			if !module.isLocal {
 				declaredDepModuleKeys, err := module.getDeclaredDepModuleKeysB5()
 				if err != nil {
 					return nil, err
 				}
-				moduleDepFullNames := make(map[string]struct{}, len(moduleDeps))
-				for _, dep := range moduleDeps {
-					fullName := dep.FullName()
-					if fullName == nil {
-						return nil, syserror.Newf("remote module dependencies should have full names")
-					}
-					moduleDepFullNames[fullName.String()] = struct{}{}
-				}
-				prunedDepModuleKeys := make([]ModuleKey, 0, len(declaredDepModuleKeys))
-				for _, dep := range declaredDepModuleKeys {
-					if _, ok := moduleDepFullNames[dep.FullName().String()]; ok {
-						prunedDepModuleKeys = append(prunedDepModuleKeys, dep)
-					}
-				}
-				return getB5DigestForBucketAndDepModuleKeys(module.ctx, bucket, prunedDepModuleKeys)
+				return getB5DigestForBucketAndDepModuleKeys(module.ctx, bucket, declaredDepModuleKeys)
+			}
+			// ModuleDeps returns the declared dependent Modules resolved for the target Module in the ModuleSet.
+			// A local Module will recursively resolve the Digest of other dependent local Modules.
+			// This is done by calling Module.Digest(DigestTypeB5) on each ModuleDep.
+			moduleDeps, err := module.ModuleDeps()
+			if err != nil {
+				return nil, err
 			}
 			return getB5DigestForBucketAndModuleDeps(module.ctx, bucket, moduleDeps)
 		default:
