@@ -301,15 +301,6 @@ func checkFieldFlags(
 		fieldCount++
 		return true
 	})
-	if fieldConstraints.GetSkipped() && fieldCount > 1 {
-		adder.addForPathf(
-			[]int32{skippedFieldNumber},
-			"Field %q has %s and therefore other rules in %s are not applied and should be removed.",
-			adder.fieldName(),
-			adder.getFieldRuleName(skippedFieldNumber),
-			adder.getFieldRuleName(),
-		)
-	}
 	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS && fieldCount > 1 {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
@@ -318,18 +309,6 @@ func checkFieldFlags(
 			adder.getFieldRuleName(ignoreFieldNumber),
 			validate.Ignore_IGNORE_ALWAYS,
 			adder.getFieldRuleName(),
-		)
-	}
-	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnoreEmpty() {
-		adder.addForPathsf(
-			[][]int32{
-				{requiredFieldNumber},
-				{ignoreEmptyFieldNumber},
-			},
-			"Field %q has both %s and %s. A field cannot be empty if it is required.",
-			adder.fieldName(),
-			adder.getFieldRuleName(requiredFieldNumber),
-			adder.getFieldRuleName(ignoreEmptyFieldNumber),
 		)
 	}
 	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
@@ -393,14 +372,6 @@ func checkConstraintsForExtension(
 			"Field %q is an extension field and cannot have %s.",
 			adder.fieldName(),
 			adder.getFieldRuleName(requiredFieldNumber),
-		)
-	}
-	if fieldConstraints.GetIgnoreEmpty() {
-		adder.addForPathf(
-			[]int32{ignoreEmptyFieldNumber},
-			"Field %q is an extension field and cannot have %s.",
-			adder.fieldName(),
-			adder.getFieldRuleName(ignoreEmptyFieldNumber),
 		)
 	}
 	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
