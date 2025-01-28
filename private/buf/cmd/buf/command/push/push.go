@@ -414,7 +414,7 @@ func validateLabelFlagValues(flags *flags) error {
 	return nil
 }
 
-// We do not allow users to set --source-control-url, --create-default-label, and --label
+// We do not allow users to set --tag, --branch, and --draft
 // flags if the --git-metadata flag is set.
 func validateGitMetadataFlags(flags *flags) error {
 	if flags.GitMetadata {
