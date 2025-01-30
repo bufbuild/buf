@@ -15,9 +15,8 @@
 package internal
 
 import (
+	"slices"
 	"sort"
-
-	"golang.org/x/exp/slices"
 )
 
 // fieldOptionsTrie stores paths to FieldOptions (tag 8 of a FieldDescriptorProto).

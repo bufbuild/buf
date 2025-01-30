@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -24,8 +25,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"golang.org/x/exp/constraints"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -400,7 +399,7 @@ type keyValPair[K any, V any] struct {
 	val V
 }
 
-func sortedPairs[K constraints.Ordered, V any](m map[K]V) []keyValPair[K, V] {
+func sortedPairs[K cmp.Ordered, V any](m map[K]V) []keyValPair[K, V] {
 	ret := make([]keyValPair[K, V], 0, len(m))
 	for key := range m {
 		ret = append(ret, keyValPair[K, V]{key: key, val: m[key]})
