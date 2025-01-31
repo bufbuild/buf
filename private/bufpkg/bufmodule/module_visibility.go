@@ -21,7 +21,7 @@ import (
 const (
 	// ModuleVisibilityPublic says the Module is public on the registry.
 	ModuleVisibilityPublic = iota + 1
-	// ModuleVisibilityPublic says the Module is private on the registry.
+	// ModuleVisibilityPrivate says the Module is private on the registry.
 	ModuleVisibilityPrivate
 )
 

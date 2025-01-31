@@ -125,13 +125,13 @@ type ManagedOverrideRule interface {
 	isManagedOverrideRule()
 }
 
-// NewFieldOptionOverrideRule returns a new ManagedOverrideRule for a file option.
+// NewManagedOverrideRuleForFileOption returns a new ManagedOverrideRule for a file option.
 func NewManagedOverrideRuleForFileOption(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
 	value interface{},
-) (*managedOverrideRule, error) {
+) (ManagedOverrideRule, error) {
 	return newFileOptionManagedOverrideRule(
 		path,
 		moduleFullName,

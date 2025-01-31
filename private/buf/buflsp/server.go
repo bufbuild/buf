@@ -216,7 +216,7 @@ func (s *server) DidOpen(
 	return nil
 }
 
-// DidOpen is called whenever the client opens a document. This is our signal to parse
+// DidChange is called whenever the client opens a document. This is our signal to parse
 // the file.
 func (s *server) DidChange(
 	ctx context.Context,
@@ -320,8 +320,7 @@ func (s *server) Formatting(
 	}, nil
 }
 
-// DidOpen is called whenever the client opens a document. This is our signal to parse
-// the file.
+// DidClose is called whenever the client closes a document.
 func (s *server) DidClose(
 	ctx context.Context,
 	params *protocol.DidCloseTextDocumentParams,
@@ -332,7 +331,7 @@ func (s *server) DidClose(
 
 // -- Language functionality methods.
 
-// Definition is the entry point for hover inlays.
+// Hover is the entry point for hover inlays.
 func (s *server) Hover(
 	ctx context.Context,
 	params *protocol.HoverParams,

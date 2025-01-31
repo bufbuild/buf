@@ -175,7 +175,7 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.hasText = true
 }
 
-// FetchSettings refreshes configuration settings for this file.
+// RefreshSettings refreshes configuration settings for this file.
 //
 // This only needs to happen when the file is open or when the client signals
 // that configuration settings have changed.

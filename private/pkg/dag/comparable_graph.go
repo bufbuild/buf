@@ -68,7 +68,7 @@ func (g *ComparableGraph[Value]) NumNodes() int {
 	return g.Graph().NumNodes()
 }
 
-// NumNodes returns the number of edges in the graph.
+// NumEdges returns the number of edges in the graph.
 func (g *ComparableGraph[Value]) NumEdges() int {
 	return g.Graph().NumEdges()
 }

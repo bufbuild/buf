@@ -65,7 +65,7 @@ type Rule interface {
 	// BufcheckCategories returns the Rule's Categories.
 	BufcheckCategories() []Category
 
-	// Plugin returns the name of the plugin that created this Rule.
+	// PluginName returns the name of the plugin that created this Rule.
 	//
 	// Names are freeform.
 	//
@@ -82,7 +82,7 @@ type Rule interface {
 type Category interface {
 	check.Category
 
-	// Plugin returns the name of the plugin that created this Category.
+	// PluginName returns the name of the plugin that created this Category.
 	//
 	// Names are freeform.
 	//

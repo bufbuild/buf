@@ -25,7 +25,7 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
-// NewPluginCommand returns a new Command.
+// NewCommand returns a new Command.
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,

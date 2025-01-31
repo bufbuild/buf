@@ -37,7 +37,7 @@ func (r *report) Error(err reporter.ErrorWithPos) error {
 	return nil
 }
 
-// Error implements reporter.Handler for *diagnostics.
+// Warning implements reporter.Handler for *diagnostics.
 func (r *report) Warning(err reporter.ErrorWithPos) {
 	r.diagnostics = append(r.diagnostics, newDiagnostic(err, true))
 

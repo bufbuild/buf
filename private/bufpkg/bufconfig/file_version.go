@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	// FileVersionV1Beta represents v1beta1 files.
+	// FileVersionV1Beta1 represents v1beta1 files.
 	FileVersionV1Beta1 FileVersion = iota + 1
 	// FileVersionV1 represents v1 files.
 	FileVersionV1

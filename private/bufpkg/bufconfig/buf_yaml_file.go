@@ -194,7 +194,7 @@ func GetBufYAMLFileForOverride(override string) (BufYAMLFile, error) {
 	return readFile(bytes.NewReader(data), fileName, readBufYAMLFile)
 }
 
-// GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override,
+// GetBufYAMLFileForPrefixOrOverride get the buf.yaml file for either the usually-flag-based override,
 // or if the override is not set, falls back to the prefix.
 func GetBufYAMLFileForPrefixOrOverride(
 	ctx context.Context,
@@ -208,7 +208,7 @@ func GetBufYAMLFileForPrefixOrOverride(
 	return GetBufYAMLFileForPrefix(ctx, bucket, prefix)
 }
 
-// GetBufYAMLFileForPrefix gets the buf.yaml file version at the given bucket prefix.
+// GetBufYAMLFileVersionForPrefix gets the buf.yaml file version at the given bucket prefix.
 //
 // The buf.yaml file will be attempted to be read at prefix/buf.yaml.
 func GetBufYAMLFileVersionForPrefix(

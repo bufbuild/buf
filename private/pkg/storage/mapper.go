@@ -22,7 +22,7 @@ import (
 //
 // This will cause a Bucket to operate as if the Mapper has all paths mapped.
 type Mapper interface {
-	// Map maps the path to the full path.
+	// MapPath maps the path to the full path.
 	//
 	// The path is expected to be normalized and validated.
 	// The returned path is expected to be normalized and validated.

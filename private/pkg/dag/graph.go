@@ -89,7 +89,7 @@ func (g *Graph[Key, Value]) NumNodes() int {
 	return len(g.keys)
 }
 
-// NumNodes returns the number of edges in the graph.
+// NumEdges returns the number of edges in the graph.
 func (g *Graph[Key, Value]) NumEdges() int {
 	if err := g.checkInit(); err != nil {
 		return 0

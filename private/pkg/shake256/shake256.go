@@ -37,7 +37,7 @@ func NewDigest(value []byte) (Digest, error) {
 	return newDigest(value)
 }
 
-// NewDigest returns a new Digest for the content read from the Reader.
+// NewDigestForContent returns a new Digest for the content read from the Reader.
 func NewDigestForContent(reader io.Reader) (Digest, error) {
 	shakeHash := sha3.NewShake256()
 	// TODO FUTURE: remove in the future, this should have no effect

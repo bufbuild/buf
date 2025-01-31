@@ -149,7 +149,7 @@ func (s *symbol) ReferencePath() (path []string, absolute bool) {
 	return
 }
 
-// Resolve attempts to resolve an unresolved reference across fileManager.
+// ResolveCrossFile attempts to resolve an unresolved reference across fileManager.
 func (s *symbol) ResolveCrossFile(ctx context.Context) {
 	switch kind := s.kind.(type) {
 	case *definition:
