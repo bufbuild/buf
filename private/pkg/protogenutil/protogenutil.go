@@ -248,7 +248,7 @@ type NamedHelper interface {
 		goPackageFileSet *GoPackageFileSet,
 		pluginName string,
 	) (protogen.GoImportPath, error)
-	// NewGlobalImportPath gets the helper GoImportPath for the pluginName.
+	// NewGlobalGoImportPath gets the helper GoImportPath for the pluginName.
 	NewGlobalGoImportPath(
 		pluginName string,
 	) (protogen.GoImportPath, error)

@@ -124,7 +124,7 @@ func NewEnabledCheckConfig(
 	)
 }
 
-// NewEnabledCheckConfig returns a new enabled CheckConfig for only the use IDs and categories.
+// NewEnabledCheckConfigForUseIDsAndCategories returns a new enabled CheckConfig for only the use IDs and categories.
 func NewEnabledCheckConfigForUseIDsAndCategories(
 	fileVersion FileVersion,
 	use []string,

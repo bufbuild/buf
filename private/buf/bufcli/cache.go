@@ -281,7 +281,7 @@ func newPluginDataProvider(
 	if err != nil {
 		return nil, err
 	}
-	delegateModuleDataProvider := bufpluginapi.NewPluingDataProvider(
+	delegateModuleDataProvider := bufpluginapi.NewPluginDataProvider(
 		container.Logger(),
 		pluginClientProvider,
 	)

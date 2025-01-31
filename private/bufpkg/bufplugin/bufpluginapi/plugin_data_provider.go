@@ -34,7 +34,7 @@ import (
 // NewPluginDataProvider returns a new PluginDataProvider for the given API client.
 //
 // A warning is printed to the logger if a given Plugin is deprecated.
-func NewPluingDataProvider(
+func NewPluginDataProvider(
 	logger *slog.Logger,
 	clientProvider interface {
 		bufregistryapiplugin.V1Beta1DownloadServiceClientProvider

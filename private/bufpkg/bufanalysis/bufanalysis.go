@@ -200,7 +200,7 @@ func NewFileAnnotationSet(fileAnnotations ...FileAnnotation) FileAnnotationSet {
 	return newFileAnnotationSet(fileAnnotations)
 }
 
-// PrintFileAnnotations prints the file annotations separated by newlines.
+// PrintFileAnnotationSet prints the file annotations separated by newlines.
 func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string) error {
 	format, err := ParseFormat(formatString)
 	if err != nil {

@@ -120,7 +120,7 @@ func Reduce[T1, T2 any](s []T1, f func(T2, T1) T2, initialValue T2) T2 {
 	return value
 }
 
-// Reduce reduces the slice.
+// ReduceError reduces the slice.
 //
 // Returns error the first time f returns error.
 func ReduceError[T1, T2 any](s []T1, f func(T2, T1) (T2, error), initialValue T2) (T2, error) {
@@ -327,7 +327,7 @@ func ToUniqueIndexedValuesMapError[K comparable, V any](values []V, f func(V) (K
 	return ToUniqueValuesMapError(ToIndexed(values), func(indexedV Indexed[V]) (K, error) { return f(indexedV.Value) })
 }
 
-// IndexedToSortedValues takes the indexed values and returns them as values.
+// IndexedToValues takes the indexed values and returns them as values.
 func IndexedToValues[T any](s []Indexed[T]) []T {
 	return Map(s, func(indexedT Indexed[T]) T { return indexedT.Value })
 }
@@ -356,7 +356,7 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 	return s
 }
 
-// MapValuesToSlice converts the map's values to a sorted slice.
+// MapValuesToSortedSlice converts the map's values to a sorted slice.
 //
 // Duplicate values will be added. This should generally be used
 // in cases where you know there is a 1-1 mapping from K to V.
@@ -427,7 +427,7 @@ func Deduplicate[V comparable](s []V) []V {
 	return result
 }
 
-// Deduplicate returns the unique values of s when transformed with f.
+// DeduplicateAny returns the unique values of s when transformed with f.
 //
 // Earlier occurrences of a value are returned and later occurrences are dropped.
 func DeduplicateAny[K comparable, V any](s []V, f func(V) K) []V {

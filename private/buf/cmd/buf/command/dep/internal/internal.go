@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// ModuleKeysAndTransitiveDepModuleKeysForModuleKeys gets the ModuleKeys for the
+// ModuleKeysAndTransitiveDepModuleKeysForModuleRefs gets the ModuleKeys for the
 // ModuleRefs, and all the transitive dependencies.
 func ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 	ctx context.Context,

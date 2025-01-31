@@ -179,7 +179,7 @@ var (
 			},
 		),
 	}
-	// FieldSameLabelV1Beta1RuleBuilder is a rule spec builder.
+	// BreakingFieldSameLabelV1Beta1RuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameLabelV1Beta1RuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:             "FIELD_SAME_LABEL",
 		Purpose:        "Checks that fields have the same labels in a given message.",
@@ -373,7 +373,7 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFileSameJavaGenericServices,
 	}
-	// BreakingFileSamePyGenericServicesRuleBuilder is a rule spec builder.
+	// BreakingFileSamePyGenericServicesRuleSpecBuilder is a rule spec builder.
 	BreakingFileSamePyGenericServicesRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FILE_SAME_PY_GENERIC_SERVICES",
 		Purpose: "Checks that files have the same value for the py_generic_services option.",

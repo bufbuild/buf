@@ -72,7 +72,7 @@ func DiffWithSuppressCommands() DiffOption {
 	}
 }
 
-// DiffWithSuppressCommands returns a new DiffOption that suppresses printing of timestamps.
+// DiffWithSuppressTimestamps returns a new DiffOption that suppresses printing of timestamps.
 func DiffWithSuppressTimestamps() DiffOption {
 	return func(diffOptions *diffOptions) {
 		diffOptions.suppressTimestamps = true

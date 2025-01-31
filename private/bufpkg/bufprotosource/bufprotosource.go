@@ -241,8 +241,8 @@ type FileInfo interface {
 	// Never empty. Falls back to Path if there is not an external path.
 	//
 	// Example:
-	//	 Assume we had the input path /foo/bar which is a local directory.
-
+	//
+	// Assume we had the input path /foo/bar which is a local directory.
 	//   Path: one/one.proto
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto

@@ -179,7 +179,7 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	)
 }
 
-// Binds a string pointer flag, which indicates flag presence, i.e. `--flag ""` is not the same as not passing the flag.
+// BindStringPointer binds a string pointer flag, which indicates flag presence, i.e. `--flag ""` is not the same as not passing the flag.
 //
 // This is useful for buf registry organization/module update, where we only modify the fields specified.
 //

@@ -89,7 +89,6 @@ type ModuleSetBuilder interface {
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
 	// ModuleProvider for example with a buf build buf.build/foo/bar call, then this
-
 	// specific Module will be targeted, while its dependencies will not be.
 	//
 	// Returns the same ModuleSetBuilder.
@@ -168,7 +167,7 @@ func LocalModuleWithFullName(moduleFullName bufparse.FullName) LocalModuleOption
 	}
 }
 
-// LocalModuleWithFullName returns a new LocalModuleOption that adds the given FullName and CommitID
+// LocalModuleWithFullNameAndCommitID returns a new LocalModuleOption that adds the given FullName and CommitID
 // to the result Module.
 func LocalModuleWithFullNameAndCommitID(moduleFullName bufparse.FullName, commitID uuid.UUID) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {

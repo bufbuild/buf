@@ -52,7 +52,7 @@ type ExternalConfig struct {
 	Bans []ExternalBanConfig `json:"bans,omitempty" yaml:"bans,omitempty"`
 }
 
-// ExternalConfig is an external ban configuration.
+// ExternalBanConfig is an external ban configuration.
 type ExternalBanConfig struct {
 	// Packages are the package expressions to get dependencies for.
 	Packages ExternalPackageConfig `json:"packages,omitempty" yaml:"packages,omitempty"`

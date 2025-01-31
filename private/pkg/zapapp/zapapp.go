@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// NewCoreForFlagValues returns a new Core for the given level and format strings.
+// NewCore returns a new Core for the given level and format strings.
 func NewCore(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogFormat) (zapcore.Core, error) {
 	level, err := getLevel(logLevel)
 	if err != nil {

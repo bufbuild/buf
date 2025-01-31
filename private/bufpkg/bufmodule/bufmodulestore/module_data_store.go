@@ -57,9 +57,9 @@ type ModuleDatasResult interface {
 	isModuleDatasResult()
 }
 
-// ModuleStore reads and writes ModulesDatas.
+// ModuleDataStore reads and writes ModulesDatas.
 type ModuleDataStore interface {
-	// GetModuleDatasForModuleKey gets the ModuleDatas from the store for the ModuleKeys.
+	// GetModuleDatasForModuleKeys gets the ModuleDatas from the store for the ModuleKeys.
 	//
 	// Returns the found ModuleDatas, and the input ModuleKeys that were not found, each
 	// ordered by the order of the input ModuleKeys.
@@ -69,7 +69,7 @@ type ModuleDataStore interface {
 		err error,
 	)
 
-	// Put puts the ModuleDatas to the store.
+	// PutModuleDatas puts the ModuleDatas to the store.
 	PutModuleDatas(ctx context.Context, moduleDatas []bufmodule.ModuleData) error
 }
 

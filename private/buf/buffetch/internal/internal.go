@@ -511,7 +511,7 @@ type ProtoFileWriter interface {
 	) (io.WriteCloser, error)
 }
 
-// NewProtoWriter returns a new ProtoWriter.
+// NewProtoFileWriter returns a new ProtoFileWriter.
 func NewProtoFileWriter(
 	logger *slog.Logger,
 ) ProtoFileWriter {
@@ -820,7 +820,7 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetReadBucketCloserOption is a GetReadBucketCloser option.
 type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
 
-// WithGetBucketCopyToInMemory says to copy the returned ReadBucketCloser to an
+// WithGetReadBucketCloserCopyToInMemory says to copy the returned ReadBucketCloser to an
 // in-memory ReadBucket. This can be a performance optimization at the expense of memory.
 func WithGetReadBucketCloserCopyToInMemory() GetReadBucketCloserOption {
 	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {

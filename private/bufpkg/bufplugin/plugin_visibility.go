@@ -21,7 +21,7 @@ import (
 const (
 	// PluginVisibilityPublic says the Plugin is public on the registry.
 	PluginVisibilityPublic = iota + 1
-	// PluginVisibilityPublic says the Plugin is private on the registry.
+	// PluginVisibilityPrivate says the Plugin is private on the registry.
 	PluginVisibilityPrivate
 )
 

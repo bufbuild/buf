@@ -91,7 +91,7 @@ func GetBufWorkYAMLFileForPrefix(
 	return getFileForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, bufWorkYAMLFileNameToSupportedFileVersions, readBufWorkYAMLFile)
 }
 
-// GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file version at the given bucket prefix.
+// GetBufWorkYAMLFileVersionForPrefix gets the buf.work.yaml file version at the given bucket prefix.
 //
 // The buf.work.yaml file will be attempted to be read at prefix/buf.work.yaml.
 func GetBufWorkYAMLFileVersionForPrefix(

@@ -130,7 +130,7 @@ func handleBreakingExtensionNoDelete(
 	return nil
 }
 
-// HandleBreakingFileDelete is a check function.
+// HandleBreakingFileNoDelete is a check function.
 var HandleBreakingFileNoDelete = bufcheckserverutil.NewRuleHandler(handleBreakingFileNoDelete)
 
 func handleBreakingFileNoDelete(
@@ -1164,7 +1164,7 @@ func handleBreakingFileSameJavaPackage(
 	)
 }
 
-// HandleBreakingfileSameObjcClassPrefix is a check function.
+// HandleBreakingFileSameObjcClassPrefix is a check function.
 var HandleBreakingFileSameObjcClassPrefix = bufcheckserverutil.NewBreakingFilePairRuleHandler(handleBreakingFileSameObjcClassPrefix)
 
 func handleBreakingFileSameObjcClassPrefix(
