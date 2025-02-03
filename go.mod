@@ -33,7 +33,7 @@ require (
 	github.com/quic-go/quic-go v0.49.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/stretchr/testify v1.10.0
 	github.com/tetratelabs/wazero v1.8.2
 	go.lsp.dev/jsonrpc2 v0.10.0
