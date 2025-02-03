@@ -1,6 +1,6 @@
 module github.com/bufbuild/buf
 
-go 1.22.0
+go 1.23.0
 
 toolchain go1.23.5
 
@@ -20,9 +20,9 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/gofrs/flock v0.12.1
-	github.com/google/cel-go v0.23.0
+	github.com/google/cel-go v0.23.2
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.20.2
+	github.com/google/go-containerregistry v0.20.3
 	github.com/google/uuid v1.6.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
@@ -33,7 +33,7 @@ require (
 	github.com/quic-go/quic-go v0.49.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/stretchr/testify v1.10.0
 	github.com/tetratelabs/wazero v1.8.2
 	go.lsp.dev/jsonrpc2 v0.10.0
@@ -83,7 +83,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/google/pprof v0.0.0-20250125003558-7fdb3d7e6fa0 // indirect
+	github.com/google/pprof v0.0.0-20250202011525-fc3143867406 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -110,7 +110,7 @@ require (
 	github.com/segmentio/encoding v0.4.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
-	github.com/vbatts/tar-split v0.11.7 // indirect
+	github.com/vbatts/tar-split v0.12.1 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.lsp.dev/uri v0.3.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -121,10 +121,10 @@ require (
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250124145028-65684f501c47 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250124145028-65684f501c47 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250127172529-29210b9bc287 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 )
