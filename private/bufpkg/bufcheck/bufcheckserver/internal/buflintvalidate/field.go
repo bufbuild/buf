@@ -26,10 +26,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protovalidate-go/resolver"
+	"github.com/bufbuild/protovalidate-go/resolve"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -163,7 +164,7 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
+	constraints := resolve.FieldConstraints(fieldDescriptor)
 	return checkConstraintsForField(
 		&adder{
 			field:               field,
@@ -260,7 +261,6 @@ func checkConstraintsForField(
 			[]int32{typeRulesFieldNumber, exampleFieldNumber},
 			fieldConstraints,
 			typeRulesMessage,
-			containingMessageDescriptor,
 			parentMapFieldDescriptor,
 			fieldDescriptor,
 			exampleValues,
@@ -731,7 +731,6 @@ func checkExampleValues(
 	pathToExampleValues []int32,
 	fieldConstraints *validate.FieldConstraints,
 	typeRulesMessage protoreflect.Message,
-	containingMessageDescriptor protoreflect.MessageDescriptor,
 	// Not nil only if fieldDescriptor is a synthetic field for map key/value.
 	parentMapFieldDescriptor protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
@@ -771,99 +770,106 @@ func checkExampleValues(
 	// errors by field name to determine whether this example value fails rules defined
 	// on the same field.
 	//
-	// Pass a constraint resolver interceptor so that constraints on other
-	// fields are not looked at by the validator.
-	constraintInterceptor := func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
-		return &constraintsResolverForTargetField{
-			StandardConstraintResolver: res,
-			targetField:                fieldDescriptor,
-		}
+	// Construct a temporary message containing only the relevant field so that
+	// constraints on other fields are not evaluated by the validator.
+	newParentMapFieldDescriptor, newFieldDescriptor, err := createSyntheticFieldDescriptorForChecking(
+		parentMapFieldDescriptor,
+		fieldDescriptor,
+		extensionTypeResolver,
+	)
+	if err != nil {
+		return err
 	}
-	// For map fields, we want to resolve the constraints on the parentMapFieldDescriptor rather
-	// than the MapEntry.
-	if parentMapFieldDescriptor != nil {
-		constraintInterceptor = func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
-			// Pass a constraint resolver interceptor so that constraints on other
-			// fields are not looked at by the validator.
-			return &constraintsResolverForTargetField{
-				StandardConstraintResolver: res,
-				targetField:                parentMapFieldDescriptor,
-			}
-		}
+	newContainingMessageDescriptor := newFieldDescriptor.ContainingMessage()
+	if newParentMapFieldDescriptor != nil {
+		newContainingMessageDescriptor = newParentMapFieldDescriptor.ContainingMessage()
 	}
-	validator, err := protovalidate.New(protovalidate.WithStandardConstraintInterceptor(constraintInterceptor))
+	validator, err := protovalidate.New()
 	if err != nil {
 		return err
 	}
 	// The shape of field path in a protovalidate.Violation depends on the type of the field descriptor.
 	violationFilterFunc := func(violation *validate.Violation) bool {
-		return protovalidate.FieldPathString(violation.GetField()) == string(fieldDescriptor.Name())
+		return len(violation.GetField().GetElements()) == 1 &&
+			violation.GetField().GetElements()[0].GetFieldNumber() == int32(fieldDescriptor.Number()) &&
+			violation.GetField().GetElements()[0].GetSubscript() == nil
 	}
 	switch {
-	case fieldDescriptor.IsList():
+	case newFieldDescriptor.IsList():
 		// Field path looks like repeated_field[10]
 		violationFilterFunc = func(violation *validate.Violation) bool {
-			prefix := fieldDescriptor.Name() + "["
-			suffix := "]"
-			fieldPath := protovalidate.FieldPathString(violation.GetField())
-			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
+			if len(violation.GetField().GetElements()) != 1 ||
+				violation.GetField().GetElements()[0].GetFieldNumber() != int32(fieldDescriptor.Number()) ||
+				violation.GetField().GetElements()[0].GetSubscript() == nil {
+				return false
+			}
+			_, ok := violation.GetField().GetElements()[0].Subscript.(*validate.FieldPathElement_Index)
+			return ok
 		}
-	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "key":
+	case parentMapFieldDescriptor != nil && newFieldDescriptor.Name() == "key":
 		// Field path looks like map_field["the key value that failed"] and ForKey is set to true.
 		violationFilterFunc = func(violation *validate.Violation) bool {
-			prefix := parentMapFieldDescriptor.Name() + "["
-			suffix := "]"
-			fieldPath := protovalidate.FieldPathString(violation.GetField())
-			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.GetForKey()
+			if !violation.GetForKey() ||
+				len(violation.GetField().GetElements()) != 1 ||
+				violation.GetField().GetElements()[0].GetFieldNumber() != int32(parentMapFieldDescriptor.Number()) ||
+				violation.GetField().GetElements()[0].GetSubscript() == nil {
+				return false
+			}
+			_, ok := violation.GetField().GetElements()[0].Subscript.(*validate.FieldPathElement_Index)
+			return !ok
 		}
-	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "value":
+	case newParentMapFieldDescriptor != nil && newFieldDescriptor.Name() == "value":
 		// Field path looks like map_field["the key value that failed"], but ForKey is set to false.
 		violationFilterFunc = func(violation *validate.Violation) bool {
-			prefix := parentMapFieldDescriptor.Name() + "["
-			suffix := "]"
-			fieldPath := protovalidate.FieldPathString(violation.GetField())
-			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
+			if violation.GetForKey() ||
+				len(violation.GetField().GetElements()) != 1 ||
+				violation.GetField().GetElements()[0].GetFieldNumber() != int32(parentMapFieldDescriptor.Number()) ||
+				violation.GetField().GetElements()[0].GetSubscript() == nil {
+				return false
+			}
+			_, ok := violation.GetField().GetElements()[0].Subscript.(*validate.FieldPathElement_Index)
+			return !ok
 		}
 	}
 	for exampleValueIndex, exampleValue := range exampleValues {
-		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
+		messageToValidate := dynamicpb.NewMessage(newContainingMessageDescriptor)
 		switch {
-		case fieldDescriptor.IsList():
-			list := messageToValidate.NewField(fieldDescriptor).List()
+		case newFieldDescriptor.IsList():
+			list := messageToValidate.NewField(newFieldDescriptor).List()
 			list.Append(exampleValue)
-			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOfList(list))
-		case parentMapFieldDescriptor != nil:
-			mapEntryMessageDescriptor := fieldDescriptor.ContainingMessage()
+			messageToValidate.Set(newFieldDescriptor, protoreflect.ValueOfList(list))
+		case newParentMapFieldDescriptor != nil:
+			mapEntryMessageDescriptor := newFieldDescriptor.ContainingMessage()
 			// We are being very defensive, because a type mismatch may cause a panic in protoreflect.
 			if !mapEntryMessageDescriptor.IsMapEntry() {
 				return syserror.Newf("containing message %q is not a map", mapEntryMessageDescriptor.Name())
 			}
-			if !parentMapFieldDescriptor.IsMap() {
-				return syserror.Newf("parent field descriptor %q is passed but is not a map field", parentMapFieldDescriptor.Name())
+			if !newParentMapFieldDescriptor.IsMap() {
+				return syserror.Newf("parent field descriptor %q is passed but is not a map field", newParentMapFieldDescriptor.Name())
 			}
-			if containingMessageDescriptor.Fields().ByName(parentMapFieldDescriptor.Name()) == nil {
-				return syserror.Newf("containing message %q does not have field named %q", containingMessageDescriptor.Name(), parentMapFieldDescriptor.Name())
+			if newContainingMessageDescriptor.Fields().ByName(newParentMapFieldDescriptor.Name()) == nil {
+				return syserror.Newf("containing message %q does not have field named %q", newContainingMessageDescriptor.Name(), newParentMapFieldDescriptor.Name())
 			}
-			if parentMapFieldDescriptor.Message().Name() != mapEntryMessageDescriptor.Name() {
-				return syserror.Newf("field %q should have parent of type %q but has type %q", fieldDescriptor.Name(), parentMapFieldDescriptor.Message().Name(), containingMessageDescriptor.Name())
+			if newParentMapFieldDescriptor.Message().Name() != mapEntryMessageDescriptor.Name() {
+				return syserror.Newf("field %q should have parent of type %q but has type %q", newFieldDescriptor.Name(), parentMapFieldDescriptor.Message().Name(), newContainingMessageDescriptor.Name())
 			}
-			mapEntry := messageToValidate.NewField(parentMapFieldDescriptor).Map()
-			switch fieldDescriptor.Name() {
+			mapEntry := messageToValidate.NewField(newParentMapFieldDescriptor).Map()
+			switch newFieldDescriptor.Name() {
 			case "key":
 				mapEntry.Set(
 					exampleValue.MapKey(),
-					dynamicpb.NewMessage(parentMapFieldDescriptor.Message()).NewField(parentMapFieldDescriptor.MapValue()),
+					dynamicpb.NewMessage(newParentMapFieldDescriptor.Message()).NewField(newParentMapFieldDescriptor.MapValue()),
 				)
 			case "value":
 				mapEntry.Set(
-					dynamicpb.NewMessage(parentMapFieldDescriptor.Message()).NewField(parentMapFieldDescriptor.MapKey()).MapKey(),
+					dynamicpb.NewMessage(newParentMapFieldDescriptor.Message()).NewField(newParentMapFieldDescriptor.MapKey()).MapKey(),
 					exampleValue,
 				)
 			default:
-				return syserror.Newf("expected key or value as synthetic field name for map entry's field name, got %q", fieldDescriptor.Name())
+				return syserror.Newf("expected key or value as synthetic field name for map entry's field name, got %q", newFieldDescriptor.Name())
 			}
-			messageToValidate.Set(parentMapFieldDescriptor, protoreflect.ValueOfMap(mapEntry))
-		case fieldDescriptor.Enum() != nil:
+			messageToValidate.Set(newParentMapFieldDescriptor, protoreflect.ValueOfMap(mapEntry))
+		case newFieldDescriptor.Enum() != nil:
 			// We need to handle enum examples in a special way, since enum examples are set as
 			// int32, but we need to set it to the enum value to the field.
 			// So we cast exampleValue to an int32 and check that cast first before attempting
@@ -873,17 +879,17 @@ func checkExampleValues(
 			if !ok {
 				return syserror.Newf("expected enum example value to be int32 for field %q, got %T type instead", fieldDescriptor.FullName(), exampleValue)
 			}
-			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOf(protoreflect.EnumNumber(exampleInt32)))
-		case fieldDescriptor.Message() != nil:
+			messageToValidate.Set(newFieldDescriptor, protoreflect.ValueOf(protoreflect.EnumNumber(exampleInt32)))
+		case newFieldDescriptor.Message() != nil:
 			// We need to handle the case where the field is a wrapper type. We set the value directly base on the wrapper type.
-			switch string(fieldDescriptor.Message().FullName()) {
+			switch string(newFieldDescriptor.Message().FullName()) {
 			case string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()):
 				exampleValueFloat, ok := exampleValue.Interface().(float32)
 				if !ok {
 					return syserror.Newf("unexpected type found for float wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.FloatValue{Value: exampleValueFloat}).ProtoReflect(),
 					),
@@ -894,7 +900,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for double wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.DoubleValue{Value: exampleValueDouble}).ProtoReflect(),
 					),
@@ -905,7 +911,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for int32 wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.Int32Value{Value: exampleValueInt32}).ProtoReflect(),
 					),
@@ -916,7 +922,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for int64 wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.Int64Value{Value: exampleValueInt64}).ProtoReflect(),
 					),
@@ -927,7 +933,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for uint32 wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.UInt32Value{Value: exampleValueUInt32}).ProtoReflect(),
 					),
@@ -938,7 +944,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for uint32 wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.UInt64Value{Value: exampleValueUInt64}).ProtoReflect(),
 					),
@@ -949,7 +955,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for bool wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.BoolValue{Value: exampleValueBool}).ProtoReflect(),
 					),
@@ -960,7 +966,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for string wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.StringValue{Value: exampleValueString}).ProtoReflect(),
 					),
@@ -971,7 +977,7 @@ func checkExampleValues(
 					return syserror.Newf("unexpected type found for bytes wrapper type %T", exampleValue.Interface())
 				}
 				messageToValidate.Set(
-					fieldDescriptor,
+					newFieldDescriptor,
 					protoreflect.ValueOf(
 						(&wrapperspb.BytesValue{Value: exampleValueBytes}).ProtoReflect(),
 					),
@@ -979,10 +985,10 @@ func checkExampleValues(
 			default:
 				// In the case where it is not a wrapper type (e.g. google.protobuf.Timestamp), we just set the example
 				// value directly.
-				messageToValidate.Set(fieldDescriptor, exampleValue)
+				messageToValidate.Set(newFieldDescriptor, exampleValue)
 			}
 		default:
-			messageToValidate.Set(fieldDescriptor, exampleValue)
+			messageToValidate.Set(newFieldDescriptor, exampleValue)
 		}
 		err := validator.Validate(messageToValidate)
 		if err == nil {
@@ -1006,6 +1012,104 @@ func checkExampleValues(
 		return fmt.Errorf("unexpected error from protovalidate: %s", err.Error())
 	}
 	return nil
+}
+
+// createSyntheticFieldDescriptorForChecking creates a clone of a specific field
+// into its own message so that it can be checked independently. For map fields,
+// this includes creating a synthetic MapEntry as well.
+func createSyntheticFieldDescriptorForChecking(
+	// If specified, parentMapFieldDescriptor is the map field to be cloned,
+	// e.g. it is a field on a message that points to a map type.
+	parentMapFieldDescriptor protoreflect.FieldDescriptor,
+	// If parentMapFieldDescriptor is specified, this is a MapKey or MapValue.
+	// Otherwise, it is the non-map field to be cloned.
+	fieldDescriptor protoreflect.FieldDescriptor,
+	resolver protodesc.Resolver,
+) (
+	newParentMapFieldDescriptor protoreflect.FieldDescriptor,
+	newFieldDescriptor protoreflect.FieldDescriptor,
+	err error,
+) {
+	// We need to determine the "root" descriptor: if parentMapFieldDescriptor
+	// is set, then fieldDescriptor points to a MapKey or MapValue field, but we
+	// want to create a synthetic clone of the map field itself.
+	rootFieldDescriptor := fieldDescriptor
+	if parentMapFieldDescriptor != nil {
+		rootFieldDescriptor = parentMapFieldDescriptor
+	}
+	originalFile := rootFieldDescriptor.ContainingMessage().ParentFile()
+	newFileDescriptorProto := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String(":synthetic:"),
+		Package: proto.String("__SYNTHETIC__"),
+		Syntax:  proto.String("proto3"),
+		Dependency: []string{
+			originalFile.Path(),
+		},
+	}
+
+	// Ensure that enum and message types are available to be resolved. It's a
+	// bit tricky to get this right, so we just import everything the original
+	// file containing the root message imports (and that file, too.)
+	for i := 0; i < originalFile.Imports().Len(); i++ {
+		newFileDescriptorProto.Dependency = append(
+			newFileDescriptorProto.Dependency,
+			originalFile.Imports().Get(i).Path(),
+		)
+	}
+
+	// Create a clone of the root field descriptor. Since our target message is
+	// going to be empty aside from this field, we also clear the OneofIndex.
+	newFieldDescriptorProto := protodesc.ToFieldDescriptorProto(rootFieldDescriptor)
+	newFieldDescriptorProto.OneofIndex = nil
+
+	newMessageDescriptorProto := &descriptorpb.DescriptorProto{
+		Name:  proto.String(string(rootFieldDescriptor.ContainingMessage().Name())),
+		Field: []*descriptorpb.FieldDescriptorProto{newFieldDescriptorProto},
+	}
+
+	// The map field and entry message have to be declared in the same scope, so
+	// we need to make a clone of the map entry type itself. This needs to be
+	// nested under the synthetic message.
+	if parentMapFieldDescriptor != nil {
+		// Shouldn't happen, but we don't want to panic if it does.
+		if !parentMapFieldDescriptor.IsMap() {
+			return nil, nil, errors.New("parentMapFieldDescriptor is not a map")
+		}
+		newMapEntryMessageDescriptor := &descriptorpb.DescriptorProto{
+			Name: proto.String(string(parentMapFieldDescriptor.Message().Name())),
+			Field: []*descriptorpb.FieldDescriptorProto{
+				protodesc.ToFieldDescriptorProto(parentMapFieldDescriptor.MapKey()),
+				protodesc.ToFieldDescriptorProto(parentMapFieldDescriptor.MapValue()),
+			},
+			Options: &descriptorpb.MessageOptions{
+				MapEntry: proto.Bool(true),
+			},
+		}
+		newMessageDescriptorProto.NestedType = append(
+			newFileDescriptorProto.MessageType,
+			newMapEntryMessageDescriptor,
+		)
+		newFieldDescriptorProto.Type = descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum()
+		newFieldDescriptorProto.TypeName = proto.String(newMapEntryMessageDescriptor.GetName())
+	}
+	newFileDescriptorProto.MessageType = append(newFileDescriptorProto.MessageType, newMessageDescriptorProto)
+
+	newFileDescriptor, err := protodesc.NewFile(newFileDescriptorProto, resolver)
+	if err != nil {
+		return nil, nil, err
+	}
+	newRootDescriptor := newFileDescriptor.Messages().ByName(
+		rootFieldDescriptor.ContainingMessage().Name(),
+	).Fields().ByNumber(
+		rootFieldDescriptor.Number(),
+	)
+	if parentMapFieldDescriptor != nil {
+		return newRootDescriptor, newRootDescriptor.Message().Fields().ByNumber(
+			fieldDescriptor.Number(),
+		), nil
+	} else {
+		return nil, newRootDescriptor, nil
+	}
 }
 
 func checkConst(adder *adder, rule proto.Message, ruleFieldNumber int32) {
