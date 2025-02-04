@@ -104,7 +104,7 @@ func generateMarkdownPage(
 	p("\n\n")
 	if command.Runnable() {
 		p("### Usage\n")
-		p("```terminal\n$ %s\n```\n\n", command.UseLine())
+		p("```console\n$ %s\n```\n\n", command.UseLine())
 	}
 	if len(command.Long) > 0 {
 		p("### Description\n\n")
@@ -112,7 +112,7 @@ func generateMarkdownPage(
 	}
 	if len(command.Example) > 0 {
 		p("### Examples\n\n")
-		p("```\n%s\n```\n\n", processDescription(command.Example))
+		p("```console\n%s\n```\n\n", processDescription(command.Example))
 	}
 	commandFlags := command.NonInheritedFlags()
 	if commandFlags.HasAvailableFlags() {
