@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -235,6 +236,7 @@ func (g *generator) execPlugins(
 				if includeWellKnownTypesOverride != nil {
 					includeWellKnownTypes = *includeWellKnownTypesOverride
 				}
+				excludeOptions := currentPluginConfig.ExcludeOptions()
 				response, err := g.execLocalPlugin(
 					ctx,
 					container,
@@ -242,6 +244,7 @@ func (g *generator) execPlugins(
 					currentPluginConfig,
 					includeImports,
 					includeWellKnownTypes,
+					excludeOptions,
 				)
 				if err != nil {
 					return err
@@ -309,10 +312,20 @@ func (g *generator) execLocalPlugin(
 	pluginConfig bufconfig.GeneratePluginConfig,
 	includeImports bool,
 	includeWellKnownTypes bool,
+	excludeOptions []string,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	pluginImages, err := imageProvider.GetImages(Strategy(pluginConfig.Strategy()))
 	if err != nil {
 		return nil, err
+	}
+	if len(excludeOptions) > 0 {
+		for i, pluginImage := range pluginImages {
+			pluginImage, err := bufimageutil.ExcludeOptions(pluginImage, excludeOptions...)
+			if err != nil {
+				return nil, err
+			}
+			pluginImages[i] = pluginImage
+		}
 	}
 	requests, err := bufimage.ImagesToCodeGeneratorRequests(
 		pluginImages,
@@ -356,6 +369,7 @@ func (g *generator) execRemotePluginsV2(
 	pluginConfigs []*remotePluginExecArgs,
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
+	// TODO: add support for exclude_options.
 ) ([]*remotePluginExecutionResult, error) {
 	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(pluginConfigs))
 	for i, pluginConfig := range pluginConfigs {

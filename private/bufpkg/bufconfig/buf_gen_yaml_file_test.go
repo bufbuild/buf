@@ -180,6 +180,8 @@ plugins:
     strategy: all
     include_imports: true
     include_wkt: true
+    exclude_options:
+      - buf.validate.oneof
 inputs:
   - git_repo: github.com/acme/weather
     branch: dev
