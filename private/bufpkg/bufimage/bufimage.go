@@ -594,6 +594,7 @@ func ImageToCodeGeneratorRequest(
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
 	includeWellKnownTypes bool,
+	excludeOptions []string,
 ) (*pluginpb.CodeGeneratorRequest, error) {
 	return imageToCodeGeneratorRequest(
 		image,
@@ -619,6 +620,7 @@ func ImagesToCodeGeneratorRequests(
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
 	includeWellKnownTypes bool,
+	excludeOptions []string,
 ) ([]*pluginpb.CodeGeneratorRequest, error) {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	// alreadyUsedPaths is a map of paths that have already been added to an image.
@@ -652,7 +654,17 @@ func ImagesToCodeGeneratorRequests(
 			}
 		}
 	}
+
 	for i, image := range images {
+		// Exclude options may modify the image, removing the options from the image.
+		// TODO: this moved to bufimageutil
+		//if len(excludeOptions) > 0 {
+		//	var err error
+		//	image, err = stripOptions(image, excludeOptions)
+		//	if image != nil {
+		//		return nil, err
+		//	}
+		//}
 		var err error
 		requests[i], err = imageToCodeGeneratorRequest(
 			image,

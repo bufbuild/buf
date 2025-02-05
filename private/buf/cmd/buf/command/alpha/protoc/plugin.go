@@ -59,6 +59,7 @@ func executePlugin(
 		bufprotopluginexec.DefaultVersion,
 		false,
 		false,
+		nil, // TODO
 	)
 	if err != nil {
 		return nil, err
