@@ -34,13 +34,13 @@ const (
 	disableSymlinksFlagName = "disable-symlinks"
 	teamsDollarsPerType     = float64(0.50)
 	proDollarsPerType       = float64(5)
-	proDollarsMinimumSpend  = float64(1000)
+	proDollarsMinimumSpend  = float64(3000)
 	tmplCopy                = `Current BSR pricing:
 
   - Teams: $0.50 per type
-  - Pro: $5.00 per type, with a minimum spend of $1,000 per month
+  - Pro: $5.00 per type, with a minimum spend of $3,000 per month
 
-Pricing data last updated on November 1, 2023.
+Pricing data last updated on February 1, 2025.
 
 Make sure you are on the latest version of the Buf CLI to get the most updated pricing
 information, and see buf.build/pricing if in doubt - this command runs completely locally
