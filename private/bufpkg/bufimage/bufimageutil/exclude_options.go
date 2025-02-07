@@ -17,6 +17,7 @@ package bufimageutil
 import (
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -131,6 +132,10 @@ func (f *protoOptionsFilter) fileDescriptor(
 	fileDescriptor *descriptorpb.FileDescriptorProto,
 	filePath string,
 ) (*descriptorpb.FileDescriptorProto, error) {
+	f.sourcePathRemaps = f.sourcePathRemaps[:0]
+	for key := range f.requiredTypes {
+		delete(f.requiredTypes, key)
+	}
 	if f.requiredTypes == nil {
 		f.requiredTypes = make(map[protoreflect.FullName]struct{})
 	}
@@ -172,49 +177,49 @@ func (f *protoOptionsFilter) fileDescriptor(
 	}
 	// Fix imports.
 	if len(fileImports) != len(fileDescriptor.Dependency) {
-		i := 0
+		indexTo := int32(0)
 		dependencyPath := []int32{fileDependencyTag}
 		dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
 		newFileDescriptor.Dependency = make([]string, 0, len(fileImports))
-		for index, dependency := range fileDescriptor.Dependency {
-			path := append(dependencyPath, int32(index))
+		for indexFrom, dependency := range fileDescriptor.Dependency {
+			path := append(dependencyPath, int32(indexFrom))
 			if _, ok := fileImports[dependency]; ok {
 				newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, dependency)
-				dependencyChanges[index] = int32(i)
-				if i != index {
-					f.sourcePathRemaps.markMoved(path, int32(i))
+				dependencyChanges[indexFrom] = indexTo
+				if indexTo != int32(indexFrom) {
+					f.sourcePathRemaps.markMoved(path, indexTo)
 				}
-				i++
+				indexTo++
 			} else {
 				f.sourcePathRemaps.markDeleted(path)
-				dependencyChanges[index] = -1
+				dependencyChanges[indexFrom] = -1
 			}
 		}
 		publicDependencyPath := []int32{filePublicDependencyTag}
 		newFileDescriptor.PublicDependency = make([]int32, 0, len(fileDescriptor.PublicDependency))
-		for index, publicDependency := range fileDescriptor.PublicDependency {
-			path := append(publicDependencyPath, int32(index))
-			newPublicDependency := dependencyChanges[publicDependency]
-			if newPublicDependency == -1 {
+		for indexFrom, publicDependency := range fileDescriptor.PublicDependency {
+			path := append(publicDependencyPath, int32(indexFrom))
+			indexTo := dependencyChanges[publicDependency]
+			if indexTo == -1 {
 				f.sourcePathRemaps.markDeleted(path)
 			} else {
-				newFileDescriptor.PublicDependency = append(newFileDescriptor.PublicDependency, newPublicDependency)
-				if newPublicDependency != int32(index) {
-					f.sourcePathRemaps.markMoved(path, newPublicDependency)
+				newFileDescriptor.PublicDependency = append(newFileDescriptor.PublicDependency, indexTo)
+				if indexTo != int32(indexFrom) {
+					f.sourcePathRemaps.markMoved(path, indexTo)
 				}
 			}
 		}
 		weakDependencyPath := []int32{fileWeakDependencyTag}
 		newFileDescriptor.WeakDependency = make([]int32, 0, len(fileDescriptor.WeakDependency))
-		for index, weakDependency := range fileDescriptor.WeakDependency {
-			path := append(weakDependencyPath, int32(index))
-			newWeakDependency := dependencyChanges[weakDependency]
-			if newWeakDependency == -1 {
+		for indexFrom, weakDependency := range fileDescriptor.WeakDependency {
+			path := append(weakDependencyPath, int32(indexFrom))
+			indexTo := dependencyChanges[weakDependency]
+			if indexTo == -1 {
 				f.sourcePathRemaps.markDeleted(path)
 			} else {
-				newFileDescriptor.WeakDependency = append(newFileDescriptor.WeakDependency, newWeakDependency)
-				if newWeakDependency != int32(index) {
-					f.sourcePathRemaps.markMoved(path, newWeakDependency)
+				newFileDescriptor.WeakDependency = append(newFileDescriptor.WeakDependency, indexTo)
+				if indexTo != int32(indexFrom) {
+					f.sourcePathRemaps.markMoved(path, indexTo)
 				}
 			}
 		}
@@ -242,11 +247,6 @@ func (f *protoOptionsFilter) fileDescriptor(
 		newFileDescriptor.SourceCodeInfo = &descriptorpb.SourceCodeInfo{
 			Location: newLocations,
 		}
-	}
-	// Cleanup.
-	f.sourcePathRemaps = f.sourcePathRemaps[:0]
-	for key := range f.requiredTypes {
-		delete(f.requiredTypes, key)
 	}
 	return newFileDescriptor, nil
 }
@@ -664,22 +664,26 @@ func remapOptionsDescriptor[T proto.Message](
 	if !options.IsValid() {
 		return fmt.Errorf("invalid options %T", optionsMessage)
 	}
-
-	// Create a mapping of fields to handle extensions. Extensions are not in the descriptor.
-	fields := make(map[int32]protoreflect.FieldDescriptor)
+	// Create a mapping of fieldDescriptors to handle extensions. This is required
+	// because extensions are not in the descriptor.
+	fieldDescriptors := make([]protoreflect.FieldDescriptor, len(sourcePathRemaps))
 	options.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		fields[int32(fd.Number())] = fd
+		if index, found := sort.Find(len(sourcePathRemaps), func(i int) int {
+			return int(fd.Number()) - int(sourcePathRemaps[i].oldIndex)
+		}); found {
+			fieldDescriptors[index] = fd
+		}
 		return true
 	})
-	for _, remapNode := range sourcePathRemaps {
-		fd := fields[remapNode.oldIndex]
-		if fd == nil {
+	for index, remapNode := range sourcePathRemaps {
+		fieldDescriptor := fieldDescriptors[index]
+		if fieldDescriptor == nil {
 			return fmt.Errorf("unexpected field number %d", remapNode.oldIndex)
 		}
 		if remapNode.newIndex != -1 {
 			return fmt.Errorf("unexpected options move %d to %d", remapNode.oldIndex, remapNode.newIndex)
 		}
-		options.Clear(fd)
+		options.Clear(fieldDescriptor)
 	}
 	return nil
 }
@@ -745,5 +749,6 @@ func shallowClone[T proto.Message](src T) T {
 		dm.Set(fd, v)
 		return true
 	})
-	return dm.Interface().(T)
+	value, _ := dm.Interface().(T) // Safe to assert.
+	return value
 }
