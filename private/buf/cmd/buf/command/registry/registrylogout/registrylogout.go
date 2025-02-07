@@ -33,11 +33,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		// Not documenting the first arg (remote) as this is just for testing for now.
-		// TODO: Update when we have self-hosted.
-		Use:   name,
+		Use:   name + " [domain]",
 		Short: `Log out of the Buf Schema Registry`,
-		Long:  fmt.Sprintf(`This command removes any BSR credentials from your %s file`, netrc.Filename),
+		Long:  fmt.Sprintf(`This command removes any BSR credentials from your %s file. The [domain] argument will default to %s if not specified.`, netrc.Filename, bufconnect.DefaultRemote),
 		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
