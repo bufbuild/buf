@@ -126,7 +126,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleData], error) {
 	// This returns the graph with pruned dependencies for the given indexedModuleKeys.
-	// We must resolve the declared dependencies for each ModuleKey.
+	// We must resolve the direct and transitive dependencies for each ModuleKey.
 	graph, err := a.graphProvider.GetGraphForModuleKeys(ctx, slicesext.IndexedToValues(indexedModuleKeys))
 	if err != nil {
 		return nil, err

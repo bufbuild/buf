@@ -161,27 +161,27 @@ func (a *addedModule) ToModule(
 		}
 		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
-	// getDeclaredDepModuleKeysB5 gets the declared dependencies for the specific Module.
+	// getDepModuleKeysB5 gets the dependencies for the specific Module.
 	//
 	// This is needed to calculate the digest for the Module. A Module constructed from this
-	// ModuleData as the target will require all Modules referenced by its DeclaredDepModuleKeys
-	// to be present in the ModuleSet.
+	// ModuleData as the target will require all Modules referenced by its DepModuleKeys to
+	// be present in the ModuleSet.
 	//
 	// Modules that depend on this remote Module will include this Module and its data.
 	// However all the dependencies of the remote Module may not be present in the parents ModuleSet.
 	// As the target Module will use its direct dependencies to resolve the dependencies required.
 	// The digest of the remote Module is however, unchanged. It is calculated based on the contents
-	// and its declared dependencies, not the dependencies of the parent ModuleSet.
+	// and its dependencies, not the dependencies of the parent ModuleSet.
 	//
 	// In contrast, a local Module dependency can be thought of as a ModuleKey at the latest commit.
-	// It will always use the bucket and declared dependencies, which may be resolved recursively
-	// for dependencies on other local Modules, to calculate its digest.
+	// It will always use the bucket and dependencies, which may be resolved recursively for
+	// dependencies on other local Modules, to calculate its digest.
 	// This is the difference between the ModuleData digest calculation and the Module
-	// digest calculation. As remote Modules are required to have all their dependencies
-	// declared as ModuleKeys they can calculate their digest directly from the contents
-	// and declared dependencies, they do not need to recursively resolve digests.
+	// digest calculation. As remote Modules are required to have all their dependencies as
+	// ModuleKeys, they can calculate their digest directly from the contents and dependencies,
+	// without needing to recursively resolve the digest as local Modules do.
 	//
-	// For example, consider the following modules at commits with their declared dependencies:
+	// For example, consider the following modules at commits with their dependencies:
 	// ```
 	// X:C1			(X has no dependencies)
 	// A:C1 -> X:C1		(A depends on X)
@@ -196,23 +196,23 @@ func (a *addedModule) ToModule(
 	// The ModuleSet for B:C1 will include A:C1 and X:C1.
 	// When calculating the digest for B:C1 in the ModuleSet of C:C1, the ModuleSet
 	// ModuleDeps cannot be used to resolve the dependencies of B:C1. It must use
-	// the declared dependencies of B:C1, which are A:C1 and X:C1, not A:C2.
+	// the dependencies of B:C1, which are A:C1 and X:C1, not A:C2.
 	//
 	// This is used for digest calculations. It is not used otherwise.
-	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
+	getDepModuleKeysB5 := func() ([]ModuleKey, error) {
 		moduleData, err := getModuleData()
 		if err != nil {
 			return nil, err
 		}
-		declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
+		depModuleKeys, err := moduleData.DepModuleKeys()
 		if err != nil {
 			return nil, err
 		}
-		if len(declaredDepModuleKeys) == 0 {
+		if len(depModuleKeys) == 0 {
 			return nil, nil
 		}
 		var digestType DigestType
-		for i, moduleKey := range declaredDepModuleKeys {
+		for i, moduleKey := range depModuleKeys {
 			digest, err := moduleKey.Digest()
 			if err != nil {
 				return nil, err
@@ -220,18 +220,18 @@ func (a *addedModule) ToModule(
 			if i == 0 {
 				digestType = digest.Type()
 			} else if digestType != digest.Type() {
-				return nil, syserror.Newf("multiple digest types found in DeclaredDepModuleKeys: %v, %v", digestType, digest.Type())
+				return nil, syserror.Newf("multiple digest types found in DepModuleKeys: %v, %v", digestType, digest.Type())
 			}
 		}
 		switch digestType {
 		case DigestTypeB4:
-			// The declared ModuleKey dependencies for a commit may be stored in v1 buf.lock file,
+			// The ModuleKey dependencies for a commit may be stored in v1 buf.lock file,
 			// in which case they will use B4 digests. B4 digests aren't allowed to be used as
 			// input to the B5 digest calculation, so we perform a call to convert all ModuleKeys
 			// from B4 to B5 by using the commit provider.
-			commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
-			for i, declaredDepModuleKey := range declaredDepModuleKeys {
-				commitKey, err := NewCommitKey(declaredDepModuleKey.FullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
+			commitKeysToFetch := make([]CommitKey, len(depModuleKeys))
+			for i, depModuleKey := range depModuleKeys {
+				commitKey, err := NewCommitKey(depModuleKey.FullName().Registry(), depModuleKey.CommitID(), DigestTypeB5)
 				if err != nil {
 					return nil, err
 				}
@@ -248,8 +248,8 @@ func (a *addedModule) ToModule(
 				return commit.ModuleKey()
 			}), nil
 		case DigestTypeB5:
-			// No need to fetch b5 digests - we've already got them stored in the module's declared dependencies.
-			return declaredDepModuleKeys, nil
+			// No need to fetch b5 digests - we've already got them stored in the module's dependencies.
+			return depModuleKeys, nil
 		default:
 			return nil, syserror.Newf("unsupported digest type: %v", digestType)
 		}
@@ -265,7 +265,7 @@ func (a *addedModule) ToModule(
 		false,
 		getV1BufYAMLObjectData,
 		getV1BufLockObjectData,
-		getDeclaredDepModuleKeysB5,
+		getDepModuleKeysB5,
 		a.remoteTargetPaths,
 		a.remoteTargetExcludePaths,
 		"",

@@ -32,7 +32,7 @@ type ModuleData interface {
 	// ModuleKey contains the ModuleKey that was used to download this ModuleData.
 	//
 	// The Digest from this ModuleKey is used for tamper-proofing. It will be checked against
-	// the actual data downloaded before Bucket() or DeclaredDepModuleKeys() returns.
+	// the actual data downloaded before Bucket() or DepModuleKeys() returns.
 	ModuleKey() ModuleKey
 	// Bucket returns a Bucket of the Module's files.
 	//
@@ -40,15 +40,15 @@ type ModuleData interface {
 	//
 	// This bucket will only contain module files - it will be filtered via NewModuleData.
 	Bucket() (storage.ReadBucket, error)
-	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
+	// DepModuleKeys returns the dependencies for this specific Module.
 	//
-	// The declared dependencies are the same as that would appear in the buf.lock file.
+	// The dependencies are the same as that would appear in the buf.lock file.
 	// These include all direct and transitive dependencies. A Module constructed
 	// from this ModuleData as the target will require all Modules referenced by
-	// its DeclaredDepModuleKeys to be present in the ModuleSet.
+	// its DepModuleKeys to be present in the ModuleSet.
 	//
 	// This is used for digest calculations. It is not used otherwise.
-	DeclaredDepModuleKeys() ([]ModuleKey, error)
+	DepModuleKeys() ([]ModuleKey, error)
 
 	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
 	//
@@ -68,7 +68,7 @@ type ModuleData interface {
 
 // NewModuleData returns a new ModuleData.
 //
-// getBucket and getDeclaredDepModuleKeys are meant to be lazily-loaded functions where possible.
+// getBucket and getDepModuleKeys are meant to be lazily-loaded functions where possible.
 //
 // It is OK for getBucket to return a bucket that has extra files that are not part of the Module, this
 // bucket will be filtered as part of this function.
@@ -76,7 +76,7 @@ func NewModuleData(
 	ctx context.Context,
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
-	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
+	getDepModuleKeys func() ([]ModuleKey, error),
 	getV1BufYAMLObjectData func() (ObjectData, error),
 	getV1BufLockObjectData func() (ObjectData, error),
 ) ModuleData {
@@ -84,7 +84,7 @@ func NewModuleData(
 		ctx,
 		moduleKey,
 		getBucket,
-		getDeclaredDepModuleKeys,
+		getDepModuleKeys,
 		getV1BufYAMLObjectData,
 		getV1BufLockObjectData,
 	)
@@ -93,11 +93,11 @@ func NewModuleData(
 // *** PRIVATE ***
 
 type moduleData struct {
-	moduleKey                ModuleKey
-	getBucket                func() (storage.ReadBucket, error)
-	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
-	getV1BufYAMLObjectData   func() (ObjectData, error)
-	getV1BufLockObjectData   func() (ObjectData, error)
+	moduleKey              ModuleKey
+	getBucket              func() (storage.ReadBucket, error)
+	getDepModuleKeys       func() ([]ModuleKey, error)
+	getV1BufYAMLObjectData func() (ObjectData, error)
+	getV1BufLockObjectData func() (ObjectData, error)
 
 	checkDigest func() error
 }
@@ -106,16 +106,16 @@ func newModuleData(
 	ctx context.Context,
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
-	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
+	getDepModuleKeys func() ([]ModuleKey, error),
 	getV1BufYAMLObjectData func() (ObjectData, error),
 	getV1BufLockObjectData func() (ObjectData, error),
 ) *moduleData {
 	moduleData := &moduleData{
-		moduleKey:                moduleKey,
-		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
-		getDeclaredDepModuleKeys: sync.OnceValues(getDeclaredDepModuleKeys),
-		getV1BufYAMLObjectData:   sync.OnceValues(getV1BufYAMLObjectData),
-		getV1BufLockObjectData:   sync.OnceValues(getV1BufLockObjectData),
+		moduleKey:              moduleKey,
+		getBucket:              getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
+		getDepModuleKeys:       sync.OnceValues(getDepModuleKeys),
+		getV1BufYAMLObjectData: sync.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData: sync.OnceValues(getV1BufLockObjectData),
 	}
 	moduleData.checkDigest = sync.OnceValue(
 		func() error {
@@ -147,15 +147,15 @@ func newModuleData(
 				}
 			case DigestTypeB5:
 				// Call unexported func instead of exported method to avoid deadlocking on checking the digest again.
-				declaredDepModuleKeys, err := moduleData.getDeclaredDepModuleKeys()
+				depModuleKeys, err := moduleData.getDepModuleKeys()
 				if err != nil {
 					return err
 				}
-				// The B5 digest is calculated based on the declared dependencies.
+				// The B5 digest is calculated based on the dependencies.
 				// Dependencies are not required to be resolved to a Module to calculate the digest.
-				// Each declared dependent ModuleKey is a reference to a specific commit of a module
+				// Each dependent ModuleKey is a reference to a specific commit of a module
 				// that includes the dependencies expected Digest.
-				actualDigest, err = getB5DigestForBucketAndDepModuleKeys(ctx, bucket, declaredDepModuleKeys)
+				actualDigest, err = getB5DigestForBucketAndDepModuleKeys(ctx, bucket, depModuleKeys)
 				if err != nil {
 					return err
 				}
@@ -185,18 +185,17 @@ func (m *moduleData) Bucket() (storage.ReadBucket, error) {
 	return m.getBucket()
 }
 
-func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
-	// Do we need to tamper-proof when getting declared deps? Probably yes - this is
-	// data that could be tampered with.
+func (m *moduleData) DepModuleKeys() ([]ModuleKey, error) {
+	// Do we need to tamper-proof when getting deps? Probably yes - this is data that could be tampered with.
 	//
-	// Note that doing so kills some of our lazy-loading, as we call DeclaredDepModuleKeys
+	// Note that doing so kills some of our lazy-loading, as we call DepModuleKeys
 	// in ModuleSetBuilder right away. However, we still do the lazy-loading here, in the case
 	// where ModuleData is loaded outside of a ModuleSetBuilder and users may defer calling this
 	// function if it is not needed.
 	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
-	return m.getDeclaredDepModuleKeys()
+	return m.getDepModuleKeys()
 }
 
 func (m *moduleData) V1Beta1OrV1BufYAMLObjectData() (ObjectData, error) {
