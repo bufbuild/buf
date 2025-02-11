@@ -167,7 +167,7 @@ func ReadConfig(container NameContainer, value interface{}) error {
 		if err != nil {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
 		}
-		if err := encoding.UnmarshalYAMLNonStrict(data, value); err != nil {
+		if err := encoding.UnmarshalYAMLStrict(data, value); err != nil {
 			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
 		}
 	}
