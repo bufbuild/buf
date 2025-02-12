@@ -155,13 +155,13 @@ func (f *protoOptionsFilter) fileDescriptor(
 	}
 
 	// Recursively apply the source path remaps.
-	newFileDescriptor := shallowClone(fileDescriptor)
-	if err := remapFileDescriptor(
-		newFileDescriptor,
-		f.sourcePathRemaps,
-	); err != nil {
+	fileDescriptorMessage := fileDescriptor.ProtoReflect()
+	newFileDescriptorMessage, err := remapMessageReflect(fileDescriptorMessage, f.sourcePathRemaps)
+	if err != nil {
 		return nil, err
 	}
+	newFileDescriptor, _ := newFileDescriptorMessage.Interface().(*descriptorpb.FileDescriptorProto)
+
 	// Convert the required types to imports.
 	fileImports := make(map[string]struct{}, len(fileDescriptor.Dependency))
 	for requiredType := range f.requiredTypes {
@@ -357,398 +357,147 @@ func (f *protoOptionsFilter) addFieldType(field *descriptorpb.FieldDescriptorPro
 	return nil
 }
 
-// TODO: rewrite using protoreflect.
-func remapFileDescriptor(
-	fileDescriptor *descriptorpb.FileDescriptorProto,
+func remapMessageReflect(
+	message protoreflect.Message,
 	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case fileDependencyTag:
-			// Dependencies are handled after message remaps.
-			return fmt.Errorf("unexpected dependency move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-		case filePublicDependencyTag:
-			return fmt.Errorf("unexpected public dependency move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-		case fileWeakDependencyTag:
-			return fmt.Errorf("unexpected weak dependency move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-		case fileMessagesTag:
-			if err := remapSlice(
-				&fileDescriptor.MessageType,
-				remapNode,
-				remapMessageDescriptor,
-			); err != nil {
-				return err
-			}
-		case fileEnumsTag:
-			if err := remapSlice(
-				&fileDescriptor.EnumType,
-				remapNode,
-				remapEnumDescriptor,
-			); err != nil {
-				return err
-			}
-		case fileServicesTag:
-			if err := remapSlice(
-				&fileDescriptor.Service,
-				remapNode,
-				remapServiceDescriptor,
-			); err != nil {
-				return err
-			}
-		case fileExtensionsTag:
-			if err := remapSlice(
-				&fileDescriptor.Extension,
-				remapNode,
-				remapFieldDescriptor,
-			); err != nil {
-				return err
-			}
-		case fileOptionsTag:
-			if err := remapMessage(
-				&fileDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected file index %d", remapNode.oldIndex)
-		}
+) (protoreflect.Message, error) {
+	if len(sourcePathRemaps) == 0 {
+		return message, nil
 	}
-	return nil
-}
-
-func remapMessageDescriptor(
-	messageDescriptor *descriptorpb.DescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case messageFieldsTag:
-			if err := remapSlice(
-				&messageDescriptor.Field,
-				remapNode,
-				remapFieldDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageNestedMessagesTag:
-			if err := remapSlice(
-				&messageDescriptor.NestedType,
-				remapNode,
-				remapMessageDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageEnumsTag:
-			if err := remapSlice(
-				&messageDescriptor.EnumType,
-				remapNode,
-				remapEnumDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageExtensionsTag:
-			if err := remapSlice(
-				&messageDescriptor.Extension,
-				remapNode,
-				remapFieldDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageOptionsTag:
-			if err := remapMessage(
-				&messageDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageOneofsTag:
-			if err := remapSlice(
-				&messageDescriptor.OneofDecl,
-				remapNode,
-				remapOneofDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageExtensionRangesTag:
-			if err := remapSlice(
-				&messageDescriptor.ExtensionRange,
-				remapNode,
-				remapExtensionRangeDescriptor,
-			); err != nil {
-				return err
-			}
-		case messageReservedRangesTag:
-			// TODO: handle reserved ranges tag.
-			return fmt.Errorf("unexpected reserved tags move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-		case messageReservedNamesTag:
-			// TODO: handle reserved names.
-			return fmt.Errorf("unexpected reserved names move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-		default:
-			return fmt.Errorf("unexpected message index %d", remapNode.oldIndex)
-		}
+	if !message.IsValid() {
+		return nil, fmt.Errorf("invalid message %T", message)
 	}
-	return nil
-}
-
-func remapFieldDescriptor(
-	fieldDescriptor *descriptorpb.FieldDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case fieldOptionsTag:
-			if err := remapMessage(
-				&fieldDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected field index %d", remapNode.oldIndex)
-		}
+	fieldDescriptors, err := getFieldDescriptors(message, sourcePathRemaps)
+	if err != nil {
+		return nil, err
 	}
-	return nil
-}
-
-func remapOneofDescriptor(
-	oneofDescriptor *descriptorpb.OneofDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case oneofOptionsTag:
-			if err := remapMessage(
-				&oneofDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected oneof index %d", remapNode.oldIndex)
-		}
-	}
-	return nil
-}
-
-func remapEnumDescriptor(
-	enumDescriptor *descriptorpb.EnumDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case enumValuesTag:
-			if err := remapSlice(
-				&enumDescriptor.Value,
-				remapNode,
-				remapEnumValueDescriptor,
-			); err != nil {
-				return err
-			}
-		case enumOptionsTag:
-			if err := remapMessage(
-				&enumDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected enum index %d", remapNode.oldIndex)
-		}
-	}
-	return nil
-}
-
-func remapEnumValueDescriptor(
-	enumValueDescriptor *descriptorpb.EnumValueDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case enumValueOptionsTag:
-			if err := remapMessage(
-				&enumValueDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected enum value index %d", remapNode.oldIndex)
-		}
-	}
-	return nil
-}
-
-func remapExtensionRangeDescriptor(
-	extensionRangeDescriptor *descriptorpb.DescriptorProto_ExtensionRange,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case extensionRangeOptionsTag:
-			if err := remapMessage(
-				&extensionRangeDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected extension range index %d", remapNode.oldIndex)
-		}
-	}
-	return nil
-}
-
-func remapServiceDescriptor(
-	serviceDescriptor *descriptorpb.ServiceDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case serviceMethodsTag:
-			if err := remapSlice(
-				&serviceDescriptor.Method,
-				remapNode,
-				remapMethodDescriptor,
-			); err != nil {
-				return err
-			}
-		case serviceOptionsTag:
-			if err := remapMessage(
-				&serviceDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected service index %d", remapNode.oldIndex)
-		}
-	}
-	return nil
-}
-
-func remapMethodDescriptor(
-	methodDescriptor *descriptorpb.MethodDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	for _, remapNode := range sourcePathRemaps {
-		switch remapNode.oldIndex {
-		case methodOptionsTag:
-			if err := remapMessage(
-				&methodDescriptor.Options,
-				remapNode,
-				remapOptionsDescriptor,
-			); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected method index %d", remapNode.oldIndex)
-		}
-	}
-	return nil
-}
-
-func remapOptionsDescriptor[T proto.Message](
-	optionsMessage T,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	options := optionsMessage.ProtoReflect()
-	if !options.IsValid() {
-		return fmt.Errorf("invalid options %T", optionsMessage)
-	}
-	// Create a mapping of fieldDescriptors to handle extensions. This is required
-	// because extensions are not in the descriptor.
-	fieldDescriptors := make([]protoreflect.FieldDescriptor, len(sourcePathRemaps))
-	options.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		if index, found := sort.Find(len(sourcePathRemaps), func(i int) int {
-			return int(fd.Number()) - int(sourcePathRemaps[i].oldIndex)
-		}); found {
-			fieldDescriptors[index] = fd
-		}
-		return true
-	})
+	message = shallowCloneReflect(message)
 	for index, remapNode := range sourcePathRemaps {
 		fieldDescriptor := fieldDescriptors[index]
 		if fieldDescriptor == nil {
-			return fmt.Errorf("unexpected field number %d", remapNode.oldIndex)
+			return nil, fmt.Errorf("missing field descriptor %d on type %s", remapNode.oldIndex, message.Descriptor().FullName())
 		}
-		if remapNode.newIndex != -1 {
-			return fmt.Errorf("unexpected options move %d to %d", remapNode.oldIndex, remapNode.newIndex)
+		if remapNode.newIndex == -1 {
+			message.Clear(fieldDescriptor)
+			continue
+		} else if remapNode.newIndex != remapNode.oldIndex {
+			return nil, fmt.Errorf("unexpected field move %d to %d", remapNode.oldIndex, remapNode.newIndex)
 		}
-		options.Clear(fieldDescriptor)
+		value := message.Get(fieldDescriptor)
+		switch {
+		case fieldDescriptor.IsList():
+			if len(remapNode.children) == 0 {
+				break
+			}
+			newList := message.NewField(fieldDescriptor).List()
+			if err := remapListReflect(newList, value.List(), remapNode.children); err != nil {
+				return nil, err
+			}
+			value = protoreflect.ValueOfList(newList)
+		case fieldDescriptor.IsMap():
+			panic("map fields not yet supported")
+		default:
+			fieldMessage, err := remapMessageReflect(value.Message(), remapNode.children)
+			if err != nil {
+				return nil, err
+			}
+			value = protoreflect.ValueOfMessage(fieldMessage)
+		}
+		message.Set(fieldDescriptor, value)
+	}
+	return message, nil
+}
+
+func remapListReflect(
+	dstList protoreflect.List,
+	srcList protoreflect.List,
+	sourcePathRemaps sourcePathsRemapTrie,
+) error {
+	if len(sourcePathRemaps) == 0 {
+		return nil
+	}
+	toIndex := 0
+	sourcePathIndex := 0
+	for fromIndex := 0; fromIndex < srcList.Len(); fromIndex++ {
+		var remapNode *sourcePathsRemapTrieNode
+		for ; sourcePathIndex < len(sourcePathRemaps); sourcePathIndex++ {
+			nextRemapNode := sourcePathRemaps[sourcePathIndex]
+			if index := int(nextRemapNode.oldIndex); index > fromIndex {
+				break
+			} else if index == fromIndex {
+				remapNode = nextRemapNode
+				break
+			}
+		}
+		value := srcList.Get(fromIndex)
+		if remapNode == nil {
+			dstList.Append(value)
+			toIndex++
+			continue
+		}
+		if remapNode.newIndex == -1 {
+			continue
+		}
+		if fromIndex != int(remapNode.oldIndex) || toIndex != int(remapNode.newIndex) {
+			return fmt.Errorf("unexpected list move %d to %d, expected %d to %d", remapNode.oldIndex, remapNode.newIndex, fromIndex, toIndex)
+		}
+		// If no children, the value is unchanged.
+		if len(remapNode.children) > 0 {
+			// Must be a list of messages to have children.
+			indexMessage, err := remapMessageReflect(value.Message(), remapNode.children)
+			if err != nil {
+				return err
+			}
+			value = protoreflect.ValueOfMessage(indexMessage)
+		}
+		dstList.Append(value)
+		toIndex++
 	}
 	return nil
 }
 
-func remapMessage[T proto.Message](
-	ptr *T,
-	remapNode *sourcePathsRemapTrieNode,
-	updateFn func(T, sourcePathsRemapTrie) error,
-) error {
-	var zero T
-	if remapNode.newIndex == -1 {
-		// Remove the message.
-		*ptr = zero
-		return nil
-	}
-	message := shallowClone(*ptr)
-	if !message.ProtoReflect().IsValid() {
-		*ptr = zero
-		return nil // Nothing to update.
-	}
-	if remapNode.oldIndex != remapNode.newIndex {
-		return fmt.Errorf("unexpected message move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-	}
-	if err := updateFn(message, remapNode.children); err != nil {
-		return err
-	}
-	*ptr = message
-	return nil
-}
-
-func remapSlice[T proto.Message](
-	slice *[]T,
-	remapNode *sourcePathsRemapTrieNode,
-	updateFn func(T, sourcePathsRemapTrie) error,
-) error {
-	if remapNode.newIndex == -1 {
-		// Remove the slice.
-		*slice = nil
-		return nil
-	}
-	*slice = slices.Clone(*slice) // Shallow clone
-	for _, child := range remapNode.children {
-		if child.oldIndex != child.newIndex {
-			// TODO: add support for deleting and moving elements.
-			// If children are present, the element must be copied.
-			// Otherwise the element can only be moved.
-			return fmt.Errorf("unexpected child slice move %d to %d", child.oldIndex, child.newIndex)
+func getFieldDescriptors(
+	message protoreflect.Message,
+	sourcePathRemaps sourcePathsRemapTrie,
+) ([]protoreflect.FieldDescriptor, error) {
+	var hasExtension bool
+	fieldDescriptors := make([]protoreflect.FieldDescriptor, len(sourcePathRemaps))
+	fields := message.Descriptor().Fields()
+	for index, remapNode := range sourcePathRemaps {
+		fieldDescriptor := fields.ByNumber(protoreflect.FieldNumber(remapNode.oldIndex))
+		if fieldDescriptor == nil {
+			hasExtension = true
+		} else {
+			fieldDescriptors[index] = fieldDescriptor
 		}
-		index := child.oldIndex
-		item := shallowClone((*slice)[index])
-		if err := updateFn(item, child.children); err != nil {
-			return err
-		}
-		(*slice)[index] = item
 	}
-	return nil
+	if !hasExtension {
+		return fieldDescriptors, nil
+	}
+	message.Range(func(fieldDescriptor protoreflect.FieldDescriptor, _ protoreflect.Value) bool {
+		if !fieldDescriptor.IsExtension() {
+			return true // Skip non-extension fields.
+		}
+		if index, found := sort.Find(len(sourcePathRemaps), func(i int) int {
+			return int(fieldDescriptor.Number()) - int(sourcePathRemaps[i].oldIndex)
+		}); found {
+			fieldDescriptors[index] = fieldDescriptor
+		}
+		return true
+	})
+	return fieldDescriptors, nil
 }
 
 func shallowClone[T proto.Message](src T) T {
-	sm := src.ProtoReflect()
-	dm := sm.New()
-	sm.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		dm.Set(fd, v)
+	value, _ := shallowCloneReflect(src.ProtoReflect()).Interface().(T) // Safe to assert.
+	return value
+}
+
+func shallowCloneReflect(src protoreflect.Message) protoreflect.Message {
+	dst := src.New()
+	src.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		dst.Set(fd, v)
 		return true
 	})
-	value, _ := dm.Interface().(T) // Safe to assert.
-	return value
+	return dst
 }
