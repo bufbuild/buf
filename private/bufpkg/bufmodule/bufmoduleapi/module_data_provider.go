@@ -172,7 +172,6 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 					return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
 				},
 			)
-
 			universalProtoContent, ok := commitIDToUniversalProtoContent[moduleKey.CommitID()]
 			if !ok {
 				// We only care to get content for a subset of the graph. If we have something
