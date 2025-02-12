@@ -149,62 +149,44 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 		return nil, err
 	}
 	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(indexedModuleKeys))
-	if err := graph.WalkNodes(
-		func(
-			moduleKey bufmodule.ModuleKey,
-			_ []bufmodule.ModuleKey,
-			_ []bufmodule.ModuleKey,
-		) error {
-			// TopoSort will get us both the direct and transitive dependencies for the key.
-			//
-			// The outgoing edge list is just the direct dependencies.
-			//
-			// There is definitely a better way to do this in one pass for all commits with
-			// memoization - this is algorithmically bad.
-			depModuleKeys, err := graph.TopoSort(bufmodule.ModuleKeyToRegistryCommitID(moduleKey))
-			if err != nil {
-				return err
-			}
-			depModuleKeys = depModuleKeys[:len(depModuleKeys)-1]
-			sort.Slice(
-				depModuleKeys,
-				func(i int, j int) bool {
-					return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
-				},
-			)
+	for _, indexedModuleKey := range indexedModuleKeys {
+		moduleKey := indexedModuleKey.Value
+		// TopoSort will get us both the direct and transitive dependencies for the key.
+		depModuleKeys, err := graph.TopoSort(bufmodule.ModuleKeyToRegistryCommitID(moduleKey))
+		if err != nil {
+			return nil, err
+		}
+		// Remove this moduleKey from the depModuleKeys.
+		depModuleKeys = depModuleKeys[:len(depModuleKeys)-1]
+		sort.Slice(
+			depModuleKeys,
+			func(i int, j int) bool {
+				return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
+			},
+		)
 
-			universalProtoContent, ok := commitIDToUniversalProtoContent[moduleKey.CommitID()]
-			if !ok {
-				// We only care to get content for a subset of the graph. If we have something
-				// in the graph without content, we just skip it.
-				return nil
-			}
-			indexedModuleKey, ok := commitIDToIndexedModuleKey[moduleKey.CommitID()]
-			if !ok {
-				return syserror.Newf("could not find indexed ModuleKey for commit ID %q", uuidutil.ToDashless(moduleKey.CommitID()))
-			}
-			indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
-				Value: bufmodule.NewModuleData(
-					ctx,
-					moduleKey,
-					func() (storage.ReadBucket, error) {
-						return universalProtoFilesToBucket(universalProtoContent.Files)
-					},
-					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
-					func() (bufmodule.ObjectData, error) {
-						return universalProtoFileToObjectData(universalProtoContent.V1BufYAMLFile)
-					},
-					func() (bufmodule.ObjectData, error) {
-						return universalProtoFileToObjectData(universalProtoContent.V1BufLockFile)
-					},
-				),
-				Index: indexedModuleKey.Index,
-			}
-			indexedModuleDatas = append(indexedModuleDatas, indexedModuleData)
-			return nil
-		},
-	); err != nil {
-		return nil, err
+		universalProtoContent, ok := commitIDToUniversalProtoContent[moduleKey.CommitID()]
+		if !ok {
+			return nil, syserror.Newf("could not find universalProtoContent for commit ID %q", moduleKey.CommitID())
+		}
+		indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
+			Value: bufmodule.NewModuleData(
+				ctx,
+				moduleKey,
+				func() (storage.ReadBucket, error) {
+					return universalProtoFilesToBucket(universalProtoContent.Files)
+				},
+				func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
+				func() (bufmodule.ObjectData, error) {
+					return universalProtoFileToObjectData(universalProtoContent.V1BufYAMLFile)
+				},
+				func() (bufmodule.ObjectData, error) {
+					return universalProtoFileToObjectData(universalProtoContent.V1BufLockFile)
+				},
+			),
+			Index: indexedModuleKey.Index,
+		}
+		indexedModuleDatas = append(indexedModuleDatas, indexedModuleData)
 	}
 	return indexedModuleDatas, nil
 }
