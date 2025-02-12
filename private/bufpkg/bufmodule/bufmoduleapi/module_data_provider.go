@@ -167,7 +167,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 
 		universalProtoContent, ok := commitIDToUniversalProtoContent[moduleKey.CommitID()]
 		if !ok {
-			return nil, syserror.Newf("could not find indexed universalProtoContent for commit ID %q", moduleKey.CommitID())
+			return nil, syserror.Newf("could not find universalProtoContent for commit ID %q", moduleKey.CommitID())
 		}
 		indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
 			Value: bufmodule.NewModuleData(
