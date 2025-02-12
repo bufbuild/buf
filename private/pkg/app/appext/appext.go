@@ -167,6 +167,25 @@ func ReadConfig(container NameContainer, value interface{}) error {
 		if err != nil {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
 		}
+		if err := encoding.UnmarshalYAMLStrict(data, value); err != nil {
+			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
+		}
+	}
+	return nil
+}
+
+// ReadConfigNonStrict reads the configuration from the YAML configuration file config.yaml
+// in the configuration directory, ignoring any unknown properties.
+//
+// If the file does not exist, this is a no-op.
+// The value should be a pointer to unmarshal into.
+func ReadConfigNonStrict(container NameContainer, value interface{}) error {
+	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
+	data, err := os.ReadFile(configFilePath)
+	if !errors.Is(err, os.ErrNotExist) {
+		if err != nil {
+			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
+		}
 		if err := encoding.UnmarshalYAMLNonStrict(data, value); err != nil {
 			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
 		}
