@@ -155,12 +155,6 @@ func (f *protoOptionsFilter) fileDescriptor(
 	}
 
 	// Recursively apply the source path remaps.
-	fileDescriptorMessage := fileDescriptor.ProtoReflect()
-	newFileDescriptorMessage, err := remapMessageReflect(fileDescriptorMessage, f.sourcePathRemaps)
-	if err != nil {
-		return nil, err
-	}
-	newFileDescriptor, _ := newFileDescriptorMessage.Interface().(*descriptorpb.FileDescriptorProto)
 
 	// Convert the required types to imports.
 	fileImports := make(map[string]struct{}, len(fileDescriptor.Dependency))
@@ -180,11 +174,9 @@ func (f *protoOptionsFilter) fileDescriptor(
 		indexTo := int32(0)
 		dependencyPath := []int32{fileDependencyTag}
 		dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
-		newFileDescriptor.Dependency = make([]string, 0, len(fileImports))
 		for indexFrom, dependency := range fileDescriptor.Dependency {
 			path := append(dependencyPath, int32(indexFrom))
 			if _, ok := fileImports[dependency]; ok {
-				newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, dependency)
 				dependencyChanges[indexFrom] = indexTo
 				if indexTo != int32(indexFrom) {
 					f.sourcePathRemaps.markMoved(path, indexTo)
@@ -196,35 +188,33 @@ func (f *protoOptionsFilter) fileDescriptor(
 			}
 		}
 		publicDependencyPath := []int32{filePublicDependencyTag}
-		newFileDescriptor.PublicDependency = make([]int32, 0, len(fileDescriptor.PublicDependency))
 		for indexFrom, publicDependency := range fileDescriptor.PublicDependency {
 			path := append(publicDependencyPath, int32(indexFrom))
 			indexTo := dependencyChanges[publicDependency]
 			if indexTo == -1 {
 				f.sourcePathRemaps.markDeleted(path)
-			} else {
-				newFileDescriptor.PublicDependency = append(newFileDescriptor.PublicDependency, indexTo)
-				if indexTo != int32(indexFrom) {
-					f.sourcePathRemaps.markMoved(path, indexTo)
-				}
+			} else if indexTo != int32(indexFrom) {
+				f.sourcePathRemaps.markMoved(path, indexTo)
 			}
 		}
 		weakDependencyPath := []int32{fileWeakDependencyTag}
-		newFileDescriptor.WeakDependency = make([]int32, 0, len(fileDescriptor.WeakDependency))
 		for indexFrom, weakDependency := range fileDescriptor.WeakDependency {
 			path := append(weakDependencyPath, int32(indexFrom))
 			indexTo := dependencyChanges[weakDependency]
 			if indexTo == -1 {
 				f.sourcePathRemaps.markDeleted(path)
-			} else {
-				newFileDescriptor.WeakDependency = append(newFileDescriptor.WeakDependency, indexTo)
-				if indexTo != int32(indexFrom) {
-					f.sourcePathRemaps.markMoved(path, indexTo)
-				}
+			} else if indexTo != int32(indexFrom) {
+				f.sourcePathRemaps.markMoved(path, indexTo)
 			}
 		}
 	}
 	// Remap the source code info.
+	fileDescriptorMessage := fileDescriptor.ProtoReflect()
+	newFileDescriptorMessage, err := remapMessageReflect(fileDescriptorMessage, f.sourcePathRemaps)
+	if err != nil {
+		return nil, err
+	}
+	newFileDescriptor, _ := newFileDescriptorMessage.Interface().(*descriptorpb.FileDescriptorProto)
 	if locations := fileDescriptor.SourceCodeInfo.GetLocation(); len(locations) > 0 {
 		newLocations := make([]*descriptorpb.SourceCodeInfo_Location, 0, len(locations))
 		for _, location := range locations {
