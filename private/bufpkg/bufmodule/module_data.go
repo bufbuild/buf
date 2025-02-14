@@ -152,9 +152,8 @@ func newModuleData(
 					return err
 				}
 				// The B5 digest is calculated based on the dependencies.
-				// Dependencies are not required to be resolved to a Module to calculate the digest.
-				// Each dependent ModuleKey is a reference to a specific commit of a module
-				// that includes the dependencies expected Digest.
+				// The dependencies are not required to be resolved to a Module to calculate this Digest.
+				// Each ModuleKey includes the expected Digest which is validated when loading that dependencies ModuleData, if needed.
 				actualDigest, err = getB5DigestForBucketAndDepModuleKeys(ctx, bucket, depModuleKeys)
 				if err != nil {
 					return err
