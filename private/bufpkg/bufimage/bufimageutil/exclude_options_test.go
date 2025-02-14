@@ -47,75 +47,81 @@ func TestExcludeOptions(t *testing.T) {
 	t.Run("ExcludeMessage", func(t *testing.T) {
 		t.Parallel()
 		testExcludeOptions(
-			t, "testdata/excludeoptions",
-			"message_foo", "message_bar", "message_baz",
+			t, "testdata/excludeoptions", WithExcludeOptions(
+				"message_foo", "message_bar", "message_baz",
+			),
 		)
 	})
 	t.Run("ExcludeFoo", func(t *testing.T) {
 		t.Parallel()
 		testExcludeOptions(
-			t, "testdata/excludeoptions",
-			"message_foo",
-			"field_foo",
-			"oneof_foo",
-			"enum_foo",
-			"enum_value_foo",
-			"service_foo",
-			"method_foo",
-			"UsedOption.file_foo",
+			t, "testdata/excludeoptions", WithExcludeOptions(
+				"message_foo",
+				"field_foo",
+				"oneof_foo",
+				"enum_foo",
+				"enum_value_foo",
+				"service_foo",
+				"method_foo",
+				"UsedOption.file_foo",
+			),
 		)
 	})
 	t.Run("OnlyFile", func(t *testing.T) {
 		t.Parallel()
 		testExcludeOptions(
-			t, "testdata/excludeoptions",
-			"message_foo", "message_bar", "message_baz",
-			"field_foo", "field_bar", "field_baz",
-			"oneof_foo", "oneof_bar", "oneof_baz",
-			"enum_foo", "enum_bar", "enum_baz",
-			"enum_value_foo", "enum_value_bar", "enum_value_baz",
-			"service_foo", "service_bar", "service_baz",
-			"method_foo", "method_bar", "method_baz",
+			t, "testdata/excludeoptions", WithExcludeOptions(
+				"message_foo", "message_bar", "message_baz",
+				"field_foo", "field_bar", "field_baz",
+				"oneof_foo", "oneof_bar", "oneof_baz",
+				"enum_foo", "enum_bar", "enum_baz",
+				"enum_value_foo", "enum_value_bar", "enum_value_baz",
+				"service_foo", "service_bar", "service_baz",
+				"method_foo", "method_bar", "method_baz",
+			),
 		)
 	})
 	t.Run("OnlyOneOf", func(t *testing.T) {
 		t.Parallel()
 		testExcludeOptions(
-			t, "testdata/excludeoptions",
-			"message_foo", "message_bar", "message_baz",
-			"field_foo", "field_bar", "field_baz",
-			"enum_foo", "enum_bar", "enum_baz",
-			"enum_value_foo", "enum_value_bar", "enum_value_baz",
-			"service_foo", "service_bar", "service_baz",
-			"method_foo", "method_bar", "method_baz",
-			"UsedOption.file_foo", "UsedOption.file_bar", "UsedOption.file_baz",
+			t, "testdata/excludeoptions", WithExcludeOptions(
+				"message_foo", "message_bar", "message_baz",
+				"field_foo", "field_bar", "field_baz",
+				"enum_foo", "enum_bar", "enum_baz",
+				"enum_value_foo", "enum_value_bar", "enum_value_baz",
+				"service_foo", "service_bar", "service_baz",
+				"method_foo", "method_bar", "method_baz",
+				"UsedOption.file_foo", "UsedOption.file_bar", "UsedOption.file_baz",
+			),
 		)
 	})
 	t.Run("OnlyEnumValue", func(t *testing.T) {
 		t.Parallel()
 		testExcludeOptions(
-			t, "testdata/excludeoptions",
-			"message_foo", "message_bar", "message_baz",
-			"field_foo", "field_bar", "field_baz",
-			"oneof_foo", "oneof_bar", "oneof_baz",
-			"enum_foo", "enum_bar", "enum_baz",
-			"service_foo", "service_bar", "service_baz",
-			"method_foo", "method_bar", "method_baz",
-			"UsedOption.file_foo", "UsedOption.file_bar", "UsedOption.file_baz",
+			t, "testdata/excludeoptions", WithExcludeOptions(
+				"message_foo", "message_bar", "message_baz",
+				"field_foo", "field_bar", "field_baz",
+				"oneof_foo", "oneof_bar", "oneof_baz",
+				"enum_foo", "enum_bar", "enum_baz",
+				"service_foo", "service_bar", "service_baz",
+				"method_foo", "method_bar", "method_baz",
+				"UsedOption.file_foo", "UsedOption.file_bar", "UsedOption.file_baz",
+			),
 		)
 	})
 	t.Run("ExcludeAll", func(t *testing.T) {
 		t.Parallel()
 		testExcludeOptions(
-			t, "testdata/excludeoptions",
-			"message_foo", "message_bar", "message_baz",
-			"field_foo", "field_bar", "field_baz",
-			"oneof_foo", "oneof_bar", "oneof_baz",
-			"enum_foo", "enum_bar", "enum_baz",
-			"enum_value_foo", "enum_value_bar", "enum_value_baz",
-			"service_foo", "service_bar", "service_baz",
-			"method_foo", "method_bar", "method_baz",
-			"UsedOption.file_foo", "UsedOption.file_bar", "UsedOption.file_baz",
+			t, "testdata/excludeoptions", WithExcludeOptions(
+				"message_foo", "message_bar", "message_baz",
+				"field_foo", "field_bar", "field_baz",
+				"oneof_foo", "oneof_bar", "oneof_baz",
+				"enum_foo", "enum_bar", "enum_baz",
+				"enum_value_foo", "enum_value_bar", "enum_value_baz",
+				"service_foo", "service_bar", "service_baz",
+				"method_foo", "method_bar", "method_baz",
+				"UsedOption.file_foo", "UsedOption.file_bar", "UsedOption.file_baz",
+			),
 		)
 	})
 }
@@ -155,25 +161,63 @@ func TestExcludeOptionImports(t *testing.T) {
 	})
 	t.Run("ExcludeFoo", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, "message_foo")
+		testExcludeOptionsForImage(t, bucket, image, WithExcludeOptions("message_foo"))
 	})
 	t.Run("ExcludeFooBar", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, "message_foo", "message_bar")
+		testExcludeOptionsForImage(t, bucket, image, WithExcludeOptions("message_foo", "message_bar"))
 	})
 	t.Run("ExcludeBar", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, "message_bar")
+		testExcludeOptionsForImage(t, bucket, image, WithExcludeOptions("message_bar"))
 	})
 }
 
-func testExcludeOptions(t *testing.T, testdataDir string, options ...string) {
+func TestFilterTypes(t *testing.T) {
+	t.Parallel()
+
+	testdataDir := "testdata/nesting"
+	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
+	require.NoError(t, err)
+	testModuleData := []bufmoduletesting.ModuleData{
+		{
+			Bucket: storage.FilterReadBucket(bucket, storage.MatchPathEqual("a.proto")),
+		},
+		{
+			Bucket:      storage.FilterReadBucket(bucket, storage.MatchPathEqual("options.proto")),
+			NotTargeted: true,
+		},
+	}
+	moduleSet, err := bufmoduletesting.NewModuleSet(testModuleData...)
+	require.NoError(t, err)
+
+	// Safe to filter the image concurrently as its not being modified.
+	image, err := bufimage.BuildImage(
+		context.Background(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
+
+	t.Run("ExcludeBar", func(t *testing.T) {
+		t.Parallel()
+		testExcludeOptionsForImage(t, bucket, image, WithExcludeTypes("pkg.Bar"))
+	})
+	t.Run("IncludeBar", func(t *testing.T) {
+		t.Parallel()
+		testExcludeOptionsForImage(t, bucket, image, WithIncludeTypes("pkg.Bar"))
+	})
+
+}
+
+func testExcludeOptions(t *testing.T, testdataDir string, options ...ImageFilterOption) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	require.NoError(t, err)
 	testExcludeOptionsForModuleData(t, bucket, nil, options...)
 }
 
-func testExcludeOptionsForModuleData(t *testing.T, bucket storage.ReadWriteBucket, moduleData []bufmoduletesting.ModuleData, options ...string) {
+func testExcludeOptionsForModuleData(t *testing.T, bucket storage.ReadWriteBucket, moduleData []bufmoduletesting.ModuleData, options ...ImageFilterOption) {
 	ctx := context.Background()
 	if len(moduleData) == 0 {
 		moduleData = append(moduleData, bufmoduletesting.ModuleData{
@@ -194,9 +238,9 @@ func testExcludeOptionsForModuleData(t *testing.T, bucket storage.ReadWriteBucke
 	testExcludeOptionsForImage(t, bucket, image, options...)
 }
 
-func testExcludeOptionsForImage(t *testing.T, bucket storage.ReadWriteBucket, image bufimage.Image, options ...string) {
+func testExcludeOptionsForImage(t *testing.T, bucket storage.ReadWriteBucket, image bufimage.Image, options ...ImageFilterOption) {
 	ctx := context.Background()
-	filteredImage, err := ExcludeOptions(image, options...)
+	filteredImage, err := FilterImage(image, options...)
 	require.NoError(t, err)
 
 	files, err := protodesc.NewFiles(&descriptorpb.FileDescriptorSet{

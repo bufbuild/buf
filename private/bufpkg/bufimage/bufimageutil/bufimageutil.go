@@ -23,8 +23,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/protoplugin/protopluginutil"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -96,6 +94,53 @@ func WithExcludeKnownExtensions() ImageFilterOption {
 func WithAllowFilterByImportedType() ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		opts.allowImportedTypes = true
+	}
+}
+
+func WithIncludeTypes(typeNames ...string) ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		if opts.includeTypes == nil {
+			opts.includeTypes = make(map[string]struct{}, len(typeNames))
+		}
+		for _, typeName := range typeNames {
+			opts.includeTypes[typeName] = struct{}{}
+		}
+	}
+}
+
+func WithExcludeTypes(typeNames ...string) ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		if opts.excludeTypes == nil {
+			opts.excludeTypes = make(map[string]struct{}, len(typeNames))
+		}
+		for _, typeName := range typeNames {
+			opts.excludeTypes[typeName] = struct{}{}
+		}
+		//opts.excludeTypes = append(opts.excludeTypes, typeNames...)
+	}
+}
+
+func WithIncludeOptions(typeNames ...string) ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		if opts.includeOptions == nil {
+			opts.includeOptions = make(map[string]struct{}, len(typeNames))
+		}
+		for _, typeName := range typeNames {
+			opts.includeOptions[typeName] = struct{}{}
+		}
+		//opts.includeOptions = append(opts.includeOptions, typeNames...)
+	}
+}
+
+func WithExcludeOptions(typeNames ...string) ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		if opts.excludeOptions == nil {
+			opts.excludeOptions = make(map[string]struct{}, len(typeNames))
+		}
+		for _, typeName := range typeNames {
+			opts.excludeOptions[typeName] = struct{}{}
+		}
+		//opts.excludeOptions = append(opts.excludeOptions, typeNames...)
 	}
 }
 
@@ -171,11 +216,23 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 	return ImageFilteredByTypesWithOptions(image, types)
 }
 
+func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.Image, error) {
+	if len(options) == 0 {
+		return image, nil
+	}
+	filterOptions := newImageFilterOptions()
+	for _, option := range options {
+		option(filterOptions)
+	}
+	return filterImage(image, filterOptions)
+}
+
 // ImageFilteredByTypesWithOptions returns a minimal image containing only the descriptors
 // required to define those types. See ImageFilteredByTypes for more details. This version
 // allows for customizing the behavior with options.
 func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts ...ImageFilterOption) (bufimage.Image, error) {
-	options := newImageFilterOptions()
+	return FilterImage(image, append(opts, WithIncludeTypes(types...))...)
+	/*options := newImageFilterOptions()
 	for _, o := range opts {
 		o(options)
 	}
@@ -366,7 +423,7 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			imageFileDescriptor.SourceCodeInfo.Location = imageFileDescriptor.SourceCodeInfo.Location[:i]
 		}
 	}
-	return bufimage.NewImage(includedFiles)
+	return bufimage.NewImage(includedFiles)*/
 }
 
 // StripSourceRetentionOptions strips any options with a retention of "source" from
@@ -384,6 +441,7 @@ func StripSourceRetentionOptions(image bufimage.Image) (bufimage.Image, error) {
 	return bufimage.NewImage(updatedFiles)
 }
 
+/*
 // trimMessageDescriptors removes (nested) messages and nested enums from a slice
 // of message descriptors if their type names are not found in the toKeep map.
 func trimMessageDescriptors(
@@ -452,7 +510,7 @@ func trimSlice[T namedDescriptor](
 	}
 	return in[:i]
 }
-
+/*
 // transitiveClosure accumulates the elements, files, and needed imports for a
 // subset of an image. When an element is added to the closure, all of its
 // dependencies are recursively added.
@@ -612,7 +670,7 @@ func (t *transitiveClosure) addElement(
 
 	case *descriptorpb.MethodDescriptorProto:
 		inputName := strings.TrimPrefix(typedDescriptor.GetInputType(), ".")
-		inputDescriptor, ok := imageIndex.ByName[inputName]
+		inputDescriptor, ok := imageIndex.NameToDescriptor[inputName]
 		if !ok {
 			return fmt.Errorf("missing %q", inputName)
 		}
@@ -621,7 +679,7 @@ func (t *transitiveClosure) addElement(
 		}
 
 		outputName := strings.TrimPrefix(typedDescriptor.GetOutputType(), ".")
-		outputDescriptor, ok := imageIndex.ByName[outputName]
+		outputDescriptor, ok := imageIndex.NameToDescriptor[outputName]
 		if !ok {
 			return fmt.Errorf("missing %q", outputName)
 		}
@@ -639,7 +697,7 @@ func (t *transitiveClosure) addElement(
 			return fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
 		}
 		extendeeName := strings.TrimPrefix(typedDescriptor.GetExtendee(), ".")
-		extendeeDescriptor, ok := imageIndex.ByName[extendeeName]
+		extendeeDescriptor, ok := imageIndex.NameToDescriptor[extendeeName]
 		if !ok {
 			return fmt.Errorf("missing %q", extendeeName)
 		}
@@ -714,7 +772,7 @@ func (t *transitiveClosure) addFieldType(field *descriptorpb.FieldDescriptorProt
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		typeName := strings.TrimPrefix(field.GetTypeName(), ".")
-		typeDescriptor, ok := imageIndex.ByName[typeName]
+		typeDescriptor, ok := imageIndex.NameToDescriptor[typeName]
 		if !ok {
 			return fmt.Errorf("missing %q", typeName)
 		}
@@ -885,7 +943,7 @@ func (t *transitiveClosure) exploreOptionSingularValueForAny(
 		typeURL := msg.Get(typeURLFd).String()
 		pos := strings.LastIndexByte(typeURL, '/')
 		msgType := typeURL[pos+1:]
-		d, _ := imageIndex.ByName[msgType].(*descriptorpb.DescriptorProto)
+		d, _ := imageIndex.NameToDescriptor[msgType].(*descriptorpb.DescriptorProto)
 		if d != nil {
 			if err := t.addElement(d, referrerFile, false, imageIndex, opts); err != nil {
 				return err
@@ -901,7 +959,7 @@ func (t *transitiveClosure) exploreOptionSingularValueForAny(
 		return err == nil
 	})
 	return err
-}
+}*/
 
 type int32Range struct {
 	start, end int32 // both inclusive
@@ -981,6 +1039,11 @@ type imageFilterOptions struct {
 	includeCustomOptions   bool
 	includeKnownExtensions bool
 	allowImportedTypes     bool
+
+	includeTypes   map[string]struct{}
+	excludeTypes   map[string]struct{}
+	includeOptions map[string]struct{}
+	excludeOptions map[string]struct{}
 }
 
 func newImageFilterOptions() *imageFilterOptions {
@@ -992,9 +1055,13 @@ func newImageFilterOptions() *imageFilterOptions {
 }
 
 func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage.ImageFile, error) {
-	updatedFileDescriptor, err := protopluginutil.StripSourceRetentionOptions(imageFile.FileDescriptorProto())
+	fileDescriptor := imageFile.FileDescriptorProto()
+	updatedFileDescriptor, err := protopluginutil.StripSourceRetentionOptions(fileDescriptor)
 	if err != nil {
 		return nil, err
+	}
+	if updatedFileDescriptor == fileDescriptor {
+		return imageFile, nil
 	}
 	return bufimage.NewImageFile(
 		updatedFileDescriptor,

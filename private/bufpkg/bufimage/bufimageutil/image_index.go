@@ -25,6 +25,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// file -> DAG types.
+
 // imageIndex holds an index that allows for easily navigating a descriptor
 // hierarchy and its relationships.
 type imageIndex struct {
