@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"slices"
 	"sort"
 	"strings"
 
@@ -681,7 +682,7 @@ func (t *targetedModuleReadBucket) WalkFileInfos(
 		func(fileInfo FileInfo) error {
 			return fn(fileInfo)
 		},
-		slicesext.Concat(
+		slices.Concat(
 			options,
 			[]WalkFileInfosOption{WalkFileInfosWithOnlyTargetFiles()},
 		)...,

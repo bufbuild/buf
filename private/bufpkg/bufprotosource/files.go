@@ -16,6 +16,7 @@ package bufprotosource
 
 import (
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -50,8 +51,11 @@ func newFiles[F InputFile](
 		}
 		return files, nil
 	}
-
-	chunks := slicesext.ToChunks(indexedInputFiles, chunkSize)
+	// slices.Chunk panics if given a chunk size less than 1 - allocate a single chunk in this case.
+	if chunkSize < 1 {
+		chunkSize = len(indexedInputFiles)
+	}
+	chunks := slices.Collect(slices.Chunk(indexedInputFiles, chunkSize))
 	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFiles))
 	jobs := make([]func(context.Context) error, len(chunks))
 	var lock sync.Mutex

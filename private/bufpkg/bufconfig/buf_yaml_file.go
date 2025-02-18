@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -337,7 +338,7 @@ func (c *bufYAMLFile) ObjectData() ObjectData {
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
-	return slicesext.Copy(c.moduleConfigs)
+	return slices.Clone(c.moduleConfigs)
 }
 
 func (c *bufYAMLFile) TopLevelLintConfig() LintConfig {
@@ -353,7 +354,7 @@ func (c *bufYAMLFile) PluginConfigs() []PluginConfig {
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufparse.Ref {
-	return slicesext.Copy(c.configuredDepModuleRefs)
+	return slices.Clone(c.configuredDepModuleRefs)
 }
 
 func (c *bufYAMLFile) IncludeDocsLink() bool {

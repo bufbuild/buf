@@ -16,8 +16,8 @@ package protosourcepath
 
 import (
 	"fmt"
+	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -143,7 +143,7 @@ func start(token int32, fullSourcePath protoreflect.SourcePath, index int, _ boo
 	case fileOptionsTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	case extensionsTypeTag:
 		// For extensions, we add the full path and then return the extensions state to validate
 		// the path.
@@ -196,10 +196,7 @@ func reservedRanges(
 func reservedRange(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
 	// Reserved ranges are considered a terminal path, we validate the token to ensure that it
 	// is an expected element and return here.
-	if !slicesext.ElementsContained(
-		terminalReservedRangeTokens,
-		[]int32{token},
-	) {
+	if !slices.Contains(terminalReservedRangeTokens, token) {
 		return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid reserved range path")
 	}
 	return nil, nil, nil
@@ -223,11 +220,11 @@ func newInvalidSourcePathError(sourcePath protoreflect.SourcePath, s string) err
 // and appends a child path tag.
 // This is a helper function, the caller is expected to manage providing an index within range.
 func childAssociatedPath(sourcePath protoreflect.SourcePath, i int, tag int32) protoreflect.SourcePath {
-	return append(slicesext.Copy(sourcePath)[:i+1], tag)
+	return append(slices.Clone(sourcePath)[:i+1], tag)
 }
 
 // currentPath makes a copy of the source path at the given index (inclusive).
 // This is a helper function, the caller is expected to manage providing an index within range.
 func currentPath(sourcePath protoreflect.SourcePath, i int) protoreflect.SourcePath {
-	return slicesext.Copy(sourcePath)[:i+1]
+	return slices.Clone(sourcePath)[:i+1]
 }

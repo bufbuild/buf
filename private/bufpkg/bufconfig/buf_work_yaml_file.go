@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -163,7 +164,7 @@ func (w *bufWorkYAMLFile) ObjectData() ObjectData {
 }
 
 func (w *bufWorkYAMLFile) DirPaths() []string {
-	return slicesext.Copy(w.dirPaths)
+	return slices.Clone(w.dirPaths)
 }
 
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}

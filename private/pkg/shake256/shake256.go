@@ -18,8 +18,8 @@ package shake256
 import (
 	"fmt"
 	"io"
+	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -70,7 +70,7 @@ func newDigest(value []byte) (*digest, error) {
 }
 
 func (d *digest) Value() []byte {
-	return slicesext.Copy(d.value)
+	return slices.Clone(d.value)
 }
 
 func (*digest) isDigest() {}
