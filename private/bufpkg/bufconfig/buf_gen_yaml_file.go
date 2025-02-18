@@ -514,6 +514,8 @@ type externalGeneratePluginConfigV2 struct {
 	IncludeWKT     bool `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
 	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	// ExcludeOptions removes options from the image.
+	ExcludeOptions []string `json:"exclude_options,omitempty" yaml:"exclude_options,omitempty"`
 }
 
 // externalGenerateManagedConfigV2 represents the managed mode config in a v2 buf.gen.yaml file.
