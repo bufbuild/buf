@@ -206,19 +206,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	if len(imageWithConfigs) != len(againstImageWithConfigs) {
-		// If workspaces are being used as input, the number
-		// of images MUST match. Otherwise the results will
-		// be meaningless and yield false positives.
-		//
-		// And similar to the note above, if the roots change,
-		// we're torched.
-		return fmt.Errorf(
-			"input contained %d images, whereas against contained %d images",
-			len(imageWithConfigs),
-			len(againstImageWithConfigs),
-		)
-	}
+	// if len(imageWithConfigs) != len(againstImageWithConfigs) {
+	// 	// If workspaces are being used as input, the number
+	// 	// of images MUST match. Otherwise the results will
+	// 	// be meaningless and yield false positives.
+	// 	//
+	// 	// And similar to the note above, if the roots change,
+	// 	// we're torched.
+	// 	return fmt.Errorf(
+	// 		"input contained %d images, whereas against contained %d images",
+	// 		len(imageWithConfigs),
+	// 		len(againstImageWithConfigs),
+	// 	)
+	// }
 	// We add all check configs (both lint and breaking) as related configs to check if plugins
 	// have rules configured.
 	// We allocated twice the size of imageWithConfigs for both lint and breaking configs.
@@ -228,7 +228,7 @@ func run(
 		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
-	for i, imageWithConfig := range imageWithConfigs {
+	for _, imageWithConfig := range imageWithConfigs {
 		breakingOptions := []bufcheck.BreakingOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
 			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
@@ -236,11 +236,16 @@ func run(
 		if flags.ExcludeImports {
 			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 		}
+		// Find the corresponding --against image using resolver
+		againstImage, err := resolveAgainstImage(imageWithConfig, againstImageWithConfigs)
+		if err != nil {
+			return err
+		}
 		if err := checkClient.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
 			imageWithConfig,
-			againstImageWithConfigs[i],
+			againstImage,
 			breakingOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
@@ -273,4 +278,35 @@ func getExternalPathsForImages[I bufimage.Image, S ~[]I](images S) ([]string, er
 		}
 	}
 	return slicesext.MapKeysToSlice(externalPaths), nil
+}
+
+func resolveAgainstImage(
+	currentImage bufctl.ImageWithConfig,
+	againstImageSet []bufctl.ImageWithConfig,
+) (bufimage.Image, error) {
+	var foundIndex int
+	var found bool
+	for _, file := range currentImage.Files() {
+		for i, against := range againstImageSet {
+			// Don't bother checking imports
+			if file.IsImport() {
+				continue
+			}
+			againstFile := against.GetFile(file.Path())
+			if againstFile != nil {
+				if !found {
+					found = true
+					foundIndex = i
+					break
+				}
+				if foundIndex != i {
+					return nil, errors.New("found paths from current image in more than one against image")
+				}
+			}
+		}
+	}
+	if found {
+		return againstImageSet[foundIndex], nil
+	}
+	return nil, nil
 }
