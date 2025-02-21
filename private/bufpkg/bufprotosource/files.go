@@ -16,7 +16,6 @@ package bufprotosource
 
 import (
 	"context"
-	"slices"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -40,7 +39,7 @@ func newFiles[F InputFile](
 	// and let thread.Parallelize deal with what to do.
 
 	chunkSize := len(indexedInputFiles) / thread.Parallelism()
-	if defaultChunkSizeThreshold != 0 && chunkSize < defaultChunkSizeThreshold {
+	if chunkSize < defaultChunkSizeThreshold {
 		files := make([]File, 0, len(indexedInputFiles))
 		for _, indexedInputFile := range indexedInputFiles {
 			file, err := newFile(indexedInputFile.Value, resolver)
@@ -51,11 +50,7 @@ func newFiles[F InputFile](
 		}
 		return files, nil
 	}
-	// slices.Chunk panics if given a chunk size less than 1 - allocate a single chunk in this case.
-	if chunkSize < 1 {
-		chunkSize = len(indexedInputFiles)
-	}
-	chunks := slices.Collect(slices.Chunk(indexedInputFiles, chunkSize))
+	chunks := slicesext.ToChunks(indexedInputFiles, chunkSize)
 	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFiles))
 	jobs := make([]func(context.Context) error, len(chunks))
 	var lock sync.Mutex

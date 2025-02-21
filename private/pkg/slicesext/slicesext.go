@@ -370,6 +370,21 @@ func DeduplicateAny[K comparable, V any](s []V, f func(V) K) []V {
 	return result
 }
 
+// ToChunks splits s into chunks of the given chunk size.
+//
+// If s is nil or empty, returns empty.
+// If chunkSize is <=0, returns [][]T{s}.
+func ToChunks[T any](s []T, chunkSize int) [][]T {
+	var chunks [][]T
+	if len(s) == 0 {
+		return chunks
+	}
+	if chunkSize <= 0 {
+		return [][]T{s}
+	}
+	return slices.Collect(slices.Chunk(s, chunkSize))
+}
+
 // ElementsContained returns true if superset contains subset.
 //
 // Nil and empty slices are treated as equals.
