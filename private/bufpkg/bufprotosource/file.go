@@ -16,10 +16,10 @@ package bufprotosource
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -400,7 +400,7 @@ func (f *file) populateEnum(
 			),
 			enumValueDescriptorProto.GetName(),
 			getEnumValueNamePath(enumIndex, enumValueIndex, nestedMessageIndexes...),
-			slicesext.Concat(nestedMessageNames, []string{enum.Name()}),
+			slices.Concat(nestedMessageNames, []string{enum.Name()}),
 		)
 		if err != nil {
 			return nil, err
@@ -499,7 +499,7 @@ func (f *file) populateMessage(
 			),
 			oneofDescriptorProto.GetName(),
 			getMessageOneofNamePath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
-			slicesext.Concat(nestedMessageNames, []string{message.Name()}),
+			slices.Concat(nestedMessageNames, []string{message.Name()}),
 		)
 		if err != nil {
 			return nil, err
@@ -526,7 +526,7 @@ func (f *file) populateMessage(
 			),
 			fieldDescriptorProto.GetName(),
 			getMessageFieldNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
-			slicesext.Concat(nestedMessageNames, []string{message.Name()}),
+			slices.Concat(nestedMessageNames, []string{message.Name()}),
 		)
 		if err != nil {
 			return nil, err
@@ -592,7 +592,7 @@ func (f *file) populateMessage(
 			),
 			fieldDescriptorProto.GetName(),
 			getMessageExtensionNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
-			slicesext.Concat(nestedMessageNames, []string{message.Name()}),
+			slices.Concat(nestedMessageNames, []string{message.Name()}),
 		)
 		if err != nil {
 			return nil, err
@@ -703,7 +703,7 @@ func (f *file) populateMessage(
 			// this is all of the message indexes including this one
 			// TODO we should refactor get.*Path messages to be more consistent
 			append([]int{topLevelMessageIndex}, nestedMessageIndexes...),
-			slicesext.Concat(nestedMessageNames, []string{message.Name()}),
+			slices.Concat(nestedMessageNames, []string{message.Name()}),
 			message,
 		)
 		if err != nil {
@@ -715,8 +715,8 @@ func (f *file) populateMessage(
 		nestedMessage, err := f.populateMessage(
 			nestedMessageDescriptorProto,
 			topLevelMessageIndex,
-			slicesext.Concat(nestedMessageIndexes, []int{nestedMessageIndex}),
-			slicesext.Concat(nestedMessageNames, []string{message.Name()}),
+			slices.Concat(nestedMessageIndexes, []int{nestedMessageIndex}),
+			slices.Concat(nestedMessageNames, []string{message.Name()}),
 			message,
 		)
 		if err != nil {

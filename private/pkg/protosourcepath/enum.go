@@ -15,7 +15,8 @@
 package protosourcepath
 
 import (
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"slices"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -68,7 +69,7 @@ func enum(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool
 	case enumOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	case enumReservedRangeTypeTag:
 		// For reserved ranges, we add the full path and then return the reserved ranges state to
 		// validate the path.

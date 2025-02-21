@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -27,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -227,14 +227,14 @@ func newBufLockFile(
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 	// To make sure we aren't editing input.
-	depModuleKeys = slicesext.Copy(depModuleKeys)
+	depModuleKeys = slices.Clone(depModuleKeys)
 	sort.Slice(
 		depModuleKeys,
 		func(i int, j int) bool {
 			return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
 		},
 	)
-	remotePluginKeys = slicesext.Copy(remotePluginKeys)
+	remotePluginKeys = slices.Clone(remotePluginKeys)
 	sort.Slice(
 		remotePluginKeys,
 		func(i int, j int) bool {

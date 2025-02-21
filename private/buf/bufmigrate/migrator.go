@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"slices"
 	"sort"
 	"strings"
 
@@ -521,7 +522,7 @@ func (m *migrator) upgradeModuleKeysToB5(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleKey, error) {
-	moduleKeys = slicesext.Copy(moduleKeys)
+	moduleKeys = slices.Clone(moduleKeys)
 
 	b4IndexedModuleKeys, err := slicesext.FilterError(
 		slicesext.ToIndexed(moduleKeys),
@@ -743,7 +744,7 @@ func equivalentCheckConfigInV2(
 			return rule.ID()
 		},
 	)
-	if slicesext.ElementsEqual(expectedIDs, simplyTranslatedIDs) {
+	if slices.Equal(expectedIDs, simplyTranslatedIDs) {
 		// If the simple translation is equivalent to before, use it.
 		return simplyTranslatedCheckConfig, nil
 	}

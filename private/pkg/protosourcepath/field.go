@@ -15,7 +15,8 @@
 package protosourcepath
 
 import (
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"slices"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -71,11 +72,7 @@ func fields(
 
 // field is the state when an element representing a specific child path of a field was parsed.
 func field(token int32, fullSourcePath protoreflect.SourcePath, index int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// TODO: use slices.Contains in the future
-	if slicesext.ElementsContained(
-		terminalFieldTokens,
-		[]int32{token},
-	) {
+	if slices.Contains(terminalFieldTokens, token) {
 		// Encountered a terminal field token, can terminate here immediately.
 		return nil, nil, nil
 	}
@@ -83,7 +80,7 @@ func field(token int32, fullSourcePath protoreflect.SourcePath, index int, _ boo
 	case fieldOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	case fieldDefaultValueTypeTag:
 		// Default value is a terminal path, but was not already added to our associated paths,
 		// since default values are specific to proto2. Add the path and terminate.

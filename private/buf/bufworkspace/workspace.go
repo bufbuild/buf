@@ -15,11 +15,12 @@
 package bufworkspace
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // Workspace is a buf workspace.
@@ -149,15 +150,15 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 }
 
 func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
-	return slicesext.Copy(w.pluginConfigs)
+	return slices.Clone(w.pluginConfigs)
 }
 
 func (w *workspace) RemotePluginKeys() []bufplugin.PluginKey {
-	return slicesext.Copy(w.remotePluginKeys)
+	return slices.Clone(w.remotePluginKeys)
 }
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufparse.Ref {
-	return slicesext.Copy(w.configuredDepModuleRefs)
+	return slices.Clone(w.configuredDepModuleRefs)
 }
 
 func (w *workspace) IsV2() bool {

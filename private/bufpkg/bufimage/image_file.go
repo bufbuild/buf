@@ -15,9 +15,10 @@
 package bufimage
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -112,7 +113,7 @@ func (f *imageFile) CommitID() uuid.UUID {
 }
 
 func (f *imageFile) Imports() ([]string, error) {
-	return slicesext.Copy(f.fileDescriptorProto.GetDependency()), nil
+	return slices.Clone(f.fileDescriptorProto.GetDependency()), nil
 }
 
 func (f *imageFile) IsImport() bool {

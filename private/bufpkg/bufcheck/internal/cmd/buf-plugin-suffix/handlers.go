@@ -22,7 +22,6 @@ import (
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/descriptor"
 	"buf.build/go/bufplugin/option"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -202,10 +201,7 @@ func handleBreakingServiceSuffixesNoChange(
 		if currentServiceDescriptor, ok := currentNoChangeServiceNameToServiceDescriptor[previousServiceName]; ok {
 			previousMethodNames := getAllMethodNamesSortedForService(previousServiceDescriptor)
 			currentMethodNames := getAllMethodNamesSortedForService(currentServiceDescriptor)
-			if !slicesext.ElementsEqual(
-				previousMethodNames,
-				currentMethodNames,
-			) {
+			if !slices.Equal(previousMethodNames, currentMethodNames) {
 				responseWriter.AddAnnotation(
 					check.WithDescriptor(currentServiceDescriptor),
 					check.WithAgainstDescriptor(previousServiceDescriptor),
@@ -281,10 +277,7 @@ func handleBreakingMessageSuffixesNoChange(
 		if currentMessageDescriptor, ok := currentNoChangeMessageNameToMessageDescriptor[previousMessageName]; ok {
 			previousFieldNames := getFieldNamesSortedForMessage(previousMessageDescriptor)
 			currentFieldNames := getFieldNamesSortedForMessage(currentMessageDescriptor)
-			if !slicesext.ElementsEqual(
-				previousFieldNames,
-				currentFieldNames,
-			) {
+			if !slices.Equal(previousFieldNames, currentFieldNames) {
 				responseWriter.AddAnnotation(
 					check.WithDescriptor(currentMessageDescriptor),
 					check.WithAgainstDescriptor(previousMessageDescriptor),
@@ -374,10 +367,7 @@ func handleBreakingEnumSuffixesNoChange(
 		if currentEnumDescriptor, ok := currentNoChangeEnumNameToEnumDescriptor[previousEnumName]; ok {
 			previousEnumValueNames := getEnumValueNamesSortedForEnum(previousEnumDescriptor)
 			currentEnumValueNames := getEnumValueNamesSortedForEnum(currentEnumDescriptor)
-			if !slicesext.ElementsEqual(
-				previousEnumValueNames,
-				currentEnumValueNames,
-			) {
+			if !slices.Equal(previousEnumValueNames, currentEnumValueNames) {
 				responseWriter.AddAnnotation(
 					check.WithDescriptor(currentEnumDescriptor),
 					check.WithAgainstDescriptor(previousEnumDescriptor),

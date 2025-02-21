@@ -487,7 +487,7 @@ func validateNugetTargetFrameworks(targetFrameworks []string) ([]string, error) 
 			return nil, fmt.Errorf("target framework %d: %w", i, err)
 		}
 	}
-	return slicesext.Copy(targetFrameworks), nil
+	return slices.Clone(targetFrameworks), nil
 }
 
 func validateNugetTargetFramework(targetFramework string) error {

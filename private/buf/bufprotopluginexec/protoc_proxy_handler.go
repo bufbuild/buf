@@ -22,13 +22,13 @@ import (
 	"io"
 	"log/slog"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -121,7 +121,7 @@ func (h *protocProxyHandler) Handle(
 	defer func() {
 		retErr = errors.Join(retErr, tmpDir.Close())
 	}()
-	args := slicesext.Concat(h.protocExtraArgs, []string{
+	args := slices.Concat(h.protocExtraArgs, []string{
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.Path()),
 	})
@@ -194,7 +194,7 @@ func (h *protocProxyHandler) getProtocVersion(
 	if err := execext.Run(
 		ctx,
 		h.protocPath,
-		execext.WithArgs(slicesext.Concat(h.protocExtraArgs, []string{"--version"})...),
+		execext.WithArgs(slices.Concat(h.protocExtraArgs, []string{"--version"})...),
 		execext.WithEnv(pluginEnv.Environ),
 		execext.WithStdout(stdoutBuffer),
 	); err != nil {

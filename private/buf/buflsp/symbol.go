@@ -235,7 +235,7 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 
 			// Done.
 			kind.file = def.file
-			kind.path = append(slicesext.Copy(ref.path), components...)
+			kind.path = append(slices.Clone(ref.path), components...)
 			return
 		}
 

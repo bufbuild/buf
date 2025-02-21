@@ -738,7 +738,7 @@ func appendWellKnownTypeImageFileInfos(
 	if !slices.Equal(datawkt.AllFilePaths, wktPaths) {
 		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
 	}
-	resultImageFileInfos := slicesext.Copy(imageFileInfos)
+	resultImageFileInfos := slices.Clone(imageFileInfos)
 	for _, wktObjectInfo := range wktObjectInfos {
 		if _, ok := pathToImageFileInfo[wktObjectInfo.Path()]; !ok {
 			fileImports, ok := datawkt.FileImports(wktObjectInfo.Path())

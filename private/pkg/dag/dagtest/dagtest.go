@@ -16,6 +16,7 @@ package dagtest
 
 import (
 	"cmp"
+	"slices"
 	"sort"
 	"testing"
 
@@ -72,7 +73,7 @@ func normalizeExpectedNodes[Key cmp.Ordered](expectedNodes []ExpectedNode[Key]) 
 	if expectedNodes == nil {
 		return []ExpectedNode[Key]{}
 	}
-	c := slicesext.Copy(expectedNodes)
+	c := slices.Clone(expectedNodes)
 	sort.Slice(
 		c,
 		func(i int, j int) bool {
@@ -90,7 +91,7 @@ func normalizeKeys[Key cmp.Ordered](keys []Key) []Key {
 	if keys == nil {
 		return []Key{}
 	}
-	keys = slicesext.Copy(keys)
+	keys = slices.Clone(keys)
 	sort.Slice(
 		keys,
 		func(i int, j int) bool {
