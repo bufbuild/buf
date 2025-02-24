@@ -15,7 +15,8 @@
 package protosourcepath
 
 import (
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"slices"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -112,7 +113,7 @@ func message(token int32, fullSourcePath protoreflect.SourcePath, index int, _ b
 	case messageOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	case messageExtensionRangeTypeTag:
 		// For extension ranges, we add the full path and then return the extension ranges state
 		// to validate the path.
@@ -154,11 +155,7 @@ func oneOfs(
 
 // oneOf is the state when an element representing a specific child path of a oneof was parsed.
 func oneOf(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// TODO: use slices.Contains in the future
-	if slicesext.ElementsContained(
-		terminalOneOfTokens,
-		[]int32{token},
-	) {
+	if slices.Contains(terminalOneOfTokens, token) {
 		// Encountered a terminal one of token, can terminate here immediately.
 		return nil, nil, nil
 	}
@@ -166,7 +163,7 @@ func oneOf(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (
 	case messageOneOfOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid one of path")
 }
@@ -198,11 +195,7 @@ func extensionRanges(
 // extensionRange is the state when an element representing a specific child path of an
 // extension range was parsed.
 func extensionRange(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// TODO: use slices.Contains in the future
-	if slicesext.ElementsContained(
-		terminalExtensionRangeTokens,
-		[]int32{token},
-	) {
+	if slices.Contains(terminalExtensionRangeTokens, token) {
 		// Encountered a terminal extension range token, can terminate here immediately.
 		return nil, nil, nil
 	}
@@ -210,7 +203,7 @@ func extensionRange(token int32, fullSourcePath protoreflect.SourcePath, _ int, 
 	case messageExtensionRangeOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid extension range path")
 }
