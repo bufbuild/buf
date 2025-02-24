@@ -40,13 +40,13 @@ func TestExcludeOptions(t *testing.T) {
 
 	t.Run("NoneExcluded", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions",
 		)
 	})
 	t.Run("ExcludeMessage", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions", WithExcludeOptions(
 				"message_foo", "message_bar", "message_baz",
 			),
@@ -54,7 +54,7 @@ func TestExcludeOptions(t *testing.T) {
 	})
 	t.Run("ExcludeFoo", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions", WithExcludeOptions(
 				"message_foo",
 				"field_foo",
@@ -69,7 +69,7 @@ func TestExcludeOptions(t *testing.T) {
 	})
 	t.Run("OnlyFile", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions", WithExcludeOptions(
 				"message_foo", "message_bar", "message_baz",
 				"field_foo", "field_bar", "field_baz",
@@ -83,7 +83,7 @@ func TestExcludeOptions(t *testing.T) {
 	})
 	t.Run("OnlyOneOf", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions", WithExcludeOptions(
 				"message_foo", "message_bar", "message_baz",
 				"field_foo", "field_bar", "field_baz",
@@ -97,7 +97,7 @@ func TestExcludeOptions(t *testing.T) {
 	})
 	t.Run("OnlyEnumValue", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions", WithExcludeOptions(
 				"message_foo", "message_bar", "message_baz",
 				"field_foo", "field_bar", "field_baz",
@@ -111,7 +111,7 @@ func TestExcludeOptions(t *testing.T) {
 	})
 	t.Run("ExcludeAll", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptions(
+		testFilterOptions(
 			t, "testdata/excludeoptions", WithExcludeOptions(
 				"message_foo", "message_bar", "message_baz",
 				"field_foo", "field_bar", "field_baz",
@@ -157,19 +157,19 @@ func TestExcludeOptionImports(t *testing.T) {
 
 	t.Run("NoneExcluded", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image)
+		testFilterOptionsForImage(t, bucket, image)
 	})
 	t.Run("ExcludeFoo", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, WithExcludeOptions("message_foo"))
+		testFilterOptionsForImage(t, bucket, image, WithExcludeOptions("message_foo"))
 	})
 	t.Run("ExcludeFooBar", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, WithExcludeOptions("message_foo", "message_bar"))
+		testFilterOptionsForImage(t, bucket, image, WithExcludeOptions("message_foo", "message_bar"))
 	})
 	t.Run("ExcludeBar", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, WithExcludeOptions("message_bar"))
+		testFilterOptionsForImage(t, bucket, image, WithExcludeOptions("message_bar"))
 	})
 }
 
@@ -202,22 +202,22 @@ func TestFilterTypes(t *testing.T) {
 
 	t.Run("ExcludeBar", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, WithExcludeTypes("pkg.Bar"))
+		testFilterOptionsForImage(t, bucket, image, WithExcludeTypes("pkg.Bar"))
 	})
 	t.Run("IncludeBar", func(t *testing.T) {
 		t.Parallel()
-		testExcludeOptionsForImage(t, bucket, image, WithIncludeTypes("pkg.Bar"))
+		testFilterOptionsForImage(t, bucket, image, WithIncludeTypes("pkg.Bar"))
 	})
 
 }
 
-func testExcludeOptions(t *testing.T, testdataDir string, options ...ImageFilterOption) {
+func testFilterOptions(t *testing.T, testdataDir string, options ...ImageFilterOption) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	require.NoError(t, err)
-	testExcludeOptionsForModuleData(t, bucket, nil, options...)
+	testFilterOptionsForModuleData(t, bucket, nil, options...)
 }
 
-func testExcludeOptionsForModuleData(t *testing.T, bucket storage.ReadWriteBucket, moduleData []bufmoduletesting.ModuleData, options ...ImageFilterOption) {
+func testFilterOptionsForModuleData(t *testing.T, bucket storage.ReadWriteBucket, moduleData []bufmoduletesting.ModuleData, options ...ImageFilterOption) {
 	ctx := context.Background()
 	if len(moduleData) == 0 {
 		moduleData = append(moduleData, bufmoduletesting.ModuleData{
@@ -235,10 +235,10 @@ func testExcludeOptionsForModuleData(t *testing.T, bucket storage.ReadWriteBucke
 	)
 	require.NoError(t, err)
 
-	testExcludeOptionsForImage(t, bucket, image, options...)
+	testFilterOptionsForImage(t, bucket, image, options...)
 }
 
-func testExcludeOptionsForImage(t *testing.T, bucket storage.ReadWriteBucket, image bufimage.Image, options ...ImageFilterOption) {
+func testFilterOptionsForImage(t *testing.T, bucket storage.ReadWriteBucket, image bufimage.Image, options ...ImageFilterOption) {
 	ctx := context.Background()
 	filteredImage, err := FilterImage(image, options...)
 	require.NoError(t, err)

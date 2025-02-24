@@ -15,7 +15,6 @@
 package bufimageutil
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 	"sort"
@@ -30,20 +29,11 @@ import (
 
 // filterImage filters the Image for the given options.
 func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Image, error) {
-	imageTypeIndex, err := newImageTypeIndex(image)
+	imageIndex, err := newImageIndexForImage(image, options)
 	if err != nil {
 		return nil, err
 	}
-	b, _ := json.MarshalIndent(imageTypeIndex.TypeSet, "", "  ")
-	fmt.Println("index:", string(b))
-	typeFilter, err := createTypeFilter(imageTypeIndex, options)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("\ttypeFilter:", typeFilter)
-	fmt.Println("\t\tincludes:", typeFilter.include)
-	fmt.Println("\t\texcludes:", typeFilter.exclude)
-	optionsFilter, err := createOptionsFilter(imageTypeIndex, options)
+	filter, err := newFullNameFilter(imageIndex, options)
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +55,10 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		newImageFile, err := filterImageFile(
 			imageFile,
-			imageTypeIndex,
-			typeFilter,
-			optionsFilter,
+			imageIndex,
+			filter,
+			//typeFilter,
+			//optionsFilter,
 		)
 		if err != nil {
 			return nil, err
@@ -91,18 +82,18 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 
 func filterImageFile(
 	imageFile bufimage.ImageFile,
-	imageTypeIndex *imageTypeIndex,
-	typesFilter fullNameFilter,
-	optionsFilter fullNameFilter,
+	imageIndex *imageIndex,
+	filter *fullNameFilter,
+	//typesFilter fullNameFilter,
+	//optionsFilter fullNameFilter,
 ) (bufimage.ImageFile, error) {
 	fileDescriptor := imageFile.FileDescriptorProto()
 	var sourcePathsRemap sourcePathsRemapTrie
 	isIncluded, err := addRemapsForFileDescriptor(
 		&sourcePathsRemap,
 		fileDescriptor,
-		imageTypeIndex,
-		typesFilter,
-		optionsFilter,
+		imageIndex,
+		filter,
 	)
 	if err != nil {
 		return nil, err
@@ -130,26 +121,24 @@ func filterImageFile(
 }
 
 type sourcePathsBuilder struct {
-	filePath       string
-	imageTypeIndex *imageTypeIndex
-	typesFilter    fullNameFilter
-	optionsFilter  fullNameFilter
-	fileImports    map[string]struct{}
+	filePath    string
+	imageIndex  *imageIndex
+	filter      *fullNameFilter
+	fileImports map[string]struct{}
 }
 
 func addRemapsForFileDescriptor(
 	sourcePathsRemap *sourcePathsRemapTrie,
 	fileDescriptor *descriptorpb.FileDescriptorProto,
-	imageTypeIndex *imageTypeIndex,
-	typesFilter fullNameFilter,
-	optionsFilter fullNameFilter,
+	imageIndex *imageIndex,
+	filter *fullNameFilter,
+	//typesFilter fullNameFilter,
+	//optionsFilter fullNameFilter,
 ) (bool, error) {
-	fmt.Println("---", fileDescriptor.GetName(), "---")
-	defer fmt.Println("------")
 	packageName := protoreflect.FullName(fileDescriptor.GetPackage())
 	if packageName != "" {
 		// Check if filtered by the package name.
-		isIncluded, isExplicit := typesFilter.filter(packageName)
+		isIncluded, isExplicit := filter.hasType(packageName)
 		if !isIncluded && isExplicit {
 			// The package is excluded.
 			return false, nil
@@ -158,11 +147,10 @@ func addRemapsForFileDescriptor(
 
 	fileImports := make(map[string]struct{})
 	builder := &sourcePathsBuilder{
-		filePath:       fileDescriptor.GetName(),
-		imageTypeIndex: imageTypeIndex,
-		typesFilter:    typesFilter,
-		optionsFilter:  optionsFilter,
-		fileImports:    fileImports,
+		filePath:    fileDescriptor.GetName(),
+		imageIndex:  imageIndex,
+		filter:      filter,
+		fileImports: fileImports,
 	}
 	sourcePath := make(protoreflect.SourcePath, 0, 8)
 
@@ -185,10 +173,9 @@ func addRemapsForFileDescriptor(
 
 	// Fix the imports to remove any that are no longer used.
 	// TODO: handle unused dependencies, and keep them?
-	fmt.Println("fileImports", builder.fileImports)
 	if len(fileImports) != len(fileDescriptor.Dependency) {
 		indexTo := int32(0)
-		dependencyPath := []int32{fileDependencyTag}
+		dependencyPath := append(sourcePath, fileDependencyTag)
 		dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
 		for indexFrom, dependency := range fileDescriptor.Dependency {
 			path := append(dependencyPath, int32(indexFrom))
@@ -203,7 +190,7 @@ func addRemapsForFileDescriptor(
 				dependencyChanges[indexFrom] = -1
 			}
 		}
-		publicDependencyPath := []int32{filePublicDependencyTag}
+		publicDependencyPath := append(sourcePath, filePublicDependencyTag)
 		for indexFrom, publicDependency := range fileDescriptor.PublicDependency {
 			path := append(publicDependencyPath, int32(indexFrom))
 			indexTo := dependencyChanges[publicDependency]
@@ -213,7 +200,7 @@ func addRemapsForFileDescriptor(
 				sourcePathsRemap.markMoved(path, indexTo)
 			}
 		}
-		weakDependencyPath := []int32{fileWeakDependencyTag}
+		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
 		for indexFrom, weakDependency := range fileDescriptor.WeakDependency {
 			path := append(weakDependencyPath, int32(indexFrom))
 			indexTo := dependencyChanges[weakDependency]
@@ -234,38 +221,39 @@ func (b *sourcePathsBuilder) addRemapsForDescriptor(
 	descriptor *descriptorpb.DescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, descriptor)
-	isIncluded, isExplicit := b.typesFilter.filter(fullName)
+	isIncluded, isExplicit := b.filter.hasType(fullName)
 	if !isIncluded && isExplicit {
 		// The type is excluded.
 		return false, nil
 	}
-	//// If the message is only enclosing an included message remove the fields.
-	//if isIncluded {
-	//	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
-	//		return false, err
-	//	}
-	//	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
-	//		return false, err
-	//	}
-	//	for index, extensionRange := range descriptor.GetExtensionRange() {
-	//		fmt.Println("\textensionRange", index, extensionRange)
-	//		extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
-	//		if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
-	//			return false, err
-	//		}
-	//	}
-	//	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions()); err != nil {
-	//		return false, err
-	//	}
-	//} else {
-	//	sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
-	//	sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionsTag))
-	//	for index := range descriptor.GetExtensionRange() {
-	//		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag))
-	//	}
-	//	sourcePathsRemap.markDeleted(append(sourcePath, messageOptionsTag))
-	//}
-
+	//
+	// If the message is only enclosin included message remove the fields.
+	if isIncluded {
+		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
+			return false, err
+		}
+		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
+			return false, err
+		}
+		for index, extensionRange := range descriptor.GetExtensionRange() {
+			extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
+			if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
+				return false, err
+			}
+		}
+	} else {
+		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
+		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
+		// TODO: check if extensions are removed???
+		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
+		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
+		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedRangesTag))
+		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedNamesTag))
+		//for index := range descriptor.GetExtensionRange() {
+		//	sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag))
+		//}
+		//sourcePathsRemap.markDeleted(append(sourcePath, messageOptionsTag))
+	}
 	// Walk the nested types.
 	hasNestedTypes, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.addRemapsForDescriptor)
 	if err != nil {
@@ -287,26 +275,9 @@ func (b *sourcePathsBuilder) addRemapsForDescriptor(
 	}
 	isIncluded = isIncluded || hasOneofs
 
-	// If the message is only enclosing an included message remove the fields.
-	if isIncluded {
-		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
-			return false, err
-		}
-		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
-			return false, err
-		}
-		for index, extensionRange := range descriptor.GetExtensionRange() {
-			fmt.Println("\textensionRange", index, extensionRange)
-			extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
-			if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
-				return false, err
-			}
-		}
-		if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions()); err != nil {
-			return false, err
-		}
-	} else {
-
+	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions()); err != nil {
+		return false, err
+	}
 	return isIncluded, nil
 }
 
@@ -316,8 +287,9 @@ func (b *sourcePathsBuilder) addRemapsForEnum(
 	sourcePath protoreflect.SourcePath,
 	enum *descriptorpb.EnumDescriptorProto,
 ) (bool, error) {
+	//fullName := b.imageIndex.ByDescriptor[enum]
 	fullName := getFullName(parentName, enum)
-	if isIncluded, _ := b.typesFilter.filter(fullName); !isIncluded {
+	if isIncluded, _ := b.filter.hasType(fullName); !isIncluded {
 		// The type is excluded, enum values cannot be excluded individually.
 		return false, nil
 	}
@@ -344,7 +316,7 @@ func (b *sourcePathsBuilder) addRemapsForOneof(
 	oneof *descriptorpb.OneofDescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, oneof)
-	if isIncluded, _ := b.typesFilter.filter(fullName); !isIncluded {
+	if isIncluded, _ := b.filter.hasType(fullName); !isIncluded {
 		// The type is excluded, enum values cannot be excluded individually.
 		return false, nil
 	}
@@ -361,7 +333,7 @@ func (b *sourcePathsBuilder) addRemapsForService(
 	service *descriptorpb.ServiceDescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, service)
-	isIncluded, isExplicit := b.typesFilter.filter(fullName)
+	isIncluded, isExplicit := b.filter.hasType(fullName)
 	if !isIncluded && isExplicit {
 		// The type is excluded.
 		return false, nil
@@ -386,18 +358,18 @@ func (b *sourcePathsBuilder) addRemapsForMethod(
 	method *descriptorpb.MethodDescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, method)
-	if isIncluded, _ := b.typesFilter.filter(fullName); !isIncluded {
+	if isIncluded, _ := b.filter.hasType(fullName); !isIncluded {
 		// The type is excluded.
 		return false, nil
 	}
 	inputName := protoreflect.FullName(strings.TrimPrefix(method.GetInputType(), "."))
-	if isIncluded, _ := b.typesFilter.filter(inputName); !isIncluded {
+	if isIncluded, _ := b.filter.hasType(inputName); !isIncluded {
 		// The input type is excluded.
 		return false, fmt.Errorf("input type %s of method %s is excluded", inputName, fullName)
 	}
 	b.addRequiredType(inputName)
 	outputName := protoreflect.FullName(strings.TrimPrefix(method.GetOutputType(), "."))
-	if isIncluded, _ := b.typesFilter.filter(outputName); !isIncluded {
+	if isIncluded, _ := b.filter.hasType(outputName); !isIncluded {
 		// The output type is excluded.
 		return false, fmt.Errorf("output type %s of method %s is excluded", outputName, fullName)
 	}
@@ -417,7 +389,7 @@ func (b *sourcePathsBuilder) addRemapsForField(
 	if field.Extendee != nil {
 		// This is an extension field.
 		extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
-		if isIncluded, _ := b.typesFilter.filter(extendeeName); !isIncluded {
+		if isIncluded, _ := b.filter.hasType(extendeeName); !isIncluded {
 			return false, nil
 		}
 		b.addRequiredType(extendeeName)
@@ -427,7 +399,7 @@ func (b *sourcePathsBuilder) addRemapsForField(
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		typeName := protoreflect.FullName(strings.TrimPrefix(field.GetTypeName(), "."))
-		if isIncluded, _ := b.typesFilter.filter(typeName); !isIncluded {
+		if isIncluded, _ := b.filter.hasType(typeName); !isIncluded {
 			return false, nil
 		}
 		b.addRequiredType(typeName)
@@ -465,16 +437,15 @@ func (b *sourcePathsBuilder) addRemapsForOptions(
 	}
 	options := optionsMessage.ProtoReflect()
 	numFieldsToKeep := 0
-	options.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		isIncluded, _ := b.optionsFilter.filter(fd.FullName())
+	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+
+		isIncluded, _ := b.filter.hasOption(fd.FullName(), fd.IsExtension())
 		if !isIncluded {
 			// Remove this option.
-			fmt.Println("\tremove option", fd.FullName())
 			optionPath := append(optionsPath, int32(fd.Number()))
 			sourcePathsRemap.markDeleted(optionPath)
 			return true
 		}
-		fmt.Println("\tkeep option", fd.FullName())
 		numFieldsToKeep++
 		if fd.IsExtension() {
 			// Add the extension type to the required types.
@@ -490,14 +461,13 @@ func (b *sourcePathsBuilder) addRemapsForOptions(
 }
 
 func (b *sourcePathsBuilder) addRequiredType(fullName protoreflect.FullName) {
-	file, ok := b.imageTypeIndex.TypeToFile[fullName]
+	info, ok := b.imageIndex.ByName[fullName]
 	if !ok {
 		panic(fmt.Sprintf("could not find file for %s", fullName))
 	}
-	fmt.Println("\taddRequiredType", fullName, file.Path())
+	file := info.imageFile
 	if file.Path() != b.filePath {
 		// This is an imported type.
-		file := b.imageTypeIndex.TypeToFile[fullName]
 		b.fileImports[file.Path()] = struct{}{}
 	}
 }
@@ -532,213 +502,6 @@ func addRemapsForSlice[T any](
 	}
 	return toIndex > 0, nil
 }
-
-/*
-type fileDescriptorWalker struct {
-	filePath       string
-	imageTypeIndex *imageTypeIndex
-	typesFilter    fullNameFilter
-	optionsFilter  fullNameFilter
-
-	// On walking record whether the type is inlcuded.
-	includes []bool
-
-	sourcePathsRemap sourcePathsRemapTrie
-	fileImports      map[string]struct{}
-}
-
-func (f *fileDescriptorWalker) walkFile(
-	fileDescriptor *descriptorpb.FileDescriptorProto,
-	sourcePathsRemap sourcePathsRemapTrie,
-) error {
-	prefix := fileDescriptor.GetPackage()
-	if prefix != "" {
-		prefix += "."
-	}
-	isIncluded, isExplicit := f.typesFilter.filter(protoreflect.FullName(prefix))
-	if !isIncluded && isExpli
-
-	sourcePath := make(protoreflect.SourcePath, 0, 16)
-	toIndex := 0
-	for fromIndex := range fileDescriptor.MessageType {
-		sourcePath := append(sourcePath, fileMessagesTag, int32(fromIndex))
-		isIncluded, err := f.walkMessage(prefix, sourcePath, fileDescriptor.MessageType[fromIndex])
-		if err != nil {
-			return err
-		}
-		if isIncluded && fromIndex != toIndex {
-			f.sourcePathsRemap.markMoved(sourcePath, int32(toIndex))
-		} else {
-			f.sourcePathsRemap.markDeleted(sourcePath)
-		}
-	}
-}
-
-func (f *fileDescriptorWalker) walkMessage(prefix string, sourcePath protoreflect.SourcePath, descriptor *descriptorpb.DescriptorProto) (bool, error) {
-
-}
-
-func (f *fileDescriptorWalker) enter(fullName protoreflect.FullName, sourcePath protoreflect.SourcePath, descriptor proto.Message) error {
-	var isIncluded bool
-	switch descriptor := descriptor.(type) {
-	case *descriptorpb.EnumValueDescriptorProto, *descriptorpb.OneofDescriptorProto:
-		// Added by their enclosing types.
-		isIncluded = f.includes[len(f.includes)-1]
-	case *descriptorpb.FieldDescriptorProto:
-		isIncluded = f.isFieldIncluded(descriptor)
-	default:
-		isIncluded = f.typesFilter.filter(fullName)
-	}
-	fmt.Println("ENTER", fullName, "included?", isIncluded)
-	if isIncluded {
-		// If a child is included, the parent must be included.
-		for index := range f.includes {
-			f.includes[index] = true
-		}
-	}
-	f.includes = append(f.includes, isIncluded)
-	return nil
-}
-
-func (f *fileDescriptorWalker) exit(fullName protoreflect.FullName, sourcePath protoreflect.SourcePath, descriptor proto.Message) error {
-	fmt.Println("EXIT", f.includes)
-	isIncluded := f.includes[len(f.includes)-1]
-	f.includes = f.includes[:len(f.includes)-1]
-	if !isIncluded {
-		// Mark the source path for deletion.
-		f.sourcePathsRemap.markDeleted(sourcePath)
-		fmt.Println("\tDELETE", fullName)
-		return nil
-	}
-	// If the type is included, walk the options.
-	switch descriptor := descriptor.(type) {
-	case *descriptorpb.FileDescriptorProto:
-		// File options are handled at the top level, before walking the file.
-		// The FileDescriptorProto is not walked here.
-		return nil
-	case *descriptorpb.DescriptorProto:
-		optionsPath := append(sourcePath, messageOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.FieldDescriptorProto:
-		// Add the field type to the required types.
-		if err := f.addFieldType(descriptor); err != nil {
-			return err
-		}
-		optionsPath := append(sourcePath, fieldOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.OneofDescriptorProto:
-		optionsPath := append(sourcePath, oneofOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.EnumDescriptorProto:
-		optionsPath := append(sourcePath, enumOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.EnumValueDescriptorProto:
-		optionsPath := append(sourcePath, enumValueOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.ServiceDescriptorProto:
-		optionsPath := append(sourcePath, serviceOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.MethodDescriptorProto:
-		optionsPath := append(sourcePath, methodOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	case *descriptorpb.DescriptorProto_ExtensionRange:
-		optionsPath := append(sourcePath, extensionRangeOptionsTag)
-		return f.options(descriptor.GetOptions(), optionsPath)
-	default:
-		return fmt.Errorf("unexpected message type %T", descriptor)
-	}
-}
-
-func (f *fileDescriptorWalker) options(
-	optionsMessage proto.Message,
-	optionsPath protoreflect.SourcePath,
-) error {
-	if optionsMessage == nil {
-		return nil
-	}
-	options := optionsMessage.ProtoReflect()
-	if !options.IsValid() {
-		return nil // No options to strip.
-	}
-	numFieldsToKeep := 0
-	options.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		if !f.optionsFilter.filter(fd.FullName()) {
-			// Remove this option.
-			fmt.Println("\tremove option", fd.FullName())
-			optionPath := append(optionsPath, int32(fd.Number()))
-			f.sourcePathsRemap.markDeleted(optionPath)
-			return true
-		}
-		fmt.Println("\tkeep option", fd.FullName())
-		numFieldsToKeep++
-		if fd.IsExtension() {
-			// Add the extension type to the required types.
-			f.addRequiredType(fd.FullName())
-		}
-		return true
-	})
-	if numFieldsToKeep == 0 {
-		f.sourcePathsRemap.markDeleted(optionsPath) // No options to keep.
-	}
-	return nil
-}
-
-func (f *fileDescriptorWalker) isFieldIncluded(field *descriptorpb.FieldDescriptorProto) bool {
-	isIncluded := f.includes[len(f.includes)-1]
-	if field.Extendee != nil {
-		// This is an extension field.
-		extendee := strings.TrimPrefix(field.GetExtendee(), ".")
-		isIncluded = isIncluded && f.typesFilter.filter(protoreflect.FullName(extendee))
-	}
-	typeName := strings.TrimPrefix(field.GetTypeName(), ".")
-	isIncluded = isIncluded && f.typesFilter.filter(protoreflect.FullName(typeName))
-	fmt.Println("\tisFieldIncluded", field.GetName(), typeName, isIncluded)
-	return isIncluded
-}
-
-func (f *fileDescriptorWalker) addFieldType(field *descriptorpb.FieldDescriptorProto) error {
-	if field.Extendee != nil {
-		// This is an extension field.
-		extendee := strings.TrimPrefix(field.GetExtendee(), ".")
-		f.addRequiredType(protoreflect.FullName(extendee))
-	}
-	switch field.GetType() {
-	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
-		typeName := strings.TrimPrefix(field.GetTypeName(), ".")
-		f.addRequiredType(protoreflect.FullName(typeName))
-	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
-		descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
-		descriptorpb.FieldDescriptorProto_TYPE_INT64,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
-		descriptorpb.FieldDescriptorProto_TYPE_INT32,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
-		descriptorpb.FieldDescriptorProto_TYPE_BOOL,
-		descriptorpb.FieldDescriptorProto_TYPE_STRING,
-		descriptorpb.FieldDescriptorProto_TYPE_BYTES,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT32,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
-	// nothing to follow, custom options handled above.
-	default:
-		return fmt.Errorf("unknown field type %d", field.GetType())
-	}
-	return nil
-}
-
-func (f *fileDescriptorWalker) addRequiredType(fullName protoreflect.FullName) {
-	file := f.imageTypeIndex.TypeToFile[fullName]
-	fmt.Println("\taddRequiredType", fullName, file.Path())
-	if file.Path() != f.filePath {
-		// This is an imported type.
-		file := f.imageTypeIndex.TypeToFile[fullName]
-		f.fileImports[file.Path()] = struct{}{}
-	}
-}*/
 
 func remapFileDescriptor(
 	fileDescriptor *descriptorpb.FileDescriptorProto,
@@ -928,12 +691,4 @@ func shallowCloneReflect(src protoreflect.Message) protoreflect.Message {
 		return true
 	})
 	return dst
-}
-
-func getFullName(parentName protoreflect.FullName, message interface{ GetName() string }) protoreflect.FullName {
-	fullName := protoreflect.FullName(message.GetName())
-	if parentName == "" {
-		return fullName
-	}
-	return parentName + "." + fullName
 }

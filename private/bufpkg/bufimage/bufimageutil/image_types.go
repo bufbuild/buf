@@ -18,171 +18,52 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/protocompile/walk"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-type typeLink int
-
-const (
-	typeLinkNone    typeLink = iota // 0
-	typeLinkChild                   // 1
-	typeLinkDepends                 // 2
-	typeLinkOption                  // 3
-)
-
-type imageTypeIndex struct {
-	// TypeSet maps fully qualified type names to their children.
-	TypeSet map[protoreflect.FullName]map[protoreflect.FullName]typeLink
-	// TypeToFile maps fully qualified type names to their image file.
-	TypeToFile map[protoreflect.FullName]bufimage.ImageFile
+type fullNameFilter struct {
+	options  *imageFilterOptions
+	index    *imageIndex
+	includes map[protoreflect.FullName]struct{}
+	excludes map[protoreflect.FullName]struct{}
 }
 
-func newImageTypeIndex(image bufimage.Image) (*imageTypeIndex, error) {
-	index := &imageTypeIndex{
-		TypeSet:    make(map[protoreflect.FullName]map[protoreflect.FullName]typeLink),
-		TypeToFile: make(map[protoreflect.FullName]bufimage.ImageFile),
+func newFullNameFilter(
+	imageIndex *imageIndex,
+	options *imageFilterOptions,
+) (*fullNameFilter, error) {
+	filter := &fullNameFilter{
+		options: options,
+		index:   imageIndex,
 	}
-	for _, file := range image.Files() {
-		if err := index.addFile(file); err != nil {
+	if !options.includeCustomOptions && len(options.includeOptions) > 0 {
+		return nil, fmt.Errorf("cannot include options without including custom options")
+	}
+	for excludeType := range options.excludeTypes {
+		excludeType := protoreflect.FullName(excludeType)
+		if err := filter.exclude(excludeType); err != nil {
 			return nil, err
 		}
 	}
-	return index, nil
-}
-
-func (i *imageTypeIndex) addFile(file bufimage.ImageFile) error {
-	fileDescriptor := file.FileDescriptorProto()
-	packageName := protoreflect.FullName(fileDescriptor.GetPackage())
-	// Add all parent packages to point to this package.
-	for packageName := packageName; packageName != ""; {
-		sep := strings.LastIndex(string(packageName), ".")
-		if sep == -1 {
-			break
+	for includeType := range options.includeTypes {
+		includeType := protoreflect.FullName(includeType)
+		if err := filter.include(includeType); err != nil {
+			return nil, err
 		}
-		parentPackageName := protoreflect.FullName(packageName[:sep])
-		i.linkType(parentPackageName, packageName, typeLinkChild)
-		packageName = parentPackageName
 	}
-
-	stack := make([]protoreflect.FullName, 0, 10)
-	stack = append(stack, packageName)
-	i.addType(stack[0])
-	i.addOptionTypes(stack[0], fileDescriptor.GetOptions())
-	enter := func(fullName protoreflect.FullName, descriptor proto.Message) error {
-		fmt.Println("stack", stack, "->", fullName)
-		parentFullName := stack[len(stack)-1]
-		switch descriptor := descriptor.(type) {
-		case *descriptorpb.DescriptorProto:
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.FieldDescriptorProto:
-			i.addFieldType(parentFullName, descriptor)
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.OneofDescriptorProto:
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.EnumDescriptorProto:
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.EnumValueDescriptorProto:
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.ServiceDescriptorProto:
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.MethodDescriptorProto:
-			inputName := protoreflect.FullName(strings.TrimPrefix(descriptor.GetInputType(), "."))
-			outputName := protoreflect.FullName(strings.TrimPrefix(descriptor.GetOutputType(), "."))
-			i.linkType(parentFullName, inputName, typeLinkDepends)
-			i.linkType(parentFullName, outputName, typeLinkDepends)
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		case *descriptorpb.DescriptorProto_ExtensionRange:
-			i.addOptionTypes(parentFullName, descriptor.GetOptions())
-		default:
-			return fmt.Errorf("unexpected message type %T", descriptor)
-		}
-		i.TypeToFile[fullName] = file
-		if isDescriptorType(descriptor) {
-			i.linkType(parentFullName, fullName, typeLinkChild)
-			i.addType(fullName)
-			stack = append(stack, fullName)
-		}
-		return nil
-	}
-	exit := func(fullName protoreflect.FullName, descriptor proto.Message) error {
-		if isDescriptorType(descriptor) {
-			stack = stack[:len(stack)-1]
-		}
-		fmt.Println("exit ", stack, "->", fullName)
-		return nil
-	}
-	if err := walk.DescriptorProtosEnterAndExit(fileDescriptor, enter, exit); err != nil {
-		return err
-	}
-	return nil
+	return filter, nil
 }
 
-func (i *imageTypeIndex) addType(fullName protoreflect.FullName) {
-	if _, ok := i.TypeSet[fullName]; !ok {
-		i.TypeSet[fullName] = nil
-	}
-}
-
-func (i *imageTypeIndex) linkType(parentFullName protoreflect.FullName, fullName protoreflect.FullName, link typeLink) {
-	if typeSet := i.TypeSet[parentFullName]; typeSet != nil {
-		typeSet[fullName] = link
-	} else {
-		i.TypeSet[parentFullName] = map[protoreflect.FullName]typeLink{fullName: link}
-	}
-}
-
-func (i *imageTypeIndex) addFieldType(parentFullName protoreflect.FullName, fieldDescriptor *descriptorpb.FieldDescriptorProto) {
-	if extendee := fieldDescriptor.GetExtendee(); extendee != "" {
-		// This is an extension field.
-		extendeeFullName := protoreflect.FullName(strings.TrimPrefix(extendee, "."))
-		i.linkType(parentFullName, extendeeFullName, typeLinkDepends)
-	}
-	// Add the field type.
-	switch fieldDescriptor.GetType() {
-	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
-		// Add links to the type of the field.
-		typeFullName := protoreflect.FullName(
-			strings.TrimPrefix(fieldDescriptor.GetTypeName(), "."),
-		)
-		i.linkType(parentFullName, typeFullName, typeLinkDepends)
-	}
-}
-
-func (i *imageTypeIndex) addOptionTypes(parentFullName protoreflect.FullName, optionsMessage proto.Message) {
-	if optionsMessage == nil {
-		return
-	}
-	options := optionsMessage.ProtoReflect()
-	if !options.IsValid() {
-		return
-	}
-	options.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		if fieldDescriptor.IsExtension() {
-			i.linkType(parentFullName, fieldDescriptor.FullName(), typeLinkOption)
-		}
-		return true
-	})
-}
-
-type fullNameFilter struct {
-	include map[protoreflect.FullName]struct{}
-	exclude map[protoreflect.FullName]struct{}
-}
-
-func (f *fullNameFilter) filter(fullName protoreflect.FullName) (isIncluded bool, isExplicit bool) {
-	if f.exclude != nil {
-		if _, ok := f.exclude[fullName]; ok {
+func (f *fullNameFilter) hasType(fullName protoreflect.FullName) (isIncluded bool, isExplicit bool) {
+	if len(f.options.excludeTypes) > 0 || f.excludes != nil {
+		if _, ok := f.excludes[fullName]; ok {
 			return false, true
 		}
 	}
-	if f.include != nil {
-		if _, ok := f.include[fullName]; ok {
+	if len(f.options.includeTypes) > 0 || f.includes != nil {
+		if _, ok := f.includes[fullName]; ok {
 			return true, true
 		}
 		return false, false
@@ -190,116 +71,430 @@ func (f *fullNameFilter) filter(fullName protoreflect.FullName) (isIncluded bool
 	return true, false
 }
 
-func createTypeFilter(index *imageTypeIndex, options *imageFilterOptions) (fullNameFilter, error) {
-	var filter fullNameFilter
-	var excludeList []protoreflect.FullName
-	for excludeType := range options.excludeTypes {
-		excludeType := protoreflect.FullName(excludeType)
-		if _, ok := index.TypeSet[excludeType]; !ok {
-			return filter, fmt.Errorf("filtering by excluded type %q: %w", excludeType, ErrImageFilterTypeNotFound)
+func (f *fullNameFilter) hasOption(fullName protoreflect.FullName, isExtension bool) (isIncluded bool, isExplicit bool) {
+	if f.options.excludeOptions != nil {
+		if _, ok := f.options.excludeOptions[string(fullName)]; ok {
+			return false, true
 		}
-		file := index.TypeToFile[excludeType]
-		if file.IsImport() && !options.allowImportedTypes {
-			return filter, fmt.Errorf("filtering by excluded type %q: %w", excludeType, ErrImageFilterTypeIsImport)
-		}
-		excludeList = append(excludeList, excludeType)
 	}
-	if len(excludeList) > 0 {
-		filter.exclude = make(map[protoreflect.FullName]struct{})
+	if !f.options.includeCustomOptions {
+		return !isExtension, true
 	}
-	for len(excludeList) > 0 {
-		excludeType := excludeList[len(excludeList)-1]
-		excludeList = excludeList[:len(excludeList)-1]
-		if _, ok := filter.exclude[excludeType]; ok {
-			continue
+	if f.options.includeOptions != nil {
+		_, ok := f.options.includeOptions[string(fullName)]
+		return ok, true
+	}
+	return true, false
+}
+
+func (f *fullNameFilter) isExplicitExclude(fullName protoreflect.FullName) bool {
+	if f.excludes == nil {
+		return false
+	}
+	_, ok := f.excludes[fullName]
+	return ok
+}
+
+func (f *fullNameFilter) exclude(fullName protoreflect.FullName) error {
+	if _, excluded := f.excludes[fullName]; excluded {
+		return nil
+	}
+	if descriptorInfo, ok := f.index.ByName[fullName]; ok {
+		return f.excludeElement(fullName, descriptorInfo.element)
+	}
+	packageInfo, ok := f.index.Packages[string(fullName)]
+	if !ok {
+		return fmt.Errorf("type %q: %w", fullName, ErrImageFilterTypeNotFound)
+	}
+	for _, file := range packageInfo.files {
+		// Remove the package name from the excludes since it is not unique per file.
+		delete(f.excludes, fullName)
+		if err := f.excludeElement(fullName, file.FileDescriptorProto()); err != nil {
+			return err
 		}
-		for childType, childLink := range index.TypeSet[excludeType] {
-			if childLink == typeLinkChild {
-				excludeList = append(excludeList, childType)
-			}
+	}
+	for _, subPackage := range packageInfo.subPackages {
+		if err := f.exclude(subPackage.fullName); err != nil {
+			return err
 		}
-		filter.exclude[excludeType] = struct{}{}
+	}
+	return nil
+}
+
+func (f *fullNameFilter) excludeElement(fullName protoreflect.FullName, descriptor namedDescriptor) error {
+	if _, excluded := f.excludes[fullName]; excluded {
+		return nil
+	}
+	if f.excludes == nil {
+		f.excludes = make(map[protoreflect.FullName]struct{})
+	}
+	f.excludes[fullName] = struct{}{}
+	switch descriptor := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		if err := forEachDescriptor(fullName, descriptor.GetMessageType(), f.excludeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetEnumType(), f.excludeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetService(), f.excludeElement); err != nil {
+			return err
+		}
+		return nil
+	case *descriptorpb.DescriptorProto:
+		f.excludes[fullName] = struct{}{}
+		// Exclude all sub-elements
+		if err := forEachDescriptor(fullName, descriptor.GetNestedType(), f.excludeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetEnumType(), f.excludeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetOneofDecl(), f.excludeElement); err != nil {
+			return err
+		}
+		return nil
+	case *descriptorpb.EnumDescriptorProto:
+		// Value is excluded by parent.
+		return nil
+	case *descriptorpb.OneofDescriptorProto:
+		return nil
+	case *descriptorpb.ServiceDescriptorProto:
+		if err := forEachDescriptor(fullName, descriptor.GetMethod(), f.excludeElement); err != nil {
+			return err
+		}
+		return nil
+	case *descriptorpb.MethodDescriptorProto:
+		return nil
+	default:
+		return errorUnsupportedFilterType(descriptor, fullName)
+	}
+}
+
+func (f *fullNameFilter) include(fullName protoreflect.FullName) error {
+	if _, included := f.includes[fullName]; included {
+		return nil
+	}
+	if descriptorInfo, ok := f.index.ByName[fullName]; ok {
+		// Include the enclosing parent options.
+		if err := f.includeEnclosingOptions(descriptorInfo.parentName); err != nil {
+			return err
+		}
+		return f.includeElement(fullName, descriptorInfo.element)
+	}
+	packageInfo, ok := f.index.Packages[string(fullName)]
+	if !ok {
+		return fmt.Errorf("type %q: %w", fullName, ErrImageFilterTypeNotFound)
+	}
+	for _, file := range packageInfo.files {
+		// Remove the package name from the includes since it is not unique per file.
+		delete(f.includes, fullName)
+		if err := f.includeElement(fullName, file.FileDescriptorProto()); err != nil {
+			return err
+		}
+	}
+	f.includes[fullName] = struct{}{}
+	for _, subPackage := range packageInfo.subPackages {
+		if err := f.include(subPackage.fullName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *fullNameFilter) includeElement(fullName protoreflect.FullName, descriptor namedDescriptor) error {
+	if _, included := f.includes[fullName]; included {
+		return nil
+	}
+	if f.isExplicitExclude(fullName) {
+		return nil // already excluded
+	}
+	if f.includes == nil {
+		f.includes = make(map[protoreflect.FullName]struct{})
+	}
+	f.includes[fullName] = struct{}{}
+
+	if err := f.includeOptions(descriptor); err != nil {
+		return err
 	}
 
-	var includeList []protoreflect.FullName
-	for includeType := range options.includeTypes {
-		includeType := protoreflect.FullName(includeType)
-		if _, ok := index.TypeSet[includeType]; !ok {
-			return filter, fmt.Errorf("filtering by included type %q: %w", includeType, ErrImageFilterTypeNotFound)
+	switch descriptor := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		if err := forEachDescriptor(fullName, descriptor.GetMessageType(), f.includeElement); err != nil {
+			return err
 		}
-		file := index.TypeToFile[includeType]
-		if file.IsImport() && !options.allowImportedTypes {
-			return filter, fmt.Errorf("filtering by included type %q: %w", includeType, ErrImageFilterTypeIsImport)
+		if err := forEachDescriptor(fullName, descriptor.GetEnumType(), f.includeElement); err != nil {
+			return err
 		}
-		if _, ok := filter.exclude[includeType]; ok {
-			continue // Skip already excluded.
+		if err := forEachDescriptor(fullName, descriptor.GetService(), f.includeElement); err != nil {
+			return err
 		}
-		includeList = append(includeList, includeType)
-	}
-	if len(includeList) > 0 {
-		filter.include = make(map[protoreflect.FullName]struct{})
-	}
-	for len(includeList) > 0 {
-		includeType := includeList[len(includeList)-1]
-		includeList = includeList[:len(includeList)-1]
-		if _, ok := filter.include[includeType]; ok {
-			continue
+		return nil
+	case *descriptorpb.DescriptorProto:
+		if err := forEachDescriptor(fullName, descriptor.GetNestedType(), f.includeElement); err != nil {
+			return err
 		}
-		for childType, childLink := range index.TypeSet[includeType] {
-			if _, ok := filter.exclude[includeType]; ok {
-				continue // Skip already excluded.
+		if err := forEachDescriptor(fullName, descriptor.GetEnumType(), f.includeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetOneofDecl(), f.includeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetField(), f.includeElement); err != nil {
+			return err
+		}
+		if err := forEachDescriptor(fullName, descriptor.GetExtension(), f.includeElement); err != nil {
+			return err
+		}
+
+		// TODO: Include known extensions.
+		//if f.options.includeKnownExtensions {
+		//	for _, extensionDescriptor := range f.index.NameToExtensions[string(fullName)] {
+		//		if err := f.includeElement(fullName, extensionDescriptor); err != nil {
+		//			return err
+		//		}
+		//	}
+		//}
+		return nil
+	case *descriptorpb.FieldDescriptorProto:
+		if descriptor.Extendee != nil {
+			// This is an extension field.
+			extendeeName := protoreflect.FullName(strings.TrimPrefix(descriptor.GetExtendee(), "."))
+			if err := f.include(extendeeName); err != nil {
+				return err
 			}
-			switch childLink {
-			case typeLinkChild:
-				includeList = append(includeList, childType)
-			case typeLinkDepends:
-				includeList = append(includeList, childType)
-			case typeLinkOption:
-				if options.includeKnownExtensions || (options.includeCustomOptions && isOptionsTypeName(string(childType))) {
-					includeList = append(includeList, childType)
+		}
+		switch descriptor.GetType() {
+		case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+			descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
+			descriptorpb.FieldDescriptorProto_TYPE_GROUP:
+			typeName := protoreflect.FullName(strings.TrimPrefix(descriptor.GetTypeName(), "."))
+			if err := f.include(typeName); err != nil {
+				return err
+			}
+		case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
+			descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
+			descriptorpb.FieldDescriptorProto_TYPE_INT64,
+			descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+			descriptorpb.FieldDescriptorProto_TYPE_INT32,
+			descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+			descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
+			descriptorpb.FieldDescriptorProto_TYPE_BOOL,
+			descriptorpb.FieldDescriptorProto_TYPE_STRING,
+			descriptorpb.FieldDescriptorProto_TYPE_BYTES,
+			descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+			descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+			descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+			descriptorpb.FieldDescriptorProto_TYPE_SINT32,
+			descriptorpb.FieldDescriptorProto_TYPE_SINT64:
+		default:
+			return fmt.Errorf("unknown field type %d", descriptor.GetType())
+		}
+		return nil
+	case *descriptorpb.EnumDescriptorProto:
+		for _, enumValue := range descriptor.GetValue() {
+			if err := f.includeOptions(enumValue); err != nil {
+				return err
+			}
+		}
+		return nil
+	case *descriptorpb.OneofDescriptorProto:
+		return nil
+	case *descriptorpb.ServiceDescriptorProto:
+		if err := forEachDescriptor(fullName, descriptor.GetMethod(), f.includeElement); err != nil {
+			return err
+		}
+		return nil
+	case *descriptorpb.MethodDescriptorProto:
+		inputName := protoreflect.FullName(strings.TrimPrefix(descriptor.GetInputType(), "."))
+		inputInfo, ok := f.index.ByName[inputName]
+		if !ok {
+			return fmt.Errorf("missing %q", inputName)
+		}
+		if err := f.includeElement(inputName, inputInfo.element); err != nil {
+			return err
+		}
+
+		outputName := protoreflect.FullName(strings.TrimPrefix(descriptor.GetOutputType(), "."))
+		outputInfo, ok := f.index.ByName[outputName]
+		if !ok {
+			return fmt.Errorf("missing %q", outputName)
+		}
+		if err := f.includeElement(outputName, outputInfo.element); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errorUnsupportedFilterType(descriptor, fullName)
+	}
+}
+
+func (f *fullNameFilter) includeEnclosingOptions(fullName protoreflect.FullName) error {
+	// loop through all enclosing parents since nesting level
+	// could be arbitrarily deep
+	for info, ok := f.index.ByName[fullName]; ok; {
+		if err := f.includeOptions(info.element); err != nil {
+			return err
+		}
+		info, ok = f.index.ByName[info.parentName]
+	}
+	return nil
+}
+
+func (f *fullNameFilter) includeOptions(descriptor proto.Message) (err error) {
+	var optionsMessage proto.Message
+	switch descriptor := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.DescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.FieldDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.OneofDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.EnumDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.EnumValueDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.ServiceDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.MethodDescriptorProto:
+		optionsMessage = descriptor.GetOptions()
+	case *descriptorpb.DescriptorProto_ExtensionRange:
+		optionsMessage = descriptor.GetOptions()
+	default:
+		return fmt.Errorf("unexpected type for exploring options %T", descriptor)
+	}
+	if optionsMessage == nil {
+		return nil
+	}
+	options := optionsMessage.ProtoReflect()
+	optionsName := options.Descriptor().FullName()
+	optionsByNumber := f.index.NameToOptions[string(optionsName)]
+	options.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+		if isIncluded, _ := f.hasOption(fieldDescriptor.FullName(), fieldDescriptor.IsExtension()); !isIncluded {
+			return true
+		}
+		if err = f.includeOptionValue(fieldDescriptor, value); err != nil {
+			return false
+		}
+		if !fieldDescriptor.IsExtension() {
+			return true
+		}
+		extensionField, ok := optionsByNumber[int32(fieldDescriptor.Number())]
+		if !ok {
+			err = fmt.Errorf("cannot find ext no %d on %s", fieldDescriptor.Number(), optionsName)
+			return false
+		}
+		info := f.index.ByDescriptor[extensionField]
+		err = f.includeElement(info.fullName, extensionField)
+		return err == nil
+	})
+	return err
+}
+
+func (f *fullNameFilter) includeOptionValue(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) error {
+	// If the value contains an Any message, we should add the message type
+	// therein to the closure.
+	switch {
+	case fieldDescriptor.IsMap():
+		if isMessageKind(fieldDescriptor.MapValue().Kind()) {
+			var err error
+			value.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
+				err = f.includeOptionSingularValueForAny(v.Message())
+				return err == nil
+			})
+			return err
+		}
+		return nil
+	case isMessageKind(fieldDescriptor.Kind()):
+		if fieldDescriptor.IsList() {
+			listVal := value.List()
+			for i := 0; i < listVal.Len(); i++ {
+				if err := f.includeOptionSingularValueForAny(listVal.Get(i).Message()); err != nil {
+					return err
 				}
 			}
+			return nil
 		}
-		filter.include[includeType] = struct{}{}
-	}
-	return filter, nil
-}
-
-func createOptionsFilter(index *imageTypeIndex, options *imageFilterOptions) (fullNameFilter, error) {
-	var filter fullNameFilter
-	for includeOption := range options.includeOptions {
-		includeOption := protoreflect.FullName(includeOption)
-		if _, ok := index.TypeSet[includeOption]; !ok {
-			return filter, fmt.Errorf("filtering by included option %q: %w", includeOption, ErrImageFilterTypeNotFound)
-		}
-		// TODO: check for imported type filter?
-		if filter.include == nil {
-			filter.include = make(map[protoreflect.FullName]struct{})
-		}
-		filter.include[includeOption] = struct{}{}
-	}
-	for excludeOption := range options.excludeOptions {
-		excludeOption := protoreflect.FullName(excludeOption)
-		if _, ok := index.TypeSet[excludeOption]; !ok {
-			return filter, fmt.Errorf("filtering by excluded option %q: %w", excludeOption, ErrImageFilterTypeNotFound)
-		}
-		// TODO: check for imported type filter?
-		if filter.exclude == nil {
-			filter.exclude = make(map[protoreflect.FullName]struct{})
-		}
-		filter.exclude[excludeOption] = struct{}{}
-	}
-	return filter, nil
-}
-
-func isDescriptorType(descriptor proto.Message) bool {
-	switch descriptor := descriptor.(type) {
-	case *descriptorpb.EnumValueDescriptorProto, *descriptorpb.OneofDescriptorProto:
-		// Added by their enclosing types.
-		return false
-	case *descriptorpb.FieldDescriptorProto:
-		return descriptor.Extendee != nil
+		return f.includeOptionSingularValueForAny(value.Message())
 	default:
-		return true
+		return nil
 	}
+}
+
+func (f *fullNameFilter) includeOptionSingularValueForAny(message protoreflect.Message) error {
+	md := message.Descriptor()
+	if md.FullName() == anyFullName {
+		// Found one!
+		typeURLFd := md.Fields().ByNumber(1)
+		if typeURLFd.Kind() != protoreflect.StringKind || typeURLFd.IsList() {
+			// should not be possible...
+			return nil
+		}
+		typeURL := message.Get(typeURLFd).String()
+		pos := strings.LastIndexByte(typeURL, '/')
+		msgType := protoreflect.FullName(typeURL[pos+1:])
+		d, _ := f.index.ByName[msgType].element.(*descriptorpb.DescriptorProto)
+		if d != nil {
+			if err := f.includeElement(msgType, d); err != nil {
+				return err
+			}
+		}
+		// TODO: unmarshal the bytes to see if there are any nested Any messages
+		return nil
+	}
+	// keep digging
+	var err error
+	message.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		err = f.includeOptionValue(fd, val)
+		return err == nil
+	})
+	return err
+}
+
+func forEachDescriptor[T namedDescriptor](
+	parentName protoreflect.FullName,
+	list []T,
+	fn func(protoreflect.FullName, namedDescriptor) error,
+) error {
+	for _, element := range list {
+		if err := fn(getFullName(parentName, element), element); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isMessageKind(k protoreflect.Kind) bool {
+	return k == protoreflect.MessageKind || k == protoreflect.GroupKind
+}
+
+func errorUnsupportedFilterType(descriptor namedDescriptor, fullName protoreflect.FullName) error {
+	var descriptorType string
+	switch d := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		descriptorType = "file"
+	case *descriptorpb.DescriptorProto:
+		descriptorType = "message"
+	case *descriptorpb.FieldDescriptorProto:
+		if d.Extendee != nil {
+			descriptorType = "extension field"
+		} else {
+			descriptorType = "non-extension field"
+		}
+	case *descriptorpb.OneofDescriptorProto:
+		descriptorType = "oneof"
+	case *descriptorpb.EnumDescriptorProto:
+		descriptorType = "enum"
+	case *descriptorpb.EnumValueDescriptorProto:
+		descriptorType = "enum value"
+	case *descriptorpb.ServiceDescriptorProto:
+		descriptorType = "service"
+	case *descriptorpb.MethodDescriptorProto:
+		descriptorType = "method"
+	default:
+		descriptorType = fmt.Sprintf("%T", d)
+	}
+	return fmt.Errorf("%s is unsupported filter type: %s", fullName, descriptorType)
 }
