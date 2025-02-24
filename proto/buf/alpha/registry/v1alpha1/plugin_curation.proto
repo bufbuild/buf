@@ -79,6 +79,7 @@ enum SwiftPlatformType {
   SWIFT_PLATFORM_TYPE_IOS = 2;
   SWIFT_PLATFORM_TYPE_WATCHOS = 3;
   SWIFT_PLATFORM_TYPE_TVOS = 4;
+  SWIFT_PLATFORM_TYPE_VISIONOS = 5;
 }
 
 // PythonPackageType is used to specify the package type for a Python Generated SDK.
