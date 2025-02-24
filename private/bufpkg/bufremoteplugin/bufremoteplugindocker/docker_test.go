@@ -238,7 +238,7 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		if err := json.NewEncoder(w).Encode(&types.ImageInspect{
+		if err := json.NewEncoder(w).Encode(&dockerimage.InspectResponse{
 			ID:       "sha256:" + foundImageID,
 			RepoTags: d.pushedImages[foundImageID].tags,
 		}); err != nil {
