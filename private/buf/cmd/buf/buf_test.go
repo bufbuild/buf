@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1259,7 +1260,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		}`,
 		append(
 			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
-				return slicesext.ElementsContained(breakingRule.Categories, []string{"WIRE"})
+				return slices.Contains(breakingRule.Categories, "WIRE")
 			}),
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
 			&outputCheckRule{ID: "MESSAGE_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that messages with configured suffixes are not deleted and do not have new fields or delete fields.", Plugin: "buf-plugin-suffix"},
@@ -1295,7 +1296,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		}`,
 		append(
 			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
-				return slicesext.ElementsContained(breakingRule.Categories, []string{"PACKAGE"})
+				return slices.Contains(breakingRule.Categories, "PACKAGE")
 			}),
 			&outputCheckRule{ID: "FIELD_WIRE_COMPATIBLE_TYPE", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible types in a given message."},
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
@@ -1314,7 +1315,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		}`,
 		append(
 			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
-				return slicesext.ElementsContained(breakingRule.Categories, []string{"PACKAGE"}) || breakingRule.ID == "FIELD_WIRE_COMPATIBLE_TYPE"
+				return slices.Contains(breakingRule.Categories, "PACKAGE") || breakingRule.ID == "FIELD_WIRE_COMPATIBLE_TYPE"
 			}),
 			&outputCheckRule{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},

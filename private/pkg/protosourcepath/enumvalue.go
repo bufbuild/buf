@@ -15,7 +15,8 @@
 package protosourcepath
 
 import (
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"slices"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -61,11 +62,7 @@ func enumValues(
 // enumValue is the state when an element representing a specific child path of an enum was
 // parsed.
 func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// TODO: use slices.Contains in the future
-	if slicesext.ElementsContained(
-		terminalEnumValueTokens,
-		[]int32{token},
-	) {
+	if slices.Contains(terminalEnumValueTokens, token) {
 		// Encountered a terminal enum value path, terminate here.
 		return nil, nil, nil
 	}
@@ -73,7 +70,7 @@ func enumValue(token int32, sourcePath protoreflect.SourcePath, i int, _ bool) (
 	case enumValueOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(sourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(sourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(sourcePath, "invalid enum value path")
 }

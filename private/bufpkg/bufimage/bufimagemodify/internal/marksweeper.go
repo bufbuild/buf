@@ -16,9 +16,9 @@ package internal
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -98,7 +98,7 @@ func removeLocationsFromSourceCodeInfo(
 			return fmt.Errorf("path %v must have a preceding parent path", location.Path)
 		}
 		if isPathForFileOption(location.Path) {
-			if !slicesext.ElementsEqual(sourceCodeInfo.Location[i-1].Path, fileOptionPath) {
+			if !slices.Equal(sourceCodeInfo.Location[i-1].Path, fileOptionPath) {
 				return fmt.Errorf("file option path %v must have a preceding parent path equal to %v", location.Path, fileOptionPath)
 			}
 			// Add the target path and its parent.

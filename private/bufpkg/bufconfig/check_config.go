@@ -15,6 +15,8 @@
 package bufconfig
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
@@ -216,15 +218,15 @@ func (c *checkConfig) FileVersion() FileVersion {
 }
 
 func (c *checkConfig) UseIDsAndCategories() []string {
-	return slicesext.Copy(c.use)
+	return slices.Clone(c.use)
 }
 
 func (c *checkConfig) ExceptIDsAndCategories() []string {
-	return slicesext.Copy(c.except)
+	return slices.Clone(c.except)
 }
 
 func (c *checkConfig) IgnorePaths() []string {
-	return slicesext.Copy(c.ignore)
+	return slices.Clone(c.ignore)
 }
 
 func (c *checkConfig) IgnoreIDOrCategoryToPaths() map[string][]string {

@@ -15,7 +15,8 @@
 package protosourcepath
 
 import (
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"slices"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -68,11 +69,7 @@ func methods(
 
 // method is the state when an element representing a specific child path of a method was parsed.
 func method(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) (state, []protoreflect.SourcePath, error) {
-	// TODO: use slices.Contains in the future
-	if slicesext.ElementsContained(
-		terminalMethodTokens,
-		[]int32{token},
-	) {
+	if slices.Contains(terminalMethodTokens, token) {
 		// Encountered a terminal method token, can terminate here immediately.
 		return nil, nil, nil
 	}
@@ -80,7 +77,7 @@ func method(token int32, fullSourcePath protoreflect.SourcePath, _ int, _ bool) 
 	case methodOptionTypeTag:
 		// For options, we add the full path and then return the options state to validate
 		// the path.
-		return options, []protoreflect.SourcePath{slicesext.Copy(fullSourcePath)}, nil
+		return options, []protoreflect.SourcePath{slices.Clone(fullSourcePath)}, nil
 	}
 	return nil, nil, newInvalidSourcePathError(fullSourcePath, "invalid method path")
 }
