@@ -114,7 +114,7 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 	if err := d.negotiateVersion(ctx); err != nil {
 		return nil, err
 	}
-	response, err := d.cli.ImageLoad(ctx, image, true)
+	response, err := d.cli.ImageLoad(ctx, image, client.ImageLoadWithQuiet(true))
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectRe
 	if err := d.negotiateVersion(ctx); err != nil {
 		return nil, err
 	}
-	inspect, _, err := d.cli.ImageInspectWithRaw(ctx, image)
+	inspect, err := d.cli.ImageInspect(ctx, image)
 	if err != nil {
 		return nil, err
 	}
