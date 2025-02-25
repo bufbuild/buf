@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"regexp"
 
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -392,7 +394,7 @@ func (g *generator) execRemotePluginsV2(
 		),
 	)
 	if err != nil {
-		return nil, err
+		return nil, g.enrichPluginResolutionError(ctx, err, requests, remote)
 	}
 	responses := response.Msg.GetResponses()
 	if len(responses) != len(requests) {
@@ -410,6 +412,65 @@ func (g *generator) execRemotePluginsV2(
 		})
 	}
 	return result, nil
+}
+
+func (g *generator) enrichPluginResolutionError(ctx context.Context, err error, requests []*registryv1alpha1.PluginGenerationRequest, remote string) error {
+	var connectErr *connect.Error
+	if !errors.As(err, &connectErr) && connectErr.Code() != connect.CodeNotFound {
+		// we only attempt to enrich NotFound errors
+		return err
+	}
+
+	// the error message for NotFound errors is expected to contain the specific failing plugin reference
+	// unfortunately we have to parse this out, it is not provided in a more direct form
+	pluginNotFoundErrorRegexp := regexp.MustCompile(`^plugin "([^"]*)" was not found$`)
+	matched := pluginNotFoundErrorRegexp.FindStringSubmatch(connectErr.Message())
+	if len(matched) <= 1 {
+		return err
+	}
+
+	pluginRefStr := matched[1]
+	pluginRef, parseErr := bufparse.ParseRef(pluginRefStr)
+	if parseErr != nil {
+		// we can't parse the plugin ref, so just return the original error
+		return err
+	}
+
+	repository := pluginRef.FullName().Registry()
+	owner := pluginRef.FullName().Owner()
+	name := pluginRef.FullName().Name()
+
+	// find the matching plugin in the request to determine what version was used
+	var missingVersion string = ""
+	for _, x := range requests {
+		if x.GetPluginReference().GetOwner() == owner && x.GetPluginReference().GetName() == name {
+			missingVersion = x.GetPluginReference().GetVersion()
+		}
+	}
+
+	if missingVersion == "" {
+		// no match in the requests, so just return the original error
+		return err
+	}
+
+	curationClientService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewPluginCurationServiceClient)
+
+	response, requestErr := curationClientService.GetLatestCuratedPlugin(ctx, connect.NewRequest(
+		registryv1alpha1.GetLatestCuratedPluginRequest_builder{
+			Owner: owner,
+			Name:  name,
+		}.Build(),
+	))
+
+	if requestErr != nil {
+		// failed to get plugin information from the plugin curation service, so this plugin must not exist
+		return fmt.Errorf("unknown plugin %s/%s, check https://%s/plugins for the list of available plugins", owner, name, repository)
+	}
+
+	plugin := response.Msg.GetPlugin()
+	latestVersion := plugin.GetVersion()
+
+	return fmt.Errorf("unknown version %[1]s for plugin %[2]s/%[3]s. The latest version is %[4]s. Check https://%[5]s/%[2]s/%[3]s for other available versions", missingVersion, owner, name, latestVersion, repository)
 }
 
 func getPluginGenerationRequest(
