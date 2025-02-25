@@ -37,7 +37,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	if err != nil {
 		return nil, err
 	}
-
 	// Loop over image files in revserse DAG order. Imports that are no longer
 	// imported by a previous file are dropped from the image.
 	imageFiles := image.Files()
@@ -57,8 +56,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			imageFile,
 			imageIndex,
 			filter,
-			//typeFilter,
-			//optionsFilter,
 		)
 		if err != nil {
 			return nil, err
@@ -84,8 +81,6 @@ func filterImageFile(
 	imageFile bufimage.ImageFile,
 	imageIndex *imageIndex,
 	filter *fullNameFilter,
-	//typesFilter fullNameFilter,
-	//optionsFilter fullNameFilter,
 ) (bufimage.ImageFile, error) {
 	fileDescriptor := imageFile.FileDescriptorProto()
 	var sourcePathsRemap sourcePathsRemapTrie
@@ -132,15 +127,11 @@ func addRemapsForFileDescriptor(
 	fileDescriptor *descriptorpb.FileDescriptorProto,
 	imageIndex *imageIndex,
 	filter *fullNameFilter,
-	//typesFilter fullNameFilter,
-	//optionsFilter fullNameFilter,
 ) (bool, error) {
 	packageName := protoreflect.FullName(fileDescriptor.GetPackage())
 	if packageName != "" {
 		// Check if filtered by the package name.
-		isIncluded, isExplicit := filter.hasType(packageName)
-		if !isIncluded && isExplicit {
-			// The package is excluded.
+		if !filter.hasType(packageName) {
 			return false, nil
 		}
 	}
@@ -155,18 +146,27 @@ func addRemapsForFileDescriptor(
 	sourcePath := make(protoreflect.SourcePath, 0, 8)
 
 	// Walk the file descriptor.
-	if _, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, builder.addRemapsForDescriptor); err != nil {
+	isIncluded := false
+	hasMessages, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, builder.addRemapsForDescriptor)
+	if err != nil {
 		return false, err
 	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, builder.addRemapsForEnum); err != nil {
+	isIncluded = isIncluded || hasMessages
+	hasEnums, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, builder.addRemapsForEnum)
+	if err != nil {
 		return false, err
 	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileServicesTag), fileDescriptor.Service, builder.addRemapsForService); err != nil {
+	isIncluded = isIncluded || hasEnums
+	hasServices, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileServicesTag), fileDescriptor.Service, builder.addRemapsForService)
+	if err != nil {
 		return false, err
 	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, builder.addRemapsForField); err != nil {
+	isIncluded = isIncluded || hasServices
+	hasExtensions, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, builder.addRemapsForField)
+	if err != nil {
 		return false, err
 	}
+	isIncluded = isIncluded || hasExtensions
 	if err := builder.addRemapsForOptions(sourcePathsRemap, append(sourcePath, fileOptionsTag), fileDescriptor.Options); err != nil {
 		return false, err
 	}
@@ -211,7 +211,7 @@ func addRemapsForFileDescriptor(
 			}
 		}
 	}
-	return true, nil
+	return isIncluded, nil
 }
 
 func (b *sourcePathsBuilder) addRemapsForDescriptor(
@@ -221,64 +221,44 @@ func (b *sourcePathsBuilder) addRemapsForDescriptor(
 	descriptor *descriptorpb.DescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, descriptor)
-	isIncluded, isExplicit := b.filter.hasType(fullName)
-	if !isIncluded && isExplicit {
+	mode := b.filter.inclusionMode(fullName)
+	if mode == inclusionModeNone {
 		// The type is excluded.
 		return false, nil
 	}
-	//
-	// If the message is only enclosin included message remove the fields.
-	if isIncluded {
-		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
-			return false, err
-		}
-		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
-			return false, err
-		}
-		for index, extensionRange := range descriptor.GetExtensionRange() {
-			extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
-			if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
-				return false, err
-			}
-		}
-	} else {
-		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
-		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
-		// TODO: check if extensions are removed???
-		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
-		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
+	if mode == inclusionModeEnclosing {
+		// TODO: check if other descriptor fields are removed?
 		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedRangesTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedNamesTag))
-		//for index := range descriptor.GetExtensionRange() {
-		//	sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag))
-		//}
-		//sourcePathsRemap.markDeleted(append(sourcePath, messageOptionsTag))
 	}
-	// Walk the nested types.
-	hasNestedTypes, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.addRemapsForDescriptor)
-	if err != nil {
+
+	// If the message is only enclosing, we search all fields for extensions.
+	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
 		return false, err
 	}
-	isIncluded = isIncluded || hasNestedTypes
-
-	// Walk the enum types.
-	hasEnums, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.addRemapsForEnum)
-	if err != nil {
+	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
 		return false, err
 	}
-	isIncluded = isIncluded || hasEnums
+	for index, extensionRange := range descriptor.GetExtensionRange() {
+		extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
+		if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
+			return false, err
+		}
+	}
 
-	// Walk the oneof types.
-	hasOneofs, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.addRemapsForOneof)
-	if err != nil {
+	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.addRemapsForDescriptor); err != nil {
 		return false, err
 	}
-	isIncluded = isIncluded || hasOneofs
-
+	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.addRemapsForEnum); err != nil {
+		return false, err
+	}
+	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.addRemapsForOneof); err != nil {
+		return false, err
+	}
 	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions()); err != nil {
 		return false, err
 	}
-	return isIncluded, nil
+	return true, nil
 }
 
 func (b *sourcePathsBuilder) addRemapsForEnum(
@@ -289,7 +269,7 @@ func (b *sourcePathsBuilder) addRemapsForEnum(
 ) (bool, error) {
 	//fullName := b.imageIndex.ByDescriptor[enum]
 	fullName := getFullName(parentName, enum)
-	if isIncluded, _ := b.filter.hasType(fullName); !isIncluded {
+	if !b.filter.hasType(fullName) {
 		// The type is excluded, enum values cannot be excluded individually.
 		return false, nil
 	}
@@ -316,7 +296,7 @@ func (b *sourcePathsBuilder) addRemapsForOneof(
 	oneof *descriptorpb.OneofDescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, oneof)
-	if isIncluded, _ := b.filter.hasType(fullName); !isIncluded {
+	if !b.filter.hasType(fullName) {
 		// The type is excluded, enum values cannot be excluded individually.
 		return false, nil
 	}
@@ -333,22 +313,18 @@ func (b *sourcePathsBuilder) addRemapsForService(
 	service *descriptorpb.ServiceDescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, service)
-	isIncluded, isExplicit := b.filter.hasType(fullName)
-	if !isIncluded && isExplicit {
+	if !b.filter.hasType(fullName) {
 		// The type is excluded.
 		return false, nil
 	}
-	if isIncluded {
-		if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, serviceOptionsTag), service.GetOptions()); err != nil {
-			return false, err
-		}
-	}
 	// Walk the service methods.
-	hasMethods, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, serviceMethodsTag), service.Method, b.addRemapsForMethod)
-	if err != nil {
+	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, serviceMethodsTag), service.Method, b.addRemapsForMethod); err != nil {
 		return false, err
 	}
-	return isIncluded || hasMethods, nil
+	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, serviceOptionsTag), service.GetOptions()); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (b *sourcePathsBuilder) addRemapsForMethod(
@@ -358,18 +334,18 @@ func (b *sourcePathsBuilder) addRemapsForMethod(
 	method *descriptorpb.MethodDescriptorProto,
 ) (bool, error) {
 	fullName := getFullName(parentName, method)
-	if isIncluded, _ := b.filter.hasType(fullName); !isIncluded {
+	if !b.filter.hasType(fullName) {
 		// The type is excluded.
 		return false, nil
 	}
 	inputName := protoreflect.FullName(strings.TrimPrefix(method.GetInputType(), "."))
-	if isIncluded, _ := b.filter.hasType(inputName); !isIncluded {
+	if !b.filter.hasType(inputName) {
 		// The input type is excluded.
 		return false, fmt.Errorf("input type %s of method %s is excluded", inputName, fullName)
 	}
 	b.addRequiredType(inputName)
 	outputName := protoreflect.FullName(strings.TrimPrefix(method.GetOutputType(), "."))
-	if isIncluded, _ := b.filter.hasType(outputName); !isIncluded {
+	if !b.filter.hasType(outputName) {
 		// The output type is excluded.
 		return false, fmt.Errorf("output type %s of method %s is excluded", outputName, fullName)
 	}
@@ -389,17 +365,19 @@ func (b *sourcePathsBuilder) addRemapsForField(
 	if field.Extendee != nil {
 		// This is an extension field.
 		extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
-		if isIncluded, _ := b.filter.hasType(extendeeName); !isIncluded {
+		if !b.filter.hasType(extendeeName) {
 			return false, nil
 		}
 		b.addRequiredType(extendeeName)
+	} else if b.filter.inclusionMode(parentName) == inclusionModeEnclosing {
+		return false, nil // The field is excluded.
 	}
 	switch field.GetType() {
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		typeName := protoreflect.FullName(strings.TrimPrefix(field.GetTypeName(), "."))
-		if isIncluded, _ := b.filter.hasType(typeName); !isIncluded {
+		if !b.filter.hasType(typeName) {
 			return false, nil
 		}
 		b.addRequiredType(typeName)
@@ -438,9 +416,7 @@ func (b *sourcePathsBuilder) addRemapsForOptions(
 	options := optionsMessage.ProtoReflect()
 	numFieldsToKeep := 0
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-
-		isIncluded, _ := b.filter.hasOption(fd.FullName(), fd.IsExtension())
-		if !isIncluded {
+		if !b.filter.hasOption(fd.FullName(), fd.IsExtension()) {
 			// Remove this option.
 			optionPath := append(optionsPath, int32(fd.Number()))
 			sourcePathsRemap.markDeleted(optionPath)
@@ -627,11 +603,6 @@ func remapListReflect(
 		if fromIndex != int(remapNode.oldIndex) || toIndex != int(remapNode.newIndex) {
 			return fmt.Errorf("unexpected list move %d to %d, expected %d to %d", remapNode.oldIndex, remapNode.newIndex, fromIndex, toIndex)
 		}
-		//if toIndex != int(remapNode.newIndex) {
-		//	// Mutate the remap node to reflect the actual index.
-		//	// TODO: this is a hack.
-		//	remapNode.newIndex = int32(toIndex)
-		//}
 		// If no children, the value is unchanged.
 		if len(remapNode.children) > 0 {
 			// Must be a list of messages to have children.

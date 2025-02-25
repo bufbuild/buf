@@ -37,15 +37,12 @@ type imageIndex struct {
 	ByName map[protoreflect.FullName]elementInfo
 	// Files maps file names to the file descriptor protos.
 	Files map[string]*descriptorpb.FileDescriptorProto
-
 	// NameToExtensions maps fully qualified type names to all known
 	// extension definitions for a type name.
 	NameToExtensions map[string][]*descriptorpb.FieldDescriptorProto
-
 	// NameToOptions maps `google.protobuf.*Options` type names to their
 	// known extensions by field tag.
 	NameToOptions map[string]map[int32]*descriptorpb.FieldDescriptorProto
-
 	// Packages maps package names to package contents.
 	Packages map[string]*packageInfo
 }
@@ -93,12 +90,28 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 		index.NameToExtensions = make(map[string][]*descriptorpb.FieldDescriptorProto)
 	}
 
+	addExtension := func(ext *descriptorpb.FieldDescriptorProto) {
+		extendeeName := strings.TrimPrefix(ext.GetExtendee(), ".")
+		if options.includeCustomOptions && isOptionsTypeName(extendeeName) {
+			if _, ok := index.NameToOptions[extendeeName]; !ok {
+				index.NameToOptions[extendeeName] = make(map[int32]*descriptorpb.FieldDescriptorProto)
+			}
+			index.NameToOptions[extendeeName][ext.GetNumber()] = ext
+		}
+		if options.includeKnownExtensions {
+			index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], ext)
+		}
+	}
+
 	for _, imageFile := range image.Files() {
 		pkg := addPackageToIndex(imageFile.FileDescriptorProto().GetPackage(), index)
 		pkg.files = append(pkg.files, imageFile)
 		fileName := imageFile.Path()
 		fileDescriptorProto := imageFile.FileDescriptorProto()
 		index.Files[fileName] = fileDescriptorProto
+		for _, fd := range fileDescriptorProto.GetExtension() {
+			addExtension(fd)
+		}
 		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
 			if _, existing := index.ByName[name]; existing {
 				return fmt.Errorf("duplicate for %q", name)
@@ -137,21 +150,8 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 				pkg.types = append(pkg.types, name)
 			}
 
-			ext, ok := descriptor.(*descriptorpb.FieldDescriptorProto)
-			if !ok || ext.Extendee == nil {
-				// not an extension, so the rest does not apply
-				return nil
-			}
-
-			extendeeName := strings.TrimPrefix(ext.GetExtendee(), ".")
-			if options.includeCustomOptions && isOptionsTypeName(extendeeName) {
-				if _, ok := index.NameToOptions[extendeeName]; !ok {
-					index.NameToOptions[extendeeName] = make(map[int32]*descriptorpb.FieldDescriptorProto)
-				}
-				index.NameToOptions[extendeeName][ext.GetNumber()] = ext
-			}
-			if options.includeKnownExtensions {
-				index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], ext)
+			if ext, ok := descriptor.(*descriptorpb.FieldDescriptorProto); ok && ext.GetExtendee() != "" {
+				addExtension(ext)
 			}
 			return nil
 		})

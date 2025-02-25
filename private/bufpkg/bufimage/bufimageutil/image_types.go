@@ -23,11 +23,20 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+type inclusionMode int
+
+const (
+	inclusionModeNone inclusionMode = iota
+	inclusionModeEnclosing
+	inclusionModeExplicit
+)
+
 type fullNameFilter struct {
 	options  *imageFilterOptions
 	index    *imageIndex
-	includes map[protoreflect.FullName]struct{}
+	includes map[protoreflect.FullName]inclusionMode
 	excludes map[protoreflect.FullName]struct{}
+	depth    int
 }
 
 func newFullNameFilter(
@@ -53,38 +62,42 @@ func newFullNameFilter(
 			return nil, err
 		}
 	}
+	if err := filter.includeExtensions(); err != nil {
+		return nil, err
+	}
 	return filter, nil
 }
 
-func (f *fullNameFilter) hasType(fullName protoreflect.FullName) (isIncluded bool, isExplicit bool) {
-	if len(f.options.excludeTypes) > 0 || f.excludes != nil {
+func (f *fullNameFilter) inclusionMode(fullName protoreflect.FullName) inclusionMode {
+	if f.excludes != nil {
 		if _, ok := f.excludes[fullName]; ok {
-			return false, true
+			return inclusionModeNone
 		}
 	}
-	if len(f.options.includeTypes) > 0 || f.includes != nil {
-		if _, ok := f.includes[fullName]; ok {
-			return true, true
-		}
-		return false, false
+	if f.includes != nil {
+		return f.includes[fullName]
 	}
-	return true, false
+	return inclusionModeExplicit
 }
 
-func (f *fullNameFilter) hasOption(fullName protoreflect.FullName, isExtension bool) (isIncluded bool, isExplicit bool) {
+func (f *fullNameFilter) hasType(fullName protoreflect.FullName) (isIncluded bool) {
+	return f.inclusionMode(fullName) != inclusionModeNone
+}
+
+func (f *fullNameFilter) hasOption(fullName protoreflect.FullName, isExtension bool) (isIncluded bool) {
 	if f.options.excludeOptions != nil {
 		if _, ok := f.options.excludeOptions[string(fullName)]; ok {
-			return false, true
+			return false
 		}
 	}
 	if !f.options.includeCustomOptions {
-		return !isExtension, true
+		return !isExtension
 	}
 	if f.options.includeOptions != nil {
 		_, ok := f.options.includeOptions[string(fullName)]
-		return ok, true
+		return ok
 	}
-	return true, false
+	return true
 }
 
 func (f *fullNameFilter) isExplicitExclude(fullName protoreflect.FullName) bool {
@@ -142,7 +155,6 @@ func (f *fullNameFilter) excludeElement(fullName protoreflect.FullName, descript
 		}
 		return nil
 	case *descriptorpb.DescriptorProto:
-		f.excludes[fullName] = struct{}{}
 		// Exclude all sub-elements
 		if err := forEachDescriptor(fullName, descriptor.GetNestedType(), f.excludeElement); err != nil {
 			return err
@@ -176,11 +188,31 @@ func (f *fullNameFilter) include(fullName protoreflect.FullName) error {
 		return nil
 	}
 	if descriptorInfo, ok := f.index.ByName[fullName]; ok {
-		// Include the enclosing parent options.
-		if err := f.includeEnclosingOptions(descriptorInfo.parentName); err != nil {
+		if err := f.includeElement(fullName, descriptorInfo.element); err != nil {
 			return err
 		}
-		return f.includeElement(fullName, descriptorInfo.element)
+		// Include the enclosing parent options.
+		fileDescriptor := descriptorInfo.imageFile.FileDescriptorProto()
+		if err := f.includeOptions(fileDescriptor); err != nil {
+			return err
+		}
+		// loop through all enclosing parents since nesting level
+		// could be arbitrarily deep
+		for parentName := descriptorInfo.parentName; parentName != ""; {
+			if isIncluded := f.hasType(parentName); isIncluded {
+				break
+			}
+			f.includes[parentName] = inclusionModeEnclosing
+			parentInfo, ok := f.index.ByName[parentName]
+			if !ok {
+				break
+			}
+			if err := f.includeOptions(parentInfo.element); err != nil {
+				return err
+			}
+			parentName = parentInfo.parentName
+		}
+		return nil
 	}
 	packageInfo, ok := f.index.Packages[string(fullName)]
 	if !ok {
@@ -193,7 +225,6 @@ func (f *fullNameFilter) include(fullName protoreflect.FullName) error {
 			return err
 		}
 	}
-	f.includes[fullName] = struct{}{}
 	for _, subPackage := range packageInfo.subPackages {
 		if err := f.include(subPackage.fullName); err != nil {
 			return err
@@ -210,9 +241,9 @@ func (f *fullNameFilter) includeElement(fullName protoreflect.FullName, descript
 		return nil // already excluded
 	}
 	if f.includes == nil {
-		f.includes = make(map[protoreflect.FullName]struct{})
+		f.includes = make(map[protoreflect.FullName]inclusionMode)
 	}
-	f.includes[fullName] = struct{}{}
+	f.includes[fullName] = inclusionModeExplicit
 
 	if err := f.includeOptions(descriptor); err != nil {
 		return err
@@ -243,18 +274,8 @@ func (f *fullNameFilter) includeElement(fullName protoreflect.FullName, descript
 		if err := forEachDescriptor(fullName, descriptor.GetField(), f.includeElement); err != nil {
 			return err
 		}
-		if err := forEachDescriptor(fullName, descriptor.GetExtension(), f.includeElement); err != nil {
-			return err
-		}
-
-		// TODO: Include known extensions.
-		//if f.options.includeKnownExtensions {
-		//	for _, extensionDescriptor := range f.index.NameToExtensions[string(fullName)] {
-		//		if err := f.includeElement(fullName, extensionDescriptor); err != nil {
-		//			return err
-		//		}
-		//	}
-		//}
+		// Extensions are handled after all elements are included.
+		// This allows us to ensure that the extendee is included first.
 		return nil
 	case *descriptorpb.FieldDescriptorProto:
 		if descriptor.Extendee != nil {
@@ -329,19 +350,34 @@ func (f *fullNameFilter) includeElement(fullName protoreflect.FullName, descript
 	}
 }
 
-func (f *fullNameFilter) includeEnclosingOptions(fullName protoreflect.FullName) error {
-	// loop through all enclosing parents since nesting level
-	// could be arbitrarily deep
-	for info, ok := f.index.ByName[fullName]; ok; {
-		if err := f.includeOptions(info.element); err != nil {
-			return err
-		}
-		info, ok = f.index.ByName[info.parentName]
+func (f *fullNameFilter) includeExtensions() error {
+	if !f.options.includeKnownExtensions {
+		return nil // nothing to do
 	}
+	// TODO
+	/*if f.options.includeKnownExtensions && len(f.options.includeTypes) > 0 {
+		for extendee, extensions := range f.index.NameToExtensions {
+			extendee := protoreflect.FullName(extendee)
+			if f.inclusionMode(extendee)== inclusionModeNone {
+				continue
+			}
+			for _, extension := range extensions {
+				typeName := protoreflect.FullName(strings.TrimPrefix(extension.GetTypeName(), "."))
+				if typeName == "" && f.hasType(typeName) {
+					if err := f.includeElement(extendee, extension); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}*/
 	return nil
 }
 
 func (f *fullNameFilter) includeOptions(descriptor proto.Message) (err error) {
+	if !f.options.includeCustomOptions {
+		return nil
+	}
 	var optionsMessage proto.Message
 	switch descriptor := descriptor.(type) {
 	case *descriptorpb.FileDescriptorProto:
@@ -372,7 +408,7 @@ func (f *fullNameFilter) includeOptions(descriptor proto.Message) (err error) {
 	optionsName := options.Descriptor().FullName()
 	optionsByNumber := f.index.NameToOptions[string(optionsName)]
 	options.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		if isIncluded, _ := f.hasOption(fieldDescriptor.FullName(), fieldDescriptor.IsExtension()); !isIncluded {
+		if !f.hasOption(fieldDescriptor.FullName(), fieldDescriptor.IsExtension()) {
 			return true
 		}
 		if err = f.includeOptionValue(fieldDescriptor, value); err != nil {
@@ -381,6 +417,7 @@ func (f *fullNameFilter) includeOptions(descriptor proto.Message) (err error) {
 		if !fieldDescriptor.IsExtension() {
 			return true
 		}
+
 		extensionField, ok := optionsByNumber[int32(fieldDescriptor.Number())]
 		if !ok {
 			err = fmt.Errorf("cannot find ext no %d on %s", fieldDescriptor.Number(), optionsName)

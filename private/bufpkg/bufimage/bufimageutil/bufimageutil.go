@@ -144,14 +144,22 @@ func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 	}
 }
 
-// ImageFilteredByTypes returns a minimal image containing only the descriptors
-// required to define those types. The resulting contains only files in which
-// those descriptors and their transitive closure of required descriptors, with
-// each file only contains the minimal required types and imports.
+// FilterImage returns a minimal image containing only the descriptors
+// required to define the set of types provided by the filter options. If no
+// filter options are provided, the original image is returned.
 //
-// Although this returns a new [bufimage.Image], it mutates the original image's
-// underlying file's [descriptorpb.FileDescriptorProto]. So the old image should
-// not continue to be used.
+// The filtered image will contain only the files that contain the definitions of
+// the specified types, and their transitive dependencies. If a file is no longer
+// required, it will be removed from the image. Only the minimal set of types
+// required to define the specified types will be included in the filtered image.
+//
+// Excluded types and options are not included in the filtered image. If an
+// included type transitively depens on the excluded type, the descriptor will
+// be altered to remove the dependency.
+//
+// This returns a new [bufimage.Image] that is a shallow copy of the underlying
+// [descriptorpb.FileDescriptorProto]s of the original. The new image may therefore
+// share state with the original image, so it should not be modified.
 //
 // A descriptor is said to require another descriptor if the dependent
 // descriptor is needed to accurately and completely describe that descriptor.
@@ -212,10 +220,6 @@ func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 //	 files:      [foo.proto, bar.proto]
 //	 messages:   [pkg.Baz, other.Quux, other.Qux]
 //	 extensions: [other.my_option]
-func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image, error) {
-	return ImageFilteredByTypesWithOptions(image, types)
-}
-
 func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.Image, error) {
 	if len(options) == 0 {
 		return image, nil
@@ -225,13 +229,6 @@ func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.I
 		option(filterOptions)
 	}
 	return filterImage(image, filterOptions)
-}
-
-// ImageFilteredByTypesWithOptions returns a minimal image containing only the descriptors
-// required to define those types. See ImageFilteredByTypes for more details. This version
-// allows for customizing the behavior with options.
-func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts ...ImageFilterOption) (bufimage.Image, error) {
-	return FilterImage(image, append(opts, WithIncludeTypes(types...))...)
 }
 
 // StripSourceRetentionOptions strips any options with a retention of "source" from
