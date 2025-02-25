@@ -26,14 +26,23 @@ const (
 	fileEnumsTag              = 5
 	fileServicesTag           = 6
 	fileExtensionsTag         = 7
+	fileOptionsTag            = 8
 	messageFieldsTag          = 2
 	messageNestedMessagesTag  = 3
 	messageEnumsTag           = 4
 	messageExtensionsTag      = 6
+	messageOptionsTag         = 7
 	messageOneofsTag          = 8
 	messageExtensionRangesTag = 5
 	messageReservedRangesTag  = 9
 	messageReservedNamesTag   = 10
+	extensionRangeOptionsTag  = 3
+	fieldOptionsTag           = 8
+	oneofOptionsTag           = 2
+	enumOptionsTag            = 3
 	enumValuesTag             = 2
+	enumValueOptionsTag       = 3
 	serviceMethodsTag         = 2
+	serviceOptionsTag         = 3
+	methodOptionsTag          = 4
 )

@@ -180,7 +180,7 @@ func TestTransitivePublic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
+	filteredImage, err := FilterImage(image, WithIncludeTypes("c.Baz"))
 	require.NoError(t, err)
 
 	_, err = protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(filteredImage))
@@ -220,15 +220,15 @@ func TestTypesFromMainModule(t *testing.T) {
 	bProtoFileInfo, err := dep.StatFileInfo(ctx, "b.proto")
 	require.NoError(t, err)
 	require.False(t, bProtoFileInfo.IsTargetFile())
-	_, err = ImageFilteredByTypes(image, "dependency.Dep")
+	_, err = FilterImage(image, WithIncludeTypes("dependency.Dep"))
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
 
 	// allowed if we specify option
-	_, err = ImageFilteredByTypesWithOptions(image, []string{"dependency.Dep"}, WithAllowFilterByImportedType())
+	_, err = FilterImage(image, WithIncludeTypes("dependency.Dep"), WithAllowFilterByImportedType())
 	require.NoError(t, err)
 
-	_, err = ImageFilteredByTypes(image, "nonexisting")
+	_, err = FilterImage(image, WithIncludeTypes("nonexisting"))
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
@@ -259,7 +259,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
-	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
+	filteredImage, err := FilterImage(image, append(opts, WithIncludeTypes(typenames...))...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
@@ -323,7 +323,7 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
-	filteredImage, err := ImageFilteredByTypesWithOptions(image, []string{typename}, opts...)
+	filteredImage, err := FilterImage(image, append(opts, WithIncludeTypes(typename))...)
 	require.NoError(t, err)
 
 	imageFile := filteredImage.GetFile("test.proto")
@@ -477,7 +477,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 				require.NoError(b, err)
 				b.StartTimer()
 
-				_, err = ImageFilteredByTypes(image, typeName)
+				_, err = FilterImage(image, WithIncludeTypes(typeName))
 				require.NoError(b, err)
 				i++
 				if i == b.N {
