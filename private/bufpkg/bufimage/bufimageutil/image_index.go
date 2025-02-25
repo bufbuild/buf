@@ -109,9 +109,9 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 		fileName := imageFile.Path()
 		fileDescriptorProto := imageFile.FileDescriptorProto()
 		index.Files[fileName] = fileDescriptorProto
-		for _, fd := range fileDescriptorProto.GetExtension() {
-			addExtension(fd)
-		}
+		//for _, fd := range fileDescriptorProto.GetExtension() {
+		//	addExtension(fd)
+		//}
 		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
 			if _, existing := index.ByName[name]; existing {
 				return fmt.Errorf("duplicate for %q", name)
@@ -150,6 +150,7 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 				pkg.types = append(pkg.types, name)
 			}
 
+			// TODO: needed?
 			if ext, ok := descriptor.(*descriptorpb.FieldDescriptorProto); ok && ext.GetExtendee() != "" {
 				addExtension(ext)
 			}

@@ -359,26 +359,28 @@ func (f *fullNameFilter) includeElement(fullName protoreflect.FullName, descript
 }
 
 func (f *fullNameFilter) includeExtensions() error {
-	if !f.options.includeKnownExtensions {
+	if !f.options.includeKnownExtensions || len(f.options.includeTypes) == 0 {
 		return nil // nothing to do
 	}
-	// TODO
-	/*if f.options.includeKnownExtensions && len(f.options.includeTypes) > 0 {
-		for extendee, extensions := range f.index.NameToExtensions {
-			extendee := protoreflect.FullName(extendee)
-			if f.inclusionMode(extendee)== inclusionModeNone {
+	for extendeeName, extensions := range f.index.NameToExtensions {
+		extendeeName := protoreflect.FullName(extendeeName)
+		if f.inclusionMode(extendeeName) != inclusionModeExplicit {
+			continue
+		}
+		for _, extension := range extensions {
+			info := f.index.ByDescriptor[extension]
+			if f.hasType(info.fullName) {
 				continue
 			}
-			for _, extension := range extensions {
-				typeName := protoreflect.FullName(strings.TrimPrefix(extension.GetTypeName(), "."))
-				if typeName == "" && f.hasType(typeName) {
-					if err := f.includeElement(extendee, extension); err != nil {
-						return err
-					}
-				}
+			typeName := protoreflect.FullName(strings.TrimPrefix(extension.GetTypeName(), "."))
+			if typeName != "" && !f.hasType(typeName) {
+				continue
+			}
+			if err := f.includeElement(info.fullName, extension); err != nil {
+				return err
 			}
 		}
-	}*/
+	}
 	return nil
 }
 
@@ -425,7 +427,6 @@ func (f *fullNameFilter) includeOptions(descriptor proto.Message) (err error) {
 		if !fieldDescriptor.IsExtension() {
 			return true
 		}
-
 		extensionField, ok := optionsByNumber[int32(fieldDescriptor.Number())]
 		if !ok {
 			err = fmt.Errorf("cannot find ext no %d on %s", fieldDescriptor.Number(), optionsName)

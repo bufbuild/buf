@@ -51,9 +51,11 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for i := len(image.Files()) - 1; i >= 0; i-- {
 		imageFile := imageFiles[i]
 		imageFilePath := imageFile.Path()
+		_, isFileImported := importsByFilePath[imageFilePath]
 		if imageFile.IsImport() && !options.allowImportedTypes {
 			// Check if this import is still used.
-			if _, isImportUsed := importsByFilePath[imageFilePath]; !isImportUsed {
+			if !isFileImported {
+				fmt.Println("dropping import", imageFilePath)
 				continue
 			}
 		}
@@ -61,12 +63,14 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			imageFile,
 			imageIndex,
 			filter,
+			isFileImported,
 		)
 		if err != nil {
 			return nil, err
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
+			fmt.Println("dropping", imageFilePath)
 			continue // Filtered out.
 		}
 		for _, filePath := range newImageFile.FileDescriptorProto().Dependency {
@@ -86,6 +90,7 @@ func filterImageFile(
 	imageFile bufimage.ImageFile,
 	imageIndex *imageIndex,
 	filter *fullNameFilter,
+	isFileImported bool,
 ) (bufimage.ImageFile, error) {
 	fileDescriptor := imageFile.FileDescriptorProto()
 	var sourcePathsRemap sourcePathsRemapTrie
@@ -98,11 +103,11 @@ func filterImageFile(
 	if err != nil {
 		return nil, err
 	}
-	if !isIncluded {
-		return nil, nil // Filtered out.
-	}
 	if len(sourcePathsRemap) == 0 {
 		return imageFile, nil // No changes required.
+	}
+	if !isIncluded && !isFileImported {
+		return nil, nil // Filtered out.
 	}
 	newFileDescriptor, err := remapFileDescriptor(fileDescriptor, sourcePathsRemap)
 	if err != nil {
@@ -232,32 +237,34 @@ func (b *sourcePathsBuilder) addRemapsForDescriptor(
 		return false, nil
 	}
 	if mode == inclusionModeEnclosing {
-		// TODO: check if other descriptor fields are removed?
+		//fmt.Println("--- ENCLOSING:", fullName)
+		// If the type is only enclosing, only the namespace matters.
+		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
+		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
+		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedRangesTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedNamesTag))
-	}
-
-	// If the message is only enclosing, we search all fields for extensions.
-	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
-		return false, err
+	} else {
+		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
+			return false, err
+		}
+		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.addRemapsForOneof); err != nil {
+			return false, err
+		}
+		for index, extensionRange := range descriptor.GetExtensionRange() {
+			extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
+			if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
+				return false, err
+			}
+		}
 	}
 	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
 		return false, err
 	}
-	for index, extensionRange := range descriptor.GetExtensionRange() {
-		extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
-		if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
-			return false, err
-		}
-	}
-
 	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.addRemapsForDescriptor); err != nil {
 		return false, err
 	}
 	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.addRemapsForEnum); err != nil {
-		return false, err
-	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.addRemapsForOneof); err != nil {
 		return false, err
 	}
 	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions()); err != nil {
@@ -303,7 +310,7 @@ func (b *sourcePathsBuilder) addRemapsForOneof(
 ) (bool, error) {
 	fullName := getFullName(parentName, oneof)
 	if !b.filter.hasType(fullName) {
-		// The type is excluded, enum values cannot be excluded individually.
+		// The type is excluded, oneof fields cannot be excluded individually.
 		return false, nil
 	}
 	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, oneofOptionsTag), oneof.GetOptions()); err != nil {
@@ -369,12 +376,14 @@ func (b *sourcePathsBuilder) addRemapsForField(
 	field *descriptorpb.FieldDescriptorProto,
 ) (bool, error) {
 	if field.Extendee != nil {
-		// This is an extension field.
-		extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
-		if !b.filter.hasType(extendeeName) {
+		// This is an extension field. Extensions are filtered by the name.
+		extensionFullName := getFullName(parentName, field)
+		if !b.filter.hasType(extensionFullName) {
 			return false, nil
 		}
+		extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
 		b.addRequiredType(extendeeName)
+
 	} else if b.filter.inclusionMode(parentName) == inclusionModeEnclosing {
 		return false, nil // The field is excluded.
 	}
@@ -419,6 +428,7 @@ func (b *sourcePathsBuilder) addRemapsForOptions(
 	if optionsMessage == nil {
 		return nil
 	}
+	var err error
 	options := optionsMessage.ProtoReflect()
 	numFieldsToKeep := 0
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
@@ -433,13 +443,70 @@ func (b *sourcePathsBuilder) addRemapsForOptions(
 			// Add the extension type to the required types.
 			b.addRequiredType(fd.FullName())
 		}
-		return true
+		err = b.addOptionValue(fd, val)
+		return err == nil
 	})
 	if numFieldsToKeep == 0 {
 		// No options to keep.
 		sourcePathsRemap.markDeleted(optionsPath)
 	}
-	return nil
+	return err
+}
+
+func (b *sourcePathsBuilder) addOptionValue(
+	fieldDescriptor protoreflect.FieldDescriptor,
+	value protoreflect.Value,
+) error {
+	switch {
+	case fieldDescriptor.IsMap():
+		if isMessageKind(fieldDescriptor.MapValue().Kind()) {
+			var err error
+			value.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
+				err = b.addOptionSingularValueForAny(v.Message())
+				return err == nil
+			})
+			return err
+		}
+		return nil
+	case isMessageKind(fieldDescriptor.Kind()):
+		if fieldDescriptor.IsList() {
+			listVal := value.List()
+			for i := 0; i < listVal.Len(); i++ {
+				if err := b.addOptionSingularValueForAny(listVal.Get(i).Message()); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		return b.addOptionSingularValueForAny(value.Message())
+	default:
+		return nil
+	}
+}
+
+func (b *sourcePathsBuilder) addOptionSingularValueForAny(message protoreflect.Message) error {
+	md := message.Descriptor()
+	if md.FullName() == anyFullName {
+		// Found one!
+		typeURLFd := md.Fields().ByNumber(1)
+		if typeURLFd.Kind() != protoreflect.StringKind || typeURLFd.IsList() {
+			// should not be possible...
+			return nil
+		}
+		typeURL := message.Get(typeURLFd).String()
+		pos := strings.LastIndexByte(typeURL, '/')
+		msgType := protoreflect.FullName(typeURL[pos+1:])
+		b.addRequiredType(msgType)
+		// TODO: unmarshal the bytes to see if there are any nested Any messages
+		return nil
+	}
+	// keep digging
+	var err error
+	message.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		err = b.addOptionValue(fd, val)
+		return err == nil
+	})
+	return err
 }
 
 func (b *sourcePathsBuilder) addRequiredType(fullName protoreflect.FullName) {
