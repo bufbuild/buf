@@ -15,6 +15,7 @@
 package bufimageutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"sort"
@@ -37,6 +38,10 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	if err != nil {
 		return nil, err
 	}
+	b1, _ := json.MarshalIndent(filter.includes, "", "  ")
+	b2, _ := json.MarshalIndent(filter.excludes, "", "  ")
+	fmt.Println("includes", string(b1))
+	fmt.Println("excludes", string(b2))
 	// Loop over image files in revserse DAG order. Imports that are no longer
 	// imported by a previous file are dropped from the image.
 	imageFiles := image.Files()
@@ -46,7 +51,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for i := len(image.Files()) - 1; i >= 0; i-- {
 		imageFile := imageFiles[i]
 		imageFilePath := imageFile.Path()
-		if imageFile.IsImport() {
+		if imageFile.IsImport() && !options.allowImportedTypes {
 			// Check if this import is still used.
 			if _, isImportUsed := importsByFilePath[imageFilePath]; !isImportUsed {
 				continue
@@ -273,6 +278,7 @@ func (b *sourcePathsBuilder) addRemapsForEnum(
 		// The type is excluded, enum values cannot be excluded individually.
 		return false, nil
 	}
+	fmt.Println("ENUM:", fullName, b.filter.inclusionMode(fullName))
 
 	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, enumOptionsTag), enum.GetOptions()); err != nil {
 		return false, err

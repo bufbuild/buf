@@ -97,6 +97,8 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 	}
 }
 
+// WithIncludeTypes returns an option for ImageFilteredByTypesWithOptions that specifies
+// the set of types that should be included in the filtered image.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.includeTypes == nil {
@@ -108,6 +110,8 @@ func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	}
 }
 
+// WithExcludeTypes returns an option for ImageFilteredByTypesWithOptions that specifies
+// the set of types that should be excluded from the filtered image.
 func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.excludeTypes == nil {
@@ -116,10 +120,11 @@ func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 		for _, typeName := range typeNames {
 			opts.excludeTypes[typeName] = struct{}{}
 		}
-		//opts.excludeTypes = append(opts.excludeTypes, typeNames...)
 	}
 }
 
+// WithIncludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
+// the set of options that should be included in the filtered image.
 func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.includeOptions == nil {
@@ -128,10 +133,13 @@ func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 		for _, typeName := range typeNames {
 			opts.includeOptions[typeName] = struct{}{}
 		}
-		//opts.includeOptions = append(opts.includeOptions, typeNames...)
 	}
 }
 
+// WithExcludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
+// the set of options that should be excluded from the filtered image.
+//
+// May be provided multiple times.
 func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.excludeOptions == nil {
@@ -140,7 +148,6 @@ func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 		for _, typeName := range typeNames {
 			opts.excludeOptions[typeName] = struct{}{}
 		}
-		//opts.excludeOptions = append(opts.excludeOptions, typeNames...)
 	}
 }
 

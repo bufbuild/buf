@@ -52,12 +52,18 @@ func newFullNameFilter(
 	}
 	for excludeType := range options.excludeTypes {
 		excludeType := protoreflect.FullName(excludeType)
+		if err := filter.checkFilterType(excludeType); err != nil {
+			return nil, err
+		}
 		if err := filter.exclude(excludeType); err != nil {
 			return nil, err
 		}
 	}
 	for includeType := range options.includeTypes {
 		includeType := protoreflect.FullName(includeType)
+		if err := filter.checkFilterType(includeType); err != nil {
+			return nil, err
+		}
 		if err := filter.include(includeType); err != nil {
 			return nil, err
 		}
@@ -81,10 +87,12 @@ func (f *fullNameFilter) inclusionMode(fullName protoreflect.FullName) inclusion
 }
 
 func (f *fullNameFilter) hasType(fullName protoreflect.FullName) (isIncluded bool) {
+	defer fmt.Println("hasType", fullName, isIncluded)
 	return f.inclusionMode(fullName) != inclusionModeNone
 }
 
 func (f *fullNameFilter) hasOption(fullName protoreflect.FullName, isExtension bool) (isIncluded bool) {
+	defer fmt.Println("hasOption", fullName, isIncluded)
 	if f.options.excludeOptions != nil {
 		if _, ok := f.options.excludeOptions[string(fullName)]; ok {
 			return false
@@ -488,6 +496,17 @@ func (f *fullNameFilter) includeOptionSingularValueForAny(message protoreflect.M
 		return err == nil
 	})
 	return err
+}
+
+func (f *fullNameFilter) checkFilterType(fullName protoreflect.FullName) error {
+	info, ok := f.index.ByName[fullName]
+	if !ok {
+		return fmt.Errorf("type %q: %w", fullName, ErrImageFilterTypeNotFound)
+	}
+	if !f.options.allowImportedTypes && info.imageFile.IsImport() {
+		return fmt.Errorf("type %q: %w", fullName, ErrImageFilterTypeIsImport)
+	}
+	return nil
 }
 
 func forEachDescriptor[T namedDescriptor](
