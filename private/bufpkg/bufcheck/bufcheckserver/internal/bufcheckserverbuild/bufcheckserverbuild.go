@@ -689,10 +689,15 @@ var (
 	}
 	// LintImportNoWeakRuleSpecBuilder is a rule spec builder.
 	LintImportNoWeakRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
-		ID:      "IMPORT_NO_WEAK",
-		Purpose: "Checks that imports are not weak.",
-		Type:    check.RuleTypeLint,
-		Handler: bufcheckserverhandle.HandleLintImportNoWeak,
+		ID:         "IMPORT_NO_WEAK",
+		Purpose:    "Checks that imports are not weak.",
+		Deprecated: true,
+		Type:       check.RuleTypeLint,
+		Handler: check.RuleHandlerFunc(
+			func(context.Context, check.ResponseWriter, check.Request) error {
+				return nil
+			},
+		),
 	}
 	// LintImportUsedRuleSpecBuilder is a rule spec builder.
 	LintImportUsedRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{

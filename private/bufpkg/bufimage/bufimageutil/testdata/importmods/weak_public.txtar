@@ -1,7 +1,7 @@
 -- a.proto --
 syntax = "proto3";
 import "public.proto";
-import weak "weak.proto";
+import "weak.proto";
 message ImportPublic {
   Public x = 1;
 }
