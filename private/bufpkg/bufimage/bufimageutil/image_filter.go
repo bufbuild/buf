@@ -34,10 +34,15 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	if err != nil {
 		return nil, err
 	}
+	for SOMETHING, pkg := range imageIndex.Packages {
+		fmt.Println("PACKAGE", SOMETHING, pkg.fullName)
+	}
 	filter, err := newFullNameFilter(imageIndex, options)
 	if err != nil {
+		fmt.Println("WAT", err)
 		return nil, err
 	}
+	fmt.Println("----")
 	b1, _ := json.MarshalIndent(filter.includes, "", "  ")
 	b2, _ := json.MarshalIndent(filter.excludes, "", "  ")
 	fmt.Println("includes", string(b1))
@@ -55,7 +60,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		if imageFile.IsImport() && !options.allowImportedTypes {
 			// Check if this import is still used.
 			if !isFileImported {
-				fmt.Println("dropping import", imageFilePath)
 				continue
 			}
 		}
@@ -70,7 +74,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
-			fmt.Println("dropping", imageFilePath)
 			continue // Filtered out.
 		}
 		for _, filePath := range newImageFile.FileDescriptorProto().Dependency {
@@ -103,11 +106,11 @@ func filterImageFile(
 	if err != nil {
 		return nil, err
 	}
-	if len(sourcePathsRemap) == 0 {
-		return imageFile, nil // No changes required.
-	}
 	if !isIncluded && !isFileImported {
 		return nil, nil // Filtered out.
+	}
+	if len(sourcePathsRemap) == 0 {
+		return imageFile, nil // No changes required.
 	}
 	newFileDescriptor, err := remapFileDescriptor(fileDescriptor, sourcePathsRemap)
 	if err != nil {
@@ -138,10 +141,12 @@ func addRemapsForFileDescriptor(
 	imageIndex *imageIndex,
 	filter *fullNameFilter,
 ) (bool, error) {
+	fmt.Println("FILE", fileDescriptor.GetName())
 	packageName := protoreflect.FullName(fileDescriptor.GetPackage())
 	if packageName != "" {
 		// Check if filtered by the package name.
 		if !filter.hasType(packageName) {
+			fmt.Println("FILTERED BY PACKAGE", packageName)
 			return false, nil
 		}
 	}
@@ -237,7 +242,7 @@ func (b *sourcePathsBuilder) addRemapsForDescriptor(
 		return false, nil
 	}
 	if mode == inclusionModeEnclosing {
-		//fmt.Println("--- ENCLOSING:", fullName)
+		fmt.Println("--- ENCLOSING:", fullName)
 		// If the type is only enclosing, only the namespace matters.
 		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
@@ -285,8 +290,6 @@ func (b *sourcePathsBuilder) addRemapsForEnum(
 		// The type is excluded, enum values cannot be excluded individually.
 		return false, nil
 	}
-	fmt.Println("ENUM:", fullName, b.filter.inclusionMode(fullName))
-
 	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, enumOptionsTag), enum.GetOptions()); err != nil {
 		return false, err
 	}
@@ -496,6 +499,9 @@ func (b *sourcePathsBuilder) addOptionSingularValueForAny(message protoreflect.M
 		typeURL := message.Get(typeURLFd).String()
 		pos := strings.LastIndexByte(typeURL, '/')
 		msgType := protoreflect.FullName(typeURL[pos+1:])
+		if !b.filter.hasType(msgType) {
+			return nil
+		}
 		b.addRequiredType(msgType)
 		// TODO: unmarshal the bytes to see if there are any nested Any messages
 		return nil

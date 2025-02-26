@@ -117,6 +117,7 @@ func (f *fullNameFilter) isExplicitExclude(fullName protoreflect.FullName) bool 
 }
 
 func (f *fullNameFilter) exclude(fullName protoreflect.FullName) error {
+	fmt.Println("exclude", fullName)
 	if _, excluded := f.excludes[fullName]; excluded {
 		return nil
 	}
@@ -192,6 +193,7 @@ func (f *fullNameFilter) excludeElement(fullName protoreflect.FullName, descript
 }
 
 func (f *fullNameFilter) include(fullName protoreflect.FullName) error {
+	fmt.Println("include", fullName)
 	if _, included := f.includes[fullName]; included {
 		return nil
 	}
@@ -385,6 +387,7 @@ func (f *fullNameFilter) includeExtensions() error {
 }
 
 func (f *fullNameFilter) includeOptions(descriptor proto.Message) (err error) {
+	fmt.Println("includeOptions", descriptor.ProtoReflect().Descriptor().FullName())
 	if !f.options.includeCustomOptions {
 		return nil
 	}
@@ -500,11 +503,17 @@ func (f *fullNameFilter) includeOptionSingularValueForAny(message protoreflect.M
 }
 
 func (f *fullNameFilter) checkFilterType(fullName protoreflect.FullName) error {
-	info, ok := f.index.ByName[fullName]
-	if !ok {
+	var isImport bool
+	if info, ok := f.index.ByName[fullName]; ok {
+		isImport = info.imageFile.IsImport()
+	} else if pkg, ok := f.index.Packages[string(fullName)]; ok {
+		for _, file := range pkg.files {
+			isImport = isImport || file.IsImport()
+		}
+	} else {
 		return fmt.Errorf("type %q: %w", fullName, ErrImageFilterTypeNotFound)
 	}
-	if !f.options.allowImportedTypes && info.imageFile.IsImport() {
+	if !f.options.allowImportedTypes && isImport {
 		return fmt.Errorf("type %q: %w", fullName, ErrImageFilterTypeIsImport)
 	}
 	return nil

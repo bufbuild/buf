@@ -35,6 +35,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -140,7 +141,7 @@ func TestPackages(t *testing.T) {
 func TestAny(t *testing.T) {
 	t.Parallel()
 	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax"}, "c1.txtar")
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InField"}, "c2.txtar")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InField"}, "c2.txtar") // c2
 	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InList"}, "c3.txtar")
 	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InMap"}, "c4.txtar")
 	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxValidType"}, "d.txtar")
@@ -259,6 +260,10 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
+	_ = protojson.MarshalOptions{}
+	//b, _ := protojson.MarshalOptions{Indent: "  "}.Marshal(bufimage.ImageToFileDescriptorSet(image))
+	//t.Log(string(b))
+
 	filteredImage, err := FilterImage(image, append(opts, WithIncludeTypes(typenames...))...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
@@ -274,6 +279,10 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
 	err = protoencoding.NewWireUnmarshaler(filteredImage.Resolver()).Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
+
+	t.Log("--------------------------------------------")
+	//b, _ = protojson.MarshalOptions{Indent: "  "}.Marshal(bufimage.ImageToFileDescriptorSet(image))
+	//t.Log(string(b))
 
 	files, err := protodesc.NewFiles(fileDescriptorSet)
 	require.NoError(t, err)

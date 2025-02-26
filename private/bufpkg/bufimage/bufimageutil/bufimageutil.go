@@ -331,11 +331,10 @@ type imageFilterOptions struct {
 	includeCustomOptions   bool
 	includeKnownExtensions bool
 	allowImportedTypes     bool
-
-	includeTypes   map[string]struct{}
-	excludeTypes   map[string]struct{}
-	includeOptions map[string]struct{}
-	excludeOptions map[string]struct{}
+	includeTypes           map[string]struct{}
+	excludeTypes           map[string]struct{}
+	includeOptions         map[string]struct{}
+	excludeOptions         map[string]struct{}
 }
 
 func newImageFilterOptions() *imageFilterOptions {
@@ -365,56 +364,4 @@ func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
 	)
-}
-
-// orderedImports is a structure to maintain an ordered set of imports. This is needed
-// because we want to be able to iterate through imports in a deterministic way when filtering
-// the image.
-type orderedImports struct {
-	pathToIndex map[string]int
-	paths       []string
-}
-
-// newOrderedImports creates a new orderedImports structure.
-func newOrderedImports() *orderedImports {
-	return &orderedImports{
-		pathToIndex: map[string]int{},
-	}
-}
-
-// index returns the index for a given path. If the path does not exist in index map, -1
-// is returned and should be considered deleted.
-func (o *orderedImports) index(path string) int {
-	if index, ok := o.pathToIndex[path]; ok {
-		return index
-	}
-	return -1
-}
-
-// add appends a path to the paths list and the index in the map. If a key already exists,
-// then this is a no-op.
-func (o *orderedImports) add(path string) {
-	if _, ok := o.pathToIndex[path]; !ok {
-		o.pathToIndex[path] = len(o.paths)
-		o.paths = append(o.paths, path)
-	}
-}
-
-// delete removes a key from the index map of ordered imports. If a non-existent path is
-// set for deletion, then this is a no-op.
-// Note that the path is not removed from the paths list. If you want to iterate through
-// the paths, use keys() to get all non-deleted keys.
-func (o *orderedImports) delete(path string) {
-	delete(o.pathToIndex, path)
-}
-
-// keys provides all non-deleted keys from the ordered imports.
-func (o *orderedImports) keys() []string {
-	keys := make([]string, 0, len(o.pathToIndex))
-	for _, path := range o.paths {
-		if _, ok := o.pathToIndex[path]; ok {
-			keys = append(keys, path)
-		}
-	}
-	return keys
 }

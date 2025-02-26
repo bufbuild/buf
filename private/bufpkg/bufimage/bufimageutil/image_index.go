@@ -90,28 +90,12 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 		index.NameToExtensions = make(map[string][]*descriptorpb.FieldDescriptorProto)
 	}
 
-	addExtension := func(ext *descriptorpb.FieldDescriptorProto) {
-		extendeeName := strings.TrimPrefix(ext.GetExtendee(), ".")
-		if options.includeCustomOptions && isOptionsTypeName(extendeeName) {
-			if _, ok := index.NameToOptions[extendeeName]; !ok {
-				index.NameToOptions[extendeeName] = make(map[int32]*descriptorpb.FieldDescriptorProto)
-			}
-			index.NameToOptions[extendeeName][ext.GetNumber()] = ext
-		}
-		if options.includeKnownExtensions {
-			index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], ext)
-		}
-	}
-
 	for _, imageFile := range image.Files() {
 		pkg := addPackageToIndex(imageFile.FileDescriptorProto().GetPackage(), index)
 		pkg.files = append(pkg.files, imageFile)
 		fileName := imageFile.Path()
 		fileDescriptorProto := imageFile.FileDescriptorProto()
 		index.Files[fileName] = fileDescriptorProto
-		//for _, fd := range fileDescriptorProto.GetExtension() {
-		//	addExtension(fd)
-		//}
 		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
 			if _, existing := index.ByName[name]; existing {
 				return fmt.Errorf("duplicate for %q", name)
@@ -127,33 +111,37 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 
 			// certain descriptor types don't need to be indexed:
 			//  enum values, normal (non-extension) fields, and oneofs
-			var includeInIndex bool
 			switch d := descriptor.(type) {
 			case *descriptorpb.EnumValueDescriptorProto, *descriptorpb.OneofDescriptorProto:
 				// do not add to package elements; these elements are implicitly included by their enclosing type
+				return nil
 			case *descriptorpb.FieldDescriptorProto:
 				// only add to elements if an extension (regular fields implicitly included by containing message)
-				includeInIndex = d.Extendee != nil
-			default:
-				includeInIndex = true
-			}
-
-			if includeInIndex {
-				info := elementInfo{
-					fullName:   name,
-					imageFile:  imageFile,
-					parentName: parentName,
-					element:    descriptor,
+				if d.Extendee == nil {
+					return nil
 				}
-				index.ByName[name] = info
-				index.ByDescriptor[descriptor] = info
-				pkg.types = append(pkg.types, name)
+				extendeeName := strings.TrimPrefix(d.GetExtendee(), ".")
+				if options.includeCustomOptions && isOptionsTypeName(extendeeName) {
+					if _, ok := index.NameToOptions[extendeeName]; !ok {
+						index.NameToOptions[extendeeName] = make(map[int32]*descriptorpb.FieldDescriptorProto)
+					}
+					index.NameToOptions[extendeeName][d.GetNumber()] = d
+				}
+				if options.includeKnownExtensions {
+					index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], d)
+				}
 			}
 
-			// TODO: needed?
-			if ext, ok := descriptor.(*descriptorpb.FieldDescriptorProto); ok && ext.GetExtendee() != "" {
-				addExtension(ext)
+			info := elementInfo{
+				fullName:   name,
+				imageFile:  imageFile,
+				parentName: parentName,
+				element:    descriptor,
 			}
+			index.ByName[name] = info
+			index.ByDescriptor[descriptor] = info
+			pkg.types = append(pkg.types, name)
+
 			return nil
 		})
 		if err != nil {
