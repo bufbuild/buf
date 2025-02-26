@@ -691,11 +691,11 @@ func (c *controller) GetMessage(
 	}
 	var validator protoyaml.Validator
 	if functionOptions.messageValidation {
-		var err error
-		validator, err = protovalidate.New()
+		protovalidateValidator, err := protovalidate.New()
 		if err != nil {
 			return nil, 0, err
 		}
+		validator = yamlValidator{protovalidateValidator}
 	}
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageEncoding {
@@ -1288,6 +1288,12 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 		}
 		*retErrAddr = ErrFileAnnotation
 	}
+}
+
+type yamlValidator struct{ protovalidateValidator protovalidate.Validator }
+
+func (v yamlValidator) Validate(msg proto.Message) error {
+	return v.protovalidateValidator.Validate(msg)
 }
 
 func getImageFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]bufimage.ImageFileInfo, error) {
