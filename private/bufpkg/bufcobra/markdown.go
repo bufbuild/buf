@@ -104,7 +104,7 @@ func generateMarkdownPage(
 	p("\n\n")
 	if command.Runnable() {
 		p("### Usage\n")
-		p("```terminal\n$ %s\n```\n\n", command.UseLine())
+		p("```console\n$ %s\n```\n\n", command.UseLine())
 	}
 	if len(command.Long) > 0 {
 		p("### Description\n\n")
@@ -112,7 +112,7 @@ func generateMarkdownPage(
 	}
 	if len(command.Example) > 0 {
 		p("### Examples\n\n")
-		p("```\n%s\n```\n\n", processDescription(command.Example))
+		p("```console\n%s\n```\n\n", processDescription(command.Example))
 	}
 	commandFlags := command.NonInheritedFlags()
 	if commandFlags.HasAvailableFlags() {
@@ -183,15 +183,12 @@ func hasSubCommands(cmd *cobra.Command) bool {
 
 // processDescription is used to process description and example text. It does the following:
 //
-// - Converts all code blocks to terminal code blocks  (```terminal)
-// - Unidents code blocks
+// - Converts all code blocks to console code blocks  (```console)
+// - Unindents code blocks
 // - Writes out the text, escaping all HTML characters.
 //
-// This is done because terminal code blocks have special handling in some documentation
-// systems (e.g. not copying the $ sign if the code block has a copy button).
-//
-// Also, Docusaurus treats indented code blocks different and does not escape HTML characters
-// so we do call that here unilaterally.
+// This is done because Pygments (which mkdocs-material uses for syntax highlighting)
+// specifies `console` as the language for bash sessions in code blocks.
 func processDescription(description string) string {
 	out := &bytes.Buffer{}
 	read := bufio.NewReader(strings.NewReader(description))
@@ -206,7 +203,7 @@ func processDescription(description string) string {
 		// $ isn't copied when using the copy button
 		if codeBlockRegex.MatchString(text) {
 			if !inCodeBlock {
-				out.WriteString("```terminal\n")
+				out.WriteString("```console\n")
 				inCodeBlock = true
 			}
 			// remove the indentation level from the indented code block

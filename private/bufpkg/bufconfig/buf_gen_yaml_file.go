@@ -83,7 +83,7 @@ func GetBufGenYAMLFileForPrefix(
 	return getFileForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, bufGenYAMLFileNameToSupportedFileVersions, readBufGenYAMLFile)
 }
 
-// GetBufGenYAMLFileForPrefix gets the buf.gen.yaml file version at the given bucket prefix.
+// GetBufGenYAMLFileVersionForPrefix gets the buf.gen.yaml file version at the given bucket prefix.
 //
 // The buf.gen.yaml file will be attempted to be read at prefix/buf.gen.yaml.
 func GetBufGenYAMLFileVersionForPrefix(

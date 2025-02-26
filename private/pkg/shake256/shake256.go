@@ -18,8 +18,8 @@ package shake256
 import (
 	"fmt"
 	"io"
+	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -37,7 +37,7 @@ func NewDigest(value []byte) (Digest, error) {
 	return newDigest(value)
 }
 
-// NewDigest returns a new Digest for the content read from the Reader.
+// NewDigestForContent returns a new Digest for the content read from the Reader.
 func NewDigestForContent(reader io.Reader) (Digest, error) {
 	shakeHash := sha3.NewShake256()
 	// TODO FUTURE: remove in the future, this should have no effect
@@ -70,7 +70,7 @@ func newDigest(value []byte) (*digest, error) {
 }
 
 func (d *digest) Value() []byte {
-	return slicesext.Copy(d.value)
+	return slices.Clone(d.value)
 }
 
 func (*digest) isDigest() {}

@@ -140,7 +140,7 @@ func GetServiceSuffix(options option.Options) (string, error) {
 	return defaultServiceSuffix, nil
 }
 
-// CommentExcludes are lines of comments that should be excluded for the COMMENT.* Rules.
+// GetCommentExcludes are lines of comments that should be excluded for the COMMENT.* Rules.
 //
 // If a comment line starts with one of these excludes, it is not considered an actual comment.
 //

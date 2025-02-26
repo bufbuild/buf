@@ -92,7 +92,7 @@ func FileAnnotationForErrorWithPos(
 	), nil
 }
 
-// FileAnnotationSetForErrorWithPos returns new FileAnnotations for the ErrorsWithPos.
+// FileAnnotationSetForErrorsWithPos returns new FileAnnotations for the ErrorsWithPos.
 //
 // This special-cases fs.PathErrors if there is FileInfo information. We know that if there
 // is FileInfo information, and there is a fs.PathError, this can only happen due to import

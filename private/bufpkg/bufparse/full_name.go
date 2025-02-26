@@ -89,7 +89,7 @@ type HasFullName interface {
 	FullName() FullName
 }
 
-// FullNameStringToValue maps the values that implement HasFullName to a map
+// FullNameStringToUniqueValue maps the values that implement HasFullName to a map
 // from FullName string to the unique value that has this FullName.
 //
 // If any value has a nil FullName, this value is not added to the map. Therefore,

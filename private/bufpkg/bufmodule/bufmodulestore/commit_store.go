@@ -54,7 +54,7 @@ type CommitStore interface {
 		notFoundCommitKeys []bufmodule.CommitKey,
 		err error,
 	)
-	// Put puts the Commits to the store.
+	// PutCommits puts the Commits to the store.
 	PutCommits(ctx context.Context, commits []bufmodule.Commit) error
 }
 

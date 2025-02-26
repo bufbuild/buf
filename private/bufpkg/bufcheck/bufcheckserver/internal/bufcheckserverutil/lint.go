@@ -113,7 +113,7 @@ func NewLintDirPathToFilesRuleHandler(
 	)
 }
 
-// NewLintFilesRuleHandler returns a new check.RuleHandler for the given function.
+// NewLintFileRuleHandler returns a new check.RuleHandler for the given function.
 //
 // The function will be called for each File in the request.
 //

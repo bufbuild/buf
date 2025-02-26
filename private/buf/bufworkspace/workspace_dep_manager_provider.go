@@ -25,7 +25,7 @@ import (
 
 // WorkspaceDepManagerProvider provides WorkspaceDepManagers.
 type WorkspaceDepManagerProvider interface {
-	// GetWorkspaceDepManagerForBucket returns a new WorkspaceDepManager for the given Bucket.
+	// GetWorkspaceDepManager returns a new WorkspaceDepManager for the given Bucket.
 	//
 	// If the workspace is not updateable, an error is returned.
 	//
@@ -34,7 +34,7 @@ type WorkspaceDepManagerProvider interface {
 	//
 	// Otherwise, this builds a Workspace with a single module at the TargetSubDirPath (which may be "."), ignoring buf.work.yamls.
 	// Directories with buf.work.yamls cannot be directly targeted.
-
+	//
 	// Note this is the same logic as if WithIgnoreAndDisallowV1BufWorkYAMLs is applied with WorkspaceProvider!! If you want an equivalent
 	// Workspace, you need to use this option!
 	//

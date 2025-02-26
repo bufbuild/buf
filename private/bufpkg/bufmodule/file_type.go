@@ -68,7 +68,7 @@ func ParseFileType(s string) (FileType, error) {
 	return c, nil
 }
 
-// FileType returns the FileType for the given path.
+// FileTypeForPath returns the FileType for the given path.
 //
 // Returns error if the path cannot be classified as a FileType, that is if it is not a
 // .proto file, license file, or documentation file.

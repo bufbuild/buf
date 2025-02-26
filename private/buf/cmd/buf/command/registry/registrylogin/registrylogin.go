@@ -53,9 +53,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <domain>",
+		Use:   name + " [domain]",
 		Short: `Log in to the Buf Schema Registry`,
-		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags --%s or --%s to complete an alternative login flow. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename),
+		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags --%s or --%s to complete an alternative login flow. The token is saved to your %s file. The [domain] argument will default to %s if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename, bufconnect.DefaultRemote),
 		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {

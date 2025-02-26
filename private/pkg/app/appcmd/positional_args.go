@@ -48,7 +48,7 @@ func RangeArgs(minimum int, maximum int) PositionalArgs {
 	return newPositionalArgs(cobra.RangeArgs(minimum, maximum))
 }
 
-// PostionalArgs matches cobra.PositionalArgs so that importers of appcmd do
+// PositionalArgs matches cobra.PositionalArgs so that importers of appcmd do
 // not need to reference cobra (and shouldn't).
 type PositionalArgs interface {
 	cobra() cobra.PositionalArgs

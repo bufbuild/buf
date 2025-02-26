@@ -58,7 +58,7 @@ type DeviceRegistrationRequest struct {
 	ClientName string `json:"client_name"`
 }
 
-// Device describes a successful OpenID Connect Dynamic Client Registration 1.0 response
+// DeviceRegistrationResponse describes a successful OpenID Connect Dynamic Client Registration 1.0 response
 // for dynamic client registration.
 type DeviceRegistrationResponse struct {
 	// ClientID is the unique client identifier.

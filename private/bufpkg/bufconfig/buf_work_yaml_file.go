@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -91,7 +92,7 @@ func GetBufWorkYAMLFileForPrefix(
 	return getFileForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, bufWorkYAMLFileNameToSupportedFileVersions, readBufWorkYAMLFile)
 }
 
-// GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file version at the given bucket prefix.
+// GetBufWorkYAMLFileVersionForPrefix gets the buf.work.yaml file version at the given bucket prefix.
 //
 // The buf.work.yaml file will be attempted to be read at prefix/buf.work.yaml.
 func GetBufWorkYAMLFileVersionForPrefix(
@@ -163,7 +164,7 @@ func (w *bufWorkYAMLFile) ObjectData() ObjectData {
 }
 
 func (w *bufWorkYAMLFile) DirPaths() []string {
-	return slicesext.Copy(w.dirPaths)
+	return slices.Clone(w.dirPaths)
 }
 
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}

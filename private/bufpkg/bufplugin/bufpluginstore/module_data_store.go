@@ -26,9 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
-// PluginStore reads and writes PluginsDatas.
+// PluginDataStore reads and writes PluginsDatas.
 type PluginDataStore interface {
-	// GetPluginDatasForPluginKey gets the PluginDatas from the store for the PluginKeys.
+	// GetPluginDatasForPluginKeys gets the PluginDatas from the store for the PluginKeys.
 	//
 	// Returns the found PluginDatas, and the input PluginKeys that were not found, each
 	// ordered by the order of the input PluginKeys.
@@ -37,7 +37,7 @@ type PluginDataStore interface {
 		notFoundPluginKeys []bufplugin.PluginKey,
 		err error,
 	)
-	// Put puts the PluginDatas to the store.
+	// PutPluginDatas puts the PluginDatas to the store.
 	PutPluginDatas(ctx context.Context, moduleDatas []bufplugin.PluginData) error
 }
 

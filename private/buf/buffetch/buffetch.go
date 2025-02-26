@@ -71,7 +71,7 @@ var (
 	//
 	// This does not include deprecated formats.
 	SourceOrModuleFormatsString = stringutil.SliceToString(sourceOrModuleFormatsNotDeprecated)
-	// DirOrProtoFileFormats is the string representation of all dir or proto file formats.
+	// DirOrProtoFileFormatsString is the string representation of all dir or proto file formats.
 	//
 	// This does not include deprecated formats.
 	DirOrProtoFileFormatsString = stringutil.SliceToString(dirOrProtoFileFormats)
@@ -146,7 +146,7 @@ type ProtoFileRef interface {
 	SourceRef
 	DirOrProtoFileRef
 	ProtoFilePath() string
-	// True if the FileScheme is Stdio, Stdout, Stdin, or Null.
+	// IsDevPath returns true if the FileScheme is Stdio, Stdout, Stdin, or Null.
 	IsDevPath() bool
 	IncludePackageFiles() bool
 	internalProtoFileRef() internal.ProtoFileRef
@@ -167,7 +167,7 @@ type MessageRefParser interface {
 type SourceRefParser interface {
 	// GetSourceRef gets the reference for the source file.
 	GetSourceRef(ctx context.Context, value string) (SourceRef, error)
-	// GetSourceRef gets the reference for the source file.
+	// GetSourceRefForInputConfig gets the reference for the source file.
 	GetSourceRefForInputConfig(
 		ctx context.Context,
 		inputConfig bufconfig.InputConfig,
@@ -233,8 +233,8 @@ type RefParser interface {
 	DirRefParser
 	SourceOrModuleRefParser
 
-	// TODO FUTURE: should this be renamed to GetRefForString?
 	// GetRef gets the reference for the message file, source bucket, or module.
+	// TODO FUTURE: should this be renamed to GetRefForString?
 	GetRef(ctx context.Context, value string) (Ref, error)
 	// GetRefForInputConfig gets the reference for the message file, source bucket, or module.
 	GetRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig) (Ref, error)
@@ -328,7 +328,7 @@ type SourceReader interface {
 // GetReadBucketCloserOption is an option for a GetSourceReadBucketCloser call.
 type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
 
-// GetReadBucketCloserCopyToInMemory says to copy the returned ReadBucketCloser to an
+// GetReadBucketCloserWithCopyToInMemory says to copy the returned ReadBucketCloser to an
 // in-memory ReadBucketCloser. This can be a performance optimization at the expense of memory.
 func GetReadBucketCloserWithCopyToInMemory() GetReadBucketCloserOption {
 	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {

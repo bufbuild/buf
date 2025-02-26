@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -194,7 +195,7 @@ func GetBufYAMLFileForOverride(override string) (BufYAMLFile, error) {
 	return readFile(bytes.NewReader(data), fileName, readBufYAMLFile)
 }
 
-// GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override,
+// GetBufYAMLFileForPrefixOrOverride get the buf.yaml file for either the usually-flag-based override,
 // or if the override is not set, falls back to the prefix.
 func GetBufYAMLFileForPrefixOrOverride(
 	ctx context.Context,
@@ -208,7 +209,7 @@ func GetBufYAMLFileForPrefixOrOverride(
 	return GetBufYAMLFileForPrefix(ctx, bucket, prefix)
 }
 
-// GetBufYAMLFileForPrefix gets the buf.yaml file version at the given bucket prefix.
+// GetBufYAMLFileVersionForPrefix gets the buf.yaml file version at the given bucket prefix.
 //
 // The buf.yaml file will be attempted to be read at prefix/buf.yaml.
 func GetBufYAMLFileVersionForPrefix(
@@ -337,7 +338,7 @@ func (c *bufYAMLFile) ObjectData() ObjectData {
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
-	return slicesext.Copy(c.moduleConfigs)
+	return slices.Clone(c.moduleConfigs)
 }
 
 func (c *bufYAMLFile) TopLevelLintConfig() LintConfig {
@@ -353,7 +354,7 @@ func (c *bufYAMLFile) PluginConfigs() []PluginConfig {
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufparse.Ref {
-	return slicesext.Copy(c.configuredDepModuleRefs)
+	return slices.Clone(c.configuredDepModuleRefs)
 }
 
 func (c *bufYAMLFile) IncludeDocsLink() bool {
