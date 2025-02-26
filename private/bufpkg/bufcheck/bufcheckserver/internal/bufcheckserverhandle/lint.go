@@ -460,25 +460,6 @@ func handleLintImportNoPublic(
 	return nil
 }
 
-// HandleLintImportNoWeak is a handle function.
-var HandleLintImportNoWeak = bufcheckserverutil.NewLintFileImportRuleHandler(handleLintImportNoWeak)
-
-func handleLintImportNoWeak(
-	responseWriter bufcheckserverutil.ResponseWriter,
-	_ bufcheckserverutil.Request,
-	fileImport bufprotosource.FileImport,
-) error {
-	if fileImport.IsWeak() {
-		responseWriter.AddProtosourceAnnotation(
-			fileImport.Location(),
-			nil,
-			`Import %q must not be weak.`,
-			fileImport.Import(),
-		)
-	}
-	return nil
-}
-
 // HandleLintImportUsed is a handle function.
 var HandleLintImportUsed = bufcheckserverutil.NewLintFileImportRuleHandler(handleLintImportUsed)
 

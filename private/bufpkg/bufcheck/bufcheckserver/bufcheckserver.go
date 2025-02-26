@@ -106,7 +106,6 @@ var (
 			bufcheckserverbuild.LintFieldNoDescriptorRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD", "SENSIBLE"}),
 			bufcheckserverbuild.LintFileLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD", "STYLE_DEFAULT", "STYLE_STANDARD"}),
 			bufcheckserverbuild.LintImportNoPublicRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD", "SENSIBLE"}),
-			bufcheckserverbuild.LintImportNoWeakRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD", "SENSIBLE"}),
 			bufcheckserverbuild.LintMessagePascalCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD", "STYLE_BASIC", "STYLE_DEFAULT", "STYLE_STANDARD"}),
 			bufcheckserverbuild.LintOneofLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD", "STYLE_BASIC", "STYLE_DEFAULT", "STYLE_STANDARD"}),
 			bufcheckserverbuild.LintPackageDefinedRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD", "SENSIBLE"}),
@@ -129,6 +128,7 @@ var (
 			bufcheckserverbuild.LintRPCResponseStandardNameRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD", "STYLE_DEFAULT", "STYLE_STANDARD"}),
 			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD", "STYLE_BASIC", "STYLE_DEFAULT", "STYLE_STANDARD"}),
 			bufcheckserverbuild.LintServiceSuffixRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD", "STYLE_DEFAULT", "STYLE_STANDARD"}),
+			bufcheckserverbuild.LintImportNoWeakRuleSpecBuilder.Build(false, []string{}),
 		},
 		Categories: []*check.CategorySpec{
 			bufcheckserverbuild.FileCategorySpec,
@@ -238,7 +238,6 @@ var (
 			bufcheckserverbuild.LintFieldLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintFileLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintImportNoPublicRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
-			bufcheckserverbuild.LintImportNoWeakRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintImportUsedRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintMessagePascalCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintOneofLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
@@ -265,6 +264,7 @@ var (
 			bufcheckserverbuild.LintServicePascalCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintServiceSuffixRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintSyntaxSpecifiedRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
+			bufcheckserverbuild.LintImportNoWeakRuleSpecBuilder.Build(false, []string{}),
 		},
 		Categories: []*check.CategorySpec{
 			bufcheckserverbuild.FileCategorySpec,
@@ -367,7 +367,6 @@ var (
 			bufcheckserverbuild.LintFieldNotRequiredRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintFileLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintImportNoPublicRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
-			bufcheckserverbuild.LintImportNoWeakRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintImportUsedRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintMessagePascalCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintOneofLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
@@ -395,6 +394,7 @@ var (
 			bufcheckserverbuild.LintServiceSuffixRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintStablePackageNoImportUnstableRuleSpecBuilder.Build(false, []string{}),
 			bufcheckserverbuild.LintSyntaxSpecifiedRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
+			bufcheckserverbuild.LintImportNoWeakRuleSpecBuilder.Build(false, []string{}),
 		},
 		Categories: []*check.CategorySpec{
 			bufcheckserverbuild.FileCategorySpec,
