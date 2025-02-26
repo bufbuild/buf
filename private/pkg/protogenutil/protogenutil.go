@@ -442,9 +442,6 @@ func GetFieldGoType(
 	generatedFile *protogen.GeneratedFile,
 	field *protogen.Field,
 ) (string, error) {
-	if field.Desc.IsWeak() {
-		return "struct{}", nil
-	}
 	var goType string
 	pointer := field.Desc.HasPresence()
 	switch field.Desc.Kind() {
@@ -500,9 +497,6 @@ func GetFieldGoZeroValue(
 	generatedFile *protogen.GeneratedFile,
 	field *protogen.Field,
 ) (string, error) {
-	if field.Desc.IsWeak() {
-		return "struct{}", nil
-	}
 	if field.Desc.HasPresence() {
 		return "nil", nil
 	}
