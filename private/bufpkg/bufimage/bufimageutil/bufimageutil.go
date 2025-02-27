@@ -138,13 +138,6 @@ func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 	}
 }
 
-// TODO: doc.
-func WithMutateInPlace() ImageFilterOption {
-	return func(opts *imageFilterOptions) {
-		opts.mutateInPlace = true
-	}
-}
-
 // WithExcludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
 // the set of options that should be excluded from the filtered image.
 //
@@ -157,6 +150,16 @@ func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 		for _, typeName := range typeNames {
 			opts.excludeOptions[typeName] = struct{}{}
 		}
+	}
+}
+
+// WithMutateInPlace returns an option for ImageFilteredByTypesWithOptions that specifies
+// that the filtered image should be mutated in place. This option is useful when the
+// unfiltered image is no longer needed and the caller wants to avoid the overhead of
+// copying the image.
+func WithMutateInPlace() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.mutateInPlace = true
 	}
 }
 
@@ -174,8 +177,10 @@ func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 // be altered to remove the dependency.
 //
 // This returns a new [bufimage.Image] that is a shallow copy of the underlying
-// [descriptorpb.FileDescriptorProto]s of the original. The new image may therefore
-// share state with the original image, so it should not be modified.
+// [descriptorpb.FileDescriptorProto]s of the original. The new image may
+// therefore share state with the original image, so it should not be modified.
+// If the original image is no longer needed, it should be discarded. To avoid
+// this sharing, use the [WithMutateInPlace] option.
 //
 // A descriptor is said to require another descriptor if the dependent
 // descriptor is needed to accurately and completely describe that descriptor.

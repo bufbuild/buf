@@ -186,24 +186,24 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 
 	// Walk the file descriptor.
 	isDirty := false
-	newMessages, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, b.remapDescriptor)
+	newMessages, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, b.remapDescriptor, b.options)
 	if err != nil {
 		return nil, err
 	}
 	isDirty = isDirty || changed
-	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, b.remapEnum)
+	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, b.remapEnum, b.options)
 	if err != nil {
 		return nil, err
 	}
 	isDirty = isDirty || changed
-	newServices, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileServicesTag), fileDescriptor.Service, b.remapService)
+	newServices, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileServicesTag), fileDescriptor.Service, b.remapService, b.options)
 	if err != nil {
 		return nil, err
 	}
 	isDirty = isDirty || changed
 	// TODO: extension docs
 	//newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField)
-	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField)
+	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField, b.options)
 	if err != nil {
 		return nil, err
 	}
@@ -302,17 +302,17 @@ func (b *sourcePathsBuilder) remapDescriptor(
 		newDescriptor.ReservedRange = nil
 		newDescriptor.ReservedName = nil
 	} else {
-		newFields, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.remapField)
+		newFields, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.remapField, b.options)
 		if err != nil {
 			return nil, false, err
 		}
 		isDirty = isDirty || changed
-		newOneofs, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.remapOneof)
+		newOneofs, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.remapOneof, b.options)
 		if err != nil {
 			return nil, false, err
 		}
 		isDirty = isDirty || changed
-		newExtensionRange, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionRangesTag), descriptor.ExtensionRange, b.remapExtensionRange)
+		newExtensionRange, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionRangesTag), descriptor.ExtensionRange, b.remapExtensionRange, b.options)
 		if err != nil {
 			return nil, false, err
 		}
@@ -326,17 +326,17 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	}
 	// TODO: sourcePath might not be correct here.
 	// TODO: extension docs.
-	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.remapField)
+	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.remapField, b.options)
 	if err != nil {
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newDescriptors, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.remapDescriptor)
+	newDescriptors, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.remapDescriptor, b.options)
 	if err != nil {
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.remapEnum)
+	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.remapEnum, b.options)
 	if err != nil {
 		return nil, false, err
 	}
@@ -394,7 +394,7 @@ func (b *sourcePathsBuilder) remapEnum(
 	isDirty = changed
 
 	// Walk the enum values.
-	newEnumValues, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, enumValuesTag), enum.Value, b.remapEnumValue)
+	newEnumValues, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, enumValuesTag), enum.Value, b.remapEnumValue, b.options)
 	if err != nil {
 		return nil, false, err
 	}
@@ -452,7 +452,7 @@ func (b *sourcePathsBuilder) remapService(
 	}
 	isDirty := false
 	// Walk the service methods.
-	newMethods, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, serviceMethodsTag), service.Method, b.remapMethod)
+	newMethods, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, serviceMethodsTag), service.Method, b.remapMethod, b.options)
 	if err != nil {
 		return nil, false, err
 	}
@@ -603,6 +603,7 @@ func remapSlice[T any](
 	sourcePath protoreflect.SourcePath,
 	list []*T,
 	remapItem func(*sourcePathsRemapTrie, protoreflect.SourcePath, *T) (*T, bool, error),
+	options *imageFilterOptions,
 ) ([]*T, bool, error) {
 	isDirty := false
 	var newList []*T
@@ -616,9 +617,12 @@ func remapSlice[T any](
 		}
 		isDirty = isDirty || changed
 		if isDirty && newList == nil {
-			// TODO: filter in place...
-			newList = make([]*T, 0, len(list))
-			newList = append(newList, list[:toIndex]...)
+			if options.mutateInPlace {
+				newList = list[:toIndex:cap(list)]
+			} else {
+				newList = make([]*T, 0, len(list))
+				newList = append(newList, list[:toIndex]...)
+			}
 		}
 		isIncluded := newItem != nil
 		if isIncluded {
@@ -650,16 +654,13 @@ func maybeClone[T proto.Message](value T, options *imageFilterOptions) T {
 	return value
 }
 
-func shallowClone[T proto.Message](src T) T {
-	value, _ := shallowCloneReflect(src.ProtoReflect()).Interface().(T) // Safe to assert.
-	return value
-}
-
-func shallowCloneReflect(src protoreflect.Message) protoreflect.Message {
+func shallowClone[T proto.Message](message T) T {
+	src := message.ProtoReflect()
 	dst := src.New()
 	src.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
 		dst.Set(fd, v)
 		return true
 	})
-	return dst
+	value, _ := dst.Interface().(T) // Safe to assert.
+	return value
 }
