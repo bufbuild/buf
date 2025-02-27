@@ -367,7 +367,7 @@ issues:
         - gosec
       # bufimageutil is handling images and converting loop indices to int32. Since it is
       # parsing from an Image, the operation should be safe.
-      path: private/bufpkg/bufimage/bufimageutil/exclude_options.go
+      path: private/bufpkg/bufimage/bufimageutil/image_filter.go
       text: "G115:"
     - linters:
         - gosec

@@ -35,16 +35,17 @@ type imageIndex struct {
 	// ByName maps fully qualified type names to information about the named
 	// element.
 	ByName map[protoreflect.FullName]elementInfo
-	// Files maps file names to the file descriptor protos.
-	Files map[string]*descriptorpb.FileDescriptorProto
 	// NameToExtensions maps fully qualified type names to all known
 	// extension definitions for a type name.
-	NameToExtensions map[string][]*descriptorpb.FieldDescriptorProto
+	NameToExtensions map[protoreflect.FullName][]*descriptorpb.FieldDescriptorProto
 	// NameToOptions maps `google.protobuf.*Options` type names to their
 	// known extensions by field tag.
-	NameToOptions map[string]map[int32]*descriptorpb.FieldDescriptorProto
+	NameToOptions map[protoreflect.FullName]map[int32]*descriptorpb.FieldDescriptorProto
 	// Packages maps package names to package contents.
 	Packages map[string]*packageInfo
+	// FileTypes maps file names to the fully qualified type names defined
+	// in the file.
+	FileTypes map[string][]protoreflect.FullName
 }
 
 type namedDescriptor interface {
@@ -62,16 +63,15 @@ var _ namedDescriptor = (*descriptorpb.ServiceDescriptorProto)(nil)
 var _ namedDescriptor = (*descriptorpb.MethodDescriptorProto)(nil)
 
 type elementInfo struct {
-	fullName   protoreflect.FullName
-	imageFile  bufimage.ImageFile    //string // TODO: maybe bufimage.ImageFile?
-	parentName protoreflect.FullName //namedDescriptor
-	element    namedDescriptor
+	fullName protoreflect.FullName
+	file     bufimage.ImageFile
+	parent   namedDescriptor
+	element  namedDescriptor
 }
 
 type packageInfo struct {
 	fullName    protoreflect.FullName
 	files       []bufimage.ImageFile
-	types       []protoreflect.FullName
 	subPackages []*packageInfo
 }
 
@@ -80,14 +80,14 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 	index := &imageIndex{
 		ByName:       make(map[protoreflect.FullName]elementInfo),
 		ByDescriptor: make(map[namedDescriptor]elementInfo),
-		Files:        make(map[string]*descriptorpb.FileDescriptorProto),
+		FileTypes:    make(map[string][]protoreflect.FullName),
 		Packages:     make(map[string]*packageInfo),
 	}
 	if options.includeCustomOptions {
-		index.NameToOptions = make(map[string]map[int32]*descriptorpb.FieldDescriptorProto)
+		index.NameToOptions = make(map[protoreflect.FullName]map[int32]*descriptorpb.FieldDescriptorProto)
 	}
 	if options.includeKnownExtensions {
-		index.NameToExtensions = make(map[string][]*descriptorpb.FieldDescriptorProto)
+		index.NameToExtensions = make(map[protoreflect.FullName][]*descriptorpb.FieldDescriptorProto)
 	}
 
 	for _, imageFile := range image.Files() {
@@ -95,7 +95,12 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 		pkg.files = append(pkg.files, imageFile)
 		fileName := imageFile.Path()
 		fileDescriptorProto := imageFile.FileDescriptorProto()
-		index.Files[fileName] = fileDescriptorProto
+		index.ByDescriptor[fileDescriptorProto] = elementInfo{
+			fullName: pkg.fullName,
+			file:     imageFile,
+			element:  fileDescriptorProto,
+			parent:   nil,
+		}
 		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
 			if _, existing := index.ByName[name]; existing {
 				return fmt.Errorf("duplicate for %q", name)
@@ -104,9 +109,13 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 			if !ok {
 				return fmt.Errorf("unexpected descriptor type %T", msg)
 			}
-			var parentName protoreflect.FullName
+			var parent namedDescriptor = fileDescriptorProto
 			if pos := strings.LastIndexByte(string(name), '.'); pos != -1 {
-				parentName = name[:pos]
+				parent = index.ByName[name[:pos]].element
+				if parent == nil {
+					// parent name was a package name, not an element name
+					parent = fileDescriptorProto
+				}
 			}
 
 			// certain descriptor types don't need to be indexed:
@@ -120,7 +129,7 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 				if d.Extendee == nil {
 					return nil
 				}
-				extendeeName := strings.TrimPrefix(d.GetExtendee(), ".")
+				extendeeName := protoreflect.FullName(strings.TrimPrefix(d.GetExtendee(), "."))
 				if options.includeCustomOptions && isOptionsTypeName(extendeeName) {
 					if _, ok := index.NameToOptions[extendeeName]; !ok {
 						index.NameToOptions[extendeeName] = make(map[int32]*descriptorpb.FieldDescriptorProto)
@@ -133,14 +142,14 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 			}
 
 			info := elementInfo{
-				fullName:   name,
-				imageFile:  imageFile,
-				parentName: parentName,
-				element:    descriptor,
+				fullName: name,
+				file:     imageFile,
+				parent:   parent,
+				element:  descriptor,
 			}
 			index.ByName[name] = info
 			index.ByDescriptor[descriptor] = info
-			pkg.types = append(pkg.types, name)
+			index.FileTypes[fileName] = append(index.FileTypes[fileName], name)
 
 			return nil
 		})
@@ -172,7 +181,7 @@ func addPackageToIndex(pkgName string, index *imageIndex) *packageInfo {
 	return pkg
 }
 
-func isOptionsTypeName(typeName string) bool {
+func isOptionsTypeName(typeName protoreflect.FullName) bool {
 	switch typeName {
 	case "google.protobuf.FileOptions",
 		"google.protobuf.MessageOptions",

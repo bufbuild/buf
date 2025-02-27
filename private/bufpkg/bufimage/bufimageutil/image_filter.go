@@ -15,14 +15,11 @@
 package bufimageutil
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -37,16 +34,23 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for SOMETHING, pkg := range imageIndex.Packages {
 		fmt.Println("PACKAGE", SOMETHING, pkg.fullName)
 	}
-	filter, err := newFullNameFilter(imageIndex, options)
-	if err != nil {
-		fmt.Println("WAT", err)
+	closure := newTransitiveClosure()
+	// TODO: handle options.
+	// TODO: add all excludes first.
+	for includeType := range options.includeTypes {
+		includeType := protoreflect.FullName(includeType)
+		if err := closure.addType(includeType, imageIndex, options); err != nil {
+			return nil, err
+		}
+	}
+	// After all types are added, add their known extensions
+	if err := closure.addExtensions(imageIndex, options); err != nil {
 		return nil, err
 	}
-	fmt.Println("----")
-	b1, _ := json.MarshalIndent(filter.includes, "", "  ")
-	b2, _ := json.MarshalIndent(filter.excludes, "", "  ")
-	fmt.Println("includes", string(b1))
-	fmt.Println("excludes", string(b2))
+	for key, value := range closure.elements {
+		fmt.Println("CLOSURE", key.GetName(), value)
+	}
+
 	// Loop over image files in revserse DAG order. Imports that are no longer
 	// imported by a previous file are dropped from the image.
 	imageFiles := image.Files()
@@ -56,24 +60,30 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for i := len(image.Files()) - 1; i >= 0; i-- {
 		imageFile := imageFiles[i]
 		imageFilePath := imageFile.Path()
+		fmt.Println("IMAGE FILE", i, imageFilePath)
 		_, isFileImported := importsByFilePath[imageFilePath]
 		if imageFile.IsImport() && !options.allowImportedTypes {
 			// Check if this import is still used.
 			if !isFileImported {
+				fmt.Println("  NOT IMPORTED")
 				continue
 			}
 		}
 		newImageFile, err := filterImageFile(
 			imageFile,
 			imageIndex,
-			filter,
-			isFileImported,
+			closure,
+			options,
 		)
 		if err != nil {
 			return nil, err
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
+			if isFileImported {
+				return nil, fmt.Errorf("imported file %q was filtered out", imageFilePath)
+			}
+			fmt.Println("  FILTERED OUT")
 			continue // Filtered out.
 		}
 		for _, filePath := range newImageFile.FileDescriptorProto().Dependency {
@@ -82,6 +92,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		newImageFiles = append(newImageFiles, newImageFile)
 	}
 	if dirty {
+		fmt.Println("Creating the new image")
 		// Reverse the image files back to DAG order.
 		slices.Reverse(newImageFiles)
 		return bufimage.NewImage(newImageFiles)
@@ -92,29 +103,59 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 func filterImageFile(
 	imageFile bufimage.ImageFile,
 	imageIndex *imageIndex,
-	filter *fullNameFilter,
-	isFileImported bool,
+	closure *transitiveClosure,
+	options *imageFilterOptions,
 ) (bufimage.ImageFile, error) {
 	fileDescriptor := imageFile.FileDescriptorProto()
 	var sourcePathsRemap sourcePathsRemapTrie
-	isIncluded, err := addRemapsForFileDescriptor(
-		&sourcePathsRemap,
-		fileDescriptor,
-		imageIndex,
-		filter,
-	)
+	builder := sourcePathsBuilder{
+		imageIndex: imageIndex,
+		closure:    closure,
+		options:    options,
+	}
+	newFileDescriptor, err := builder.remapFileDescriptor(&sourcePathsRemap, fileDescriptor)
 	if err != nil {
 		return nil, err
 	}
-	if !isIncluded && !isFileImported {
+	if newFileDescriptor == nil {
 		return nil, nil // Filtered out.
 	}
-	if len(sourcePathsRemap) == 0 {
+	if newFileDescriptor == fileDescriptor {
 		return imageFile, nil // No changes required.
 	}
-	newFileDescriptor, err := remapFileDescriptor(fileDescriptor, sourcePathsRemap)
-	if err != nil {
-		return nil, err
+	fmt.Println("-----")
+	//b, _ := (&protojson.MarshalOptions{
+	//	Indent: "  ",
+	//}).Marshal(newFileDescriptor)
+	//fmt.Println(string(b))
+	//fmt.Println("FILE", newFileDescriptor.GetName())
+	for _, filePath := range newFileDescriptor.Dependency {
+		fmt.Println("  IMPORT", filePath)
+	}
+
+	// Remap the source code info.
+	if locations := fileDescriptor.SourceCodeInfo.GetLocation(); len(locations) > 0 {
+		newLocations := make([]*descriptorpb.SourceCodeInfo_Location, 0, len(locations))
+		for _, location := range locations {
+			oldPath := location.Path
+			newPath, noComment := sourcePathsRemap.newPath(oldPath)
+			if newPath == nil {
+				continue
+			}
+			if noComment || !slices.Equal(oldPath, newPath) {
+				location = shallowClone(location)
+				location.Path = newPath
+			}
+			if noComment {
+				location.LeadingDetachedComments = nil
+				location.LeadingComments = nil
+				location.TrailingComments = nil
+			}
+			newLocations = append(newLocations, location)
+		}
+		newFileDescriptor.SourceCodeInfo = &descriptorpb.SourceCodeInfo{
+			Location: newLocations,
+		}
 	}
 	return bufimage.NewImageFile(
 		newFileDescriptor,
@@ -129,276 +170,369 @@ func filterImageFile(
 }
 
 type sourcePathsBuilder struct {
-	filePath    string
-	imageIndex  *imageIndex
-	filter      *fullNameFilter
-	fileImports map[string]struct{}
+	imageIndex *imageIndex
+	closure    *transitiveClosure
+	options    *imageFilterOptions
 }
 
-func addRemapsForFileDescriptor(
+func (b *sourcePathsBuilder) remapFileDescriptor(
 	sourcePathsRemap *sourcePathsRemapTrie,
 	fileDescriptor *descriptorpb.FileDescriptorProto,
-	imageIndex *imageIndex,
-	filter *fullNameFilter,
-) (bool, error) {
+) (*descriptorpb.FileDescriptorProto, error) {
 	fmt.Println("FILE", fileDescriptor.GetName())
 	packageName := protoreflect.FullName(fileDescriptor.GetPackage())
-	if packageName != "" {
-		// Check if filtered by the package name.
-		if !filter.hasType(packageName) {
-			fmt.Println("FILTERED BY PACKAGE", packageName)
-			return false, nil
-		}
+	if !b.closure.hasType(fileDescriptor, b.options) {
+		fmt.Println("   FILTERED BY PACKAGE", packageName)
+		return nil, nil
 	}
 
-	fileImports := make(map[string]struct{})
-	builder := &sourcePathsBuilder{
-		filePath:    fileDescriptor.GetName(),
-		imageIndex:  imageIndex,
-		filter:      filter,
-		fileImports: fileImports,
-	}
 	sourcePath := make(protoreflect.SourcePath, 0, 8)
 
 	// Walk the file descriptor.
-	isIncluded := false
-	hasMessages, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, builder.addRemapsForDescriptor)
+	isDirty := false
+	fmt.Println("REMAP MESSAGES")
+	newMessages, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, b.remapDescriptor)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	isIncluded = isIncluded || hasMessages
-	hasEnums, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, builder.addRemapsForEnum)
+	fmt.Println("MESSAGES", len(newMessages))
+	fmt.Println("MESSAGES", newMessages)
+	isDirty = isDirty || changed
+	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, b.remapEnum)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	isIncluded = isIncluded || hasEnums
-	hasServices, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileServicesTag), fileDescriptor.Service, builder.addRemapsForService)
+	isDirty = isDirty || changed
+	newServices, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileServicesTag), fileDescriptor.Service, b.remapService)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	isIncluded = isIncluded || hasServices
-	hasExtensions, err := addRemapsForSlice(sourcePathsRemap, packageName, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, builder.addRemapsForField)
+	isDirty = isDirty || changed
+	// TODO: extension docs
+	//newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField)
+	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	isIncluded = isIncluded || hasExtensions
-	if err := builder.addRemapsForOptions(sourcePathsRemap, append(sourcePath, fileOptionsTag), fileDescriptor.Options); err != nil {
-		return false, err
+	fmt.Println("CHANGED?", changed, "how many?", len(newExtensions))
+	//if len(newExtensions) == 0 {
+	//	sourcePathsRemap.markDeleted(append(sourcePath, fileExtensionsTag))
+	//}
+	isDirty = isDirty || changed
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, fileOptionsTag), fileDescriptor.Options, b.remapOptions)
+	if err != nil {
+		return nil, err
+	}
+	isDirty = isDirty || changed
+
+	if !isDirty {
+		fmt.Println("  NO CHANGES", fileDescriptor.GetName())
+		return fileDescriptor, nil
 	}
 
+	newFileDescriptor := shallowClone(fileDescriptor)
+	newFileDescriptor.MessageType = newMessages
+	newFileDescriptor.EnumType = newEnums
+	newFileDescriptor.Service = newServices
+	newFileDescriptor.Extension = newExtensions
+	newFileDescriptor.Options = newOptions
+
 	// Fix the imports to remove any that are no longer used.
-	// TODO: handle unused dependencies, and keep them?
-	if len(fileImports) != len(fileDescriptor.Dependency) {
-		indexTo := int32(0)
-		dependencyPath := append(sourcePath, fileDependencyTag)
-		dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
-		for indexFrom, dependency := range fileDescriptor.Dependency {
-			path := append(dependencyPath, int32(indexFrom))
-			if _, ok := fileImports[dependency]; ok {
-				dependencyChanges[indexFrom] = indexTo
+	importsRequired := b.closure.imports[fileDescriptor.GetName()]
+
+	indexTo := int32(0)
+	newFileDescriptor.Dependency = nil
+	dependencyPath := append(sourcePath, fileDependencyTag)
+	dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
+	for indexFrom, importPath := range fileDescriptor.Dependency {
+		path := append(dependencyPath, int32(indexFrom))
+		if importsRequired != nil && importsRequired.index(importPath) != -1 {
+			dependencyChanges[indexFrom] = indexTo
+			if indexTo != int32(indexFrom) {
+				sourcePathsRemap.markMoved(path, indexTo)
+			}
+			newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, importPath)
+			indexTo++
+			// delete them as we go, so we know which ones weren't in the list
+			importsRequired.delete(importPath)
+		} else {
+			sourcePathsRemap.markDeleted(path)
+			dependencyChanges[indexFrom] = -1
+		}
+	}
+	if importsRequired != nil {
+		newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, importsRequired.keys()...)
+	}
+
+	newFileDescriptor.PublicDependency = nil
+	publicDependencyPath := append(sourcePath, filePublicDependencyTag)
+	sourcePathsRemap.markDeleted(publicDependencyPath)
+
+	// TODO: validate
+	newFileDescriptor.WeakDependency = nil
+	if len(fileDescriptor.WeakDependency) > 0 {
+		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
+		for _, indexFrom := range fileDescriptor.WeakDependency {
+			path := append(weakDependencyPath, int32(indexFrom))
+			indexTo := dependencyChanges[indexFrom]
+			if indexTo == -1 {
+				sourcePathsRemap.markDeleted(path)
+			} else {
 				if indexTo != int32(indexFrom) {
 					sourcePathsRemap.markMoved(path, indexTo)
 				}
-				indexTo++
-			} else {
-				sourcePathsRemap.markDeleted(path)
-				dependencyChanges[indexFrom] = -1
-			}
-		}
-		publicDependencyPath := append(sourcePath, filePublicDependencyTag)
-		for indexFrom, publicDependency := range fileDescriptor.PublicDependency {
-			path := append(publicDependencyPath, int32(indexFrom))
-			indexTo := dependencyChanges[publicDependency]
-			if indexTo == -1 {
-				sourcePathsRemap.markDeleted(path)
-			} else if indexTo != int32(indexFrom) {
-				sourcePathsRemap.markMoved(path, indexTo)
-			}
-		}
-		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
-		for indexFrom, weakDependency := range fileDescriptor.WeakDependency {
-			path := append(weakDependencyPath, int32(indexFrom))
-			indexTo := dependencyChanges[weakDependency]
-			if indexTo == -1 {
-				sourcePathsRemap.markDeleted(path)
-			} else if indexTo != int32(indexFrom) {
-				sourcePathsRemap.markMoved(path, indexTo)
+				newFileDescriptor.WeakDependency = append(newFileDescriptor.WeakDependency, indexTo)
 			}
 		}
 	}
-	return isIncluded, nil
+
+	return newFileDescriptor, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForDescriptor(
+func (b *sourcePathsBuilder) remapDescriptor(
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
 	sourcePath protoreflect.SourcePath,
 	descriptor *descriptorpb.DescriptorProto,
-) (bool, error) {
-	fullName := getFullName(parentName, descriptor)
-	mode := b.filter.inclusionMode(fullName)
-	if mode == inclusionModeNone {
-		// The type is excluded.
-		return false, nil
+) (*descriptorpb.DescriptorProto, bool, error) {
+	if !b.closure.hasType(descriptor, b.options) {
+		fmt.Println("  FILTERED BY DESCRIPTOR", descriptor.GetName())
+		return nil, true, nil
 	}
-	if mode == inclusionModeEnclosing {
-		fmt.Println("--- ENCLOSING:", fullName)
+	var newDescriptor *descriptorpb.DescriptorProto
+	isDirty := false
+	if mode := b.closure.elements[descriptor]; mode == inclusionModeEnclosing {
+		fmt.Println("--- ENCLOSING:", descriptor.GetName())
 		// If the type is only enclosing, only the namespace matters.
+		isDirty = true
+		newDescriptor = shallowClone(descriptor)
+		sourcePathsRemap.markNoComment(sourcePath)
 		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedRangesTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedNamesTag))
+		newDescriptor.Field = nil
+		newDescriptor.OneofDecl = nil
+		newDescriptor.ExtensionRange = nil
+		newDescriptor.ReservedRange = nil
+		newDescriptor.ReservedName = nil
 	} else {
-		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.addRemapsForField); err != nil {
-			return false, err
+		newFields, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.remapField)
+		if err != nil {
+			return nil, false, err
 		}
-		if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.addRemapsForOneof); err != nil {
-			return false, err
+		isDirty = isDirty || changed
+		newOneofs, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageOneofsTag), descriptor.OneofDecl, b.remapOneof)
+		if err != nil {
+			return nil, false, err
 		}
-		for index, extensionRange := range descriptor.GetExtensionRange() {
-			extensionRangeOptionsPath := append(sourcePath, messageExtensionRangesTag, int32(index), extensionRangeOptionsTag)
-			if err := b.addRemapsForOptions(sourcePathsRemap, extensionRangeOptionsPath, extensionRange.GetOptions()); err != nil {
-				return false, err
-			}
+		isDirty = isDirty || changed
+		newExtensionRange, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionRangesTag), descriptor.ExtensionRange, b.remapExtensionRange)
+		if err != nil {
+			return nil, false, err
+		}
+		isDirty = isDirty || changed
+		if isDirty {
+			newDescriptor = shallowClone(descriptor)
+			newDescriptor.Field = newFields
+			newDescriptor.OneofDecl = newOneofs
+			newDescriptor.ExtensionRange = newExtensionRange
 		}
 	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.addRemapsForField); err != nil {
-		return false, err
+	// TODO: sourcePath might not be correct here.
+	// TODO: extension docs.
+	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.remapField)
+	if err != nil {
+		return nil, false, err
 	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.addRemapsForDescriptor); err != nil {
-		return false, err
+	fmt.Println("DESCRIPTOR", changed, "how many?", len(newExtensions))
+	//if len(newExtensions) == 0 {
+	//	sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionsTag))
+	//}
+	isDirty = isDirty || changed
+	newDescriptors, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.remapDescriptor)
+	if err != nil {
+		return nil, false, err
 	}
-	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.addRemapsForEnum); err != nil {
-		return false, err
+	isDirty = isDirty || changed
+	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageEnumsTag), descriptor.EnumType, b.remapEnum)
+	if err != nil {
+		return nil, false, err
 	}
-	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions()); err != nil {
-		return false, err
+	isDirty = isDirty || changed
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, messageOptionsTag), descriptor.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
 	}
-	return true, nil
+	isDirty = isDirty || changed
+
+	if !isDirty {
+		fmt.Println("  NO CHANGES", descriptor.GetName())
+		return descriptor, false, nil
+	}
+	if newDescriptor == nil {
+		newDescriptor = shallowClone(descriptor)
+	}
+	newDescriptor.Extension = newExtensions
+	newDescriptor.NestedType = newDescriptors
+	newDescriptor.EnumType = newEnums
+	newDescriptor.Options = newOptions
+	return newDescriptor, true, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForEnum(
+func (b *sourcePathsBuilder) remapExtensionRange(
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
+	sourcePath protoreflect.SourcePath,
+	extensionRange *descriptorpb.DescriptorProto_ExtensionRange,
+) (*descriptorpb.DescriptorProto_ExtensionRange, bool, error) {
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, extensionRangeOptionsTag), extensionRange.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return extensionRange, false, nil
+	}
+	newExtensionRange := shallowClone(extensionRange)
+	newExtensionRange.Options = newOptions
+	return newExtensionRange, true, nil
+}
+
+func (b *sourcePathsBuilder) remapEnum(
+	sourcePathsRemap *sourcePathsRemapTrie,
 	sourcePath protoreflect.SourcePath,
 	enum *descriptorpb.EnumDescriptorProto,
-) (bool, error) {
-	//fullName := b.imageIndex.ByDescriptor[enum]
-	fullName := getFullName(parentName, enum)
-	if !b.filter.hasType(fullName) {
+) (*descriptorpb.EnumDescriptorProto, bool, error) {
+	if !b.closure.hasType(enum, b.options) {
 		// The type is excluded, enum values cannot be excluded individually.
-		return false, nil
+		return nil, true, nil
 	}
-	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, enumOptionsTag), enum.GetOptions()); err != nil {
-		return false, err
+	var isDirty bool
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, enumOptionsTag), enum.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
 	}
+	isDirty = changed
 
 	// Walk the enum values.
-	for index, enumValue := range enum.Value {
-		enumValuePath := append(sourcePath, enumValuesTag, int32(index))
-		enumValueOptionsPath := append(enumValuePath, enumValueOptionsTag)
-		if err := b.addRemapsForOptions(sourcePathsRemap, enumValueOptionsPath, enumValue.GetOptions()); err != nil {
-			return false, err
-		}
+	newEnumValues, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, enumValuesTag), enum.Value, b.remapEnumValue)
+	if err != nil {
+		return nil, false, err
 	}
-	return true, nil
+	isDirty = isDirty || changed
+	if !isDirty {
+		return enum, true, nil
+	}
+	newEnum := shallowClone(enum)
+	newEnum.Options = newOptions
+	newEnum.Value = newEnumValues
+	return newEnum, true, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForOneof(
+func (b *sourcePathsBuilder) remapEnumValue(
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
+	sourcePath protoreflect.SourcePath,
+	enumValue *descriptorpb.EnumValueDescriptorProto,
+) (*descriptorpb.EnumValueDescriptorProto, bool, error) {
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, enumValueOptionsTag), enumValue.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return enumValue, false, nil
+	}
+	newEnumValue := shallowClone(enumValue)
+	newEnumValue.Options = newOptions
+	return newEnumValue, true, nil
+}
+
+func (b *sourcePathsBuilder) remapOneof(
+	sourcePathsRemap *sourcePathsRemapTrie,
 	sourcePath protoreflect.SourcePath,
 	oneof *descriptorpb.OneofDescriptorProto,
-) (bool, error) {
-	fullName := getFullName(parentName, oneof)
-	if !b.filter.hasType(fullName) {
-		// The type is excluded, oneof fields cannot be excluded individually.
-		return false, nil
+) (*descriptorpb.OneofDescriptorProto, bool, error) {
+	options, changed, err := remapMessage(nil, append(sourcePath, oneofOptionsTag), oneof.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
 	}
-	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, oneofOptionsTag), oneof.GetOptions()); err != nil {
-		return false, err
+	if !changed {
+		return oneof, false, nil
 	}
-	return true, nil
+	newOneof := shallowClone(oneof)
+	newOneof.Options = options
+	return newOneof, true, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForService(
+func (b *sourcePathsBuilder) remapService(
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
 	sourcePath protoreflect.SourcePath,
 	service *descriptorpb.ServiceDescriptorProto,
-) (bool, error) {
-	fullName := getFullName(parentName, service)
-	if !b.filter.hasType(fullName) {
-		// The type is excluded.
-		return false, nil
+) (*descriptorpb.ServiceDescriptorProto, bool, error) {
+	if !b.closure.hasType(service, b.options) {
+		return nil, true, nil
 	}
+	isDirty := false
 	// Walk the service methods.
-	if _, err := addRemapsForSlice(sourcePathsRemap, fullName, append(sourcePath, serviceMethodsTag), service.Method, b.addRemapsForMethod); err != nil {
-		return false, err
+	newMethods, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, serviceMethodsTag), service.Method, b.remapMethod)
+	if err != nil {
+		return nil, false, err
 	}
-	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, serviceOptionsTag), service.GetOptions()); err != nil {
-		return false, err
+	isDirty = isDirty || changed
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, serviceOptionsTag), service.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
 	}
-	return true, nil
+	isDirty = isDirty || changed
+	if !isDirty {
+		return service, false, nil
+	}
+	newService := shallowClone(service)
+	newService.Method = newMethods
+	newService.Options = newOptions
+	return newService, true, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForMethod(
+func (b *sourcePathsBuilder) remapMethod(
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
 	sourcePath protoreflect.SourcePath,
 	method *descriptorpb.MethodDescriptorProto,
-) (bool, error) {
-	fullName := getFullName(parentName, method)
-	if !b.filter.hasType(fullName) {
-		// The type is excluded.
-		return false, nil
+) (*descriptorpb.MethodDescriptorProto, bool, error) {
+	if !b.closure.hasType(method, b.options) {
+		return nil, true, nil
 	}
-	inputName := protoreflect.FullName(strings.TrimPrefix(method.GetInputType(), "."))
-	if !b.filter.hasType(inputName) {
-		// The input type is excluded.
-		return false, fmt.Errorf("input type %s of method %s is excluded", inputName, fullName)
+	newOptions, changed, err := remapMessage(nil, append(sourcePath, methodOptionsTag), method.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
 	}
-	b.addRequiredType(inputName)
-	outputName := protoreflect.FullName(strings.TrimPrefix(method.GetOutputType(), "."))
-	if !b.filter.hasType(outputName) {
-		// The output type is excluded.
-		return false, fmt.Errorf("output type %s of method %s is excluded", outputName, fullName)
+	if !changed {
+		return method, false, nil
 	}
-	b.addRequiredType(outputName)
-	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, methodOptionsTag), method.GetOptions()); err != nil {
-		return false, err
-	}
-	return true, nil
+	newMethod := shallowClone(method)
+	newMethod.Options = newOptions
+	return newMethod, true, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForField(
+func (b *sourcePathsBuilder) remapField(
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
 	sourcePath protoreflect.SourcePath,
 	field *descriptorpb.FieldDescriptorProto,
-) (bool, error) {
+) (*descriptorpb.FieldDescriptorProto, bool, error) {
 	if field.Extendee != nil {
-		// This is an extension field. Extensions are filtered by the name.
-		extensionFullName := getFullName(parentName, field)
-		if !b.filter.hasType(extensionFullName) {
-			return false, nil
+		// Extensions are filtered by type.
+		fmt.Println("EXTEND", field.GetName())
+		if !b.closure.hasType(field, b.options) {
+			return nil, true, nil
 		}
-		extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
-		b.addRequiredType(extendeeName)
-
-	} else if b.filter.inclusionMode(parentName) == inclusionModeEnclosing {
-		return false, nil // The field is excluded.
 	}
 	switch field.GetType() {
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		typeName := protoreflect.FullName(strings.TrimPrefix(field.GetTypeName(), "."))
-		if !b.filter.hasType(typeName) {
-			return false, nil
+		typeInfo := b.imageIndex.ByName[typeName]
+		fmt.Println("FIELD", field.GetName(), "->", typeName)
+		if !b.closure.hasType(typeInfo.element, b.options) {
+			return nil, true, nil
 		}
-		b.addRequiredType(typeName)
 	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
 		descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
 		descriptorpb.FieldDescriptorProto_TYPE_INT64,
@@ -415,136 +549,106 @@ func (b *sourcePathsBuilder) addRemapsForField(
 		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
 		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 	default:
-		return false, fmt.Errorf("unknown field type %d", field.GetType())
+		return nil, false, fmt.Errorf("unknown field type %d", field.GetType())
 	}
-	if err := b.addRemapsForOptions(sourcePathsRemap, append(sourcePath, fieldOptionsTag), field.GetOptions()); err != nil {
-		return false, err
+	newOption, changed, err := remapMessage(nil, append(sourcePath, fieldOptionsTag), field.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
 	}
-	return true, nil
+	if !changed {
+		return field, false, nil
+	}
+	newField := shallowClone(field)
+	newField.Options = newOption
+	return newField, true, nil
 }
 
-func (b *sourcePathsBuilder) addRemapsForOptions(
+func (b *sourcePathsBuilder) remapOptions(
 	sourcePathsRemap *sourcePathsRemapTrie,
 	optionsPath protoreflect.SourcePath,
 	optionsMessage proto.Message,
-) error {
+) (proto.Message, bool, error) {
 	if optionsMessage == nil {
-		return nil
+		return nil, false, nil
 	}
-	var err error
+	var newOptions protoreflect.Message
 	options := optionsMessage.ProtoReflect()
 	numFieldsToKeep := 0
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-		if !b.filter.hasOption(fd.FullName(), fd.IsExtension()) {
+		if !b.closure.hasOption(fd, b.options) {
 			// Remove this option.
 			optionPath := append(optionsPath, int32(fd.Number()))
 			sourcePathsRemap.markDeleted(optionPath)
+			if newOptions == nil {
+				newOptions = shallowCloneReflect(options)
+			}
+			newOptions.Clear(fd)
 			return true
 		}
 		numFieldsToKeep++
-		if fd.IsExtension() {
-			// Add the extension type to the required types.
-			b.addRequiredType(fd.FullName())
-		}
-		err = b.addOptionValue(fd, val)
-		return err == nil
+		return true
 	})
 	if numFieldsToKeep == 0 {
 		// No options to keep.
 		sourcePathsRemap.markDeleted(optionsPath)
+		return nil, true, nil
 	}
-	return err
+	if newOptions == nil {
+		return optionsMessage, false, nil
+	}
+	return newOptions.Interface(), true, nil
 }
 
-func (b *sourcePathsBuilder) addOptionValue(
-	fieldDescriptor protoreflect.FieldDescriptor,
-	value protoreflect.Value,
-) error {
-	switch {
-	case fieldDescriptor.IsMap():
-		if isMessageKind(fieldDescriptor.MapValue().Kind()) {
-			var err error
-			value.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
-				err = b.addOptionSingularValueForAny(v.Message())
-				return err == nil
-			})
-			return err
-		}
-		return nil
-	case isMessageKind(fieldDescriptor.Kind()):
-		if fieldDescriptor.IsList() {
-			listVal := value.List()
-			for i := 0; i < listVal.Len(); i++ {
-				if err := b.addOptionSingularValueForAny(listVal.Get(i).Message()); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-		return b.addOptionSingularValueForAny(value.Message())
-	default:
-		return nil
-	}
-}
-
-func (b *sourcePathsBuilder) addOptionSingularValueForAny(message protoreflect.Message) error {
-	md := message.Descriptor()
-	if md.FullName() == anyFullName {
-		// Found one!
-		typeURLFd := md.Fields().ByNumber(1)
-		if typeURLFd.Kind() != protoreflect.StringKind || typeURLFd.IsList() {
-			// should not be possible...
-			return nil
-		}
-		typeURL := message.Get(typeURLFd).String()
-		pos := strings.LastIndexByte(typeURL, '/')
-		msgType := protoreflect.FullName(typeURL[pos+1:])
-		if !b.filter.hasType(msgType) {
-			return nil
-		}
-		b.addRequiredType(msgType)
-		// TODO: unmarshal the bytes to see if there are any nested Any messages
-		return nil
-	}
-	// keep digging
-	var err error
-	message.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-		err = b.addOptionValue(fd, val)
-		return err == nil
-	})
-	return err
-}
-
-func (b *sourcePathsBuilder) addRequiredType(fullName protoreflect.FullName) {
-	info, ok := b.imageIndex.ByName[fullName]
-	if !ok {
-		panic(fmt.Sprintf("could not find file for %s", fullName))
-	}
-	file := info.imageFile
-	if file.Path() != b.filePath {
-		// This is an imported type.
-		b.fileImports[file.Path()] = struct{}{}
-	}
-}
-
-func addRemapsForSlice[T any](
+func remapMessage[T proto.Message](
 	sourcePathsRemap *sourcePathsRemapTrie,
-	parentName protoreflect.FullName,
 	sourcePath protoreflect.SourcePath,
-	list []T,
-	addRemapsForItem func(*sourcePathsRemapTrie, protoreflect.FullName, protoreflect.SourcePath, T) (bool, error),
-) (bool, error) {
+	message T,
+	remapMessage func(*sourcePathsRemapTrie, protoreflect.SourcePath, proto.Message) (proto.Message, bool, error),
+) (T, bool, error) {
+	var zeroValue T
+	newMessageOpaque, changed, err := remapMessage(sourcePathsRemap, sourcePath, message)
+	if err != nil {
+		return zeroValue, false, err
+	}
+	if newMessageOpaque == nil {
+		return zeroValue, true, nil
+	}
+	if !changed {
+		return message, false, nil
+	}
+	newMessage, _ := newMessageOpaque.(T) // Safe to assert.
+	return newMessage, true, nil
+
+}
+
+func remapSlice[T any](
+	sourcePathsRemap *sourcePathsRemapTrie,
+	sourcePath protoreflect.SourcePath,
+	list []*T,
+	remapItem func(*sourcePathsRemapTrie, protoreflect.SourcePath, *T) (*T, bool, error),
+) ([]*T, bool, error) {
+	isDirty := false
+	var newList []*T
 	fromIndex, toIndex := int32(0), int32(0)
 	for int(fromIndex) < len(list) {
 		item := list[fromIndex]
 		sourcePath := append(sourcePath, fromIndex)
-		isIncluded, err := addRemapsForItem(sourcePathsRemap, parentName, sourcePath, item)
+		newItem, changed, err := remapItem(sourcePathsRemap, sourcePath, item)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
+		isDirty = isDirty || changed
+		if isDirty && newList == nil {
+			newList = make([]*T, 0, len(list))
+			newList = append(newList, list[:toIndex]...)
+		}
+		isIncluded := newItem != nil
 		if isIncluded {
 			if fromIndex != toIndex {
 				sourcePathsRemap.markMoved(sourcePath, toIndex)
+			}
+			if isDirty {
+				newList = append(newList, newItem)
 			}
 			toIndex++
 		} else {
@@ -555,178 +659,10 @@ func addRemapsForSlice[T any](
 	if toIndex == 0 {
 		sourcePathsRemap.markDeleted(sourcePath)
 	}
-	return toIndex > 0, nil
-}
-
-func remapFileDescriptor(
-	fileDescriptor *descriptorpb.FileDescriptorProto,
-	sourcePathRemaps sourcePathsRemapTrie,
-) (*descriptorpb.FileDescriptorProto, error) {
-	fileDescriptorMessage := fileDescriptor.ProtoReflect()
-	newFileDescriptorMessage, err := remapMessageReflect(fileDescriptorMessage, sourcePathRemaps)
-	if err != nil {
-		return nil, err
+	if isDirty {
+		return newList, true, nil
 	}
-	newFileDescriptor, ok := newFileDescriptorMessage.Interface().(*descriptorpb.FileDescriptorProto)
-	if !ok {
-		return nil, syserror.Newf("unexpected type %T", newFileDescriptorMessage.Interface())
-	}
-	// Remap the source code info.
-	if locations := fileDescriptor.SourceCodeInfo.GetLocation(); len(locations) > 0 {
-		newLocations := make([]*descriptorpb.SourceCodeInfo_Location, 0, len(locations))
-		for _, location := range locations {
-			oldPath := location.Path
-			newPath, noComment := sourcePathRemaps.newPath(oldPath)
-			if newPath == nil {
-				continue
-			}
-			if !slices.Equal(oldPath, newPath) || noComment {
-				location = shallowClone(location)
-				location.Path = newPath
-			}
-			if noComment {
-				location.LeadingDetachedComments = nil
-				location.LeadingComments = nil
-				location.TrailingComments = nil
-			}
-			newLocations = append(newLocations, location)
-		}
-		newFileDescriptor.SourceCodeInfo = &descriptorpb.SourceCodeInfo{
-			Location: newLocations,
-		}
-	}
-	return newFileDescriptor, nil
-}
-
-func remapMessageReflect(
-	message protoreflect.Message,
-	sourcePathRemaps sourcePathsRemapTrie,
-) (protoreflect.Message, error) {
-	if len(sourcePathRemaps) == 0 {
-		return message, nil
-	}
-	if !message.IsValid() {
-		return nil, fmt.Errorf("invalid message %T", message)
-	}
-	fieldDescriptors, err := getFieldDescriptors(message, sourcePathRemaps)
-	if err != nil {
-		return nil, err
-	}
-	message = shallowCloneReflect(message)
-	for index, remapNode := range sourcePathRemaps {
-		fieldDescriptor := fieldDescriptors[index]
-		if fieldDescriptor == nil {
-			return nil, fmt.Errorf("missing field descriptor %d on type %s", remapNode.oldIndex, message.Descriptor().FullName())
-		}
-		if remapNode.newIndex == -1 {
-			message.Clear(fieldDescriptor)
-			continue
-		} else if remapNode.newIndex != remapNode.oldIndex {
-			return nil, fmt.Errorf("unexpected field move %d to %d", remapNode.oldIndex, remapNode.newIndex)
-		}
-		value := message.Get(fieldDescriptor)
-		switch {
-		case fieldDescriptor.IsList():
-			if len(remapNode.children) == 0 {
-				break
-			}
-			newList := message.NewField(fieldDescriptor).List()
-			if err := remapListReflect(newList, value.List(), remapNode.children); err != nil {
-				return nil, err
-			}
-			value = protoreflect.ValueOfList(newList)
-		case fieldDescriptor.IsMap():
-			panic("map fields not yet supported")
-		default:
-			fieldMessage, err := remapMessageReflect(value.Message(), remapNode.children)
-			if err != nil {
-				return nil, err
-			}
-			value = protoreflect.ValueOfMessage(fieldMessage)
-		}
-		message.Set(fieldDescriptor, value)
-	}
-	return message, nil
-}
-
-func remapListReflect(
-	dstList protoreflect.List,
-	srcList protoreflect.List,
-	sourcePathRemaps sourcePathsRemapTrie,
-) error {
-	if len(sourcePathRemaps) == 0 {
-		return nil
-	}
-	toIndex := 0
-	sourcePathIndex := 0
-	for fromIndex := 0; fromIndex < srcList.Len(); fromIndex++ {
-		var remapNode *sourcePathsRemapTrieNode
-		for ; sourcePathIndex < len(sourcePathRemaps); sourcePathIndex++ {
-			nextRemapNode := sourcePathRemaps[sourcePathIndex]
-			if index := int(nextRemapNode.oldIndex); index > fromIndex {
-				break
-			} else if index == fromIndex {
-				remapNode = nextRemapNode
-				break
-			}
-		}
-		value := srcList.Get(fromIndex)
-		if remapNode == nil {
-			dstList.Append(value)
-			toIndex++
-			continue
-		}
-		if remapNode.newIndex == -1 {
-			continue
-		}
-		if fromIndex != int(remapNode.oldIndex) || toIndex != int(remapNode.newIndex) {
-			return fmt.Errorf("unexpected list move %d to %d, expected %d to %d", remapNode.oldIndex, remapNode.newIndex, fromIndex, toIndex)
-		}
-		// If no children, the value is unchanged.
-		if len(remapNode.children) > 0 {
-			// Must be a list of messages to have children.
-			indexMessage, err := remapMessageReflect(value.Message(), remapNode.children)
-			if err != nil {
-				return err
-			}
-			value = protoreflect.ValueOfMessage(indexMessage)
-		}
-		dstList.Append(value)
-		toIndex++
-	}
-	return nil
-}
-
-func getFieldDescriptors(
-	message protoreflect.Message,
-	sourcePathRemaps sourcePathsRemapTrie,
-) ([]protoreflect.FieldDescriptor, error) {
-	var hasExtension bool
-	fieldDescriptors := make([]protoreflect.FieldDescriptor, len(sourcePathRemaps))
-	fields := message.Descriptor().Fields()
-	for index, remapNode := range sourcePathRemaps {
-		fieldDescriptor := fields.ByNumber(protoreflect.FieldNumber(remapNode.oldIndex))
-		if fieldDescriptor == nil {
-			hasExtension = true
-		} else {
-			fieldDescriptors[index] = fieldDescriptor
-		}
-	}
-	if !hasExtension {
-		return fieldDescriptors, nil
-	}
-	message.Range(func(fieldDescriptor protoreflect.FieldDescriptor, _ protoreflect.Value) bool {
-		if !fieldDescriptor.IsExtension() {
-			return true // Skip non-extension fields.
-		}
-		if index, found := sort.Find(len(sourcePathRemaps), func(i int) int {
-			return int(fieldDescriptor.Number()) - int(sourcePathRemaps[i].oldIndex)
-		}); found {
-			fieldDescriptors[index] = fieldDescriptor
-		}
-		return true
-	})
-	return fieldDescriptors, nil
+	return list, false, nil
 }
 
 func shallowClone[T proto.Message](src T) T {
