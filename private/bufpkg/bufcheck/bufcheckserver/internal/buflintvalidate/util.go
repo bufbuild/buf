@@ -19,33 +19,10 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/google/cel-go/cel"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
-
-// This implements protovalidate.StandardConstraintResolver, see checkExampleValues' comment
-// for why this is needed.
-type constraintsResolverForTargetField struct {
-	protovalidate.StandardConstraintResolver
-	targetField protoreflect.FieldDescriptor
-}
-
-func (r *constraintsResolverForTargetField) ResolveFieldConstraints(desc protoreflect.FieldDescriptor) *validate.FieldConstraints {
-	if desc.FullName() != r.targetField.FullName() {
-		return nil
-	}
-	return r.StandardConstraintResolver.ResolveFieldConstraints(desc)
-}
-
-func (*constraintsResolverForTargetField) ResolveMessageConstraints(protoreflect.MessageDescriptor) *validate.MessageConstraints {
-	return nil
-}
-
-func (*constraintsResolverForTargetField) ResolveOneofConstraints(protoreflect.OneofDescriptor) *validate.OneofConstraints {
-	return nil
-}
 
 // This function is copied directly from protovalidate-go, except refactored to use protoencoding
 // for marshalling and unmarshalling. We also added error handling for marshal/unmarshal.

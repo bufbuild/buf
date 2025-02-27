@@ -18,7 +18,7 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/protovalidate-go/resolver"
+	"github.com/bufbuild/protovalidate-go/resolve"
 )
 
 // https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
@@ -35,7 +35,7 @@ func CheckMessage(
 	if err != nil {
 		return err
 	}
-	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageDescriptor)
+	messageConstraints := resolve.MessageConstraints(messageDescriptor)
 	if messageConstraints.GetDisabled() && len(messageConstraints.GetCel()) > 0 {
 		addAnnotationFunc(
 			message,
