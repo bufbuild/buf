@@ -80,8 +80,8 @@ func newImageIndexForImage(image bufimage.Image, options *imageFilterOptions) (*
 	index := &imageIndex{
 		ByName:       make(map[protoreflect.FullName]elementInfo),
 		ByDescriptor: make(map[namedDescriptor]elementInfo),
-		FileTypes:    make(map[string][]protoreflect.FullName),
 		Packages:     make(map[string]*packageInfo),
+		FileTypes:    make(map[string][]protoreflect.FullName),
 	}
 	if options.includeCustomOptions {
 		index.NameToOptions = make(map[protoreflect.FullName]map[int32]*descriptorpb.FieldDescriptorProto)

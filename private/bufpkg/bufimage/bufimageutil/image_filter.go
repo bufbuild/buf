@@ -31,24 +31,33 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	if err != nil {
 		return nil, err
 	}
-	for SOMETHING, pkg := range imageIndex.Packages {
-		fmt.Println("PACKAGE", SOMETHING, pkg.fullName)
-	}
 	closure := newTransitiveClosure()
-	// TODO: handle options.
-	// TODO: add all excludes first.
+	// All excludes are added first, then includes walk included all non excluded types.
+	for excludeType := range options.excludeTypes {
+		excludeType := protoreflect.FullName(excludeType)
+		if err := closure.excludeType(excludeType, imageIndex, options); err != nil {
+			return nil, err
+		}
+	}
 	for includeType := range options.includeTypes {
 		includeType := protoreflect.FullName(includeType)
-		if err := closure.addType(includeType, imageIndex, options); err != nil {
+		if err := closure.includeType(includeType, imageIndex, options); err != nil {
 			return nil, err
+		}
+	}
+	// TODO: No types were included, so include everything. This can be
+	// removed when we are able to handle finding all required imports
+	// below, when remapping the descriptor.
+	if len(options.includeTypes) == 0 {
+		for _, file := range image.Files() {
+			if err := closure.addElement(file.FileDescriptorProto(), "", false, imageIndex, options); err != nil {
+				return nil, err
+			}
 		}
 	}
 	// After all types are added, add their known extensions
 	if err := closure.addExtensions(imageIndex, options); err != nil {
 		return nil, err
-	}
-	for key, value := range closure.elements {
-		fmt.Println("CLOSURE", key.GetName(), value)
 	}
 
 	// Loop over image files in revserse DAG order. Imports that are no longer
@@ -60,12 +69,10 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for i := len(image.Files()) - 1; i >= 0; i-- {
 		imageFile := imageFiles[i]
 		imageFilePath := imageFile.Path()
-		fmt.Println("IMAGE FILE", i, imageFilePath)
 		_, isFileImported := importsByFilePath[imageFilePath]
 		if imageFile.IsImport() && !options.allowImportedTypes {
 			// Check if this import is still used.
 			if !isFileImported {
-				fmt.Println("  NOT IMPORTED")
 				continue
 			}
 		}
@@ -83,7 +90,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			if isFileImported {
 				return nil, fmt.Errorf("imported file %q was filtered out", imageFilePath)
 			}
-			fmt.Println("  FILTERED OUT")
 			continue // Filtered out.
 		}
 		for _, filePath := range newImageFile.FileDescriptorProto().Dependency {
@@ -92,7 +98,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		newImageFiles = append(newImageFiles, newImageFile)
 	}
 	if dirty {
-		fmt.Println("Creating the new image")
 		// Reverse the image files back to DAG order.
 		slices.Reverse(newImageFiles)
 		return bufimage.NewImage(newImageFiles)
@@ -122,15 +127,6 @@ func filterImageFile(
 	}
 	if newFileDescriptor == fileDescriptor {
 		return imageFile, nil // No changes required.
-	}
-	fmt.Println("-----")
-	//b, _ := (&protojson.MarshalOptions{
-	//	Indent: "  ",
-	//}).Marshal(newFileDescriptor)
-	//fmt.Println(string(b))
-	//fmt.Println("FILE", newFileDescriptor.GetName())
-	for _, filePath := range newFileDescriptor.Dependency {
-		fmt.Println("  IMPORT", filePath)
 	}
 
 	// Remap the source code info.
@@ -179,10 +175,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	sourcePathsRemap *sourcePathsRemapTrie,
 	fileDescriptor *descriptorpb.FileDescriptorProto,
 ) (*descriptorpb.FileDescriptorProto, error) {
-	fmt.Println("FILE", fileDescriptor.GetName())
-	packageName := protoreflect.FullName(fileDescriptor.GetPackage())
 	if !b.closure.hasType(fileDescriptor, b.options) {
-		fmt.Println("   FILTERED BY PACKAGE", packageName)
 		return nil, nil
 	}
 
@@ -190,13 +183,10 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 
 	// Walk the file descriptor.
 	isDirty := false
-	fmt.Println("REMAP MESSAGES")
 	newMessages, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, b.remapDescriptor)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("MESSAGES", len(newMessages))
-	fmt.Println("MESSAGES", newMessages)
 	isDirty = isDirty || changed
 	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, b.remapEnum)
 	if err != nil {
@@ -214,10 +204,6 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("CHANGED?", changed, "how many?", len(newExtensions))
-	//if len(newExtensions) == 0 {
-	//	sourcePathsRemap.markDeleted(append(sourcePath, fileExtensionsTag))
-	//}
 	isDirty = isDirty || changed
 	newOptions, changed, err := remapMessage(nil, append(sourcePath, fileOptionsTag), fileDescriptor.Options, b.remapOptions)
 	if err != nil {
@@ -226,7 +212,6 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	isDirty = isDirty || changed
 
 	if !isDirty {
-		fmt.Println("  NO CHANGES", fileDescriptor.GetName())
 		return fileDescriptor, nil
 	}
 
@@ -295,13 +280,11 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	descriptor *descriptorpb.DescriptorProto,
 ) (*descriptorpb.DescriptorProto, bool, error) {
 	if !b.closure.hasType(descriptor, b.options) {
-		fmt.Println("  FILTERED BY DESCRIPTOR", descriptor.GetName())
 		return nil, true, nil
 	}
 	var newDescriptor *descriptorpb.DescriptorProto
 	isDirty := false
 	if mode := b.closure.elements[descriptor]; mode == inclusionModeEnclosing {
-		fmt.Println("--- ENCLOSING:", descriptor.GetName())
 		// If the type is only enclosing, only the namespace matters.
 		isDirty = true
 		newDescriptor = shallowClone(descriptor)
@@ -345,10 +328,6 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	if err != nil {
 		return nil, false, err
 	}
-	fmt.Println("DESCRIPTOR", changed, "how many?", len(newExtensions))
-	//if len(newExtensions) == 0 {
-	//	sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionsTag))
-	//}
 	isDirty = isDirty || changed
 	newDescriptors, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageNestedMessagesTag), descriptor.NestedType, b.remapDescriptor)
 	if err != nil {
@@ -367,7 +346,6 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	isDirty = isDirty || changed
 
 	if !isDirty {
-		fmt.Println("  NO CHANGES", descriptor.GetName())
 		return descriptor, false, nil
 	}
 	if newDescriptor == nil {
@@ -518,7 +496,6 @@ func (b *sourcePathsBuilder) remapField(
 ) (*descriptorpb.FieldDescriptorProto, bool, error) {
 	if field.Extendee != nil {
 		// Extensions are filtered by type.
-		fmt.Println("EXTEND", field.GetName())
 		if !b.closure.hasType(field, b.options) {
 			return nil, true, nil
 		}
@@ -529,7 +506,6 @@ func (b *sourcePathsBuilder) remapField(
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		typeName := protoreflect.FullName(strings.TrimPrefix(field.GetTypeName(), "."))
 		typeInfo := b.imageIndex.ByName[typeName]
-		fmt.Println("FIELD", field.GetName(), "->", typeName)
 		if !b.closure.hasType(typeInfo.element, b.options) {
 			return nil, true, nil
 		}

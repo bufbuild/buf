@@ -48,39 +48,65 @@ import (
 
 var shouldUpdateExpectations = os.Getenv("BUFBUILD_BUF_BUFIMAGEUTIL_SHOULD_UPDATE_EXPECTATIONS")
 
-func TestOptions(t *testing.T) {
+func TestTypes(t *testing.T) {
 	t.Parallel()
 	t.Run("message", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo"}, "pkg.Foo.txtar")
+		runDiffTest(t, "testdata/options", "pkg.Foo.txtar", WithIncludeTypes("pkg.Foo"))
 	})
 	t.Run("enum", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.FooEnum"}, "pkg.FooEnum.txtar")
+		runDiffTest(t, "testdata/options", "pkg.FooEnum.txtar", WithIncludeTypes("pkg.FooEnum"))
 	})
 	t.Run("service", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
+		runDiffTest(t, "testdata/options", "pkg.FooService.txtar", WithIncludeTypes("pkg.FooService"))
 	})
 	t.Run("method", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.txtar")
+		runDiffTest(t, "testdata/options", "pkg.FooService.Do.txtar", WithIncludeTypes("pkg.FooService.Do"))
 	})
 	t.Run("all", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
+		runDiffTest(t, "testdata/options", "all.txtar", WithIncludeTypes("pkg.Foo", "pkg.FooEnum", "pkg.FooService"))
 	})
 	t.Run("exclude-options", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
+		runDiffTest(t, "testdata/options", "all-exclude-options.txtar", WithIncludeTypes("pkg.Foo", "pkg.FooEnum", "pkg.FooService"), WithExcludeCustomOptions())
 	})
 	t.Run("files", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.txtar")
+		runDiffTest(t, "testdata/options", "Files.txtar", WithIncludeTypes("Files"))
 	})
 	t.Run("all-with-files", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.txtar")
+		runDiffTest(t, "testdata/options", "all-with-Files.txtar", WithIncludeTypes("pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"))
+	})
+
+	t.Run("exclude-message", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.Foo.exclude.txtar", WithExcludeTypes("pkg.Foo"))
+	})
+	t.Run("exclude-enum", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.FooEnum.exclude.txtar", WithExcludeTypes("pkg.FooEnum"))
+	})
+	t.Run("exclude-service", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.FooService.exclude.txtar", WithExcludeTypes("pkg.FooService"))
+	})
+	t.Run("exclude-method", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.FooService.Do.exclude.txtar", WithExcludeTypes("pkg.FooService.Do"))
+	})
+	t.Run("exclude-all", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "all.exclude.txtar", WithExcludeTypes("pkg.Foo", "pkg.FooEnum", "pkg.FooService"))
+	})
+
+	t.Run("mixed-service-method", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.FooService.mixed.txtar", WithIncludeTypes("pkg.FooService"), WithExcludeTypes("pkg.FooService.Do"))
 	})
 }
 
@@ -88,19 +114,117 @@ func TestNesting(t *testing.T) {
 	t.Parallel()
 	t.Run("message", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo"}, "message.txtar")
+		runDiffTest(t, "testdata/nesting", "message.txtar", WithIncludeTypes("pkg.Foo"))
 	})
 	t.Run("recursenested", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo.NestedFoo.NestedNestedFoo"}, "recursenested.txtar")
+		runDiffTest(t, "testdata/nesting", "recursenested.txtar", WithIncludeTypes("pkg.Foo.NestedFoo.NestedNestedFoo"))
 	})
 	t.Run("enum", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.FooEnum"}, "enum.txtar")
+		runDiffTest(t, "testdata/nesting", "enum.txtar", WithIncludeTypes("pkg.FooEnum"))
 	})
 	t.Run("usingother", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/nesting", []string{"pkg.Baz"}, "usingother.txtar")
+		runDiffTest(t, "testdata/nesting", "usingother.txtar", WithIncludeTypes("pkg.Baz"))
+	})
+
+	t.Run("exclude_message", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/nesting", "message.exclude.txtar", WithExcludeTypes("pkg.Foo"))
+	})
+	t.Run("exclude_recursenested", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/nesting", "recursenested.exclude.txtar", WithExcludeTypes("pkg.Foo.NestedFoo.NestedNestedFoo"))
+	})
+	t.Run("exclude_enum", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/nesting", "enum.exclude.txtar", WithExcludeTypes("pkg.FooEnum"))
+	})
+	t.Run("exclude_usingother", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/nesting", "usingother.exclude.txtar", WithExcludeTypes("pkg.Baz"))
+	})
+
+	t.Run("mixed", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/nesting", "mixed.txtar", WithIncludeTypes("pkg.Foo", "pkg.FooEnum"), WithExcludeTypes("pkg.Foo.NestedFoo", "pkg.Baz"))
+	})
+}
+
+func TestOptions(t *testing.T) {
+	t.Parallel()
+	t.Run("include_jstype", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "options.jstype.include.txtar", WithIncludeOptions("google.protobuf.FieldOptions.jstype"))
+		WithIncludeOptions("google.protobuf.FieldOptions.jstype")
+	})
+	t.Run("exclude_jstype", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "options.jstype.exclude.txtar", WithExcludeOptions("google.protobuf.FieldOptions.jstype"))
+	})
+	t.Run("include_message", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "options.message.include.txtar", WithIncludeOptions("message_foo", "message_baz"))
+	})
+	t.Run("exclude_foo", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "options.foo.exclude.txtar", WithExcludeOptions(
+			"message_foo",
+			"field_foo",
+			"oneof_foo",
+			"enum_foo",
+			"enum_value_foo",
+			"service_foo",
+			"method_foo",
+			"UsedOption.file_foo",
+		))
+	})
+	t.Run("include_foo", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "options.foo.include.txtar", WithIncludeOptions(
+			"message_foo",
+			"field_foo",
+			"oneof_foo",
+			"enum_foo",
+			"enum_value_foo",
+			"service_foo",
+			"method_foo",
+			"UsedOption.file_foo",
+		))
+	})
+	t.Run("only_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "options.only_file.txtar", WithExcludeOptions(
+			"message_foo", "message_bar", "message_baz",
+			"field_foo", "field_bar", "field_baz",
+			"oneof_foo", "oneof_bar", "oneof_baz",
+			"enum_foo", "enum_bar", "enum_baz",
+			"enum_value_foo", "enum_value_bar", "enum_value_baz",
+			"service_foo", "service_bar", "service_baz",
+			"method_foo", "method_bar", "method_baz",
+		))
+	})
+}
+
+func TestOptionImports(t *testing.T) {
+	t.Parallel()
+
+	t.Run("none_excluded", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/imports", "none_excluded.txtar", WithExcludeOptions("google.protobuf.FieldOptions.jstype"))
+	})
+	t.Run("exclude_foo", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/imports", "foo.txtar", WithExcludeOptions("message_foo"))
+	})
+	t.Run("exclude_foo_bar", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/imports", "foo_bar.txtar", WithExcludeOptions("message_foo", "message_bar"))
+	})
+	t.Run("exclude_bar", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/imports", "bar.txtar", WithIncludeOptions("message_foo"), WithExcludeOptions("message_bar"))
 	})
 }
 
@@ -108,44 +232,44 @@ func TestImportModifiers(t *testing.T) {
 	t.Parallel()
 	t.Run("regular_weak", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportWeak"}, "regular_weak.txtar")
+		runDiffTest(t, "testdata/importmods", "regular_weak.txtar", WithIncludeTypes("ImportRegular", "ImportWeak"))
 	})
 	t.Run("weak_public", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"ImportWeak", "ImportPublic"}, "weak_public.txtar")
+		runDiffTest(t, "testdata/importmods", "weak_public.txtar", WithIncludeTypes("ImportWeak", "ImportPublic"))
 	})
 	t.Run("regular_public", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportPublic"}, "regular_public.txtar")
+		runDiffTest(t, "testdata/importmods", "regular_public.txtar", WithIncludeTypes("ImportRegular", "ImportPublic"))
 	})
 	t.Run("noimports", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/importmods", []string{"NoImports"}, "noimports.txtar")
+		runDiffTest(t, "testdata/importmods", "noimports.txtar", WithIncludeTypes("NoImports"))
 	})
 }
 
 func TestExtensions(t *testing.T) {
 	t.Parallel()
-	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
-	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.txtar", WithExcludeKnownExtensions())
+	runDiffTest(t, "testdata/extensions", "extensions.txtar", WithIncludeTypes("pkg.Foo"))
+	runDiffTest(t, "testdata/extensions", "extensions-excluded.txtar", WithExcludeKnownExtensions(), WithIncludeTypes("pkg.Foo"))
 }
 
 func TestPackages(t *testing.T) {
 	t.Parallel()
-	runDiffTest(t, "testdata/packages", []string{""}, "root.txtar")
-	runDiffTest(t, "testdata/packages", []string{"foo"}, "foo.txtar")
-	runDiffTest(t, "testdata/packages", []string{"foo.bar"}, "foo.bar.txtar")
-	runDiffTest(t, "testdata/packages", []string{"foo.bar.baz"}, "foo.bar.baz.txtar")
+	runDiffTest(t, "testdata/packages", "root.txtar", WithIncludeTypes(""))
+	runDiffTest(t, "testdata/packages", "foo.txtar", WithIncludeTypes("foo"))
+	runDiffTest(t, "testdata/packages", "foo.bar.txtar", WithIncludeTypes("foo.bar"))
+	runDiffTest(t, "testdata/packages", "foo.bar.baz.txtar", WithIncludeTypes("foo.bar.baz"))
 }
 
 func TestAny(t *testing.T) {
 	t.Parallel()
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax"}, "c1.txtar")
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InField"}, "c2.txtar") // c2
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InList"}, "c3.txtar")
-	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InMap"}, "c4.txtar")
-	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxValidType"}, "d.txtar")
-	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxInvalidType"}, "e.txtar")
+	runDiffTest(t, "testdata/any", "c1.txtar", WithIncludeTypes("ExtendedAnySyntax"))
+	runDiffTest(t, "testdata/any", "c2.txtar", WithIncludeTypes("ExtendedAnySyntax_InField")) // c2
+	runDiffTest(t, "testdata/any", "c3.txtar", WithIncludeTypes("ExtendedAnySyntax_InList"))
+	runDiffTest(t, "testdata/any", "c4.txtar", WithIncludeTypes("ExtendedAnySyntax_InMap"))
+	runDiffTest(t, "testdata/any", "d.txtar", WithIncludeTypes("NormalMessageSyntaxValidType"))
+	runDiffTest(t, "testdata/any", "e.txtar", WithIncludeTypes("NormalMessageSyntaxInvalidType"))
 }
 
 func TestSourceCodeInfo(t *testing.T) {
@@ -255,16 +379,16 @@ func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, opti
 	return bucket, image, nil
 }
 
-func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
+func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	_ = protojson.MarshalOptions{}
-	//b, _ := protojson.MarshalOptions{Indent: "  "}.Marshal(bufimage.ImageToFileDescriptorSet(image))
-	//t.Log(string(b))
+	b, _ := protojson.MarshalOptions{Indent: "  "}.Marshal(bufimage.ImageToFileDescriptorSet(image))
+	t.Log(string(b))
 
-	filteredImage, err := FilterImage(image, append(opts, WithIncludeTypes(typenames...))...)
+	filteredImage, err := FilterImage(image, opts...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
