@@ -35,7 +35,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -210,21 +209,51 @@ func TestOptions(t *testing.T) {
 func TestOptionImports(t *testing.T) {
 	t.Parallel()
 
+	// This checks that when excluding options the imports are correctly dropped.
+	// For this case when both options are removed only a.proto should be left.
+	testdataDir := "testdata/imports"
+	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
+	require.NoError(t, err)
+	testModuleData := []bufmoduletesting.ModuleData{
+		{
+			Bucket: storage.FilterReadBucket(bucket, storage.MatchPathEqual("a.proto")),
+		},
+		{
+			Bucket:      storage.FilterReadBucket(bucket, storage.MatchPathEqual("options.proto")),
+			NotTargeted: true,
+		},
+	}
+	moduleSet, err := bufmoduletesting.NewModuleSet(testModuleData...)
+	require.NoError(t, err)
+
+	// Safe to filter the image concurrently as its not being modified.
+	image, err := bufimage.BuildImage(
+		context.Background(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
+
 	t.Run("none_excluded", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/imports", "none_excluded.txtar", WithExcludeOptions("google.protobuf.FieldOptions.jstype"))
+		generated := runFilterImage(t, image, WithExcludeOptions("google.protobuf.FieldOptions.jstype"))
+		checkExpectation(t, context.Background(), generated, bucket, "none_excluded.txtar")
 	})
 	t.Run("exclude_foo", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/imports", "foo.txtar", WithExcludeOptions("message_foo"))
+		generated := runFilterImage(t, image, WithExcludeOptions("message_foo"))
+		checkExpectation(t, context.Background(), generated, bucket, "foo.txtar")
 	})
 	t.Run("exclude_foo_bar", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/imports", "foo_bar.txtar", WithExcludeOptions("message_foo", "message_bar"))
+		generated := runFilterImage(t, image, WithExcludeOptions("message_foo", "message_bar"))
+		checkExpectation(t, context.Background(), generated, bucket, "foo_bar.txtar")
 	})
 	t.Run("exclude_bar", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/imports", "bar.txtar", WithIncludeOptions("message_foo"), WithExcludeOptions("message_bar"))
+		generated := runFilterImage(t, image, WithIncludeOptions("message_foo"), WithExcludeOptions("message_bar"))
+		checkExpectation(t, context.Background(), generated, bucket, "bar.txtar")
 	})
 }
 
@@ -383,11 +412,11 @@ func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...
 	ctx := context.Background()
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
+	generated := runFilterImage(t, image, opts...)
+	checkExpectation(t, ctx, generated, bucket, expectedFile)
+}
 
-	_ = protojson.MarshalOptions{}
-	b, _ := protojson.MarshalOptions{Indent: "  "}.Marshal(bufimage.ImageToFileDescriptorSet(image))
-	t.Log(string(b))
-
+func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOption) []byte {
 	filteredImage, err := FilterImage(image, opts...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
@@ -395,18 +424,13 @@ func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...
 
 	// We may have filtered out custom options from the set in the step above. However, the options messages
 	// still contain extension fields that refer to the custom options, as a result of building the image.
-	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
-	// way, the result will omit custom options that aren't present in the filtered set (as they will be
+	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
 	data, err := protoencoding.NewWireMarshaler().Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
 	err = protoencoding.NewWireUnmarshaler(filteredImage.Resolver()).Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
-
-	t.Log("--------------------------------------------")
-	//b, _ = protojson.MarshalOptions{Indent: "  "}.Marshal(bufimage.ImageToFileDescriptorSet(image))
-	//t.Log(string(b))
 
 	files, err := protodesc.NewFiles(fileDescriptorSet)
 	require.NoError(t, err)
@@ -432,7 +456,7 @@ func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...
 		return archive.Files[i].Name < archive.Files[j].Name
 	})
 	generated := txtar.Format(archive)
-	checkExpectation(t, ctx, generated, bucket, expectedFile)
+	return generated
 }
 
 func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket storage.ReadWriteBucket, expectedFile string) {

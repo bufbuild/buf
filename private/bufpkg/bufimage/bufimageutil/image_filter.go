@@ -50,6 +50,9 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	// below, when remapping the descriptor.
 	if len(options.includeTypes) == 0 {
 		for _, file := range image.Files() {
+			if file.IsImport() {
+				continue
+			}
 			if err := closure.addElement(file.FileDescriptorProto(), "", false, imageIndex, options); err != nil {
 				return nil, err
 			}

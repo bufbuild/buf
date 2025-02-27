@@ -380,7 +380,7 @@ func (t *transitiveClosure) includeType(
 	return nil
 }
 
-func (t *transitiveClosure) addImport(fromPath, toPath string) {
+func (t *transitiveClosure) addImport(wat namedDescriptor, fromPath, toPath string) {
 	if fromPath == toPath {
 		return // no need for a file to import itself
 	}
@@ -401,9 +401,8 @@ func (t *transitiveClosure) addElement(
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
 	if referrerFile != "" {
-		t.addImport(referrerFile, descriptorInfo.file.Path())
+		t.addImport(descriptor, referrerFile, descriptorInfo.file.Path())
 	}
-
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
@@ -415,15 +414,6 @@ func (t *transitiveClosure) addElement(
 		t.elements[descriptor] = inclusionModeImplicit
 	} else {
 		t.elements[descriptor] = inclusionModeExplicit
-	}
-
-	// if this type is enclosed inside another, add enclosing types
-	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
-		return err
-	}
-	// add any custom options and their dependencies
-	if err := t.exploreCustomOptions(descriptor, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
-		return err
 	}
 
 	switch typedDescriptor := descriptor.(type) {
@@ -534,6 +524,15 @@ func (t *transitiveClosure) addElement(
 
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
+	}
+
+	// if this type is enclosed inside another, add enclosing types
+	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
+		return err
+	}
+	// add any custom options and their dependencies
+	if err := t.exploreCustomOptions(descriptor, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
+		return err
 	}
 
 	return nil
@@ -805,9 +804,9 @@ func (t *transitiveClosure) exploreCustomOptions(
 	optionsName := options.Descriptor().FullName()
 	var err error
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-		//if !t.hasOption(fd, opts) {
-		//	return true
-		//}
+		if !t.hasOption(fd, opts) {
+			return true
+		}
 		// If the value contains an Any message, we should add the message type
 		// therein to the closure.
 		if err = t.exploreOptionValueForAny(fd, val, referrerFile, imageIndex, opts); err != nil {

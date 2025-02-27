@@ -1,7 +1,6 @@
 -- a.proto --
 syntax = "proto2";
 package pkg;
-import "options.proto";
 message Empty {
 }
 message Foo {
