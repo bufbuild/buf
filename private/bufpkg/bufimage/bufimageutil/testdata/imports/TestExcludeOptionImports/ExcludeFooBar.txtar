@@ -1,0 +1,9 @@
+-- a.proto --
+syntax = "proto3";
+package pkg;
+message Foo {
+  Bar nested_bar = 2;
+  message Bar {
+    string bar = 1;
+  }
+}
