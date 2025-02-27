@@ -261,19 +261,18 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	if len(fileDescriptor.WeakDependency) > 0 {
 		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
 		for _, indexFrom := range fileDescriptor.WeakDependency {
-			path := append(weakDependencyPath, int32(indexFrom))
+			path := append(weakDependencyPath, indexFrom)
 			indexTo := dependencyChanges[indexFrom]
 			if indexTo == -1 {
 				sourcePathsRemap.markDeleted(path)
 			} else {
-				if indexTo != int32(indexFrom) {
+				if indexTo != indexFrom {
 					sourcePathsRemap.markMoved(path, indexTo)
 				}
 				newFileDescriptor.WeakDependency = append(newFileDescriptor.WeakDependency, indexTo)
 			}
 		}
 	}
-
 	return newFileDescriptor, nil
 }
 
@@ -597,7 +596,6 @@ func remapMessage[T proto.Message](
 	}
 	newMessage, _ := newMessageOpaque.(T) // Safe to assert.
 	return newMessage, true, nil
-
 }
 
 func remapSlice[T any](

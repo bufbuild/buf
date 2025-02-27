@@ -197,11 +197,3 @@ func isOptionsTypeName(typeName protoreflect.FullName) bool {
 		return false
 	}
 }
-
-func getFullName(parentName protoreflect.FullName, descriptor namedDescriptor) protoreflect.FullName {
-	fullName := protoreflect.FullName(descriptor.GetName())
-	if parentName == "" {
-		return fullName
-	}
-	return parentName + "." + fullName
-}
