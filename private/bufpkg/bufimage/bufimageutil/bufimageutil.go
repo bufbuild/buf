@@ -138,6 +138,13 @@ func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 	}
 }
 
+// TODO: doc.
+func WithMutateInPlace() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.mutateInPlace = true
+	}
+}
+
 // WithExcludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
 // the set of options that should be excluded from the filtered image.
 //
@@ -980,6 +987,7 @@ type imageFilterOptions struct {
 	includeCustomOptions   bool
 	includeKnownExtensions bool
 	allowImportedTypes     bool
+	mutateInPlace          bool
 	includeTypes           map[string]struct{}
 	excludeTypes           map[string]struct{}
 	includeOptions         map[string]struct{}

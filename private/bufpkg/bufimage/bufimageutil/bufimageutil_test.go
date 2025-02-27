@@ -634,7 +634,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 				require.NoError(b, err)
 				b.StartTimer()
 
-				_, err = FilterImage(image, WithIncludeTypes(typeName))
+				_, err = FilterImage(image, WithIncludeTypes(typeName), WithMutateInPlace())
 				require.NoError(b, err)
 				i++
 				if i == b.N {

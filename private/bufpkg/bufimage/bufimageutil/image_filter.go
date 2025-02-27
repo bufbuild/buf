@@ -142,7 +142,7 @@ func filterImageFile(
 				continue
 			}
 			if noComment || !slices.Equal(oldPath, newPath) {
-				location = shallowClone(location)
+				location = maybeClone(location, options)
 				location.Path = newPath
 			}
 			if noComment {
@@ -218,7 +218,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return fileDescriptor, nil
 	}
 
-	newFileDescriptor := shallowClone(fileDescriptor)
+	newFileDescriptor := maybeClone(fileDescriptor, b.options)
 	newFileDescriptor.MessageType = newMessages
 	newFileDescriptor.EnumType = newEnums
 	newFileDescriptor.Service = newServices
@@ -289,7 +289,7 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	if mode := b.closure.elements[descriptor]; mode == inclusionModeEnclosing {
 		// If the type is only enclosing, only the namespace matters.
 		isDirty = true
-		newDescriptor = shallowClone(descriptor)
+		newDescriptor = maybeClone(descriptor, b.options)
 		sourcePathsRemap.markNoComment(sourcePath)
 		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
 		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
@@ -318,7 +318,7 @@ func (b *sourcePathsBuilder) remapDescriptor(
 		}
 		isDirty = isDirty || changed
 		if isDirty {
-			newDescriptor = shallowClone(descriptor)
+			newDescriptor = maybeClone(descriptor, b.options)
 			newDescriptor.Field = newFields
 			newDescriptor.OneofDecl = newOneofs
 			newDescriptor.ExtensionRange = newExtensionRange
@@ -351,7 +351,7 @@ func (b *sourcePathsBuilder) remapDescriptor(
 		return descriptor, false, nil
 	}
 	if newDescriptor == nil {
-		newDescriptor = shallowClone(descriptor)
+		newDescriptor = maybeClone(descriptor, b.options)
 	}
 	newDescriptor.Extension = newExtensions
 	newDescriptor.NestedType = newDescriptors
@@ -372,7 +372,7 @@ func (b *sourcePathsBuilder) remapExtensionRange(
 	if !changed {
 		return extensionRange, false, nil
 	}
-	newExtensionRange := shallowClone(extensionRange)
+	newExtensionRange := maybeClone(extensionRange, b.options)
 	newExtensionRange.Options = newOptions
 	return newExtensionRange, true, nil
 }
@@ -402,7 +402,7 @@ func (b *sourcePathsBuilder) remapEnum(
 	if !isDirty {
 		return enum, true, nil
 	}
-	newEnum := shallowClone(enum)
+	newEnum := maybeClone(enum, b.options)
 	newEnum.Options = newOptions
 	newEnum.Value = newEnumValues
 	return newEnum, true, nil
@@ -420,7 +420,7 @@ func (b *sourcePathsBuilder) remapEnumValue(
 	if !changed {
 		return enumValue, false, nil
 	}
-	newEnumValue := shallowClone(enumValue)
+	newEnumValue := maybeClone(enumValue, b.options)
 	newEnumValue.Options = newOptions
 	return newEnumValue, true, nil
 }
@@ -437,7 +437,7 @@ func (b *sourcePathsBuilder) remapOneof(
 	if !changed {
 		return oneof, false, nil
 	}
-	newOneof := shallowClone(oneof)
+	newOneof := maybeClone(oneof, b.options)
 	newOneof.Options = options
 	return newOneof, true, nil
 }
@@ -465,7 +465,7 @@ func (b *sourcePathsBuilder) remapService(
 	if !isDirty {
 		return service, false, nil
 	}
-	newService := shallowClone(service)
+	newService := maybeClone(service, b.options)
 	newService.Method = newMethods
 	newService.Options = newOptions
 	return newService, true, nil
@@ -486,7 +486,7 @@ func (b *sourcePathsBuilder) remapMethod(
 	if !changed {
 		return method, false, nil
 	}
-	newMethod := shallowClone(method)
+	newMethod := maybeClone(method, b.options)
 	newMethod.Options = newOptions
 	return newMethod, true, nil
 }
@@ -536,7 +536,7 @@ func (b *sourcePathsBuilder) remapField(
 	if !changed {
 		return field, false, nil
 	}
-	newField := shallowClone(field)
+	newField := maybeClone(field, b.options)
 	newField.Options = newOption
 	return newField, true, nil
 }
@@ -558,7 +558,7 @@ func (b *sourcePathsBuilder) remapOptions(
 			optionPath := append(optionsPath, int32(fd.Number()))
 			sourcePathsRemap.markDeleted(optionPath)
 			if newOptions == nil {
-				newOptions = shallowCloneReflect(options)
+				newOptions = maybeClone(optionsMessage, b.options).ProtoReflect()
 			}
 			newOptions.Clear(fd)
 			return true
@@ -616,6 +616,7 @@ func remapSlice[T any](
 		}
 		isDirty = isDirty || changed
 		if isDirty && newList == nil {
+			// TODO: filter in place...
 			newList = make([]*T, 0, len(list))
 			newList = append(newList, list[:toIndex]...)
 		}
@@ -640,6 +641,13 @@ func remapSlice[T any](
 		return newList, true, nil
 	}
 	return list, false, nil
+}
+
+func maybeClone[T proto.Message](value T, options *imageFilterOptions) T {
+	if options == nil || !options.mutateInPlace {
+		return shallowClone(value)
+	}
+	return value
 }
 
 func shallowClone[T proto.Message](src T) T {
