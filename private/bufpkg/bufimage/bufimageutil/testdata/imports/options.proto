@@ -1,0 +1,14 @@
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+
+message OptionFoo {
+	string foo = 1;
+}
+message OptionBar {
+	string bar = 1;
+}
+
+extend google.protobuf.MessageOptions {
+	optional OptionFoo message_foo = 50000;
+	optional OptionBar message_bar = 50001;
+}
