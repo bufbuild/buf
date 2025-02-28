@@ -101,6 +101,11 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 
 // WithIncludeTypes returns an option for ImageFilteredByTypesWithOptions that specifies
 // the set of types that should be included in the filtered image.
+//
+// May be provided multiple times. The type names should be fully qualified.
+// For example, "google.protobuf.Any" or "buf.validate". Type or package names
+// are accepted. If the type does not exist in the image, an error
+// [ErrImageFilterTypeNotFound] will be returned.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.includeTypes == nil {
@@ -114,6 +119,11 @@ func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 
 // WithExcludeTypes returns an option for ImageFilteredByTypesWithOptions that specifies
 // the set of types that should be excluded from the filtered image.
+//
+// May be provided multiple times. The type names should be fully qualified.
+// For example, "google.protobuf.Any" or "buf.validate". Type or package names
+// are accepted. If the type does not exist in the image, an error
+// [ErrImageFilterTypeNotFound] will be returned.
 func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.excludeTypes == nil {
@@ -127,6 +137,10 @@ func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 
 // WithIncludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
 // the set of options that should be included in the filtered image.
+//
+// May be provided multiple times. The option names should be fully qualified.
+// For example, "google.protobuf.FieldOptions.jstype" or "buf.validate.field".
+// If the option does not exist in the image, it will be ignored.
 func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.includeOptions == nil {
@@ -141,7 +155,9 @@ func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 // WithExcludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
 // the set of options that should be excluded from the filtered image.
 //
-// May be provided multiple times.
+// May be provided multiple times. The option names should be fully qualified.
+// For example, "google.protobuf.FieldOptions.jstype" or "buf.validate.field".
+// If the option does not exist in the image, it will be ignored.
 func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if opts.excludeOptions == nil {
@@ -339,12 +355,12 @@ func (t *transitiveClosure) hasOption(
 			return false
 		}
 	}
-	if fieldDescriptor.IsExtension() && !options.includeCustomOptions {
-		return false
-	}
 	if options.includeOptions != nil {
 		_, isIncluded = options.includeOptions[string(fullName)]
 		return isIncluded
+	}
+	if fieldDescriptor.IsExtension() && !options.includeCustomOptions {
+		return false
 	}
 	return true
 }
@@ -392,7 +408,7 @@ func (t *transitiveClosure) includeType(
 	return nil
 }
 
-func (t *transitiveClosure) addImport(wat namedDescriptor, fromPath, toPath string) {
+func (t *transitiveClosure) addImport(fromPath, toPath string) {
 	if fromPath == toPath {
 		return // no need for a file to import itself
 	}
@@ -413,7 +429,7 @@ func (t *transitiveClosure) addElement(
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
 	if referrerFile != "" {
-		t.addImport(descriptor, referrerFile, descriptorInfo.file.Path())
+		t.addImport(referrerFile, descriptorInfo.file.Path())
 	}
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {

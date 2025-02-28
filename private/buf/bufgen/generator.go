@@ -320,7 +320,10 @@ func (g *generator) execLocalPlugin(
 	}
 	if len(excludeOptions) > 0 {
 		for i, pluginImage := range pluginImages {
-			pluginImage, err := bufimageutil.FilterImage(pluginImage, bufimageutil.WithExcludeOptions(excludeOptions...))
+			pluginImage, err := bufimageutil.FilterImage(
+				pluginImage,
+				bufimageutil.WithExcludeOptions(excludeOptions...),
+			)
 			if err != nil {
 				return nil, err
 			}
