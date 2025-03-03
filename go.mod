@@ -21,7 +21,7 @@ require (
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/gofrs/flock v0.12.1
 	github.com/google/cel-go v0.23.2
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.3
 	github.com/google/uuid v1.6.0
 	github.com/jdx/go-netrc v1.0.0
