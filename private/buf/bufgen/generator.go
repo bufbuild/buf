@@ -16,10 +16,12 @@ package bufgen
 
 import (
 	"context"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"strings"
 
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
@@ -197,6 +199,30 @@ func (g *generator) generateCode(
 	return nil
 }
 
+// hashPluginConfigForImage returns a hash of the plugin config for the image.
+// This is used to batch plugins that have the same configuration.
+// The hash is based on the following properties:
+//   - Strategy
+//   - ExcludeOptions
+//   - RemoteHost
+func hashPluginConfigForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
+	type imagePluginConfigKey struct {
+		Strategy       Strategy
+		ExcludeOptions []string
+		RemoteHost     string
+	}
+	key := &imagePluginConfigKey{
+		Strategy:       Strategy(pluginConfig.Strategy()),
+		ExcludeOptions: pluginConfig.ExcludeOptions(),
+		RemoteHost:     pluginConfig.RemoteHost(),
+	}
+	var str strings.Builder
+	if err := gob.NewEncoder(&str).Encode(key); err != nil {
+		return "", err
+	}
+	return str.String(), nil
+}
+
 func (g *generator) execPlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
@@ -205,58 +231,34 @@ func (g *generator) execPlugins(
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
-	imageProvider := newImageProvider(image)
 	// Collect all of the plugin jobs so that they can be executed in parallel.
 	jobs := make([]func(context.Context) error, 0, len(pluginConfigs))
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(pluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
-	remotePluginConfigTable := make(map[string][]*remotePluginExecArgs, len(pluginConfigs))
-	for i, pluginConfig := range pluginConfigs {
-		index := i
-		currentPluginConfig := pluginConfig
-		// We're using this as a proxy for Type() == PluginConfigTypeRemote.
-		//
-		// We should be using the enum here.
-		remote := currentPluginConfig.RemoteHost()
-		if remote != "" {
-			remotePluginConfigTable[remote] = append(
-				remotePluginConfigTable[remote],
-				&remotePluginExecArgs{
-					Index:        index,
-					PluginConfig: currentPluginConfig,
-				},
-			)
-		} else {
-			jobs = append(jobs, func(ctx context.Context) error {
-				includeImports := currentPluginConfig.IncludeImports()
-				if includeImportsOverride != nil {
-					includeImports = *includeImportsOverride
-				}
-				includeWellKnownTypes := currentPluginConfig.IncludeWKT()
-				if includeWellKnownTypesOverride != nil {
-					includeWellKnownTypes = *includeWellKnownTypesOverride
-				}
-				excludeOptions := currentPluginConfig.ExcludeOptions()
-				response, err := g.execLocalPlugin(
-					ctx,
-					container,
-					imageProvider,
-					currentPluginConfig,
-					includeImports,
-					includeWellKnownTypes,
-					excludeOptions,
-				)
-				if err != nil {
-					return err
-				}
-				responses[index] = response
-				return nil
-			})
-		}
+
+	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, hashPluginConfigForImage)
+	if err != nil {
+		return nil, err
 	}
-	// Batch for each remote.
-	for remote, indexedPluginConfigs := range remotePluginConfigTable {
-		if len(indexedPluginConfigs) > 0 {
+
+	for _, indexedPluginConfigs := range pluginConfigsForImage {
+		image := image
+		currentPluginConfig := indexedPluginConfigs[0].Value
+
+		// Apply per-config filters.
+		if excludeOptions := currentPluginConfig.ExcludeOptions(); len(excludeOptions) > 0 {
+			var err error
+			image, err = bufimageutil.FilterImage(
+				image,
+				bufimageutil.WithExcludeOptions(excludeOptions...),
+			)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Batch for each remote.
+		if remote := currentPluginConfig.RemoteHost(); remote != "" {
 			jobs = append(jobs, func(ctx context.Context) error {
 				results, err := g.execRemotePluginsV2(
 					ctx,
@@ -271,8 +273,50 @@ func (g *generator) execPlugins(
 					return err
 				}
 				for _, result := range results {
-					responses[result.Index] = result.CodeGeneratorResponse
+					responses[result.Index] = result.Value
 				}
+				return nil
+
+			})
+			continue
+		}
+
+		// Local plugins.
+		var images []bufimage.Image
+		switch Strategy(currentPluginConfig.Strategy()) {
+		case StrategyAll:
+			images = []bufimage.Image{image}
+		case StrategyDirectory:
+			var err error
+			images, err = bufimage.ImageByDir(image)
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unknown strategy: %v", currentPluginConfig.Strategy())
+		}
+		for _, indexedPluginConfig := range indexedPluginConfigs {
+			jobs = append(jobs, func(ctx context.Context) error {
+				includeImports := currentPluginConfig.IncludeImports()
+				if includeImportsOverride != nil {
+					includeImports = *includeImportsOverride
+				}
+				includeWellKnownTypes := currentPluginConfig.IncludeWKT()
+				if includeWellKnownTypesOverride != nil {
+					includeWellKnownTypes = *includeWellKnownTypesOverride
+				}
+				response, err := g.execLocalPlugin(
+					ctx,
+					container,
+					images,
+					indexedPluginConfig.Value,
+					includeImports,
+					includeWellKnownTypes,
+				)
+				if err != nil {
+					return err
+				}
+				responses[indexedPluginConfig.Index] = response
 				return nil
 			})
 		}
@@ -308,28 +352,11 @@ func (g *generator) execPlugins(
 func (g *generator) execLocalPlugin(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	imageProvider *imageProvider,
+	pluginImages []bufimage.Image,
 	pluginConfig bufconfig.GeneratePluginConfig,
 	includeImports bool,
 	includeWellKnownTypes bool,
-	excludeOptions []string,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	pluginImages, err := imageProvider.GetImages(Strategy(pluginConfig.Strategy()))
-	if err != nil {
-		return nil, err
-	}
-	if len(excludeOptions) > 0 {
-		for i, pluginImage := range pluginImages {
-			pluginImage, err := bufimageutil.FilterImage(
-				pluginImage,
-				bufimageutil.WithExcludeOptions(excludeOptions...),
-			)
-			if err != nil {
-				return nil, err
-			}
-			pluginImages[i] = pluginImage
-		}
-	}
 	requests, err := bufimage.ImagesToCodeGeneratorRequests(
 		pluginImages,
 		pluginConfig.Opt(),
@@ -354,38 +381,27 @@ func (g *generator) execLocalPlugin(
 	return response, nil
 }
 
-type remotePluginExecArgs struct {
-	Index        int
-	PluginConfig bufconfig.GeneratePluginConfig
-}
-
-type remotePluginExecutionResult struct {
-	CodeGeneratorResponse *pluginpb.CodeGeneratorResponse
-	Index                 int
-}
-
 func (g *generator) execRemotePluginsV2(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	image bufimage.Image,
 	remote string,
-	pluginConfigs []*remotePluginExecArgs,
+	indexedPluginConfigs []slicesext.Indexed[bufconfig.GeneratePluginConfig],
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
-	// TODO: add support for exclude_options.
-) ([]*remotePluginExecutionResult, error) {
-	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(pluginConfigs))
-	for i, pluginConfig := range pluginConfigs {
-		includeImports := pluginConfig.PluginConfig.IncludeImports()
+) ([]slicesext.Indexed[*pluginpb.CodeGeneratorResponse], error) {
+	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(indexedPluginConfigs))
+	for i, pluginConfig := range indexedPluginConfigs {
+		includeImports := pluginConfig.Value.IncludeImports()
 		if includeImportsOverride != nil {
 			includeImports = *includeImportsOverride
 		}
-		includeWellKnownTypes := pluginConfig.PluginConfig.IncludeWKT()
+		includeWellKnownTypes := pluginConfig.Value.IncludeWKT()
 		if includeWellKnownTypesOverride != nil {
 			includeWellKnownTypes = *includeWellKnownTypesOverride
 		}
 		request, err := getPluginGenerationRequest(
-			pluginConfig.PluginConfig,
+			pluginConfig.Value,
 			includeImports,
 			includeWellKnownTypes,
 		)
@@ -415,15 +431,15 @@ func (g *generator) execRemotePluginsV2(
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}
-	result := make([]*remotePluginExecutionResult, 0, len(responses))
+	result := make([]slicesext.Indexed[*pluginpb.CodeGeneratorResponse], 0, len(responses))
 	for i := range requests {
 		codeGeneratorResponse := responses[i].GetResponse()
 		if codeGeneratorResponse == nil {
 			return nil, errors.New("expected code generator response")
 		}
-		result = append(result, &remotePluginExecutionResult{
-			CodeGeneratorResponse: codeGeneratorResponse,
-			Index:                 pluginConfigs[i].Index,
+		result = append(result, slicesext.Indexed[*pluginpb.CodeGeneratorResponse]{
+			Value: codeGeneratorResponse,
+			Index: indexedPluginConfigs[i].Index,
 		})
 	}
 	return result, nil
