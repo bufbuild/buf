@@ -273,7 +273,7 @@ func newGeneratePluginConfigFromExternalV1Beta1(
 			opt,
 			false,
 			false,
-			nil, // TODO
+			nil,
 			strategy,
 			[]string{externalConfig.Path},
 		)
@@ -284,7 +284,7 @@ func newGeneratePluginConfigFromExternalV1Beta1(
 		opt,
 		false,
 		false,
-		nil, // TODO
+		nil,
 		strategy,
 	)
 }
@@ -344,7 +344,7 @@ func newGeneratePluginConfigFromExternalV1(
 			opt,
 			false,
 			false,
-			nil, // TODO
+			nil,
 			externalConfig.Revision,
 		)
 	}
@@ -357,7 +357,7 @@ func newGeneratePluginConfigFromExternalV1(
 			opt,
 			false,
 			false,
-			nil, // TODO
+			nil,
 			strategy,
 			path,
 		)
@@ -369,7 +369,7 @@ func newGeneratePluginConfigFromExternalV1(
 			opt,
 			false,
 			false,
-			nil, // TODO
+			nil,
 			strategy,
 			protocPath,
 		)
@@ -382,7 +382,7 @@ func newGeneratePluginConfigFromExternalV1(
 		opt,
 		false,
 		false,
-		nil, // TODO
+		nil,
 		strategy,
 	)
 }
