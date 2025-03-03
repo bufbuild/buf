@@ -16,12 +16,11 @@ package bufgen
 
 import (
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
-	"strings"
 
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
@@ -202,25 +201,25 @@ func (g *generator) generateCode(
 // hashPluginConfigForImage returns a hash of the plugin config for the image.
 // This is used to batch plugins that have the same configuration.
 // The hash is based on the following properties:
-//   - Strategy
 //   - ExcludeOptions
+//   - Strategy
 //   - RemoteHost
 func hashPluginConfigForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
 	type imagePluginConfigKey struct {
-		Strategy       Strategy
 		ExcludeOptions []string
+		Strategy       Strategy
 		RemoteHost     string
 	}
 	key := &imagePluginConfigKey{
-		Strategy:       Strategy(pluginConfig.Strategy()),
 		ExcludeOptions: pluginConfig.ExcludeOptions(),
+		Strategy:       Strategy(pluginConfig.Strategy()),
 		RemoteHost:     pluginConfig.RemoteHost(),
 	}
-	var str strings.Builder
-	if err := gob.NewEncoder(&str).Encode(key); err != nil {
+	bytes, err := json.Marshal(key)
+	if err != nil {
 		return "", err
 	}
-	return str.String(), nil
+	return string(bytes), nil
 }
 
 func (g *generator) execPlugins(
@@ -236,17 +235,18 @@ func (g *generator) execPlugins(
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(pluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
 
+	// Group the pluginConfigs by their hash. The hash only considers the
+	// properties ExcludeOptions, Strategy, and RemoteHost.
 	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, hashPluginConfigForImage)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, indexedPluginConfigs := range pluginConfigsForImage {
 		image := image
-		currentPluginConfig := indexedPluginConfigs[0].Value
+		hashPluginConfig := indexedPluginConfigs[0].Value
 
 		// Apply per-config filters.
-		if excludeOptions := currentPluginConfig.ExcludeOptions(); len(excludeOptions) > 0 {
+		if excludeOptions := hashPluginConfig.ExcludeOptions(); len(excludeOptions) > 0 {
 			var err error
 			image, err = bufimageutil.FilterImage(
 				image,
@@ -258,7 +258,7 @@ func (g *generator) execPlugins(
 		}
 
 		// Batch for each remote.
-		if remote := currentPluginConfig.RemoteHost(); remote != "" {
+		if remote := hashPluginConfig.RemoteHost(); remote != "" {
 			jobs = append(jobs, func(ctx context.Context) error {
 				results, err := g.execRemotePluginsV2(
 					ctx,
@@ -276,14 +276,13 @@ func (g *generator) execPlugins(
 					responses[result.Index] = result.Value
 				}
 				return nil
-
 			})
 			continue
 		}
 
 		// Local plugins.
 		var images []bufimage.Image
-		switch Strategy(currentPluginConfig.Strategy()) {
+		switch Strategy(hashPluginConfig.Strategy()) {
 		case StrategyAll:
 			images = []bufimage.Image{image}
 		case StrategyDirectory:
@@ -293,15 +292,15 @@ func (g *generator) execPlugins(
 				return nil, err
 			}
 		default:
-			return nil, fmt.Errorf("unknown strategy: %v", currentPluginConfig.Strategy())
+			return nil, fmt.Errorf("unknown strategy: %v", hashPluginConfig.Strategy())
 		}
 		for _, indexedPluginConfig := range indexedPluginConfigs {
 			jobs = append(jobs, func(ctx context.Context) error {
-				includeImports := currentPluginConfig.IncludeImports()
+				includeImports := hashPluginConfig.IncludeImports()
 				if includeImportsOverride != nil {
 					includeImports = *includeImportsOverride
 				}
-				includeWellKnownTypes := currentPluginConfig.IncludeWKT()
+				includeWellKnownTypes := hashPluginConfig.IncludeWKT()
 				if includeWellKnownTypesOverride != nil {
 					includeWellKnownTypes = *includeWellKnownTypesOverride
 				}
