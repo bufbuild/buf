@@ -228,15 +228,15 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	// Fix the imports to remove any that are no longer used.
 	importsRequired := b.closure.imports[fileDescriptor.GetName()]
 
-	indexTo := int32(0)
+	indexFrom, indexTo := int32(0), int32(0)
 	newFileDescriptor.Dependency = nil
 	dependencyPath := append(sourcePath, fileDependencyTag)
 	dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
-	for indexFrom, importPath := range fileDescriptor.Dependency {
-		path := append(dependencyPath, int32(indexFrom))
+	for _, importPath := range fileDescriptor.Dependency {
+		path := append(dependencyPath, indexFrom)
 		if importsRequired != nil && importsRequired.index(importPath) != -1 {
 			dependencyChanges[indexFrom] = indexTo
-			if indexTo != int32(indexFrom) {
+			if indexTo != indexFrom {
 				sourcePathsRemap.markMoved(path, indexTo)
 			}
 			newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, importPath)
@@ -247,6 +247,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 			sourcePathsRemap.markDeleted(path)
 			dependencyChanges[indexFrom] = -1
 		}
+		indexFrom++
 	}
 	if importsRequired != nil {
 		newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, importsRequired.keys()...)
