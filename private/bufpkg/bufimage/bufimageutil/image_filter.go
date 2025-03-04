@@ -621,7 +621,6 @@ func remapSlice[T any](
 			if options.mutateInPlace {
 				newList = list[:toIndex:cap(list)]
 			} else {
-				newList = make([]*T, 0, len(list))
 				newList = append(newList, list[:toIndex]...)
 			}
 		}
@@ -643,6 +642,15 @@ func remapSlice[T any](
 		sourcePathsRemap.markDeleted(sourcePath)
 	}
 	if isDirty {
+		if len(newList) == 0 {
+			return nil, true, nil
+		}
+		if options.mutateInPlace && newList != nil {
+			// Zero out the remaining elements.
+			for i := int(toIndex); i < len(list); i++ {
+				list[i] = nil
+			}
+		}
 		return newList, true, nil
 	}
 	return list, false, nil

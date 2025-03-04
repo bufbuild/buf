@@ -295,7 +295,7 @@ func TestPackages(t *testing.T) {
 func TestAny(t *testing.T) {
 	t.Parallel()
 	runDiffTest(t, "testdata/any", "c1.txtar", WithIncludeTypes("ExtendedAnySyntax"))
-	runDiffTest(t, "testdata/any", "c2.txtar", WithIncludeTypes("ExtendedAnySyntax_InField")) // c2
+	runDiffTest(t, "testdata/any", "c2.txtar", WithIncludeTypes("ExtendedAnySyntax_InField"))
 	runDiffTest(t, "testdata/any", "c3.txtar", WithIncludeTypes("ExtendedAnySyntax_InList"))
 	runDiffTest(t, "testdata/any", "c4.txtar", WithIncludeTypes("ExtendedAnySyntax_InMap"))
 	runDiffTest(t, "testdata/any", "d.txtar", WithIncludeTypes("NormalMessageSyntaxValidType"))
@@ -386,6 +386,41 @@ func TestTypesFromMainModule(t *testing.T) {
 	_, err = FilterImage(image, WithIncludeTypes("nonexisting"))
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
+}
+
+func TestMutateInPlace(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+	require.NoError(t, err)
+
+	aProtoFile := image.GetFile("a.proto")
+	aFileDescriptorProto := aProtoFile.FileDescriptorProto()
+	assert.Len(t, aFileDescriptorProto.MessageType, 2) // Foo, Empty
+	assert.Len(t, aFileDescriptorProto.EnumType, 1)    // FooEnum
+	assert.Len(t, aFileDescriptorProto.Service, 1)
+
+	// Shallow copy
+	shallowFilteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Foo"))
+	require.NoError(t, err)
+
+	assert.NotSame(t, aFileDescriptorProto, shallowFilteredImage.GetFile("a.proto").FileDescriptorProto())
+
+	// Mutate in place
+	mutateFilteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Foo"), WithMutateInPlace())
+	require.NoError(t, err)
+
+	// Check that the original image was mutated
+	assert.Same(t, aFileDescriptorProto, mutateFilteredImage.GetFile("a.proto").FileDescriptorProto())
+	assert.Len(t, aFileDescriptorProto.MessageType, 1) // Foo
+	if assert.GreaterOrEqual(t, cap(aFileDescriptorProto.MessageType), 2) {
+		slice := aFileDescriptorProto.MessageType[1:cap(aFileDescriptorProto.MessageType)]
+		for _, elem := range slice {
+			assert.Nil(t, elem) // Empty
+		}
+	}
+	assert.Nil(t, aFileDescriptorProto.EnumType)
+	assert.Nil(t, aFileDescriptorProto.Service)
 }
 
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {

@@ -198,30 +198,6 @@ func (g *generator) generateCode(
 	return nil
 }
 
-// hashPluginConfigForImage returns a hash of the plugin config for the image.
-// This is used to batch plugins that have the same configuration.
-// The hash is based on the following properties:
-//   - ExcludeOptions
-//   - Strategy
-//   - RemoteHost
-func hashPluginConfigForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
-	type imagePluginConfigKey struct {
-		ExcludeOptions []string
-		Strategy       Strategy
-		RemoteHost     string
-	}
-	key := &imagePluginConfigKey{
-		ExcludeOptions: pluginConfig.ExcludeOptions(),
-		Strategy:       Strategy(pluginConfig.Strategy()),
-		RemoteHost:     pluginConfig.RemoteHost(),
-	}
-	bytes, err := json.Marshal(key)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
-}
-
 func (g *generator) execPlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
@@ -235,9 +211,8 @@ func (g *generator) execPlugins(
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(pluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
 
-	// Group the pluginConfigs by their hash. The hash only considers the
-	// properties ExcludeOptions, Strategy, and RemoteHost.
-	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, hashPluginConfigForImage)
+	// Group the pluginConfigs by the properties ExcludeOptions, Strategy, and RemoteHost.
+	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, createPluginConfigKeyForImage)
 	if err != nil {
 		return nil, err
 	}
@@ -513,4 +488,28 @@ type generateOptions struct {
 
 func newGenerateOptions() *generateOptions {
 	return &generateOptions{}
+}
+
+// createPluginConfigKeyForImage returns a string of the plugin config with
+// a subset of properties. This is used to batch plugins that have similar
+// configuration. The key is based on the following properties:
+//   - ExcludeOptions
+//   - Strategy
+//   - RemoteHost
+func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
+	type pluginConfigKey struct {
+		ExcludeOptions []string
+		Strategy       Strategy
+		RemoteHost     string
+	}
+	key := &pluginConfigKey{
+		ExcludeOptions: pluginConfig.ExcludeOptions(),
+		Strategy:       Strategy(pluginConfig.Strategy()),
+		RemoteHost:     pluginConfig.RemoteHost(),
+	}
+	bytes, err := json.Marshal(key)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
