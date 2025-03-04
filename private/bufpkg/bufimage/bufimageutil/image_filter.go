@@ -201,8 +201,6 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return nil, err
 	}
 	isDirty = isDirty || changed
-	// TODO: extension docs
-	//newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField)
 	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField, b.options)
 	if err != nil {
 		return nil, err
@@ -257,7 +255,6 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	publicDependencyPath := append(sourcePath, filePublicDependencyTag)
 	sourcePathsRemap.markDeleted(publicDependencyPath)
 
-	// TODO: validate
 	newFileDescriptor.WeakDependency = nil
 	if len(fileDescriptor.WeakDependency) > 0 {
 		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
@@ -325,8 +322,6 @@ func (b *sourcePathsBuilder) remapDescriptor(
 			newDescriptor.ExtensionRange = newExtensionRange
 		}
 	}
-	// TODO: sourcePath might not be correct here.
-	// TODO: extension docs.
 	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.remapField, b.options)
 	if err != nil {
 		return nil, false, err
