@@ -42,12 +42,12 @@ type ModuleData interface {
 	Bucket() (storage.ReadBucket, error)
 	// DepModuleKeys returns the dependencies for this specific Module.
 	//
-	// The dependencies are the same as that would appear in the buf.lock file.
+	// The dependencies are the same as that would appear in the v1 buf.lock file.
 	// These include all direct and transitive dependencies. A Module constructed
 	// from this ModuleData as the target will require all Modules referenced by
 	// its DepModuleKeys to be present in the ModuleSet.
 	//
-	// This is used for digest calculations. It is not used otherwise.
+	// This is used for digest calculations.
 	DepModuleKeys() ([]ModuleKey, error)
 
 	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
