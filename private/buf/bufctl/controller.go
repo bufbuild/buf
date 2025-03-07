@@ -1331,8 +1331,19 @@ func filterImage(
 	if functionOptions.imageExcludeImports {
 		newImage = bufimage.ImageWithoutImports(newImage)
 	}
-	if len(functionOptions.imageTypes) > 0 {
-		newImage, err = bufimageutil.ImageFilteredByTypes(newImage, functionOptions.imageTypes...)
+	includeTypes := functionOptions.imageTypes
+	excludeTypes := functionOptions.imageExcludeTypes
+	includeOptions := functionOptions.imageOptions
+	excludeOptions := functionOptions.imageExcludeOptions
+	if len(includeTypes) > 0 || len(excludeTypes) > 0 || len(includeOptions) > 0 || len(excludeOptions) > 0 {
+		newImage, err = bufimageutil.FilterImage(
+			newImage,
+			bufimageutil.WithIncludeTypes(includeTypes...),
+			bufimageutil.WithExcludeTypes(excludeTypes...),
+			bufimageutil.WithIncludeOptions(includeTypes...),
+			bufimageutil.WithExcludeOptions(excludeOptions...),
+			bufimageutil.WithMutateInPlace(),
+		)
 		if err != nil {
 			return nil, err
 		}
