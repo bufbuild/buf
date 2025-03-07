@@ -212,6 +212,7 @@ func (g *generator) execPlugins(
 	requiredFeatures := computeRequiredFeatures(image)
 
 	// Group the pluginConfigs by the properties ExcludeOptions, Strategy, and RemoteHost.
+
 	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, createPluginConfigKeyForImage)
 	if err != nil {
 		return nil, err
@@ -221,10 +222,17 @@ func (g *generator) execPlugins(
 		hashPluginConfig := indexedPluginConfigs[0].Value
 
 		// Apply per-config filters.
-		if excludeOptions := hashPluginConfig.ExcludeOptions(); len(excludeOptions) > 0 {
+		includeTypes := hashPluginConfig.Types()
+		excludeTypes := hashPluginConfig.ExcludeTypes()
+		includeOptions := hashPluginConfig.Options()
+		excludeOptions := hashPluginConfig.ExcludeOptions()
+		if len(includeTypes) > 0 || len(excludeTypes) > 0 || len(includeOptions) > 0 || len(excludeOptions) > 0 {
 			var err error
 			image, err = bufimageutil.FilterImage(
 				image,
+				bufimageutil.WithIncludeTypes(includeTypes...),
+				bufimageutil.WithExcludeTypes(excludeTypes...),
+				bufimageutil.WithIncludeOptions(includeOptions...),
 				bufimageutil.WithExcludeOptions(excludeOptions...),
 			)
 			if err != nil {
@@ -498,11 +506,17 @@ func newGenerateOptions() *generateOptions {
 //   - RemoteHost
 func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
 	type pluginConfigKey struct {
-		ExcludeOptions []string
-		Strategy       Strategy
-		RemoteHost     string
+		Types          []string `json:"types"`
+		ExcludeTypes   []string `json:"exclude_types"`
+		Options        []string `json:"options"`
+		ExcludeOptions []string `json:"exclude_options"`
+		Strategy       Strategy `json:"strategy"`
+		RemoteHost     string   `json:"remote_host"`
 	}
 	key := &pluginConfigKey{
+		Types:          pluginConfig.Types(),
+		ExcludeTypes:   pluginConfig.ExcludeTypes(),
+		Options:        pluginConfig.Options(),
 		ExcludeOptions: pluginConfig.ExcludeOptions(),
 		Strategy:       Strategy(pluginConfig.Strategy()),
 		RemoteHost:     pluginConfig.RemoteHost(),

@@ -161,7 +161,17 @@ type InputConfig interface {
 	// ExcludePaths returns paths not to generate for.
 	ExcludePaths() []string
 	// IncludeTypes returns the types to generate. An empty slice means to generate for all types.
+	// This is unioned with ExcludeTypes.
 	IncludeTypes() []string
+	// ExcludeTypes returns the types to exclude. An empty slice means to exclude no types.
+	// This is unioned with IncludeTypes.
+	ExcludeTypes() []string
+	// IncludeOptions returns the options to include. An empty slice means to include all options.
+	// This is unioned with ExcludeOptions.
+	IncludeOptions() []string
+	// ExcludeOptions returns the options to exclude. An empty slice means to exclude no options.
+	// This is unioned with IncludeOptions.
+	ExcludeOptions() []string
 
 	isInputConfig()
 }
@@ -343,6 +353,9 @@ type inputConfig struct {
 	recurseSubmodules   bool
 	includePackageFiles bool
 	includeTypes        []string
+	excludeTypes        []string
+	includeOptions      []string
+	excludeOptions      []string
 	targetPaths         []string
 	excludePaths        []string
 }
@@ -514,6 +527,18 @@ func (i *inputConfig) TargetPaths() []string {
 
 func (i *inputConfig) IncludeTypes() []string {
 	return i.includeTypes
+}
+
+func (i *inputConfig) ExcludeTypes() []string {
+	return i.excludeTypes
+}
+
+func (i *inputConfig) IncludeOptions() []string {
+	return i.includeOptions
+}
+
+func (i *inputConfig) ExcludeOptions() []string {
+	return i.excludeOptions
 }
 
 func (i *inputConfig) isInputConfig() {}

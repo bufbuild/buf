@@ -514,6 +514,13 @@ type externalGeneratePluginConfigV2 struct {
 	IncludeWKT     bool `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
 	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+
+	// Types is a list of types to include in the image.
+	Types []string `json:"types,omitempty" yaml:"types,omitempty"`
+	// ExcludeTypes removes types from the image.
+	ExcludeTypes []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
+	// Options is a list of options to include in the image.
+	Options []string `json:"options,omitempty" yaml:"options,omitempty"`
 	// ExcludeOptions removes options from the image.
 	ExcludeOptions []string `json:"exclude_options,omitempty" yaml:"exclude_options,omitempty"`
 }
@@ -566,10 +573,13 @@ type externalInputConfigV2 struct {
 	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
 	YAMLImage   *string `json:"yaml_image,omitempty" yaml:"yaml_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
-	// Types, TargetPaths and ExcludePaths are available for all formats.
-	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
-	TargetPaths  []string `json:"paths,omitempty" yaml:"paths,omitempty"`
-	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
+	// Types, ExcludeTypes, Options, ExcludeOptions, TargetPaths and ExcludePaths are available for all formats.
+	Types          []string `json:"types,omitempty" yaml:"types,omitempty"`
+	ExcludeTypes   []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
+	Options        []string `json:"options,omitempty" yaml:"options,omitempty"`
+	ExcludeOptions []string `json:"exclude_options,omitempty" yaml:"exclude_options,omitempty"`
+	TargetPaths    []string `json:"paths,omitempty" yaml:"paths,omitempty"`
+	ExcludePaths   []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
 	// The following options are available depending on input format.
 	Compression         *string `json:"compression,omitempty" yaml:"compression,omitempty"`
 	StripComponents     *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`

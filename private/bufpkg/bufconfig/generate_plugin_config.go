@@ -112,6 +112,12 @@ type GeneratePluginConfig interface {
 	//
 	// This is not empty only when the plugin is remote.
 	Revision() int
+	// Types returns the types to include.
+	Types() []string
+	// ExcludeTypes returns the types to exclude.
+	ExcludeTypes() []string
+	// Options returns the options to include.
+	Options() []string
 	// ExcludeOptions returns the options to exclude.
 	ExcludeOptions() []string
 
@@ -125,6 +131,9 @@ func NewRemoteGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	types []string,
+	excludeTypes []string,
+	options []string,
 	excludeOptions []string,
 	revision int,
 ) (GeneratePluginConfig, error) {
@@ -134,6 +143,9 @@ func NewRemoteGeneratePluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
+		types,
+		excludeTypes,
+		options,
 		excludeOptions,
 		revision,
 	)
@@ -146,6 +158,9 @@ func NewLocalOrProtocBuiltinGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	includeTypes []string,
+	excludeTypes []string,
+	includeOptions []string,
 	excludeOptions []string,
 	strategy *GenerateStrategy,
 ) (GeneratePluginConfig, error) {
@@ -155,6 +170,9 @@ func NewLocalOrProtocBuiltinGeneratePluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
+		includeTypes,
+		excludeTypes,
+		includeOptions,
 		excludeOptions,
 		strategy,
 	)
@@ -167,6 +185,9 @@ func NewLocalGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	types []string,
+	excludeTypes []string,
+	options []string,
 	excludeOptions []string,
 	strategy *GenerateStrategy,
 	path []string,
@@ -177,6 +198,9 @@ func NewLocalGeneratePluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
+		types,
+		excludeTypes,
+		options,
 		excludeOptions,
 		strategy,
 		path,
@@ -191,6 +215,9 @@ func NewProtocBuiltinGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	includeTypes []string,
+	excludeTypes []string,
+	includeOptions []string,
 	excludeOptions []string,
 	strategy *GenerateStrategy,
 	protocPath []string,
@@ -201,6 +228,9 @@ func NewProtocBuiltinGeneratePluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
+		includeTypes,
+		excludeTypes,
+		includeOptions,
 		excludeOptions,
 		strategy,
 		protocPath,
@@ -241,6 +271,9 @@ type generatePluginConfig struct {
 	opts                     []string
 	includeImports           bool
 	includeWKT               bool
+	types                    []string
+	excludeTypes             []string
+	options                  []string
 	excludeOptions           []string
 	strategy                 *GenerateStrategy
 	path                     []string
@@ -274,6 +307,9 @@ func newGeneratePluginConfigFromExternalV1Beta1(
 			false,
 			false,
 			nil,
+			nil,
+			nil,
+			nil,
 			strategy,
 			[]string{externalConfig.Path},
 		)
@@ -284,6 +320,9 @@ func newGeneratePluginConfigFromExternalV1Beta1(
 		opt,
 		false,
 		false,
+		nil,
+		nil,
+		nil,
 		nil,
 		strategy,
 	)
@@ -345,6 +384,9 @@ func newGeneratePluginConfigFromExternalV1(
 			false,
 			false,
 			nil,
+			nil,
+			nil,
+			nil,
 			externalConfig.Revision,
 		)
 	}
@@ -358,6 +400,9 @@ func newGeneratePluginConfigFromExternalV1(
 			false,
 			false,
 			nil,
+			nil,
+			nil,
+			nil,
 			strategy,
 			path,
 		)
@@ -369,6 +414,9 @@ func newGeneratePluginConfigFromExternalV1(
 			opt,
 			false,
 			false,
+			nil,
+			nil,
+			nil,
 			nil,
 			strategy,
 			protocPath,
@@ -382,6 +430,9 @@ func newGeneratePluginConfigFromExternalV1(
 		opt,
 		false,
 		false,
+		nil,
+		nil,
+		nil,
 		nil,
 		strategy,
 	)
@@ -439,6 +490,9 @@ func newGeneratePluginConfigFromExternalV2(
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
+			externalConfig.Types,
+			externalConfig.ExcludeTypes,
+			externalConfig.Options,
 			externalConfig.ExcludeOptions,
 			revision,
 		)
@@ -460,6 +514,9 @@ func newGeneratePluginConfigFromExternalV2(
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
+			externalConfig.Types,
+			externalConfig.ExcludeTypes,
+			externalConfig.Options,
 			externalConfig.ExcludeOptions,
 			parsedStrategy,
 			path,
@@ -478,6 +535,9 @@ func newGeneratePluginConfigFromExternalV2(
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
+			externalConfig.Types,
+			externalConfig.ExcludeTypes,
+			externalConfig.Options,
 			externalConfig.ExcludeOptions,
 			parsedStrategy,
 			protocPath,
@@ -493,6 +553,9 @@ func newRemoteGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	types []string,
+	excludeTypes []string,
+	options []string,
 	excludeOptions []string,
 	revision int,
 ) (*generatePluginConfig, error) {
@@ -515,6 +578,9 @@ func newRemoteGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
+		types:                    types,
+		excludeTypes:             excludeTypes,
+		options:                  options,
 		excludeOptions:           excludeOptions,
 	}, nil
 }
@@ -525,6 +591,9 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	types []string,
+	excludeTypes []string,
+	options []string,
 	excludeOptions []string,
 	strategy *GenerateStrategy,
 ) (*generatePluginConfig, error) {
@@ -539,6 +608,9 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
+		types:                    types,
+		excludeTypes:             excludeTypes,
+		options:                  options,
 		excludeOptions:           excludeOptions,
 	}, nil
 }
@@ -549,6 +621,9 @@ func newLocalGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	types []string,
+	excludeTypes []string,
+	options []string,
 	excludeOptions []string,
 	strategy *GenerateStrategy,
 	path []string,
@@ -568,6 +643,9 @@ func newLocalGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
+		types:                    types,
+		excludeTypes:             excludeTypes,
+		options:                  options,
 		excludeOptions:           excludeOptions,
 	}, nil
 }
@@ -578,6 +656,9 @@ func newProtocBuiltinGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
+	types []string,
+	excludeTypes []string,
+	options []string,
 	excludeOptions []string,
 	strategy *GenerateStrategy,
 	protocPath []string,
@@ -594,6 +675,9 @@ func newProtocBuiltinGeneratePluginConfig(
 		strategy:                 strategy,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
+		types:                    types,
+		excludeTypes:             excludeTypes,
+		options:                  options,
 		excludeOptions:           excludeOptions,
 	}, nil
 }
@@ -620,6 +704,18 @@ func (p *generatePluginConfig) IncludeImports() bool {
 
 func (p *generatePluginConfig) IncludeWKT() bool {
 	return p.includeWKT
+}
+
+func (p *generatePluginConfig) Types() []string {
+	return p.types
+}
+
+func (p *generatePluginConfig) ExcludeTypes() []string {
+	return p.excludeTypes
+}
+
+func (p *generatePluginConfig) Options() []string {
+	return p.options
 }
 
 func (p *generatePluginConfig) ExcludeOptions() []string {

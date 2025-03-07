@@ -108,7 +108,7 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
-		if opts.includeTypes == nil {
+		if len(typeNames) > 0 && opts.includeTypes == nil {
 			opts.includeTypes = make(map[string]struct{}, len(typeNames))
 		}
 		for _, typeName := range typeNames {
@@ -126,7 +126,7 @@ func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
-		if opts.excludeTypes == nil {
+		if len(typeNames) > 0 && opts.excludeTypes == nil {
 			opts.excludeTypes = make(map[string]struct{}, len(typeNames))
 		}
 		for _, typeName := range typeNames {
@@ -143,7 +143,7 @@ func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 // If the option does not exist in the image, it will be ignored.
 func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
-		if opts.includeOptions == nil {
+		if len(typeNames) > 0 && opts.includeOptions == nil {
 			opts.includeOptions = make(map[string]struct{}, len(typeNames))
 		}
 		for _, typeName := range typeNames {
@@ -160,7 +160,7 @@ func WithIncludeOptions(typeNames ...string) ImageFilterOption {
 // If the option does not exist in the image, it will be ignored.
 func WithExcludeOptions(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
-		if opts.excludeOptions == nil {
+		if len(typeNames) > 0 && opts.excludeOptions == nil {
 			opts.excludeOptions = make(map[string]struct{}, len(typeNames))
 		}
 		for _, typeName := range typeNames {
@@ -264,6 +264,14 @@ func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.I
 	filterOptions := newImageFilterOptions()
 	for _, option := range options {
 		option(filterOptions)
+	}
+	if filterOptions.includeCustomOptions &&
+		filterOptions.includeKnownExtensions &&
+		len(filterOptions.excludeTypes) == 0 &&
+		len(filterOptions.includeTypes) == 0 &&
+		len(filterOptions.excludeOptions) == 0 &&
+		len(filterOptions.includeOptions) == 0 {
+		return image, nil
 	}
 	return filterImage(image, filterOptions)
 }
