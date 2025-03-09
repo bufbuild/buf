@@ -3576,7 +3576,6 @@ func TestConvertWithImage(t *testing.T) {
 		"-o",
 		filepath.Join(tempDir, "image.binpb"),
 	)
-
 	t.Run("stdin input", func(t *testing.T) {
 		t.Parallel()
 		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
@@ -3596,18 +3595,65 @@ func TestConvertWithImage(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 
-	t.Run("no stdin input", func(t *testing.T) {
+	t.Run("no stdin input from binpb", func(t *testing.T) {
+		t.Parallel()
+		testRun(
+			t,
+			0,
+			nil,
+			nil,
+			"convert",
+			filepath.Join(tempDir, "image.binpb"),
+			"--type",
+			"buf.Foo",
+			"--from=-#format=binpb",
+			"--to=-#format=txtpb",
+		)
+	})
+	t.Run("no stdin input from txtpb", func(t *testing.T) {
+		t.Parallel()
+		testRun(
+			t,
+			0,
+			nil,
+			nil,
+			"convert",
+			filepath.Join(tempDir, "image.binpb"),
+			"--type",
+			"buf.Foo",
+			"--from=-#format=txtpb",
+			"--to=-#format=binpb",
+		)
+	})
+	t.Run("no stdin input from yaml", func(t *testing.T) {
+		t.Parallel()
+		testRun(
+			t,
+			0,
+			nil,
+			nil,
+			"convert",
+			filepath.Join(tempDir, "image.binpb"),
+			"--type",
+			"buf.Foo",
+			"--from=-#format=yaml",
+			"--to=-#format=binpb",
+		)
+	})
+	t.Run("no stdin input from json", func(t *testing.T) {
 		t.Parallel()
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			1,
 			"",
-			`Failure: --from: length of data read from "-" was zero`,
+			`Failure: --from: proto: syntax error (line 1:1): unexpected token`,
 			"convert",
 			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
+			"--from=-#format=json",
+			"--to=-#format=binpb",
 		)
 	})
 }
