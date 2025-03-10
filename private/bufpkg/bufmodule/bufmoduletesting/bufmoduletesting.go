@@ -311,7 +311,7 @@ func (o *omniProvider) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	declaredDepModuleKeys, err := slicesext.MapError(
+	depModuleKeys, err := slicesext.MapError(
 		moduleDeps,
 		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
 			return bufmodule.ModuleToModuleKey(moduleDep, digest.Type())
@@ -327,7 +327,7 @@ func (o *omniProvider) getModuleDataForModuleKey(
 			return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
-			return declaredDepModuleKeys, nil
+			return depModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
 			return module.V1Beta1OrV1BufYAMLObjectData()
