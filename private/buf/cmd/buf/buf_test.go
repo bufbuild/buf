@@ -3648,6 +3648,7 @@ func TestConvertWithImage(t *testing.T) {
 			1,
 			[]string{
 				"Failure: --from:",
+				"json unmarshal:",
 				"proto:",
 				"syntax error (line 1:1): unexpected token",
 			},
