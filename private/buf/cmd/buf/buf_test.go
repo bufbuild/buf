@@ -3648,7 +3648,8 @@ func TestConvertWithImage(t *testing.T) {
 			1,
 			[]string{
 				"Failure: --from:",
-				"proto: syntax error (line 1:1): unexpected token",
+				"proto:",
+				"syntax error (line 1:1): unexpected token",
 			},
 			"convert",
 			filepath.Join(tempDir, "image.binpb"),
