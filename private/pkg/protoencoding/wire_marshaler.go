@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -28,5 +30,9 @@ func (m *wireMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	options := proto.MarshalOptions{
 		Deterministic: true,
 	}
-	return options.Marshal(message)
+	data, err := options.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("wire marshal: %w", err)
+	}
+	return data, err
 }

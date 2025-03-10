@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf convert` to allow for zero length for `binpb`, `txtpb`, and `yaml` formats.
 
 ## [v1.50.1] - 2025-03-10
 

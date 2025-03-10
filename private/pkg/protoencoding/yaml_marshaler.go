@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"buf.build/go/protoyaml"
 	"google.golang.org/protobuf/proto"
 )
@@ -51,5 +53,9 @@ func (m *yamlMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		UseEnumNumbers:  m.useEnumNumbers,
 		EmitUnpopulated: m.emitUnpopulated,
 	}
-	return options.Marshal(message)
+	data, err := options.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("yaml marshal: %w", err)
+	}
+	return data, err
 }
