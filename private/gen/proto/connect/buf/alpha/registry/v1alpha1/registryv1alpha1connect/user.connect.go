@@ -72,29 +72,21 @@ const (
 	// UserServiceUpdateUserSettingsProcedure is the fully-qualified name of the UserService's
 	// UpdateUserSettings RPC.
 	UserServiceUpdateUserSettingsProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings"
-	// UserServiceGetUserPluginPreferencesProcedure is the fully-qualified name of the UserService's
-	// GetUserPluginPreferences RPC.
-	UserServiceGetUserPluginPreferencesProcedure = "/buf.alpha.registry.v1alpha1.UserService/GetUserPluginPreferences"
-	// UserServiceUpdateUserPluginPreferencesProcedure is the fully-qualified name of the UserService's
-	// UpdateUserPluginPreferences RPC.
-	UserServiceUpdateUserPluginPreferencesProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserPluginPreferences"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	userServiceServiceDescriptor                           = v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService")
-	userServiceCreateUserMethodDescriptor                  = userServiceServiceDescriptor.Methods().ByName("CreateUser")
-	userServiceGetUserMethodDescriptor                     = userServiceServiceDescriptor.Methods().ByName("GetUser")
-	userServiceGetUserByUsernameMethodDescriptor           = userServiceServiceDescriptor.Methods().ByName("GetUserByUsername")
-	userServiceListUsersMethodDescriptor                   = userServiceServiceDescriptor.Methods().ByName("ListUsers")
-	userServiceListOrganizationUsersMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("ListOrganizationUsers")
-	userServiceDeleteUserMethodDescriptor                  = userServiceServiceDescriptor.Methods().ByName("DeleteUser")
-	userServiceDeactivateUserMethodDescriptor              = userServiceServiceDescriptor.Methods().ByName("DeactivateUser")
-	userServiceUpdateUserServerRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("UpdateUserServerRole")
-	userServiceCountUsersMethodDescriptor                  = userServiceServiceDescriptor.Methods().ByName("CountUsers")
-	userServiceUpdateUserSettingsMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("UpdateUserSettings")
-	userServiceGetUserPluginPreferencesMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("GetUserPluginPreferences")
-	userServiceUpdateUserPluginPreferencesMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("UpdateUserPluginPreferences")
+	userServiceServiceDescriptor                     = v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService")
+	userServiceCreateUserMethodDescriptor            = userServiceServiceDescriptor.Methods().ByName("CreateUser")
+	userServiceGetUserMethodDescriptor               = userServiceServiceDescriptor.Methods().ByName("GetUser")
+	userServiceGetUserByUsernameMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("GetUserByUsername")
+	userServiceListUsersMethodDescriptor             = userServiceServiceDescriptor.Methods().ByName("ListUsers")
+	userServiceListOrganizationUsersMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("ListOrganizationUsers")
+	userServiceDeleteUserMethodDescriptor            = userServiceServiceDescriptor.Methods().ByName("DeleteUser")
+	userServiceDeactivateUserMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("DeactivateUser")
+	userServiceUpdateUserServerRoleMethodDescriptor  = userServiceServiceDescriptor.Methods().ByName("UpdateUserServerRole")
+	userServiceCountUsersMethodDescriptor            = userServiceServiceDescriptor.Methods().ByName("CountUsers")
+	userServiceUpdateUserSettingsMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("UpdateUserSettings")
 )
 
 // UserServiceClient is a client for the buf.alpha.registry.v1alpha1.UserService service.
@@ -120,12 +112,6 @@ type UserServiceClient interface {
 	CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error)
 	// UpdateUserSettings update the user settings including description.
 	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
-	// GetUserPluginPreferences returns the preferred language and plugins a user has selected in the BSR's Generated SDKs UI flow.
-	// If the user does not have a stored preference in the database this will return a CodeNotFound error and
-	// on the UI, the user will be prompted to select a language and plugins in the Generated SDKs flow.
-	GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error)
-	// UpdateUserPluginPreferences updates the user plugin preferences.
-	UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the buf.alpha.registry.v1alpha1.UserService service.
@@ -206,36 +192,21 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceUpdateUserSettingsMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		getUserPluginPreferences: connect.NewClient[v1alpha1.GetUserPluginPreferencesRequest, v1alpha1.GetUserPluginPreferencesResponse](
-			httpClient,
-			baseURL+UserServiceGetUserPluginPreferencesProcedure,
-			connect.WithSchema(userServiceGetUserPluginPreferencesMethodDescriptor),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		updateUserPluginPreferences: connect.NewClient[v1alpha1.UpdateUserPluginPreferencesRequest, v1alpha1.UpdateUserPluginPreferencesResponse](
-			httpClient,
-			baseURL+UserServiceUpdateUserPluginPreferencesProcedure,
-			connect.WithSchema(userServiceUpdateUserPluginPreferencesMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
-	createUser                  *connect.Client[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse]
-	getUser                     *connect.Client[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse]
-	getUserByUsername           *connect.Client[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse]
-	listUsers                   *connect.Client[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse]
-	listOrganizationUsers       *connect.Client[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse]
-	deleteUser                  *connect.Client[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse]
-	deactivateUser              *connect.Client[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse]
-	updateUserServerRole        *connect.Client[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse]
-	countUsers                  *connect.Client[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse]
-	updateUserSettings          *connect.Client[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse]
-	getUserPluginPreferences    *connect.Client[v1alpha1.GetUserPluginPreferencesRequest, v1alpha1.GetUserPluginPreferencesResponse]
-	updateUserPluginPreferences *connect.Client[v1alpha1.UpdateUserPluginPreferencesRequest, v1alpha1.UpdateUserPluginPreferencesResponse]
+	createUser            *connect.Client[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse]
+	getUser               *connect.Client[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse]
+	getUserByUsername     *connect.Client[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse]
+	listUsers             *connect.Client[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse]
+	listOrganizationUsers *connect.Client[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse]
+	deleteUser            *connect.Client[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse]
+	deactivateUser        *connect.Client[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse]
+	updateUserServerRole  *connect.Client[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse]
+	countUsers            *connect.Client[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse]
+	updateUserSettings    *connect.Client[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse]
 }
 
 // CreateUser calls buf.alpha.registry.v1alpha1.UserService.CreateUser.
@@ -288,17 +259,6 @@ func (c *userServiceClient) UpdateUserSettings(ctx context.Context, req *connect
 	return c.updateUserSettings.CallUnary(ctx, req)
 }
 
-// GetUserPluginPreferences calls buf.alpha.registry.v1alpha1.UserService.GetUserPluginPreferences.
-func (c *userServiceClient) GetUserPluginPreferences(ctx context.Context, req *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error) {
-	return c.getUserPluginPreferences.CallUnary(ctx, req)
-}
-
-// UpdateUserPluginPreferences calls
-// buf.alpha.registry.v1alpha1.UserService.UpdateUserPluginPreferences.
-func (c *userServiceClient) UpdateUserPluginPreferences(ctx context.Context, req *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error) {
-	return c.updateUserPluginPreferences.CallUnary(ctx, req)
-}
-
 // UserServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.UserService service.
 type UserServiceHandler interface {
 	// CreateUser creates a new user with the given username.
@@ -322,12 +282,6 @@ type UserServiceHandler interface {
 	CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error)
 	// UpdateUserSettings update the user settings including description.
 	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
-	// GetUserPluginPreferences returns the preferred language and plugins a user has selected in the BSR's Generated SDKs UI flow.
-	// If the user does not have a stored preference in the database this will return a CodeNotFound error and
-	// on the UI, the user will be prompted to select a language and plugins in the Generated SDKs flow.
-	GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error)
-	// UpdateUserPluginPreferences updates the user plugin preferences.
-	UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -404,19 +358,6 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceUpdateUserSettingsMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	userServiceGetUserPluginPreferencesHandler := connect.NewUnaryHandler(
-		UserServiceGetUserPluginPreferencesProcedure,
-		svc.GetUserPluginPreferences,
-		connect.WithSchema(userServiceGetUserPluginPreferencesMethodDescriptor),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceUpdateUserPluginPreferencesHandler := connect.NewUnaryHandler(
-		UserServiceUpdateUserPluginPreferencesProcedure,
-		svc.UpdateUserPluginPreferences,
-		connect.WithSchema(userServiceUpdateUserPluginPreferencesMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/buf.alpha.registry.v1alpha1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceCreateUserProcedure:
@@ -439,10 +380,6 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 			userServiceCountUsersHandler.ServeHTTP(w, r)
 		case UserServiceUpdateUserSettingsProcedure:
 			userServiceUpdateUserSettingsHandler.ServeHTTP(w, r)
-		case UserServiceGetUserPluginPreferencesProcedure:
-			userServiceGetUserPluginPreferencesHandler.ServeHTTP(w, r)
-		case UserServiceUpdateUserPluginPreferencesProcedure:
-			userServiceUpdateUserPluginPreferencesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -490,12 +427,4 @@ func (UnimplementedUserServiceHandler) CountUsers(context.Context, *connect.Requ
 
 func (UnimplementedUserServiceHandler) UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings is not implemented"))
-}
-
-func (UnimplementedUserServiceHandler) GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.GetUserPluginPreferences is not implemented"))
-}
-
-func (UnimplementedUserServiceHandler) UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.UpdateUserPluginPreferences is not implemented"))
 }

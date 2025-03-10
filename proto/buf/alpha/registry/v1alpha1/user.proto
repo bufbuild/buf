@@ -119,14 +119,6 @@ service UserService {
   }
   // UpdateUserSettings update the user settings including description.
   rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
-  // GetUserPluginPreferences returns the preferred language and plugins a user has selected in the BSR's Generated SDKs UI flow.
-  // If the user does not have a stored preference in the database this will return a CodeNotFound error and
-  // on the UI, the user will be prompted to select a language and plugins in the Generated SDKs flow.
-  rpc GetUserPluginPreferences(GetUserPluginPreferencesRequest) returns (GetUserPluginPreferencesResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UpdateUserPluginPreferences updates the user plugin preferences.
-  rpc UpdateUserPluginPreferences(UpdateUserPluginPreferencesRequest) returns (UpdateUserPluginPreferencesResponse);
 }
 
 message CreateUserRequest {
@@ -221,20 +213,3 @@ message UpdateUserSettingsRequest {
 }
 
 message UpdateUserSettingsResponse {}
-
-message GetUserPluginPreferencesRequest {
-  reserved 1;
-  reserved "user_id";
-}
-
-message GetUserPluginPreferencesResponse {
-  UserPluginPreference preference = 1;
-}
-
-message UpdateUserPluginPreferencesRequest {
-  UserPluginPreference preference = 1;
-}
-
-message UpdateUserPluginPreferencesResponse {
-  UserPluginPreference preference = 1;
-}
