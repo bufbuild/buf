@@ -441,83 +441,6 @@ func (b0 OrganizationUser_builder) Build() *OrganizationUser {
 	return m0
 }
 
-// UserPluginPreference contains the user's preferred language and the
-// list of plugins for that language, which they selected in the BSR's Generated SDKs UI flow.
-// These preferences are stored in the database so the language and plugins
-// are pre-selected when the user navigates back to the Generated SDKs page from any device or browser.
-type UserPluginPreference struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SelectedLanguage PluginLanguage         `protobuf:"varint,2,opt,name=selected_language,json=selectedLanguage,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage"`
-	xxx_hidden_SelectedPlugins  []string               `protobuf:"bytes,3,rep,name=selected_plugins,json=selectedPlugins,proto3"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
-}
-
-func (x *UserPluginPreference) Reset() {
-	*x = UserPluginPreference{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UserPluginPreference) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UserPluginPreference) ProtoMessage() {}
-
-func (x *UserPluginPreference) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *UserPluginPreference) GetSelectedLanguage() PluginLanguage {
-	if x != nil {
-		return x.xxx_hidden_SelectedLanguage
-	}
-	return PluginLanguage_PLUGIN_LANGUAGE_UNSPECIFIED
-}
-
-func (x *UserPluginPreference) GetSelectedPlugins() []string {
-	if x != nil {
-		return x.xxx_hidden_SelectedPlugins
-	}
-	return nil
-}
-
-func (x *UserPluginPreference) SetSelectedLanguage(v PluginLanguage) {
-	x.xxx_hidden_SelectedLanguage = v
-}
-
-func (x *UserPluginPreference) SetSelectedPlugins(v []string) {
-	x.xxx_hidden_SelectedPlugins = v
-}
-
-type UserPluginPreference_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	// The language that the user has indicated as their preferred language for plugins.
-	SelectedLanguage PluginLanguage
-	// A list of plugin names selected by the user.
-	SelectedPlugins []string
-}
-
-func (b0 UserPluginPreference_builder) Build() *UserPluginPreference {
-	m0 := &UserPluginPreference{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_SelectedLanguage = b.SelectedLanguage
-	x.xxx_hidden_SelectedPlugins = b.SelectedPlugins
-	return m0
-}
-
 type CreateUserRequest struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Username string                 `protobuf:"bytes,1,opt,name=username,proto3"`
@@ -527,7 +450,7 @@ type CreateUserRequest struct {
 
 func (x *CreateUserRequest) Reset() {
 	*x = CreateUserRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +462,7 @@ func (x *CreateUserRequest) String() string {
 func (*CreateUserRequest) ProtoMessage() {}
 
 func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -584,7 +507,7 @@ type CreateUserResponse struct {
 
 func (x *CreateUserResponse) Reset() {
 	*x = CreateUserResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -596,7 +519,7 @@ func (x *CreateUserResponse) String() string {
 func (*CreateUserResponse) ProtoMessage() {}
 
 func (x *CreateUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -652,7 +575,7 @@ type GetUserRequest struct {
 
 func (x *GetUserRequest) Reset() {
 	*x = GetUserRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -664,7 +587,7 @@ func (x *GetUserRequest) String() string {
 func (*GetUserRequest) ProtoMessage() {}
 
 func (x *GetUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -709,7 +632,7 @@ type GetUserResponse struct {
 
 func (x *GetUserResponse) Reset() {
 	*x = GetUserResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -721,7 +644,7 @@ func (x *GetUserResponse) String() string {
 func (*GetUserResponse) ProtoMessage() {}
 
 func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -777,7 +700,7 @@ type GetUserByUsernameRequest struct {
 
 func (x *GetUserByUsernameRequest) Reset() {
 	*x = GetUserByUsernameRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -789,7 +712,7 @@ func (x *GetUserByUsernameRequest) String() string {
 func (*GetUserByUsernameRequest) ProtoMessage() {}
 
 func (x *GetUserByUsernameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -834,7 +757,7 @@ type GetUserByUsernameResponse struct {
 
 func (x *GetUserByUsernameResponse) Reset() {
 	*x = GetUserByUsernameResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +769,7 @@ func (x *GetUserByUsernameResponse) String() string {
 func (*GetUserByUsernameResponse) ProtoMessage() {}
 
 func (x *GetUserByUsernameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -906,7 +829,7 @@ type ListUsersRequest struct {
 
 func (x *ListUsersRequest) Reset() {
 	*x = ListUsersRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -918,7 +841,7 @@ func (x *ListUsersRequest) String() string {
 func (*ListUsersRequest) ProtoMessage() {}
 
 func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1019,7 +942,7 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1031,7 +954,7 @@ func (x *ListUsersResponse) String() string {
 func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1095,7 +1018,7 @@ type ListOrganizationUsersRequest struct {
 
 func (x *ListOrganizationUsersRequest) Reset() {
 	*x = ListOrganizationUsersRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1107,7 +1030,7 @@ func (x *ListOrganizationUsersRequest) String() string {
 func (*ListOrganizationUsersRequest) ProtoMessage() {}
 
 func (x *ListOrganizationUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1193,7 +1116,7 @@ type ListOrganizationUsersResponse struct {
 
 func (x *ListOrganizationUsersResponse) Reset() {
 	*x = ListOrganizationUsersResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1205,7 +1128,7 @@ func (x *ListOrganizationUsersResponse) String() string {
 func (*ListOrganizationUsersResponse) ProtoMessage() {}
 
 func (x *ListOrganizationUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1265,7 +1188,7 @@ type DeleteUserRequest struct {
 
 func (x *DeleteUserRequest) Reset() {
 	*x = DeleteUserRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1277,7 +1200,7 @@ func (x *DeleteUserRequest) String() string {
 func (*DeleteUserRequest) ProtoMessage() {}
 
 func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1308,7 +1231,7 @@ type DeleteUserResponse struct {
 
 func (x *DeleteUserResponse) Reset() {
 	*x = DeleteUserResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1320,7 +1243,7 @@ func (x *DeleteUserResponse) String() string {
 func (*DeleteUserResponse) ProtoMessage() {}
 
 func (x *DeleteUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1352,7 +1275,7 @@ type DeactivateUserRequest struct {
 
 func (x *DeactivateUserRequest) Reset() {
 	*x = DeactivateUserRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1364,7 +1287,7 @@ func (x *DeactivateUserRequest) String() string {
 func (*DeactivateUserRequest) ProtoMessage() {}
 
 func (x *DeactivateUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1408,7 +1331,7 @@ type DeactivateUserResponse struct {
 
 func (x *DeactivateUserResponse) Reset() {
 	*x = DeactivateUserResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +1343,7 @@ func (x *DeactivateUserResponse) String() string {
 func (*DeactivateUserResponse) ProtoMessage() {}
 
 func (x *DeactivateUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1453,7 +1376,7 @@ type UpdateUserServerRoleRequest struct {
 
 func (x *UpdateUserServerRoleRequest) Reset() {
 	*x = UpdateUserServerRoleRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1465,7 +1388,7 @@ func (x *UpdateUserServerRoleRequest) String() string {
 func (*UpdateUserServerRoleRequest) ProtoMessage() {}
 
 func (x *UpdateUserServerRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1524,7 +1447,7 @@ type UpdateUserServerRoleResponse struct {
 
 func (x *UpdateUserServerRoleResponse) Reset() {
 	*x = UpdateUserServerRoleResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1536,7 +1459,7 @@ func (x *UpdateUserServerRoleResponse) String() string {
 func (*UpdateUserServerRoleResponse) ProtoMessage() {}
 
 func (x *UpdateUserServerRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1568,7 +1491,7 @@ type CountUsersRequest struct {
 
 func (x *CountUsersRequest) Reset() {
 	*x = CountUsersRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1580,7 +1503,7 @@ func (x *CountUsersRequest) String() string {
 func (*CountUsersRequest) ProtoMessage() {}
 
 func (x *CountUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1626,7 +1549,7 @@ type CountUsersResponse struct {
 
 func (x *CountUsersResponse) Reset() {
 	*x = CountUsersResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1638,7 +1561,7 @@ func (x *CountUsersResponse) String() string {
 func (*CountUsersResponse) ProtoMessage() {}
 
 func (x *CountUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1687,7 +1610,7 @@ type UpdateUserSettingsRequest struct {
 
 func (x *UpdateUserSettingsRequest) Reset() {
 	*x = UpdateUserSettingsRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1699,7 +1622,7 @@ func (x *UpdateUserSettingsRequest) String() string {
 func (*UpdateUserSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateUserSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1809,7 +1732,7 @@ type UpdateUserSettingsResponse struct {
 
 func (x *UpdateUserSettingsResponse) Reset() {
 	*x = UpdateUserSettingsResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1821,7 +1744,7 @@ func (x *UpdateUserSettingsResponse) String() string {
 func (*UpdateUserSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateUserSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1851,75 +1774,61 @@ var file_buf_alpha_registry_v1alpha1_user_proto_rawDesc = string([]byte{
 	0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x75, 0x73,
 	0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x1b, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
 	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x1a, 0x31, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x1a, 0x26, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61,
 	0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x2f, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x5f, 0x63, 0x75, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x26, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x72, 0x6f, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x1a, 0x35, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x76, 0x65,
-	0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
-	0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xa8, 0x03, 0x0a, 0x04, 0x55, 0x73, 0x65,
-	0x72, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
-	0x64, 0x12, 0x3b, 0x0a, 0x0b, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
-	0x6d, 0x70, 0x52, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x3b,
-	0x0a, 0x0b, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20,
+	0x61, 0x31, 0x2f, 0x72, 0x6f, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x35, 0x62,
+	0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x76, 0x65, 0x72, 0x69, 0x66,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xa8, 0x03, 0x0a, 0x04, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0e,
+	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x3b,
+	0x0a, 0x0b, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
-	0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x75,
-	0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x75,
-	0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x61, 0x63, 0x74,
-	0x69, 0x76, 0x61, 0x74, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x64, 0x65,
-	0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73,
-	0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
-	0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75,
-	0x72, 0x6c, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x60, 0x0a,
-	0x13, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74,
-	0x61, 0x74, 0x75, 0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2f, 0x2e, 0x62, 0x75, 0x66,
-	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x12, 0x76, 0x65, 0x72,
-	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
-	0x42, 0x0a, 0x09, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x09, 0x20, 0x01,
-	0x28, 0x0e, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2e, 0x55, 0x73, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72, 0x54,
-	0x79, 0x70, 0x65, 0x22, 0xbd, 0x02, 0x0a, 0x10, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x55, 0x73, 0x65, 0x72, 0x12, 0x35, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x12,
-	0x27, 0x0a, 0x0f, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
-	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69,
-	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x5a, 0x0a, 0x11, 0x6f, 0x72, 0x67, 0x61,
-	0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x6f, 0x6c, 0x65, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0e, 0x32, 0x2d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
+	0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x3b, 0x0a, 0x0b, 0x75,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x75, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72,
+	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72,
+	0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61,
+	0x74, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x64, 0x65, 0x61, 0x63, 0x74,
+	0x69, 0x76, 0x61, 0x74, 0x65, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18,
+	0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x60, 0x0a, 0x13, 0x76, 0x65,
+	0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
+	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x12, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x42, 0x0a, 0x09,
+	0x75, 0x73, 0x65, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0e, 0x32,
+	0x25, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69,
+	0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x55, 0x73,
+	0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65,
+	0x22, 0xbd, 0x02, 0x0a, 0x10, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x55, 0x73, 0x65, 0x72, 0x12, 0x35, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
+	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x31, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x12, 0x27, 0x0a, 0x0f,
+	0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x5a, 0x0a, 0x11, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x6f, 0x6c, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x2d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4f,
+	0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x52,
+	0x10, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x6f, 0x6c,
+	0x65, 0x12, 0x6d, 0x0a, 0x18, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x72, 0x6f, 0x6c, 0x65, 0x5f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x33, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
 	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
 	0x31, 0x2e, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x6f,
-	0x6c, 0x65, 0x52, 0x10, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x6f, 0x6c, 0x65, 0x12, 0x6d, 0x0a, 0x18, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x6f, 0x6c, 0x65, 0x5f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x33, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x16, 0x6f, 0x72, 0x67,
-	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x53, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x22, 0xaa, 0x01, 0x0a, 0x14, 0x55, 0x73, 0x65, 0x72, 0x50, 0x6c, 0x75, 0x67,
-	0x69, 0x6e, 0x50, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x12, 0x58, 0x0a, 0x11,
-	0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x6c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67,
-	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2b, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x4c, 0x61, 0x6e, 0x67,
-	0x75, 0x61, 0x67, 0x65, 0x52, 0x10, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x4c, 0x61,
-	0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x12, 0x29, 0x0a, 0x10, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74,
-	0x65, 0x64, 0x5f, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09,
-	0x52, 0x0f, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e,
-	0x73, 0x4a, 0x04, 0x08, 0x01, 0x10, 0x02, 0x52, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64,
+	0x6c, 0x65, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x16, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65,
 	0x22, 0x2f, 0x0a, 0x11, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d,
 	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d,
@@ -2138,83 +2047,80 @@ var file_buf_alpha_registry_v1alpha1_user_proto_rawDesc = string([]byte{
 })
 
 var file_buf_alpha_registry_v1alpha1_user_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_buf_alpha_registry_v1alpha1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_buf_alpha_registry_v1alpha1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_buf_alpha_registry_v1alpha1_user_proto_goTypes = []any{
 	(UserState)(0),                        // 0: buf.alpha.registry.v1alpha1.UserState
 	(UserType)(0),                         // 1: buf.alpha.registry.v1alpha1.UserType
 	(*User)(nil),                          // 2: buf.alpha.registry.v1alpha1.User
 	(*OrganizationUser)(nil),              // 3: buf.alpha.registry.v1alpha1.OrganizationUser
-	(*UserPluginPreference)(nil),          // 4: buf.alpha.registry.v1alpha1.UserPluginPreference
-	(*CreateUserRequest)(nil),             // 5: buf.alpha.registry.v1alpha1.CreateUserRequest
-	(*CreateUserResponse)(nil),            // 6: buf.alpha.registry.v1alpha1.CreateUserResponse
-	(*GetUserRequest)(nil),                // 7: buf.alpha.registry.v1alpha1.GetUserRequest
-	(*GetUserResponse)(nil),               // 8: buf.alpha.registry.v1alpha1.GetUserResponse
-	(*GetUserByUsernameRequest)(nil),      // 9: buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
-	(*GetUserByUsernameResponse)(nil),     // 10: buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
-	(*ListUsersRequest)(nil),              // 11: buf.alpha.registry.v1alpha1.ListUsersRequest
-	(*ListUsersResponse)(nil),             // 12: buf.alpha.registry.v1alpha1.ListUsersResponse
-	(*ListOrganizationUsersRequest)(nil),  // 13: buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
-	(*ListOrganizationUsersResponse)(nil), // 14: buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
-	(*DeleteUserRequest)(nil),             // 15: buf.alpha.registry.v1alpha1.DeleteUserRequest
-	(*DeleteUserResponse)(nil),            // 16: buf.alpha.registry.v1alpha1.DeleteUserResponse
-	(*DeactivateUserRequest)(nil),         // 17: buf.alpha.registry.v1alpha1.DeactivateUserRequest
-	(*DeactivateUserResponse)(nil),        // 18: buf.alpha.registry.v1alpha1.DeactivateUserResponse
-	(*UpdateUserServerRoleRequest)(nil),   // 19: buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest
-	(*UpdateUserServerRoleResponse)(nil),  // 20: buf.alpha.registry.v1alpha1.UpdateUserServerRoleResponse
-	(*CountUsersRequest)(nil),             // 21: buf.alpha.registry.v1alpha1.CountUsersRequest
-	(*CountUsersResponse)(nil),            // 22: buf.alpha.registry.v1alpha1.CountUsersResponse
-	(*UpdateUserSettingsRequest)(nil),     // 23: buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest
-	(*UpdateUserSettingsResponse)(nil),    // 24: buf.alpha.registry.v1alpha1.UpdateUserSettingsResponse
-	(*timestamppb.Timestamp)(nil),         // 25: google.protobuf.Timestamp
-	(VerificationStatus)(0),               // 26: buf.alpha.registry.v1alpha1.VerificationStatus
-	(OrganizationRole)(0),                 // 27: buf.alpha.registry.v1alpha1.OrganizationRole
-	(OrganizationRoleSource)(0),           // 28: buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	(PluginLanguage)(0),                   // 29: buf.alpha.registry.v1alpha1.PluginLanguage
-	(ServerRole)(0),                       // 30: buf.alpha.registry.v1alpha1.ServerRole
+	(*CreateUserRequest)(nil),             // 4: buf.alpha.registry.v1alpha1.CreateUserRequest
+	(*CreateUserResponse)(nil),            // 5: buf.alpha.registry.v1alpha1.CreateUserResponse
+	(*GetUserRequest)(nil),                // 6: buf.alpha.registry.v1alpha1.GetUserRequest
+	(*GetUserResponse)(nil),               // 7: buf.alpha.registry.v1alpha1.GetUserResponse
+	(*GetUserByUsernameRequest)(nil),      // 8: buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
+	(*GetUserByUsernameResponse)(nil),     // 9: buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
+	(*ListUsersRequest)(nil),              // 10: buf.alpha.registry.v1alpha1.ListUsersRequest
+	(*ListUsersResponse)(nil),             // 11: buf.alpha.registry.v1alpha1.ListUsersResponse
+	(*ListOrganizationUsersRequest)(nil),  // 12: buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
+	(*ListOrganizationUsersResponse)(nil), // 13: buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
+	(*DeleteUserRequest)(nil),             // 14: buf.alpha.registry.v1alpha1.DeleteUserRequest
+	(*DeleteUserResponse)(nil),            // 15: buf.alpha.registry.v1alpha1.DeleteUserResponse
+	(*DeactivateUserRequest)(nil),         // 16: buf.alpha.registry.v1alpha1.DeactivateUserRequest
+	(*DeactivateUserResponse)(nil),        // 17: buf.alpha.registry.v1alpha1.DeactivateUserResponse
+	(*UpdateUserServerRoleRequest)(nil),   // 18: buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest
+	(*UpdateUserServerRoleResponse)(nil),  // 19: buf.alpha.registry.v1alpha1.UpdateUserServerRoleResponse
+	(*CountUsersRequest)(nil),             // 20: buf.alpha.registry.v1alpha1.CountUsersRequest
+	(*CountUsersResponse)(nil),            // 21: buf.alpha.registry.v1alpha1.CountUsersResponse
+	(*UpdateUserSettingsRequest)(nil),     // 22: buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest
+	(*UpdateUserSettingsResponse)(nil),    // 23: buf.alpha.registry.v1alpha1.UpdateUserSettingsResponse
+	(*timestamppb.Timestamp)(nil),         // 24: google.protobuf.Timestamp
+	(VerificationStatus)(0),               // 25: buf.alpha.registry.v1alpha1.VerificationStatus
+	(OrganizationRole)(0),                 // 26: buf.alpha.registry.v1alpha1.OrganizationRole
+	(OrganizationRoleSource)(0),           // 27: buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	(ServerRole)(0),                       // 28: buf.alpha.registry.v1alpha1.ServerRole
 }
 var file_buf_alpha_registry_v1alpha1_user_proto_depIdxs = []int32{
-	25, // 0: buf.alpha.registry.v1alpha1.User.create_time:type_name -> google.protobuf.Timestamp
-	25, // 1: buf.alpha.registry.v1alpha1.User.update_time:type_name -> google.protobuf.Timestamp
-	26, // 2: buf.alpha.registry.v1alpha1.User.verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
+	24, // 0: buf.alpha.registry.v1alpha1.User.create_time:type_name -> google.protobuf.Timestamp
+	24, // 1: buf.alpha.registry.v1alpha1.User.update_time:type_name -> google.protobuf.Timestamp
+	25, // 2: buf.alpha.registry.v1alpha1.User.verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
 	1,  // 3: buf.alpha.registry.v1alpha1.User.user_type:type_name -> buf.alpha.registry.v1alpha1.UserType
 	2,  // 4: buf.alpha.registry.v1alpha1.OrganizationUser.user:type_name -> buf.alpha.registry.v1alpha1.User
-	27, // 5: buf.alpha.registry.v1alpha1.OrganizationUser.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	28, // 6: buf.alpha.registry.v1alpha1.OrganizationUser.organization_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	29, // 7: buf.alpha.registry.v1alpha1.UserPluginPreference.selected_language:type_name -> buf.alpha.registry.v1alpha1.PluginLanguage
-	2,  // 8: buf.alpha.registry.v1alpha1.CreateUserResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
-	2,  // 9: buf.alpha.registry.v1alpha1.GetUserResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
-	2,  // 10: buf.alpha.registry.v1alpha1.GetUserByUsernameResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
-	0,  // 11: buf.alpha.registry.v1alpha1.ListUsersRequest.user_state_filter:type_name -> buf.alpha.registry.v1alpha1.UserState
-	1,  // 12: buf.alpha.registry.v1alpha1.ListUsersRequest.user_type_filters:type_name -> buf.alpha.registry.v1alpha1.UserType
-	2,  // 13: buf.alpha.registry.v1alpha1.ListUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.User
-	3,  // 14: buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.OrganizationUser
-	30, // 15: buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest.server_role:type_name -> buf.alpha.registry.v1alpha1.ServerRole
-	0,  // 16: buf.alpha.registry.v1alpha1.CountUsersRequest.user_state_filter:type_name -> buf.alpha.registry.v1alpha1.UserState
-	5,  // 17: buf.alpha.registry.v1alpha1.UserService.CreateUser:input_type -> buf.alpha.registry.v1alpha1.CreateUserRequest
-	7,  // 18: buf.alpha.registry.v1alpha1.UserService.GetUser:input_type -> buf.alpha.registry.v1alpha1.GetUserRequest
-	9,  // 19: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:input_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
-	11, // 20: buf.alpha.registry.v1alpha1.UserService.ListUsers:input_type -> buf.alpha.registry.v1alpha1.ListUsersRequest
-	13, // 21: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
-	15, // 22: buf.alpha.registry.v1alpha1.UserService.DeleteUser:input_type -> buf.alpha.registry.v1alpha1.DeleteUserRequest
-	17, // 23: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:input_type -> buf.alpha.registry.v1alpha1.DeactivateUserRequest
-	19, // 24: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:input_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest
-	21, // 25: buf.alpha.registry.v1alpha1.UserService.CountUsers:input_type -> buf.alpha.registry.v1alpha1.CountUsersRequest
-	23, // 26: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest
-	6,  // 27: buf.alpha.registry.v1alpha1.UserService.CreateUser:output_type -> buf.alpha.registry.v1alpha1.CreateUserResponse
-	8,  // 28: buf.alpha.registry.v1alpha1.UserService.GetUser:output_type -> buf.alpha.registry.v1alpha1.GetUserResponse
-	10, // 29: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:output_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
-	12, // 30: buf.alpha.registry.v1alpha1.UserService.ListUsers:output_type -> buf.alpha.registry.v1alpha1.ListUsersResponse
-	14, // 31: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
-	16, // 32: buf.alpha.registry.v1alpha1.UserService.DeleteUser:output_type -> buf.alpha.registry.v1alpha1.DeleteUserResponse
-	18, // 33: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:output_type -> buf.alpha.registry.v1alpha1.DeactivateUserResponse
-	20, // 34: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:output_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleResponse
-	22, // 35: buf.alpha.registry.v1alpha1.UserService.CountUsers:output_type -> buf.alpha.registry.v1alpha1.CountUsersResponse
-	24, // 36: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsResponse
-	27, // [27:37] is the sub-list for method output_type
-	17, // [17:27] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	26, // 5: buf.alpha.registry.v1alpha1.OrganizationUser.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	27, // 6: buf.alpha.registry.v1alpha1.OrganizationUser.organization_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	2,  // 7: buf.alpha.registry.v1alpha1.CreateUserResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
+	2,  // 8: buf.alpha.registry.v1alpha1.GetUserResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
+	2,  // 9: buf.alpha.registry.v1alpha1.GetUserByUsernameResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
+	0,  // 10: buf.alpha.registry.v1alpha1.ListUsersRequest.user_state_filter:type_name -> buf.alpha.registry.v1alpha1.UserState
+	1,  // 11: buf.alpha.registry.v1alpha1.ListUsersRequest.user_type_filters:type_name -> buf.alpha.registry.v1alpha1.UserType
+	2,  // 12: buf.alpha.registry.v1alpha1.ListUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.User
+	3,  // 13: buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.OrganizationUser
+	28, // 14: buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest.server_role:type_name -> buf.alpha.registry.v1alpha1.ServerRole
+	0,  // 15: buf.alpha.registry.v1alpha1.CountUsersRequest.user_state_filter:type_name -> buf.alpha.registry.v1alpha1.UserState
+	4,  // 16: buf.alpha.registry.v1alpha1.UserService.CreateUser:input_type -> buf.alpha.registry.v1alpha1.CreateUserRequest
+	6,  // 17: buf.alpha.registry.v1alpha1.UserService.GetUser:input_type -> buf.alpha.registry.v1alpha1.GetUserRequest
+	8,  // 18: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:input_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
+	10, // 19: buf.alpha.registry.v1alpha1.UserService.ListUsers:input_type -> buf.alpha.registry.v1alpha1.ListUsersRequest
+	12, // 20: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
+	14, // 21: buf.alpha.registry.v1alpha1.UserService.DeleteUser:input_type -> buf.alpha.registry.v1alpha1.DeleteUserRequest
+	16, // 22: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:input_type -> buf.alpha.registry.v1alpha1.DeactivateUserRequest
+	18, // 23: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:input_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest
+	20, // 24: buf.alpha.registry.v1alpha1.UserService.CountUsers:input_type -> buf.alpha.registry.v1alpha1.CountUsersRequest
+	22, // 25: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest
+	5,  // 26: buf.alpha.registry.v1alpha1.UserService.CreateUser:output_type -> buf.alpha.registry.v1alpha1.CreateUserResponse
+	7,  // 27: buf.alpha.registry.v1alpha1.UserService.GetUser:output_type -> buf.alpha.registry.v1alpha1.GetUserResponse
+	9,  // 28: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:output_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
+	11, // 29: buf.alpha.registry.v1alpha1.UserService.ListUsers:output_type -> buf.alpha.registry.v1alpha1.ListUsersResponse
+	13, // 30: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
+	15, // 31: buf.alpha.registry.v1alpha1.UserService.DeleteUser:output_type -> buf.alpha.registry.v1alpha1.DeleteUserResponse
+	17, // 32: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:output_type -> buf.alpha.registry.v1alpha1.DeactivateUserResponse
+	19, // 33: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:output_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleResponse
+	21, // 34: buf.alpha.registry.v1alpha1.UserService.CountUsers:output_type -> buf.alpha.registry.v1alpha1.CountUsersResponse
+	23, // 35: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsResponse
+	26, // [26:36] is the sub-list for method output_type
+	16, // [16:26] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_user_proto_init() }
@@ -2222,17 +2128,16 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_user_proto != nil {
 		return
 	}
-	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init()
 	file_buf_alpha_registry_v1alpha1_role_proto_init()
 	file_buf_alpha_registry_v1alpha1_verification_status_proto_init()
-	file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21].OneofWrappers = []any{}
+	file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_registry_v1alpha1_user_proto_rawDesc), len(file_buf_alpha_registry_v1alpha1_user_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   23,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

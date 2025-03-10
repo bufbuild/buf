@@ -4,6 +4,10 @@
 
 - Fix `buf convert` to allow for zero length for `binpb`, `txtpb`, and `yaml` formats.
 
+## [v1.50.1] - 2025-03-10
+
+- Minor fixes and dependency updates.
+
 ## [v1.50.0] - 2025-01-17
 
 - Add input parameter `filter` for use with git inputs. This sets the filter
@@ -1331,7 +1335,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.50.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.50.1...HEAD
+[v1.50.1]: https://github.com/bufbuild/buf/compare/v1.50.0...v1.50.1
 [v1.50.0]: https://github.com/bufbuild/buf/compare/v1.49.0...v1.50.0
 [v1.49.0]: https://github.com/bufbuild/buf/compare/v1.48.0...v1.49.0
 [v1.48.0]: https://github.com/bufbuild/buf/compare/v1.47.2...v1.48.0
