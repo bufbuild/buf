@@ -153,6 +153,54 @@ func TestAuthorizeDevice(t *testing.T) {
 			ErrorCode:        ErrorCodeInvalidRequest,
 			ErrorDescription: "invalid request",
 		},
+	}, {
+		name: "http_device_uri",
+		input: &DeviceAuthorizationRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			testAssertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"http://example.com","verification_uri_complete":"http://example.com?code=userCode","expires_in":10,"interval":5}`), nil
+		},
+		output: &DeviceAuthorizationResponse{
+			DeviceCode:              "deviceCode",
+			UserCode:                "userCode",
+			VerificationURI:         "http://example.com",
+			VerificationURIComplete: "http://example.com?code=userCode",
+			ExpiresIn:               10,
+			Interval:                5,
+		},
+	}, {
+		name: "invalid_device_uri",
+		input: &DeviceAuthorizationRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			testAssertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"file:///path/to/file.ext","verification_uri_complete":"file:///path/to/file.ext?code=userCode","expires_in":10,"interval":5}`), nil
+		},
+		err: fmt.Errorf(
+			`oauth2: invalid verification URI scheme, %q, received: %s`,
+			"file",
+			"file:///path/to/file.ext",
+		),
+	}, {
+		name: "invalid_device_uri_complete",
+		input: &DeviceAuthorizationRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			testAssertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"https://example.com","verification_uri_complete":"file:///path/to/file.ext?code=userCode","expires_in":10,"interval":5}`), nil
+		},
+		err: fmt.Errorf(
+			`oauth2: invalid verification URI scheme, %q, received: %s`,
+			"file",
+			"file:///path/to/file.ext?code=userCode",
+		),
 	}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
