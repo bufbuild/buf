@@ -54,19 +54,6 @@ message OrganizationUser {
   OrganizationRoleSource organization_role_source = 4;
 }
 
-// UserPluginPreference contains the user's preferred language and the
-// list of plugins for that language, which they selected in the BSR's Generated SDKs UI flow.
-// These preferences are stored in the database so the language and plugins
-// are pre-selected when the user navigates back to the Generated SDKs page from any device or browser.
-message UserPluginPreference {
-  reserved 1;
-  reserved "user_id";
-  // The language that the user has indicated as their preferred language for plugins.
-  PluginLanguage selected_language = 2;
-  // A list of plugin names selected by the user.
-  repeated string selected_plugins = 3;
-}
-
 enum UserState {
   USER_STATE_UNSPECIFIED = 0;
   USER_STATE_ACTIVE = 1;
