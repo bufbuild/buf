@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,17 +20,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/klauspost/compress/zstd"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type writer struct {
-	logger *zap.Logger
+	logger *slog.Logger
 
 	// never set for now (no corresponding option)
 	httpEnabled  bool
@@ -39,7 +38,7 @@ type writer struct {
 }
 
 func newWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	options ...WriterOption,
 ) *writer {
 	writer := &writer{
@@ -111,7 +110,7 @@ func (w *writer) putFileWriteCloser(
 	}
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, writeCloser.Close())
+			retErr = errors.Join(retErr, writeCloser.Close())
 		}
 	}()
 	if noFileCompression {

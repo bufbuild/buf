@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ func TestGetConfigForBucket(t *testing.T) {
 	require.NoError(t, err)
 	pluginDependency, err := bufremotepluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
 	require.NoError(t, err)
+	basePluginIdentity, err := bufremotepluginref.PluginIdentityForString("buf.build/library/go")
+	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
@@ -54,6 +56,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
+					BasePlugin: basePluginIdentity,
 					Deps: []*GoRegistryDependencyConfig{
 						{
 							Module:  "google.golang.org/grpc",
@@ -68,6 +71,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			SPDXLicenseID:       "Apache-2.0",
 			LicenseURL:          "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 			IntegrationGuideURL: "https://grpc.io/docs/languages/go/quickstart",
+			Deprecated:          true,
 		},
 		pluginConfig,
 	)
@@ -81,6 +85,8 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 	require.NoError(t, err)
 	pluginDependency, err := bufremotepluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
 	require.NoError(t, err)
+	basePluginIdentity, err := bufremotepluginref.PluginIdentityForString("buf.build/library/go")
+	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
@@ -95,6 +101,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
+					BasePlugin: basePluginIdentity,
 					Deps: []*GoRegistryDependencyConfig{
 						{
 							Module:  "google.golang.org/grpc",
@@ -109,6 +116,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			SPDXLicenseID:       "Apache-2.0",
 			LicenseURL:          "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 			IntegrationGuideURL: "https://grpc.io/docs/languages/go/quickstart",
+			Deprecated:          true,
 		},
 		pluginConfig,
 	)

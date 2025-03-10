@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package githubtesting
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 // ArchiveReader reads GitHub archives.
@@ -46,7 +46,7 @@ type ArchiveReader interface {
 
 // NewArchiveReader returns a new ArchiveReader.
 func NewArchiveReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 ) ArchiveReader {

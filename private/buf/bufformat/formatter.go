@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/bufbuild/protocompile/ast"
-	"go.uber.org/multierr"
 )
 
 // formatter writes an *ast.FileNode as a .proto file.
@@ -127,7 +126,7 @@ func (f *formatter) In() {
 func (f *formatter) Out() {
 	if f.indent <= 0 {
 		// Unreachable.
-		f.err = multierr.Append(
+		f.err = errors.Join(
 			f.err,
 			errors.New("internal error: attempted to decrement indentation at zero"),
 		)
@@ -155,7 +154,7 @@ func (f *formatter) Indent(nextNode ast.Node) {
 // WriteString writes the given element to the generated output.
 //
 // This will not write indentation or newlines. Use P if you
-// want to emit identation or newlines.
+// want to emit indentation or newlines.
 func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
@@ -180,7 +179,7 @@ func (f *formatter) WriteString(elem string) {
 		if !strings.ContainsRune(prevBlockList, f.lastWritten) &&
 			!strings.ContainsRune(nextBlockList, first) {
 			if _, err := f.writer.Write([]byte{' '}); err != nil {
-				f.err = multierr.Append(f.err, err)
+				f.err = errors.Join(f.err, err)
 				return
 			}
 		}
@@ -190,7 +189,7 @@ func (f *formatter) WriteString(elem string) {
 	}
 	f.lastWritten, _ = utf8.DecodeLastRuneInString(elem)
 	if _, err := f.writer.Write([]byte(elem)); err != nil {
-		f.err = multierr.Append(f.err, err)
+		f.err = errors.Join(f.err, err)
 	}
 }
 
@@ -450,7 +449,9 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 	}
 
 	if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
-		f.writeCompoundStringLiteralIndent(node)
+		// We write the compound string literal node and end in-line to handle any commas for
+		// the option.
+		f.writeCompoundStringLiteralIndentEndInline(node)
 		return
 	}
 	f.writeInline(optionNode.Val)
@@ -595,9 +596,23 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 			f.writeMessageLiteralElements(messageLiteralNode)
 		}
 	}
+	closeNode := messageLiteralClose(messageLiteralNode)
+	// In the case where we are writing a compact message literal, we need to check if there
+	// are any trailing comments on the message literal that needs to be handled. The trailing
+	// comments may end up on the message literal node itself rather than the closing bracket
+	// in the case where a message literal is an element of a message literal, and trailing
+	// comments on the separator are attached to message literal.
+	messageLiteralTrailingComments := f.nodeInfo(messageLiteralNode).TrailingComments()
+	// Similar to how we handle the trailing comments on separators, we check if there are
+	// any existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the message literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if messageLiteralTrailingComments.Len() > 0 && f.nodeInfo(closeNode).TrailingComments().Len() == 0 {
+		f.setTrailingComments(closeNode, messageLiteralTrailingComments)
+	}
 	f.writeCompositeValueBody(
 		messageLiteralOpen(messageLiteralNode),
-		messageLiteralClose(messageLiteralNode),
+		closeNode,
 		elementWriterFunc,
 	)
 }
@@ -621,9 +636,23 @@ func (f *formatter) writeMessageLiteralForArray(
 	if lastElement {
 		closeWriter = f.writeBodyEnd
 	}
+	closeNode := messageLiteralClose(messageLiteralNode)
+	// In the case where we are writing a compact message literal, we need to check if there
+	// are any trailing comments on the message literal that needs to be handled. The trailing
+	// comments may end up on the message literal node itself rather than the closing bracket
+	// in the case where a message literal is an element of a message literal, and trailing
+	// comments on the separator are attached to message literal.
+	messageLiteralTrailingComments := f.nodeInfo(messageLiteralNode).TrailingComments()
+	// Similar to how we handle the trailing comments on separators, we check if there are
+	// any existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the message literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if messageLiteralTrailingComments.Len() > 0 && f.nodeInfo(closeNode).TrailingComments().Len() == 0 {
+		f.setTrailingComments(closeNode, messageLiteralTrailingComments)
+	}
 	f.writeBody(
 		messageLiteralOpen(messageLiteralNode),
-		messageLiteralClose(messageLiteralNode),
+		closeNode,
 		elementWriterFunc,
 		f.writeOpenBracePrefixForArray,
 		closeWriter,
@@ -634,38 +663,60 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	messageLiteralNode *ast.MessageLiteralNode,
 	inArrayLiteral bool,
 ) bool {
-	if len(messageLiteralNode.Elements) == 0 || len(messageLiteralNode.Elements) > 1 ||
+	// We only want to write a compact message literal for a message literal with either 0 or
+	// 1 elements, and if there are no interior comments, and the element, if present, is not
+	// a message or array literal.
+	if len(messageLiteralNode.Elements) > 1 ||
 		f.hasInteriorComments(messageLiteralNode.Children()...) ||
 		messageLiteralHasNestedMessageOrArray(messageLiteralNode) {
 		return false
 	}
+
 	// messages with a single scalar field and no comments can be
 	// printed all on one line
 	openNode := messageLiteralOpen(messageLiteralNode)
 	closeNode := messageLiteralClose(messageLiteralNode)
+
+	// In the case where we are writing a compact message literal, we need to check if there
+	// are any trailing comments on the message literal that needs to be handled. The trailing
+	// comments may end up on the message literal node itself rather than the closing bracket
+	// in the case where a message literal is an element of a message literal, and trailing
+	// comments on the separator are attached to message literal.
+	messageLiteralTrailingComments := f.nodeInfo(messageLiteralNode).TrailingComments()
+	// Similar to how we handle the trailing comments on separators, we check if there are
+	// any existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the message literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if messageLiteralTrailingComments.Len() > 0 && f.nodeInfo(closeNode).TrailingComments().Len() == 0 {
+		f.setTrailingComments(closeNode, messageLiteralTrailingComments)
+	}
+
 	if inArrayLiteral {
 		f.Indent(openNode)
 	}
 	f.writeInline(openNode)
-	fieldNode := messageLiteralNode.Elements[0]
-	f.writeInline(fieldNode.Name)
-	if fieldNode.Sep != nil {
-		f.writeInline(fieldNode.Sep)
-	} else {
-		f.WriteString(":")
-	}
-	f.Space()
-	if messageLiteralNode.Seps[0] != nil {
-		// We are dropping the optional trailing separator. If it had
-		// trailing comments and the value does not, move the separator's
-		// trailing comment to the value.
-		sepTrailingComments := f.nodeInfo(messageLiteralNode.Seps[0]).TrailingComments()
-		if sepTrailingComments.Len() > 0 &&
-			f.nodeInfo(fieldNode.Val).TrailingComments().Len() == 0 {
-			f.setTrailingComments(fieldNode.Val, sepTrailingComments)
+	// We check if our compact message has one element, if so, write that value as compact.
+	if len(messageLiteralNode.Elements) == 1 {
+		fieldNode := messageLiteralNode.Elements[0]
+		f.writeInline(fieldNode.Name)
+		if fieldNode.Sep != nil {
+			f.writeInline(fieldNode.Sep)
+		} else {
+			f.WriteString(":")
 		}
+		f.Space()
+		if messageLiteralNode.Seps[0] != nil {
+			// We are dropping the optional trailing separator. If it had
+			// trailing comments and the value does not, move the separator's
+			// trailing comment to the value.
+			sepTrailingComments := f.nodeInfo(messageLiteralNode.Seps[0]).TrailingComments()
+			if sepTrailingComments.Len() > 0 &&
+				f.nodeInfo(fieldNode.Val).TrailingComments().Len() == 0 {
+				f.setTrailingComments(fieldNode.Val, sepTrailingComments)
+			}
+		}
+		f.writeInline(fieldNode.Val)
 	}
-	f.writeInline(fieldNode.Val)
 	f.writeInline(closeNode)
 	return true
 }
@@ -835,7 +886,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 		// If a label was not written, the multiline comments will be
 		// attached to the type.
 		if compoundIdentNode, ok := fieldNode.FldType.(*ast.CompoundIdentNode); ok {
-			f.writeCompountIdentForFieldName(compoundIdentNode)
+			f.writeCompoundIdentForFieldName(compoundIdentNode)
 		} else {
 			f.writeStart(fieldNode.FldType)
 		}
@@ -1248,6 +1299,19 @@ func (f *formatter) hasInteriorComments(nodes ...ast.Node) bool {
 //	  "bar"
 //	]
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
+	// We need to check if there are any trailing comments on the array literal itself that
+	// needs to be handled. The trailing comments may end up on the array literal node itself
+	// rather than the closing bracket in the case where an array literal is an element of a
+	// message literal, and trailing comments on the separator are attached to array literal.
+	arrayLiteralTrailingComments := f.nodeInfo(arrayLiteralNode).TrailingComments()
+	// Similar to how we handle trailing comments on separators, we check if there are any
+	// existing trailing comments on the closing bracket. If not, then we attach the trailing
+	// comments of the array literal node to the closing bracket. Skip this if the closing
+	// bracket already has trailing comments.
+	if arrayLiteralTrailingComments.Len() > 0 && f.nodeInfo(arrayLiteralNode.CloseBracket).TrailingComments().Len() == 0 {
+		f.setTrailingComments(arrayLiteralNode.CloseBracket, arrayLiteralTrailingComments)
+	}
+
 	if len(arrayLiteralNode.Elements) == 1 &&
 		!f.hasInteriorComments(arrayLiteralNode.Children()...) &&
 		!arrayLiteralHasNestedMessageOrArray(arrayLiteralNode) {
@@ -1282,6 +1346,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 			}
 		}
 	}
+
 	f.writeCompositeValueBody(
 		arrayLiteralNode.OpenBracket,
 		arrayLiteralNode.CloseBracket,
@@ -1323,7 +1388,7 @@ func (f *formatter) writeCompositeValueForArrayLiteral(
 	case *ast.MessageLiteralNode:
 		f.writeMessageLiteralForArray(node, lastElement)
 	default:
-		f.err = multierr.Append(f.err, fmt.Errorf("unexpected array value node %T", node))
+		f.err = errors.Join(f.err, fmt.Errorf("unexpected array value node %T", node))
 	}
 }
 
@@ -1435,7 +1500,7 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 	}
 }
 
-// writeCompountIdentForFieldName writes a compound identifier, but handles comments
+// writeCompoundIdentForFieldName writes a compound identifier, but handles comments
 // specially for field names.
 //
 // For example,
@@ -1444,7 +1509,7 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 //	  // These are comments attached to bar.
 //	  bar.v1.Bar bar = 1;
 //	}
-func (f *formatter) writeCompountIdentForFieldName(compoundIdentNode *ast.CompoundIdentNode) {
+func (f *formatter) writeCompoundIdentForFieldName(compoundIdentNode *ast.CompoundIdentNode) {
 	if compoundIdentNode.LeadingDot != nil {
 		f.writeStart(compoundIdentNode.LeadingDot)
 	}
@@ -1713,7 +1778,7 @@ func (f *formatter) writeNode(node ast.Node) {
 	case *ast.EmptyDeclNode:
 		// Nothing to do here.
 	default:
-		f.err = multierr.Append(f.err, fmt.Errorf("unexpected node: %T", node))
+		f.err = errors.Join(f.err, fmt.Errorf("unexpected node: %T", node))
 	}
 }
 

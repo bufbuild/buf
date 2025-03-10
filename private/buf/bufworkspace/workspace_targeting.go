@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,16 +19,17 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // workspaceTargeting figures out if we are working with a v1 or v2 workspace based on
@@ -53,7 +54,7 @@ type workspaceTargeting struct {
 type v1Targeting struct {
 	bucketIDToModuleConfig     map[string]bufconfig.ModuleConfig
 	moduleBucketsAndTargeting  []*moduleBucketAndModuleTargeting
-	allConfiguredDepModuleRefs []bufmodule.ModuleRef
+	allConfiguredDepModuleRefs []bufparse.Ref
 }
 
 type v2Targeting struct {
@@ -63,13 +64,16 @@ type v2Targeting struct {
 }
 
 type moduleBucketAndModuleTargeting struct {
-	bucket          storage.ReadBucket
+	bucket storage.ReadBucket
+	// A bucketID, which uniquely identifies a moduleBucketAndModuleTargeting, is needed
+	// because in a v2 workspace multiple local modules may have the same DirPath.
+	bucketID        string
 	moduleTargeting *moduleTargeting
 }
 
 func newWorkspaceTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config *workspaceBucketConfig,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
@@ -80,9 +84,10 @@ func newWorkspaceTargeting(
 		return nil, err
 	}
 	if overrideBufYAMLFile != nil {
-		logger.Debug(
+		logger.DebugContext(
+			ctx,
 			"targeting workspace with config override",
-			zap.String("subDirPath", bucketTargeting.SubDirPath()),
+			slog.String("subDirPath", bucketTargeting.SubDirPath()),
 		)
 		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
@@ -95,7 +100,17 @@ func newWorkspaceTargeting(
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, overrideBufYAMLFile)
+			return v2WorkspaceTargeting(
+				ctx,
+				config,
+				bucket,
+				bucketTargeting,
+				overrideBufYAMLFile,
+				// If the user specifies a `--config path/to/config/buf.yaml` and the input workspace
+				// modules do not have their own doc/license files, we do not want to use "path/to/config/README(or LICENSE)"
+				// or "moduleDir/README(or LICENSE)" as the module's doc/license.
+				false,
+			)
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
@@ -103,11 +118,21 @@ func newWorkspaceTargeting(
 	if controllingWorkspace := bucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
 		// This is a v2 workspace.
 		if controllingWorkspace.BufYAMLFile() != nil {
-			logger.Debug(
+			logger.DebugContext(
+				ctx,
 				"targeting workspace based on v2 buf.yaml",
-				zap.String("subDirPath", bucketTargeting.SubDirPath()),
+				slog.String("subDirPath", bucketTargeting.SubDirPath()),
 			)
-			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, controllingWorkspace.BufYAMLFile())
+			return v2WorkspaceTargeting(
+				ctx,
+				config,
+				bucket,
+				bucketTargeting,
+				controllingWorkspace.BufYAMLFile(),
+				// For a v2 controlling workspace, if a module inside does not have its own doc/license,
+				// we want to the doc/license at the root of the workspace if they exist.
+				true,
+			)
 		}
 		// This is a v1 workspace.
 		if bufWorkYAMLFile := controllingWorkspace.BufWorkYAMLFile(); bufWorkYAMLFile != nil {
@@ -122,9 +147,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 				}
 				// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
 				// the workspace entirely, and just act as if the buf.work.yaml did not exist.
-				logger.Debug(
+				logger.DebugContext(
+					ctx,
 					"targeting workspace, ignoring v1 buf.work.yaml, just building on module at target",
-					zap.String("subDirPath", bucketTargeting.SubDirPath()),
+					slog.String("subDirPath", bucketTargeting.SubDirPath()),
 				)
 				return v1WorkspaceTargeting(
 					ctx,
@@ -145,9 +171,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 			)
 		}
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"targeting workspace with no found buf.work.yaml or v2 buf.yaml",
-		zap.String("subDirPath", bucketTargeting.SubDirPath()),
+		slog.String("subDirPath", bucketTargeting.SubDirPath()),
 	)
 	// We did not find any buf.work.yaml or v2 buf.yaml, we invoke fallback logic.
 	return fallbackWorkspaceTargeting(
@@ -165,6 +192,9 @@ func v2WorkspaceTargeting(
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	bufYAMLFile bufconfig.BufYAMLFile,
+	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
+	// use the license/doc respectively at the workspace root for this module.
+	useWorkspaceLicenseDocIfNotFoundAtModule bool,
 ) (*workspaceTargeting, error) {
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -179,10 +209,18 @@ func v2WorkspaceTargeting(
 	moduleDirPaths := make([]string, 0, len(bufYAMLFile.ModuleConfigs()))
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	moduleBucketsAndTargeting := make([]*moduleBucketAndModuleTargeting, 0, len(bufYAMLFile.ModuleConfigs()))
-	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+	moduleConfigs := bufYAMLFile.ModuleConfigs()
+	bucketIDsForModuleConfigs := bucketIDsForModuleConfigsV2(moduleConfigs)
+	if len(bucketIDsForModuleConfigs) != len(moduleConfigs) {
+		// This is impossible, as the length is guaranteed by bucketIDsForModuleConfigsV2.
+		return nil, syserror.Newf("expected %d bucketIDs computed but got %d", len(moduleConfigs), len(bucketIDsForModuleConfigs))
+	}
+	for i, moduleConfig := range moduleConfigs {
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		// bucketIDs have the same order as moduleConfigs
+		bucketID := bucketIDsForModuleConfigs[i]
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// bucketTargeting.SubDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -193,7 +231,7 @@ func v2WorkspaceTargeting(
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.SubDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
-		// In the future, it would be nice to handle this more elegently.
+		// In the future, it would be nice to handle this more elegantly.
 		if config.protoFileTargetPath != "" {
 			isTentativelyTargetModule = true
 		}
@@ -208,6 +246,7 @@ func v2WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			useWorkspaceLicenseDocIfNotFoundAtModule,
 		)
 		if err != nil {
 			return nil, err
@@ -217,6 +256,7 @@ func v2WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -257,7 +297,7 @@ func v1WorkspaceTargeting(
 	// directories, and this is a system error - this should be verified before we reach this function.
 	var hadIsTentativelyTargetModule bool
 	var hadIsTargetModule bool
-	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
+	var allConfiguredDepModuleRefs []bufparse.Ref
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We use this to detect different refs across different files.
 	moduleFullNameStringToConfiguredDepModuleRefString := make(map[string]string)
@@ -273,19 +313,21 @@ func v1WorkspaceTargeting(
 			return nil, err
 		}
 		for _, configuredDepModuleRef := range configuredDepModuleRefs {
-			moduleFullNameString := configuredDepModuleRef.ModuleFullName().String()
+			moduleFullNameString := configuredDepModuleRef.FullName().String()
 			configuredDepModuleRefString := configuredDepModuleRef.String()
 			existingConfiguredDepModuleRefString, ok := moduleFullNameStringToConfiguredDepModuleRefString[moduleFullNameString]
 			if !ok {
-				// We haven't encountered a ModuleRef with this ModuleFullName yet, add it.
+				// We haven't encountered a ModuleRef with this FullName yet, add it.
 				allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRef)
 				moduleFullNameStringToConfiguredDepModuleRefString[moduleFullNameString] = configuredDepModuleRefString
 			} else if configuredDepModuleRefString != existingConfiguredDepModuleRefString {
-				// We encountered the same ModuleRef by ModuleFullName, but with a different Ref.
+				// We encountered the same ModuleRef by FullName, but with a different Ref.
 				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
 			}
 		}
-		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		// DirPaths are unique within a v1 workspace, and so it's safe to use them as bucketIDs.
+		bucketID := moduleDirPath
+		bucketIDToModuleConfig[bucketID] = moduleConfig
 		// We only want to target modules that are inside the bucketTargeting.SubDirPath().
 		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.SubDirPath() is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
@@ -296,7 +338,7 @@ func v1WorkspaceTargeting(
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.SubDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
-		// In the future, it would be nice to handle this more elegently.
+		// In the future, it would be nice to handle this more elegantly.
 		if config.protoFileTargetPath != "" {
 			isTentativelyTargetModule = true
 		}
@@ -311,6 +353,9 @@ func v1WorkspaceTargeting(
 			moduleDirPath,
 			moduleConfig,
 			isTentativelyTargetModule,
+			// In a v1 workspace, if a module does not have its own doc/license next to its v1 buf.yaml,
+			// we do NOT want to fall back to the doc/license next to it's buf.work.yaml.
+			false,
 		)
 		if err != nil {
 			return nil, err
@@ -320,6 +365,7 @@ func v1WorkspaceTargeting(
 		}
 		moduleBucketsAndTargeting = append(moduleBucketsAndTargeting, &moduleBucketAndModuleTargeting{
 			bucket:          mappedModuleBucket,
+			bucketID:        bucketID,
 			moduleTargeting: moduleTargeting,
 		})
 	}
@@ -356,7 +402,7 @@ func v1WorkspaceTargeting(
 // 3. In the case where we find nothing, we set the input as a v1 module in a v1 workspace.
 func fallbackWorkspaceTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config *workspaceBucketConfig,
 	bucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
@@ -434,6 +480,10 @@ func fallbackWorkspaceTargeting(
 				bucket,
 				bucketTargeting,
 				v2BufYAMLFile,
+				// Since the v2 buf.yaml is found at the workspace root we allow falling back
+				// to the doc/license at the workspace root, even though this function (fallbackWorkspaceTargeting)
+				// is the logic for handling the situation where the a controlling workspace not found.
+				true,
 			)
 		}
 		if v1BufWorkYAML != nil {
@@ -512,25 +562,36 @@ func validateBucketTargeting(
 func getMappedModuleBucketAndModuleTargeting(
 	ctx context.Context,
 	config *workspaceBucketConfig,
-	bucket storage.ReadBucket,
+	workspaceBucket storage.ReadBucket,
 	bucketTargeting buftarget.BucketTargeting,
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	isTargetModule bool,
+	// If true and if a workspace module does not have a license/doc at its moduleDirPath,
+	// use the license/doc respectively at the workspace root for this module.
+	useWorkspaceLicenseDocIfNotFoundAtModule bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	moduleBucket := storage.MapReadBucket(
-		bucket,
+		workspaceBucket,
 		storage.MapOnPrefix(moduleDirPath),
 	)
 	rootToExcludes := moduleConfig.RootToExcludes()
+	rootToIncludes := moduleConfig.RootToIncludes()
 	var rootBuckets []storage.ReadBucket
 	for root, excludes := range rootToExcludes {
+		includes, ok := rootToIncludes[root]
+		if !ok {
+			// This should never happen because ModuleConfig guarantees that they have the same keys.
+			return nil, nil, syserror.Newf("expected root %q to be also in rootToIncludes but not found", root)
+		}
 		// Roots only applies to .proto files.
 		mappers := []storage.Mapper{
+			storage.MapOnPrefix(root),
+		}
+		matchers := []storage.Matcher{
 			// need to do match extension here
 			// https://github.com/bufbuild/buf/issues/113
 			storage.MatchPathExt(".proto"),
-			storage.MapOnPrefix(root),
 		}
 		if len(excludes) != 0 {
 			var notOrMatchers []storage.Matcher
@@ -540,8 +601,8 @@ func getMappedModuleBucketAndModuleTargeting(
 					storage.MatchPathContained(exclude),
 				)
 			}
-			mappers = append(
-				mappers,
+			matchers = append(
+				matchers,
 				storage.MatchNot(
 					storage.MatchOr(
 						notOrMatchers...,
@@ -549,18 +610,75 @@ func getMappedModuleBucketAndModuleTargeting(
 				),
 			)
 		}
+		// An includes with length 0 adds no filter to the proto files.
+		if len(includes) > 0 {
+			var orMatchers []storage.Matcher
+			for _, include := range includes {
+				orMatchers = append(
+					orMatchers,
+					storage.MatchPathContained(include),
+				)
+			}
+			matchers = append(
+				matchers,
+				storage.MatchOr(
+					orMatchers...,
+				),
+			)
+		}
 		rootBuckets = append(
 			rootBuckets,
-			storage.MapReadBucket(
-				moduleBucket,
-				mappers...,
+			storage.FilterReadBucket(
+				storage.MapReadBucket(
+					moduleBucket,
+					mappers...,
+				),
+				matchers...,
 			),
 		)
 	}
+	docStorageReadBucket, err := bufmodule.GetDocStorageReadBucket(ctx, moduleBucket)
+	if err != nil {
+		return nil, nil, err
+	}
+	licenseStorageReadBucket, err := bufmodule.GetLicenseStorageReadBucket(ctx, moduleBucket)
+	if err != nil {
+		return nil, nil, err
+	}
+	if useWorkspaceLicenseDocIfNotFoundAtModule {
+		isModuleDocBucketEmpty, err := storage.IsEmpty(ctx, docStorageReadBucket, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		// If at moduleDirPath there isn't a doc file, we fall back to use the doc file
+		// at the workspace root if it exists.
+		if isModuleDocBucketEmpty {
+			// We do not need to check if a doc file exists at the workspace root by
+			// checking whether the doc bucket for the workspace is empty, because
+			// this bucket will just be empty there isn't one, which is what we want.
+			docStorageReadBucket, err = bufmodule.GetDocStorageReadBucket(ctx, workspaceBucket)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		isModuleLicenseBucketEmpty, err := storage.IsEmpty(ctx, licenseStorageReadBucket, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		// If at moduleDirPath there isn't a license, we fall back to use the license
+		// at the workspace root if it exists.
+		if isModuleLicenseBucketEmpty {
+			// We do not need to check if this bucket is empty for the same reason, see comment for doc bucket.
+			licenseStorageReadBucket, err = bufmodule.GetLicenseStorageReadBucket(ctx, workspaceBucket)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+	}
 	rootBuckets = append(
 		rootBuckets,
-		bufmodule.GetDocStorageReadBucket(ctx, moduleBucket),
-		bufmodule.GetLicenseStorageReadBucket(moduleBucket),
+		docStorageReadBucket,
+		licenseStorageReadBucket,
 	)
 	mappedModuleBucket := storage.MultiReadBucket(rootBuckets...)
 	moduleTargeting, err := newModuleTargeting(
@@ -581,7 +699,7 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 	bucket storage.ReadBucket,
 	moduleDirPath string,
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
-) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
+) (bufconfig.ModuleConfig, []bufparse.Ref, error) {
 	var bufYAMLFile bufconfig.BufYAMLFile
 	var err error
 	if overrideBufYAMLFile != nil {
@@ -619,7 +737,7 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 // nice to be able to isolate this as fallback logic here.
 func checkForControllingWorkspaceOrV1Module(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	path string,
 	ignoreWorkspaceCheck bool,
@@ -650,10 +768,11 @@ func checkForControllingWorkspaceOrV1Module(
 				return nil, err
 			}
 			if controllingWorkspace != nil {
-				logger.Debug(
+				logger.DebugContext(
+					ctx,
 					"buffetch termination found",
-					zap.String("curDirPath", curDirPath),
-					zap.String("path", path),
+					slog.String("curDirPath", curDirPath),
+					slog.String("path", path),
 				)
 				return controllingWorkspace, nil
 			}
@@ -674,9 +793,10 @@ func checkForControllingWorkspaceOrV1Module(
 		}
 		curDirPath = normalpath.Dir(curDirPath)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch no termination found",
-		zap.String("path", path),
+		slog.String("path", path),
 	)
 	return fallbackV1Module, nil
 }
@@ -706,4 +826,67 @@ func checkForOverlap(
 		}
 	}
 	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
+}
+
+// bucketIDsForModuleConfigsV2 returns the bucket IDs for the given moduleDirPaths in the same order.
+// moduleDirPaths must already be normalized.
+//
+// v1 does not need to call a function like this because bucketIDs are just their module roots relative to the workspace root, which are unique.
+func bucketIDsForModuleConfigsV2(moduleConfigs []bufconfig.ModuleConfig) []string {
+	moduleDirPaths := slicesext.Map(moduleConfigs, bufconfig.ModuleConfig.DirPath)
+	// In a v2 bufYAMLFile, multiple module configs may have the same DirPath, but we still want to
+	// make sure each local module has a unique BucketID, which means we cannot use their DirPaths as
+	// BucketIDs directly. Instead, we append an index (1-indexed) to each DirPath to deduplicate, and
+	// each module's bucketID becomes "<path>[index]", except for the first one does not need the index
+	// and its bucketID is still "<path>".
+	// As an example, bucketIDs are shown for modules in the buf.yaml below:
+	// ...
+	// modules:
+	//   - path: foo # bucketID: foo
+	//   - path: bar # bucketID: bar
+	//   - path: foo # bucketID: foo-2
+	//   - path: bar # bucketID: bar-2
+	//   - path: bar # bucketID: bar-3
+	//   - path: new # bucketID: new
+	//   - path: foo # bucketID: foo-3
+	// ...
+	// Note: The BufYAMLFile interface guarantees that the relative order among module configs with
+	// the same path is the same order among these modules in the external buf.yaml v2, e.g. the 2nd
+	// "foo" in the external buf.yaml above is also the 2nd "foo" in module configs, even though sorted:
+	// [bar, bar, bar, foo, foo, foo, new].
+	//                       ^
+	bucketIDs := bucketIDsForDirPaths(moduleDirPaths, false)
+	if len(slicesext.Duplicates(bucketIDs)) == 0 {
+		// This approach does not produce duplicate bucketIDs in the result most of the time, we return
+		// the bucketIDs if we don't detect any duplicates and it gives us the nice property that for
+		// 99% of the v2 workspaces, each module's bucketID is its DirPath.
+		return bucketIDs
+	}
+	// However, the approach above may create duplicates in the result bucketIDs, for example:
+	// ...
+	// modules:
+	//   - path: foo-2 # bucketID: foo-2
+	//   - path: foo   # bucketID: foo
+	//   - path: foo   # bucketID: foo-2
+	// Notice that both the module at "foo-2" and the second module at "foo" have bucketID "foo-2".
+	// In this case, we append an index to every DirPath, including the first occurrence of each DirPath.
+	return bucketIDsForDirPaths(moduleDirPaths, true)
+}
+
+func bucketIDsForDirPaths(moduleDirPaths []string, firstIDHasSuffix bool) []string {
+	bucketIDs := make([]string, 0, len(moduleDirPaths))
+	// Use dirPathToRunningCount to keep track of how many modules of this path has been seen (before the
+	// current module) in this BufYAMLFile.
+	dirPathToRunningCount := make(map[string]int)
+	for _, moduleDirPath := range moduleDirPaths {
+		// If n modules before this one has the same DirPath, then this module has index n+1 (1-indexed).
+		currentModuleDirPathIndex := dirPathToRunningCount[moduleDirPath] + 1
+		bucketID := fmt.Sprintf("%s-%d", moduleDirPath, currentModuleDirPathIndex)
+		if currentModuleDirPathIndex == 1 && !firstIDHasSuffix {
+			bucketID = moduleDirPath
+		}
+		bucketIDs = append(bucketIDs, bucketID)
+		dirPathToRunningCount[moduleDirPath]++
+	}
+	return bucketIDs
 }

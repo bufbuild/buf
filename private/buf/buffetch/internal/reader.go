@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -41,12 +43,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type reader struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 
 	localEnabled bool
@@ -64,7 +64,7 @@ type reader struct {
 }
 
 func newReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ReaderOption,
 ) *reader {
@@ -123,7 +123,7 @@ func (r *reader) GetReadBucketCloser(
 			if retReadBucketCloser != nil {
 				castReadBucketCloser, ok := retReadBucketCloser.(*readBucketCloser)
 				if !ok {
-					retErr = multierr.Append(
+					retErr = errors.Join(
 						retErr,
 						syserror.Newf("expected *readBucketCloser but got %T", retReadBucketCloser),
 					)
@@ -131,7 +131,7 @@ func (r *reader) GetReadBucketCloser(
 				}
 				var err error
 				retReadBucketCloser, err = castReadBucketCloser.copyToInMemory(ctx)
-				retErr = multierr.Append(retErr, err)
+				retErr = errors.Join(retErr, err)
 			}
 		}()
 	}
@@ -370,6 +370,8 @@ func (r *reader) getGitBucket(
 		git.CloneToBucketOptions{
 			Name:              gitRef.GitName(),
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
+			SubDir:            gitRef.SubDirPath(),
+			Filter:            gitRef.Filter(),
 		},
 	); err != nil {
 		return nil, nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
@@ -398,7 +400,7 @@ func (r *reader) getModuleKey(
 	}
 	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{moduleRef.ModuleRef()},
+		[]bufparse.Ref{moduleRef.ModuleRef()},
 		bufmodule.DigestTypeB5,
 	)
 	if err != nil {
@@ -422,7 +424,7 @@ func (r *reader) getFileReadCloserAndSize(
 	}
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, readCloser.Close())
+			retErr = errors.Join(retErr, readCloser.Close())
 		}
 	}()
 	if keepFileCompression {
@@ -531,7 +533,7 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressedHTTP(
 	if response.StatusCode != http.StatusOK {
 		err := fmt.Errorf("got HTTP status code %d", response.StatusCode)
 		if response.Body != nil {
-			return nil, -1, multierr.Append(err, response.Body.Close())
+			return nil, -1, errors.Join(err, response.Body.Close())
 		}
 		return nil, -1, err
 	}
@@ -563,7 +565,7 @@ func getGitURL(gitRef GitRef) (string, error) {
 // Use for memory buckets i.e. archive and git.
 func getReadBucketCloserForBucket(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
 	targetPaths []string,
@@ -610,10 +612,11 @@ func getReadBucketCloserForBucket(
 			storage.MapOnPrefix(bucketPath),
 		)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch creating new bucket",
-		zap.String("bucketPath", bucketPath),
-		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
+		slog.String("bucketPath", bucketPath),
+		slog.Any("targetPaths", bucketTargeting.TargetPaths()),
 	)
 	readBucketCloser := newReadBucketCloser(inputBucket, bucketTargeting)
 	return readBucketCloser, bucketTargeting, nil
@@ -622,7 +625,7 @@ func getReadBucketCloserForBucket(
 // Use for directory-based buckets.
 func getReadWriteBucketForOS(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
 	targetPaths []string,
@@ -671,7 +674,7 @@ func getReadWriteBucketForOS(
 	// osRootBucketTargeting returns the information on whether or not a controlling
 	// workspace was found based on the inputDirPath.
 	//
-	// *** CONTROLLING WOKRSPACE FOUND ***
+	// *** CONTROLLING WORKSPACE FOUND ***
 	//
 	// In the case where a controlling workspace is found, we want to create a new bucket
 	// for the controlling workspace.
@@ -686,11 +689,11 @@ func getReadWriteBucketForOS(
 	//
 	// We do not need to remap the input dir, target paths, and target exclude paths
 	// returned by buftarget.BucketTargeting, because they are already relative to the
-	// controlling workpsace.
+	// controlling workspace.
 	//
-	// *** CONTROLLING WOKRSPACE NOT FOUND ***
+	// *** CONTROLLING WORKSPACE NOT FOUND ***
 	//
-	// In the case where a controlling workpsace is not found, we have three outcomes for
+	// In the case where a controlling workspace is not found, we have three outcomes for
 	// creating a new bucket.
 	// If the inputDirPath is an absolute path, we want to use an absolute path to the input
 	// path:
@@ -803,7 +806,7 @@ func getReadWriteBucketForOS(
 // Use for ProtoFileRefs.
 func getReadBucketCloserForOSProtoFile(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	protoFilePath string,
 	terminateFunc buftarget.TerminateFunc,

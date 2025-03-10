@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
 
 package bufconfig
 
-import "github.com/bufbuild/buf/private/pkg/slicesext"
+import "slices"
 
 func copyStringToStringSliceMap(m map[string][]string) map[string][]string {
 	c := make(map[string][]string)
 	for k, v := range m {
-		c[k] = slicesext.Copy(v)
+		c[k] = slices.Clone(v)
 	}
 	return c
 }

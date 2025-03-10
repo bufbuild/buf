@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -29,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 )
 
@@ -45,16 +48,12 @@ const (
 func NewLSCommand(
 	name string,
 	builder appext.SubCommandBuilder,
-	ruleType string,
-	getAllRulesV1Beta1 func() ([]bufcheck.Rule, error),
-	getAllRulesV1 func() ([]bufcheck.Rule, error),
-	getAllRulesV2 func() ([]bufcheck.Rule, error),
-	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
+	ruleType check.RuleType,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: fmt.Sprintf("List %s rules", ruleType),
+		Short: fmt.Sprintf("List %s rules", ruleType.String()),
 		Args:  appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -63,10 +62,7 @@ func NewLSCommand(
 					container,
 					flags,
 					name,
-					getAllRulesV1Beta1,
-					getAllRulesV1,
-					getAllRulesV2,
-					getRulesForModuleConfig,
+					ruleType,
 				)
 			},
 		),
@@ -118,7 +114,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format to print rules as. Must be one of %s",
-			stringutil.SliceToString(bufcheck.AllRuleFormatStrings),
+			stringutil.SliceToString(bufcli.AllRuleFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -152,11 +148,8 @@ func lsRun(
 	container appext.Container,
 	flags *flags,
 	commandName string,
-	getAllRulesV1Beta1 func() ([]bufcheck.Rule, error),
-	getAllRulesV1 func() ([]bufcheck.Rule, error),
-	getAllRulesV2 func() ([]bufcheck.Rule, error),
-	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
-) error {
+	ruleType check.RuleType,
+) (retErr error) {
 	if flags.ConfiguredOnly {
 		if flags.Version != "" {
 			return appcmd.NewInvalidArgumentErrorf("--%s cannot be specified if --%s is specified", versionFlagName, configFlagName)
@@ -169,7 +162,6 @@ func lsRun(
 			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", configuredOnlyFlagName, modulePathFlagName)
 		}
 	}
-
 	configOverride := flags.Config
 	if flags.Version != "" {
 		configOverride = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
@@ -185,71 +177,116 @@ func lsRun(
 				bufconfig.DefaultModuleConfigV2,
 			},
 			nil,
+			nil,
 		)
 		if err != nil {
 			return err
 		}
 	}
-
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		".",
+		bufctl.WithConfigOverride(configOverride),
+	)
+	if err != nil {
+		return err
+	}
+	checkClient, err := controller.GetCheckClientForWorkspace(
+		ctx,
+		workspace,
+		wasmRuntime,
+	)
+	if err != nil {
+		return err
+	}
 	var rules []bufcheck.Rule
 	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		var moduleConfig bufconfig.ModuleConfig
 		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 			if len(moduleConfigs) != 1 {
 				return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
 			}
-			rules, err = getRulesForModuleConfig(moduleConfigs[0])
-			if err != nil {
-				return err
-			}
+			moduleConfig = moduleConfigs[0]
 		case bufconfig.FileVersionV2:
 			switch len(moduleConfigs) {
 			case 0:
 				return syserror.New("got 0 ModuleConfigs from a BufYAMLFile")
 			case 1:
-				rules, err = getRulesForModuleConfig(moduleConfigs[0])
-				if err != nil {
-					return err
-				}
+				moduleConfig = moduleConfigs[0]
 			default:
 				if flags.ModulePath == "" {
 					return appcmd.NewInvalidArgumentErrorf("--%s must be specified if the the buf.yaml has more than one module", modulePathFlagName)
 				}
-				moduleConfig, err := getModuleConfigForModulePath(moduleConfigs, flags.ModulePath)
-				if err != nil {
-					return err
-				}
-				rules, err = getRulesForModuleConfig(moduleConfig)
+				moduleConfig, err = getModuleConfigForModulePath(moduleConfigs, flags.ModulePath)
 				if err != nil {
 					return err
 				}
 			}
 		default:
 			return syserror.Newf("unknown FileVersion: %v", fileVersion)
+		}
+		var checkConfig bufconfig.CheckConfig
+		// We add all check configs (both lint and breaking) as related configs to check if plugins
+		// have rules configured.
+		// We allocated twice the size of moduleConfigs for both lint and breaking configs.
+		allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(moduleConfigs)*2)
+		for _, moduleConfig := range moduleConfigs {
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.LintConfig())
+			allCheckConfigs = append(allCheckConfigs, moduleConfig.BreakingConfig())
+		}
+		switch ruleType {
+		case check.RuleTypeLint:
+			checkConfig = moduleConfig.LintConfig()
+		case check.RuleTypeBreaking:
+			checkConfig = moduleConfig.BreakingConfig()
+		default:
+			return fmt.Errorf("unknown check.RuleType: %v", ruleType)
+		}
+		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
+		}
+		rules, err = checkClient.ConfiguredRules(
+			ctx,
+			ruleType,
+			checkConfig,
+			configuredRuleOptions...,
+		)
+		if err != nil {
+			return err
 		}
 	} else {
-		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1:
-			rules, err = getAllRulesV1Beta1()
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV1:
-			rules, err = getAllRulesV1()
-			if err != nil {
-				return err
-			}
-		case bufconfig.FileVersionV2:
-			rules, err = getAllRulesV2()
-			if err != nil {
-				return err
-			}
-		default:
-			return syserror.Newf("unknown FileVersion: %v", fileVersion)
+		allRulesOptions := []bufcheck.AllRulesOption{
+			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+		}
+		rules, err = checkClient.AllRules(
+			ctx,
+			ruleType,
+			bufYAMLFile.FileVersion(),
+			allRulesOptions...,
+		)
+		if err != nil {
+			return err
 		}
 	}
-	return bufcheck.PrintRules(
+	return bufcli.PrintRules(
 		container.Stdout(),
 		rules,
 		flags.Format,
@@ -259,10 +296,20 @@ func lsRun(
 
 func getModuleConfigForModulePath(moduleConfigs []bufconfig.ModuleConfig, modulePath string) (bufconfig.ModuleConfig, error) {
 	modulePath = normalpath.Normalize(modulePath)
+	// Multiple modules in a v2 workspace may have the same moduleDirPath.
+	moduleConfigsFound := []bufconfig.ModuleConfig{}
 	for _, moduleConfig := range moduleConfigs {
 		if moduleConfig.DirPath() == modulePath {
-			return moduleConfig, nil
+			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
 		}
 	}
-	return nil, fmt.Errorf("no module found for path %q", modulePath)
+	switch len(moduleConfigsFound) {
+	case 0:
+		return nil, fmt.Errorf("no module found for path %q", modulePath)
+	case 1:
+		return moduleConfigsFound[0], nil
+	default:
+		// TODO: add --module-name flag to allow differentiation
+		return nil, fmt.Errorf("multiple modules found for %q", modulePath)
+	}
 }

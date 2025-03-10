@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -89,7 +90,7 @@ func TestParseManifestError(t *testing.T) {
 func testParseManifestError(t *testing.T, manifestString string) {
 	_, err := ParseManifest(manifestString)
 	assert.Error(t, err)
-	parseError := &ParseError{}
+	parseError := &bufparse.ParseError{}
 	isParseError := errors.As(err, &parseError)
 	assert.True(t, isParseError)
 	assert.Equal(t, manifestString, parseError.Input())

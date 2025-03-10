@@ -2,9 +2,9 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="27.0"
-PROTOC_GEN_GO_VERSION="v1.34.1"
-CONNECT_VERSION="v1.16.2"
+PROTOC_VERSION="29.3"
+PROTOC_GEN_GO_VERSION="v1.36.3"
+CONNECT_VERSION="v1.18.1"
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
 DOWNLOAD_CACHE="$(echo "/${DOWNLOAD_CACHE}" | sed 's|\\|/|g' | sed 's/://')"
@@ -33,5 +33,13 @@ go install connectrpc.com/connect/cmd/protoc-gen-connect-go@${CONNECT_VERSION}
 go install ./cmd/buf \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
-  ./private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
+  ./private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
+GOOS=wasip1 GOARCH=wasm go build -o $(go env -json | jq -r .GOPATH)/bin/buf-plugin-suffix.wasm \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix
 go test ./...

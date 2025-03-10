@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,22 +59,21 @@ func testFormatProto2(t *testing.T) {
 
 func testFormatProto3(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto3/all/v1")
+	testFormatNoDiff(t, "testdata/proto3/block/v1")
 	testFormatNoDiff(t, "testdata/proto3/file/v1")
 	testFormatNoDiff(t, "testdata/proto3/header/v1")
 	testFormatNoDiff(t, "testdata/proto3/literal/v1")
 	testFormatNoDiff(t, "testdata/proto3/oneof/v1")
 	testFormatNoDiff(t, "testdata/proto3/range/v1")
 	testFormatNoDiff(t, "testdata/proto3/service/v1")
-	testFormatNoDiff(t, "testdata/proto3/block/v1")
 }
 
 func testFormatNoDiff(t *testing.T, path string) {
 	t.Run(path, func(t *testing.T) {
 		ctx := context.Background()
-		runner := command.NewRunner()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
-		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 		moduleSetBuilder.AddLocalModule(bucket, path, true)
 		moduleSet, err := moduleSetBuilder.Build()
 		require.NoError(t, err)
@@ -90,7 +88,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 				func(formattedFile storage.ReadObject) error {
 					expectedPath := formattedFile.Path()
 					t.Run(expectedPath, func(t *testing.T) {
-						// The expecetd format result is the golden file. If
+						// The expected format result is the golden file. If
 						// this file IS a golden file, it is expected to not
 						// change.
 						if !strings.HasSuffix(expectedPath, ".golden.proto") {
@@ -102,7 +100,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 						require.NoError(t, err)
 						expectedData, err := io.ReadAll(expectedFile)
 						require.NoError(t, err)
-						fileDiff, err := diff.Diff(ctx, runner, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
+						fileDiff, err := diff.Diff(ctx, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
 						require.NoError(t, err)
 						require.Empty(t, string(fileDiff))
 					})

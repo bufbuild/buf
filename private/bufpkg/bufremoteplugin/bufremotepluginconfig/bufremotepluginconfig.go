@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,6 +81,8 @@ type Config struct {
 	// IntegrationGuideURL is an optional attribute used to specify where
 	// the plugin integration guide can be found.
 	IntegrationGuideURL string
+	// Deprecated specifies whether the plugin is deprecated.
+	Deprecated bool
 }
 
 // RegistryConfig is the configuration for the registry of a plugin.
@@ -118,6 +120,7 @@ type RegistryConfig struct {
 type GoRegistryConfig struct {
 	MinVersion string
 	Deps       []*GoRegistryDependencyConfig
+	BasePlugin bufremotepluginref.PluginIdentity
 }
 
 // GoRegistryDependencyConfig is the go registry dependency configuration.
@@ -407,6 +410,7 @@ type ExternalConfig struct {
 	SPDXLicenseID       string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
 	LicenseURL          string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
 	IntegrationGuideURL string                 `json:"integration_guide_url,omitempty" yaml:"integration_guide_url,omitempty"`
+	Deprecated          bool                   `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.
@@ -437,6 +441,7 @@ type ExternalGoRegistryConfig struct {
 		Module  string `json:"module,omitempty" yaml:"module,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
+	BasePlugin string `json:"base_plugin,omitempty" yaml:"base_plugin,omitempty"`
 }
 
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.

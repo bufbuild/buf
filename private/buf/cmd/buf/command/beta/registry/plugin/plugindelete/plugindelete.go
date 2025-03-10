@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,11 +66,11 @@ func run(
 	identity, version, _ := strings.Cut(container.Arg(0), ":")
 	pluginIdentity, err := bufremotepluginref.PluginIdentityForString(identity)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	if version != "" {
 		if err := bufremotepluginref.ValidatePluginVersion(version); err != nil {
-			return appcmd.NewInvalidArgumentError(err.Error())
+			return appcmd.WrapInvalidArgumentError(err)
 		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
@@ -85,11 +85,11 @@ func run(
 	if _, err := service.DeleteCuratedPlugin(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.DeleteCuratedPluginRequest{
+			registryv1alpha1.DeleteCuratedPluginRequest_builder{
 				Owner:   pluginIdentity.Owner(),
 				Name:    pluginIdentity.Plugin(),
 				Version: version,
-			},
+			}.Build(),
 		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -73,7 +73,7 @@ func run(
 ) error {
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "organization", moduleOwner.Owner()); err != nil {
@@ -84,8 +84,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
+	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
+	organizationServiceClient := ownerClientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	if _, err := organizationServiceClient.DeleteOrganizations(
 		ctx,
 		connect.NewRequest(

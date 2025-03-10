@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ func NewStdoutContainer(writer io.Writer) StdoutContainer {
 	return newStdoutContainer(writer)
 }
 
-// NewStdoutContainerForOS returns a new StdoutContainer for the operatoutg system.
+// NewStdoutContainerForOS returns a new StdoutContainer for the operating system.
 func NewStdoutContainerForOS() StdoutContainer {
 	return newStdoutContainer(os.Stdout)
 }
@@ -126,7 +126,7 @@ func NewStderrContainer(writer io.Writer) StderrContainer {
 	return newStderrContainer(writer)
 }
 
-// NewStderrContainerForOS returns a new StderrContainer for the operaterrg system.
+// NewStderrContainerForOS returns a new StderrContainer for the operating system.
 func NewStderrContainerForOS() StderrContainer {
 	return newStderrContainer(os.Stderr)
 }
@@ -326,9 +326,7 @@ func Main(ctx context.Context, f func(context.Context, Container) error) {
 // The run will be stopped on interrupt signal.
 // The exit code can be determined using GetExitCode.
 func Run(ctx context.Context, container Container, f func(context.Context, Container) error) error {
-	ctx, cancel := interrupt.WithCancel(ctx)
-	defer cancel()
-	if err := f(ctx, container); err != nil {
+	if err := f(interrupt.Handle(ctx), container); err != nil {
 		printError(container, err)
 		return err
 	}

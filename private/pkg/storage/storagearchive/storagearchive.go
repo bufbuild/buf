@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 	"github.com/klauspost/compress/zip"
-	"go.uber.org/multierr"
 )
 
 var (
@@ -49,7 +48,7 @@ func Tar(
 ) (retErr error) {
 	tarWriter := tar.NewWriter(writer)
 	defer func() {
-		retErr = multierr.Append(retErr, tarWriter.Close())
+		retErr = errors.Join(retErr, tarWriter.Close())
 	}()
 	return storage.WalkReadObjects(
 		ctx,
@@ -166,7 +165,7 @@ func Zip(
 ) (retErr error) {
 	zipWriter := zip.NewWriter(writer)
 	defer func() {
-		retErr = multierr.Append(retErr, zipWriter.Close())
+		retErr = errors.Join(retErr, zipWriter.Close())
 	}()
 	return storage.WalkReadObjects(
 		ctx,
@@ -289,7 +288,7 @@ func copyZipFile(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
+		retErr = errors.Join(retErr, readCloser.Close())
 	}()
 	return storage.CopyReader(ctx, writeBucket, readCloser, path)
 }

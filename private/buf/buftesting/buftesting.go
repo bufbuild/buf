@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,14 +24,12 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -50,7 +48,7 @@ var (
 	}
 	testStorageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	testArchiveReader     = githubtesting.NewArchiveReader(
-		zap.NewNop(),
+		slogext.NopLogger,
 		testStorageosProvider,
 		testHTTPClient,
 	)
@@ -60,7 +58,6 @@ var (
 // GetActualProtocFileDescriptorSet gets the FileDescriptorSet for actual protoc.
 func GetActualProtocFileDescriptorSet(
 	t *testing.T,
-	runner command.Runner,
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
@@ -68,7 +65,6 @@ func GetActualProtocFileDescriptorSet(
 ) *descriptorpb.FileDescriptorSet {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
-		runner,
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -81,7 +77,6 @@ func GetActualProtocFileDescriptorSet(
 // RunActualProtoc runs actual protoc.
 func RunActualProtoc(
 	t *testing.T,
-	runner command.Runner,
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
@@ -92,7 +87,6 @@ func RunActualProtoc(
 ) {
 	err := prototesting.RunProtoc(
 		context.Background(),
-		runner,
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -136,7 +130,7 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 	// impact on our dependency tree.
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
-		tracing.NopTracer,
+		slogext.NopLogger,
 		testStorageosProvider,
 		[]string{dirPath},
 		nil,

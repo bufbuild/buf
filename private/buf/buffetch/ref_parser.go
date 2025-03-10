@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,24 +18,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 type refParser struct {
-	logger         *zap.Logger
+	logger         *slog.Logger
 	fetchRefParser internal.RefParser
 }
 
-func newRefParser(logger *zap.Logger) *refParser {
+func newRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -89,7 +89,7 @@ func newRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) *refParser {
+func newMessageRefParser(logger *slog.Logger, options ...MessageRefParserOption) *refParser {
 	messageRefParserOptions := newMessageRefParserOptions()
 	for _, option := range options {
 		option(messageRefParserOptions)
@@ -128,7 +128,7 @@ func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) 
 	}
 }
 
-func newSourceRefParser(logger *zap.Logger) *refParser {
+func newSourceRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -156,7 +156,7 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newDirRefParser(logger *zap.Logger) *refParser {
+func newDirRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -167,7 +167,7 @@ func newDirRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newDirOrProtoFileRefParser(logger *zap.Logger) *refParser {
+func newDirOrProtoFileRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -179,7 +179,7 @@ func newDirOrProtoFileRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newModuleRefParser(logger *zap.Logger) *refParser {
+func newModuleRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -190,7 +190,7 @@ func newModuleRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
+func newSourceOrModuleRefParser(logger *slog.Logger) *refParser {
 	return &refParser{
 		logger: logger,
 		fetchRefParser: internal.NewRefParser(
@@ -539,11 +539,11 @@ func (a *refParser) getParsedRefForInputConfig(
 func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 	format := parsedRef.Format()
 	if replacementFormat, ok := deprecatedCompressionFormatToReplacementFormat[format]; ok {
-		a.logger.Sugar().Warnf(
+		a.logger.Warn(fmt.Sprintf(
 			`Format %q is deprecated. Use "format=%s,compression=gzip" instead. This will continue to work forever, but updating is recommended.`,
 			format,
 			replacementFormat,
-		)
+		))
 	}
 }
 
@@ -837,7 +837,7 @@ func assumeModuleOrDir(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("assumeModuleOrDir: no path given")
 	}
-	if _, err := bufmodule.ParseModuleRef(path); err == nil {
+	if _, err := bufparse.ParseRef(path); err == nil {
 		// this is possible to be a module, check if it is a directory though
 		// OK to use os.Stat instead of os.Lstat here
 		fileInfo, err := os.Stat(path)

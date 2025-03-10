@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,15 +16,22 @@ package bufmodulecache
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {
@@ -33,12 +40,13 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 
 	cacheProvider := newCommitProvider(
-		zap.NewNop(),
+		logger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			zap.NewNop(),
+			logger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -60,7 +68,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -83,7 +91,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -95,14 +103,15 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 	commitKeys, err := slicesext.MapError(moduleKeys, bufmodule.ModuleKeyToCommitKey)
 	require.NoError(t, err)
 
 	cacheProvider := newCommitProvider(
-		zap.NewNop(),
+		logger,
 		bsrProvider,
 		bufmodulestore.NewCommitStore(
-			zap.NewNop(),
+			logger,
 			storagemem.NewReadWriteBucket(),
 		),
 	)
@@ -124,7 +133,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -147,7 +156,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 		slicesext.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().ModuleFullName().String()
+				return commit.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -158,13 +167,15 @@ func TestModuleDataProviderBasic(t *testing.T) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	logger := slogtestext.NewLogger(t)
 
 	cacheProvider := newModuleDataProvider(
-		zap.NewNop(),
+		logger,
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
-			zap.NewNop(),
+			logger,
 			storagemem.NewReadWriteBucket(),
+			filelock.NewNopLocker(),
 		),
 	)
 
@@ -185,7 +196,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		slicesext.Map(
 			moduleDatas,
 			func(moduleData bufmodule.ModuleData) string {
-				return moduleData.ModuleKey().ModuleFullName().String()
+				return moduleData.ModuleKey().FullName().String()
 			},
 		),
 	)
@@ -208,10 +219,67 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		slicesext.Map(
 			moduleDatas,
 			func(moduleData bufmodule.ModuleData) string {
-				return moduleData.ModuleKey().ModuleFullName().String()
+				return moduleData.ModuleKey().FullName().String()
 			},
 		),
 	)
+}
+
+func TestConcurrentCacheReadWrite(t *testing.T) {
+	t.Parallel()
+
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
+	tempDir := t.TempDir()
+	cacheDir := filepath.Join(tempDir, "cache")
+	logger := slogtestext.NewLogger(t)
+
+	for i := 0; i < 20; i++ {
+		require.NoError(t, os.MkdirAll(cacheDir, 0755))
+		jobs, err := slicesext.MapError(
+			[]int{0, 1, 2, 3, 4},
+			func(i int) (func(ctx context.Context) error, error) {
+				bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)
+				if err != nil {
+					return nil, err
+				}
+				filelocker, err := filelock.NewLocker(
+					cacheDir,
+					filelock.LockerWithLockRetryDelay(10*time.Millisecond), // Drops test time from ~16s to ~1s
+				)
+				if err != nil {
+					return nil, err
+				}
+				cacheProvider := newModuleDataProvider(
+					logger,
+					bsrProvider,
+					bufmodulestore.NewModuleDataStore(
+						logger,
+						bucket,
+						filelocker,
+					),
+				)
+				return func(ctx context.Context) error {
+					moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
+						ctx,
+						moduleKeys,
+					)
+					if err != nil {
+						return err
+					}
+					for _, moduleData := range moduleDatas {
+						// Calling moduleData.Bucket() checks the digest
+						if _, err := moduleData.Bucket(); err != nil {
+							return err
+						}
+					}
+					return nil
+				}, nil
+			},
+		)
+		require.NoError(t, err)
+		require.NoError(t, thread.Parallelize(context.Background(), jobs))
+		require.NoError(t, os.RemoveAll(cacheDir))
+	}
 }
 
 func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmoduletesting.OmniProvider, []bufmodule.ModuleKey) {
@@ -235,22 +303,25 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/mod3",
 			PathToData: map[string][]byte{
-				"mod3.proto": []byte(
+				"mod3a.proto": []byte(
+					`syntax = proto3; package mod3;`,
+				),
+				"mod3b.proto": []byte(
 					`syntax = proto3; package mod3;`,
 				),
 			},
 		},
 	)
 	require.NoError(t, err)
-	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
+	moduleRefMod1, err := bufparse.NewRef("buf.build", "foo", "mod1", "")
 	require.NoError(t, err)
-	moduleRefMod2, err := bufmodule.NewModuleRef("buf.build", "foo", "mod2", "")
+	moduleRefMod2, err := bufparse.NewRef("buf.build", "foo", "mod2", "")
 	require.NoError(t, err)
-	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
+	moduleRefMod3, err := bufparse.NewRef("buf.build", "foo", "mod3", "")
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{
+		[]bufparse.Ref{
 			moduleRefMod1,
 			// Switching order on purpose.
 			moduleRefMod3,

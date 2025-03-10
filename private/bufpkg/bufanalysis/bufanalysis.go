@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -144,6 +144,11 @@ type FileAnnotation interface {
 	Type() string
 	// Message is the message of the annotation.
 	Message() string
+	// PluginName is the name of the plugin that the annotation originated from.
+	//
+	// May be empty if this annotation did not originate from a plugin.
+	// This may be added to the printed message field for certain printers.
+	PluginName() string
 
 	isFileAnnotation()
 }
@@ -157,6 +162,7 @@ func NewFileAnnotation(
 	endColumn int,
 	typeString string,
 	message string,
+	pluginName string,
 ) FileAnnotation {
 	return newFileAnnotation(
 		fileInfo,
@@ -166,6 +172,7 @@ func NewFileAnnotation(
 		endColumn,
 		typeString,
 		message,
+		pluginName,
 	)
 }
 
@@ -193,7 +200,7 @@ func NewFileAnnotationSet(fileAnnotations ...FileAnnotation) FileAnnotationSet {
 	return newFileAnnotationSet(fileAnnotations)
 }
 
-// PrintFileAnnotations prints the file annotations separated by newlines.
+// PrintFileAnnotationSet prints the file annotations separated by newlines.
 func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string) error {
 	format, err := ParseFormat(formatString)
 	if err != nil {

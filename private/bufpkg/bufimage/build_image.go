@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"math"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
@@ -39,13 +41,12 @@ import (
 
 func buildImage(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
-) (_ Image, retErr error) {
-	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+) (Image, error) {
+	defer slogext.DebugProfile(logger)()
 
 	if !moduleReadBucket.ShouldBeSelfContained() {
 		return nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")
@@ -306,6 +307,11 @@ func getImageFilesRec(
 		dependency := fileDescriptor.Imports().Get(i).FileDescriptor
 		if unusedDependencyFilenames != nil {
 			if _, ok := unusedDependencyFilenames[dependency.Path()]; ok {
+				// This should never happen, however we do a bounds check to ensure that we are
+				// doing a safe conversion for the index.
+				if i > math.MaxInt32 || i < math.MinInt32 {
+					return nil, fmt.Errorf("unused dependency index out-of-bounds for int32 conversion: %v", i)
+				}
 				unusedDependencyIndexes = append(
 					unusedDependencyIndexes,
 					int32(i),
@@ -340,7 +346,7 @@ func getImageFilesRec(
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
 	imageFile, err := NewImageFile(
 		fileDescriptorProto,
-		parserAccessorHandler.ModuleFullName(path),
+		parserAccessorHandler.FullName(path),
 		parserAccessorHandler.CommitID(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),

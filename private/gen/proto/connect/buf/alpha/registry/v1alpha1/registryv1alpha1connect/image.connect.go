@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,12 +51,6 @@ const (
 	ImageServiceGetImageProcedure = "/buf.alpha.registry.v1alpha1.ImageService/GetImage"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	imageServiceServiceDescriptor        = v1alpha1.File_buf_alpha_registry_v1alpha1_image_proto.Services().ByName("ImageService")
-	imageServiceGetImageMethodDescriptor = imageServiceServiceDescriptor.Methods().ByName("GetImage")
-)
-
 // ImageServiceClient is a client for the buf.alpha.registry.v1alpha1.ImageService service.
 type ImageServiceClient interface {
 	// GetImage serves a compiled image for the local module. It automatically
@@ -73,11 +67,12 @@ type ImageServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewImageServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ImageServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	imageServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_image_proto.Services().ByName("ImageService").Methods()
 	return &imageServiceClient{
 		getImage: connect.NewClient[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse](
 			httpClient,
 			baseURL+ImageServiceGetImageProcedure,
-			connect.WithSchema(imageServiceGetImageMethodDescriptor),
+			connect.WithSchema(imageServiceMethods.ByName("GetImage")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -107,10 +102,11 @@ type ImageServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	imageServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_image_proto.Services().ByName("ImageService").Methods()
 	imageServiceGetImageHandler := connect.NewUnaryHandler(
 		ImageServiceGetImageProcedure,
 		svc.GetImage,
-		connect.WithSchema(imageServiceGetImageMethodDescriptor),
+		connect.WithSchema(imageServiceMethods.ByName("GetImage")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

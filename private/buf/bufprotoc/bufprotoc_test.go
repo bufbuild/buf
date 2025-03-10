@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +30,7 @@ func TestNewModuleSetForProtoc(t *testing.T) {
 
 	moduleSet, err := NewModuleSetForProtoc(
 		ctx,
-		tracing.NopTracer,
+		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",

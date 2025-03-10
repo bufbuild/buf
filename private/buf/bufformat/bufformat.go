@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package bufformat
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -25,7 +26,6 @@ import (
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
-	"go.uber.org/multierr"
 )
 
 // FormatModuleSet formats and writes the target files into a read bucket.
@@ -43,20 +43,19 @@ func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ stor
 // FormatBucket formats the .proto files in the bucket and returns a new bucket with the formatted files.
 func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.ReadBucket, retErr error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	paths, err := storage.AllPaths(ctx, storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")), "")
+	paths, err := storage.AllPaths(ctx, storage.FilterReadBucket(bucket, storage.MatchPathExt(".proto")), "")
 	if err != nil {
 		return nil, err
 	}
 	jobs := make([]func(context.Context) error, len(paths))
 	for i, path := range paths {
-		path := path
 		jobs[i] = func(ctx context.Context) (retErr error) {
 			readObjectCloser, err := bucket.Get(ctx, path)
 			if err != nil {
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, readObjectCloser.Close())
+				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
 			fileNode, err := parser.Parse(readObjectCloser.ExternalPath(), readObjectCloser, reporter.NewHandler(nil))
 			if err != nil {
@@ -67,7 +66,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, writeObjectCloser.Close())
+				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
 			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
 				return err

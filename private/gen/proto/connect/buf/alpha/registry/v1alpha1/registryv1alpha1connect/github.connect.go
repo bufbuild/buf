@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,12 +52,6 @@ const (
 	GithubServiceGetGithubAppConfigProcedure = "/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	githubServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_github_proto.Services().ByName("GithubService")
-	githubServiceGetGithubAppConfigMethodDescriptor = githubServiceServiceDescriptor.Methods().ByName("GetGithubAppConfig")
-)
-
 // GithubServiceClient is a client for the buf.alpha.registry.v1alpha1.GithubService service.
 type GithubServiceClient interface {
 	// GetGithubAppConfig returns a Github Application Configuration.
@@ -73,11 +67,12 @@ type GithubServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewGithubServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) GithubServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	githubServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_github_proto.Services().ByName("GithubService").Methods()
 	return &githubServiceClient{
 		getGithubAppConfig: connect.NewClient[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse](
 			httpClient,
 			baseURL+GithubServiceGetGithubAppConfigProcedure,
-			connect.WithSchema(githubServiceGetGithubAppConfigMethodDescriptor),
+			connect.WithSchema(githubServiceMethods.ByName("GetGithubAppConfig")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -107,10 +102,11 @@ type GithubServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	githubServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_github_proto.Services().ByName("GithubService").Methods()
 	githubServiceGetGithubAppConfigHandler := connect.NewUnaryHandler(
 		GithubServiceGetGithubAppConfigProcedure,
 		svc.GetGithubAppConfig,
-		connect.WithSchema(githubServiceGetGithubAppConfigMethodDescriptor),
+		connect.WithSchema(githubServiceMethods.ByName("GetGithubAppConfig")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

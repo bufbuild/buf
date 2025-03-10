@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
 package bufmodule
 
 import (
+	"sync"
 	"time"
-
-	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
-// Commit represents a Commit on the BSR.
+// Commit represents a Commit for a Module on the BSR.
 type Commit interface {
 	// ModuleKey returns the ModuleKey for the Commit.
 	ModuleKey() ModuleKey
@@ -78,10 +77,10 @@ func newCommit(
 		// We need to preserve this, as if we do not, the new value for moduleKey
 		// will end up recursively calling itself when moduleKey.Digest() is called
 		// in the anonymous function. We could just extract moduleKeyDigestFunc := moduleKey.Digest
-		// and call that, but we make a variable to reference the original ModuleKey just for constency.
+		// and call that, but we make a variable to reference the original ModuleKey just for consistency.
 		originalModuleKey := moduleKey
 		moduleKey = newModuleKeyNoValidate(
-			originalModuleKey.ModuleFullName(),
+			originalModuleKey.FullName(),
 			originalModuleKey.CommitID(),
 			func() (Digest, error) {
 				moduleKeyDigest, err := originalModuleKey.Digest()
@@ -90,7 +89,7 @@ func newCommit(
 				}
 				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
 					return nil, &DigestMismatchError{
-						ModuleFullName: originalModuleKey.ModuleFullName(),
+						FullName:       originalModuleKey.FullName(),
 						CommitID:       originalModuleKey.CommitID(),
 						ExpectedDigest: commitOptions.expectedDigest,
 						ActualDigest:   moduleKeyDigest,
@@ -102,7 +101,7 @@ func newCommit(
 	}
 	return &commit{
 		moduleKey:     moduleKey,
-		getCreateTime: syncext.OnceValues(getCreateTime),
+		getCreateTime: sync.OnceValues(getCreateTime),
 	}
 }
 

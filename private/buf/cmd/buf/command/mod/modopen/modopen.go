@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ func run(
 		if len(moduleConfigs) != 1 {
 			return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
 		}
-		moduleFullName := moduleConfigs[0].ModuleFullName()
+		moduleFullName := moduleConfigs[0].FullName()
 		if moduleFullName == nil {
 			return fmt.Errorf("%s/buf.yaml has no module name", dirPath)
 		}

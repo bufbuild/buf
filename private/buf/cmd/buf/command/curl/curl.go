@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -39,10 +40,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -60,6 +61,7 @@ const (
 	protocolFlagName            = "protocol"
 	unixSocketFlagName          = "unix-socket"
 	http2PriorKnowledgeFlagName = "http2-prior-knowledge"
+	http3FlagName               = "http3"
 
 	// TLS flags
 	keyFlagName           = "key"
@@ -96,6 +98,9 @@ const (
 	outputFlagName       = "output"
 	outputFlagShortName  = "o"
 	emitDefaultsFlagName = "emit-defaults"
+
+	verboseFlagName      = "verbose"
+	verboseFlagShortName = "v"
 )
 
 // NewCommand returns a new Command.
@@ -207,6 +212,7 @@ type flags struct {
 	Protocol            string
 	UnixSocket          string
 	HTTP2PriorKnowledge bool
+	HTTP3               bool
 
 	// TLS
 	Key, Cert, CACert, ServerName string
@@ -232,6 +238,8 @@ type flags struct {
 	// Output options
 	Output       string
 	EmitDefaults bool
+
+	Verbose bool
 
 	// so we can inquire about which flags present on command-line
 	// TODO: ideally we'd use cobra directly instead of having the appcmd wrapper,
@@ -322,6 +330,16 @@ and port indicated in the URL`,
 will be used with URLs with an http scheme, and protocol negotiation will be used to
 choose either HTTP 1.1 or HTTP/2 for URLs with an https scheme. With this flag set,
 HTTP/2 is always used, even over plain-text.`,
+	)
+
+	flagSet.BoolVar(
+		&f.HTTP3,
+		http3FlagName,
+		false,
+		`This flag can be used to indicate that HTTP/3 should be used. Without this, HTTP 1.1
+will be used with URLs with an http scheme, and protocol negotiation will be used to
+choose either HTTP 1.1 or HTTP/2 for URLs with an https scheme. With this flag set,
+HTTP/3 is always used.`,
 	)
 
 	flagSet.BoolVar(
@@ -505,6 +523,14 @@ provided via stdin as a file descriptor set or image`,
 		false,
 		`Emit default values for JSON-encoded responses.`,
 	)
+
+	flagSet.BoolVarP(
+		&f.Verbose,
+		verboseFlagName,
+		verboseFlagShortName,
+		false,
+		"Turn on verbose mode",
+	)
 }
 
 func (f *flags) validate(hasURL, isSecure bool) error {
@@ -542,6 +568,14 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 
 	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolGRPC {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
+	}
+
+	if !isSecure && f.HTTP3 {
+		return fmt.Errorf("--%s cannot be used with plain-text URLs (http)", http3FlagName)
+	}
+
+	if f.UnixSocket != "" && f.HTTP3 {
+		return fmt.Errorf("--%s cannot be used with --%s", unixSocketFlagName, http3FlagName)
 	}
 
 	if f.Netrc && f.NetrcFile != "" {
@@ -626,10 +660,8 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 
 func (f *flags) determineCredentials(
 	ctx context.Context,
-	container interface {
-		app.Container
-		appext.VerboseContainer
-	},
+	container app.Container,
+	verbosePrinter verbose.Printer,
 	host string,
 ) (string, error) {
 	if f.User != "" {
@@ -665,7 +697,7 @@ func (f *flags) determineCredentials(
 	if _, err := os.Stat(netrcFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			// This mirrors the behavior of curl when a netrc file does not exist ¯\_(ツ)_/¯
-			container.VerbosePrinter().Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
+			verbosePrinter.Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
 			return "", nil
 		}
 		if !strings.Contains(err.Error(), netrcFile) {
@@ -680,7 +712,7 @@ func (f *flags) determineCredentials(
 	}
 	if machine == nil {
 		// no creds found for this host
-		container.VerbosePrinter().Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
+		verbosePrinter.Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
 		return "", nil
 	}
 	username := machine.Login()
@@ -689,6 +721,18 @@ func (f *flags) determineCredentials(
 	}
 	password := machine.Password()
 	return basicAuth(username, password), nil
+}
+
+func (f *flags) getTLSConfig(authority string, printer verbose.Printer) (*tls.Config, error) {
+	return bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
+		KeyFile:             f.Key,
+		CertFile:            f.Cert,
+		CACertFile:          f.CACert,
+		ServerName:          f.ServerName,
+		Insecure:            f.Insecure,
+		HTTP2PriorKnowledge: f.HTTP2PriorKnowledge,
+		HTTP3:               f.HTTP3,
+	}, authority, printer)
 }
 
 func promptForPassword(ctx context.Context, container app.Container, prompt string) (string, error) {
@@ -834,6 +878,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		return err
 	}
 
+	var verbosePrinter verbose.Printer = verbose.NopPrinter
+	if f.Verbose {
+		verbosePrinter = verbose.NewPrinter(container.Stderr(), container.AppName())
+	}
+
 	var clientOptions []connect.ClientOption
 	switch f.Protocol {
 	case connect.ProtocolGRPC:
@@ -847,7 +896,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		// in an end-of-stream message for streaming calls. So this interceptor
 		// will print the trailers for streaming calls when the response stream
 		// is drained.
-		clientOptions = append(clientOptions, connect.WithInterceptors(bufcurl.TraceTrailersInterceptor(container.VerbosePrinter())))
+		clientOptions = append(clientOptions, connect.WithInterceptors(bufcurl.TraceTrailersInterceptor(verbosePrinter)))
 	}
 
 	dataSource := "(argument)"
@@ -876,7 +925,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	var basicCreds *string
 	if len(requestHeaders.Values("authorization")) == 0 {
-		creds, err := f.determineCredentials(ctx, container, host)
+		creds, err := f.determineCredentials(ctx, container, verbosePrinter, host)
 		if err != nil {
 			return err
 		}
@@ -902,11 +951,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 	}
 	defer func() {
 		if dataReader != nil {
-			err = multierr.Append(err, dataReader.Close())
+			err = errors.Join(err, dataReader.Close())
 		}
 	}()
 
-	makeTransportOnce := syncext.OnceValues(func() (connect.HTTPClient, error) {
+	makeTransportOnce := sync.OnceValues(func() (connect.HTTPClient, error) {
 		// We do this lazily since some commands don't need a transport, like listing
 		// services and methods and describing elements when the schema source is
 		// something other than server reflection. We memoize the result to use the
@@ -916,7 +965,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			// This shouldn't be possible since we check in flags.validate, but just in case
 			return nil, errors.New("URL positional argument is missing")
 		}
-		return makeHTTPClient(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), container.VerbosePrinter())
+		roundTripper, err := makeHTTPRoundTripper(f, isSecure, bufcurl.GetAuthority(host, requestHeaders), verbosePrinter)
+		if err != nil {
+			return nil, err
+		}
+		return bufcurl.NewVerboseHTTPClient(roundTripper, verbosePrinter), nil
 	})
 
 	output := container.Stdout()
@@ -927,7 +980,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}
 
-	resolvers := make([]bufcurl.Resolver, 0, len(f.Schemas)+1)
+	resolvers := make([]bufcurl.Resolver, 0, len(f.Schemas)+2)
 	if f.Reflect {
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
@@ -938,7 +991,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			if basicCreds != nil {
 				creds = *basicCreds
 			} else {
-				if creds, err = f.determineCredentials(ctx, container, host); err != nil {
+				if creds, err = f.determineCredentials(ctx, container, verbosePrinter, host); err != nil {
 					return err
 				}
 			}
@@ -957,7 +1010,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, container.VerbosePrinter())
+		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, verbosePrinter)
 		defer closeRes()
 		resolvers = append(resolvers, res)
 	}
@@ -972,7 +1025,13 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 		resolvers = append(resolvers, bufcurl.ResolverForImage(image))
 	}
-	res := bufcurl.CombineResolvers(resolvers...)
+	// Add a WKT resolver to the end of the end of the list. This is used
+	// for printing a WKT encoded in a "google.protobuf.Any" type as JSON.
+	wktResolver, err := bufcurl.NewWKTResolver(ctx, container.Logger())
+	if err != nil {
+		return err
+	}
+	res := bufcurl.CombineResolvers(append(resolvers, wktResolver)...)
 
 	switch {
 	case f.ListServices || f.ListMethods:
@@ -1020,12 +1079,15 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		invoker := bufcurl.NewInvoker(container, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, urlArg, output)
+		invoker := bufcurl.NewInvoker(container, verbosePrinter, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, urlArg, output)
 		return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
 	}
 }
 
-func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.Printer) (connect.HTTPClient, error) {
+func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer verbose.Printer) (http.RoundTripper, error) {
+	if f.HTTP3 {
+		return makeHTTP3RoundTripper(f, authority, printer)
+	}
 	var dialer net.Dialer
 	if f.ConnectTimeoutSeconds != 0 {
 		dialer.Timeout = secondsToDuration(f.ConnectTimeoutSeconds)
@@ -1035,6 +1097,7 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 	} else {
 		dialer.KeepAlive = secondsToDuration(f.KeepAliveTimeSeconds)
 	}
+
 	var dialFunc func(ctx context.Context, network, address string) (net.Conn, error)
 	if f.UnixSocket != "" {
 		dialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -1055,14 +1118,7 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 
 	var dialTLSFunc func(ctx context.Context, network, address string) (net.Conn, error)
 	if isSecure {
-		tlsConfig, err := bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
-			KeyFile:             f.Key,
-			CertFile:            f.Cert,
-			CACertFile:          f.CACert,
-			ServerName:          f.ServerName,
-			Insecure:            f.Insecure,
-			HTTP2PriorKnowledge: f.HTTP2PriorKnowledge,
-		}, authority, printer)
+		tlsConfig, err := f.getTLSConfig(authority, printer)
 		if err != nil {
 			return nil, err
 		}
@@ -1104,7 +1160,53 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 			MaxIdleConns:      1,
 		}
 	}
-	return bufcurl.NewVerboseHTTPClient(transport, printer), nil
+	return transport, nil
+}
+
+func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) (http.RoundTripper, error) {
+	quicCfg := &quic.Config{
+		KeepAlivePeriod: -1,
+	}
+	if f.ConnectTimeoutSeconds != 0 {
+		quicCfg.HandshakeIdleTimeout = secondsToDuration(f.ConnectTimeoutSeconds)
+	}
+	if !f.NoKeepAlive {
+		quicCfg.KeepAlivePeriod = secondsToDuration(f.KeepAliveTimeSeconds)
+	}
+
+	tlsConfig, err := f.getTLSConfig(authority, printer)
+	if err != nil {
+		return nil, err
+	}
+
+	udpConn, err := net.ListenUDP("udp", nil)
+	if err != nil {
+		return nil, err
+	}
+	transport := &quic.Transport{Conn: udpConn}
+	roundTripper := &http3.Transport{
+		TLSClientConfig: tlsConfig,
+		QUICConfig:      quicCfg,
+		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+			printer.Printf("* Dialing (udp) %s...", addr)
+			udpAddr, err := net.ResolveUDPAddr("udp", addr)
+			if err != nil {
+				return nil, err
+			}
+			printer.Printf("* ALPN: offering %s", strings.Join(tlsCfg.NextProtos, ","))
+			conn, err := transport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
+			if err != nil {
+				return nil, err
+			}
+			printer.Printf("* Connected to %s", conn.RemoteAddr().String())
+			return conn, err
+		},
+		EnableDatagrams:        false,
+		AdditionalSettings:     map[uint64]uint64{},
+		MaxResponseHeaderBytes: 0,
+		DisableCompression:     false,
+	}
+	return roundTripper, nil
 }
 
 func secondsToDuration(secs float64) time.Duration {

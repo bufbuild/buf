@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,10 +80,10 @@ func (p *curatedPluginPrinter) printCuratedPluginsText(plugins ...*registryv1alp
 		func(tabWriter TabWriter) error {
 			for _, plugin := range plugins {
 				if err := tabWriter.Write(
-					plugin.Owner,
-					plugin.Name,
-					plugin.Version,
-					strconv.FormatInt(int64(plugin.Revision), 10),
+					plugin.GetOwner(),
+					plugin.GetName(),
+					plugin.GetVersion(),
+					strconv.FormatInt(int64(plugin.GetRevision()), 10),
 				); err != nil {
 					return err
 				}
@@ -103,10 +103,10 @@ type outputCuratedPlugin struct {
 
 func registryCuratedPluginToOutputCuratedPlugin(plugin *registryv1alpha1.CuratedPlugin) outputCuratedPlugin {
 	return outputCuratedPlugin{
-		Owner:       plugin.Owner,
-		Name:        plugin.Name,
-		Version:     plugin.Version,
-		Revision:    plugin.Revision,
-		ImageDigest: plugin.ContainerImageDigest,
+		Owner:       plugin.GetOwner(),
+		Name:        plugin.GetName(),
+		Version:     plugin.GetVersion(),
+		Revision:    plugin.GetRevision(),
+		ImageDigest: plugin.GetContainerImageDigest(),
 	}
 }

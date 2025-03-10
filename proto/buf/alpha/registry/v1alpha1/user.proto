@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ message OrganizationUser {
 message UserPluginPreference {
   reserved 1;
   reserved "user_id";
-  // The language that the user has indicidated as their preferred language for plugins.
+  // The language that the user has indicated as their preferred language for plugins.
   PluginLanguage selected_language = 2;
   // A list of plugin names selected by the user.
   repeated string selected_plugins = 3;

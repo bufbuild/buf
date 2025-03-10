@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,57 +16,58 @@ package bufmoduleapi
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
 // NewModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
 func NewModuleKeyProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 ) bufmodule.ModuleKeyProvider {
-	return newModuleKeyProvider(logger, clientProvider)
+	return newModuleKeyProvider(logger, moduleClientProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleKeyProvider struct {
-	logger         *zap.Logger
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	}
 }
 
 func newModuleKeyProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 ) *moduleKeyProvider {
 	return &moduleKeyProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
 	}
 }
 
 func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
 	// Check unique.
 	if _, err := slicesext.ToUniqueValuesMapError(
 		moduleRefs,
-		func(moduleRef bufmodule.ModuleRef) (string, error) {
+		func(moduleRef bufparse.Ref) (string, error) {
 			return moduleRef.String(), nil
 		},
 	); err != nil {
@@ -75,8 +76,8 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 
 	registryToIndexedModuleRefs := slicesext.ToIndexedValuesMap(
 		moduleRefs,
-		func(moduleRef bufmodule.ModuleRef) string {
-			return moduleRef.ModuleFullName().Registry()
+		func(moduleRef bufparse.Ref) string {
+			return moduleRef.FullName().Registry()
 		},
 	)
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], 0, len(moduleRefs))
@@ -98,23 +99,22 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	ctx context.Context,
 	registry string,
-	indexedModuleRefs []slicesext.Indexed[bufmodule.ModuleRef],
+	indexedModuleRefs []slicesext.Indexed[bufparse.Ref],
 	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleKey], error) {
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.clientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.moduleClientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
 	if err != nil {
 		return nil, err
 	}
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
 	for i, universalProtoCommit := range universalProtoCommits {
-		universalProtoCommit := universalProtoCommit
 		commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 		if err != nil {
 			return nil, err
 		}
 		moduleKey, err := bufmodule.NewModuleKey(
 			// Note we don't have to resolve owner_name and module_name since we already have them.
-			indexedModuleRefs[i].Value.ModuleFullName(),
+			indexedModuleRefs[i].Value.FullName(),
 			commitID,
 			func() (bufmodule.Digest, error) {
 				// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.

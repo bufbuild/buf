@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
 package bufgen
 
 import (
+	"bytes"
+	"log/slog"
 	"math"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -173,9 +172,10 @@ func testCheckRequiredFeatures(
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
-	observed, logs := observer.New(zapcore.WarnLevel)
+	buffer := bytes.NewBuffer(nil)
+	logger := slog.New(slog.NewTextHandler(buffer, &slog.HandlerOptions{}))
 	err := checkRequiredFeatures(
-		zap.New(observed),
+		logger,
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
@@ -192,10 +192,9 @@ func testCheckRequiredFeatures(
 		},
 	)
 	if expectedStdErr != "" {
-		require.NotEmpty(t, logs.All())
-		require.Equal(t, expectedStdErr, logs.All()[0].Message)
+		require.NotEmpty(t, buffer.String())
 	} else {
-		require.Empty(t, logs.All())
+		require.Empty(t, buffer.String())
 	}
 	if expectedErr != "" {
 		require.ErrorContains(t, err, expectedErr)

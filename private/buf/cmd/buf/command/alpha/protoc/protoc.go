@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -33,11 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // NewCommand returns a new Command.
@@ -88,11 +86,8 @@ func run(
 	container appext.Container,
 	env *env,
 ) (retErr error) {
-	runner := command.NewRunner()
 	logger := container.Logger()
-	tracer := tracing.NewTracer(container.Tracer())
-	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+	defer slogext.DebugProfile(logger)()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -104,17 +99,17 @@ func run(
 		return fmt.Errorf("cannot call --%s and plugins at the same time", outputFlagName)
 	}
 
-	if checkedEntry := logger.Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
-		checkedEntry.Write(
-			zap.Any("flags", env.flags),
-			zap.Any("plugins", env.PluginNameToPluginInfo),
-		)
-	}
+	logger.DebugContext(
+		ctx,
+		"env",
+		slog.Any("flags", env.flags),
+		slog.Any("plugins", env.PluginNameToPluginInfo),
+	)
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
-		tracer,
+		logger,
 		storageosProvider,
 		env.IncludeDirPaths,
 		env.FilePaths,
@@ -129,7 +124,7 @@ func run(
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracer,
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		buildOptions...,
 	)
@@ -176,8 +171,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				_, span := tracer.Start(ctx, tracing.WithErr(&retErr))
-				defer span.End()
+				defer slogext.DebugProfile(logger)()
 				images, err = bufimage.ImageByDir(image)
 				return err
 			}
@@ -194,9 +188,7 @@ func run(
 			response, err := executePlugin(
 				ctx,
 				logger,
-				tracer,
 				storageosProvider,
-				runner,
 				container,
 				images,
 				pluginName,

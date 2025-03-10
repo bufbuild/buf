@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
-
 package bufmigrate
 
 import (
@@ -21,21 +19,21 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 )
 
 type migrateBuilder struct {
-	logger             *zap.Logger
+	logger             *slog.Logger
 	commitProvider     bufmodule.CommitProvider
 	bucket             storage.ReadBucket
 	destinationDirPath string
@@ -45,7 +43,7 @@ type migrateBuilder struct {
 	addedModuleDirPaths      map[string]struct{}
 
 	moduleConfigs                    []bufconfig.ModuleConfig
-	configuredDepModuleRefs          []bufmodule.ModuleRef
+	configuredDepModuleRefs          []bufparse.Ref
 	hasSeenBufLockFile               bool
 	depModuleKeys                    []bufmodule.ModuleKey
 	pathToMigratedBufGenYAMLFile     map[string]bufconfig.BufGenYAMLFile
@@ -54,7 +52,7 @@ type migrateBuilder struct {
 }
 
 func newMigrateBuilder(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	commitProvider bufmodule.CommitProvider,
 	bucket storage.ReadBucket,
 	destinationDirPath string,
@@ -91,26 +89,26 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
+		retErr = errors.Join(retErr, file.Close())
 	}()
 	bufGenYAML, err := bufconfig.ReadBufGenYAMLFile(file)
 	if err != nil {
 		return err
 	}
 	if bufGenYAML.FileVersion() == bufconfig.FileVersionV2 {
-		m.logger.Sugar().Warnf("%s is a v2 file, no migration required", bufGenYAMLFilePath)
+		m.logger.Warn(fmt.Sprintf("%s is a v2 file, no migration required", bufGenYAMLFilePath))
 		return nil
 	}
 	if typeConfig := bufGenYAML.GenerateConfig().GenerateTypeConfig(); typeConfig != nil && len(typeConfig.IncludeTypes()) > 0 {
 		// TODO FUTURE: what does this sentence mean? Get someone else to read it and understand it without any explanation.
-		m.logger.Sugar().Warnf(
+		m.logger.Warn(fmt.Sprintf(
 			"%s is a v1 generation template with a top-level 'types' section including %s. In a v2 generation template, 'types' can"+
 				" only exist within an input in the 'inputs' section. Since the migration command does not have information"+
 				" on inputs, the migrated generation will not have an 'inputs' section. To add these types in the migrated file, you can"+
 				" first add an input to 'inputs' and then add these types to the input.",
 			bufGenYAMLFilePath,
 			stringutil.SliceToHumanString(typeConfig.IncludeTypes()),
-		)
+		))
 	}
 	// No special transformation needed, writeBufGenYAMLFile handles it correctly.
 	migratedBufGenYAMLFile := bufconfig.NewBufGenYAMLFile(
@@ -179,6 +177,10 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		emptyModuleConfig, err := bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			nil,
+			// The default (empty) value for rootToIncludes and rootToExcludes only has key ".".
+			map[string][]string{
+				".": {},
+			},
 			map[string][]string{
 				".": {},
 			},
@@ -186,6 +188,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
+					false,
 				),
 				"",
 				false,
@@ -198,6 +201,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
+					false,
 				),
 				false,
 			),
@@ -224,7 +228,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 	}
 	bufYAMLFilePath := normalpath.Join(moduleDirPath, objectData.Name())
 	// If this module is already visited, we don't add it for a second time. It's
-	// possbile to visit the same module directory twice when the user specifies both
+	// possible to visit the same module directory twice when the user specifies both
 	// a workspace and a module in this workspace.
 	if _, ok := m.pathsToDelete[bufYAMLFilePath]; ok {
 		return nil
@@ -236,17 +240,17 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAMLFile.ModuleConfigs()))
 		}
 		moduleConfig := bufYAMLFile.ModuleConfigs()[0]
-		moduleFullName := moduleConfig.ModuleFullName()
+		moduleFullName := moduleConfig.FullName()
 		// If a buf.yaml v1beta1 has a non-empty name and multiple roots, the
 		// resulting buf.yaml v2 should have these roots as module directories,
 		// but they should not share the same module name. Instead we just give
 		// them empty module names.
 		if len(moduleConfig.RootToExcludes()) > 1 && moduleFullName != nil {
-			m.logger.Sugar().Warnf(
+			m.logger.Warn(fmt.Sprintf(
 				"%s has name %s and multiple roots. These roots are now separate unnamed modules.",
 				bufYAMLFilePath,
 				moduleFullName.String(),
-			)
+			))
 			moduleFullName = nil
 		}
 		// Each root in buf.yaml v1beta1 should become its own module config in v2,
@@ -260,19 +264,20 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 			if err != nil {
 				return err
 			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+			lintConfigForRoot, err := equivalentLintConfigInV2(ctx, m.logger, moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(ctx, m.logger, moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
 			moduleConfigForRoot, err := bufconfig.NewModuleConfig(
 				moduleRootRelativeToDestination,
 				moduleFullName,
-				// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
+				// We do not need to handle paths in rootToIncludes, rootToExcludes, lint or breaking config specially,
 				// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
+				map[string][]string{".": moduleConfig.RootToIncludes()[root]},
 				map[string][]string{".": moduleConfig.RootToExcludes()[root]},
 				lintConfigForRoot,
 				breakingConfigForRoot,
@@ -295,19 +300,20 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
-		lintConfig, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+		lintConfig, err := equivalentLintConfigInV2(ctx, m.logger, moduleConfig.LintConfig())
 		if err != nil {
 			return err
 		}
-		breakingConfig, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+		breakingConfig, err := equivalentBreakingConfigInV2(ctx, m.logger, moduleConfig.BreakingConfig())
 		if err != nil {
 			return err
 		}
 		moduleConfig, err = bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
-			moduleConfig.ModuleFullName(),
-			// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
+			moduleConfig.FullName(),
+			// We do not need to handle paths in rootToIncludes, rootToExcludes, lint or breaking config specially,
 			// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
+			moduleConfig.RootToIncludes(),
 			moduleConfig.RootToExcludes(),
 			lintConfig,
 			breakingConfig,
@@ -320,7 +326,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		}
 		m.configuredDepModuleRefs = append(m.configuredDepModuleRefs, bufYAMLFile.ConfiguredDepModuleRefs()...)
 	case bufconfig.FileVersionV2:
-		m.logger.Sugar().Warnf("%s is a v2 file, no migration required", bufYAMLFilePath)
+		m.logger.Warn(fmt.Sprintf("%s is a v2 file, no migration required", bufYAMLFilePath))
 		return nil
 	default:
 		return syserror.Newf("unexpected version: %v", bufYAMLFile.FileVersion())
@@ -367,7 +373,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 		m.depModuleKeys = append(m.depModuleKeys, bufLockFile.DepModuleKeys()...)
 	case bufconfig.FileVersionV2:
-		m.logger.Sugar().Warnf("%s is a v2 file, no migration required", bufLockFilePath)
+		m.logger.Warn(fmt.Sprintf("%s is a v2 file, no migration required", bufLockFilePath))
 		return nil
 	default:
 		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
@@ -377,12 +383,12 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 
 func (m *migrateBuilder) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, parentPath string) error {
 	m.moduleConfigs = append(m.moduleConfigs, moduleConfig)
-	if moduleConfig.ModuleFullName() == nil {
+	if moduleConfig.FullName() == nil {
 		return nil
 	}
-	if file, ok := m.moduleFullNameStringToParentPath[moduleConfig.ModuleFullName().String()]; ok {
-		return fmt.Errorf("module %s is found in both %s and %s", moduleConfig.ModuleFullName(), file, parentPath)
+	if file, ok := m.moduleFullNameStringToParentPath[moduleConfig.FullName().String()]; ok {
+		return fmt.Errorf("module %s is found in both %s and %s", moduleConfig.FullName(), file, parentPath)
 	}
-	m.moduleFullNameStringToParentPath[moduleConfig.ModuleFullName().String()] = parentPath
+	m.moduleFullNameStringToParentPath[moduleConfig.FullName().String()] = parentPath
 	return nil
 }

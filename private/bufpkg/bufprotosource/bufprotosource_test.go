@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,11 +31,11 @@ func TestNewFiles(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		context.Background(),
-		tracing.NopTracer,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
 	require.NoError(t, err)
-	files, err := NewFiles(context.Background(), image)
+	files, err := NewFiles(context.Background(), image.Files(), image.Resolver())
 	require.NoError(t, err)
 	require.Len(t, files, 1)
 	file := files[0]

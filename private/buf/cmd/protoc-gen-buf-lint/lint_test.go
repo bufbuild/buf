@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,13 +22,12 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protoplugin"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -258,7 +257,6 @@ func testRunLint(
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
-	runner := command.NewRunner()
 	testRunHandlerFunc(
 		t,
 		protoplugin.HandlerFunc(
@@ -278,7 +276,6 @@ func testRunLint(
 		),
 		testBuildRequest(
 			t,
-			runner,
 			root,
 			realFilePaths,
 			parameter,
@@ -328,7 +325,6 @@ func testRunHandlerFunc(
 
 func testBuildRequest(
 	t *testing.T,
-	runner command.Runner,
 	root string,
 	realFilePaths []string,
 	parameter string,
@@ -336,7 +332,6 @@ func testBuildRequest(
 ) protoplugin.Request {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
-		runner,
 		[]string{root},
 		realFilePaths,
 		true,

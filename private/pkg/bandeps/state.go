@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,19 +15,19 @@
 package bandeps
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"go.uber.org/zap"
 )
 
 type state struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	envStdioContainer app.EnvStdioContainer
-	runner            command.Runner
 	violationMap      map[string]Violation
 	// map from ./foo/bar/... to actual packages
 	packageExpressionToPackages     map[string]*packagesResult
@@ -41,14 +41,12 @@ type state struct {
 }
 
 func newState(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	envStdioContainer app.EnvStdioContainer,
-	runner command.Runner,
 ) *state {
 	return &state{
 		logger:                          logger,
 		envStdioContainer:               envStdioContainer,
-		runner:                          runner,
 		violationMap:                    make(map[string]Violation),
 		packageExpressionToPackages:     make(map[string]*packagesResult),
 		packageExpressionToPackagesLock: newKeyRWLock(),
@@ -113,7 +111,7 @@ func (s *state) packagesForPackageExpression(
 ) (map[string]struct{}, error) {
 	defer func() {
 		// not worrying about locks
-		s.logger.Debug("cache", zap.Int("calls", s.calls), zap.Int("hits", s.cacheHits))
+		s.logger.DebugContext(ctx, "cache", slog.Int("calls", s.calls), slog.Int("hits", s.cacheHits))
 	}()
 
 	s.packageExpressionToPackagesLock.RLock(packageExpression)
@@ -155,7 +153,7 @@ func (s *state) packagesForPackageExpressionUncached(
 	ctx context.Context,
 	packageExpression string,
 ) (map[string]struct{}, error) {
-	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, packageExpression)
+	data, err := s.runStdout(ctx, `go`, `list`, packageExpression)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +166,7 @@ func (s *state) depsForPackage(
 ) (map[string]struct{}, error) {
 	defer func() {
 		// not worrying about locks
-		s.logger.Debug("cache", zap.Int("calls", s.calls), zap.Int("hits", s.cacheHits))
+		s.logger.DebugContext(ctx, "cache", slog.Int("calls", s.calls), slog.Int("hits", s.cacheHits))
 	}()
 
 	s.packageToDepsLock.RLock(pkg)
@@ -210,11 +208,27 @@ func (s *state) depsForPackageUncached(
 	ctx context.Context,
 	pkg string,
 ) (map[string]struct{}, error) {
-	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
+	data, err := s.runStdout(ctx, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
 	if err != nil {
 		return nil, err
 	}
 	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+}
+
+func (s *state) runStdout(ctx context.Context, name string, args ...string) ([]byte, error) {
+	buffer := bytes.NewBuffer(nil)
+	if err := execext.Run(
+		ctx,
+		name,
+		execext.WithArgs(args...),
+		execext.WithEnv(app.Environ(s.envStdioContainer)),
+		execext.WithStdin(s.envStdioContainer.Stdin()),
+		execext.WithStdout(buffer),
+		execext.WithStderr(s.envStdioContainer.Stderr()),
+	); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
 
 type packagesResult struct {

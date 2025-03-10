@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package dagtest
 
 import (
+	"cmp"
+	"slices"
 	"sort"
 	"testing"
 
@@ -23,17 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
-//
-// TODO: remove and replace with cmp.Ordered when we only support Go versions >= 1.21.
-type Ordered interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64 |
-		~string
-}
-
-type ExpectedNode[Key Ordered] struct {
+type ExpectedNode[Key cmp.Ordered] struct {
 	Key      Key
 	Outbound []Key
 }
@@ -42,7 +34,7 @@ type ExpectedNode[Key Ordered] struct {
 //
 // The order of the input ExpectedNodes does not matter, and the order of
 // the outbound Keys does not matter.
-func RequireComparableGraphEqual[Key Ordered](
+func RequireComparableGraphEqual[Key cmp.Ordered](
 	t *testing.T,
 	expected []ExpectedNode[Key],
 	comparableGraph *dag.ComparableGraph[Key],
@@ -54,7 +46,7 @@ func RequireComparableGraphEqual[Key Ordered](
 //
 // The order of the input ExpectedNodes does not matter, and the order of
 // the outbound Keys does not matter.
-func RequireGraphEqual[Key Ordered, Value any](
+func RequireGraphEqual[Key cmp.Ordered, Value any](
 	t *testing.T,
 	expected []ExpectedNode[Key],
 	graph *dag.Graph[Key, Value],
@@ -77,11 +69,11 @@ func RequireGraphEqual[Key Ordered, Value any](
 	require.Equal(t, normalizeExpectedNodes(expected), normalizeExpectedNodes(actual))
 }
 
-func normalizeExpectedNodes[Key Ordered](expectedNodes []ExpectedNode[Key]) []ExpectedNode[Key] {
+func normalizeExpectedNodes[Key cmp.Ordered](expectedNodes []ExpectedNode[Key]) []ExpectedNode[Key] {
 	if expectedNodes == nil {
 		return []ExpectedNode[Key]{}
 	}
-	c := slicesext.Copy(expectedNodes)
+	c := slices.Clone(expectedNodes)
 	sort.Slice(
 		c,
 		func(i int, j int) bool {
@@ -95,11 +87,11 @@ func normalizeExpectedNodes[Key Ordered](expectedNodes []ExpectedNode[Key]) []Ex
 	return c
 }
 
-func normalizeKeys[Key Ordered](keys []Key) []Key {
+func normalizeKeys[Key cmp.Ordered](keys []Key) []Key {
 	if keys == nil {
 		return []Key{}
 	}
-	keys = slicesext.Copy(keys)
+	keys = slices.Clone(keys)
 	sort.Slice(
 		keys,
 		func(i int, j int) bool {

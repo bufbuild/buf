@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"slices"
 	"sort"
 	"strings"
 
@@ -26,9 +27,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protocompile/parser/fastscan"
-	"go.uber.org/multierr"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -72,8 +73,7 @@ type ModuleReadBucket interface {
 	// being self-contained.
 	//
 	// A ModuleReadBucket is self-contained if it was constructed from
-	// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
-	// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles.
+	// ModuleSetToModuleReadBucketWithOnlyProtoFiles.
 	//
 	// A ModuleReadBucket as inherited from a Module is not self-contained.
 	//
@@ -228,20 +228,39 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // GetDocStorageReadBucket gets a storage.ReadBucket that just contains the documentation file(s).
 //
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
-func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) storage.ReadBucket {
-	return storage.MapReadBucket(
-		bucket,
-		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
+func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) (storage.ReadBucket, error) {
+	// Store the documentation file in a new memory bucket for performance reasons.
+	docFilePath := getDocFilePathForStorageReadBucket(ctx, bucket)
+	if docFilePath == "" {
+		return storage.MultiReadBucket(), nil // nop bucket
+	}
+	content, err := storage.ReadPath(ctx, bucket, docFilePath)
+	if err != nil {
+		return nil, err
+	}
+	return storagemem.NewReadBucket(
+		map[string][]byte{
+			docFilePath: content,
+		},
 	)
 }
 
 // GetLicenseStorageReadBucket gets a storage.ReadBucket that just contains the license file(s).
 //
 // This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
-func GetLicenseStorageReadBucket(bucket storage.ReadBucket) storage.ReadBucket {
-	return storage.MapReadBucket(
-		bucket,
-		storage.MatchPathEqual(licenseFilePath),
+func GetLicenseStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) (storage.ReadBucket, error) {
+	// Store the license file in a new memory bucket for performance reasons.
+	content, err := storage.ReadPath(ctx, bucket, licenseFilePath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return storage.MultiReadBucket(), nil // nop bucket
+		}
+		return nil, err
+	}
+	return storagemem.NewReadBucket(
+		map[string][]byte{
+			licenseFilePath: content,
+		},
 	)
 }
 
@@ -344,7 +363,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	if !walkFileInfosOptions.onlyTargetFiles {
 		// We only want to call trackModule if we are walking all the files, not just
 		// the target files. By not calling trackModule outside of this if statement,
-		// we will not produce NoProtoFilesErrors, per the documention on trackModule.
+		// we will not produce NoProtoFilesErrors, per the documentation on trackModule.
 		protoFileTracker.trackModule(b.module)
 		if err := bucket.Walk(
 			ctx,
@@ -525,6 +544,12 @@ func (b *moduleReadBucket) getIsTargetFileForPathUncached(ctx context.Context, p
 		// We've now deferred having to get fastscan.Results as much as we can.
 		protoFileTargetFastscanResult, err := b.getFastscanResultForPath(ctx, b.protoFileTargetPath)
 		if err != nil {
+			// In the case where multiple modules may have shared module roots through the includes key
+			// in the module configs, the protoFileTargetPath may not exist in the target module.
+			// In that case, we just return false.
+			if errors.Is(err, fs.ErrNotExist) {
+				return false, nil
+			}
 			return false, err
 		}
 		if protoFileTargetFastscanResult.PackageName == "" {
@@ -588,7 +613,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 		return fastscan.Result{}, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObjectCloser.Close())
+		retErr = errors.Join(retErr, readObjectCloser.Close())
 	}()
 	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {
@@ -657,7 +682,7 @@ func (t *targetedModuleReadBucket) WalkFileInfos(
 		func(fileInfo FileInfo) error {
 			return fn(fileInfo)
 		},
-		slicesext.Concat(
+		slices.Concat(
 			options,
 			[]WalkFileInfosOption{WalkFileInfosWithOnlyTargetFiles()},
 		)...,

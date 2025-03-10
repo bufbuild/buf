@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 package bufcli
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
@@ -29,7 +29,7 @@ func NewModuleKeyProvider(container appext.Container) (bufmodule.ModuleKeyProvid
 	}
 	return bufmoduleapi.NewModuleKeyProvider(
 		container.Logger(),
-		bufapi.NewClientProvider(
+		bufregistryapimodule.NewClientProvider(
 			clientConfig,
 		),
 	), nil

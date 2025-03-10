@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,6 +66,11 @@ type Command struct {
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
+	// ModifyCobra will modify the underlying [cobra.Command] that is created from this [Command].
+	//
+	// This should be used sparingly. Almost all operations should be able to be performed
+	// by the fields of Command. However, ModifyCommand exists as a break-class feature.
+	ModifyCobra func(*cobra.Command) error
 	// Version the version of the command.
 	//
 	// If this is specified, a flag --version will be added to the command
@@ -74,7 +79,7 @@ type Command struct {
 	Version string
 }
 
-// NewInvalidArgumentError creates a new invalidArgumentError, indicating that
+// NewInvalidArgumentError creates a new InvalidArgumentError, indicating that
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
 func NewInvalidArgumentError(message string) error {
@@ -86,6 +91,13 @@ func NewInvalidArgumentError(message string) error {
 // help text for the command that it is returned from.
 func NewInvalidArgumentErrorf(format string, args ...any) error {
 	return newInvalidArgumentError(fmt.Errorf(format, args...))
+}
+
+// WrapInvalidArgumentError creates a new InvalidArgumentError, indicating that
+// the error was caused by argument validation. This causes us to print the usage
+// help text for the command that it is returned from.
+func WrapInvalidArgumentError(delegate error) error {
+	return newInvalidArgumentError(delegate)
 }
 
 // Main runs the application using the OS container and calling os.Exit on the return value of Run.
@@ -139,7 +151,7 @@ func run(
 	// commands.
 	cobraCommand.CompletionOptions.DisableDefaultCmd = true
 
-	// If the root command is not the only command, add a hidden manpages command
+	// If the root command is not the only command, add a hidden manpages command,
 	// and a visible completion command.
 	if len(command.SubCommands) > 0 {
 		shellCobraCommand, err := commandToCobra(
@@ -213,16 +225,13 @@ func run(
 			return err
 		}
 		cobraCommand.AddCommand(manpagesCobraCommand)
-		webpagesCobraCommand, err := commandToCobra(
-			ctx,
-			container,
-			newWebpagesCommand(cobraCommand),
-			&runErr,
-		)
-		if err != nil {
+	}
+
+	// Apply any modifications specified by ModifyCobra
+	if command.ModifyCobra != nil {
+		if err := command.ModifyCobra(cobraCommand); err != nil {
 			return err
 		}
-		cobraCommand.AddCommand(webpagesCobraCommand)
 	}
 
 	cobraCommand.SetOut(container.Stderr())

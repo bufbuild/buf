@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,15 +59,6 @@ const (
 	TokenServiceDeleteTokenProcedure = "/buf.alpha.registry.v1alpha1.TokenService/DeleteToken"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	tokenServiceServiceDescriptor           = v1alpha1.File_buf_alpha_registry_v1alpha1_token_proto.Services().ByName("TokenService")
-	tokenServiceCreateTokenMethodDescriptor = tokenServiceServiceDescriptor.Methods().ByName("CreateToken")
-	tokenServiceGetTokenMethodDescriptor    = tokenServiceServiceDescriptor.Methods().ByName("GetToken")
-	tokenServiceListTokensMethodDescriptor  = tokenServiceServiceDescriptor.Methods().ByName("ListTokens")
-	tokenServiceDeleteTokenMethodDescriptor = tokenServiceServiceDescriptor.Methods().ByName("DeleteToken")
-)
-
 // TokenServiceClient is a client for the buf.alpha.registry.v1alpha1.TokenService service.
 type TokenServiceClient interface {
 	// CreateToken creates a new token suitable for machine-to-machine authentication.
@@ -95,31 +86,32 @@ type TokenServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewTokenServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) TokenServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	tokenServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_token_proto.Services().ByName("TokenService").Methods()
 	return &tokenServiceClient{
 		createToken: connect.NewClient[v1alpha1.CreateTokenRequest, v1alpha1.CreateTokenResponse](
 			httpClient,
 			baseURL+TokenServiceCreateTokenProcedure,
-			connect.WithSchema(tokenServiceCreateTokenMethodDescriptor),
+			connect.WithSchema(tokenServiceMethods.ByName("CreateToken")),
 			connect.WithClientOptions(opts...),
 		),
 		getToken: connect.NewClient[v1alpha1.GetTokenRequest, v1alpha1.GetTokenResponse](
 			httpClient,
 			baseURL+TokenServiceGetTokenProcedure,
-			connect.WithSchema(tokenServiceGetTokenMethodDescriptor),
+			connect.WithSchema(tokenServiceMethods.ByName("GetToken")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listTokens: connect.NewClient[v1alpha1.ListTokensRequest, v1alpha1.ListTokensResponse](
 			httpClient,
 			baseURL+TokenServiceListTokensProcedure,
-			connect.WithSchema(tokenServiceListTokensMethodDescriptor),
+			connect.WithSchema(tokenServiceMethods.ByName("ListTokens")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		deleteToken: connect.NewClient[v1alpha1.DeleteTokenRequest, v1alpha1.DeleteTokenResponse](
 			httpClient,
 			baseURL+TokenServiceDeleteTokenProcedure,
-			connect.WithSchema(tokenServiceDeleteTokenMethodDescriptor),
+			connect.WithSchema(tokenServiceMethods.ByName("DeleteToken")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -178,30 +170,31 @@ type TokenServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewTokenServiceHandler(svc TokenServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	tokenServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_token_proto.Services().ByName("TokenService").Methods()
 	tokenServiceCreateTokenHandler := connect.NewUnaryHandler(
 		TokenServiceCreateTokenProcedure,
 		svc.CreateToken,
-		connect.WithSchema(tokenServiceCreateTokenMethodDescriptor),
+		connect.WithSchema(tokenServiceMethods.ByName("CreateToken")),
 		connect.WithHandlerOptions(opts...),
 	)
 	tokenServiceGetTokenHandler := connect.NewUnaryHandler(
 		TokenServiceGetTokenProcedure,
 		svc.GetToken,
-		connect.WithSchema(tokenServiceGetTokenMethodDescriptor),
+		connect.WithSchema(tokenServiceMethods.ByName("GetToken")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	tokenServiceListTokensHandler := connect.NewUnaryHandler(
 		TokenServiceListTokensProcedure,
 		svc.ListTokens,
-		connect.WithSchema(tokenServiceListTokensMethodDescriptor),
+		connect.WithSchema(tokenServiceMethods.ByName("ListTokens")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	tokenServiceDeleteTokenHandler := connect.NewUnaryHandler(
 		TokenServiceDeleteTokenProcedure,
 		svc.DeleteToken,
-		connect.WithSchema(tokenServiceDeleteTokenMethodDescriptor),
+		connect.WithSchema(tokenServiceMethods.ByName("DeleteToken")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)

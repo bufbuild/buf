@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@ func ExactArgs(n int) PositionalArgs {
 }
 
 // RangeArgs matches cobra.RangeArgs.
-func RangeArgs(min int, max int) PositionalArgs {
-	return newPositionalArgs(cobra.RangeArgs(min, max))
+func RangeArgs(minimum int, maximum int) PositionalArgs {
+	return newPositionalArgs(cobra.RangeArgs(minimum, maximum))
 }
 
-// PostionalArgs matches cobra.PositionalArgs so that importers of appcmd do
+// PositionalArgs matches cobra.PositionalArgs so that importers of appcmd do
 // not need to reference cobra (and shouldn't).
 type PositionalArgs interface {
 	cobra() cobra.PositionalArgs

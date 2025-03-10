@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,31 +17,32 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
 // NewGraphProvider returns a new GraphProvider for the given API client.
 func NewGraphProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1GraphServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1GraphServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1GraphServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1GraphServiceClientProvider
 	},
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 	options ...GraphProviderOption,
 ) bufmodule.GraphProvider {
-	return newGraphProvider(logger, clientProvider, options...)
+	return newGraphProvider(logger, moduleClientProvider, ownerClientProvider, options...)
 }
 
 // GraphProviderOption is an option for a new GraphProvider.
@@ -74,31 +75,32 @@ func GraphProviderWithPublicRegistry(publicRegistry string) GraphProviderOption 
 // *** PRIVATE ***
 
 type graphProvider struct {
-	logger         *zap.Logger
-	clientProvider interface {
-		bufapi.V1GraphServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1GraphServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1GraphServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1GraphServiceClientProvider
 	}
+	ownerClientProvider      bufregistryapiowner.V1OwnerServiceClientProvider
 	legacyFederationRegistry string
 	publicRegistry           string
 }
 
 func newGraphProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1GraphServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1GraphServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1GraphServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1GraphServiceClientProvider
 	},
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 	options ...GraphProviderOption,
 ) *graphProvider {
 	graphProvider := &graphProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
-		publicRegistry: defaultPublicRegistry,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
+		ownerClientProvider:  ownerClientProvider,
+		publicRegistry:       defaultPublicRegistry,
 	}
 	for _, option := range options {
 		option(graphProvider)
@@ -121,8 +123,8 @@ func (a *graphProvider) GetGraphForModuleKeys(
 
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
-	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
+	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.ownerClientProvider)
 	v1beta1ProtoGraph, err := a.getV1Beta1ProtoGraphForModuleKeys(ctx, moduleKeys, digestType)
 	if err != nil {
 		return nil, err
@@ -238,7 +240,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	response, err := a.clientProvider.V1Beta1GraphServiceClient(primaryRegistry).GetGraph(
+	response, err := a.moduleClientProvider.V1Beta1GraphServiceClient(primaryRegistry).GetGraph(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetGraphRequest{
@@ -273,7 +275,7 @@ func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 	moduleKeys []bufmodule.ModuleKey,
 ) (*modulev1.Graph, error) {
 	commitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
-	response, err := a.clientProvider.V1GraphServiceClient(registry).GetGraph(
+	response, err := a.moduleClientProvider.V1GraphServiceClient(registry).GetGraph(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetGraphRequest{

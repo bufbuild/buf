@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,15 +22,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os/exec"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -42,9 +40,9 @@ const (
 	// defaultMajorVersion is the default major version.
 	defaultMajorVersion = 5
 	// defaultMinorVersion is the default minor version.
-	defaultMinorVersion = 27
+	defaultMinorVersion = 29
 	// defaultPatchVersion is the default patch version.
-	defaultPatchVersion = 0
+	defaultPatchVersion = 3
 	// defaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
@@ -76,12 +74,10 @@ type Generator interface {
 
 // NewGenerator returns a new Generator.
 func NewGenerator(
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 ) Generator {
-	return newGenerator(logger, tracer, storageosProvider, runner)
+	return newGenerator(logger, storageosProvider)
 }
 
 // GenerateOption is an option for Generate.
@@ -114,9 +110,8 @@ func GenerateWithProtocPath(protocPath ...string) GenerateOption {
 //   - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
 //   - Else, this returns error.
 func NewHandler(
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
-	tracer tracing.Tracer,
 	pluginName string,
 	options ...HandlerOption,
 ) (protoplugin.Handler, error) {
@@ -128,11 +123,11 @@ func NewHandler(
 	// Initialize binary plugin handler when path is specified with optional args. Return
 	// on error as something is wrong with the supplied pluginPath option.
 	if len(handlerOptions.pluginPath) > 0 {
-		return NewBinaryHandler(runner, tracer, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
+		return NewBinaryHandler(logger, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
 	}
 
 	// Initialize binary plugin handler based on plugin name.
-	if handler, err := NewBinaryHandler(runner, tracer, "protoc-gen-"+pluginName, nil); err == nil {
+	if handler, err := NewBinaryHandler(logger, "protoc-gen-"+pluginName, nil); err == nil {
 		return handler, nil
 	}
 
@@ -147,7 +142,7 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newProtocProxyHandler(storageosProvider, runner, tracer, protocPath, protocExtraArgs, pluginName), nil
+		return newProtocProxyHandler(logger, storageosProvider, protocPath, protocExtraArgs, pluginName), nil
 	}
 	return nil, fmt.Errorf(
 		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
@@ -182,12 +177,12 @@ func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
-func NewBinaryHandler(runner command.Runner, tracer tracing.Tracer, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
+func NewBinaryHandler(logger *slog.Logger, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err
 	}
-	return newBinaryHandler(runner, tracer, pluginPath, pluginArgs), nil
+	return newBinaryHandler(logger, pluginPath, pluginArgs), nil
 }
 
 type handlerOptions struct {

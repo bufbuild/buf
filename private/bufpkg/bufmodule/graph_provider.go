@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ type GraphProvider interface {
 	//
 	// The key will be the ModuleKey.CommitID().
 	//
-	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
+	// The input ModuleKeys are expected to be unique by FullName. The implementation
 	// may error if this is not the case.
 	//
 	// The input ModuleKeys are expected to have the same DigestType. The implementation

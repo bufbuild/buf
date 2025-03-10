@@ -1,0 +1,30 @@
+version: v2
+lint:
+  use:
+    - PACKAGE_DEFINED
+    - SERVICE_BANNED_SUFFIXES
+    - RPC_BANNED_SUFFIXES
+    - FIELD_BANNED_SUFFIXES
+    - ENUM_VALUE_BANNED_SUFFIXES
+    - VALIDATE_ID_DASHLESS
+    - MESSAGE_NOT_DISABLED
+    - PAGE_REQUEST_HAS_TOKEN
+    - PAGE_RESPONSE_HAS_TOKEN
+plugins:
+  - plugin: buf-plugin-suffix
+    options:
+      service_banned_suffixes:
+        - Mock
+        - Test
+      rpc_banned_suffixes:
+        - Element
+      field_banned_suffixes:
+        - _uuid
+      enum_value_banned_suffixes:
+        - _INVALID
+  - plugin: buf-plugin-protovalidate-ext
+  - plugin: buf-plugin-rpc-ext
+    options:
+      page_rpc_prefix:
+        - List
+        - GetAll

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -34,7 +35,7 @@ type ModuleDep interface {
 
 	// Parent returns the Module that this ModuleDep is a dependency of.
 	//
-	// Note this is not recursive - this points ot the top-level Module that dependencies
+	// Note this is not recursive - this points of the top-level Module that dependencies
 	// were created for. That is, if a -> b -> c, then a will have ModuleDeps b and c, both
 	// of which have a as a parent.
 	Parent() Module
@@ -85,7 +86,7 @@ func getModuleDeps(
 	if err := getModuleDepsRec(
 		ctx,
 		module,
-		make(map[string]struct{}),
+		make(map[string]string),
 		make(map[string]struct{}),
 		nil,
 		depOpaqueIDToModuleDep,
@@ -114,10 +115,10 @@ func getModuleDeps(
 func getModuleDepsRec(
 	ctx context.Context,
 	module Module,
-	visitedOpaqueIDs map[string]struct{},
+	visitedOpaqueIDToDescription map[string]string,
 	// Changes as we go down the stack.
 	parentOpaqueIDs map[string]struct{},
-	// Ordered version of parentOpaqueIDs so we can print a cycle error.
+	// Ordered (by dependency relationship) version of parentOpaqueIDs so we can print a cycle error.
 	orderedParentOpaqueIDs []string,
 	// Already discovered deps.
 	depOpaqueIDToModuleDep map[string]ModuleDep,
@@ -126,12 +127,19 @@ func getModuleDepsRec(
 ) error {
 	opaqueID := module.OpaqueID()
 	if _, ok := parentOpaqueIDs[opaqueID]; ok {
-		return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+		return &ModuleCycleError{
+			Descriptions: append(
+				slicesext.Map(orderedParentOpaqueIDs, func(parentOpaqueID string) string {
+					return visitedOpaqueIDToDescription[parentOpaqueID]
+				}),
+				module.Description(),
+			),
+		}
 	}
-	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
+	if _, ok := visitedOpaqueIDToDescription[opaqueID]; ok {
 		return nil
 	}
-	visitedOpaqueIDs[opaqueID] = struct{}{}
+	visitedOpaqueIDToDescription[opaqueID] = module.Description()
 	moduleSet := module.ModuleSet()
 	if moduleSet == nil {
 		// This should never happen.
@@ -229,7 +237,7 @@ func getModuleDepsRec(
 		if err := getModuleDepsRec(
 			ctx,
 			newModuleDep,
-			visitedOpaqueIDs,
+			visitedOpaqueIDToDescription,
 			parentOpaqueIDs,
 			newOrderedParentOpaqueIDs,
 			depOpaqueIDToModuleDep,

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -64,16 +64,6 @@ const (
 	DocServiceGetPackageDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	docServiceServiceDescriptor                       = v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService")
-	docServiceGetSourceDirectoryInfoMethodDescriptor  = docServiceServiceDescriptor.Methods().ByName("GetSourceDirectoryInfo")
-	docServiceGetSourceFileMethodDescriptor           = docServiceServiceDescriptor.Methods().ByName("GetSourceFile")
-	docServiceGetModulePackagesMethodDescriptor       = docServiceServiceDescriptor.Methods().ByName("GetModulePackages")
-	docServiceGetModuleDocumentationMethodDescriptor  = docServiceServiceDescriptor.Methods().ByName("GetModuleDocumentation")
-	docServiceGetPackageDocumentationMethodDescriptor = docServiceServiceDescriptor.Methods().ByName("GetPackageDocumentation")
-)
-
 // DocServiceClient is a client for the buf.alpha.registry.v1alpha1.DocService service.
 type DocServiceClient interface {
 	// GetSourceDirectoryInfo retrieves the directory and file structure for the
@@ -105,39 +95,40 @@ type DocServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewDocServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DocServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	docServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods()
 	return &docServiceClient{
 		getSourceDirectoryInfo: connect.NewClient[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse](
 			httpClient,
 			baseURL+DocServiceGetSourceDirectoryInfoProcedure,
-			connect.WithSchema(docServiceGetSourceDirectoryInfoMethodDescriptor),
+			connect.WithSchema(docServiceMethods.ByName("GetSourceDirectoryInfo")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getSourceFile: connect.NewClient[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse](
 			httpClient,
 			baseURL+DocServiceGetSourceFileProcedure,
-			connect.WithSchema(docServiceGetSourceFileMethodDescriptor),
+			connect.WithSchema(docServiceMethods.ByName("GetSourceFile")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getModulePackages: connect.NewClient[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse](
 			httpClient,
 			baseURL+DocServiceGetModulePackagesProcedure,
-			connect.WithSchema(docServiceGetModulePackagesMethodDescriptor),
+			connect.WithSchema(docServiceMethods.ByName("GetModulePackages")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getModuleDocumentation: connect.NewClient[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse](
 			httpClient,
 			baseURL+DocServiceGetModuleDocumentationProcedure,
-			connect.WithSchema(docServiceGetModuleDocumentationMethodDescriptor),
+			connect.WithSchema(docServiceMethods.ByName("GetModuleDocumentation")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getPackageDocumentation: connect.NewClient[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse](
 			httpClient,
 			baseURL+DocServiceGetPackageDocumentationProcedure,
-			connect.WithSchema(docServiceGetPackageDocumentationMethodDescriptor),
+			connect.WithSchema(docServiceMethods.ByName("GetPackageDocumentation")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -206,38 +197,39 @@ type DocServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewDocServiceHandler(svc DocServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	docServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods()
 	docServiceGetSourceDirectoryInfoHandler := connect.NewUnaryHandler(
 		DocServiceGetSourceDirectoryInfoProcedure,
 		svc.GetSourceDirectoryInfo,
-		connect.WithSchema(docServiceGetSourceDirectoryInfoMethodDescriptor),
+		connect.WithSchema(docServiceMethods.ByName("GetSourceDirectoryInfo")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetSourceFileHandler := connect.NewUnaryHandler(
 		DocServiceGetSourceFileProcedure,
 		svc.GetSourceFile,
-		connect.WithSchema(docServiceGetSourceFileMethodDescriptor),
+		connect.WithSchema(docServiceMethods.ByName("GetSourceFile")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetModulePackagesHandler := connect.NewUnaryHandler(
 		DocServiceGetModulePackagesProcedure,
 		svc.GetModulePackages,
-		connect.WithSchema(docServiceGetModulePackagesMethodDescriptor),
+		connect.WithSchema(docServiceMethods.ByName("GetModulePackages")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetModuleDocumentationHandler := connect.NewUnaryHandler(
 		DocServiceGetModuleDocumentationProcedure,
 		svc.GetModuleDocumentation,
-		connect.WithSchema(docServiceGetModuleDocumentationMethodDescriptor),
+		connect.WithSchema(docServiceMethods.ByName("GetModuleDocumentation")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetPackageDocumentationHandler := connect.NewUnaryHandler(
 		DocServiceGetPackageDocumentationProcedure,
 		svc.GetPackageDocumentation,
-		connect.WithSchema(docServiceGetPackageDocumentationMethodDescriptor),
+		connect.WithSchema(docServiceMethods.ByName("GetPackageDocumentation")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,12 +51,6 @@ const (
 	ConvertServiceConvertProcedure = "/buf.alpha.registry.v1alpha1.ConvertService/Convert"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	convertServiceServiceDescriptor       = v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService")
-	convertServiceConvertMethodDescriptor = convertServiceServiceDescriptor.Methods().ByName("Convert")
-)
-
 // ConvertServiceClient is a client for the buf.alpha.registry.v1alpha1.ConvertService service.
 type ConvertServiceClient interface {
 	// Convert converts a serialized message according to
@@ -73,11 +67,12 @@ type ConvertServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewConvertServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConvertServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	convertServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService").Methods()
 	return &convertServiceClient{
 		convert: connect.NewClient[v1alpha1.ConvertRequest, v1alpha1.ConvertResponse](
 			httpClient,
 			baseURL+ConvertServiceConvertProcedure,
-			connect.WithSchema(convertServiceConvertMethodDescriptor),
+			connect.WithSchema(convertServiceMethods.ByName("Convert")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -107,10 +102,11 @@ type ConvertServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewConvertServiceHandler(svc ConvertServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	convertServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService").Methods()
 	convertServiceConvertHandler := connect.NewUnaryHandler(
 		ConvertServiceConvertProcedure,
 		svc.Convert,
-		connect.WithSchema(convertServiceConvertMethodDescriptor),
+		connect.WithSchema(convertServiceMethods.ByName("Convert")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.ConvertService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

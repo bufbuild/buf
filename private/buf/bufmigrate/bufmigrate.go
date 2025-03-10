@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,14 +18,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // Migrator migrates buf configuration files.
@@ -44,7 +43,7 @@ type Migrator interface {
 	//     regardless whether these module directories are specified in moduleDirPaths. Same
 	//     behavior with multiple workspaces. For example, if workspace foo has directories
 	//     bar and baz, then specifying foo, foo + bar and foo + bar + baz are the same.
-	//   - If a workspace is specfied, and modules not from this workspace are specified, the
+	//   - If a workspace is specified, and modules not from this workspace are specified, the
 	//     buf.yaml will contain all directories from the workspace, as well as the module
 	//     directories specified.
 	//   - If only module directories are specified, then the buf.yaml will contain exactly
@@ -74,15 +73,14 @@ type Migrator interface {
 	) error
 }
 
+// NewMigrator returns a new Migrator.
 func NewMigrator(
-	logger *zap.Logger,
-	runner command.Runner,
+	logger *slog.Logger,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) Migrator {
 	return newMigrator(
 		logger,
-		runner,
 		moduleKeyProvider,
 		commitProvider,
 	)

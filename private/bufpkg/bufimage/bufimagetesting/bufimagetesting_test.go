@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/gofrs/uuid/v5"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -440,7 +440,7 @@ func TestBasic(t *testing.T) {
 		newImage.Files(),
 	)
 
-	protoImage := &imagev1.Image{
+	protoImage := imagev1.Image_builder{
 		File: []*imagev1.ImageFile{
 			protoImageFileAA,
 			protoImageFileImport,
@@ -450,7 +450,7 @@ func TestBasic(t *testing.T) {
 			protoImageFileBB,
 			protoImageFileOutlandishDirectoryName,
 		},
-	}
+	}.Build()
 	newImage, err = bufimage.NewImageForProto(protoImage)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -883,7 +883,7 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 
 func testProtoImageFileToFileDescriptorProto(imageFile *imagev1.ImageFile) *descriptorpb.FileDescriptorProto {
 	return &descriptorpb.FileDescriptorProto{
-		Name:       imageFile.Name,
-		Dependency: imageFile.Dependency,
+		Name:       proto.ValueOrNil(imageFile.HasName(), imageFile.GetName),
+		Dependency: imageFile.GetDependency(),
 	}
 }

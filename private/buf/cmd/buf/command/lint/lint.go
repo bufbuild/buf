@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 )
 
@@ -83,7 +84,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors or check violations printed to stdout. Must be one of %s",
-			stringutil.SliceToString(buflint.AllFormatStrings),
+			stringutil.SliceToString(bufcli.AllLintFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -121,9 +122,21 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		input,
+		wasmRuntime,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
 	)
@@ -131,14 +144,24 @@ func run(
 		return err
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
+	// We add all check configs (both lint and breaking) as related configs to check if plugins
+	// have rules configured.
+	// We allocated twice the size of imageWithConfigs for both lint and breaking configs.
+	allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(imageWithConfigs)*2)
 	for _, imageWithConfig := range imageWithConfigs {
-		if err := buflint.NewHandler(
-			container.Logger(),
-			tracing.NewTracer(container.Tracer()),
-		).Check(
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.LintConfig())
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
+	}
+	for _, imageWithConfig := range imageWithConfigs {
+		lintOptions := []bufcheck.LintOption{
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
+		}
+		if err := checkClient.Lint(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
+			lintOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {
@@ -151,7 +174,7 @@ func run(
 	if len(allFileAnnotations) > 0 {
 		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
 		if flags.ErrorFormat == "config-ignore-yaml" {
-			if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+			if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 				container.Stdout(),
 				allFileAnnotationSet,
 			); err != nil {

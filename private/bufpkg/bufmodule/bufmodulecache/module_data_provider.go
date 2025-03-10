@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@ package bufmodulecache
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider that caches the results of the delegate.
 //
 // The ModuleDataStore is used as a cache.
+//
+// All files in returned [storage.Bucket]s will have local paths if the cache is on-disk.
 func NewModuleDataProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
 ) bufmodule.ModuleDataProvider {
@@ -41,7 +43,7 @@ type moduleDataProvider struct {
 }
 
 func newModuleDataProvider(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
 ) *moduleDataProvider {

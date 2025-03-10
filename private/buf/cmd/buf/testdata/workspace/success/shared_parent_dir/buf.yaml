@@ -1,0 +1,6 @@
+version: v2
+modules:
+  - path: standalone
+  - path: parent/foo
+  - path: parent/nextlayer/bar
+  - path: parent/nextlayer/baz

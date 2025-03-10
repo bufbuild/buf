@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 )
 
@@ -261,11 +262,11 @@ type externalImageFileInfo struct {
 
 func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalImageFileInfo {
 	var module string
-	if moduleFullName := imageFileInfo.ModuleFullName(); moduleFullName != nil {
+	if moduleFullName := imageFileInfo.FullName(); moduleFullName != nil {
 		module = moduleFullName.String()
 	}
 	var commit string
-	if commitID := imageFileInfo.CommitID(); !commitID.IsNil() {
+	if commitID := imageFileInfo.CommitID(); commitID != uuid.Nil {
 		commit = uuidutil.ToDashless(commitID)
 	}
 	return &externalImageFileInfo{

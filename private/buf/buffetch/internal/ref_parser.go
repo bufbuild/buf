@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,11 +26,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 type refParser struct {
-	logger                *zap.Logger
+	logger                *slog.Logger
 	rawRefProcessor       func(*RawRef) error
 	singleFormatToInfo    map[string]*singleFormatInfo
 	archiveFormatToInfo   map[string]*archiveFormatInfo
@@ -39,7 +39,7 @@ type refParser struct {
 	protoFileFormatToInfo map[string]*protoFileFormatInfo
 }
 
-func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
+func newRefParser(logger *slog.Logger, options ...RefParserOption) *refParser {
 	refParser := &refParser{
 		logger:                logger,
 		singleFormatToInfo:    make(map[string]*singleFormatInfo),
@@ -142,6 +142,8 @@ func (a *refParser) getRawRef(
 			rawRef.GitCommitOrTag = value
 		case "ref":
 			rawRef.GitRef = value
+		case "filter":
+			rawRef.GitFilter = value
 		case "depth":
 			depth, err := parseGitDepth(value)
 			if err != nil {
@@ -519,6 +521,7 @@ func getGitRef(
 		rawRef.GitDepth,
 		rawRef.GitRecurseSubmodules,
 		rawRef.SubDirPath,
+		rawRef.GitFilter,
 	)
 }
 

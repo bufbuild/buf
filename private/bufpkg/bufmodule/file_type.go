@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -54,26 +55,26 @@ func (c FileType) String() string {
 //
 // This reverses FileType.String().
 //
-// Returns an error of type *ParseError if thie string could not be parsed.
+// Returns an error of type *bufparse.ParseError if the string could not be parsed.
 func ParseFileType(s string) (FileType, error) {
 	c, ok := stringToFileType[s]
 	if !ok {
-		return 0, &ParseError{
-			typeString: "module file type",
-			input:      s,
-			err:        fmt.Errorf("unknown type: %q", s),
-		}
+		return 0, bufparse.NewParseError(
+			"module file type",
+			s,
+			fmt.Errorf("unknown type: %q", s),
+		)
 	}
 	return c, nil
 }
 
-// FileType returns the FileType for the given path.
+// FileTypeForPath returns the FileType for the given path.
 //
 // Returns error if the path cannot be classified as a FileType, that is if it is not a
 // .proto file, license file, or documentation file.
 //
 // Note that license and documentation files must be at the root, and cannot be in subdirectories. That is,
-// subdir/LICENSE will not be classified as a FileTypeLicnese, but LICENSE will be.
+// subdir/LICENSE will not be classified as a FileTypeLicense, but LICENSE will be.
 func FileTypeForPath(path string) (FileType, error) {
 	if normalpath.Ext(path) == ".proto" {
 		return FileTypeProto, nil

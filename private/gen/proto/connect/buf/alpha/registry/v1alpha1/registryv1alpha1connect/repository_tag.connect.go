@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -64,16 +64,6 @@ const (
 	RepositoryTagServiceListRepositoryTagsForReferenceProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/ListRepositoryTagsForReference"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	repositoryTagServiceServiceDescriptor                              = v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService")
-	repositoryTagServiceGetRepositoryTagMethodDescriptor               = repositoryTagServiceServiceDescriptor.Methods().ByName("GetRepositoryTag")
-	repositoryTagServiceCreateRepositoryTagMethodDescriptor            = repositoryTagServiceServiceDescriptor.Methods().ByName("CreateRepositoryTag")
-	repositoryTagServiceUpdateRepositoryTagMethodDescriptor            = repositoryTagServiceServiceDescriptor.Methods().ByName("UpdateRepositoryTag")
-	repositoryTagServiceListRepositoryTagsMethodDescriptor             = repositoryTagServiceServiceDescriptor.Methods().ByName("ListRepositoryTags")
-	repositoryTagServiceListRepositoryTagsForReferenceMethodDescriptor = repositoryTagServiceServiceDescriptor.Methods().ByName("ListRepositoryTagsForReference")
-)
-
 // RepositoryTagServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryTagService
 // service.
 type RepositoryTagServiceClient interface {
@@ -100,39 +90,40 @@ type RepositoryTagServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewRepositoryTagServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RepositoryTagServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	repositoryTagServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods()
 	return &repositoryTagServiceClient{
 		getRepositoryTag: connect.NewClient[v1alpha1.GetRepositoryTagRequest, v1alpha1.GetRepositoryTagResponse](
 			httpClient,
 			baseURL+RepositoryTagServiceGetRepositoryTagProcedure,
-			connect.WithSchema(repositoryTagServiceGetRepositoryTagMethodDescriptor),
+			connect.WithSchema(repositoryTagServiceMethods.ByName("GetRepositoryTag")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		createRepositoryTag: connect.NewClient[v1alpha1.CreateRepositoryTagRequest, v1alpha1.CreateRepositoryTagResponse](
 			httpClient,
 			baseURL+RepositoryTagServiceCreateRepositoryTagProcedure,
-			connect.WithSchema(repositoryTagServiceCreateRepositoryTagMethodDescriptor),
+			connect.WithSchema(repositoryTagServiceMethods.ByName("CreateRepositoryTag")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		updateRepositoryTag: connect.NewClient[v1alpha1.UpdateRepositoryTagRequest, v1alpha1.UpdateRepositoryTagResponse](
 			httpClient,
 			baseURL+RepositoryTagServiceUpdateRepositoryTagProcedure,
-			connect.WithSchema(repositoryTagServiceUpdateRepositoryTagMethodDescriptor),
+			connect.WithSchema(repositoryTagServiceMethods.ByName("UpdateRepositoryTag")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryTags: connect.NewClient[v1alpha1.ListRepositoryTagsRequest, v1alpha1.ListRepositoryTagsResponse](
 			httpClient,
 			baseURL+RepositoryTagServiceListRepositoryTagsProcedure,
-			connect.WithSchema(repositoryTagServiceListRepositoryTagsMethodDescriptor),
+			connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTags")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryTagsForReference: connect.NewClient[v1alpha1.ListRepositoryTagsForReferenceRequest, v1alpha1.ListRepositoryTagsForReferenceResponse](
 			httpClient,
 			baseURL+RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
-			connect.WithSchema(repositoryTagServiceListRepositoryTagsForReferenceMethodDescriptor),
+			connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTagsForReference")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -196,38 +187,39 @@ type RepositoryTagServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryTagServiceHandler(svc RepositoryTagServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	repositoryTagServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods()
 	repositoryTagServiceGetRepositoryTagHandler := connect.NewUnaryHandler(
 		RepositoryTagServiceGetRepositoryTagProcedure,
 		svc.GetRepositoryTag,
-		connect.WithSchema(repositoryTagServiceGetRepositoryTagMethodDescriptor),
+		connect.WithSchema(repositoryTagServiceMethods.ByName("GetRepositoryTag")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryTagServiceCreateRepositoryTagHandler := connect.NewUnaryHandler(
 		RepositoryTagServiceCreateRepositoryTagProcedure,
 		svc.CreateRepositoryTag,
-		connect.WithSchema(repositoryTagServiceCreateRepositoryTagMethodDescriptor),
+		connect.WithSchema(repositoryTagServiceMethods.ByName("CreateRepositoryTag")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryTagServiceUpdateRepositoryTagHandler := connect.NewUnaryHandler(
 		RepositoryTagServiceUpdateRepositoryTagProcedure,
 		svc.UpdateRepositoryTag,
-		connect.WithSchema(repositoryTagServiceUpdateRepositoryTagMethodDescriptor),
+		connect.WithSchema(repositoryTagServiceMethods.ByName("UpdateRepositoryTag")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryTagServiceListRepositoryTagsHandler := connect.NewUnaryHandler(
 		RepositoryTagServiceListRepositoryTagsProcedure,
 		svc.ListRepositoryTags,
-		connect.WithSchema(repositoryTagServiceListRepositoryTagsMethodDescriptor),
+		connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTags")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryTagServiceListRepositoryTagsForReferenceHandler := connect.NewUnaryHandler(
 		RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
 		svc.ListRepositoryTagsForReference,
-		connect.WithSchema(repositoryTagServiceListRepositoryTagsForReferenceMethodDescriptor),
+		connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTagsForReference")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

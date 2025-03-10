@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@ package bufmodulecache
 
 import (
 	"context"
+	"log/slog"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 )
 
 type baseProvider[K any, V any] struct {
-	logger                   *zap.Logger
+	logger                   *slog.Logger
 	delegateGetValuesForKeys func(context.Context, []K) ([]V, error)
 	storeGetValuesForKeys    func(context.Context, []K) ([]V, []K, error)
 	storePutValues           func(context.Context, []V) error
@@ -38,7 +38,7 @@ type baseProvider[K any, V any] struct {
 }
 
 func newBaseProvider[K any, V any](
-	logger *zap.Logger,
+	logger *slog.Logger,
 	delegateGetValuesForKeys func(context.Context, []K) ([]V, error),
 	storeGetValuesForKeys func(context.Context, []K) ([]V, []K, error),
 	storePutValues func(context.Context, []V) error,
@@ -79,6 +79,24 @@ func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]
 		delegateValues,
 	); err != nil {
 		return nil, err
+	}
+	// We are getting the values again so that we retrieve the values from the cache directly.
+	// This matters for ie ModuleDatas where the storage.Bucket attached will have local paths
+	// instead of empty local paths if read from the cache. We document NewModuleDataProvider
+	// to return a ModuleDataProvider that will always have local paths for returned storage.Buckets,
+	// if the cache is an on-disk cache.
+	var delegateNotFoundKeys []K
+	delegateValues, delegateNotFoundKeys, err = p.storeGetValuesForKeys(ctx, notFoundKeys)
+	if err != nil {
+		return nil, err
+	}
+	// We need to ensure that all the delegate values can be retrieved from the store. If there
+	// are unfound keys, we return an error.
+	if len(delegateNotFoundKeys) > 0 {
+		return nil, syserror.Newf(
+			"delegate keys %v not found in the store after putting in the store",
+			delegateNotFoundKeys,
+		)
 	}
 
 	p.keysRetrieved.Add(int64(len(keys)))

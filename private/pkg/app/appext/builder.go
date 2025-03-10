@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,25 +17,19 @@ package appext
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/observabilityzap"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type builder struct {
 	appName string
 
-	verbose   bool
 	debug     bool
 	noWarn    bool
 	logFormat string
@@ -52,16 +46,14 @@ type builder struct {
 
 	defaultTimeout time.Duration
 
-	tracing bool
-
-	// 0 is InfoLevel in zap
-	defaultLogLevel zapcore.Level
-	interceptors    []Interceptor
+	interceptors   []Interceptor
+	loggerProvider LoggerProvider
 }
 
 func newBuilder(appName string, options ...BuilderOption) *builder {
 	builder := &builder{
-		appName: appName,
+		appName:        appName,
+		loggerProvider: defaultLoggerProvider,
 	}
 	for _, option := range options {
 		option(builder)
@@ -70,7 +62,6 @@ func newBuilder(appName string, options ...BuilderOption) *builder {
 }
 
 func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
-	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Turn on verbose mode")
 	flagSet.BoolVar(&b.debug, "debug", false, "Turn on debug logging")
 	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json]")
 	if b.defaultTimeout > 0 {
@@ -93,6 +84,11 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	_ = flagSet.MarkHidden("no-warn")
 	flagSet.IntVar(&b.parallelism, "parallelism", 0, "Manually control the parallelism")
 	_ = flagSet.MarkHidden("parallelism")
+
+	// We used to have this as a global flag, so we still need to not error when it is called.
+	var verbose bool
+	flagSet.BoolVarP(&verbose, "verbose", "v", false, "")
+	_ = flagSet.MarkHidden("verbose")
 }
 
 func (b *builder) NewRunFunc(
@@ -112,22 +108,23 @@ func (b *builder) run(
 	appContainer app.Container,
 	f func(context.Context, Container) error,
 ) (retErr error) {
-	logLevel, err := getLogLevel(b.defaultLogLevel, b.debug, b.noWarn)
+	logLevel, err := getLogLevel(b.debug, b.noWarn)
 	if err != nil {
 		return err
 	}
-	logger, err := zaputil.NewLoggerForFlagValues(appContainer.Stderr(), logLevel, b.logFormat)
+	logFormat, err := ParseLogFormat(b.logFormat)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, logger.Sync())
-	}()
-	verbosePrinter := verbose.NewPrinterForFlagValue(appContainer.Stderr(), b.appName, b.verbose)
-	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
+	nameContainer, err := newNameContainer(appContainer, b.appName)
 	if err != nil {
 		return err
 	}
+	logger, err := b.loggerProvider(nameContainer, logLevel, logFormat)
+	if err != nil {
+		return err
+	}
+	container := newContainer(nameContainer, logger)
 
 	if b.parallelism > 0 {
 		thread.SetParallelism(b.parallelism)
@@ -139,18 +136,11 @@ func (b *builder) run(
 		defer cancel()
 	}
 
-	if b.tracing {
-		tracerProvider, closer := observabilityzap.Start(logger)
-		defer func() {
-			retErr = multierr.Append(retErr, closer.Close())
-		}()
-		_, span := tracerProvider.Tracer(b.appName).Start(ctx, "command")
-		defer span.End()
-	}
 	if !b.profile {
 		return f(ctx, container)
 	}
 	return runProfile(
+		ctx,
 		logger,
 		b.profilePath,
 		b.profileType,
@@ -164,7 +154,8 @@ func (b *builder) run(
 
 // runProfile profiles the function.
 func runProfile(
-	logger *zap.Logger,
+	ctx context.Context,
+	logger *slog.Logger,
 	profilePath string,
 	profileType string,
 	profileLoops int,
@@ -178,7 +169,7 @@ func runProfile(
 			return err
 		}
 	}
-	logger.Debug("profile", zap.String("path", profilePath))
+	logger.DebugContext(ctx, "profile", slog.String("path", profilePath))
 	if profileType == "" {
 		profileType = "cpu"
 	}
@@ -214,17 +205,28 @@ func runProfile(
 	return nil
 }
 
-func getLogLevel(defaultLogLevel zapcore.Level, debugFlag bool, noWarnFlag bool) (string, error) {
+func getLogLevel(debugFlag bool, noWarnFlag bool) (LogLevel, error) {
 	if debugFlag && noWarnFlag {
-		return "", fmt.Errorf("cannot set both --debug and --no-warn")
+		return 0, fmt.Errorf("cannot set both --debug and --no-warn")
 	}
 	if noWarnFlag {
-		return "error", nil
+		return LogLevelError, nil
 	}
 	if debugFlag {
-		return "debug", nil
+		return LogLevelDebug, nil
 	}
-	return defaultLogLevel.String(), nil
+	return LogLevelInfo, nil
+}
+
+func defaultLoggerProvider(container NameContainer, logLevel LogLevel, logFormat LogFormat) (*slog.Logger, error) {
+	switch logFormat {
+	case LogFormatText, LogFormatColor:
+		return slog.New(slog.NewTextHandler(container.Stderr(), &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
+	case LogFormatJSON:
+		return slog.New(slog.NewJSONHandler(container.Stderr(), &slog.HandlerOptions{Level: logLevel.SlogLevel()})), nil
+	default:
+		return nil, fmt.Errorf("unknown appext.LogFormat: %v", logFormat)
+	}
 }
 
 // chainInterceptors consolidates the given interceptors into one.

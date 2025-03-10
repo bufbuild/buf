@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,25 +18,25 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type responseWriter struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
 func newResponseWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *responseWriter {
 	return &responseWriter{
 		logger: logger,
@@ -68,7 +68,7 @@ func (h *responseWriter) WriteResponse(
 	return nil
 }
 
-// applyInsertionPoint inserts the content of the given file at the insertion point that it specfiies.
+// applyInsertionPoint inserts the content of the given file at the insertion point that it specifies.
 // For more details on insertion points, see the following:
 //
 // https://github.com/protocolbuffers/protobuf/blob/f5bdd7cd56aa86612e166706ed8ef139db06edf2/src/google/protobuf/compiler/plugin.proto#L135-L171
@@ -83,7 +83,7 @@ func applyInsertionPoint(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, targetReadObjectCloser.Close())
+		retErr = errors.Join(retErr, targetReadObjectCloser.Close())
 	}()
 	resultData, err := writeInsertionPoint(ctx, file, targetReadObjectCloser)
 	if err != nil {

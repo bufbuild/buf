@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,24 +17,24 @@ package bufmoduleapi
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/google/uuid"
 )
 
 // DigestForCommitID resolves the commit ID by calling the CommitService to get
 // the Digest for the Commit.
 func DigestForCommitID(
 	ctx context.Context,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
 	registry string,
 	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (bufmodule.Digest, error) {
-	universalProtoCommit, err := getUniversalProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)
+	universalProtoCommit, err := getUniversalProtoCommitForRegistryAndCommitID(ctx, moduleClientProvider, registry, commitID, digestType)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,24 +77,21 @@ func TestOS(t *testing.T) {
 		actualTempDir := t.TempDir()
 		actualTempDir, err := filepath.Abs(actualTempDir)
 		require.NoError(t, err)
-		_, err = os.Create(filepath.Join(actualTempDir, "foo.txt"))
+		f, err := os.Create(filepath.Join(actualTempDir, "foo.txt"))
 		require.NoError(t, err)
+		require.NoError(t, f.Close())
 		tempDir := t.TempDir()
 		tempDir, err = filepath.Abs(tempDir)
 		require.NoError(t, err)
 		tempDir = filepath.Join(tempDir, "sym")
 		require.NoError(t, os.Symlink(actualTempDir, tempDir))
-		t.Cleanup(func() {
-			if err := os.Remove(tempDir); err != nil {
-				t.Error(err)
-			}
-		})
 		provider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 		bucket, err := provider.NewReadWriteBucket(tempDir, storageos.ReadWriteBucketWithSymlinksIfSupported())
 		require.NoError(t, err)
 
-		_, err = bucket.Get(ctx, "foo.txt")
+		foo, err := bucket.Get(ctx, "foo.txt")
 		require.NoError(t, err)
+		require.NoError(t, foo.Close())
 
 		// Try reading a file as if foo.txt is a directory.
 		_, err = bucket.Get(ctx, "foo.txt/bar.txt")

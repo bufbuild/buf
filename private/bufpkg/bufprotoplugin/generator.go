@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,21 +18,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger  *zap.Logger
+	logger  *slog.Logger
 	handler protoplugin.Handler
 }
 
 func newGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	handler protoplugin.Handler,
 ) *generator {
 	return &generator{
@@ -55,7 +55,6 @@ func (g *generator) Generate(
 	)
 	jobs := make([]func(context.Context) error, len(codeGeneratorRequests))
 	for i, codeGeneratorRequest := range codeGeneratorRequests {
-		codeGeneratorRequest := codeGeneratorRequest
 		jobs[i] = func(ctx context.Context) error {
 			protopluginRequest, err := protoplugin.NewRequest(codeGeneratorRequest)
 			if err != nil {
@@ -72,9 +71,7 @@ func (g *generator) Generate(
 			)
 		}
 	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
+	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancelOnFailure()); err != nil {
 		return nil, err
 	}
 	codeGeneratorResponse, err := protopluginResponseWriter.ToCodeGeneratorResponse()

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -139,4 +143,54 @@ func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(s
 		}
 		return interceptor
 	}
+}
+
+// NewDebugLoggingInterceptor returns a new Connect Interceptor that adds debug log
+// statements for each rpc call.
+//
+// The following information is collected for logging: duration, status code, peer name,
+// rpc system, request size, and response size.
+func NewDebugLoggingInterceptor(container appext.LoggerContainer) connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			var requestSize int
+			if req.Any() != nil {
+				msg, ok := req.Any().(proto.Message)
+				if ok {
+					requestSize = proto.Size(msg)
+				}
+			}
+			startTime := time.Now()
+			resp, err := next(ctx, req)
+			duration := time.Since(startTime)
+			var status connect.Code
+			if err != nil {
+				status = connect.CodeOf(err)
+			}
+			var responseSize int
+			if resp != nil && resp.Any() != nil {
+				msg, ok := resp.Any().(proto.Message)
+				if ok {
+					responseSize = proto.Size(msg)
+				}
+			}
+			attrs := []slog.Attr{
+				slog.Duration("duration", duration),
+				slog.String("status", status.String()),
+				slog.String("net.peer.name", req.Peer().Addr),
+				slog.String("rpc.system", req.Peer().Protocol),
+				slog.Int("message.sent.uncompressed_size", requestSize),
+				slog.Int("message.received.uncompressed_size", responseSize),
+			}
+			container.Logger().LogAttrs(
+				ctx,
+				slog.LevelDebug,
+				// Remove the leading "/" from Procedure name
+				strings.TrimPrefix(req.Spec().Procedure, "/"),
+				attrs...,
+			)
+			return resp, err
+		}
+	}
+	return interceptor
 }

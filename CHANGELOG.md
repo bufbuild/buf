@@ -4,6 +4,135 @@
 
 - No changes yet.
 
+## [v1.50.0] - 2025-01-17
+
+- Add input parameter `filter` for use with git inputs. This sets the filter
+  flag argument for the git fetch command.
+
+## [v1.49.0] - 2025-01-07
+
+- Fix `buf plugin push --label` to allow pushing a plugin with a label.
+- Add `--digest-changes-only` flag to `buf registry {module,plugin} commit list` to filter
+  out commits that have no digest changes.
+- Fix `buf plugin push --source-control-url` to allow pushing a plugin with the source 
+  control url.
+
+## [v1.48.0] - 2024-12-19
+
+- Add `buf registry plugin {create,delete,info,update}` commands to manage BSR plugins.
+- Breaking analysis support for `buf beta lsp`.
+- Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
+  deterministic.
+- Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
+  Only WebAssembly check plugins are supported at this time.
+- Add `buf plugin update` and `buf plugin prune` command to manage plugins in the `buf.lock`
+  file. Only WebAssembly check plugins are supported at this time.
+- Add `buf registry plugin commit {add-label,info,list,resolve}` to manage BSR plugin commits.
+- Add `buf registry plugin label {archive,info,list,unarchive}` to manage BSR plugin commits.
+- Move `buf registry module update` to `buf registry module settings update`. Command
+  `buf registry module update` is now deprecated.
+- Support remote check plugins in `buf lint` and `buf breaking` commands.
+
+## [v1.47.2] - 2024-11-14
+
+- Update the patch version to resolve NPM packaging issues. No command updates or user changes.
+
+## [v1.47.1] - 2024-11-14
+
+- Update the patch version to resolve NPM packaging issues. No command updates or user changes.
+
+## [v1.47.0] - 2024-11-13
+
+- Move `buf registry commit` to `buf registry module commit`. Command
+  `buf registry commit` is now deprecated.
+- Move `buf registry label` to `buf registry module label`. Command
+  `buf registry label` is now deprecated.
+
+## [v1.46.0] - 2024-10-29
+
+- Add `buf registry whoami` command, which checks if you are logged in to the Buf Schema
+  Registry at a given domain.
+
+## [v1.45.0] - 2024-10-08
+
+- Update `buf registry module info --format=json` to add `default_label_name`, which provides the name
+  of the default label of a module.
+
+## [v1.44.0] - 2024-10-03
+
+- Update the `PROTOVALIDATE` lint rule to check example field options. Examples will be checked that
+  they satisfy the field constraints, and are only present if constraints are present.
+- Update the `PROTOVALIDATE` lint rule to check predefined rules. Predefined rules will be checked
+  that they compile.
+- Add support for a WebAssembly (Wasm) runtime for custom lint and breaking changes plugins. Use the
+  `.wasm` file extension to specify a path to a Wasm plugin.
+
+## [v1.43.0] - 2024-09-30
+
+- Add new experimental LSP support under `buf beta lsp`.
+
+## [v1.42.0] - 2024-09-18
+
+- Add support for custom lint and breaking change plugins. See
+  [our launch blog post](https://buf.build/blog/buf-custom-lint-breaking-change-plugins)
+  for more details!
+- Add `buf dep graph --format` flag that defaults to `dot`, and adds the option `json`, to print
+  the dependency graph in JSON format.
+- Fix bugs in `buf format` where trailing comments on commas in message literals were not properly
+  propagated to the formatted proto, empty message literals were not properly indented, and
+  compound strings in options added an extra newline before trailing commas.
+
+## [v1.41.0] - 2024-09-11
+
+- Add HTTP/3 support for gRPC with `buf curl`.
+- Fix issue where errors from protoc plugins may be overwritten when executing plugins in parallel.
+
+## [v1.40.1] - 2024-09-06
+
+- Fix issue with `buf lint` where comment ignores in the shape of `// buf:lint:ignore <RULE_ID> <extra comment>`
+  were not recognized due to the extra comment.
+
+## [v1.40.0] - 2024-09-04
+
+- Add concept of a default lint or breaking rule, which is printed out as a property when running
+  `buf config ls-{breaking,lint}-rules`. Default rules are those rules which are run if no lint
+  or breaking rules are explicitly configured in your `buf.yaml`.
+- Rename `DEFAULT` lint rule category to `STANDARD`. With the concept of default rules being introduced,
+  having a category named `DEFAULT` is confusing, as while it happens that all the rules in the `DEFAULT`
+  lint category are also default rules, the name has become overloaded. As with all `buf` changes, this
+  change is backwards-compatible: the `DEFAULT` lint category continues to work, and always will. We
+  recommend changing to `STANDARD`, however.
+
+## [v1.39.0] - 2024-08-27
+
+- Fix git input handling of relative HEAD refs without branch names.
+- Add `includes` key to module configurations in v2 `buf.yaml`, accepting a list of directories.
+  * If `includes` is specified, a proto file is considered in the module only if it is in one of the
+    directories specified.
+  * If both `includes` and `excludes` keys are specified for a module, a proto file is considered
+    part of this module if it is contained in any of the include paths and not in any of the exclude
+    paths.
+- Allow multiple module configurations in the same v2 `buf.yaml` to have the same directory path.
+
+## [v1.38.0] - 2024-08-22
+
+- Add `--http3` flag to `buf curl` which forces `buf curl` to use HTTP/3 as the transport.
+- Fix issue with directory inputs for v2 workspaces where the specified directory was not itself
+  a path to a module, but contained directories with modules, and the modules would not build.
+- Stop creating empty `buf.lock` files when `buf dep update` does not find new dependencies
+  to update and there is no existing `buf.lock`.
+- Update `buf push` to push the license file or doc file (e.g. `README.md`, `LICENSE`) in the
+  same directory as `buf.yaml` if a module does not have a license file or doc file in the
+  module's directory.
+- Fix constraints of `--path` flag for lint and breaking rules to avoid resolving all files
+  within a module. This change can result in a performance improvement for large workspaces.
+
+## [v1.37.0] - 2024-08-16
+
+- Add `STABLE_PACKAGE_NO_IMPORT_UNSTABLE` lint rule which disallows files from stable packages
+  to import files from unstable packages.
+- Fix plugin push failures when pushing an image built with containerd image store.
+
 ## [v1.36.0] - 2024-08-06
 
 - Add `--list-services` and `--list-methods` flags to `buf curl`, which trigger the command to list
@@ -731,7 +860,7 @@ curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-b
 ## [v0.56.0] - 2021-09-08
 
 - Cascade `ENUM_ZERO_VALUE_SUFFIX` comment ignores from the enum level.
-- Fix issue where `buf genarate --output` was not being respected in 0.55.0.
+- Fix issue where `buf generate --output` was not being respected in 0.55.0.
 
 ## [v0.55.0] - 2021-09-07
 
@@ -739,7 +868,7 @@ curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-b
 - Support `BUF_TOKEN` for authentication. `buf` will now look for a token in the `BUF_TOKEN` environment variable, falling back to `.netrc` as set via `buf login`.
 - Add support for using remote plugins with local source files.
 - Add per-file overrides for managed mode.
-- Fix issue with the module cache where multiple simulataneous downloads would result in a temporarily-corrupted cache.
+- Fix issue with the module cache where multiple simultaneous downloads would result in a temporarily-corrupted cache.
 - Hide verbose messaing behind the `--verbose` (`-v`) flag.
 - Add `--debug` flag to print out debug logging.
 
@@ -1202,7 +1331,24 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.36.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.50.0...HEAD
+[v1.50.0]: https://github.com/bufbuild/buf/compare/v1.49.0...v1.50.0
+[v1.49.0]: https://github.com/bufbuild/buf/compare/v1.48.0...v1.49.0
+[v1.48.0]: https://github.com/bufbuild/buf/compare/v1.47.2...v1.48.0
+[v1.47.2]: https://github.com/bufbuild/buf/compare/v1.47.1...v1.47.2
+[v1.47.1]: https://github.com/bufbuild/buf/compare/v1.47.0...v1.47.1
+[v1.47.0]: https://github.com/bufbuild/buf/compare/v1.46.0...v1.47.0
+[v1.46.0]: https://github.com/bufbuild/buf/compare/v1.45.0...v1.46.0
+[v1.45.0]: https://github.com/bufbuild/buf/compare/v1.44.0...v1.45.0
+[v1.44.0]: https://github.com/bufbuild/buf/compare/v1.43.0...v1.44.0
+[v1.43.0]: https://github.com/bufbuild/buf/compare/v1.42.0...v1.43.0
+[v1.42.0]: https://github.com/bufbuild/buf/compare/v1.41.0...v1.42.0
+[v1.41.0]: https://github.com/bufbuild/buf/compare/v1.40.1...v1.41.0
+[v1.40.1]: https://github.com/bufbuild/buf/compare/v1.40.0...v1.40.1
+[v1.40.0]: https://github.com/bufbuild/buf/compare/v1.39.0...v1.40.0
+[v1.39.0]: https://github.com/bufbuild/buf/compare/v1.38.0...v1.39.0
+[v1.38.0]: https://github.com/bufbuild/buf/compare/v1.37.0...v1.38.0
+[v1.37.0]: https://github.com/bufbuild/buf/compare/v1.36.0...v1.37.0
 [v1.36.0]: https://github.com/bufbuild/buf/compare/v1.35.1...v1.36.0
 [v1.35.1]: https://github.com/bufbuild/buf/compare/v1.35.0...v1.35.1
 [v1.35.0]: https://github.com/bufbuild/buf/compare/v1.34.0...v1.35.0

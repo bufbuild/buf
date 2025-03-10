@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -25,8 +26,6 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/exp/constraints"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -35,9 +34,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -57,7 +56,10 @@ func main() {
 
 func newCommand() *appcmd.Command {
 	flags := newFlags()
-	builder := appext.NewBuilder(programName)
+	builder := appext.NewBuilder(
+		programName,
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
+	)
 	return &appcmd.Command{
 		Use:  fmt.Sprintf("%s path/to/google/protobuf/include", programName),
 		Args: appcmd.ExactArgs(1),
@@ -181,7 +183,7 @@ func getProtosourceFiles(
 ) ([]bufprotosource.File, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
-		tracing.NewTracer(container.Tracer()),
+		container.Logger(),
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
 	).AddLocalModule(
@@ -195,14 +197,14 @@ func getProtosourceFiles(
 	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NewTracer(container.Tracer()),
+		container.Logger(),
 		module,
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
-			// stderr since we do output to stdouot
+			// stderr since we do output to stdout
 			if err := bufanalysis.PrintFileAnnotationSet(
 				container.Stderr(),
 				fileAnnotationSet,
@@ -214,7 +216,7 @@ func getProtosourceFiles(
 		}
 		return nil, err
 	}
-	return bufprotosource.NewFiles(ctx, image)
+	return bufprotosource.NewFiles(ctx, image.Files(), image.Resolver())
 }
 
 func getGolangFileData(
@@ -397,7 +399,7 @@ type keyValPair[K any, V any] struct {
 	val V
 }
 
-func sortedPairs[K constraints.Ordered, V any](m map[K]V) []keyValPair[K, V] {
+func sortedPairs[K cmp.Ordered, V any](m map[K]V) []keyValPair[K, V] {
 	ret := make([]keyValPair[K, V], 0, len(m))
 	for key := range m {
 		ret = append(ret, keyValPair[K, V]{key: key, val: m[key]})

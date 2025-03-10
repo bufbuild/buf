@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,11 +29,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/testingext"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -213,26 +212,23 @@ func TestGoogleapis(t *testing.T) {
 
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	// basic check to make sure there is no error at this scale
-	_, err = bufprotosource.NewFiles(context.Background(), image)
+	_, err = bufprotosource.NewFiles(context.Background(), image.Files(), image.Resolver())
 	assert.NoError(t, err)
 }
 
 func TestCompareCustomOptions1(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "customoptions1")
+	testCompare(t, "customoptions1")
 }
 
 func TestCompareProto3Optional1(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "proto3optional1")
+	testCompare(t, "proto3optional1")
 }
 
 func TestCompareTrailingComments(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "trailingcomments")
+	testCompare(t, "trailingcomments")
 }
 
 func TestCustomOptionsError1(t *testing.T) {
@@ -305,7 +301,7 @@ func TestOptionPanic(t *testing.T) {
 		require.NoError(t, err)
 		_, err = bufimage.BuildImage(
 			context.Background(),
-			tracing.NopTracer,
+			slogtestext.NewLogger(t),
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		)
 		require.NoError(t, err)
@@ -314,19 +310,69 @@ func TestOptionPanic(t *testing.T) {
 
 func TestCompareSemicolons(t *testing.T) {
 	t.Parallel()
-	runner := command.NewRunner()
-	testCompare(t, runner, "semicolons")
+	testCompare(t, "semicolons")
 }
 
-func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
+func TestModuleTargetFiles(t *testing.T) {
+	t.Parallel()
+	moduleSet, err := bufmoduletesting.NewModuleSet(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = "proto3"; package a; import "b.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(
+					`syntax = "proto3"; package b; import "c.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/c",
+			PathToData: map[string][]byte{
+				"c.proto": []byte(
+					`syntax = "proto3"; package c;`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+	testTargetImageFiles := func(t *testing.T, want []string, opaqueID ...string) {
+		targetModuleSet := moduleSet
+		if len(opaqueID) > 0 {
+			var err error
+			targetModuleSet, err = moduleSet.WithTargetOpaqueIDs(opaqueID...)
+			require.NoError(t, err)
+		}
+		image, err := bufimage.BuildImage(
+			context.Background(),
+			slogtestext.NewLogger(t),
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(targetModuleSet),
+		)
+		require.NoError(t, err)
+		assert.Equal(t, want, testGetImageFilePaths(image))
+	}
+	testTargetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"})
+	testTargetImageFiles(t, []string{"a.proto", "b.proto", "c.proto"}, "buf.build/foo/a")
+	testTargetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b")
+	testTargetImageFiles(t, []string{"c.proto"}, "buf.build/foo/c")
+	testTargetImageFiles(t, []string{"b.proto", "c.proto"}, "buf.build/foo/b", "buf.build/foo/c")
+}
+
+func testCompare(t *testing.T, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath, false)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
-	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, runner, false, false, dirPath, filePaths)
-	prototesting.AssertFileDescriptorSetsEqual(t, runner, fileDescriptorSet, actualProtocFileDescriptorSet)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
+	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
@@ -348,7 +394,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism
 	}
 	image, err := bufimage.BuildImage(
 		context.Background(),
-		tracing.NopTracer,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

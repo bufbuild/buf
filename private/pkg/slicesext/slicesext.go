@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,54 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Some implementations are copied from "slices", and hence
-// https://github.com/golang/go/blob/b788e91badd523e5bb0fc8d50cd76b8ae04ffb20/LICENSE:
-// Copyright (c) 2009 The Go Authors. All rights reserved.
-
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 // Package slicesext provides extra functionality on top of the slices package.
 package slicesext
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 )
-
-// Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
-//
-// TODO FUTURE: remove and replace with cmp.Ordered when we only support Go versions >= 1.21.
-type Ordered interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64 |
-		~string
-}
 
 // Indexed is a value that had an index within a slice.
 type Indexed[T any] struct {
@@ -67,7 +29,7 @@ type Indexed[T any] struct {
 	Index int
 }
 
-// Filter filters the slice to only the values where f returns true.
+// Filter returns a new slice containing only the values where f returns true.
 func Filter[T any](s []T, f func(T) bool) []T {
 	sf := make([]T, 0, len(s))
 	for _, e := range s {
@@ -128,7 +90,7 @@ func Reduce[T1, T2 any](s []T1, f func(T2, T1) T2, initialValue T2) T2 {
 	return value
 }
 
-// Reduce reduces the slice.
+// ReduceError reduces the slice.
 //
 // Returns error the first time f returns error.
 func ReduceError[T1, T2 any](s []T1, f func(T2, T1) (T2, error), initialValue T2) (T2, error) {
@@ -169,68 +131,6 @@ func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
 		}
 	}
 	return count, nil
-}
-
-// Copy returns a copy of the slice.
-//
-// TODO FUTURE: Delete this in favor of slices.Clone.
-func Copy[T any](s []T) []T {
-	sc := make([]T, len(s))
-	copy(sc, s)
-	return sc
-}
-
-// Grow increases the slice's capacity, if necessary, to guarantee space for
-// another n elements. After Grow(n), at least n elements can be appended
-// to the slice without another allocation. If n is negative or too large to
-// allocate the memory, Grow panics.
-//
-// TODO FUTURE: Delete this in favor of slices.Grow.
-func Grow[S ~[]E, E any](s S, n int) S {
-	if n < 0 {
-		panic("cannot be negative")
-	}
-	if n -= cap(s) - len(s); n > 0 {
-		s = append(s[:cap(s)], make([]E, n)...)[:len(s)]
-	}
-	return s
-}
-
-// Concat returns a new slice concatenating the passed in slices.
-//
-// TODO FUTURE: Delete this in favor of slices.Concat.
-func Concat[S ~[]E, E any](slices ...S) S {
-	size := 0
-	for _, s := range slices {
-		size += len(s)
-		if size < 0 {
-			panic("len out of range")
-		}
-	}
-	newslice := Grow[S](nil, size)
-	for _, s := range slices {
-		newslice = append(newslice, s...)
-	}
-	return newslice
-}
-
-// Equal reports whether two slices are equal: the same length and all
-// elements equal. If the lengths are different, Equal returns false.
-// Otherwise, the elements are compared in increasing index order, and the
-// comparison stops at the first unequal pair.
-// Floating point NaNs are not considered equal.
-//
-// TODO FUTURE: Delete this in favor of slices.Equal when we are >1.21.
-func Equal[S ~[]E, E comparable](s1, s2 S) bool {
-	if len(s1) != len(s2) {
-		return false
-	}
-	for i := range s1 {
-		if s1[i] != s2[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // ToStructMap converts the slice to a map with struct{} values.
@@ -354,7 +254,7 @@ func ToUniqueIndexedValuesMapError[K comparable, V any](values []V, f func(V) (K
 	return ToUniqueValuesMapError(ToIndexed(values), func(indexedV Indexed[V]) (K, error) { return f(indexedV.Value) })
 }
 
-// IndexedToSortedValues takes the indexed values and returns them as values.
+// IndexedToValues takes the indexed values and returns them as values.
 func IndexedToValues[T any](s []Indexed[T]) []T {
 	return Map(s, func(indexedT Indexed[T]) T { return indexedT.Value })
 }
@@ -368,15 +268,9 @@ func IndexedToSortedValues[T any](s []Indexed[T]) []T {
 }
 
 // MapKeysToSortedSlice converts the map's keys to a sorted slice.
-func MapKeysToSortedSlice[M ~map[K]V, K Ordered, V any](m M) []K {
+func MapKeysToSortedSlice[M ~map[K]V, K cmp.Ordered, V any](m M) []K {
 	s := MapKeysToSlice(m)
-	// TODO FUTURE: Replace with slices.Sort when we only support Go versions >= 1.21.
-	sort.Slice(
-		s,
-		func(i int, j int) bool {
-			return s[i] < s[j]
-		},
-	)
+	slices.Sort(s)
 	return s
 }
 
@@ -389,19 +283,13 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 	return s
 }
 
-// MapValuesToSlice converts the map's values to a sorted slice.
+// MapValuesToSortedSlice converts the map's values to a sorted slice.
 //
 // Duplicate values will be added. This should generally be used
 // in cases where you know there is a 1-1 mapping from K to V.
-func MapValuesToSortedSlice[K comparable, V Ordered](m map[K]V) []V {
+func MapValuesToSortedSlice[K comparable, V cmp.Ordered](m map[K]V) []V {
 	s := MapValuesToSlice(m)
-	// TODO FUTURE: Replace with slices.Sort when we only support Go versions >= 1.21.
-	sort.Slice(
-		s,
-		func(i int, j int) bool {
-			return s[i] < s[j]
-		},
-	)
+	slices.Sort(s)
 	return s
 }
 
@@ -418,7 +306,7 @@ func MapValuesToSlice[K comparable, V any](m map[K]V) []V {
 }
 
 // ToUniqueSorted returns a sorted copy of s with no duplicates.
-func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
+func ToUniqueSorted[S ~[]T, T cmp.Ordered](s S) S {
 	return MapKeysToSortedSlice(ToStructMap(s))
 }
 
@@ -456,7 +344,7 @@ func Duplicates[T comparable](s []T) []T {
 // Deduplicate returns the unique values of s.
 func Deduplicate[V comparable](s []V) []V {
 	seen := make(map[V]struct{})
-	result := make([]V, 0)
+	result := make([]V, 0, len(s))
 	for _, e := range s {
 		if _, ok := seen[e]; !ok {
 			result = append(result, e)
@@ -466,12 +354,12 @@ func Deduplicate[V comparable](s []V) []V {
 	return result
 }
 
-// Deduplicate returns the unique values of s when transformed with f.
+// DeduplicateAny returns the unique values of s when transformed with f.
 //
 // Earlier occurrences of a value are returned and later occurrences are dropped.
 func DeduplicateAny[K comparable, V any](s []V, f func(V) K) []V {
 	seen := make(map[K]struct{})
-	result := make([]V, 0)
+	result := make([]V, 0, len(s))
 	for _, e := range s {
 		k := f(e)
 		if _, ok := seen[k]; !ok {
@@ -494,28 +382,7 @@ func ToChunks[T any](s []T, chunkSize int) [][]T {
 	if chunkSize <= 0 {
 		return [][]T{s}
 	}
-	c := make([]T, len(s))
-	copy(c, s)
-	// https://github.com/golang/go/wiki/SliceTricks#batching-with-minimal-allocation
-	for chunkSize < len(c) {
-		c, chunks = c[chunkSize:], append(chunks, c[0:chunkSize:chunkSize])
-	}
-	return append(chunks, c)
-}
-
-// ElementsEqual returns true if the two slices have equal elements.
-//
-// Nil and empty slices are treated as equals.
-func ElementsEqual[T comparable](one []T, two []T) bool {
-	if len(one) != len(two) {
-		return false
-	}
-	for i, elem := range one {
-		if two[i] != elem {
-			return false
-		}
-	}
-	return true
+	return slices.Collect(slices.Chunk(s, chunkSize))
 }
 
 // ElementsContained returns true if superset contains subset.
@@ -529,4 +396,24 @@ func ElementsContained[T comparable](superset []T, subset []T) bool {
 		}
 	}
 	return true
+}
+
+// TrimPrefix removes a leading prefix from s, otherwise leaves s as-is.
+//
+// A slice s is considered to have a prefix p if the elements of p are equal
+// to the first len(p) elements of s.
+//
+// Returns false if p was not a prefix of s.
+func TrimPrefix[T comparable](s []T, p []T) ([]T, bool) {
+	if len(s) < len(p) {
+		return s, false
+	}
+
+	for i, x := range p {
+		if s[i] != x {
+			return s, false
+		}
+	}
+
+	return s[len(p):], true
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,59 +17,60 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider for the given API client.
 //
 // A warning is printed to the logger if a given Module is deprecated.
 func NewModuleDataProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	},
 	graphProvider bufmodule.GraphProvider,
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(logger, clientProvider, graphProvider)
+	return newModuleDataProvider(logger, moduleClientProvider, graphProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleDataProvider struct {
-	logger         *zap.Logger
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	}
 	graphProvider bufmodule.GraphProvider
 }
 
 func newModuleDataProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	},
 	graphProvider bufmodule.GraphProvider,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
-		graphProvider:  graphProvider,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
+		graphProvider:        graphProvider,
 	}
 }
 
@@ -84,18 +85,18 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+	if _, err := bufparse.FullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
 
 	// We don't want to persist this across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
 
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().Registry()
+			return moduleKey.FullName().Registry()
 		},
 	)
 	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(moduleKeys))
@@ -148,62 +149,44 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 		return nil, err
 	}
 	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(indexedModuleKeys))
-	if err := graph.WalkNodes(
-		func(
-			moduleKey bufmodule.ModuleKey,
-			_ []bufmodule.ModuleKey,
-			_ []bufmodule.ModuleKey,
-		) error {
-			// TopoSort will get us both the direct and transitive dependencies for the key.
-			//
-			// The outgoing edge list is just the direct dependencies.
-			//
-			// There is definitely a better way to do this in one pass for all commits with
-			// memoization - this is algorithmically bad.
-			depModuleKeys, err := graph.TopoSort(bufmodule.ModuleKeyToRegistryCommitID(moduleKey))
-			if err != nil {
-				return err
-			}
-			depModuleKeys = depModuleKeys[:len(depModuleKeys)-1]
-			sort.Slice(
-				depModuleKeys,
-				func(i int, j int) bool {
-					return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
-				},
-			)
+	for _, indexedModuleKey := range indexedModuleKeys {
+		moduleKey := indexedModuleKey.Value
+		// TopoSort will get us both the direct and transitive dependencies for the key.
+		depModuleKeys, err := graph.TopoSort(bufmodule.ModuleKeyToRegistryCommitID(moduleKey))
+		if err != nil {
+			return nil, err
+		}
+		// Remove this moduleKey from the depModuleKeys.
+		depModuleKeys = depModuleKeys[:len(depModuleKeys)-1]
+		sort.Slice(
+			depModuleKeys,
+			func(i int, j int) bool {
+				return depModuleKeys[i].FullName().String() < depModuleKeys[j].FullName().String()
+			},
+		)
 
-			universalProtoContent, ok := commitIDToUniversalProtoContent[moduleKey.CommitID()]
-			if !ok {
-				// We only care to get content for a subset of the graph. If we have something
-				// in the graph without content, we just skip it.
-				return nil
-			}
-			indexedModuleKey, ok := commitIDToIndexedModuleKey[moduleKey.CommitID()]
-			if !ok {
-				return syserror.Newf("could not find indexed ModuleKey for commit ID %q", uuidutil.ToDashless(moduleKey.CommitID()))
-			}
-			indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
-				Value: bufmodule.NewModuleData(
-					ctx,
-					moduleKey,
-					func() (storage.ReadBucket, error) {
-						return universalProtoFilesToBucket(universalProtoContent.Files)
-					},
-					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
-					func() (bufmodule.ObjectData, error) {
-						return universalProtoFileToObjectData(universalProtoContent.V1BufYAMLFile)
-					},
-					func() (bufmodule.ObjectData, error) {
-						return universalProtoFileToObjectData(universalProtoContent.V1BufLockFile)
-					},
-				),
-				Index: indexedModuleKey.Index,
-			}
-			indexedModuleDatas = append(indexedModuleDatas, indexedModuleData)
-			return nil
-		},
-	); err != nil {
-		return nil, err
+		universalProtoContent, ok := commitIDToUniversalProtoContent[moduleKey.CommitID()]
+		if !ok {
+			return nil, syserror.Newf("could not find universalProtoContent for commit ID %q", moduleKey.CommitID())
+		}
+		indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
+			Value: bufmodule.NewModuleData(
+				ctx,
+				moduleKey,
+				func() (storage.ReadBucket, error) {
+					return universalProtoFilesToBucket(universalProtoContent.Files)
+				},
+				func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
+				func() (bufmodule.ObjectData, error) {
+					return universalProtoFileToObjectData(universalProtoContent.V1BufYAMLFile)
+				},
+				func() (bufmodule.ObjectData, error) {
+					return universalProtoFileToObjectData(universalProtoContent.V1BufLockFile)
+				},
+			),
+			Index: indexedModuleKey.Index,
+		}
+		indexedModuleDatas = append(indexedModuleDatas, indexedModuleData)
 	}
 	return indexedModuleDatas, nil
 }
@@ -218,7 +201,7 @@ func (a *moduleDataProvider) getCommitIDToUniversalProtoContentForRegistryAndInd
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
 	universalProtoContents, err := getUniversalProtoContentsForRegistryAndCommitIDs(
 		ctx,
-		a.clientProvider,
+		a.moduleClientProvider,
 		registry,
 		commitIDs,
 		digestType,
@@ -276,7 +259,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 		return err
 	}
 	if v1ProtoModule.State == modulev1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.FullName().String()))
 	}
 	return nil
 }

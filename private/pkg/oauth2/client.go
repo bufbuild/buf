@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,17 +23,9 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
-
-	"go.uber.org/multierr"
-)
-
-var (
-	// ErrUnsupported is returned when we receive an unsupported response from the server.
-	//
-	// TODO(go1.21): replace by errors.ErrUnsupported once it is available.
-	ErrUnsupported = errors.New("unsupported operation")
 )
 
 const (
@@ -80,7 +72,7 @@ func (c *Client) RegisterDevice(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
+		retErr = errors.Join(retErr, response.Body.Close())
 	}()
 
 	payload := &struct {
@@ -118,7 +110,7 @@ func (c *Client) AuthorizeDevice(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
+		retErr = errors.Join(retErr, response.Body.Close())
 	}()
 
 	payload := &struct {
@@ -133,6 +125,9 @@ func (c *Client) AuthorizeDevice(
 	}
 	if code := response.StatusCode; code != http.StatusOK {
 		return nil, fmt.Errorf("oauth2: invalid status: %v", code)
+	}
+	if err := validateDeviceAuthorizationResponse(payload.DeviceAuthorizationResponse); err != nil {
+		return nil, err
 	}
 	return &payload.DeviceAuthorizationResponse, nil
 }
@@ -182,7 +177,7 @@ func (c *Client) AccessDeviceToken(
 			}{}
 			if err := parseJSONResponse(response, payload); err != nil {
 				if closeErr := response.Body.Close(); closeErr != nil {
-					err = multierr.Append(err, closeErr)
+					err = errors.Join(err, closeErr)
 				}
 				return nil, err
 			}
@@ -239,10 +234,30 @@ func parseJSONResponse(response *http.Response, payload any) error {
 		return fmt.Errorf("oauth2: failed to read response body: %w", err)
 	}
 	if contentType, _, _ := mime.ParseMediaType(response.Header.Get("Content-Type")); contentType != "application/json" {
-		return fmt.Errorf("oauth2: %w: %d %s", ErrUnsupported, response.StatusCode, body)
+		return fmt.Errorf("oauth2: %w: %d %s", errors.ErrUnsupported, response.StatusCode, body)
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return fmt.Errorf("oauth2: failed to unmarshal response: %w: %s", err, body)
+	}
+	return nil
+}
+
+func validateDeviceAuthorizationResponse(deviceAuthorizationResponse DeviceAuthorizationResponse) error {
+	// Validate that the verification URI with and without the code
+	// are valid web URLs, and not a file system URI, for example.
+	if err := validateURIScheme(deviceAuthorizationResponse.VerificationURI); err != nil {
+		return err
+	}
+	return validateURIScheme(deviceAuthorizationResponse.VerificationURIComplete)
+}
+
+func validateURIScheme(rawURI string) error {
+	parsed, err := url.Parse(rawURI)
+	if err != nil {
+		return fmt.Errorf("oauth2: invalid verification URI, %s: %w", rawURI, err)
+	}
+	if parsed.Scheme != "https" && parsed.Scheme != "http" {
+		return fmt.Errorf("oauth2: invalid verification URI scheme, %q, received: %s", parsed.Scheme, parsed)
 	}
 	return nil
 }

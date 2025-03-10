@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@ package bufprotopluginos
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -27,8 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -42,7 +42,7 @@ Created-By: 1.6.0 (protoc)
 )
 
 type responseWriter struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	responseWriter    bufprotoplugin.ResponseWriter
 	// If set, create directories if they don't already exist.
@@ -71,7 +71,7 @@ type responseWriter struct {
 }
 
 func newResponseWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ResponseWriterOption,
 ) *responseWriter {
@@ -126,7 +126,7 @@ func (w *responseWriter) Close() error {
 			// whereas others aren't.
 			//
 			// Regardless, we stop at the first error so that
-			// we don't unncessarily write more results.
+			// we don't unnecessarily write more results.
 			return err
 		}
 	}
@@ -231,7 +231,7 @@ func (w *responseWriter) writeZip(
 			return err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, file.Close())
+			retErr = errors.Join(retErr, file.Close())
 		}()
 		// protoc does not compress.
 		return storagearchive.Zip(ctx, readWriteBucket, file, false)

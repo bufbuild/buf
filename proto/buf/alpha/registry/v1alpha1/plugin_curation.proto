@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -125,6 +125,14 @@ message GoConfig {
   repeated RuntimeLibrary runtime_libraries = 1;
   // The minimum Go version required by the plugin.
   string minimum_version = 2;
+  // Optionally specifies an alternate base plugin like "remote/org/go-multi" instead of the default
+  // "remote/protocolbuffers/go". If provided, the name must match one of the plugin dependencies in
+  // the top-level deps field.
+  //
+  // This affects how imports are resolved - the specified plugin's import path will be used as the
+  // base path for all generated code, replacing the default protocolbuffers/go import paths. Used
+  // when depending on non-default BSR plugins.
+  string base_plugin = 3;
 }
 
 // NPMConfig is the configuration for a JavaScript NPM plugin.
@@ -373,6 +381,16 @@ message CuratedPlugin {
   string deprecation_message = 20;
   // The URL leading to the integration guide of the plugin, if available.
   string integration_guide_url = 21;
+  // The configurable documentation of the Plugin.
+  string doc = 22;
+  // The collections the Plugin belongs to.
+  repeated PluginCollection collections = 23;
+}
+
+// Plugin collections group related plugins, organizing them by functionality or ecosystem.
+message PluginCollection {
+  // The name of the collection.
+  string name = 1;
 }
 
 // PluginCurationService manages curated plugins.
@@ -492,6 +510,8 @@ message CreateCuratedPluginRequest {
   CuratedPluginVisibility visibility = 17;
   // The URL leading to the integration guide of the plugin, if available.
   string integration_guide_url = 18;
+  // The deprecation status of the plugin.
+  bool deprecated = 19;
 }
 
 message CreateCuratedPluginResponse {

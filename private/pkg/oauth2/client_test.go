@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package oauth2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -87,10 +88,9 @@ func TestRegisterDevice(t *testing.T) {
 				Body:       io.NopCloser(strings.NewReader(`not implemented`)),
 			}, nil
 		},
-		err: fmt.Errorf("oauth2: %w: 501 not implemented", ErrUnsupported),
+		err: fmt.Errorf("oauth2: %w: 501 not implemented", errors.ErrUnsupported),
 	}}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -105,7 +105,9 @@ func TestRegisterDevice(t *testing.T) {
 			})
 			output, err := c.RegisterDevice(ctx, test.input)
 			assert.Equal(t, test.output, output)
-			assert.Equal(t, err, test.err)
+			if test.err != nil {
+				assert.EqualError(t, err, test.err.Error())
+			}
 		})
 	}
 }
@@ -151,9 +153,56 @@ func TestAuthorizeDevice(t *testing.T) {
 			ErrorCode:        ErrorCodeInvalidRequest,
 			ErrorDescription: "invalid request",
 		},
+	}, {
+		name: "http_device_uri",
+		input: &DeviceAuthorizationRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			testAssertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"http://example.com","verification_uri_complete":"http://example.com?code=userCode","expires_in":10,"interval":5}`), nil
+		},
+		output: &DeviceAuthorizationResponse{
+			DeviceCode:              "deviceCode",
+			UserCode:                "userCode",
+			VerificationURI:         "http://example.com",
+			VerificationURIComplete: "http://example.com?code=userCode",
+			ExpiresIn:               10,
+			Interval:                5,
+		},
+	}, {
+		name: "invalid_device_uri",
+		input: &DeviceAuthorizationRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			testAssertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"file:///path/to/file.ext","verification_uri_complete":"file:///path/to/file.ext?code=userCode","expires_in":10,"interval":5}`), nil
+		},
+		err: fmt.Errorf(
+			`oauth2: invalid verification URI scheme, %q, received: %s`,
+			"file",
+			"file:///path/to/file.ext",
+		),
+	}, {
+		name: "invalid_device_uri_complete",
+		input: &DeviceAuthorizationRequest{
+			ClientID:     "clientID",
+			ClientSecret: "clientSecret",
+		},
+		transport: func(t *testing.T, r *http.Request) (*http.Response, error) {
+			testAssertFormRequest(t, r, url.Values{"client_id": {"clientID"}, "client_secret": {"clientSecret"}})
+			return testNewJSONResponse(t, http.StatusOK, `{"device_code":"deviceCode","user_code":"userCode","verification_uri":"https://example.com","verification_uri_complete":"file:///path/to/file.ext?code=userCode","expires_in":10,"interval":5}`), nil
+		},
+		err: fmt.Errorf(
+			`oauth2: invalid verification URI scheme, %q, received: %s`,
+			"file",
+			"file:///path/to/file.ext?code=userCode",
+		),
 	}}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -168,7 +217,9 @@ func TestAuthorizeDevice(t *testing.T) {
 			})
 			output, err := c.AuthorizeDevice(ctx, test.input)
 			assert.Equal(t, test.output, output)
-			assert.Equal(t, err, test.err)
+			if test.err != nil {
+				assert.EqualError(t, err, test.err.Error())
+			}
 		})
 	}
 }
@@ -258,7 +309,6 @@ func TestAccessDeviceToken(t *testing.T) {
 		},
 	}}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()

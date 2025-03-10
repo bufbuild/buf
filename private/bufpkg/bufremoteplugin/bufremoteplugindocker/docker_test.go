@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -41,7 +42,6 @@ import (
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -103,11 +103,35 @@ func TestMain(m *testing.M) {
 	}
 }
 
+func TestGetImageDigestFromMessage(t *testing.T) {
+	t.Parallel()
+	assertImageDigestFromStatusString(t,
+		"v1.4.0: digest: sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8 size: 855",
+		"sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+	)
+	assertImageDigestFromStatusString(t,
+		"v1.4.0: digest: sha512:4b230b5e4e3518cf1f16e0a5d3293245cd6f27df350aed72c9eb59fc4b5b5ef764cb0aaea201ea70eab68ca7388533384c4d0e690eaba7f2cd7a0e8939db986f size: 855", "sha512:4b230b5e4e3518cf1f16e0a5d3293245cd6f27df350aed72c9eb59fc4b5b5ef764cb0aaea201ea70eab68ca7388533384c4d0e690eaba7f2cd7a0e8939db986f",
+	)
+	assertImageDigestFromStatusString(t,
+		"digest: sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+		"sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+	)
+	// malformed, missing "digest:"
+	assertImageDigestFromStatusString(t,
+		"sha256:83189bf0fa178c5947af0bcfcf8b9e955c67bf13c4bea0eee145fbfc3e8398d8",
+		"",
+	)
+}
+
+func assertImageDigestFromStatusString(t *testing.T, status string, expectedDigest string) {
+	t.Helper()
+	digest := getImageDigestFromMessage(jsonmessage.JSONMessage{Status: status})
+	assert.Equal(t, expectedDigest, digest)
+}
+
 func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
-	logger, err := zap.NewDevelopment()
-	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := NewClient(logger, "buf-cli-1.11.0", options...)
+	dockerClient, err := NewClient(slogtestext.NewLogger(t), "buf-cli-1.11.0", options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
@@ -124,29 +148,28 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 		return "", err
 	}
 	imageName := fmt.Sprintf("%s:%s", pluginIdentity, stringid.GenerateRandomID())
-	cmd := command.NewRunner()
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	if err := cmd.Run(
+	if err := execext.Run(
 		context.Background(),
 		docker,
-		command.RunWithArgs("build", "-t", imageName, "."),
-		command.RunWithDir(filepath.Dir(dockerfilePath)),
-		command.RunWithStdout(os.Stdout),
-		command.RunWithStderr(os.Stderr),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("build", "-t", imageName, "."),
+		execext.WithDir(filepath.Dir(dockerfilePath)),
+		execext.WithStdout(os.Stdout),
+		execext.WithStderr(os.Stderr),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", err
 	}
 	t.Logf("created image: %s", imageName)
 	t.Cleanup(func() {
-		if err := cmd.Run(
+		if err := execext.Run(
 			context.Background(),
 			docker,
-			command.RunWithArgs("rmi", "--force", imageName),
-			command.RunWithDir(filepath.Dir(dockerfilePath)),
-			command.RunWithStdout(os.Stdout),
-			command.RunWithStderr(os.Stderr),
+			execext.WithArgs("rmi", "--force", imageName),
+			execext.WithDir(filepath.Dir(dockerfilePath)),
+			execext.WithStdout(os.Stdout),
+			execext.WithStderr(os.Stderr),
 		); err != nil {
 			t.Logf("failed to remove temporary docker image: %v", err)
 		}
@@ -215,7 +238,7 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		if err := json.NewEncoder(w).Encode(&types.ImageInspect{
+		if err := json.NewEncoder(w).Encode(&dockerimage.InspectResponse{
 			ID:       "sha256:" + foundImageID,
 			RepoTags: d.pushedImages[foundImageID].tags,
 		}); err != nil {

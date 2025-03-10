@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package common.v1alpha1;
+
+import "common/v1/common.proto";
+import "buf/validate/validate.proto";
+
+message Three {
+  common.v1.One one = 1;
+  string two = 2;
+}
+
+message Four {
+  string id = 1 [(buf.validate.field).string.tuuid = true];
+  message FourTwo {
+    string id = 1;
+  }
+}
+
+enum Five {
+  FIVE_UNSPECIFIED = 0;
+  FIVE_VALID = 1;
+  FIVE_INVALID = 2;
+}

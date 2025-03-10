@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagetesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -38,13 +39,13 @@ func TestModifyImage(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		description               string
-		dirPathToModuleFullName   map[string]string
+		dirPathToFullName         map[string]string
 		config                    bufconfig.GenerateManagedConfig
 		filePathToExpectedOptions map[string]*descriptorpb.FileOptions
 	}{
 		{
 			description: "nil_config",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -74,7 +75,7 @@ func TestModifyImage(t *testing.T) {
 		},
 		{
 			description: "empty_config",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -93,7 +94,7 @@ func TestModifyImage(t *testing.T) {
 					JavaPackage:        proto.String("com.foo.empty"),
 					// JavaStringCheckUtf8 is not modified by default
 					ObjcClassPrefix: proto.String("FEX"),
-					// OptimizeFor tries to modifiy this value to SPEED, which is already the default
+					// OptimizeFor tries to modify this value to SPEED, which is already the default
 					// Empty is a keyword in php
 					PhpMetadataNamespace: proto.String(`Foo\Empty_\GPBMetadata`),
 					PhpNamespace:         proto.String(`Foo\Empty_`),
@@ -105,7 +106,7 @@ func TestModifyImage(t *testing.T) {
 					JavaMultipleFiles:  proto.Bool(true),
 					JavaOuterClassname: proto.String("WithoutPackageProto"),
 					// JavaStringCheckUtf8 is not modified by default
-					// OptimizeFor tries to modifiy this value to SPEED, which is already the default
+					// OptimizeFor tries to modify this value to SPEED, which is already the default
 				},
 				"bar_all/with_package.proto": {
 					CcEnableArenas:       proto.Bool(true),
@@ -149,12 +150,10 @@ func TestModifyImage(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		for _, includeSourceInfo := range []bool{true, false} {
-			includeSourceInfo := includeSourceInfo
 			t.Run(testcase.description, func(t *testing.T) {
 				t.Parallel()
-				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
+				image := testGetImageFromDirs(t, testcase.dirPathToFullName, includeSourceInfo)
 				err := Modify(
 					image,
 					testcase.config,
@@ -180,7 +179,7 @@ func TestModifyImageFile(
 	t.Parallel()
 	testcases := []struct {
 		description                           string
-		dirPathToModuleFullName               map[string]string
+		dirPathToFullName                     map[string]string
 		config                                bufconfig.GenerateManagedConfig
 		modifyFunc                            func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig, ...ModifyOption) error
 		filePathToExpectedOptions             map[string]*descriptorpb.FileOptions
@@ -188,7 +187,7 @@ func TestModifyImageFile(
 	}{
 		{
 			description: "cc_enable_arena",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -212,7 +211,7 @@ func TestModifyImageFile(
 		},
 		{
 			description: "csharp_namespace",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -249,7 +248,7 @@ func TestModifyImageFile(
 		},
 		{
 			description: "go_package",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -289,7 +288,7 @@ func TestModifyImageFile(
 		},
 		{
 			description: "java_package_prefix",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -383,7 +382,7 @@ func TestModifyImageFile(
 		},
 		{
 			description: "java_package_suffix",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -437,7 +436,7 @@ func TestModifyImageFile(
 		},
 		{
 			description: "java_package",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -490,7 +489,7 @@ func TestModifyImageFile(
 		},
 		{
 			description: "objc_class_prefix",
-			dirPathToModuleFullName: map[string]string{
+			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
@@ -549,13 +548,11 @@ func TestModifyImageFile(
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		for _, includeSourceInfo := range []bool{true, false} {
 			// TODO FUTURE: we are only testing sweep here, no need to test both include and exclude source info
-			includeSourceInfo := includeSourceInfo
 			t.Run(testcase.description, func(t *testing.T) {
 				t.Parallel()
-				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
+				image := testGetImageFromDirs(t, testcase.dirPathToFullName, includeSourceInfo)
 				sweeper := internal.NewMarkSweeper(image)
 				// TODO FUTURE: check include source code info
 				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
@@ -743,7 +740,6 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			override, err := stringOverrideFromConfig(
@@ -770,7 +766,7 @@ func testGetImageFile(
 	path string,
 	moduleFullName string,
 ) bufimage.ImageFile {
-	parsedModuleFullName, err := bufmodule.ParseModuleFullName(moduleFullName)
+	parsedFullName, err := bufparse.ParseFullName(moduleFullName)
 	require.NoError(t, err)
 	return bufimagetesting.NewImageFile(
 		t,
@@ -778,7 +774,7 @@ func testGetImageFile(
 			Name:   proto.String(path),
 			Syntax: proto.String("proto3"),
 		},
-		parsedModuleFullName,
+		parsedFullName,
 		uuid.Nil,
 		path,
 		"",
@@ -790,11 +786,11 @@ func testGetImageFile(
 
 func testGetImageFromDirs(
 	t *testing.T,
-	dirPathToModuleFullName map[string]string,
+	dirPathToFullName map[string]string,
 	includeSourceInfo bool,
 ) bufimage.Image {
-	moduleDatas := make([]bufmoduletesting.ModuleData, 0, len(dirPathToModuleFullName))
-	for dirPath, moduleFullName := range dirPathToModuleFullName {
+	moduleDatas := make([]bufmoduletesting.ModuleData, 0, len(dirPathToFullName))
+	for dirPath, moduleFullName := range dirPathToFullName {
 		moduleDatas = append(
 			moduleDatas,
 			bufmoduletesting.ModuleData{
@@ -811,7 +807,7 @@ func testGetImageFromDirs(
 	}
 	image, err := bufimage.BuildImage(
 		context.Background(),
-		tracing.NopTracer,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

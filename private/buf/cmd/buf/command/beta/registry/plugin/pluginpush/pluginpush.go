@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -43,11 +44,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	pkgv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -61,7 +61,7 @@ const (
 	privateVisibility = "private"
 )
 
-var allVisibiltyStrings = []string{
+var allVisibilityStrings = []string{
 	publicVisibility,
 	privateVisibility,
 }
@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibilityStrings)),
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 }
@@ -140,7 +140,7 @@ func run(
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	source, err := bufcli.GetInputValue(container, "" /* The input hashtag is not supported here */, ".")
 	if err != nil {
@@ -160,7 +160,7 @@ func run(
 		}
 		defer func() {
 			if err := os.RemoveAll(tmpDir); !os.IsNotExist(err) {
-				retErr = multierr.Append(retErr, err)
+				retErr = errors.Join(retErr, err)
 			}
 		}()
 		sourceBucket, err = storageProvider.NewReadWriteBucket(tmpDir)
@@ -197,7 +197,7 @@ func run(
 	}
 	defer func() {
 		if err := client.Close(); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("docker client close error: %w", err))
+			retErr = errors.Join(retErr, fmt.Errorf("docker client close error: %w", err))
 		}
 	}()
 	var imageID string
@@ -218,7 +218,7 @@ func run(
 		}
 		defer func() {
 			if err := image.Close(); err != nil && !errors.Is(err, storage.ErrClosed) {
-				retErr = multierr.Append(retErr, fmt.Errorf("docker image close error: %w", err))
+				retErr = errors.Join(retErr, fmt.Errorf("docker image close error: %w", err))
 			}
 		}()
 		imageID = loadResponse.ImageID
@@ -239,12 +239,12 @@ func run(
 	latestPluginResp, err := service.GetLatestCuratedPlugin(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GetLatestCuratedPluginRequest{
+			registryv1alpha1.GetLatestCuratedPluginRequest_builder{
 				Owner:    pluginConfig.Name.Owner(),
 				Name:     pluginConfig.Name.Plugin(),
 				Version:  pluginConfig.PluginVersion,
 				Revision: 0, // get latest revision for the plugin version.
-			},
+			}.Build(),
 		),
 	)
 	var currentImageDigest string
@@ -255,8 +255,8 @@ func run(
 		}
 		nextRevision = 1
 	} else {
-		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
-		currentImageDigest = latestPluginResp.Msg.Plugin.ContainerImageDigest
+		nextRevision = latestPluginResp.Msg.GetPlugin().GetRevision() + 1
+		currentImageDigest = latestPluginResp.Msg.GetPlugin().GetContainerImageDigest()
 	}
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
@@ -304,12 +304,12 @@ func run(
 		// Plugin with the same image digest and metadata already exists
 		container.Logger().Info(
 			"plugin already exists",
-			zap.String("name", pluginConfig.Name.IdentityString()),
-			zap.String("digest", plugin.ContainerImageDigest()),
+			slog.String("name", pluginConfig.Name.IdentityString()),
+			slog.String("digest", plugin.ContainerImageDigest()),
 		)
-		curatedPlugin = latestPluginResp.Msg.Plugin
+		curatedPlugin = latestPluginResp.Msg.GetPlugin()
 	} else {
-		curatedPlugin = createPluginResp.Msg.Configuration
+		curatedPlugin = createPluginResp.Msg.GetConfiguration()
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }
@@ -328,7 +328,7 @@ func createCuratedPluginRequest(
 	if err != nil {
 		return nil, err
 	}
-	return &registryv1alpha1.CreateCuratedPluginRequest{
+	return registryv1alpha1.CreateCuratedPluginRequest_builder{
 		Owner:                pluginConfig.Name.Owner(),
 		Name:                 pluginConfig.Name.Plugin(),
 		RegistryType:         bufremoteplugin.PluginToProtoPluginRegistryType(plugin),
@@ -344,7 +344,8 @@ func createCuratedPluginRequest(
 		LicenseUrl:           pluginConfig.LicenseURL,
 		Visibility:           visibility,
 		IntegrationGuideUrl:  pluginConfig.IntegrationGuideURL,
-	}, nil
+		Deprecated:           pluginConfig.Deprecated,
+	}.Build(), nil
 }
 
 func pushImage(
@@ -363,7 +364,7 @@ func pushImage(
 	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
 	defer func() {
 		if _, err := client.Delete(ctx, createdImage); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
+			retErr = errors.Join(retErr, fmt.Errorf("failed to delete image %q", createdImage))
 		}
 	}()
 	pushResponse, err := client.Push(ctx, createdImage, authConfig)
@@ -397,7 +398,7 @@ func findExistingDigestForImageID(
 	remoteOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(auth)}
 	// First attempt to see if the current image digest matches the image ID
 	if currentImageDigest != "" {
-		remoteImageID, _, err := getImageIDAndDigestFromReference(repo.Digest(currentImageDigest), remoteOpts...)
+		remoteImageID, _, err := getImageIDAndDigestFromReference(ctx, repo.Digest(currentImageDigest), remoteOpts...)
 		if err != nil {
 			return "", err
 		}
@@ -421,7 +422,7 @@ func findExistingDigestForImageID(
 	}
 	existingImageDigest := ""
 	for _, tag := range tags {
-		remoteImageID, imageDigest, err := getImageIDAndDigestFromReference(repo.Tag(tag), remoteOpts...)
+		remoteImageID, imageDigest, err := getImageIDAndDigestFromReference(ctx, repo.Tag(tag), remoteOpts...)
 		if err != nil {
 			return "", err
 		}
@@ -433,20 +434,78 @@ func findExistingDigestForImageID(
 	return existingImageDigest, nil
 }
 
-func getImageIDAndDigestFromReference(ref name.Reference, options ...remote.Option) (string, string, error) {
-	image, err := remote.Image(ref, options...)
+// getImageIDAndDigestFromReference takes an image reference and returns 2 resolved digests:
+//
+//  1. The image config digest (https://github.com/opencontainers/image-spec/blob/v1.1.0/config.md)
+//  2. The image manifest digest (https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md)
+//
+// The incoming ref is expected to be either an image manifest digest or an image index digest.
+func getImageIDAndDigestFromReference(
+	ctx context.Context,
+	ref name.Reference,
+	options ...remote.Option,
+) (string, string, error) {
+	puller, err := remote.NewPuller(options...)
 	if err != nil {
 		return "", "", err
 	}
-	imageDigest, err := image.Digest()
+	desc, err := puller.Get(ctx, ref)
 	if err != nil {
 		return "", "", err
 	}
-	manifest, err := image.Manifest()
-	if err != nil {
-		return "", "", err
+
+	switch {
+	case desc.MediaType.IsIndex():
+		imageIndex, err := desc.ImageIndex()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image index: %w", err)
+		}
+		indexManifest, err := imageIndex.IndexManifest()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image manifests: %w", err)
+		}
+		var manifest pkgv1.Descriptor
+		for _, desc := range indexManifest.Manifests {
+			if p := desc.Platform; p != nil {
+				//  Drop attestations, which don't have a valid platform set.
+				if p.OS == "unknown" && p.Architecture == "unknown" {
+					continue
+				}
+				manifest = desc
+				break
+			}
+		}
+		refNameWithoutDigest, _, ok := strings.Cut(ref.Name(), "@")
+		if !ok {
+			return "", "", fmt.Errorf("failed to parse reference name %q", ref)
+		}
+		repository, err := name.NewRepository(refNameWithoutDigest)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to construct repository %q: %w", refNameWithoutDigest, err)
+		}
+		// We resolved the image index to an image manifest digest, we can now call this function
+		// again to resolve the image manifest digest to an image config digest.
+		return getImageIDAndDigestFromReference(
+			ctx,
+			repository.Digest(manifest.Digest.String()),
+			options...,
+		)
+	case desc.MediaType.IsImage():
+		imageManifest, err := desc.Image()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image: %w", err)
+		}
+		imageManifestDigest, err := imageManifest.Digest()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image digest for %q: %w", ref, err)
+		}
+		manifest, err := imageManifest.Manifest()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get image manifest for %q: %w", ref, err)
+		}
+		return manifest.Config.Digest.String(), imageManifestDigest.String(), nil
 	}
-	return manifest.Config.Digest.String(), imageDigest.String(), nil
+	return "", "", fmt.Errorf("unsupported media type: %q", desc.MediaType)
 }
 
 func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64, bucket storage.ReadWriteBucket) (retErr error) {
@@ -456,7 +515,7 @@ func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("plugin zip close error: %w", err))
+			retErr = errors.Join(retErr, fmt.Errorf("plugin zip close error: %w", err))
 		}
 	}()
 	return storagearchive.Unzip(ctx, f, size, bucket)
@@ -477,7 +536,7 @@ func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPlug
 	case privateVisibility:
 		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE, nil
 	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibilityStrings))
 	}
 }
 

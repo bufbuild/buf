@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,54 +16,56 @@ package bufmoduleapi
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 )
 
 // NewCommitProvider returns a new CommitProvider for the given API client.
 func NewCommitProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 ) bufmodule.CommitProvider {
-	return newCommitProvider(logger, clientProvider)
+	return newCommitProvider(logger, moduleClientProvider, ownerClientProvider)
 }
 
 // *** PRIVATE ***
 
 type commitProvider struct {
-	logger         *zap.Logger
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger               *slog.Logger
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	}
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider
 }
 
 func newCommitProvider(
-	logger *zap.Logger,
-	clientProvider interface {
-		bufapi.V1CommitServiceClientProvider
-		bufapi.V1ModuleServiceClientProvider
-		bufapi.V1OwnerServiceClientProvider
-		bufapi.V1Beta1CommitServiceClientProvider
+	logger *slog.Logger,
+	moduleClientProvider interface {
+		bufregistryapimodule.V1CommitServiceClientProvider
+		bufregistryapimodule.V1ModuleServiceClientProvider
+		bufregistryapimodule.V1Beta1CommitServiceClientProvider
 	},
+	ownerClientProvider bufregistryapiowner.V1OwnerServiceClientProvider,
 ) *commitProvider {
 	return &commitProvider{
-		logger:         logger,
-		clientProvider: clientProvider,
+		logger:               logger,
+		moduleClientProvider: moduleClientProvider,
+		ownerClientProvider:  ownerClientProvider,
 	}
 }
 
@@ -82,7 +84,7 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().Registry()
+			return moduleKey.FullName().Registry()
 		},
 	)
 	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(moduleKeys))
@@ -115,8 +117,8 @@ func (a *commitProvider) GetCommitsForCommitKeys(
 
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
-	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
+	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.ownerClientProvider)
 
 	registryToIndexedCommitKeys := slicesext.ToIndexedValuesMap(
 		commitKeys,
@@ -158,7 +160,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 		return nil, err
 	}
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.moduleClientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +211,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 		return nil, err
 	}
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedCommitKey)
-	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.moduleClientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}

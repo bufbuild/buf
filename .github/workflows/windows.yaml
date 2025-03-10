@@ -1,5 +1,9 @@
 name: windows
-on: push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions: read-all
@@ -21,7 +25,7 @@ jobs:
       - name: setup-go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.x'
+          go-version: '1.23.x'
           cache: true
       - name: windows-cache
         uses: actions/cache@v4

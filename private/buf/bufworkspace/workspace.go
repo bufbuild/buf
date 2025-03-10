@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
 package bufworkspace
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 )
 
 // Workspace is a buf workspace.
@@ -58,12 +61,11 @@ type Workspace interface {
 	//
 	// However, this would mean that Workspace would not inherit ModuleSet, as we'd
 	// want to create GetWorkspaceModule.* functions instead of GetModule.* functions,
-	// and then provide a WorkpaceToModuleSet global function. This seems messier in
+	// and then provide a WorkspaceToModuleSet global function. This seems messier in
 	// practice than having users call GetLintConfigForOpaqueID(module.OpaqueID())
 	// in the situations where they need configuration.
 	GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig
-
-	// GetLintConfigForOpaqueID gets the LintConfig for the OpaqueID, if the OpaqueID
+	// GetBreakingConfigForOpaqueID gets the BreakingConfig for the OpaqueID, if the OpaqueID
 	// represents a Module within the workspace.
 	//
 	// This will be the default value for Modules that didn't have an associated config,
@@ -71,18 +73,26 @@ type Workspace interface {
 	// in the workspace. This should result in items such as the linter or breaking change
 	// detector ignoring these configs anyways.
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
-	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
+	// PluginConfigs gets the configured PluginConfigs of the Workspace.
+	//
+	// These come from the buf.lock file. Only v2 supports plugins.
+	PluginConfigs() []bufconfig.PluginConfig
+	// RemotePluginKeys gets the remote PluginKeys of the Workspace.
+	//
+	// These come from the buf.lock file. Only v2 supports plugins.
+	RemotePluginKeys() []bufplugin.PluginKey
+	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as Refs.
 	//
 	// These come from buf.yaml files.
 	//
-	// The ModuleRefs in this list will be unique by ModuleFullName. If there are two ModuleRefs
-	// in the buf.yaml with the same ModuleFullName but different Refs, an error will be given
+	// The ModuleRefs in this list will be unique by FullName. If there are two ModuleRefs
+	// in the buf.yaml with the same FullName but different Refs, an error will be given
 	// at workspace constructions. For example, with v1 buf.yaml, this is a union of the deps in
 	// the buf.yaml files in the workspace. If different buf.yamls had different refs, an error
 	// will be returned - we have no way to resolve what the user intended.
 	//
 	// Sorted.
-	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
+	ConfiguredDepModuleRefs() []bufparse.Ref
 
 	// IsV2 signifies if this module was created from a v2 buf.yaml.
 	//
@@ -102,7 +112,9 @@ type workspace struct {
 
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
-	configuredDepModuleRefs  []bufmodule.ModuleRef
+	pluginConfigs            []bufconfig.PluginConfig
+	remotePluginKeys         []bufplugin.PluginKey
+	configuredDepModuleRefs  []bufparse.Ref
 
 	// If true, the workspace was created from v2 buf.yamls.
 	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls.
@@ -113,13 +125,17 @@ func newWorkspace(
 	moduleSet bufmodule.ModuleSet,
 	opaqueIDToLintConfig map[string]bufconfig.LintConfig,
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
-	configuredDepModuleRefs []bufmodule.ModuleRef,
+	pluginConfigs []bufconfig.PluginConfig,
+	remotePluginKeys []bufplugin.PluginKey,
+	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
 ) *workspace {
 	return &workspace{
 		ModuleSet:                moduleSet,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
+		pluginConfigs:            pluginConfigs,
+		remotePluginKeys:         remotePluginKeys,
 		configuredDepModuleRefs:  configuredDepModuleRefs,
 		isV2:                     isV2,
 	}
@@ -133,8 +149,16 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 	return w.opaqueIDToBreakingConfig[opaqueID]
 }
 
-func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
-	return slicesext.Copy(w.configuredDepModuleRefs)
+func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
+	return slices.Clone(w.pluginConfigs)
+}
+
+func (w *workspace) RemotePluginKeys() []bufplugin.PluginKey {
+	return slices.Clone(w.remotePluginKeys)
+}
+
+func (w *workspace) ConfiguredDepModuleRefs() []bufparse.Ref {
+	return slices.Clone(w.configuredDepModuleRefs)
 }
 
 func (w *workspace) IsV2() bool {

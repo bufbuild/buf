@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ enum Format {
 message BinaryOutputOptions {}
 
 message JSONOutputOptions {
-  // Enum fields will be emitted as numeric values. If false (the dafault), enum
+  // Enum fields will be emitted as numeric values. If false (the default), enum
   // fields are emitted as strings that are the enum values' names.
   bool use_enum_numbers = 3;
   // Includes fields that have their default values. This applies only to fields

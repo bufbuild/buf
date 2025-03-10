@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,42 +17,41 @@ package bufmigrate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
+	"slices"
 	"sort"
 	"strings"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
+	"github.com/bufbuild/buf/private/pkg/wasm"
+	"github.com/google/uuid"
 )
 
 type migrator struct {
-	logger            *zap.Logger
-	runner            command.Runner
+	logger            *slog.Logger
 	moduleKeyProvider bufmodule.ModuleKeyProvider
 	commitProvider    bufmodule.CommitProvider
 }
 
 func newMigrator(
-	logger *zap.Logger,
-	runner command.Runner,
+	logger *slog.Logger,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) *migrator {
 	return &migrator{
 		logger:            logger,
-		runner:            runner,
 		moduleKeyProvider: moduleKeyProvider,
 		commitProvider:    commitProvider,
 	}
@@ -95,13 +94,13 @@ func (m *migrator) logPaths(
 	bufGenYAMLFilePaths []string,
 ) {
 	if len(workspaceDirPaths) > 0 {
-		m.logger.Sugar().Debugf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n")))
 	}
 	if len(moduleDirPaths) > 0 {
-		m.logger.Sugar().Debugf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n")))
 	}
 	if len(bufGenYAMLFilePaths) > 0 {
-		m.logger.Sugar().Debugf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n"))
+		m.logger.Debug(fmt.Sprintf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n")))
 	}
 }
 
@@ -207,7 +206,6 @@ func (m *migrator) diff(
 	}
 	return storage.Diff(
 		ctx,
-		m.runner,
 		writer,
 		originalFileBucket,
 		addedFileBucket,
@@ -260,7 +258,7 @@ func (m *migrator) getOriginalAndAddedFileBuckets(
 			return nil, nil, err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			retErr = errors.Join(retErr, writeObjectCloser.Close())
 		}()
 		if err := bufconfig.WriteBufYAMLFile(writeObjectCloser, migratedBufYAMLFile); err != nil {
 			return nil, nil, err
@@ -283,7 +281,7 @@ func (m *migrator) getOriginalAndAddedFileBuckets(
 				return nil, nil, err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, writeObjectCloser.Close())
+				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
 			if err := bufconfig.WriteBufLockFile(writeObjectCloser, migratedBufLockFile); err != nil {
 				return nil, nil, err
@@ -307,7 +305,7 @@ func (m *migrator) getOriginalAndAddedFileBuckets(
 			return nil, nil, err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			retErr = errors.Join(retErr, writeObjectCloser.Close())
 		}()
 		if err := bufconfig.WriteBufGenYAMLFile(writeObjectCloser, migratedBufGenYAMLFile); err != nil {
 			return nil, nil, err
@@ -323,9 +321,9 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	migrateBuilder *migrateBuilder,
 ) (bufconfig.BufYAMLFile, bufconfig.BufLockFile, error) {
 	// module full name --> the list of declared dependencies that are this module.
-	depModuleToDeclaredRefs := make(map[string][]bufmodule.ModuleRef)
+	depModuleToDeclaredRefs := make(map[string][]bufparse.Ref)
 	for _, declaredRef := range migrateBuilder.configuredDepModuleRefs {
-		moduleFullName := declaredRef.ModuleFullName().String()
+		moduleFullName := declaredRef.FullName().String()
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
 		if _, ok := migrateBuilder.moduleFullNameStringToParentPath[moduleFullName]; ok {
 			continue
@@ -335,11 +333,11 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	// module full name --> the list of lock entries that are this module.
 	depModuleToLockEntries := make(map[string][]bufmodule.ModuleKey)
 	for _, lockEntry := range migrateBuilder.depModuleKeys {
-		moduleFullName := lockEntry.ModuleFullName().String()
+		moduleFullName := lockEntry.FullName().String()
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
 		//
 		// We are only removing lock entries that are in the workspace. A lock entry
-		// could be for an indirect dependenceny not listed in deps in any buf.yaml.
+		// could be for an indirect dependency not listed in deps in any buf.yaml.
 		if _, ok := migrateBuilder.moduleFullNameStringToParentPath[moduleFullName]; ok {
 			continue
 		}
@@ -348,7 +346,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	// This will be set to false if the duplicate dependencies cannot be resolved locally.
 	areDependenciesResolved := true
 	for depModule, declaredRefs := range depModuleToDeclaredRefs {
-		refStringToRef := make(map[string]bufmodule.ModuleRef)
+		refStringToRef := make(map[string]bufparse.Ref)
 		for _, ref := range declaredRefs {
 			// Add ref even if ref.Ref() is empty. Therefore, slicesext.ToValuesMap is not used.
 			refStringToRef[ref.Ref()] = ref
@@ -376,7 +374,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		}
 	}
 	if areDependenciesResolved {
-		resolvedDeclaredRefs := make([]bufmodule.ModuleRef, 0, len(depModuleToDeclaredRefs))
+		resolvedDeclaredRefs := make([]bufparse.Ref, 0, len(depModuleToDeclaredRefs))
 		for _, depModuleRefs := range depModuleToDeclaredRefs {
 			// depModuleRefs is guaranteed to have length 1, because areDependenciesResolved is true.
 			resolvedDeclaredRefs = append(resolvedDeclaredRefs, depModuleRefs...)
@@ -384,6 +382,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		bufYAML, err := bufconfig.NewBufYAMLFile(
 			bufconfig.FileVersionV2,
 			migrateBuilder.moduleConfigs,
+			// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+			nil,
 			resolvedDeclaredRefs,
 		)
 		if err != nil {
@@ -402,6 +402,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedLockEntries,
+				nil,
 			)
 			if err != nil {
 				return nil, nil, err
@@ -430,6 +431,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		migrateBuilder.moduleConfigs,
+		// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+		nil,
 		resolvedDepModuleRefs,
 	)
 	if err != nil {
@@ -444,6 +447,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		bufLock, err = bufconfig.NewBufLockFile(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
+			nil, // Plugins are not supported in v1.
 		)
 		if err != nil {
 			return nil, nil, err
@@ -454,7 +458,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 
 func (m *migrator) getModuleToRefToCommit(
 	ctx context.Context,
-	moduleRefs []bufmodule.ModuleRef,
+	moduleRefs []bufparse.Ref,
 ) (map[string]map[string]bufmodule.Commit, error) {
 	// The module refs that are collected by migrateBuilder is across all modules being
 	// migrated, so there may be duplicates. ModuleKeyProvider errors on duplicate module
@@ -462,7 +466,7 @@ func (m *migrator) getModuleToRefToCommit(
 	// so we deduplicate the module refs we are passing here.
 	moduleRefs = slicesext.DeduplicateAny(
 		moduleRefs,
-		func(moduleRef bufmodule.ModuleRef) string { return moduleRef.String() },
+		func(moduleRef bufparse.Ref) string { return moduleRef.String() },
 	)
 	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB5)
 	if err != nil {
@@ -481,7 +485,7 @@ func (m *migrator) getModuleToRefToCommit(
 		// of GetModuleKeysForModuleRefs and GetCommitsForModuleKeys.
 		commit := commits[i]
 
-		moduleFullName := moduleRef.ModuleFullName()
+		moduleFullName := moduleRef.FullName()
 		if moduleToRefToCommit[moduleFullName.String()] == nil {
 			moduleToRefToCommit[moduleFullName.String()] = make(map[string]bufmodule.Commit)
 		}
@@ -518,7 +522,7 @@ func (m *migrator) upgradeModuleKeysToB5(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleKey, error) {
-	moduleKeys = slicesext.Copy(moduleKeys)
+	moduleKeys = slices.Clone(moduleKeys)
 
 	b4IndexedModuleKeys, err := slicesext.FilterError(
 		slicesext.ToIndexed(moduleKeys),
@@ -542,7 +546,7 @@ func (m *migrator) upgradeModuleKeysToB5(
 		b4IndexedModuleKeys,
 		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bufmodule.CommitKey, error) {
 			return bufmodule.NewCommitKey(
-				indexedModuleKey.Value.ModuleFullName().Registry(),
+				indexedModuleKey.Value.FullName().Registry(),
 				indexedModuleKey.Value.CommitID(),
 				bufmodule.DigestTypeB5,
 			)
@@ -560,7 +564,7 @@ func (m *migrator) upgradeModuleKeysToB5(
 		moduleKeyIndex := b4IndexedModuleKeys[i].Index
 		existingModuleKey := moduleKeys[moduleKeyIndex]
 		newModuleKey, err := bufmodule.NewModuleKey(
-			existingModuleKey.ModuleFullName(),
+			existingModuleKey.FullName(),
 			existingModuleKey.CommitID(),
 			commit.ModuleKey().Digest,
 		)
@@ -575,10 +579,10 @@ func (m *migrator) upgradeModuleKeysToB5(
 func resolvedDeclaredAndLockedDependencies(
 	moduleToRefToCommit map[string]map[string]bufmodule.Commit,
 	commitIDToCommit map[uuid.UUID]bufmodule.Commit,
-	moduleFullNameToDeclaredRefs map[string][]bufmodule.ModuleRef,
+	moduleFullNameToDeclaredRefs map[string][]bufparse.Ref,
 	moduleFullNameToLockKeys map[string][]bufmodule.ModuleKey,
-) ([]bufmodule.ModuleRef, []bufmodule.ModuleKey, error) {
-	depModuleFullNameToResolvedRef := make(map[string]bufmodule.ModuleRef)
+) ([]bufparse.Ref, []bufmodule.ModuleKey, error) {
+	depFullNameToResolvedRef := make(map[string]bufparse.Ref)
 	for moduleFullName, refs := range moduleFullNameToDeclaredRefs {
 		var errs []error
 		// There are multiple pinned versions of the same dependency, we use the latest one.
@@ -595,13 +599,13 @@ func resolvedDeclaredAndLockedDependencies(
 			return iTime.After(jTime)
 		})
 		if len(errs) > 0 {
-			return nil, nil, multierr.Combine(errs...)
+			return nil, nil, errors.Join(errs...)
 		}
-		depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
+		depFullNameToResolvedRef[moduleFullName] = refs[0]
 	}
 	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(moduleFullNameToLockKeys))
 	for moduleFullName, lockKeys := range moduleFullNameToLockKeys {
-		resolvedRef, ok := depModuleFullNameToResolvedRef[moduleFullName]
+		resolvedRef, ok := depFullNameToResolvedRef[moduleFullName]
 		if ok && resolvedRef.Ref() != "" {
 			// If we have already picked a pinned dependency ref for this dependency,
 			// we use that as the lock entry as well.
@@ -623,41 +627,31 @@ func resolvedDeclaredAndLockedDependencies(
 			return iTime.After(jTime)
 		})
 		if len(errs) > 0 {
-			return nil, nil, multierr.Combine(errs...)
+			return nil, nil, errors.Join(errs...)
 		}
 		resolvedDepModuleKeys = append(resolvedDepModuleKeys, lockKeys[0])
 	}
-	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depModuleFullNameToResolvedRef)
+	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depFullNameToResolvedRef)
 	// Sort the resolved dependencies for deterministic results.
 	sort.Slice(resolvedDeclaredDependencies, func(i, j int) bool {
-		return resolvedDeclaredDependencies[i].ModuleFullName().String() < resolvedDeclaredDependencies[j].ModuleFullName().String()
+		return resolvedDeclaredDependencies[i].FullName().String() < resolvedDeclaredDependencies[j].FullName().String()
 	})
 	sort.Slice(resolvedDepModuleKeys, func(i, j int) bool {
-		return resolvedDepModuleKeys[i].ModuleFullName().String() < resolvedDepModuleKeys[j].ModuleFullName().String()
+		return resolvedDepModuleKeys[i].FullName().String() < resolvedDepModuleKeys[j].FullName().String()
 	})
 	return resolvedDeclaredDependencies, resolvedDepModuleKeys, nil
 }
 
-func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
-	deprecations, err := buflint.GetRelevantDeprecations(lintConfig.FileVersion())
-	if err != nil {
-		return nil, err
-	}
+func equivalentLintConfigInV2(
+	ctx context.Context,
+	logger *slog.Logger,
+	lintConfig bufconfig.LintConfig,
+) (bufconfig.LintConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
+		ctx,
+		logger,
+		check.RuleTypeLint,
 		lintConfig,
-		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
-			lintConfig := bufconfig.NewLintConfig(
-				checkConfig,
-				lintConfig.EnumZeroValueSuffix(),
-				lintConfig.RPCAllowSameRequestResponse(),
-				lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
-				lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
-				lintConfig.ServiceSuffix(),
-				lintConfig.AllowCommentIgnores(),
-			)
-			return buflint.RulesForConfig(lintConfig)
-		},
-		deprecations,
 	)
 	if err != nil {
 		return nil, err
@@ -673,21 +667,16 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 	), nil
 }
 
-func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
-	deprecations, err := bufbreaking.GetRelevantDeprecations(breakingConfig.FileVersion())
-	if err != nil {
-		return nil, err
-	}
+func equivalentBreakingConfigInV2(
+	ctx context.Context,
+	logger *slog.Logger,
+	breakingConfig bufconfig.BreakingConfig,
+) (bufconfig.BreakingConfig, error) {
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
+		ctx,
+		logger,
+		check.RuleTypeBreaking,
 		breakingConfig,
-		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
-			breakingConfig := bufconfig.NewBreakingConfig(
-				checkConfig,
-				breakingConfig.IgnoreUnstablePackages(),
-			)
-			return bufbreaking.RulesForConfig(breakingConfig)
-		},
-		deprecations,
 	)
 	if err != nil {
 		return nil, err
@@ -701,17 +690,30 @@ func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufc
 // Returns an equivalent check config with (close to) minimal difference in the
 // list of rules and categories specified.
 func equivalentCheckConfigInV2(
+	ctx context.Context,
+	logger *slog.Logger,
+	ruleType check.RuleType,
 	checkConfig bufconfig.CheckConfig,
-	getRulesFunc func(bufconfig.CheckConfig) ([]bufcheck.Rule, error),
-	deprecations map[string][]string,
 ) (bufconfig.CheckConfig, error) {
-	// These are the rules we want the returned config to have in effect.
-	// i.e. getRulesFunc(returnedConfig) should return this list.
-	expectedRules, err := getRulesFunc(checkConfig)
+	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
+	// TODO: If we ever need v3, then we will have to deal with this.
+	client, err := bufcheck.NewClient(logger, bufcheck.NewLocalRunnerProvider(
+		wasm.UnimplementedRuntime,
+		bufplugin.NopPluginKeyProvider,
+		bufplugin.NopPluginDataProvider,
+	))
 	if err != nil {
 		return nil, err
 	}
-
+	expectedRules, err := client.ConfiguredRules(ctx, ruleType, checkConfig)
+	if err != nil {
+		return nil, err
+	}
+	deprecations, err := bufcheck.GetDeprecatedIDToReplacementIDs(expectedRules)
+	if err != nil {
+		return nil, err
+	}
+	expectedRules = slicesext.Filter(expectedRules, func(rule bufcheck.Rule) bool { return !rule.Deprecated() })
 	expectedIDs := slicesext.Map(
 		expectedRules,
 		func(rule bufcheck.Rule) string {
@@ -727,11 +729,12 @@ func equivalentCheckConfigInV2(
 		undeprecateSlice(checkConfig.ExceptIDsAndCategories(), deprecations),
 		checkConfig.IgnorePaths(),
 		undeprecateMap(checkConfig.IgnoreIDOrCategoryToPaths(), deprecations),
+		checkConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	simplyTranslatedRules, err := getRulesFunc(simplyTranslatedCheckConfig)
+	simplyTranslatedRules, err := client.ConfiguredRules(ctx, ruleType, simplyTranslatedCheckConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -741,7 +744,7 @@ func equivalentCheckConfigInV2(
 			return rule.ID()
 		},
 	)
-	if slicesext.ElementsEqual(expectedIDs, simplyTranslatedIDs) {
+	if slices.Equal(expectedIDs, simplyTranslatedIDs) {
 		// If the simple translation is equivalent to before, use it.
 		return simplyTranslatedCheckConfig, nil
 	}
@@ -768,6 +771,7 @@ func equivalentCheckConfigInV2(
 		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
 		simplyTranslatedCheckConfig.IgnorePaths(),
 		simplyTranslatedCheckConfig.IgnoreIDOrCategoryToPaths(),
+		simplyTranslatedCheckConfig.DisableBuiltin(),
 	)
 }
 

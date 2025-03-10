@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,13 +55,6 @@ const (
 	StudioServiceSetStudioAgentPresetsProcedure = "/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	studioServiceServiceDescriptor                      = v1alpha1.File_buf_alpha_registry_v1alpha1_studio_proto.Services().ByName("StudioService")
-	studioServiceListStudioAgentPresetsMethodDescriptor = studioServiceServiceDescriptor.Methods().ByName("ListStudioAgentPresets")
-	studioServiceSetStudioAgentPresetsMethodDescriptor  = studioServiceServiceDescriptor.Methods().ByName("SetStudioAgentPresets")
-)
-
 // StudioServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioService service.
 type StudioServiceClient interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
@@ -79,18 +72,19 @@ type StudioServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewStudioServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) StudioServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	studioServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_studio_proto.Services().ByName("StudioService").Methods()
 	return &studioServiceClient{
 		listStudioAgentPresets: connect.NewClient[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse](
 			httpClient,
 			baseURL+StudioServiceListStudioAgentPresetsProcedure,
-			connect.WithSchema(studioServiceListStudioAgentPresetsMethodDescriptor),
+			connect.WithSchema(studioServiceMethods.ByName("ListStudioAgentPresets")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		setStudioAgentPresets: connect.NewClient[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse](
 			httpClient,
 			baseURL+StudioServiceSetStudioAgentPresetsProcedure,
-			connect.WithSchema(studioServiceSetStudioAgentPresetsMethodDescriptor),
+			connect.WithSchema(studioServiceMethods.ByName("SetStudioAgentPresets")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -127,17 +121,18 @@ type StudioServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	studioServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_studio_proto.Services().ByName("StudioService").Methods()
 	studioServiceListStudioAgentPresetsHandler := connect.NewUnaryHandler(
 		StudioServiceListStudioAgentPresetsProcedure,
 		svc.ListStudioAgentPresets,
-		connect.WithSchema(studioServiceListStudioAgentPresetsMethodDescriptor),
+		connect.WithSchema(studioServiceMethods.ByName("ListStudioAgentPresets")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	studioServiceSetStudioAgentPresetsHandler := connect.NewUnaryHandler(
 		StudioServiceSetStudioAgentPresetsProcedure,
 		svc.SetStudioAgentPresets,
-		connect.WithSchema(studioServiceSetStudioAgentPresetsMethodDescriptor),
+		connect.WithSchema(studioServiceMethods.ByName("SetStudioAgentPresets")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.StudioService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

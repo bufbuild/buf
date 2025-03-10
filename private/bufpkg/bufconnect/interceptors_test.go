@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,7 +112,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
-	logger, err := zaputil.NewLoggerForFlagValues(&buf, "warn", "text")
+	logger, err := slogapp.NewLogger(&buf, appext.LogLevelWarn, appext.LogFormatText)
 	require.NoError(t, err)
 	// testing valid warning message
 	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -136,7 +136,7 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
-	logger, err := zaputil.NewLoggerForFlagValues(&buf, "warn", "text")
+	logger, err := slogapp.NewLogger(&buf, appext.LogLevelWarn, appext.LogFormatText)
 	require.NoError(t, err)
 	// testing valid warning message from error
 	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {

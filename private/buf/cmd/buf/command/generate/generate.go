@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -30,12 +31,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 )
 
 const (
@@ -70,6 +68,10 @@ func NewCommand(
     # The valid values are v1beta1, v1 and v2.
     # Required.
     version: v2
+    # When clean is set to true, delete the directories, zip files, and/or jar files specified in the
+    # "out" field for all plugins before running code generation. Defaults to false.
+    # Optional.
+    clean: true
     # The plugins to run.
     # Required.
     plugins:
@@ -170,7 +172,7 @@ func NewCommand(
       # The accepted field options are:
       #  - jstype
       #
-      # If multple overrides for the same option apply to a file or field,
+      # If multiple overrides for the same option apply to a file or field,
       # the last rule takes effect.
       # Optional.
       override:
@@ -542,9 +544,7 @@ func run(
 	}
 	return bufgen.NewGenerator(
 		logger,
-		tracing.NewTracer(container.Tracer()),
 		storageosProvider,
-		command.NewRunner(),
 		clientConfig,
 	).Generate(
 		ctx,
@@ -583,7 +583,7 @@ func readBufGenYAMLFile(
 
 func getInputImages(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	controller bufctl.Controller,
 	inputSpecified string,
 	bufGenYAMLFile bufconfig.BufGenYAMLFile,

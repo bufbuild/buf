@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,36 +16,169 @@ package buf
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
 
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
-var convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
+var (
+	convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
+	// ordered, contains non-default
+	builtinLintRulesV2 = []*outputCheckRule{
+		{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
+		{ID: "PACKAGE_DEFINED", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a package defined."},
+		{ID: "PACKAGE_DIRECTORY_MATCH", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files are in a directory that matches their package name."},
+		{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
+		{ID: "PACKAGE_SAME_DIRECTORY", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package are in the same directory."},
+		{ID: "ENUM_FIRST_VALUE_ZERO", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all first values of enums have a numeric value of 0."},
+		{ID: "ENUM_NO_ALLOW_ALIAS", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that enums do not have the allow_alias option set."},
+		{ID: "ENUM_PASCAL_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that enums are PascalCase."},
+		{ID: "ENUM_VALUE_UPPER_SNAKE_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that enum values are UPPER_SNAKE_CASE."},
+		{ID: "FIELD_LOWER_SNAKE_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that field names are lower_snake_case."},
+		{ID: "FIELD_NOT_REQUIRED", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that fields are not configured to be required."},
+		{ID: "IMPORT_NO_PUBLIC", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that imports are not public."},
+		{ID: "IMPORT_USED", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that imports are used."},
+		{ID: "MESSAGE_PASCAL_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that messages are PascalCase."},
+		{ID: "ONEOF_LOWER_SNAKE_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that oneof names are lower_snake_case."},
+		{ID: "PACKAGE_LOWER_SNAKE_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages are lower_snake.case."},
+		{ID: "PACKAGE_SAME_CSHARP_NAMESPACE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the csharp_namespace option."},
+		{ID: "PACKAGE_SAME_GO_PACKAGE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the go_package option."},
+		{ID: "PACKAGE_SAME_JAVA_MULTIPLE_FILES", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the java_multiple_files option."},
+		{ID: "PACKAGE_SAME_JAVA_PACKAGE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the java_package option."},
+		{ID: "PACKAGE_SAME_PHP_NAMESPACE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the php_namespace option."},
+		{ID: "PACKAGE_SAME_RUBY_PACKAGE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the ruby_package option."},
+		{ID: "PACKAGE_SAME_SWIFT_PREFIX", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package have the same value for the swift_prefix option."},
+		{ID: "RPC_PASCAL_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that RPCs are PascalCase."},
+		{ID: "SERVICE_PASCAL_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that services are PascalCase."},
+		{ID: "SYNTAX_SPECIFIED", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a syntax specified."},
+		{ID: "ENUM_VALUE_PREFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE."},
+		{ID: "ENUM_ZERO_VALUE_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that enum zero values have a consistent suffix (configurable, default suffix is \"_UNSPECIFIED\")."},
+		{ID: "FILE_LOWER_SNAKE_CASE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that filenames are lower_snake_case."},
+		{ID: "PACKAGE_VERSION_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that the last component of all packages is a version of the form v\\d+, v\\d+test.*, v\\d+(alpha|beta)\\d+, or v\\d+p\\d+(alpha|beta)\\d+, where numbers are >=1."},
+		{ID: "PROTOVALIDATE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that protovalidate rules are valid and all CEL expressions compile."},
+		{ID: "RPC_REQUEST_RESPONSE_UNIQUE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that RPC request and response types are only used in one RPC (configurable)."},
+		{ID: "RPC_REQUEST_STANDARD_NAME", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)."},
+		{ID: "RPC_RESPONSE_STANDARD_NAME", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)."},
+		{ID: "SERVICE_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that services have a consistent suffix (configurable, default suffix is \"Service\")."},
+		{ID: "COMMENT_ENUM", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that enums have non-empty comments."},
+		{ID: "COMMENT_ENUM_VALUE", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that enum values have non-empty comments."},
+		{ID: "COMMENT_FIELD", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that fields have non-empty comments."},
+		{ID: "COMMENT_MESSAGE", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that messages have non-empty comments."},
+		{ID: "COMMENT_ONEOF", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that oneofs have non-empty comments."},
+		{ID: "COMMENT_RPC", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that RPCs have non-empty comments."},
+		{ID: "COMMENT_SERVICE", Categories: []string{"COMMENTS"}, Default: false, Purpose: "Checks that services have non-empty comments."},
+		{ID: "RPC_NO_CLIENT_STREAMING", Categories: []string{"UNARY_RPC"}, Default: false, Purpose: "Checks that RPCs are not client streaming."},
+		{ID: "RPC_NO_SERVER_STREAMING", Categories: []string{"UNARY_RPC"}, Default: false, Purpose: "Checks that RPCs are not server streaming."},
+		{ID: "STABLE_PACKAGE_NO_IMPORT_UNSTABLE", Categories: []string{}, Default: false, Purpose: "Checks that all files that have stable versioned packages do not import packages with unstable version packages."},
+	}
+	// ordered, contains non-default
+	builtinBreakingRulesV2 = []*outputCheckRule{
+		{ID: "ENUM_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that enums are not deleted from a given file."},
+		{ID: "EXTENSION_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that extensions are not deleted from a given file."},
+		{ID: "FILE_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that files are not deleted."},
+		{ID: "MESSAGE_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that messages are not deleted from a given file."},
+		{ID: "SERVICE_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that services are not deleted from a given file."},
+		{ID: "ENUM_SAME_TYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that enums have the same type (open vs closed)."},
+		{ID: "ENUM_VALUE_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that enum values are not deleted from a given enum."},
+		{ID: "EXTENSION_MESSAGE_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that extension ranges are not deleted from a given message."},
+		{ID: "FIELD_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields are not deleted from a given message."},
+		{ID: "FIELD_SAME_CARDINALITY", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same cardinalities in a given message."},
+		{ID: "FIELD_SAME_CPP_STRING_TYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature."},
+		{ID: "FIELD_SAME_JAVA_UTF8_VALIDATION", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature."},
+		{ID: "FIELD_SAME_JSTYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same value for the jstype option."},
+		{ID: "FIELD_SAME_TYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same types in a given message."},
+		{ID: "FIELD_SAME_UTF8_VALIDATION", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that string fields have the same UTF8 validation mode."},
+		{ID: "FILE_SAME_CC_ENABLE_ARENAS", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the cc_enable_arenas option."},
+		{ID: "FILE_SAME_CC_GENERIC_SERVICES", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the cc_generic_services option."},
+		{ID: "FILE_SAME_CSHARP_NAMESPACE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the csharp_namespace option."},
+		{ID: "FILE_SAME_GO_PACKAGE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the go_package option."},
+		{ID: "FILE_SAME_JAVA_GENERIC_SERVICES", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the java_generic_services option."},
+		{ID: "FILE_SAME_JAVA_MULTIPLE_FILES", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the java_multiple_files option."},
+		{ID: "FILE_SAME_JAVA_OUTER_CLASSNAME", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the java_outer_classname option."},
+		{ID: "FILE_SAME_JAVA_PACKAGE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the java_package option."},
+		{ID: "FILE_SAME_OBJC_CLASS_PREFIX", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the objc_class_prefix option."},
+		{ID: "FILE_SAME_OPTIMIZE_FOR", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the optimize_for option."},
+		{ID: "FILE_SAME_PHP_CLASS_PREFIX", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the php_class_prefix option."},
+		{ID: "FILE_SAME_PHP_METADATA_NAMESPACE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the php_metadata_namespace option."},
+		{ID: "FILE_SAME_PHP_NAMESPACE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the php_namespace option."},
+		{ID: "FILE_SAME_PY_GENERIC_SERVICES", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the py_generic_services option."},
+		{ID: "FILE_SAME_RUBY_PACKAGE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the ruby_package option."},
+		{ID: "FILE_SAME_SWIFT_PREFIX", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the swift_prefix option."},
+		{ID: "FILE_SAME_SYNTAX", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same syntax."},
+		{ID: "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true."},
+		{ID: "ONEOF_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that oneofs are not deleted from a given message."},
+		{ID: "RPC_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that rpcs are not deleted from a given service."},
+		{ID: "ENUM_SAME_JSON_FORMAT", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enums have the same JSON format support."},
+		{ID: "ENUM_VALUE_SAME_NAME", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enum values have the same name."},
+		{ID: "FIELD_SAME_JSON_NAME", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same value for the json_name option."},
+		{ID: "FIELD_SAME_NAME", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same names in a given message."},
+		{ID: "MESSAGE_SAME_JSON_FORMAT", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that messages have the same JSON format support."},
+		{ID: "FIELD_SAME_DEFAULT", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that fields have the same default value, if a default is specified."},
+		{ID: "FIELD_SAME_ONEOF", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that fields have the same oneofs in a given message."},
+		{ID: "FILE_SAME_PACKAGE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that files have the same package."},
+		{ID: "MESSAGE_SAME_REQUIRED_FIELDS", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that messages have no added or deleted required fields."},
+		{ID: "RESERVED_ENUM_NO_DELETE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that reserved ranges and names are not deleted from a given enum."},
+		{ID: "RESERVED_MESSAGE_NO_DELETE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that reserved ranges and names are not deleted from a given message."},
+		{ID: "RPC_SAME_CLIENT_STREAMING", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same client streaming value."},
+		{ID: "RPC_SAME_IDEMPOTENCY_LEVEL", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same value for the idempotency_level option."},
+		{ID: "RPC_SAME_REQUEST_TYPE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs are have the same request type."},
+		{ID: "RPC_SAME_RESPONSE_TYPE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs are have the same response type."},
+		{ID: "RPC_SAME_SERVER_STREAMING", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same server streaming value."},
+		{ID: "PACKAGE_ENUM_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that enums are not deleted from a given package."},
+		{ID: "PACKAGE_EXTENSION_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that extensions are not deleted from a given package."},
+		{ID: "PACKAGE_MESSAGE_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that messages are not deleted from a given package."},
+		{ID: "PACKAGE_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that packages are not deleted."},
+		{ID: "PACKAGE_SERVICE_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that services are not deleted from a given package."},
+		{ID: "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that enum values are not deleted from a given enum unless the name is reserved."},
+		{ID: "FIELD_NO_DELETE_UNLESS_NAME_RESERVED", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that fields are not deleted from a given message unless the name is reserved."},
+		{ID: "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that fields have wire and JSON compatible cardinalities in a given message."},
+		{ID: "FIELD_WIRE_JSON_COMPATIBLE_TYPE", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that fields have wire and JSON compatible types in a given message."},
+		{ID: "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED", Categories: []string{"WIRE_JSON", "WIRE"}, Default: false, Purpose: "Checks that enum values are not deleted from a given enum unless the number is reserved."},
+		{ID: "FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED", Categories: []string{"WIRE_JSON", "WIRE"}, Default: false, Purpose: "Checks that fields are not deleted from a given message unless the number is reserved."},
+		{ID: "FIELD_WIRE_COMPATIBLE_CARDINALITY", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible cardinalities in a given message."},
+		{ID: "FIELD_WIRE_COMPATIBLE_TYPE", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible types in a given message."},
+	}
+)
+
+type outputCheckRule struct {
+	ID           string   `json:"id"`
+	Categories   []string `json:"categories"`
+	Default      bool     `json:"default"`
+	Purpose      string   `json:"purpose"`
+	Plugin       string   `json:"plugin"`
+	Deprecated   bool     `json:"deprecated"`
+	Replacements []string `json:"replacements"`
+}
 
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
@@ -294,10 +427,15 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		"", // stdout is empty
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		// This is new behavior we introduced. When setting a config override, we no longer do
 		// a search for the controlling workspace. See bufctl/option.go for additional details.
-		filepath.FromSlash(`Failure: testdata/export/other/proto/unimported.proto: import "another.proto": file does not exist`),
+		// Only the paths specified by "--path" in the command are considered. This avoids build
+		// failures from other proto files under testdata. Command "build" succeeds with this path
+		// restriction, "lint" should be able to build the image and only fail on lint issue for
+		// the specified file.
+		"",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -446,18 +584,18 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
-		"../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete",
 		"--against",
-		"../../../bufpkg/bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/testdata/breaking/previous/breaking_field_no_delete",
 	)
 }
 
@@ -529,51 +667,50 @@ func TestFailCheckBreaking5(t *testing.T) {
 func TestCheckLsLintRulesModAll(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                CATEGORIES               PURPOSE
-DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT  Checks that all files in a given directory are in the same package.
-PACKAGE_DEFINED                   MINIMAL, BASIC, DEFAULT  Checks that all files have a package defined.
-PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT  Checks that all files are in a directory that matches their package name.
-PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, DEFAULT  Checks that all files with a given package are in the same directory.
-ENUM_FIRST_VALUE_ZERO             BASIC, DEFAULT           Checks that all first values of enums have a numeric value of 0.
-ENUM_NO_ALLOW_ALIAS               BASIC, DEFAULT           Checks that enums do not have the allow_alias option set.
-ENUM_PASCAL_CASE                  BASIC, DEFAULT           Checks that enums are PascalCase.
-ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT           Checks that enum values are UPPER_SNAKE_CASE.
-FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that field names are lower_snake_case.
-IMPORT_NO_PUBLIC                  BASIC, DEFAULT           Checks that imports are not public.
-IMPORT_NO_WEAK                    BASIC, DEFAULT           Checks that imports are not weak.
-IMPORT_USED                       BASIC, DEFAULT           Checks that imports are used.
-MESSAGE_PASCAL_CASE               BASIC, DEFAULT           Checks that messages are PascalCase.
-ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that oneof names are lower_snake_case.
-PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT           Checks that packages are lower_snake.case.
-PACKAGE_SAME_CSHARP_NAMESPACE     BASIC, DEFAULT           Checks that all files with a given package have the same value for the csharp_namespace option.
-PACKAGE_SAME_GO_PACKAGE           BASIC, DEFAULT           Checks that all files with a given package have the same value for the go_package option.
-PACKAGE_SAME_JAVA_MULTIPLE_FILES  BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_multiple_files option.
-PACKAGE_SAME_JAVA_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_package option.
-PACKAGE_SAME_PHP_NAMESPACE        BASIC, DEFAULT           Checks that all files with a given package have the same value for the php_namespace option.
-PACKAGE_SAME_RUBY_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the ruby_package option.
-PACKAGE_SAME_SWIFT_PREFIX         BASIC, DEFAULT           Checks that all files with a given package have the same value for the swift_prefix option.
-RPC_PASCAL_CASE                   BASIC, DEFAULT           Checks that RPCs are PascalCase.
-SERVICE_PASCAL_CASE               BASIC, DEFAULT           Checks that services are PascalCase.
-SYNTAX_SPECIFIED                  BASIC, DEFAULT           Checks that all files have a syntax specified.
-ENUM_VALUE_PREFIX                 DEFAULT                  Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
-ENUM_ZERO_VALUE_SUFFIX            DEFAULT                  Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
-FILE_LOWER_SNAKE_CASE             DEFAULT                  Checks that filenames are lower_snake_case.
-PACKAGE_VERSION_SUFFIX            DEFAULT                  Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
-PROTOVALIDATE                     DEFAULT                  Checks that protovalidate rules are valid and all CEL expressions compile.
-RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT                  Checks that RPC request and response types are only used in one RPC (configurable).
-RPC_REQUEST_STANDARD_NAME         DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
-RPC_RESPONSE_STANDARD_NAME        DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
-SERVICE_SUFFIX                    DEFAULT                  Checks that services have a consistent suffix (configurable, default suffix is "Service").
-COMMENT_ENUM                      COMMENTS                 Checks that enums have non-empty comments.
-COMMENT_ENUM_VALUE                COMMENTS                 Checks that enum values have non-empty comments.
-COMMENT_FIELD                     COMMENTS                 Checks that fields have non-empty comments.
-COMMENT_MESSAGE                   COMMENTS                 Checks that messages have non-empty comments.
-COMMENT_ONEOF                     COMMENTS                 Checks that oneof have non-empty comments.
-COMMENT_RPC                       COMMENTS                 Checks that RPCs have non-empty comments.
-COMMENT_SERVICE                   COMMENTS                 Checks that services have non-empty comments.
-RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
-RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
-PACKAGE_NO_IMPORT_CYCLE                                    Checks that packages do not have import cycles.
+ID                                CATEGORIES                DEFAULT  PURPOSE
+DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, STANDARD  *        Checks that all files in a given directory are in the same package.
+PACKAGE_DEFINED                   MINIMAL, BASIC, STANDARD  *        Checks that all files have a package defined.
+PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, STANDARD  *        Checks that all files are in a directory that matches their package name.
+PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, STANDARD  *        Checks that all files with a given package are in the same directory.
+ENUM_FIRST_VALUE_ZERO             BASIC, STANDARD           *        Checks that all first values of enums have a numeric value of 0.
+ENUM_NO_ALLOW_ALIAS               BASIC, STANDARD           *        Checks that enums do not have the allow_alias option set.
+ENUM_PASCAL_CASE                  BASIC, STANDARD           *        Checks that enums are PascalCase.
+ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, STANDARD           *        Checks that enum values are UPPER_SNAKE_CASE.
+FIELD_LOWER_SNAKE_CASE            BASIC, STANDARD           *        Checks that field names are lower_snake_case.
+IMPORT_NO_PUBLIC                  BASIC, STANDARD           *        Checks that imports are not public.
+IMPORT_USED                       BASIC, STANDARD           *        Checks that imports are used.
+MESSAGE_PASCAL_CASE               BASIC, STANDARD           *        Checks that messages are PascalCase.
+ONEOF_LOWER_SNAKE_CASE            BASIC, STANDARD           *        Checks that oneof names are lower_snake_case.
+PACKAGE_LOWER_SNAKE_CASE          BASIC, STANDARD           *        Checks that packages are lower_snake.case.
+PACKAGE_SAME_CSHARP_NAMESPACE     BASIC, STANDARD           *        Checks that all files with a given package have the same value for the csharp_namespace option.
+PACKAGE_SAME_GO_PACKAGE           BASIC, STANDARD           *        Checks that all files with a given package have the same value for the go_package option.
+PACKAGE_SAME_JAVA_MULTIPLE_FILES  BASIC, STANDARD           *        Checks that all files with a given package have the same value for the java_multiple_files option.
+PACKAGE_SAME_JAVA_PACKAGE         BASIC, STANDARD           *        Checks that all files with a given package have the same value for the java_package option.
+PACKAGE_SAME_PHP_NAMESPACE        BASIC, STANDARD           *        Checks that all files with a given package have the same value for the php_namespace option.
+PACKAGE_SAME_RUBY_PACKAGE         BASIC, STANDARD           *        Checks that all files with a given package have the same value for the ruby_package option.
+PACKAGE_SAME_SWIFT_PREFIX         BASIC, STANDARD           *        Checks that all files with a given package have the same value for the swift_prefix option.
+RPC_PASCAL_CASE                   BASIC, STANDARD           *        Checks that RPCs are PascalCase.
+SERVICE_PASCAL_CASE               BASIC, STANDARD           *        Checks that services are PascalCase.
+SYNTAX_SPECIFIED                  BASIC, STANDARD           *        Checks that all files have a syntax specified.
+ENUM_VALUE_PREFIX                 STANDARD                  *        Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
+ENUM_ZERO_VALUE_SUFFIX            STANDARD                  *        Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
+FILE_LOWER_SNAKE_CASE             STANDARD                  *        Checks that filenames are lower_snake_case.
+PACKAGE_VERSION_SUFFIX            STANDARD                  *        Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
+PROTOVALIDATE                     STANDARD                  *        Checks that protovalidate rules are valid and all CEL expressions compile.
+RPC_REQUEST_RESPONSE_UNIQUE       STANDARD                  *        Checks that RPC request and response types are only used in one RPC (configurable).
+RPC_REQUEST_STANDARD_NAME         STANDARD                  *        Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
+RPC_RESPONSE_STANDARD_NAME        STANDARD                  *        Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
+SERVICE_SUFFIX                    STANDARD                  *        Checks that services have a consistent suffix (configurable, default suffix is "Service").
+COMMENT_ENUM                      COMMENTS                           Checks that enums have non-empty comments.
+COMMENT_ENUM_VALUE                COMMENTS                           Checks that enum values have non-empty comments.
+COMMENT_FIELD                     COMMENTS                           Checks that fields have non-empty comments.
+COMMENT_MESSAGE                   COMMENTS                           Checks that messages have non-empty comments.
+COMMENT_ONEOF                     COMMENTS                           Checks that oneofs have non-empty comments.
+COMMENT_RPC                       COMMENTS                           Checks that RPCs have non-empty comments.
+COMMENT_SERVICE                   COMMENTS                           Checks that services have non-empty comments.
+RPC_NO_CLIENT_STREAMING           UNARY_RPC                          Checks that RPCs are not client streaming.
+RPC_NO_SERVER_STREAMING           UNARY_RPC                          Checks that RPCs are not server streaming.
+PACKAGE_NO_IMPORT_CYCLE                                              Checks that packages do not have import cycles.
 		`
 	testRunStdout(
 		t,
@@ -593,62 +730,177 @@ func TestCheckLsLintRulesFromConfig(t *testing.T) {
 		nil,
 		0,
 		`
-		ID                       CATEGORIES                            PURPOSE
-		PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, DEFAULT, FILE_LAYOUT  Checks that all files are in a directory that matches their package name.
-		ENUM_NO_ALLOW_ALIAS      MINIMAL, BASIC, DEFAULT, SENSIBLE     Checks that enums do not have the allow_alias option set.
+		ID                       CATEGORIES                             DEFAULT  PURPOSE
+		PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, STANDARD, FILE_LAYOUT  *        Checks that all files are in a directory that matches their package name.
+		ENUM_NO_ALLOW_ALIAS      MINIMAL, BASIC, STANDARD, SENSIBLE     *        Checks that enums do not have the allow_alias option set.
 		`,
 		"mod",
 		"ls-lint-rules",
 		"--config",
 		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
+	// defaults only, built-ins and plugins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeLint,
+		`{
+			"version":"v2",
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		append(
+			slicesext.Filter(builtinLintRulesV2, func(lintRule *outputCheckRule) bool {
+				return lintRule.Default
+			}),
+			&outputCheckRule{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			&outputCheckRule{ID: "SERVICE_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no services with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+		),
+	)
+	// configure a deprecated category and a non-deprecated built-in category.
+	// deprecated category contains some non-deprecated rules.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeLint,
+		`{
+			"version":"v2",
+			"lint": {
+				"use": ["MINIMAL", "RESOURCE_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		[]*outputCheckRule{
+			{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
+			{ID: "PACKAGE_DEFINED", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a package defined."},
+			{ID: "PACKAGE_DIRECTORY_MATCH", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files are in a directory that matches their package name."},
+			{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
+			{ID: "PACKAGE_SAME_DIRECTORY", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package are in the same directory."},
+			{ID: "ENUM_VALUE_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no enum values of top-level enums with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "FIELD_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no fields with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+		},
+	)
+	// configure a deprecated category and a non-deprecated category, no built-ins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeLint,
+		`{
+			"version":"v2",
+			"lint": {
+				"use": ["OPERATION_SUFFIXES","ATTRIBUTES_SUFFIXES", "RESOURCE_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		[]*outputCheckRule{
+			{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "SERVICE_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no services with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "ENUM_VALUE_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no enum values of top-level enums with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "FIELD_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no fields with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+		},
+	)
+	// configure a deprecated category and a non-deprecated category, no built-ins.
+	// note: ATTRIBUTES_SUFFIXES is not in USE, but is the replacement category for
+	// RESOURCE_SUFFIXES.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeLint,
+		`{
+			"version":"v2",
+			"lint": {
+				"use": ["OPERATION_SUFFIXES", "RESOURCE_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		[]*outputCheckRule{
+			{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "SERVICE_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no services with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "ENUM_VALUE_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no enum values of top-level enums with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "FIELD_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no fields with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+		},
+	)
+	// configure a mix of rules from built-ins and plugins. MESSAGE_BANNED_SUFFIXES is a deprecated
+	// rule, expect to print its replacement, FIELD_BANNED_SUFFIXES.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeLint,
+		`{
+			"version":"v2",
+			"lint": {
+				"use": ["RPC_BANNED_SUFFIXES","SERVICE_SUFFIX", "MESSAGE_BANNED_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		[]*outputCheckRule{
+			{ID: "SERVICE_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that services have a consistent suffix (configurable, default suffix is \"Service\")."},
+			{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "FIELD_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no fields with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+		},
+	)
+	// configure a mix of categories and rules from built-ins and plugins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeLint,
+		`{
+			"version":"v2",
+			"lint": {
+				"use": ["RPC_BANNED_SUFFIXES","SERVICE_SUFFIX", "MINIMAL", "OPERATION_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		[]*outputCheckRule{
+			{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
+			{ID: "PACKAGE_DEFINED", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a package defined."},
+			{ID: "PACKAGE_DIRECTORY_MATCH", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files are in a directory that matches their package name."},
+			{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
+			{ID: "PACKAGE_SAME_DIRECTORY", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package are in the same directory."},
+			{ID: "SERVICE_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that services have a consistent suffix (configurable, default suffix is \"Service\")."},
+			{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+			{ID: "SERVICE_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no services with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
+		},
+	)
 }
 
 func TestCheckLsLintRulesV1Beta1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                CATEGORIES                                  PURPOSE
-DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files in a given directory are in the same package.
-PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files are in a directory that matches their package name.
-PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files with a given package are in the same directory.
-PACKAGE_SAME_CSHARP_NAMESPACE     MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the csharp_namespace option.
-PACKAGE_SAME_GO_PACKAGE           MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the go_package option.
-PACKAGE_SAME_JAVA_MULTIPLE_FILES  MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the java_multiple_files option.
-PACKAGE_SAME_JAVA_PACKAGE         MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the java_package option.
-PACKAGE_SAME_PHP_NAMESPACE        MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the php_namespace option.
-PACKAGE_SAME_RUBY_PACKAGE         MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the ruby_package option.
-PACKAGE_SAME_SWIFT_PREFIX         MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the swift_prefix option.
-ENUM_NO_ALLOW_ALIAS               MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that enums do not have the allow_alias option set.
-FIELD_NO_DESCRIPTOR               MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that field names are not any capitalization of "descriptor" with any number of prefix or suffix underscores.
-IMPORT_NO_PUBLIC                  MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that imports are not public.
-IMPORT_NO_WEAK                    MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that imports are not weak.
-PACKAGE_DEFINED                   MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that all files have a package defined.
-ENUM_PASCAL_CASE                  BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that enums are PascalCase.
-ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that enum values are UPPER_SNAKE_CASE.
-FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that field names are lower_snake_case.
-MESSAGE_PASCAL_CASE               BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that messages are PascalCase.
-ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that oneof names are lower_snake_case.
-PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that packages are lower_snake.case.
-RPC_PASCAL_CASE                   BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that RPCs are PascalCase.
-SERVICE_PASCAL_CASE               BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that services are PascalCase.
-ENUM_VALUE_PREFIX                 DEFAULT, STYLE_DEFAULT                      Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
-ENUM_ZERO_VALUE_SUFFIX            DEFAULT, STYLE_DEFAULT                      Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
-FILE_LOWER_SNAKE_CASE             DEFAULT, STYLE_DEFAULT                      Checks that filenames are lower_snake_case.
-PACKAGE_VERSION_SUFFIX            DEFAULT, STYLE_DEFAULT                      Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
-RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT, STYLE_DEFAULT                      Checks that RPC request and response types are only used in one RPC (configurable).
-RPC_REQUEST_STANDARD_NAME         DEFAULT, STYLE_DEFAULT                      Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
-RPC_RESPONSE_STANDARD_NAME        DEFAULT, STYLE_DEFAULT                      Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
-SERVICE_SUFFIX                    DEFAULT, STYLE_DEFAULT                      Checks that services have a consistent suffix (configurable, default suffix is "Service").
-COMMENT_ENUM                      COMMENTS                                    Checks that enums have non-empty comments.
-COMMENT_ENUM_VALUE                COMMENTS                                    Checks that enum values have non-empty comments.
-COMMENT_FIELD                     COMMENTS                                    Checks that fields have non-empty comments.
-COMMENT_MESSAGE                   COMMENTS                                    Checks that messages have non-empty comments.
-COMMENT_ONEOF                     COMMENTS                                    Checks that oneof have non-empty comments.
-COMMENT_RPC                       COMMENTS                                    Checks that RPCs have non-empty comments.
-COMMENT_SERVICE                   COMMENTS                                    Checks that services have non-empty comments.
-RPC_NO_CLIENT_STREAMING           UNARY_RPC                                   Checks that RPCs are not client streaming.
-RPC_NO_SERVER_STREAMING           UNARY_RPC                                   Checks that RPCs are not server streaming.
-ENUM_FIRST_VALUE_ZERO             OTHER                                       Checks that all first values of enums have a numeric value of 0.
+ID                                CATEGORIES                                    DEFAULT  PURPOSE
+DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, STANDARD, FILE_LAYOUT         *        Checks that all files in a given directory are in the same package.
+PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, STANDARD, FILE_LAYOUT         *        Checks that all files are in a directory that matches their package name.
+PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, STANDARD, FILE_LAYOUT         *        Checks that all files with a given package are in the same directory.
+PACKAGE_SAME_CSHARP_NAMESPACE     MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the csharp_namespace option.
+PACKAGE_SAME_GO_PACKAGE           MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the go_package option.
+PACKAGE_SAME_JAVA_MULTIPLE_FILES  MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the java_multiple_files option.
+PACKAGE_SAME_JAVA_PACKAGE         MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the java_package option.
+PACKAGE_SAME_PHP_NAMESPACE        MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the php_namespace option.
+PACKAGE_SAME_RUBY_PACKAGE         MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the ruby_package option.
+PACKAGE_SAME_SWIFT_PREFIX         MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    *        Checks that all files with a given package have the same value for the swift_prefix option.
+ENUM_NO_ALLOW_ALIAS               MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that enums do not have the allow_alias option set.
+FIELD_NO_DESCRIPTOR               MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that field names are not any capitalization of "descriptor" with any number of prefix or suffix underscores.
+IMPORT_NO_PUBLIC                  MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that imports are not public.
+PACKAGE_DEFINED                   MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that all files have a package defined.
+ENUM_PASCAL_CASE                  BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that enums are PascalCase.
+ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that enum values are UPPER_SNAKE_CASE.
+FIELD_LOWER_SNAKE_CASE            BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that field names are lower_snake_case.
+MESSAGE_PASCAL_CASE               BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that messages are PascalCase.
+ONEOF_LOWER_SNAKE_CASE            BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that oneof names are lower_snake_case.
+PACKAGE_LOWER_SNAKE_CASE          BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that packages are lower_snake.case.
+RPC_PASCAL_CASE                   BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that RPCs are PascalCase.
+SERVICE_PASCAL_CASE               BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that services are PascalCase.
+ENUM_VALUE_PREFIX                 STANDARD, STYLE_STANDARD                      *        Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
+ENUM_ZERO_VALUE_SUFFIX            STANDARD, STYLE_STANDARD                      *        Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
+FILE_LOWER_SNAKE_CASE             STANDARD, STYLE_STANDARD                      *        Checks that filenames are lower_snake_case.
+PACKAGE_VERSION_SUFFIX            STANDARD, STYLE_STANDARD                      *        Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
+RPC_REQUEST_RESPONSE_UNIQUE       STANDARD, STYLE_STANDARD                      *        Checks that RPC request and response types are only used in one RPC (configurable).
+RPC_REQUEST_STANDARD_NAME         STANDARD, STYLE_STANDARD                      *        Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
+RPC_RESPONSE_STANDARD_NAME        STANDARD, STYLE_STANDARD                      *        Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
+SERVICE_SUFFIX                    STANDARD, STYLE_STANDARD                      *        Checks that services have a consistent suffix (configurable, default suffix is "Service").
+COMMENT_ENUM                      COMMENTS                                               Checks that enums have non-empty comments.
+COMMENT_ENUM_VALUE                COMMENTS                                               Checks that enum values have non-empty comments.
+COMMENT_FIELD                     COMMENTS                                               Checks that fields have non-empty comments.
+COMMENT_MESSAGE                   COMMENTS                                               Checks that messages have non-empty comments.
+COMMENT_ONEOF                     COMMENTS                                               Checks that oneofs have non-empty comments.
+COMMENT_RPC                       COMMENTS                                               Checks that RPCs have non-empty comments.
+COMMENT_SERVICE                   COMMENTS                                               Checks that services have non-empty comments.
+RPC_NO_CLIENT_STREAMING           UNARY_RPC                                              Checks that RPCs are not client streaming.
+RPC_NO_SERVER_STREAMING           UNARY_RPC                                              Checks that RPCs are not server streaming.
+ENUM_FIRST_VALUE_ZERO             OTHER                                                  Checks that all first values of enums have a numeric value of 0.
 		`
 	testRunStdout(
 		t,
@@ -665,52 +917,52 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 func TestCheckLsLintRulesV2(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                CATEGORIES               PURPOSE
-DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT  Checks that all files in a given directory are in the same package.
-PACKAGE_DEFINED                   MINIMAL, BASIC, DEFAULT  Checks that all files have a package defined.
-PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT  Checks that all files are in a directory that matches their package name.
-PACKAGE_NO_IMPORT_CYCLE           MINIMAL, BASIC, DEFAULT  Checks that packages do not have import cycles.
-PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, DEFAULT  Checks that all files with a given package are in the same directory.
-ENUM_FIRST_VALUE_ZERO             BASIC, DEFAULT           Checks that all first values of enums have a numeric value of 0.
-ENUM_NO_ALLOW_ALIAS               BASIC, DEFAULT           Checks that enums do not have the allow_alias option set.
-ENUM_PASCAL_CASE                  BASIC, DEFAULT           Checks that enums are PascalCase.
-ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT           Checks that enum values are UPPER_SNAKE_CASE.
-FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that field names are lower_snake_case.
-FIELD_NOT_REQUIRED                BASIC, DEFAULT           Checks that fields are not configured to be required.
-IMPORT_NO_PUBLIC                  BASIC, DEFAULT           Checks that imports are not public.
-IMPORT_NO_WEAK                    BASIC, DEFAULT           Checks that imports are not weak.
-IMPORT_USED                       BASIC, DEFAULT           Checks that imports are used.
-MESSAGE_PASCAL_CASE               BASIC, DEFAULT           Checks that messages are PascalCase.
-ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that oneof names are lower_snake_case.
-PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT           Checks that packages are lower_snake.case.
-PACKAGE_SAME_CSHARP_NAMESPACE     BASIC, DEFAULT           Checks that all files with a given package have the same value for the csharp_namespace option.
-PACKAGE_SAME_GO_PACKAGE           BASIC, DEFAULT           Checks that all files with a given package have the same value for the go_package option.
-PACKAGE_SAME_JAVA_MULTIPLE_FILES  BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_multiple_files option.
-PACKAGE_SAME_JAVA_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_package option.
-PACKAGE_SAME_PHP_NAMESPACE        BASIC, DEFAULT           Checks that all files with a given package have the same value for the php_namespace option.
-PACKAGE_SAME_RUBY_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the ruby_package option.
-PACKAGE_SAME_SWIFT_PREFIX         BASIC, DEFAULT           Checks that all files with a given package have the same value for the swift_prefix option.
-RPC_PASCAL_CASE                   BASIC, DEFAULT           Checks that RPCs are PascalCase.
-SERVICE_PASCAL_CASE               BASIC, DEFAULT           Checks that services are PascalCase.
-SYNTAX_SPECIFIED                  BASIC, DEFAULT           Checks that all files have a syntax specified.
-ENUM_VALUE_PREFIX                 DEFAULT                  Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
-ENUM_ZERO_VALUE_SUFFIX            DEFAULT                  Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
-FILE_LOWER_SNAKE_CASE             DEFAULT                  Checks that filenames are lower_snake_case.
-PACKAGE_VERSION_SUFFIX            DEFAULT                  Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
-PROTOVALIDATE                     DEFAULT                  Checks that protovalidate rules are valid and all CEL expressions compile.
-RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT                  Checks that RPC request and response types are only used in one RPC (configurable).
-RPC_REQUEST_STANDARD_NAME         DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
-RPC_RESPONSE_STANDARD_NAME        DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
-SERVICE_SUFFIX                    DEFAULT                  Checks that services have a consistent suffix (configurable, default suffix is "Service").
-COMMENT_ENUM                      COMMENTS                 Checks that enums have non-empty comments.
-COMMENT_ENUM_VALUE                COMMENTS                 Checks that enum values have non-empty comments.
-COMMENT_FIELD                     COMMENTS                 Checks that fields have non-empty comments.
-COMMENT_MESSAGE                   COMMENTS                 Checks that messages have non-empty comments.
-COMMENT_ONEOF                     COMMENTS                 Checks that oneof have non-empty comments.
-COMMENT_RPC                       COMMENTS                 Checks that RPCs have non-empty comments.
-COMMENT_SERVICE                   COMMENTS                 Checks that services have non-empty comments.
-RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
-RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
+ID                                 CATEGORIES                DEFAULT  PURPOSE
+DIRECTORY_SAME_PACKAGE             MINIMAL, BASIC, STANDARD  *        Checks that all files in a given directory are in the same package.
+PACKAGE_DEFINED                    MINIMAL, BASIC, STANDARD  *        Checks that all files have a package defined.
+PACKAGE_DIRECTORY_MATCH            MINIMAL, BASIC, STANDARD  *        Checks that all files are in a directory that matches their package name.
+PACKAGE_NO_IMPORT_CYCLE            MINIMAL, BASIC, STANDARD  *        Checks that packages do not have import cycles.
+PACKAGE_SAME_DIRECTORY             MINIMAL, BASIC, STANDARD  *        Checks that all files with a given package are in the same directory.
+ENUM_FIRST_VALUE_ZERO              BASIC, STANDARD           *        Checks that all first values of enums have a numeric value of 0.
+ENUM_NO_ALLOW_ALIAS                BASIC, STANDARD           *        Checks that enums do not have the allow_alias option set.
+ENUM_PASCAL_CASE                   BASIC, STANDARD           *        Checks that enums are PascalCase.
+ENUM_VALUE_UPPER_SNAKE_CASE        BASIC, STANDARD           *        Checks that enum values are UPPER_SNAKE_CASE.
+FIELD_LOWER_SNAKE_CASE             BASIC, STANDARD           *        Checks that field names are lower_snake_case.
+FIELD_NOT_REQUIRED                 BASIC, STANDARD           *        Checks that fields are not configured to be required.
+IMPORT_NO_PUBLIC                   BASIC, STANDARD           *        Checks that imports are not public.
+IMPORT_USED                        BASIC, STANDARD           *        Checks that imports are used.
+MESSAGE_PASCAL_CASE                BASIC, STANDARD           *        Checks that messages are PascalCase.
+ONEOF_LOWER_SNAKE_CASE             BASIC, STANDARD           *        Checks that oneof names are lower_snake_case.
+PACKAGE_LOWER_SNAKE_CASE           BASIC, STANDARD           *        Checks that packages are lower_snake.case.
+PACKAGE_SAME_CSHARP_NAMESPACE      BASIC, STANDARD           *        Checks that all files with a given package have the same value for the csharp_namespace option.
+PACKAGE_SAME_GO_PACKAGE            BASIC, STANDARD           *        Checks that all files with a given package have the same value for the go_package option.
+PACKAGE_SAME_JAVA_MULTIPLE_FILES   BASIC, STANDARD           *        Checks that all files with a given package have the same value for the java_multiple_files option.
+PACKAGE_SAME_JAVA_PACKAGE          BASIC, STANDARD           *        Checks that all files with a given package have the same value for the java_package option.
+PACKAGE_SAME_PHP_NAMESPACE         BASIC, STANDARD           *        Checks that all files with a given package have the same value for the php_namespace option.
+PACKAGE_SAME_RUBY_PACKAGE          BASIC, STANDARD           *        Checks that all files with a given package have the same value for the ruby_package option.
+PACKAGE_SAME_SWIFT_PREFIX          BASIC, STANDARD           *        Checks that all files with a given package have the same value for the swift_prefix option.
+RPC_PASCAL_CASE                    BASIC, STANDARD           *        Checks that RPCs are PascalCase.
+SERVICE_PASCAL_CASE                BASIC, STANDARD           *        Checks that services are PascalCase.
+SYNTAX_SPECIFIED                   BASIC, STANDARD           *        Checks that all files have a syntax specified.
+ENUM_VALUE_PREFIX                  STANDARD                  *        Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
+ENUM_ZERO_VALUE_SUFFIX             STANDARD                  *        Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
+FILE_LOWER_SNAKE_CASE              STANDARD                  *        Checks that filenames are lower_snake_case.
+PACKAGE_VERSION_SUFFIX             STANDARD                  *        Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
+PROTOVALIDATE                      STANDARD                  *        Checks that protovalidate rules are valid and all CEL expressions compile.
+RPC_REQUEST_RESPONSE_UNIQUE        STANDARD                  *        Checks that RPC request and response types are only used in one RPC (configurable).
+RPC_REQUEST_STANDARD_NAME          STANDARD                  *        Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
+RPC_RESPONSE_STANDARD_NAME         STANDARD                  *        Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
+SERVICE_SUFFIX                     STANDARD                  *        Checks that services have a consistent suffix (configurable, default suffix is "Service").
+COMMENT_ENUM                       COMMENTS                           Checks that enums have non-empty comments.
+COMMENT_ENUM_VALUE                 COMMENTS                           Checks that enum values have non-empty comments.
+COMMENT_FIELD                      COMMENTS                           Checks that fields have non-empty comments.
+COMMENT_MESSAGE                    COMMENTS                           Checks that messages have non-empty comments.
+COMMENT_ONEOF                      COMMENTS                           Checks that oneofs have non-empty comments.
+COMMENT_RPC                        COMMENTS                           Checks that RPCs have non-empty comments.
+COMMENT_SERVICE                    COMMENTS                           Checks that services have non-empty comments.
+RPC_NO_CLIENT_STREAMING            UNARY_RPC                          Checks that RPCs are not client streaming.
+RPC_NO_SERVER_STREAMING            UNARY_RPC                          Checks that RPCs are not server streaming.
+STABLE_PACKAGE_NO_IMPORT_UNSTABLE                                     Checks that all files that have stable versioned packages do not import packages with unstable version packages.
 		`
 	testRunStdout(
 		t,
@@ -727,69 +979,68 @@ RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are 
 func TestCheckLsBreakingRulesV1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                              CATEGORIES                      PURPOSE
-ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
-FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
-MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
-SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
-ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
-EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
-FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
-FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
-FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
-FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
-FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
-FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
-FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
-FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
-FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
-FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
-FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
-FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
-FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
-FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
-FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
-FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
-FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
-FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
-FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
-FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
-FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
-MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
-RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
-ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
-FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
-FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
-FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
-FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
-MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
-MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
-RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
-RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
-RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
-RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
-RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
-RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
-RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
-PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
-PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
-PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
-PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
-ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
-FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
-FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                       Checks that fields have wire and JSON compatible cardinalities in a given message.
-FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                       Checks that fields have wire and JSON compatible types in a given message.
-ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
-FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
-FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            Checks that fields have wire-compatible cardinalities in a given message.
-FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            Checks that fields have wire-compatible types in a given message.
+ID                                              CATEGORIES                      DEFAULT  PURPOSE
+ENUM_NO_DELETE                                  FILE                            *        Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            *        Checks that files are not deleted.
+MESSAGE_NO_DELETE                               FILE                            *        Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            *        Checks that services are not deleted from a given file.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   *        Checks that enums have the same type (open vs closed).
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   *        Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   *        Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   *        Checks that fields are not deleted from a given message.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   *        Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   *        Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   *        Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   *        Checks that fields have the same value for the jstype option.
+FIELD_SAME_TYPE                                 FILE, PACKAGE                   *        Checks that fields have the same types in a given message.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   *        Checks that string fields have the same UTF8 validation mode.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   *        Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   *        Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   *        Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   *        Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   *        Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   *        Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the java_package option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   *        Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   *        Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   *        Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   *        Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   *        Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   *        Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   *        Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   *        Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   *        Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   *        Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        *        Checks that enums have the same JSON format support.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        *        Checks that messages have the same JSON format support.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same oneofs in a given message.
+FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that files have the same package.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                                  Checks that enums are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                                  Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                                  Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                                  Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                                Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                                Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                                Checks that fields have wire and JSON compatible cardinalities in a given message.
+FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                                Checks that fields have wire and JSON compatible types in a given message.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                          Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                          Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                                     Checks that fields have wire-compatible cardinalities in a given message.
+FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                                     Checks that fields have wire-compatible types in a given message.
 		`
 	testRunStdout(
 		t,
@@ -806,65 +1057,66 @@ FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            
 func TestCheckLsBreakingRulesV1Beta1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                              CATEGORIES                      PURPOSE
-ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
-FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
-FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
-MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
-SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
-ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
-EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
-FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
-FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
-FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
-FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
-FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
-FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
-FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
-FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
-FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
-FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
-FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
-FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
-FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
-FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
-FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
-FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
-FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
-FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
-FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
-MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
-RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
-ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
-FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
-FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
-FIELD_SAME_CARDINALITY                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same cardinalities in a given message.
-FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
-FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
-MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
-MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
-RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
-RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
-RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
-RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
-RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
-RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
-RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
-PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
-PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
-PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
-PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
-ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
-FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
-ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
-FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+ID                                              CATEGORIES                      DEFAULT  PURPOSE
+ENUM_NO_DELETE                                  FILE                            *        Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            *        Checks that files are not deleted.
+FILE_SAME_PACKAGE                               FILE                            *        Checks that files have the same package.
+MESSAGE_NO_DELETE                               FILE                            *        Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            *        Checks that services are not deleted from a given file.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   *        Checks that enums have the same type (open vs closed).
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   *        Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   *        Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   *        Checks that fields are not deleted from a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   *        Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   *        Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   *        Checks that fields have the same value for the jstype option.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   *        Checks that string fields have the same UTF8 validation mode.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   *        Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   *        Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   *        Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   *        Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   *        Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   *        Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the java_package option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   *        Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   *        Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   *        Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   *        Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   *        Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   *        Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   *        Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   *        Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   *        Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   *        Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        *        Checks that enums have the same JSON format support.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        *        Checks that messages have the same JSON format support.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same oneofs in a given message.
+FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same types in a given message.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                                  Checks that enums are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                                  Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                                  Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                                  Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                                Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                                Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                                Checks that fields have wire and JSON compatible cardinalities in a given message.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                          Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                          Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                                     Checks that fields have wire-compatible cardinalities in a given message.
 		`
 	testRunStdout(
 		t,
@@ -881,72 +1133,71 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 func TestCheckLsBreakingRulesV2(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                              CATEGORIES                      PURPOSE
-ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
-EXTENSION_NO_DELETE                             FILE                            Checks that extensions are not deleted from a given file.
-FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
-MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
-SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
-ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
-ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
-EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
-FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
-FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
-FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
-FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
-FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
-FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
-FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
-FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
-FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
-FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
-FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
-FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
-FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
-FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
-FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
-FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
-FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
-FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
-FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
-FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
-FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
-MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
-RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        Checks that enums have the same JSON format support.
-ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
-FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
-FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        Checks that messages have the same JSON format support.
-FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same default value, if a default is specified.
-FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
-FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
-MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
-MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
-RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
-RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
-RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
-RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
-RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
-RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
-RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
-PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
-PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                         Checks that extensions are not deleted from a given package.
-PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
-PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
-PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
-ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
-FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
-FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                       Checks that fields have wire and JSON compatible cardinalities in a given message.
-FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                       Checks that fields have wire and JSON compatible types in a given message.
-ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
-FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
-FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            Checks that fields have wire-compatible cardinalities in a given message.
-FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            Checks that fields have wire-compatible types in a given message.
+ID                                              CATEGORIES                      DEFAULT  PURPOSE
+ENUM_NO_DELETE                                  FILE                            *        Checks that enums are not deleted from a given file.
+EXTENSION_NO_DELETE                             FILE                            *        Checks that extensions are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            *        Checks that files are not deleted.
+MESSAGE_NO_DELETE                               FILE                            *        Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            *        Checks that services are not deleted from a given file.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   *        Checks that enums have the same type (open vs closed).
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   *        Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   *        Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   *        Checks that fields are not deleted from a given message.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   *        Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   *        Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   *        Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   *        Checks that fields have the same value for the jstype option.
+FIELD_SAME_TYPE                                 FILE, PACKAGE                   *        Checks that fields have the same types in a given message.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   *        Checks that string fields have the same UTF8 validation mode.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   *        Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   *        Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   *        Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   *        Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   *        Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   *        Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the java_package option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   *        Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   *        Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   *        Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   *        Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   *        Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   *        Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   *        Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   *        Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   *        Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   *        Checks that rpcs are not deleted from a given service.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        *        Checks that enums have the same JSON format support.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        *        Checks that messages have the same JSON format support.
+FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same default value, if a default is specified.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same oneofs in a given message.
+FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that files have the same package.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                                  Checks that enums are not deleted from a given package.
+PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                                  Checks that extensions are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                                  Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                                  Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                                  Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                                Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                                Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                                Checks that fields have wire and JSON compatible cardinalities in a given message.
+FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                                Checks that fields have wire and JSON compatible types in a given message.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                          Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                          Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                                     Checks that fields have wire-compatible cardinalities in a given message.
+FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                                     Checks that fields have wire-compatible types in a given message.
 		`
 	testRunStdout(
 		t,
@@ -967,14 +1218,104 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		nil,
 		0,
 		`
-		ID                    CATEGORIES     PURPOSE
-		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
-		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
-		`,
+	 	ID                    CATEGORIES     DEFAULT  PURPOSE
+	 	ENUM_VALUE_NO_DELETE  FILE, PACKAGE  *        Checks that enum values are not deleted from a given enum.
+	 	FIELD_SAME_JSTYPE     FILE, PACKAGE  *        Checks that fields have the same value for the jstype option.
+	 	`,
 		"mod",
 		"ls-breaking-rules",
 		"--config",
 		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
+	)
+	// defaults only, built-ins and plugins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeBreaking,
+		`{
+			"version":"v2",
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		append(
+			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+				return breakingRule.Default
+			}),
+			&outputCheckRule{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
+		),
+	)
+	// configure a deprecated category and a non-deprecated built-in category.
+	// deprecated category contains some non-deprecated rules.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeBreaking,
+		`{
+			"version":"v2",
+			"breaking": {
+				"use": ["WIRE", "RESOURCE_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		append(
+			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+				return slices.Contains(breakingRule.Categories, "WIRE")
+			}),
+			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
+			&outputCheckRule{ID: "MESSAGE_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that messages with configured suffixes are not deleted and do not have new fields or delete fields.", Plugin: "buf-plugin-suffix"},
+		),
+	)
+	// configure a deprecated category and a non-deprecated category, no built-ins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeBreaking,
+		`{
+			"version":"v2",
+			"breaking": {
+				"use": ["OPERATION_SUFFIXES","ATTRIBUTES_SUFFIXES", "RESOURCE_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		[]*outputCheckRule{
+			{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
+			{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
+			{ID: "MESSAGE_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that messages with configured suffixes are not deleted and do not have new fields or delete fields.", Plugin: "buf-plugin-suffix"},
+		},
+	)
+	// configure a mix of rules from built-ins and plugins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeBreaking,
+		`{
+			"version":"v2",
+			"breaking": {
+				"use": ["FIELD_WIRE_COMPATIBLE_TYPE", "PACKAGE", "ENUM_SUFFIXES_NO_CHANGE"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		append(
+			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+				return slices.Contains(breakingRule.Categories, "PACKAGE")
+			}),
+			&outputCheckRule{ID: "FIELD_WIRE_COMPATIBLE_TYPE", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible types in a given message."},
+			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
+		),
+	)
+	// configure a mix of categories and rules from built-ins and plugins.
+	testLsRuleOutputJSON(
+		t,
+		check.RuleTypeBreaking,
+		`{
+			"version":"v2",
+			"breaking": {
+				"use": ["FIELD_WIRE_COMPATIBLE_TYPE", "PACKAGE", "ENUM_SUFFIXES_NO_CHANGE", "OPERATION_SUFFIXES"],
+			},
+			"plugins":[{"plugin": "buf-plugin-suffix"}]
+		}`,
+		append(
+			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+				return slices.Contains(breakingRule.Categories, "PACKAGE") || breakingRule.ID == "FIELD_WIRE_COMPATIBLE_TYPE"
+			}),
+			&outputCheckRule{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
+			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
+		),
 	)
 }
 
@@ -985,9 +1326,9 @@ func TestCheckLsBreakingRulesFromConfigNotNamedBufYAML(t *testing.T) {
 		nil,
 		0,
 		`
-		ID                    CATEGORIES     PURPOSE
-		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
-		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
+		ID                    CATEGORIES     DEFAULT  PURPOSE
+		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  *        Checks that enum values are not deleted from a given enum.
+		FIELD_SAME_JSTYPE     FILE, PACKAGE  *        Checks that fields have the same value for the jstype option.
 		`,
 		"mod",
 		"ls-breaking-rules",
@@ -1001,10 +1342,19 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 	t.Parallel()
 
 	for _, version := range bufconfig.AllFileVersions {
-		version := version
 		t.Run(version.String(), func(t *testing.T) {
 			t.Parallel()
-			allRules, err := bufbreaking.GetAllRules(version)
+			// Do not need any custom lint/breaking plugins here.
+			client, err := bufcheck.NewClient(
+				slogtestext.NewLogger(t),
+				bufcheck.NewLocalRunnerProvider(
+					wasm.UnimplementedRuntime,
+					bufplugin.NopPluginKeyProvider,
+					bufplugin.NopPluginDataProvider,
+				),
+			)
+			require.NoError(t, err)
+			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
 			require.NoError(t, err)
 			allPackageIDs := make([]string, 0, len(allRules))
 			for _, rule := range allRules {
@@ -1016,7 +1366,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 				}
 				var found bool
 				for _, category := range rule.Categories() {
-					if category == "PACKAGE" {
+					if category.ID() == "PACKAGE" {
 						found = true
 						break
 					}
@@ -1026,11 +1376,10 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 				}
 			}
 			sort.Strings(allPackageIDs)
-			deprecations, err := bufbreaking.GetRelevantDeprecations(version)
+			deprecations, err := bufcheck.GetDeprecatedIDToReplacementIDs(allRules)
 			require.NoError(t, err)
 
 			for deprecatedRule := range deprecations {
-				deprecatedRule := deprecatedRule
 				t.Run(deprecatedRule, func(t *testing.T) {
 					t.Parallel()
 					ids := getRuleIDsFromLsBreaking(t, version.String(), []string{"PACKAGE"}, []string{deprecatedRule})
@@ -1124,11 +1473,11 @@ buf.build/foo/bar
 		// format as json, sort by path
 		`
 {"path":"a_v1","name":"buf.build/foo/bar"}
-{"path":"b_no_name_v1","name":""}
+{"path":"b_no_name_v1"}
 {"path":"c_v1beta1","name":"buf.build/bar/baz"}
-{"path":"d_no_file","name":""}
-{"path":"e_no_file","name":""}
-{"path":"f_no_name_v1beta1","name":""}
+{"path":"d_no_file"}
+{"path":"e_no_file"}
+{"path":"f_no_name_v1beta1"}
 `,
 		"config",
 		"ls-modules",
@@ -1201,9 +1550,9 @@ buf.build/foo/bar
 		// format as json, sort by path
 		`
 {"path":"a","name":"buf.build/foo/bar"}
-{"path":"b_no_name","name":""}
+{"path":"b_no_name"}
 {"path":"c","name":"buf.build/bar/baz"}
-{"path":"d_no_name","name":""}
+{"path":"d_no_name"}
 `,
 		"config",
 		"ls-modules",
@@ -1302,7 +1651,7 @@ buf.build/foo/bar
 		t,
 		nil,
 		0,
-		`{"path":".","name":""}`,
+		`{"path":"."}`,
 		"config",
 		"ls-modules",
 		"--format",
@@ -1398,7 +1747,7 @@ func TestLsModulesModuleV1Beta1(t *testing.T) {
 		t,
 		nil,
 		0,
-		`{"path":".","name":""}`,
+		`{"path":"."}`,
 		"config",
 		"ls-modules",
 		"--format",
@@ -1453,7 +1802,7 @@ func TestLsModulesNoConfig(t *testing.T) {
 		t,
 		nil,
 		0,
-		`{"path":".","name":""}`,
+		`{"path":"."}`,
 		"config",
 		"ls-modules",
 		"--format",
@@ -1555,9 +1904,9 @@ func TestLsModulesConfigFlag(t *testing.T) {
 		0,
 		`
 {"path":"a","name":"buf.build/foo/bar"}
-{"path":"b_no_name","name":""}
+{"path":"b_no_name"}
 {"path":"c","name":"buf.build/bar/baz"}
-{"path":"d_no_name","name":""}
+{"path":"d_no_name"}
 `,
 		"config",
 		"ls-modules",
@@ -1568,7 +1917,7 @@ func TestLsModulesConfigFlag(t *testing.T) {
 	)
 }
 
-func TestLsModulesConfigPrecedence(t *testing.T) {
+func TestLsModulesConfigFlagTakesPrecedence(t *testing.T) {
 	// Cannot be parallel since we chdir.
 	pwd, err := osext.Getwd()
 	require.NoError(t, err)
@@ -1596,6 +1945,88 @@ d_no_name
 		"ls-modules",
 		"--config",
 		filepath.Join(pwd, "testdata", "lsmodules", "workspacev2", "buf.yaml"),
+	)
+}
+
+func TestLsModulesWorkspaceV2DuplicateDirPath(t *testing.T) {
+	// Cannot be parallel since we chdir.
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}()
+
+	require.NoError(t, osext.Chdir(filepath.Join(pwd, "testdata", "workspace", "success", "duplicate_dir_path")))
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// default format is path
+		`
+proto/shared
+proto/shared
+proto/shared1
+proto/shared1
+separate
+`,
+		"config",
+		"ls-modules",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as path
+		`
+proto/shared
+proto/shared
+proto/shared1
+proto/shared1
+separate
+	`,
+
+		"config",
+		"ls-modules",
+		"--format",
+		"path",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as name
+		`
+buf.build/shared/one
+buf.build/shared/zero
+	`,
+
+		"config",
+		"ls-modules",
+		"--format",
+		"name",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		// format as json, sort by path
+		`
+
+	{"path":"proto/shared","excludes":["proto/shared/prefix/foo"]}
+	{"path":"proto/shared","excludes":["proto/shared/prefix/bar"],"name":"buf.build/shared/zero"}
+	{"path":"proto/shared1","includes":["proto/shared1/prefix/x"],"name":"buf.build/shared/one"}
+	{"path":"proto/shared1","excludes":["proto/shared1/prefix/x"]}
+	{"path":"separate"}
+	`,
+
+		"config",
+		"ls-modules",
+		"--format",
+		"json",
 	)
 }
 
@@ -2081,7 +2512,7 @@ func TestModInitBasic(t *testing.T) {
 version: v2
 lint:
   use:
-    - DEFAULT
+    - STANDARD
 breaking:
   use:
     - FILE
@@ -2462,6 +2893,215 @@ func TestLintWithPaths(t *testing.T) {
 	)
 }
 
+func TestLintWithPlugins(t *testing.T) {
+	t.Parallel()
+	// defaults only, comment ignores on.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/api/v1/service.proto:11:1:Service name "api.v1.FooServiceMock" has banned suffix "Mock". (buf-plugin-suffix)
+testdata/check_plugins/current/proto/api/v1/service.proto:12:14:RPC request type "GetFooMockRequest" should be named "GetFooRequest" or "FooServiceMockGetFooRequest".
+testdata/check_plugins/current/proto/api/v1/service.proto:12:42:RPC response type "GetFooMockResponse" should be named "GetFooResponse" or "FooServiceMockGetFooResponse".
+testdata/check_plugins/current/proto/api/v1/service.proto:16:9:Service name "FooServiceTest" should be suffixed with "Service".
+testdata/check_plugins/current/proto/api/v1/service.proto:17:14:RPC request type "GetFooTestRequest" should be named "GetFooRequest" or "FooServiceTestGetFooRequest".
+testdata/check_plugins/current/proto/api/v1/service.proto:17:42:RPC response type "GetFooTestResponse" should be named "GetFooResponse" or "FooServiceTestGetFooResponse".
+testdata/check_plugins/current/proto/api/v1/service.proto:26:1:"ListFooResponse" is a pagination response without a page token field named "page_token" (buf-plugin-rpc-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/validate.proto:94:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+		`),
+		"lint",
+		filepath.Join("testdata", "check_plugins", "current"),
+	)
+	// Defaults only, comment ignores off.
+	// Always ignore the vendored protovalidate module.
+	//
+	// There are still lint failures for protovalidate despite being set as an ignore path because
+	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
+	// for the module -- this is expected behavior for now.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/api/v1/service.proto:11:1:Service name "api.v1.FooServiceMock" has banned suffix "Mock". (buf-plugin-suffix)
+testdata/check_plugins/current/proto/api/v1/service.proto:11:9:Service name "FooServiceMock" should be suffixed with "Service".
+testdata/check_plugins/current/proto/api/v1/service.proto:12:14:RPC request type "GetFooMockRequest" should be named "GetFooRequest" or "FooServiceMockGetFooRequest".
+testdata/check_plugins/current/proto/api/v1/service.proto:12:42:RPC response type "GetFooMockResponse" should be named "GetFooResponse" or "FooServiceMockGetFooResponse".
+testdata/check_plugins/current/proto/api/v1/service.proto:16:1:Service name "api.v1.FooServiceTest" has banned suffix "Test". (buf-plugin-suffix)
+testdata/check_plugins/current/proto/api/v1/service.proto:16:9:Service name "FooServiceTest" should be suffixed with "Service".
+testdata/check_plugins/current/proto/api/v1/service.proto:17:14:RPC request type "GetFooTestRequest" should be named "GetFooRequest" or "FooServiceTestGetFooRequest".
+testdata/check_plugins/current/proto/api/v1/service.proto:17:42:RPC response type "GetFooTestResponse" should be named "GetFooResponse" or "FooServiceTestGetFooResponse".
+testdata/check_plugins/current/proto/api/v1/service.proto:26:1:"ListFooResponse" is a pagination response without a page token field named "page_token" (buf-plugin-rpc-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/validate.proto:94:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+		`),
+		"lint",
+		filepath.Join("testdata", "check_plugins", "current"),
+		"--config",
+		`{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"lint": {
+				"disallow_comment_ignores": true,
+				"ignore": [
+					"testdata/check_plugins/current/vendor/protovalidate",
+    				"testdata/check_plugins/current/proto/common/v1/breaking.proto",
+    				"testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto"
+				]
+			},
+			"plugins":[
+				{
+					"plugin": "buf-plugin-suffix",
+					"options": {
+						"service_banned_suffixes": ["Mock", "Test"],
+						"rpc_banned_suffixes": ["Element"],
+						"field_banned_suffixes": ["_uuid"],
+						"enum_value_banned_suffixes": ["_invalid"],
+						"service_no_change_suffixes": ["Service"],
+						"message_no_change_suffixes": ["Request", "Response"],
+						"enum_no_change_suffixes": ["State"]
+					}
+				},
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
+			]
+		}`,
+	)
+	// With specified use, ignore, and ignore_only configurations.
+	// Always ignore the vendored protovalidate module.
+	//
+	// There are still lint failures for protovalidate despite being set as an ignore path because
+	// proto imports these files, and paths outside of a module cannot be configured as ignore paths
+	// for the module -- this is expected behavior for now.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/api/v1/service.proto:11:1:Service name "api.v1.FooServiceMock" has banned suffix "Mock". (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1alpha1/messages.proto:16:5:field "common.v1alpha1.Four.FourTwo.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/vendor/protovalidate/buf/validate/validate.proto:94:3:field "buf.validate.Constraint.id" does not have rule (buf.validate.field).string.tuuid set (buf-plugin-protovalidate-ext)
+		`),
+		"lint",
+		filepath.Join("testdata", "check_plugins", "current"),
+		"--config",
+		`{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"lint": {
+				"use": ["PAGE_REQUEST_HAS_TOKEN", "SERVICE_BANNED_SUFFIXES", "VALIDATE_ID_DASHLESS"],
+				"ignore": [
+					"testdata/check_plugins/current/vendor/protovalidate",
+    				"testdata/check_plugins/current/proto/common/v1/breaking.proto",
+    				"testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto"
+				],
+				"ignore_only": {
+					"VALIDATE_ID_DASHLESS": ["testdata/check_plugins/current/vendor/protovalidate/buf/validate"],
+				}
+			},
+			"plugins":[
+				{
+					"plugin": "buf-plugin-suffix",
+					"options": {
+						"service_banned_suffixes": ["Mock", "Test"],
+						"rpc_banned_suffixes": ["Element"],
+						"field_banned_suffixes": ["_uuid"],
+						"enum_value_banned_suffixes": ["_invalid"],
+						"service_no_change_suffixes": ["Service"],
+						"message_no_change_suffixes": ["Request", "Response"],
+						"enum_no_change_suffixes": ["State"]
+					}
+				},
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
+			]
+		}`,
+	)
+	// Set the same category for lint and breaking, but ensure that only the lint rules run.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "common.v1.One.Two.foo_uuid" has banned suffix "_uuid". (buf-plugin-suffix)
+		`),
+		"lint",
+		filepath.Join("testdata", "check_plugins", "current"),
+		"--config",
+		`{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"lint": {
+				"use": ["ATTRIBUTES_SUFFIXES"]
+			},
+			"breaking": {
+				"use": ["ATTRIBUTES_SUFFIXES"]
+			},
+			"plugins":[
+				{
+					"plugin": "buf-plugin-suffix",
+					"options": {
+						"service_banned_suffixes": ["Mock", "Test"],
+						"rpc_banned_suffixes": ["Element"],
+						"field_banned_suffixes": ["_uuid"],
+						"enum_value_banned_suffixes": ["_invalid"],
+						"service_no_change_suffixes": ["Service"],
+						"message_no_change_suffixes": ["DONT_CHANGE"],
+						"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+					}
+				},
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
+			]
+		}`,
+	)
+
+	// tests that if a plugin panics, the buf CLI does not panic
+	require.NotPanics(
+		t,
+		func() {
+			appcmdtesting.RunCommandExitCodeStderrContains(
+				t,
+				func(use string) *appcmd.Command { return NewRootCommand(use) },
+				1,
+				[]string{
+					`panic: this panic is intentional`,
+					`Failure: plugin "buf-plugin-panic" failed: Exited with code 2: exit status 2`,
+				},
+				internaltesting.NewEnvFunc(t),
+				nil,
+				"lint",
+				filepath.Join("testdata", "check_plugins", "current"),
+				"--config",
+				`{
+					"version":"v2",
+					"modules": [
+						{"path": "testdata/check_plugins/current/proto"},
+						{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+					],
+					"lint": {
+						"use": ["LINT_PANIC"]
+					},
+					"plugins":[
+						{"plugin": "buf-plugin-panic"}
+					]
+				}`,
+			)
+		},
+	)
+}
+
 func TestBreakingWithPaths(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -2509,6 +3149,412 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 		filepath.Join("a", "v3", "foo"),
 		"--config",
 		`{"version":"v2","breaking":{"use":["WIRE"]}}`,
+	)
+}
+
+func TestBreakingWithPlugins(t *testing.T) {
+	t.Parallel()
+	currentConfig := `{
+			"version":"v2",
+			"modules": [
+				{"path": "testdata/check_plugins/current/proto"},
+				{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+			],
+			"breaking": {
+				"use": ["STRING_LEN_RANGE_NO_SHRINK"]
+			},
+			"plugins":[
+				{
+					"plugin": "buf-plugin-suffix",
+					"options": {
+						"service_banned_suffixes": ["Mock", "Test"],
+						"rpc_banned_suffixes": ["Element"],
+						"field_banned_suffixes": ["_uuid"],
+						"enum_value_banned_suffixes": ["_invalid"],
+						"service_no_change_suffixes": ["Service"],
+						"message_no_change_suffixes": ["Request", "Response"],
+						"enum_no_change_suffixes": ["State"]
+					}
+				},
+				{"plugin": "buf-plugin-protovalidate-ext"},
+				{"plugin": "buf-plugin-rpc-ext"}
+			]
+		}`
+	previousConfig := strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (buf-plugin-protovalidate-ext)
+testdata/check_plugins/current/proto/common/v1alpha1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (buf-plugin-protovalidate-ext)
+		`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// ignore unstable package
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["STRING_LEN_RANGE_NO_SHRINK"],
+			"ignore_unstable_packages": true
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"service_banned_suffixes": ["Mock", "Test"],
+					"rpc_banned_suffixes": ["Element"],
+					"field_banned_suffixes": ["_uuid"],
+					"enum_value_banned_suffixes": ["_invalid"],
+					"service_no_change_suffixes": ["Service"],
+					"message_no_change_suffixes": ["Request", "Response"],
+					"enum_no_change_suffixes": ["State"]
+				}
+			},
+			{"plugin": "buf-plugin-protovalidate-ext"},
+			{"plugin": "buf-plugin-rpc-ext"}
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:10:5:max len requirement reduced from 10 to 5 (buf-plugin-protovalidate-ext)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// use category
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["ATTRIBUTES_SUFFIXES"],
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// use deprecated category
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// use except
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"except": ["ENUM_SUFFIXES_NO_CHANGE"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+
+	// ignore module
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"ignore": ["testdata/check_plugins/current/proto"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+	// ignore path inside module
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"ignore": ["testdata/check_plugins/current/proto/common/v1"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+	// ignore only
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"breaking": {
+			"use": ["RESOURCE_SUFFIXES"],
+			"ignore_only": {
+				"MESSAGE_SUFFIXES_NO_CHANGE": ["testdata/check_plugins/current/proto/common"],
+			},
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
+	)
+	// Set the same category for lint and breaking but ensure only breaking is run.
+	currentConfig = `{
+		"version":"v2",
+		"modules": [
+			{"path": "testdata/check_plugins/current/proto"},
+			{"path": "testdata/check_plugins/current/vendor/protovalidate"}
+		],
+		"lint": {
+			"use": ["ATTRIBUTES_SUFFIXES"]
+		},
+		"breaking": {
+			"use": ["ATTRIBUTES_SUFFIXES"]
+		},
+		"plugins":[
+			{
+				"plugin": "buf-plugin-suffix",
+				"options": {
+					"service_banned_suffixes": ["Mock", "Test"],
+					"rpc_banned_suffixes": ["Element"],
+					"field_banned_suffixes": ["_uuid"],
+					"enum_value_banned_suffixes": ["_invalid"],
+					"service_no_change_suffixes": ["Service"],
+					"message_no_change_suffixes": ["DONT_CHANGE"],
+					"enum_no_change_suffixes": ["DO_NOT_CHANGE"]
+				}
+			},
+		]
+	}`
+	previousConfig = strings.ReplaceAll(
+		currentConfig,
+		"current",
+		"previous",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins/current/proto/common/v1/breaking.proto:14:1:Message "common.v1.MSG_DONT_CHANGE" has a suffix configured for no changes has different fields, previously [], currently [common.v1.MSG_DONT_CHANGE.new_field]. (buf-plugin-suffix)
+testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.v1.E_DO_NOT_CHANGE" has a suffix configured for no changes has different enum values, previously [common.v1.ZERO], currently [common.v1.ONE common.v1.ZERO]. (buf-plugin-suffix)
+	`),
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--config",
+		currentConfig,
+		"--against-config",
+		previousConfig,
 	)
 }
 
@@ -3305,7 +4351,7 @@ func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFi
 	buffer := bytes.NewBuffer(nil)
 	testRun(t, expectedExitCode, nil, buffer, append([]string{"build", "-o", "-"}, buildArgs...)...)
 	protoImage := &imagev1.Image{}
-	err := proto.Unmarshal(buffer.Bytes(), protoImage)
+	err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(buffer.Bytes(), protoImage)
 	require.NoError(t, err)
 	image, err := bufimage.NewImageForProto(protoImage)
 	require.NoError(t, err)
@@ -3479,4 +4525,55 @@ func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string,
 	}
 	sort.Strings(ids)
 	return ids
+}
+
+func testLsRuleOutputJSON(
+	t *testing.T,
+	ruleType check.RuleType,
+	config string,
+	expectedRules []*outputCheckRule,
+) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	var command string
+	switch ruleType {
+	case check.RuleTypeLint:
+		command = "ls-lint-rules"
+	case check.RuleTypeBreaking:
+		command = "ls-breaking-rules"
+	default:
+		t.Errorf("invalid rule type %v", ruleType)
+		t.FailNow()
+	}
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		0,
+		internaltesting.NewEnvFunc(t),
+		nil,
+		stdout,
+		stderr,
+		"config",
+		command,
+		"--configured-only",
+		"--config",
+		config,
+		"--format",
+		"json",
+	)
+	outputRules :=
+		slicesext.Map(
+			slicesext.Filter(
+				bytes.Split(stdout.Bytes(), []byte("\n")),
+				func(outputBytes []byte) bool {
+					return len(outputBytes) > 0
+				},
+			),
+			func(outputBytes []byte) *outputCheckRule {
+				var outputRule outputCheckRule
+				require.NoError(t, json.Unmarshal(outputBytes, &outputRule), "unable to unmarshal %s", string(outputBytes))
+				return &outputRule
+			},
+		)
+	require.Equal(t, expectedRules, outputRules)
 }

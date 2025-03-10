@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,18 +22,12 @@ import (
 //
 // This will cause a Bucket to operate as if the Mapper has all paths mapped.
 type Mapper interface {
-	// Map maps the path to the full path.
+	// MapPath maps the path to the full path.
 	//
 	// The path is expected to be normalized and validated.
 	// The returned path is expected to be normalized and validated.
 	// If the path cannot be mapped, this returns false.
 	MapPath(path string) (string, bool)
-	// Map maps the prefix to the full prefix.
-	//
-	// The path is expected to be normalized and validated.
-	// The returned path is expected to be normalized and validated.
-	// If the path cannot be mapped, this returns false.
-	MapPrefix(prefix string) (string, bool)
 	// UnmapFullPath maps the full path to the path.
 	//
 	// Returns false if the full path does not apply.
@@ -58,7 +52,7 @@ func MapOnPrefix(prefix string) Mapper {
 //
 // If the Mappers are empty, a no-op Mapper is returned.
 // If there is more than one Mapper, the Mappers are called in order
-// for UnmapFullPath, with the order reversed for MapPath and MapPrefix.
+// for UnmapFullPath, with the order reversed for MapPath.
 //
 // That is, order these assuming you are starting with a full path and
 // working to a path.
@@ -83,10 +77,6 @@ func (p prefixMapper) MapPath(path string) (string, bool) {
 	return normalpath.Join(p.prefix, path), true
 }
 
-func (p prefixMapper) MapPrefix(prefix string) (string, bool) {
-	return normalpath.Join(p.prefix, prefix), true
-}
-
 func (p prefixMapper) UnmapFullPath(fullPath string) (string, bool, error) {
 	if !normalpath.EqualsOrContainsPath(p.prefix, fullPath, normalpath.Relative) {
 		return "", false, nil
@@ -106,10 +96,6 @@ type chainMapper struct {
 
 func (c chainMapper) MapPath(path string) (string, bool) {
 	return c.mapFunc(path, Mapper.MapPath)
-}
-
-func (c chainMapper) MapPrefix(prefix string) (string, bool) {
-	return c.mapFunc(prefix, Mapper.MapPrefix)
 }
 
 func (c chainMapper) UnmapFullPath(fullPath string) (string, bool, error) {
@@ -150,10 +136,6 @@ type nopMapper struct{}
 
 func (n nopMapper) MapPath(path string) (string, bool) {
 	return path, true
-}
-
-func (n nopMapper) MapPrefix(prefix string) (string, bool) {
-	return prefix, true
 }
 
 func (nopMapper) UnmapFullPath(fullPath string) (string, bool, error) {

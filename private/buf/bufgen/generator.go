@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	connect "connectrpc.com/connect"
@@ -32,37 +33,29 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger              *zap.Logger
-	tracer              tracing.Tracer
+	logger              *slog.Logger
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufprotopluginexec.Generator
 	clientConfig        *connectclient.Config
 }
 
 func newGenerator(
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:              logger,
-		tracer:              tracer,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
+		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, storageosProvider),
 		clientConfig:        clientConfig,
 	}
 }
@@ -97,7 +90,7 @@ func (g *generator) Generate(
 	}
 	if !config.GenerateManagedConfig().Enabled() {
 		if len(config.GenerateManagedConfig().Overrides()) != 0 || len(config.GenerateManagedConfig().Disables()) != 0 {
-			g.logger.Sugar().Warn("managed mode configs are set but are not enabled")
+			g.logger.Warn("managed mode configs are set but are not enabled")
 		}
 	}
 	for _, image := range images {
@@ -260,8 +253,6 @@ func (g *generator) execPlugins(
 	}
 	// Batch for each remote.
 	for remote, indexedPluginConfigs := range remotePluginConfigTable {
-		remote := remote
-		indexedPluginConfigs := indexedPluginConfigs
 		if len(indexedPluginConfigs) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
 				results, err := g.execRemotePluginsV2(
@@ -295,16 +286,11 @@ func (g *generator) execPlugins(
 	//      out: gen/proto
 	//    - name: insertion-point-writer
 	//      out: gen/proto
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	if err := thread.Parallelize(
 		ctx,
 		jobs,
-		thread.ParallelizeWithCancel(cancel),
+		thread.ParallelizeWithCancelOnFailure(),
 	); err != nil {
-		if errs := multierr.Errors(err); len(errs) > 0 {
-			return nil, errs[0]
-		}
 		return nil, err
 	}
 	if err := validateResponses(responses, pluginConfigs); err != nil {
@@ -399,16 +385,16 @@ func (g *generator) execRemotePluginsV2(
 	response, err := codeGenerationService.GenerateCode(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GenerateCodeRequest{
+			registryv1alpha1.GenerateCodeRequest_builder{
 				Image:    protoImage,
 				Requests: requests,
-			},
+			}.Build(),
 		),
 	)
 	if err != nil {
 		return nil, err
 	}
-	responses := response.Msg.Responses
+	responses := response.Msg.GetResponses()
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}
@@ -447,12 +433,12 @@ func getPluginGenerationRequest(
 		// Only include parameters if they're not empty.
 		options = []string{pluginConfig.Opt()}
 	}
-	return &registryv1alpha1.PluginGenerationRequest{
+	return registryv1alpha1.PluginGenerationRequest_builder{
 		PluginReference:       curatedPluginReference,
 		Options:               options,
 		IncludeImports:        &includeImports,
 		IncludeWellKnownTypes: &includeWellKnownTypes,
-	}, nil
+	}.Build(), nil
 }
 
 // validateResponses verifies that a response is set for each of the

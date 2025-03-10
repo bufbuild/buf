@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@ package thread
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
-
-	"go.uber.org/multierr"
 )
 
 var (
@@ -27,7 +26,7 @@ var (
 	globalLock        sync.RWMutex
 )
 
-// Parallelism returns the current parellism.
+// Parallelism returns the current parallelism.
 //
 // This defaults to the number of CPUs.
 func Parallelism() int {
@@ -68,10 +67,20 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 	if multiplier < 1 {
 		multiplier = 1
 	}
+	var cancel context.CancelFunc
+	if parallelizeOptions.cancelOnFailure {
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
+	}
 	semaphoreC := make(chan struct{}, Parallelism()*multiplier)
-	var retErr error
-	var wg sync.WaitGroup
+	var errs []error
 	var lock sync.Mutex
+	addError := func(err error) {
+		lock.Lock()
+		errs = append(errs, err)
+		lock.Unlock()
+	}
+	var wg sync.WaitGroup
 	var stop bool
 	for _, job := range jobs {
 		if stop {
@@ -86,22 +95,20 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		select {
 		case <-ctx.Done():
 			stop = true
-			retErr = multierr.Append(retErr, ctx.Err())
+			addError(ctx.Err())
 		case semaphoreC <- struct{}{}:
 			select {
 			case <-ctx.Done():
 				stop = true
-				retErr = multierr.Append(retErr, ctx.Err())
+				addError(ctx.Err())
 			default:
 				job := job
 				wg.Add(1)
 				go func() {
 					if err := job(ctx); err != nil {
-						lock.Lock()
-						retErr = multierr.Append(retErr, err)
-						lock.Unlock()
-						if parallelizeOptions.cancel != nil {
-							parallelizeOptions.cancel()
+						addError(err)
+						if cancel != nil {
+							cancel()
 						}
 					}
 					// This will never block.
@@ -112,7 +119,14 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		}
 	}
 	wg.Wait()
-	return retErr
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
+		return errors.Join(errs...)
+	}
 }
 
 // ParallelizeOption is an option to Parallelize.
@@ -129,17 +143,17 @@ func ParallelizeWithMultiplier(multiplier int) ParallelizeOption {
 	}
 }
 
-// ParallelizeWithCancel returns a new ParallelizeOption that will call the
-// given context.CancelFunc if any job fails.
-func ParallelizeWithCancel(cancel context.CancelFunc) ParallelizeOption {
+// ParallelizeWithCancelOnFailure returns a new ParallelizeOption that will attempt
+// to cancel all other jobs via context cancellation if any job fails.
+func ParallelizeWithCancelOnFailure() ParallelizeOption {
 	return func(parallelizeOptions *parallelizeOptions) {
-		parallelizeOptions.cancel = cancel
+		parallelizeOptions.cancelOnFailure = true
 	}
 }
 
 type parallelizeOptions struct {
-	multiplier int
-	cancel     context.CancelFunc
+	multiplier      int
+	cancelOnFailure bool
 }
 
 func newParallelizeOptions() *parallelizeOptions {

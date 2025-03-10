@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package bufprotoc
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -26,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 )
 
 // NewModuleSetForProtoc returns a new ModuleSet for protoc -I dirPaths and filePaths.
@@ -38,7 +38,7 @@ import (
 // that is banned in protoc.
 func NewModuleSetForProtoc(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	includeDirPaths []string,
 	filePaths []string,
@@ -62,7 +62,7 @@ func NewModuleSetForProtoc(
 		}
 		// need to do match extension here
 		// https://github.com/bufbuild/buf/issues/113
-		rootBuckets = append(rootBuckets, storage.MapReadBucket(rootBucket, storage.MatchPathExt(".proto")))
+		rootBuckets = append(rootBuckets, storage.FilterReadBucket(rootBucket, storage.MatchPathExt(".proto")))
 	}
 	targetPaths, err := slicesext.MapError(
 		absFilePaths,
@@ -74,7 +74,7 @@ func NewModuleSetForProtoc(
 		return nil, err
 	}
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		storage.MultiReadBucket(rootBuckets...),
 		".",

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,23 +20,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
 )
 
 const (
 	gitCommand      = "git"
 	tagsPrefix      = "refs/tags/"
 	headsPrefix     = "refs/heads/"
-	psuedoRefSuffix = "^{}"
+	pseudoRefSuffix = "^{}"
 )
 
 var (
@@ -47,6 +48,11 @@ var (
 	// ErrInvalidGitCheckout is returned from CheckDirectoryIsValidGitCheckout when the
 	// specified directory is not a valid git checkout.
 	ErrInvalidGitCheckout = errors.New("invalid git checkout")
+
+	// ErrInvalidRef is returned from IsValidRef if the ref does not exist in the
+	// repository containing the given directory (or, if the directory is not
+	// a valid git checkout).
+	ErrInvalidRef = errors.New("invalid git ref")
 )
 
 // Name is a name identifiable by git.
@@ -95,20 +101,20 @@ type Cloner interface {
 
 // CloneToBucketOptions are options for Clone.
 type CloneToBucketOptions struct {
-	Mapper            storage.Mapper
+	Matcher           storage.Matcher
 	Name              Name
 	RecurseSubmodules bool
+	SubDir            string
+	Filter            string
 }
 
 // NewCloner returns a new Cloner.
 func NewCloner(
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	options ClonerOptions,
 ) Cloner {
-	return newCloner(logger, tracer, storageosProvider, runner, options)
+	return newCloner(logger, storageosProvider, options)
 }
 
 // ClonerOptions are options for a new Cloner.
@@ -146,8 +152,8 @@ type Lister interface {
 }
 
 // NewLister returns a new Lister.
-func NewLister(runner command.Runner) Lister {
-	return newLister(runner)
+func NewLister() Lister {
+	return newLister()
 }
 
 // ListFilesAndUnstagedFilesOptions are options for ListFilesAndUnstagedFiles.
@@ -202,12 +208,11 @@ type Remote interface {
 // permissions.
 func GetRemote(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	name string,
 ) (Remote, error) {
-	return getRemote(ctx, runner, envContainer, dir, name)
+	return getRemote(ctx, envContainer, dir, name)
 }
 
 // CheckDirectoryIsValidGitCheckout runs a simple git rev-parse. In the case where the
@@ -216,20 +221,19 @@ func GetRemote(
 // ErrInvalidGitCheckout to the user.
 func CheckDirectoryIsValidGitCheckout(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 ) error {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("rev-parse"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("rev-parse"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -246,23 +250,22 @@ func CheckDirectoryIsValidGitCheckout(
 // changes from git based on the given directory.
 func CheckForUncommittedGitChanges(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 ) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	var modifiedFiles []string
-	envMap := app.EnvironMap(envContainer)
+	environ := app.Environ(envContainer)
 	// Unstaged changes
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("diff", "--name-only"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(envMap),
+		execext.WithArgs("diff", "--name-only"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(environ),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get unstaged changes: %w: %s", err, stderr.String())
 	}
@@ -271,14 +274,14 @@ func CheckForUncommittedGitChanges(
 	stdout = bytes.NewBuffer(nil)
 	stderr = bytes.NewBuffer(nil)
 	// Staged changes
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("diff", "--name-only", "--cached"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(envMap),
+		execext.WithArgs("diff", "--name-only", "--cached"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(environ),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get staged changes: %w: %s", err, stderr.String())
 	}
@@ -290,20 +293,19 @@ func CheckForUncommittedGitChanges(
 // GetCurrentHEADGitCommit returns the current HEAD commit based on the given directory.
 func GetCurrentHEADGitCommit(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 ) (string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("rev-parse", "HEAD"),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("rev-parse", "HEAD"),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", fmt.Errorf("failed to get current HEAD commit: %w: %s", err, stderr.String())
 	}
@@ -315,7 +317,6 @@ func GetCurrentHEADGitCommit(
 // passing the environment for permissions.
 func GetRefsForGitCommitAndRemote(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	dir string,
 	remote string,
@@ -323,14 +324,14 @@ func GetRefsForGitCommitAndRemote(
 ) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := runner.Run(
+	if err := execext.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("ls-remote", "--heads", "--tags", remote),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-		command.RunWithDir(dir),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
+		execext.WithArgs("ls-remote", "--heads", "--tags", remote),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get refs for remote %s: %w: %s", remote, err, stderr.String())
 	}
@@ -342,7 +343,7 @@ func GetRefsForGitCommitAndRemote(
 			ref = strings.TrimSpace(ref)
 			if tag, isTag := strings.CutPrefix(ref, tagsPrefix); isTag {
 				// Remove the ^{} suffix for pseudo-ref tags
-				tag, _ = strings.CutSuffix(tag, psuedoRefSuffix)
+				tag, _ = strings.CutSuffix(tag, pseudoRefSuffix)
 				refs = append(refs, tag)
 				continue
 			}
@@ -352,6 +353,93 @@ func GetRefsForGitCommitAndRemote(
 		}
 	}
 	return refs, nil
+}
+
+// IsValidRef returns whether or not ref is a valid git ref for the git
+// repository that contains dir. Returns nil if the ref is valid.
+func IsValidRef(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	dir, ref string,
+) error {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := execext.Run(
+		ctx,
+		gitCommand,
+		execext.WithArgs("rev-parse", "--verify", ref),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
+	); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			if exitErr.ExitCode() == 128 {
+				return fmt.Errorf("could not find ref %s in %s: %w", ref, dir, ErrInvalidRef)
+			}
+		}
+		return err
+	}
+	return nil
+}
+
+// ReadFileAtRef will read the file at path rolled back to the given ref, if
+// it exists at that ref.
+//
+// Specifically, this will take path, and find the associated .git directory
+// (and thus, repository root) associated with that path, if any. It will then
+// look up the commit corresponding to ref in that git directory, and within
+// that commit, the blob corresponding to that path (relative to the repository
+// root).
+func ReadFileAtRef(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	path, ref string,
+) ([]byte, error) {
+	orig := path
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find a directory with a .git directory.
+	dir := filepath.Dir(path)
+	for {
+		_, err := os.Stat(filepath.Join(dir, ".git"))
+		if err == nil {
+			break
+		} else if errors.Is(err, os.ErrNotExist) {
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				return nil, fmt.Errorf("could not find .git directory for %s: %w", orig, ErrInvalidGitCheckout)
+			}
+			dir = parent
+		} else {
+			return nil, err
+		}
+	}
+
+	// This gives us the name of the blob we're looking for.
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Call git show to show us the file we want.
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := execext.Run(ctx, gitCommand,
+		execext.WithArgs("--no-pager", "show", ref+":"+rel),
+		execext.WithStdout(stdout),
+		execext.WithStderr(stderr),
+		execext.WithDir(dir),
+		execext.WithEnv(app.Environ(envContainer)),
+	); err != nil {
+		return nil, fmt.Errorf("failed to get text of file %s at ref %s: %w: %s", orig, ref, err, stderr.String())
+	}
+
+	return stdout.Bytes(), nil
 }
 
 func getAllTrimmedLinesFromBuffer(buffer *bytes.Buffer) []string {

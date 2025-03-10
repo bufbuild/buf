@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,13 +23,14 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 )
 
@@ -144,7 +145,7 @@ func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) error {
+) (retErr error) {
 	if err := bufcli.ValidateRequiredFlag(againstFlagName, flags.Against); err != nil {
 		return err
 	}
@@ -161,11 +162,24 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
+	if err != nil {
+		return err
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
+	// Do not exclude imports here. bufcheck's Client requires all imports.
+	// Use bufcheck's BreakingWithExcludeImports.
+	imageWithConfigs, checkClient, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		input,
+		wasmRuntime,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithImageExcludeImports(flags.ExcludeImports),
 		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
@@ -180,11 +194,13 @@ func run(
 			return err
 		}
 	}
-	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
+	// Do not exclude imports here. bufcheck's Client requires all imports.
+	// Use bufcheck's BreakingWithExcludeImports.
+	againstImageWithConfigs, _, err := controller.GetTargetImageWithConfigsAndCheckClient(
 		ctx,
 		flags.Against,
+		wasm.UnimplementedRuntime,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
-		bufctl.WithImageExcludeImports(flags.ExcludeImports),
 		bufctl.WithConfigOverride(flags.AgainstConfig),
 	)
 	if err != nil {
@@ -203,16 +219,29 @@ func run(
 			len(againstImageWithConfigs),
 		)
 	}
+	// We add all check configs (both lint and breaking) as related configs to check if plugins
+	// have rules configured.
+	// We allocated twice the size of imageWithConfigs for both lint and breaking configs.
+	allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(imageWithConfigs)*2)
+	for _, imageWithConfig := range imageWithConfigs {
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.LintConfig())
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
+	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		if err := bufbreaking.NewHandler(
-			container.Logger(),
-			tracing.NewTracer(container.Tracer()),
-		).Check(
+		breakingOptions := []bufcheck.BreakingOption{
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
+		}
+		if flags.ExcludeImports {
+			breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
+		}
+		if err := checkClient.Breaking(
 			ctx,
 			imageWithConfig.BreakingConfig(),
-			againstImageWithConfigs[i],
 			imageWithConfig,
+			againstImageWithConfigs[i],
+			breakingOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
 			if errors.As(err, &fileAnnotationSet) {

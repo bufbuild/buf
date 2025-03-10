@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package buffetch
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
@@ -26,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 type reader struct {
@@ -34,7 +34,7 @@ type reader struct {
 }
 
 func newReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -62,7 +62,7 @@ func newReader(
 }
 
 func newMessageReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -83,7 +83,7 @@ func newMessageReader(
 }
 
 func newSourceReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
@@ -107,7 +107,7 @@ func newSourceReader(
 }
 
 func newDirReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 ) *reader {
 	return &reader{
@@ -120,7 +120,7 @@ func newDirReader(
 }
 
 func newModuleFetcher(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) *reader {

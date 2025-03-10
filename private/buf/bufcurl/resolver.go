@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,12 @@
 package bufcurl
 
 import (
+	"context"
+	"log/slog"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -95,4 +100,32 @@ func (c *combinedResolver) ListServices() ([]protoreflect.FullName, error) {
 		serviceNames = append(serviceNames, serviceName)
 	}
 	return serviceNames, nil
+}
+
+// NewWKTResolver returns a Resolver that can resolve all well-known types.
+func NewWKTResolver(ctx context.Context, logger *slog.Logger) (Resolver, error) {
+	moduleSet, err := bufmodule.NewModuleSetBuilder(
+		ctx,
+		logger,
+		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
+	).AddLocalModule(
+		datawkt.ReadBucket,
+		".",
+		true,
+	).Build()
+	if err != nil {
+		return nil, err
+	}
+	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	image, err := bufimage.BuildImage(
+		ctx,
+		logger,
+		module,
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ResolverForImage(image), nil
 }

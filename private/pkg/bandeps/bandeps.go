@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package bandeps
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"go.uber.org/zap"
 )
 
 // Checker is a checker.
@@ -33,8 +32,8 @@ type Checker interface {
 	) ([]Violation, error)
 }
 
-func NewChecker(logger *zap.Logger, runner command.Runner) Checker {
-	return newChecker(logger, runner)
+func NewChecker(logger *slog.Logger) Checker {
+	return newChecker(logger)
 }
 
 // Violation is a violation.
@@ -48,12 +47,12 @@ type Violation interface {
 	key() string
 }
 
-// ExternalConfig is an external configuation.
+// ExternalConfig is an external configuration.
 type ExternalConfig struct {
 	Bans []ExternalBanConfig `json:"bans,omitempty" yaml:"bans,omitempty"`
 }
 
-// ExternalConfig is an external ban configuation.
+// ExternalBanConfig is an external ban configuration.
 type ExternalBanConfig struct {
 	// Packages are the package expressions to get dependencies for.
 	Packages ExternalPackageConfig `json:"packages,omitempty" yaml:"packages,omitempty"`

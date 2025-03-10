@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@ package bufcurl
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"go.uber.org/multierr"
 )
 
 // headersBlockList contains disallowed headers. These are headers that are part
@@ -124,7 +123,7 @@ func readHeadersFile(headerFile string, stopAtBlankLine bool, headers http.Heade
 		if f != nil {
 			closeErr := f.Close()
 			if closeErr != nil {
-				err = multierr.Append(err, ErrorHasFilename(closeErr, headerFile))
+				err = errors.Join(err, ErrorHasFilename(closeErr, headerFile))
 			}
 		}
 	}()

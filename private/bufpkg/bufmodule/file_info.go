@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
 package bufmodule
 
 import (
+	"sync"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
 // FileInfo is the file info for a Module file.
 //
 // It comprises the typical storage.ObjectInfo, along with a pointer back to the Module.
-// This allows callers to figure out i.e. the ModuleFullName, Commit, as well as any other
+// This allows callers to figure out i.e. the FullName, Commit, as well as any other
 // data it may need.
 type FileInfo interface {
 	storage.ObjectInfo
@@ -88,8 +89,8 @@ func newFileInfo(
 		module:              module,
 		fileType:            fileType,
 		isTargetFile:        isTargetFile,
-		getProtoFileImports: syncext.OnceValues(getProtoFileImports),
-		getProtoFilePackage: syncext.OnceValues(getProtoFilePackage),
+		getProtoFileImports: sync.OnceValues(getProtoFileImports),
+		getProtoFilePackage: sync.OnceValues(getProtoFilePackage),
 	}
 }
 

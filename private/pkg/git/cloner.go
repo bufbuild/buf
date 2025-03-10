@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,40 +19,32 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.opentelemetry.io/otel/codes"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type cloner struct {
-	logger            *zap.Logger
-	tracer            tracing.Tracer
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
-	runner            command.Runner
 	options           ClonerOptions
 }
 
 func newCloner(
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	options ClonerOptions,
 ) *cloner {
 	return &cloner{
 		logger:            logger,
-		tracer:            tracer,
 		storageosProvider: storageosProvider,
-		runner:            runner,
 		options:           options,
 	}
 }
@@ -65,8 +57,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
+	defer slogext.DebugProfile(c.logger)()
 
 	var err error
 	switch {
@@ -80,44 +71,39 @@ func (c *cloner) CloneToBucket(
 	}
 
 	if depth == 0 {
-		err := errors.New("depth must be > 0")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return errors.New("depth must be > 0")
 	}
 
 	depthArg := strconv.Itoa(int(depth))
 
-	baseDir, err := tmp.NewDir()
+	baseDir, err := tmp.NewDir(ctx)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, baseDir.Close())
+		retErr = errors.Join(retErr, baseDir.Close())
 	}()
 
 	buffer := bytes.NewBuffer(nil)
-	if err := c.runner.Run(
+	if err := execext.Run(
 		ctx,
 		"git",
-		command.RunWithArgs("init"),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		execext.WithArgs("init"),
+		execext.WithEnv(app.Environ(envContainer)),
+		execext.WithStderr(buffer),
+		execext.WithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
 
 	buffer.Reset()
-	if err := c.runner.Run(
+	if err := execext.Run(
 		ctx,
 		"git",
-		command.RunWithArgs("remote", "add", "origin", url),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		execext.WithArgs("remote", "add", "origin", url),
+		execext.WithEnv(app.Environ(envContainer)),
+		execext.WithStderr(buffer),
+		execext.WithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
@@ -139,46 +125,66 @@ func (c *cloner) CloneToBucket(
 			return err
 		}
 	}
+
+	// Build the args for the fetch command.
+	fetchArgs := []string{}
+	fetchArgs = append(fetchArgs, gitConfigAuthArgs...)
+	fetchArgs = append(
+		fetchArgs,
+		"fetch",
+		"--depth", depthArg,
+		// Required on branches matching the current branch of git init.
+		"--update-head-ok",
+	)
+	if options.Filter != "" {
+		fetchArgs = append(fetchArgs, "--filter", options.Filter)
+	}
+
 	// First, try to fetch the fetchRef directly. If the ref is not found, we
 	// will try to fetch the fallback ref with a depth to allow resolving partial
 	// refs locally. If the fetch fails, we will return an error.
+	var usedFallback bool
 	fetchRef, fallbackRef, checkoutRef := getRefspecsForName(options.Name)
 	buffer.Reset()
-	if err := c.runner.Run(
+	if err := execext.Run(
 		ctx,
 		"git",
-		command.RunWithArgs(append(
-			gitConfigAuthArgs,
-			"fetch",
-			"--depth", depthArg,
-			"--update-head-ok", // Required on branches matching the current branch of git init.
-			"origin",
-			fetchRef,
-		)...),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		execext.WithArgs(append(fetchArgs, "origin", fetchRef)...),
+		execext.WithEnv(app.Environ(envContainer)),
+		execext.WithStderr(buffer),
+		execext.WithDir(baseDir.Path()),
 	); err != nil {
 		// If the ref fetch failed, without a fallback, return the error.
-		if fallbackRef == "" || !strings.Contains(buffer.String(), "couldn't find remote ref") {
+		if fallbackRef == "" {
 			return newGitCommandError(err, buffer)
 		}
 		// Failed to fetch the ref directly, try to fetch the fallback ref.
+		usedFallback = true
 		buffer.Reset()
-		if err := c.runner.Run(
+		if err := execext.Run(
 			ctx,
 			"git",
-			command.RunWithArgs(append(
-				gitConfigAuthArgs,
-				"fetch",
-				"--depth", depthArg,
-				"--update-head-ok", // Required on branches matching the current branch of git init.
-				"origin",
-				fallbackRef,
-			)...),
-			command.RunWithEnv(app.EnvironMap(envContainer)),
-			command.RunWithStderr(buffer),
-			command.RunWithDir(baseDir.AbsPath()),
+			execext.WithArgs(append(fetchArgs, "origin", fallbackRef)...),
+			execext.WithEnv(app.Environ(envContainer)),
+			execext.WithStderr(buffer),
+			execext.WithDir(baseDir.Path()),
+		); err != nil {
+			return newGitCommandError(err, buffer)
+		}
+	}
+
+	// As a further optimization, if a filter is applied with a subdir, we run
+	// a sparse checkout to reduce the size of the working directory.
+	buffer.Reset()
+	if options.Filter != "" && options.SubDir != "" {
+		// Set the subdir for sparse checkout.
+		if err := execext.Run(
+			ctx,
+			"git",
+			execext.WithArgs("sparse-checkout", "set", options.SubDir),
+			execext.WithEnv(app.Environ(envContainer)),
+			execext.WithStderr(buffer),
+			execext.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -187,25 +193,27 @@ func (c *cloner) CloneToBucket(
 	// Always checkout the FETCH_HEAD to populate the working directory.
 	// This allows for referencing HEAD in checkouts.
 	buffer.Reset()
-	if err := c.runner.Run(
+	if err := execext.Run(
 		ctx,
 		"git",
-		command.RunWithArgs("checkout", "--force", "FETCH_HEAD"),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-		command.RunWithDir(baseDir.AbsPath()),
+		execext.WithArgs("checkout", "--force", "FETCH_HEAD"),
+		execext.WithEnv(app.Environ(envContainer)),
+		execext.WithStderr(buffer),
+		execext.WithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
-	if checkoutRef != "" {
+	// Should checkout if the fallback was used or if the checkout ref is different
+	// from the fetch ref.
+	if checkoutRef != "" && (usedFallback || checkoutRef != fetchRef) {
 		buffer.Reset()
-		if err := c.runner.Run(
+		if err := execext.Run(
 			ctx,
 			"git",
-			command.RunWithArgs("checkout", "--force", checkoutRef),
-			command.RunWithEnv(app.EnvironMap(envContainer)),
-			command.RunWithStderr(buffer),
-			command.RunWithDir(baseDir.AbsPath()),
+			execext.WithArgs("checkout", "--force", checkoutRef),
+			execext.WithEnv(app.Environ(envContainer)),
+			execext.WithStderr(buffer),
+			execext.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -213,10 +221,10 @@ func (c *cloner) CloneToBucket(
 
 	if options.RecurseSubmodules {
 		buffer.Reset()
-		if err := c.runner.Run(
+		if err := execext.Run(
 			ctx,
 			"git",
-			command.RunWithArgs(append(
+			execext.WithArgs(append(
 				gitConfigAuthArgs,
 				"submodule",
 				"update",
@@ -226,22 +234,22 @@ func (c *cloner) CloneToBucket(
 				"--depth",
 				depthArg,
 			)...),
-			command.RunWithEnv(app.EnvironMap(envContainer)),
-			command.RunWithStderr(buffer),
-			command.RunWithDir(baseDir.AbsPath()),
+			execext.WithEnv(app.Environ(envContainer)),
+			execext.WithStderr(buffer),
+			execext.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
 	}
 
 	// we do NOT want to read in symlinks
-	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(baseDir.AbsPath())
+	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(baseDir.Path())
 	if err != nil {
 		return err
 	}
 	var readBucket storage.ReadBucket = tmpReadWriteBucket
-	if options.Mapper != nil {
-		readBucket = storage.MapReadBucket(readBucket, options.Mapper)
+	if options.Matcher != nil {
+		readBucket = storage.FilterReadBucket(readBucket, options.Matcher)
 	}
 	_, err = storage.Copy(ctx, readBucket, writeBucket)
 	return err
@@ -354,7 +362,8 @@ func getRefspecsForName(gitName Name) (fetchRef string, fallbackRef string, chec
 	} else if checkout != "" && checkout != "HEAD" {
 		// If a checkout ref is specified, we fetch the ref directly.
 		// We fallback to fetching the HEAD to resolve partial refs.
-		return checkout, "HEAD", ""
+		// We checkout the ref after the fetch if the fallback was used.
+		return checkout, "HEAD", checkout
 	}
 	return "HEAD", "", ""
 }

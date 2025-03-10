@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -204,7 +204,7 @@ func getAlphaBetaMajorPatch(remainder string, minMajorVersionNumber int) (int, i
 	return major, 0, true
 }
 
-func getNumber(s string, min int) (int, bool) {
+func getNumber(s string, minimum int) (int, bool) {
 	if s == "" {
 		return 0, false
 	}
@@ -212,7 +212,7 @@ func getNumber(s string, min int) (int, bool) {
 	if err != nil {
 		return 0, false
 	}
-	if value < int64(min) {
+	if value < int64(minimum) {
 		return 0, false
 	}
 	return int(value), true

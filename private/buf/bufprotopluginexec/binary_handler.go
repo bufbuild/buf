@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,33 +18,30 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/protoplugin"
-	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
-	runner     command.Runner
-	tracer     tracing.Tracer
+	logger     *slog.Logger
 	pluginPath string
 	pluginArgs []string
 }
 
 func newBinaryHandler(
-	runner command.Runner,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	pluginPath string,
 	pluginArgs []string,
 ) *binaryHandler {
 	return &binaryHandler{
-		runner:     runner,
-		tracer:     tracer,
+		logger:     logger,
 		pluginPath: pluginPath,
 		pluginArgs: pluginArgs,
 	}
@@ -56,14 +53,7 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	ctx, span := h.tracer.Start(
-		ctx,
-		tracing.WithErr(&retErr),
-		tracing.WithAttributes(
-			attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
-		),
-	)
-	defer span.End()
+	defer slogext.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
 
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {
@@ -71,16 +61,16 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(pluginEnv.Stderr, h.pluginPath)
-	runOptions := []command.RunOption{
-		command.RunWithEnviron(pluginEnv.Environ),
-		command.RunWithStdin(bytes.NewReader(requestData)),
-		command.RunWithStdout(responseBuffer),
-		command.RunWithStderr(stderrWriteCloser),
+	runOptions := []execext.RunOption{
+		execext.WithEnv(pluginEnv.Environ),
+		execext.WithStdin(bytes.NewReader(requestData)),
+		execext.WithStdout(responseBuffer),
+		execext.WithStderr(stderrWriteCloser),
 	}
 	if len(h.pluginArgs) > 0 {
-		runOptions = append(runOptions, command.RunWithArgs(h.pluginArgs...))
+		runOptions = append(runOptions, execext.WithArgs(h.pluginArgs...))
 	}
-	if err := h.runner.Run(
+	if err := execext.Run(
 		ctx,
 		h.pluginPath,
 		runOptions...,
@@ -92,10 +82,10 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	responseWriter.AddCodeGeneratorResponseFiles(response.GetFile()...)
+	responseWriter.AddError(response.GetError())
 	responseWriter.SetSupportedFeatures(response.GetSupportedFeatures())
 	responseWriter.SetMinimumEdition(response.GetMinimumEdition())
 	responseWriter.SetMaximumEdition(response.GetMaximumEdition())
-	responseWriter.SetError(response.GetError())
 	return nil
 }
 

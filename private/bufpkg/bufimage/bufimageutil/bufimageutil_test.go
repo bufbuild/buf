@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"os"
 	"sort"
 	"testing"
@@ -26,18 +27,16 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoprint"
+	"github.com/google/uuid"
+	"github.com/jhump/protoreflect/v2/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -175,7 +174,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -184,7 +183,7 @@ func TestTransitivePublic(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
+	_, err = protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 }
 
@@ -210,7 +209,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -234,7 +233,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
+func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
 		return nil, nil, err
@@ -245,7 +244,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracing.NopTracer,
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
@@ -257,7 +256,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
+	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -270,30 +269,32 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
 	// way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
-	data, err := proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
+	data, err := protoencoding.NewWireMarshaler().Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	err = proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal(data, fileDescriptorSet)
+	err = protoencoding.NewWireUnmarshaler(filteredImage.Resolver()).Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
 
-	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(fileDescriptorSet)
+	files, err := protodesc.NewFiles(fileDescriptorSet)
 	require.NoError(t, err)
+
 	archive := &txtar.Archive{}
 	printer := protoprint.Printer{
 		SortElements: true,
 		Compact:      true,
 	}
-	for fname, d := range reflectDescriptors {
+	files.RangeFiles(func(fileDescriptor protoreflect.FileDescriptor) bool {
 		fileBuilder := &bytes.Buffer{}
-		require.NoError(t, printer.PrintProtoFile(d, fileBuilder), "expected no error while printing %q", fname)
+		require.NoError(t, printer.PrintProtoFile(fileDescriptor, fileBuilder), "expected no error while printing %q", fileDescriptor.Path())
 		archive.Files = append(
 			archive.Files,
 			txtar.File{
-				Name: fname,
+				Name: fileDescriptor.Path(),
 				Data: fileBuilder.Bytes(),
 			},
 		)
-	}
+		return true
+	})
 	sort.SliceStable(archive.Files, func(i, j int) bool {
 		return archive.Files[i].Name < archive.Files[j].Name
 	})
@@ -319,7 +320,7 @@ func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket s
 
 func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), "testdata/sourcecodeinfo")
+	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, []string{typename}, opts...)
@@ -452,7 +453,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 	}
 	ctx := context.Background()
 	for _, benchmarkCase := range benchmarkCases {
-		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder, opts...)
+		_, image, err := getImage(ctx, slogtestext.NewLogger(b), benchmarkCase.folder, opts...)
 		require.NoError(b, err)
 		benchmarkCase.image = image
 	}

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	// FileVersionV1Beta represents v1beta1 files.
+	// FileVersionV1Beta1 represents v1beta1 files.
 	FileVersionV1Beta1 FileVersion = iota + 1
 	// FileVersionV1 represents v1 files.
 	FileVersionV1

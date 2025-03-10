@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/multierr"
 )
 
 // Copy copies the bucket at from to the bucket at to.
@@ -79,7 +79,7 @@ func CopyReader(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	_, err = io.Copy(writeObjectCloser, reader)
 	return err
@@ -144,7 +144,6 @@ func copyPaths(
 	var count atomic.Int64
 	jobs := make([]func(context.Context) error, len(paths))
 	for i, path := range paths {
-		path := path
 		jobs[i] = func(ctx context.Context) error {
 			if err := copyPath(ctx, from, path, to, path, copyExternalAndLocalPaths, atomicOpt); err != nil {
 				return err
@@ -174,7 +173,7 @@ func copyPath(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(err, readObjectCloser.Close())
+		retErr = errors.Join(err, readObjectCloser.Close())
 	}()
 	return copyReadObject(ctx, readObjectCloser, to, toPath, copyExternalAndLocalPaths, atomic)
 }
@@ -196,7 +195,7 @@ func copyReadObject(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	if copyExternalAndLocalPaths {
 		if err := writeObjectCloser.SetExternalPath(readObject.ExternalPath()); err != nil {

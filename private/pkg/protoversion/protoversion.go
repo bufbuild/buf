@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ func NewPackageVersionForPackage(pkg string, options ...PackageVersionOption) (P
 	return newPackageVersionForPackage(pkg, options...)
 }
 
-// NewPackageVersionForCompoonent returns the PackageVersion for the package component.
+// NewPackageVersionForComponent returns the PackageVersion for the package component.
 //
 // Returns false if the component is not a package version per the specifications.
 // That is, the component "v1beta1" will return true, while the component "foo" will return false.

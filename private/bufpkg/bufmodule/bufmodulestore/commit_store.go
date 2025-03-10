@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,14 +20,16 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/zap"
 )
 
 var externalCommitVersion = "v1"
@@ -52,7 +54,7 @@ type CommitStore interface {
 		notFoundCommitKeys []bufmodule.CommitKey,
 		err error,
 	)
-	// Put puts the Commits to the store.
+	// PutCommits puts the Commits to the store.
 	PutCommits(ctx context.Context, commits []bufmodule.Commit) error
 }
 
@@ -62,7 +64,7 @@ type CommitStore interface {
 //
 // This is typically used to interact with a cache directory.
 func NewCommitStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 ) CommitStore {
 	return newCommitStore(logger, bucket)
@@ -71,12 +73,12 @@ func NewCommitStore(
 /// *** PRIVATE ***
 
 type commitStore struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	bucket storage.ReadWriteBucket
 }
 
 func newCommitStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
 ) *commitStore {
 	return &commitStore{
@@ -151,14 +153,15 @@ func (p *commitStore) getCommitForCommitKey(
 	// may be nil
 	expectedDigest bufmodule.Digest,
 ) (_ bufmodule.Commit, retErr error) {
-	bucket := p.getReadWriteBucketForDir(commitKey)
+	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
 	data, err := storage.ReadPath(ctx, bucket, path)
 	p.logDebugCommitKey(
+		ctx,
 		commitKey,
 		"commit store get file",
-		zap.Bool("found", err == nil),
-		zap.Error(err),
+		slog.Bool("found", err == nil),
+		slogext.ErrorAttr(err),
 	)
 	if err != nil {
 		return nil, err
@@ -187,7 +190,7 @@ func (p *commitStore) getCommitForCommitKey(
 		invalidReason = "mismatched digest type"
 		return nil, err
 	}
-	moduleFullName, err := bufmodule.NewModuleFullName(
+	moduleFullName, err := bufparse.NewFullName(
 		commitKey.Registry(),
 		externalCommit.Owner,
 		externalCommit.Module,
@@ -233,12 +236,12 @@ func (p *commitStore) putCommit(
 	if err != nil {
 		return err
 	}
-	bucket := p.getReadWriteBucketForDir(commitKey)
+	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
 	externalCommit := externalCommit{
 		Version:    externalCommitVersion,
-		Owner:      moduleKey.ModuleFullName().Owner(),
-		Module:     moduleKey.ModuleFullName().Name(),
+		Owner:      moduleKey.FullName().Owner(),
+		Module:     moduleKey.FullName().Name(),
 		CreateTime: createTime,
 		Digest:     digest.String(),
 	}
@@ -252,12 +255,13 @@ func (p *commitStore) putCommit(
 	return storage.PutPath(ctx, bucket, path, data, storage.PutWithAtomic())
 }
 
-func (p *commitStore) getReadWriteBucketForDir(commitKey bufmodule.CommitKey) storage.ReadWriteBucket {
+func (p *commitStore) getReadWriteBucketForDir(ctx context.Context, commitKey bufmodule.CommitKey) storage.ReadWriteBucket {
 	dirPath := getCommitStoreDirPath(commitKey)
 	p.logDebugCommitKey(
+		ctx,
 		commitKey,
 		"commit store dir read write bucket",
-		zap.String("dirPath", dirPath),
+		slog.String("dirPath", dirPath),
 	)
 	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 }
@@ -271,25 +275,27 @@ func (p *commitStore) deleteInvalidCommitFile(
 	invalidErr error,
 ) error {
 	p.logDebugCommitKey(
+		ctx,
 		commitKey,
 		fmt.Sprintf("commit store %s commit file", invalidReason),
-		zap.Error(invalidErr),
+		slog.Any("error", invalidErr),
 	)
 	// Attempt to delete file as it is missing information.
 	if err := bucket.Delete(ctx, path); err != nil {
 		// Otherwise ignore error.
 		p.logDebugCommitKey(
+			ctx,
 			commitKey,
 			fmt.Sprintf("commit store could not delete %s commit file", invalidReason),
-			zap.Error(err),
+			slogext.ErrorAttr(err),
 		)
 	}
 	// This will act as if the file is not found
 	return &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 }
 
-func (p *commitStore) logDebugCommitKey(commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
-	logDebugCommitKey(p.logger, commitKey, message, fields...)
+func (p *commitStore) logDebugCommitKey(ctx context.Context, commitKey bufmodule.CommitKey, message string, fields ...any) {
+	logDebugCommitKey(ctx, p.logger, commitKey, message, fields...)
 }
 
 // Returns the directory path within the store for the Commit.

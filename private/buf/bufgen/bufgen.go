@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,16 +20,14 @@ package bufgen
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
 )
 
 const (
@@ -41,7 +39,7 @@ const (
 	StrategyAll Strategy = 2
 )
 
-// Strategy is a generation stategy.
+// Strategy is a generation strategy.
 type Strategy int
 
 // ParseStrategy parses the Strategy.
@@ -87,10 +85,8 @@ type Generator interface {
 
 // NewGenerator returns a new Generator.
 func NewGenerator(
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	// Pass a clientConfig instead of a CodeGenerationServiceClient because the
 	// plugins' remotes/registries is not known at this time, and remotes/registries
 	// may be different for different plugins.
@@ -98,9 +94,7 @@ func NewGenerator(
 ) Generator {
 	return newGenerator(
 		logger,
-		tracer,
 		storageosProvider,
-		runner,
 		clientConfig,
 	)
 }

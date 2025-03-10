@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/shake256"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/spf13/pflag"
 )
 
@@ -41,7 +42,10 @@ func main() {
 
 func newCommand() *appcmd.Command {
 	flags := newFlags()
-	builder := appext.NewBuilder(programName)
+	builder := appext.NewBuilder(
+		programName,
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
+	)
 	return &appcmd.Command{
 		Use:   programName,
 		Short: "Send a newline-separated file via stdin",

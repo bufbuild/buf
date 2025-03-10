@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,17 +24,20 @@ type imageWithConfig struct {
 
 	lintConfig     bufconfig.LintConfig
 	breakingConfig bufconfig.BreakingConfig
+	pluginConfigs  []bufconfig.PluginConfig
 }
 
 func newImageWithConfig(
 	image bufimage.Image,
 	lintConfig bufconfig.LintConfig,
 	breakingConfig bufconfig.BreakingConfig,
+	pluginConfigs []bufconfig.PluginConfig,
 ) *imageWithConfig {
 	return &imageWithConfig{
 		Image:          image,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
+		pluginConfigs:  pluginConfigs,
 	}
 }
 
@@ -44,6 +47,10 @@ func (i *imageWithConfig) LintConfig() bufconfig.LintConfig {
 
 func (i *imageWithConfig) BreakingConfig() bufconfig.BreakingConfig {
 	return i.breakingConfig
+}
+
+func (i *imageWithConfig) PluginConfigs() []bufconfig.PluginConfig {
+	return i.pluginConfigs
 }
 
 func (*imageWithConfig) isImageWithConfig() {}

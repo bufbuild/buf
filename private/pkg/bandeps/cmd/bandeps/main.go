@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/bandeps"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/spf13/pflag"
 )
 
@@ -46,7 +46,7 @@ func newCommand() *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(timeout),
-		appext.BuilderWithTracing(),
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
 	)
 	flags := newFlags()
 	return &appcmd.Command{
@@ -91,7 +91,6 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	}
 	violations, err := bandeps.NewChecker(
 		container.Logger(),
-		command.NewRunner(),
 	).Check(
 		ctx,
 		container,

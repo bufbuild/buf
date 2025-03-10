@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@ package storage
 
 import (
 	"context"
-
-	"go.uber.org/atomic"
+	"sync/atomic"
 )
 
 // LimitWriteBucket returns a [WriteBucket] that writes to [writeBucket]
@@ -42,7 +41,7 @@ type limitedWriteBucket struct {
 func newLimitedWriteBucket(bucket WriteBucket, limit int64) *limitedWriteBucket {
 	return &limitedWriteBucket{
 		WriteBucket: bucket,
-		currentSize: atomic.NewInt64(0),
+		currentSize: &atomic.Int64{},
 		limit:       limit,
 	}
 }
@@ -78,7 +77,7 @@ func (o *limitedWriteObjectCloser) Write(p []byte) (int, error) {
 	writeSize := int64(len(p))
 	newBucketSize := o.bucketSize.Add(writeSize)
 	if newBucketSize > o.limit {
-		o.bucketSize.Sub(writeSize)
+		o.bucketSize.Add(-writeSize)
 		return 0, &errWriteLimitReached{
 			Limit:       o.limit,
 			ExceedingBy: newBucketSize - o.limit,
@@ -86,7 +85,7 @@ func (o *limitedWriteObjectCloser) Write(p []byte) (int, error) {
 	}
 	writtenSize, err := o.WriteObjectCloser.Write(p)
 	if int64(writtenSize) < writeSize {
-		o.bucketSize.Sub(writeSize - int64(writtenSize))
+		o.bucketSize.Add(-(writeSize - int64(writtenSize)))
 	}
 	return writtenSize, err
 }

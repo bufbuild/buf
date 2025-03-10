@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -29,7 +30,7 @@ func getModuleKeyForUniversalProtoCommit(
 	registry string,
 	universalProtoCommit *universalProtoCommit,
 ) (bufmodule.ModuleKey, error) {
-	moduleFullName, err := getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
+	moduleFullName, err := getFullNameForRegistryProtoOwnerIDProtoModuleID(
 		ctx,
 		v1ProtoModuleProvider,
 		v1ProtoOwnerProvider,
@@ -53,7 +54,7 @@ func getModuleKeyForUniversalProtoCommit(
 	)
 }
 
-func getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
+func getFullNameForRegistryProtoOwnerIDProtoModuleID(
 	ctx context.Context,
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	v1ProtoOwnerProvider *v1ProtoOwnerProvider,
@@ -62,7 +63,7 @@ func getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
 	protoOwnerID string,
 	// Dashless
 	protoModuleID string,
-) (bufmodule.ModuleFullName, error) {
+) (bufparse.FullName, error) {
 	v1ProtoModule, err := v1ProtoModuleProvider.getV1ProtoModuleForProtoModuleID(
 		ctx,
 		registry,
@@ -88,7 +89,7 @@ func getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
 	default:
 		return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", v1ProtoOwner)
 	}
-	return bufmodule.NewModuleFullName(
+	return bufparse.NewFullName(
 		registry,
 		ownerName,
 		v1ProtoModule.Name,

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -86,25 +87,25 @@ func TestBasic(t *testing.T) {
 	// This is the ModuleSetBuilder that will build the modules that we are going to test.
 	// This is replicating how a workspace would be built from remote dependencies and
 	// local sources.
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bsrProvider, bsrProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bsrProvider, bsrProvider)
 
 	// First, we add the remote dependences (adding order doesn't matter).
 	//
 	// Remember, the bsrProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
-	moduleRefExtdep1, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
+	moduleRefExtdep1, err := bufparse.NewRef("buf.build", "foo", "extdep1", "")
 	require.NoError(t, err)
-	moduleRefExtdep2, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
+	moduleRefExtdep2, err := bufparse.NewRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
-	moduleRefExtdep3, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
+	moduleRefExtdep3, err := bufparse.NewRef("buf.build", "foo", "extdep3", "")
 	require.NoError(t, err)
-	moduleRefExtdep4, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep4", "")
+	moduleRefExtdep4, err := bufparse.NewRef("buf.build", "foo", "extdep4", "")
 	require.NoError(t, err)
-	moduleRefModule2, err := bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
+	moduleRefModule2, err := bufparse.NewRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		[]bufmodule.ModuleRef{
+		[]bufparse.Ref{
 			moduleRefExtdep1,
 			moduleRefExtdep2,
 			moduleRefExtdep3,
@@ -138,7 +139,7 @@ func TestBasic(t *testing.T) {
 	//
 	// This module is also in the BSR, but we'll prefer the local sources when
 	// we do ModuleSetBuilder.Build().
-	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
+	moduleFullName, err := bufparse.NewFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
 	moduleSetBuilder.AddLocalModule(
 		testNewBucketForPathToData(
@@ -157,7 +158,7 @@ func TestBasic(t *testing.T) {
 		),
 		"path/to/module2",
 		true,
-		bufmodule.LocalModuleWithModuleFullName(moduleFullName),
+		bufmodule.LocalModuleWithFullName(moduleFullName),
 		// We're going to exclude the files in the foo directory from targeting,
 		// ie foo/module2_excluded.proto. This file will still be in the module,
 		// but will not be marked as a target.
@@ -306,6 +307,35 @@ func TestBasic(t *testing.T) {
 		graph,
 		bufmodule.Module.OpaqueID,
 	)
+	graphRemoteOnly, err := bufmodule.ModuleSetToDAG(moduleSet, bufmodule.ModuleSetToDAGWithRemoteOnly())
+	require.NoError(t, err)
+	dagtest.RequireGraphEqual(
+		t,
+		[]dagtest.ExpectedNode[string]{
+			{
+				Key:      "buf.build/foo/extdep1",
+				Outbound: []string{},
+			},
+			{
+				Key: "buf.build/foo/extdep3",
+				Outbound: []string{
+					"buf.build/foo/extdep4",
+				},
+			},
+			{
+				Key:      "buf.build/foo/extdep4",
+				Outbound: []string{},
+			},
+			{
+				Key: "buf.build/foo/extdep2",
+				Outbound: []string{
+					"buf.build/foo/extdep1",
+				},
+			},
+		},
+		graphRemoteOnly,
+		bufmodule.Module.OpaqueID,
+	)
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(moduleSet)
 	require.NoError(t, err)
 	require.Equal(
@@ -377,7 +407,7 @@ func TestModuleCycleError(t *testing.T) {
 			"buf.build/foo/c",
 			"buf.build/foo/a",
 		},
-		moduleCycleError.OpaqueIDs,
+		moduleCycleError.Descriptions,
 	)
 
 	moduleB := moduleSet.GetModuleForOpaqueID("buf.build/foo/b")
@@ -394,7 +424,7 @@ func TestModuleCycleError(t *testing.T) {
 			"buf.build/foo/a",
 			"buf.build/foo/b",
 		},
-		moduleCycleError.OpaqueIDs,
+		moduleCycleError.Descriptions,
 	)
 
 	moduleC := moduleSet.GetModuleForOpaqueID("buf.build/foo/c")
@@ -411,7 +441,7 @@ func TestModuleCycleError(t *testing.T) {
 			"buf.build/foo/b",
 			"buf.build/foo/c",
 		},
-		moduleCycleError.OpaqueIDs,
+		moduleCycleError.Descriptions,
 	)
 }
 
@@ -461,7 +491,7 @@ func TestDuplicateProtoPathError(t *testing.T) {
 				"buf.build/foo/a",
 				"buf.build/foo/b",
 			},
-			duplicateProtoPathError.OpaqueIDs,
+			duplicateProtoPathError.ModuleDescriptions,
 		)
 	}
 	_, err = moduleA.ModuleDeps()
@@ -505,10 +535,10 @@ func TestNoProtoFilesError(t *testing.T) {
 		require.Error(t, err)
 		noProtoFilesError := &bufmodule.NoProtoFilesError{}
 		require.True(t, errors.As(err, &noProtoFilesError), err.Error())
-		require.Equal(
+		require.Contains(
 			t,
 			"buf.build/foo/b",
-			noProtoFilesError.OpaqueID,
+			noProtoFilesError.ModuleDescription,
 		)
 	}
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
@@ -541,7 +571,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 		},
 	)
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(bucket, "module1", true)
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
@@ -567,7 +597,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",
@@ -597,7 +627,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto with package files
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",

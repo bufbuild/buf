@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,14 +58,6 @@ const (
 	WebhookServiceListWebhooksProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	webhookServiceServiceDescriptor             = v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService")
-	webhookServiceCreateWebhookMethodDescriptor = webhookServiceServiceDescriptor.Methods().ByName("CreateWebhook")
-	webhookServiceDeleteWebhookMethodDescriptor = webhookServiceServiceDescriptor.Methods().ByName("DeleteWebhook")
-	webhookServiceListWebhooksMethodDescriptor  = webhookServiceServiceDescriptor.Methods().ByName("ListWebhooks")
-)
-
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
 	// Create a webhook, subscribes to a given repository event for a callback URL
@@ -86,25 +78,26 @@ type WebhookServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewWebhookServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) WebhookServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	webhookServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods()
 	return &webhookServiceClient{
 		createWebhook: connect.NewClient[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse](
 			httpClient,
 			baseURL+WebhookServiceCreateWebhookProcedure,
-			connect.WithSchema(webhookServiceCreateWebhookMethodDescriptor),
+			connect.WithSchema(webhookServiceMethods.ByName("CreateWebhook")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		deleteWebhook: connect.NewClient[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse](
 			httpClient,
 			baseURL+WebhookServiceDeleteWebhookProcedure,
-			connect.WithSchema(webhookServiceDeleteWebhookMethodDescriptor),
+			connect.WithSchema(webhookServiceMethods.ByName("DeleteWebhook")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		listWebhooks: connect.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
 			httpClient,
 			baseURL+WebhookServiceListWebhooksProcedure,
-			connect.WithSchema(webhookServiceListWebhooksMethodDescriptor),
+			connect.WithSchema(webhookServiceMethods.ByName("ListWebhooks")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -151,24 +144,25 @@ type WebhookServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	webhookServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods()
 	webhookServiceCreateWebhookHandler := connect.NewUnaryHandler(
 		WebhookServiceCreateWebhookProcedure,
 		svc.CreateWebhook,
-		connect.WithSchema(webhookServiceCreateWebhookMethodDescriptor),
+		connect.WithSchema(webhookServiceMethods.ByName("CreateWebhook")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	webhookServiceDeleteWebhookHandler := connect.NewUnaryHandler(
 		WebhookServiceDeleteWebhookProcedure,
 		svc.DeleteWebhook,
-		connect.WithSchema(webhookServiceDeleteWebhookMethodDescriptor),
+		connect.WithSchema(webhookServiceMethods.ByName("DeleteWebhook")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	webhookServiceListWebhooksHandler := connect.NewUnaryHandler(
 		WebhookServiceListWebhooksProcedure,
 		svc.ListWebhooks,
-		connect.WithSchema(webhookServiceListWebhooksMethodDescriptor),
+		connect.WithSchema(webhookServiceMethods.ByName("ListWebhooks")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

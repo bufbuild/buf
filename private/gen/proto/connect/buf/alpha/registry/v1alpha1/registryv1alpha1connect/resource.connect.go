@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,12 +52,6 @@ const (
 	ResourceServiceGetResourceByNameProcedure = "/buf.alpha.registry.v1alpha1.ResourceService/GetResourceByName"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	resourceServiceServiceDescriptor                 = v1alpha1.File_buf_alpha_registry_v1alpha1_resource_proto.Services().ByName("ResourceService")
-	resourceServiceGetResourceByNameMethodDescriptor = resourceServiceServiceDescriptor.Methods().ByName("GetResourceByName")
-)
-
 // ResourceServiceClient is a client for the buf.alpha.registry.v1alpha1.ResourceService service.
 type ResourceServiceClient interface {
 	// GetResourceByName takes a resource name and returns the
@@ -74,11 +68,12 @@ type ResourceServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewResourceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ResourceServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	resourceServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resource_proto.Services().ByName("ResourceService").Methods()
 	return &resourceServiceClient{
 		getResourceByName: connect.NewClient[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse](
 			httpClient,
 			baseURL+ResourceServiceGetResourceByNameProcedure,
-			connect.WithSchema(resourceServiceGetResourceByNameMethodDescriptor),
+			connect.WithSchema(resourceServiceMethods.ByName("GetResourceByName")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -109,10 +104,11 @@ type ResourceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	resourceServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resource_proto.Services().ByName("ResourceService").Methods()
 	resourceServiceGetResourceByNameHandler := connect.NewUnaryHandler(
 		ResourceServiceGetResourceByNameProcedure,
 		svc.GetResourceByName,
-		connect.WithSchema(resourceServiceGetResourceByNameMethodDescriptor),
+		connect.WithSchema(resourceServiceMethods.ByName("GetResourceByName")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

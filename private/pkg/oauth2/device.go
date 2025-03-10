@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ type DeviceRegistrationRequest struct {
 	ClientName string `json:"client_name"`
 }
 
-// Devic describes a successful OpenID Connect Dynamic Client Registration 1.0 response
+// DeviceRegistrationResponse describes a successful OpenID Connect Dynamic Client Registration 1.0 response
 // for dynamic client registration.
 type DeviceRegistrationResponse struct {
 	// ClientID is the unique client identifier.
@@ -161,7 +161,7 @@ type DeviceAccessTokenResponse struct {
 	TokenType string `json:"token_type"`
 	// ExpiresIn is the lifetime in seconds of the access token.
 	ExpiresIn int `json:"expires_in,omitempty"`
-	// RefreshToken may be used to obtain new access tokens using the same authoization
+	// RefreshToken may be used to obtain new access tokens using the same authorization
 	// grant. May be empty.
 	RefreshToken string `json:"refresh_token,omitempty"`
 	// Scope is the scope of the access token as described in RFC 6749 Section 3.3.

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,22 +22,34 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protoplugin"
 )
 
-const defaultTimeout = 10 * time.Second
+const (
+	appName        = "protoc-gen-buf-lint"
+	defaultTimeout = 10 * time.Second
+)
 
 // Main is the main.
 func Main() {
-	protoplugin.Main(protoplugin.HandlerFunc(handle))
+	protoplugin.Main(
+		protoplugin.HandlerFunc(handle),
+		// An `EmptyResolver` is passed to protoplugin for unmarshalling instead of defaulting to
+		// protoregistry.GlobalTypes so that extensions are not inadvertently parsed from generated
+		// code linked into the binary. Extensions are later reparsed with the descriptorset itself.
+		// https://github.com/bufbuild/buf/issues/3306
+		protoplugin.WithExtensionTypeResolver(protoencoding.EmptyResolver),
+	)
 }
 
 func handle(
@@ -55,16 +67,21 @@ func handle(
 	); err != nil {
 		return err
 	}
+	container, err := internal.NewAppextContainerForPluginEnv(
+		pluginEnv,
+		appName,
+		externalConfig.LogLevel,
+		externalConfig.LogFormat,
+	)
+	if err != nil {
+		return err
+	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := zaputil.NewLoggerForFlagValues(pluginEnv.Stderr, externalConfig.LogLevel, externalConfig.LogFormat)
-	if err != nil {
-		return err
-	}
 	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
@@ -81,7 +98,20 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if err := buflint.NewHandler(logger, tracing.NopTracer).Check(
+	// The protoc plugins do not support custom lint/breaking change plugins for now.
+	client, err := bufcheck.NewClient(
+		container.Logger(),
+		bufcheck.NewLocalRunnerProvider(
+			wasm.UnimplementedRuntime,
+			bufplugin.NopPluginKeyProvider,
+			bufplugin.NopPluginDataProvider,
+		),
+		bufcheck.ClientWithStderr(pluginEnv.Stderr),
+	)
+	if err != nil {
+		return err
+	}
+	if err := client.Lint(
 		ctx,
 		moduleConfig.LintConfig(),
 		image,
@@ -90,7 +120,7 @@ func handle(
 		if errors.As(err, &fileAnnotationSet) {
 			buffer := bytes.NewBuffer(nil)
 			if externalConfig.ErrorFormat == "config-ignore-yaml" {
-				if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+				if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 					buffer,
 					fileAnnotationSet,
 				); err != nil {
@@ -105,7 +135,7 @@ func handle(
 					return err
 				}
 			}
-			responseWriter.SetError(strings.TrimSpace(buffer.String()))
+			responseWriter.AddError(strings.TrimSpace(buffer.String()))
 			return nil
 		}
 		return err

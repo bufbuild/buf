@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ func newConnectClientConfigWithOptions(container appext.Container, opts ...conne
 				bufconnect.NewAugmentedConnectErrorInterceptor(),
 				bufconnect.NewSetCLIVersionInterceptor(Version),
 				bufconnect.NewCLIWarningInterceptor(container),
+				bufconnect.NewDebugLoggingInterceptor(container),
 				otelconnectInterceptor,
 			},
 		),

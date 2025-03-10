@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -35,15 +36,15 @@ type ModuleKey interface {
 	// String returns "registry/owner/name:dashlessCommitID".
 	fmt.Stringer
 
-	// ModuleFullName returns the full name of the Module.
+	// FullName returns the full name of the Module.
 	//
 	// Always present.
-	ModuleFullName() ModuleFullName
+	FullName() bufparse.FullName
 	// CommitID returns the ID of the Commit.
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
-	// Always present, that is CommitID().IsNil() will always be false.
+	// Always present, that is CommitID() == uuid.Nil will always be false.
 	CommitID() uuid.UUID
 	// Digest returns the Module digest.
 	//
@@ -61,7 +62,7 @@ type ModuleKey interface {
 // *not* validate the digest. If you need to validate the digest, call Digest() and evaluate
 // the returned error.
 func NewModuleKey(
-	moduleFullName ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) (ModuleKey, error) {
@@ -107,45 +108,45 @@ func ModuleKeyToCommitKey(moduleKey ModuleKey) (CommitKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newCommitKey(moduleKey.ModuleFullName().Registry(), moduleKey.CommitID(), digest.Type())
+	return newCommitKey(moduleKey.FullName().Registry(), moduleKey.CommitID(), digest.Type())
 }
 
 // *** PRIVATE ***
 
 type moduleKey struct {
-	moduleFullName ModuleFullName
+	moduleFullName bufparse.FullName
 	commitID       uuid.UUID
 
 	getDigest func() (Digest, error)
 }
 
 func newModuleKey(
-	moduleFullName ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
-		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
+		return nil, errors.New("nil FullName when constructing ModuleKey")
 	}
-	if commitID.IsNil() {
+	if commitID == uuid.Nil {
 		return nil, errors.New("empty commitID when constructing ModuleKey")
 	}
 	return newModuleKeyNoValidate(moduleFullName, commitID, getDigest), nil
 }
 
 func newModuleKeyNoValidate(
-	moduleFullName ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) *moduleKey {
 	return &moduleKey{
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
-		getDigest:      syncext.OnceValues(getDigest),
+		getDigest:      sync.OnceValues(getDigest),
 	}
 }
 
-func (m *moduleKey) ModuleFullName() ModuleFullName {
+func (m *moduleKey) FullName() bufparse.FullName {
 	return m.moduleFullName
 }
 

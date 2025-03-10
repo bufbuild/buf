@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,13 +54,6 @@ const (
 	SchemaServiceConvertMessageProcedure = "/buf.alpha.registry.v1alpha1.SchemaService/ConvertMessage"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	schemaServiceServiceDescriptor              = v1alpha1.File_buf_alpha_registry_v1alpha1_schema_proto.Services().ByName("SchemaService")
-	schemaServiceGetSchemaMethodDescriptor      = schemaServiceServiceDescriptor.Methods().ByName("GetSchema")
-	schemaServiceConvertMessageMethodDescriptor = schemaServiceServiceDescriptor.Methods().ByName("ConvertMessage")
-)
-
 // SchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.SchemaService service.
 type SchemaServiceClient interface {
 	// GetSchema allows the caller to download a schema for one or more requested
@@ -80,18 +73,19 @@ type SchemaServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewSchemaServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SchemaServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	schemaServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_schema_proto.Services().ByName("SchemaService").Methods()
 	return &schemaServiceClient{
 		getSchema: connect.NewClient[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse](
 			httpClient,
 			baseURL+SchemaServiceGetSchemaProcedure,
-			connect.WithSchema(schemaServiceGetSchemaMethodDescriptor),
+			connect.WithSchema(schemaServiceMethods.ByName("GetSchema")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		convertMessage: connect.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
 			httpClient,
 			baseURL+SchemaServiceConvertMessageProcedure,
-			connect.WithSchema(schemaServiceConvertMessageMethodDescriptor),
+			connect.WithSchema(schemaServiceMethods.ByName("ConvertMessage")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -130,17 +124,18 @@ type SchemaServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	schemaServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_schema_proto.Services().ByName("SchemaService").Methods()
 	schemaServiceGetSchemaHandler := connect.NewUnaryHandler(
 		SchemaServiceGetSchemaProcedure,
 		svc.GetSchema,
-		connect.WithSchema(schemaServiceGetSchemaMethodDescriptor),
+		connect.WithSchema(schemaServiceMethods.ByName("GetSchema")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	schemaServiceConvertMessageHandler := connect.NewUnaryHandler(
 		SchemaServiceConvertMessageProcedure,
 		svc.ConvertMessage,
-		connect.WithSchema(schemaServiceConvertMessageMethodDescriptor),
+		connect.WithSchema(schemaServiceMethods.ByName("ConvertMessage")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.SchemaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

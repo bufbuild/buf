@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ func (g *Graph[Key, Value]) NumNodes() int {
 	return len(g.keys)
 }
 
-// NumNodes returns the number of edges in the graph.
+// NumEdges returns the number of edges in the graph.
 func (g *Graph[Key, Value]) NumEdges() int {
 	if err := g.checkInit(); err != nil {
 		return 0

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package bufconfig
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
@@ -25,6 +27,7 @@ var (
 		nil,
 		nil,
 		nil,
+		false,
 	)
 	defaultCheckConfigV2 = newEnabledCheckConfigNoValidate(
 		FileVersionV2,
@@ -32,6 +35,7 @@ var (
 		nil,
 		nil,
 		nil,
+		false,
 	)
 )
 
@@ -84,14 +88,21 @@ type CheckConfig interface {
 	UseIDsAndCategories() []string
 	// Sorted
 	ExceptIDsAndCategories() []string
-	// Paths are specific to the Module.
+	// Paths are specific to the Module. Users cannot ignore paths outside of their modules for check
+	// configs, which includes any imports from outside of the module.
 	// Paths are relative to roots.
-	// Sorted
+	// Paths are sorted.
 	IgnorePaths() []string
-	// Paths are specific to the Module.
+	// Paths are specific to the Module. Users cannot ignore paths outside of their modules for
+	// check configs, which includes any imports from outside of the module.
 	// Paths are relative to roots.
-	// Paths sorted.
+	// Paths are sorted.
 	IgnoreIDOrCategoryToPaths() map[string][]string
+	// DisableBuiltin says to disable the Rules and Categories builtin to the Buf CLI and only
+	// use plugins.
+	//
+	// This will make it as if these rules did not exist.
+	DisableBuiltin() bool
 
 	isCheckConfig()
 }
@@ -103,6 +114,7 @@ func NewEnabledCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	disableBuiltin bool,
 ) (CheckConfig, error) {
 	return newEnabledCheckConfig(
 		fileVersion,
@@ -110,13 +122,15 @@ func NewEnabledCheckConfig(
 		except,
 		ignore,
 		ignoreOnly,
+		disableBuiltin,
 	)
 }
 
-// NewEnabledCheckConfig returns a new enabled CheckConfig for only the use IDs and categories.
+// NewEnabledCheckConfigForUseIDsAndCategories returns a new enabled CheckConfig for only the use IDs and categories.
 func NewEnabledCheckConfigForUseIDsAndCategories(
 	fileVersion FileVersion,
 	use []string,
+	disableBuiltin bool,
 ) CheckConfig {
 	return newEnabledCheckConfigNoValidate(
 		fileVersion,
@@ -124,18 +138,20 @@ func NewEnabledCheckConfigForUseIDsAndCategories(
 		nil,
 		nil,
 		nil,
+		disableBuiltin,
 	)
 }
 
 // *** PRIVATE ***
 
 type checkConfig struct {
-	fileVersion FileVersion
-	disabled    bool
-	use         []string
-	except      []string
-	ignore      []string
-	ignoreOnly  map[string][]string
+	fileVersion    FileVersion
+	disabled       bool
+	use            []string
+	except         []string
+	ignore         []string
+	ignoreOnly     map[string][]string
+	disableBuiltin bool
 }
 
 func newEnabledCheckConfig(
@@ -144,6 +160,7 @@ func newEnabledCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	disableBuiltin bool,
 ) (*checkConfig, error) {
 	use = slicesext.ToUniqueSorted(use)
 	except = slicesext.ToUniqueSorted(except)
@@ -163,7 +180,7 @@ func newEnabledCheckConfig(
 	}
 	ignoreOnly = newIgnoreOnly
 
-	return newEnabledCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly), nil
+	return newEnabledCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly, disableBuiltin), nil
 }
 
 func newEnabledCheckConfigNoValidate(
@@ -172,14 +189,16 @@ func newEnabledCheckConfigNoValidate(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	disableBuiltin bool,
 ) *checkConfig {
 	return &checkConfig{
-		fileVersion: fileVersion,
-		disabled:    false,
-		use:         use,
-		except:      except,
-		ignore:      ignore,
-		ignoreOnly:  ignoreOnly,
+		fileVersion:    fileVersion,
+		disabled:       false,
+		use:            use,
+		except:         except,
+		ignore:         ignore,
+		ignoreOnly:     ignoreOnly,
+		disableBuiltin: disableBuiltin,
 	}
 }
 
@@ -199,19 +218,23 @@ func (c *checkConfig) FileVersion() FileVersion {
 }
 
 func (c *checkConfig) UseIDsAndCategories() []string {
-	return slicesext.Copy(c.use)
+	return slices.Clone(c.use)
 }
 
 func (c *checkConfig) ExceptIDsAndCategories() []string {
-	return slicesext.Copy(c.except)
+	return slices.Clone(c.except)
 }
 
 func (c *checkConfig) IgnorePaths() []string {
-	return slicesext.Copy(c.ignore)
+	return slices.Clone(c.ignore)
 }
 
 func (c *checkConfig) IgnoreIDOrCategoryToPaths() map[string][]string {
 	return copyStringToStringSliceMap(c.ignoreOnly)
+}
+
+func (c *checkConfig) DisableBuiltin() bool {
+	return c.disableBuiltin
 }
 
 func (*checkConfig) isCheckConfig() {}

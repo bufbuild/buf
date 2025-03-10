@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@ package protostatstorage
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 type fileWalker struct {
@@ -28,7 +28,7 @@ type fileWalker struct {
 
 func newFileWalker(readBucket storage.ReadBucket) *fileWalker {
 	return &fileWalker{
-		readBucket: storage.MapReadBucket(
+		readBucket: storage.FilterReadBucket(
 			readBucket,
 			storage.MatchPathExt(".proto"),
 		),
@@ -45,7 +45,7 @@ func (f *fileWalker) Walk(ctx context.Context, fu func(io.Reader) error) error {
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, readObjectCloser.Close())
+				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
 			return fu(readObjectCloser)
 		},

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -127,7 +126,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		createFlagName,
 		false,
 		fmt.Sprintf(
-			"Create the repository if it does not exist. Defaults to creating a private repository if --%s is not set.",
+			"Create the module if it does not exist. Defaults to creating a private module if --%s is not set.",
 			createVisibilityFlagName,
 		),
 	)
@@ -135,7 +134,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.CreateDefaultLabel,
 		createDefaultLabelFlagName,
 		"",
-		`The repository's default label setting, if created. If this is not set, then the repository will be created with the default label "main".`,
+		`The module's default label setting, if created. If this is not set, then the module will be created with the default label "main".`,
 	)
 	flagSet.StringVar(
 		&f.SourceControlURL,
@@ -177,14 +176,32 @@ If you set the --%s flag and/or --%s flag yourself, then the value(s) will be us
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
 	_ = flagSet.MarkHidden(tagFlagName)
 	_ = flagSet.MarkHidden(tagFlagShortName)
-	_ = flagSet.MarkDeprecated(tagFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(
+		tagFlagName,
+		fmt.Sprintf(
+			`%s Replace "buf push --tag <tag-name>" with "buf push --label <default-label-name> --label <label-name>" (<tag-name> and <label-name> are equivalent in this case).
+You can also use "buf registry commit add-label <remote/owner/module:commit> --label <label>" to add a label to an existing commit.`,
+			useLabelInstead,
+		),
+	)
 	_ = flagSet.MarkDeprecated(tagFlagShortName, useLabelInstead)
 	flagSet.StringVar(&f.Draft, draftFlagName, "", useLabelInstead)
 	_ = flagSet.MarkHidden(draftFlagName)
-	_ = flagSet.MarkDeprecated(draftFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(
+		draftFlagName,
+		fmt.Sprintf(
+			`%s Replace "buf push --draft <draft-name>" with "buf push --label <label-name>" (<draft-name> and <label-name> are equivalent in this case).`,
+			useLabelInstead,
+		),
+	)
 	flagSet.StringVar(&f.Branch, branchFlagName, "", useLabelInstead)
 	_ = flagSet.MarkHidden(branchFlagName)
-	_ = flagSet.MarkDeprecated(branchFlagName, useLabelInstead)
+	_ = flagSet.MarkDeprecated(branchFlagName,
+		fmt.Sprintf(
+			`%s Replace "buf push --branch <branch-name>" with "buf push --label <label-name>" (<branch-name> and <label-name> are equivalent in this case).`,
+			useLabelInstead,
+		),
+	)
 }
 
 func run(
@@ -201,7 +218,7 @@ func run(
 		return err
 	}
 
-	uploader, err := bufcli.NewUploader(container)
+	uploader, err := bufcli.NewModuleUploader(container)
 	if err != nil {
 		return err
 	}
@@ -224,13 +241,13 @@ func run(
 		}
 	}
 	if flags.Create {
-		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
+		createModuleVisibility, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
 			return err
 		}
 		uploadOptions = append(
 			uploadOptions,
-			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisibility, flags.CreateDefaultLabel),
 		)
 	}
 	if flags.SourceControlURL != "" {
@@ -333,7 +350,7 @@ func validateCreateFlags(flags *flags) error {
 			)
 		}
 		if _, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility); err != nil {
-			return appcmd.NewInvalidArgumentError(err.Error())
+			return appcmd.WrapInvalidArgumentError(err)
 		}
 	} else {
 		if flags.CreateDefaultLabel != "" {
@@ -397,7 +414,7 @@ func validateLabelFlagValues(flags *flags) error {
 	return nil
 }
 
-// We do not allow users to set --source-control-url, --create-default-label, and --label
+// We do not allow users to set --tag, --branch, and --draft
 // flags if the --git-metadata flag is set.
 func validateGitMetadataFlags(flags *flags) error {
 	if flags.GitMetadata {
@@ -438,31 +455,30 @@ func getGitMetadataUploadOptions(
 	if err != nil {
 		return nil, err
 	}
-	runner := command.NewRunner()
 	// validate that input is a dirRef and is a valid git checkout
-	if err := validateInputIsValidDirAndGitCheckout(ctx, runner, container, input); err != nil {
+	if err := validateInputIsValidDirAndGitCheckout(ctx, container, input); err != nil {
 		return nil, err
 	}
-	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, runner, container, input)
+	uncommittedFiles, err := git.CheckForUncommittedGitChanges(ctx, container, input)
 	if err != nil {
 		return nil, err
 	}
 	if len(uncommittedFiles) > 0 {
 		return nil, fmt.Errorf("--%s requires that there are no uncommitted changes, uncommitted changes found in the following files: %v", gitMetadataFlagName, uncommittedFiles)
 	}
-	originRemote, err := git.GetRemote(ctx, runner, container, input, gitOriginRemote)
+	originRemote, err := git.GetRemote(ctx, container, input, gitOriginRemote)
 	if err != nil {
 		if errors.Is(err, git.ErrRemoteNotFound) {
 			return nil, appcmd.NewInvalidArgumentErrorf("remote %s must be present on Git checkout: %w", gitOriginRemote, err)
 		}
 		return nil, err
 	}
-	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, runner, container, input)
+	currentGitCommit, err := git.GetCurrentHEADGitCommit(ctx, container, input)
 	if err != nil {
 		return nil, err
 	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
-	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, container, input, currentGitCommit)
+	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, container, input, currentGitCommit)
 	if err != nil {
 		return nil, err
 	}
@@ -497,14 +513,13 @@ func getGitMetadataUploadOptions(
 
 func validateInputIsValidDirAndGitCheckout(
 	ctx context.Context,
-	runner command.Runner,
 	container appext.Container,
 	input string,
 ) error {
 	if _, err := buffetch.NewDirRefParser(container.Logger()).GetDirRef(ctx, input); err != nil {
 		return appcmd.NewInvalidArgumentErrorf("input %q is not a valid directory: %w", input, err)
 	}
-	if err := git.CheckDirectoryIsValidGitCheckout(ctx, runner, container, input); err != nil {
+	if err := git.CheckDirectoryIsValidGitCheckout(ctx, container, input); err != nil {
 		if errors.Is(err, git.ErrInvalidGitCheckout) {
 			return appcmd.NewInvalidArgumentErrorf("input %q is not a local Git repository checkout", input)
 		}
@@ -515,12 +530,11 @@ func validateInputIsValidDirAndGitCheckout(
 
 func getGitMetadataLabelsUploadOptions(
 	ctx context.Context,
-	runner command.Runner,
 	envContainer app.EnvContainer,
 	input string,
 	gitCommitSha string,
 ) (bufmodule.UploadOption, error) {
-	refs, err := git.GetRefsForGitCommitAndRemote(ctx, runner, envContainer, input, gitOriginRemote, gitCommitSha)
+	refs, err := git.GetRefsForGitCommitAndRemote(ctx, envContainer, input, gitOriginRemote, gitCommitSha)
 	if err != nil {
 		return nil, err
 	}

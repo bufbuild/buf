@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,12 +52,6 @@ const (
 	OwnerServiceGetOwnerByNameProcedure = "/buf.alpha.registry.v1alpha1.OwnerService/GetOwnerByName"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	ownerServiceServiceDescriptor              = v1alpha1.File_buf_alpha_registry_v1alpha1_owner_proto.Services().ByName("OwnerService")
-	ownerServiceGetOwnerByNameMethodDescriptor = ownerServiceServiceDescriptor.Methods().ByName("GetOwnerByName")
-)
-
 // OwnerServiceClient is a client for the buf.alpha.registry.v1alpha1.OwnerService service.
 type OwnerServiceClient interface {
 	// GetOwnerByName takes an owner name and returns the owner as
@@ -74,11 +68,12 @@ type OwnerServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewOwnerServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) OwnerServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	ownerServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_owner_proto.Services().ByName("OwnerService").Methods()
 	return &ownerServiceClient{
 		getOwnerByName: connect.NewClient[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse](
 			httpClient,
 			baseURL+OwnerServiceGetOwnerByNameProcedure,
-			connect.WithSchema(ownerServiceGetOwnerByNameMethodDescriptor),
+			connect.WithSchema(ownerServiceMethods.ByName("GetOwnerByName")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -108,10 +103,11 @@ type OwnerServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	ownerServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_owner_proto.Services().ByName("OwnerService").Methods()
 	ownerServiceGetOwnerByNameHandler := connect.NewUnaryHandler(
 		OwnerServiceGetOwnerByNameProcedure,
 		svc.GetOwnerByName,
-		connect.WithSchema(ownerServiceGetOwnerByNameMethodDescriptor),
+		connect.WithSchema(ownerServiceMethods.ByName("GetOwnerByName")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

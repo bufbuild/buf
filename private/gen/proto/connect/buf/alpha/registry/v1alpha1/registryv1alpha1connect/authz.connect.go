@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,23 +85,6 @@ const (
 	AuthzServiceUserCanReviewCommitsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanReviewCommits"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	authzServiceServiceDescriptor                                   = v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService")
-	authzServiceUserCanCreateOrganizationRepositoryMethodDescriptor = authzServiceServiceDescriptor.Methods().ByName("UserCanCreateOrganizationRepository")
-	authzServiceUserCanSeeRepositorySettingsMethodDescriptor        = authzServiceServiceDescriptor.Methods().ByName("UserCanSeeRepositorySettings")
-	authzServiceUserCanSeeOrganizationSettingsMethodDescriptor      = authzServiceServiceDescriptor.Methods().ByName("UserCanSeeOrganizationSettings")
-	authzServiceUserCanAddOrganizationMemberMethodDescriptor        = authzServiceServiceDescriptor.Methods().ByName("UserCanAddOrganizationMember")
-	authzServiceUserCanUpdateOrganizationMemberMethodDescriptor     = authzServiceServiceDescriptor.Methods().ByName("UserCanUpdateOrganizationMember")
-	authzServiceUserCanRemoveOrganizationMemberMethodDescriptor     = authzServiceServiceDescriptor.Methods().ByName("UserCanRemoveOrganizationMember")
-	authzServiceUserCanDeleteOrganizationMethodDescriptor           = authzServiceServiceDescriptor.Methods().ByName("UserCanDeleteOrganization")
-	authzServiceUserCanDeleteRepositoryMethodDescriptor             = authzServiceServiceDescriptor.Methods().ByName("UserCanDeleteRepository")
-	authzServiceUserCanDeleteUserMethodDescriptor                   = authzServiceServiceDescriptor.Methods().ByName("UserCanDeleteUser")
-	authzServiceUserCanSeeServerAdminPanelMethodDescriptor          = authzServiceServiceDescriptor.Methods().ByName("UserCanSeeServerAdminPanel")
-	authzServiceUserCanManageRepositoryContributorsMethodDescriptor = authzServiceServiceDescriptor.Methods().ByName("UserCanManageRepositoryContributors")
-	authzServiceUserCanReviewCommitsMethodDescriptor                = authzServiceServiceDescriptor.Methods().ByName("UserCanReviewCommits")
-)
-
 // AuthzServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthzService service.
 type AuthzServiceClient interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
@@ -151,88 +134,89 @@ type AuthzServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewAuthzServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuthzServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	authzServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods()
 	return &authzServiceClient{
 		userCanCreateOrganizationRepository: connect.NewClient[v1alpha1.UserCanCreateOrganizationRepositoryRequest, v1alpha1.UserCanCreateOrganizationRepositoryResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
-			connect.WithSchema(authzServiceUserCanCreateOrganizationRepositoryMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanCreateOrganizationRepository")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanSeeRepositorySettings: connect.NewClient[v1alpha1.UserCanSeeRepositorySettingsRequest, v1alpha1.UserCanSeeRepositorySettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeRepositorySettingsProcedure,
-			connect.WithSchema(authzServiceUserCanSeeRepositorySettingsMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanSeeRepositorySettings")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanSeeOrganizationSettings: connect.NewClient[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeOrganizationSettingsProcedure,
-			connect.WithSchema(authzServiceUserCanSeeOrganizationSettingsMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanSeeOrganizationSettings")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanAddOrganizationMember: connect.NewClient[v1alpha1.UserCanAddOrganizationMemberRequest, v1alpha1.UserCanAddOrganizationMemberResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanAddOrganizationMemberProcedure,
-			connect.WithSchema(authzServiceUserCanAddOrganizationMemberMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanAddOrganizationMember")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanUpdateOrganizationMember: connect.NewClient[v1alpha1.UserCanUpdateOrganizationMemberRequest, v1alpha1.UserCanUpdateOrganizationMemberResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanUpdateOrganizationMemberProcedure,
-			connect.WithSchema(authzServiceUserCanUpdateOrganizationMemberMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanUpdateOrganizationMember")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanRemoveOrganizationMember: connect.NewClient[v1alpha1.UserCanRemoveOrganizationMemberRequest, v1alpha1.UserCanRemoveOrganizationMemberResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanRemoveOrganizationMemberProcedure,
-			connect.WithSchema(authzServiceUserCanRemoveOrganizationMemberMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanRemoveOrganizationMember")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanDeleteOrganization: connect.NewClient[v1alpha1.UserCanDeleteOrganizationRequest, v1alpha1.UserCanDeleteOrganizationResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteOrganizationProcedure,
-			connect.WithSchema(authzServiceUserCanDeleteOrganizationMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteOrganization")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanDeleteRepository: connect.NewClient[v1alpha1.UserCanDeleteRepositoryRequest, v1alpha1.UserCanDeleteRepositoryResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteRepositoryProcedure,
-			connect.WithSchema(authzServiceUserCanDeleteRepositoryMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteRepository")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanDeleteUser: connect.NewClient[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteUserProcedure,
-			connect.WithSchema(authzServiceUserCanDeleteUserMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteUser")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanSeeServerAdminPanel: connect.NewClient[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeServerAdminPanelProcedure,
-			connect.WithSchema(authzServiceUserCanSeeServerAdminPanelMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanSeeServerAdminPanel")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanManageRepositoryContributors: connect.NewClient[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanManageRepositoryContributorsProcedure,
-			connect.WithSchema(authzServiceUserCanManageRepositoryContributorsMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanManageRepositoryContributors")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		userCanReviewCommits: connect.NewClient[v1alpha1.UserCanReviewCommitsRequest, v1alpha1.UserCanReviewCommitsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanReviewCommitsProcedure,
-			connect.WithSchema(authzServiceUserCanReviewCommitsMethodDescriptor),
+			connect.WithSchema(authzServiceMethods.ByName("UserCanReviewCommits")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -370,87 +354,88 @@ type AuthzServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	authzServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods()
 	authzServiceUserCanCreateOrganizationRepositoryHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
 		svc.UserCanCreateOrganizationRepository,
-		connect.WithSchema(authzServiceUserCanCreateOrganizationRepositoryMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanCreateOrganizationRepository")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanSeeRepositorySettingsHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanSeeRepositorySettingsProcedure,
 		svc.UserCanSeeRepositorySettings,
-		connect.WithSchema(authzServiceUserCanSeeRepositorySettingsMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanSeeRepositorySettings")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanSeeOrganizationSettingsHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanSeeOrganizationSettingsProcedure,
 		svc.UserCanSeeOrganizationSettings,
-		connect.WithSchema(authzServiceUserCanSeeOrganizationSettingsMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanSeeOrganizationSettings")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanAddOrganizationMemberHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanAddOrganizationMemberProcedure,
 		svc.UserCanAddOrganizationMember,
-		connect.WithSchema(authzServiceUserCanAddOrganizationMemberMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanAddOrganizationMember")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanUpdateOrganizationMemberHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanUpdateOrganizationMemberProcedure,
 		svc.UserCanUpdateOrganizationMember,
-		connect.WithSchema(authzServiceUserCanUpdateOrganizationMemberMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanUpdateOrganizationMember")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanRemoveOrganizationMemberHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanRemoveOrganizationMemberProcedure,
 		svc.UserCanRemoveOrganizationMember,
-		connect.WithSchema(authzServiceUserCanRemoveOrganizationMemberMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanRemoveOrganizationMember")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanDeleteOrganizationHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanDeleteOrganizationProcedure,
 		svc.UserCanDeleteOrganization,
-		connect.WithSchema(authzServiceUserCanDeleteOrganizationMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteOrganization")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanDeleteRepositoryHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanDeleteRepositoryProcedure,
 		svc.UserCanDeleteRepository,
-		connect.WithSchema(authzServiceUserCanDeleteRepositoryMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteRepository")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanDeleteUserHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanDeleteUserProcedure,
 		svc.UserCanDeleteUser,
-		connect.WithSchema(authzServiceUserCanDeleteUserMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteUser")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanSeeServerAdminPanelHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanSeeServerAdminPanelProcedure,
 		svc.UserCanSeeServerAdminPanel,
-		connect.WithSchema(authzServiceUserCanSeeServerAdminPanelMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanSeeServerAdminPanel")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanManageRepositoryContributorsHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanManageRepositoryContributorsProcedure,
 		svc.UserCanManageRepositoryContributors,
-		connect.WithSchema(authzServiceUserCanManageRepositoryContributorsMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanManageRepositoryContributors")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authzServiceUserCanReviewCommitsHandler := connect.NewUnaryHandler(
 		AuthzServiceUserCanReviewCommitsProcedure,
 		svc.UserCanReviewCommits,
-		connect.WithSchema(authzServiceUserCanReviewCommitsMethodDescriptor),
+		connect.WithSchema(authzServiceMethods.ByName("UserCanReviewCommits")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

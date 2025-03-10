@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -145,10 +145,11 @@ func newInvalidPluginIdentityStringError(s string) error {
 }
 
 func parsePluginReference(reference string, revision int) (PluginReference, error) {
-	name, version, ok := strings.Cut(reference, ":")
-	if !ok {
+	index := strings.LastIndex(reference, ":")
+	if index == -1 {
 		return nil, fmt.Errorf("plugin references must be specified as \"<name>:<version>\" strings")
 	}
+	name, version := reference[:index], reference[index+1:]
 	identity, err := PluginIdentityForString(name)
 	if err != nil {
 		return nil, err

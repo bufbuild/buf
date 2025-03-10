@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -293,4 +293,38 @@ func TestIsAlphanumeric(t *testing.T) {
 	require.True(t, IsAlphanumeric('0'))
 	require.True(t, IsAlphanumeric('9'))
 	require.False(t, IsAlphanumeric('!'))
+}
+
+func TestWordWrap(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(
+		t,
+		[]string{
+			"",
+		},
+		WordWrap("", 7),
+	)
+	assert.Equal(
+		t,
+		[]string{
+			"foo bar",
+		},
+		WordWrap("foo bar", 7),
+	)
+	assert.Equal(
+		t,
+		[]string{
+			"foo",
+			"bar",
+		},
+		WordWrap("foo bar", 6),
+	)
+	assert.Equal(
+		t,
+		[]string{
+			"foobar",
+		},
+		WordWrap("foobar", 5),
+	)
 }

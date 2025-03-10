@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"go.uber.org/zap"
 )
 
 type protoFileWriter struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
 func newProtoFileWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *protoFileWriter {
 	return &protoFileWriter{
 		logger: logger,

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,18 +18,19 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
 )
 
 const (
@@ -206,6 +207,8 @@ type GitRef interface {
 	RecurseSubmodules() bool
 	// Will be empty instead of "." for root directory
 	SubDirPath() string
+	// Filter spec to use, see the --filter option in git rev-list.
+	Filter() string
 	gitRef()
 }
 
@@ -216,14 +219,15 @@ func NewGitRef(
 	depth uint32,
 	recurseSubmodules bool,
 	subDirPath string,
+	filter string,
 ) (GitRef, error) {
-	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath)
+	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath, filter)
 }
 
 // ModuleRef is a module reference.
 type ModuleRef interface {
 	Ref
-	ModuleRef() bufmodule.ModuleRef
+	ModuleRef() bufparse.Ref
 	moduleRef()
 }
 
@@ -352,6 +356,7 @@ func NewDirectParsedGitRef(
 	recurseSubmodules bool,
 	depth uint32,
 	subDirPath string,
+	filter string,
 ) ParsedGitRef {
 	return newDirectGitRef(
 		format,
@@ -361,6 +366,7 @@ func NewDirectParsedGitRef(
 		recurseSubmodules,
 		depth,
 		subDirPath,
+		filter,
 	)
 }
 
@@ -375,7 +381,7 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleRef bufmodule.ModuleRef,
+	moduleRef bufparse.Ref,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,
@@ -400,7 +406,7 @@ type RefParser interface {
 }
 
 // NewRefParser returns a new RefParser.
-func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
+func NewRefParser(logger *slog.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
@@ -409,7 +415,7 @@ type BucketExtender interface {
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
 	// This will be set if a terminate file was found. If so, the actual Bucket will be
-	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
+	// the directory that contained this terminate file, and the subDirPath will be the sub-directory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
 }
@@ -462,7 +468,7 @@ type Reader interface {
 
 // NewReader returns a new Reader.
 func NewReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	options ...ReaderOption,
 ) Reader {
@@ -486,7 +492,7 @@ type Writer interface {
 
 // NewWriter returns a new Writer.
 func NewWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	options ...WriterOption,
 ) Writer {
 	return newWriter(
@@ -505,9 +511,9 @@ type ProtoFileWriter interface {
 	) (io.WriteCloser, error)
 }
 
-// NewProtoWriter returns a new ProtoWriter.
+// NewProtoFileWriter returns a new ProtoFileWriter.
 func NewProtoFileWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) ProtoFileWriter {
 	return newProtoFileWriter(
 		logger,
@@ -556,6 +562,9 @@ type RawRef struct {
 	// requested GitRef will be included when cloning the requested branch
 	// (or the repo's default branch if GitBranch is empty).
 	GitDepth uint32
+	// Only set for git formats.
+	// The filter spec to use, see the --filter option in git rev-list.
+	GitFilter string
 	// Only set for archive formats.
 	ArchiveStripComponents uint32
 	// Only set for proto file ref format.
@@ -811,7 +820,7 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetReadBucketCloserOption is a GetReadBucketCloser option.
 type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
 
-// WithGetBucketCopyToInMemory says to copy the returned ReadBucketCloser to an
+// WithGetReadBucketCloserCopyToInMemory says to copy the returned ReadBucketCloser to an
 // in-memory ReadBucket. This can be a performance optimization at the expense of memory.
 func WithGetReadBucketCloserCopyToInMemory() GetReadBucketCloserOption {
 	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {

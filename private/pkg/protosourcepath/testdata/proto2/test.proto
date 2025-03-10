@@ -1,0 +1,52 @@
+syntax = "proto2";
+
+package foo;
+
+import "testdata/proto2/import.proto";
+
+service Foo {
+  rpc GetFoo(GetFooRequest) returns (GetFooResponse);
+  rpc GetFoos(stream GetFoosRequest) returns (stream GetFooResponse);
+}
+
+message GetFooRequest {
+  required string id = 1;
+}
+
+message GetFooResponse {
+  message Value {
+    required string id = 1;
+    optional foo.Import imported_value = 2;
+    extensions 3 to 10 [
+     verification = DECLARATION,
+      declaration = {
+        number: 3,
+        full_name: ".foo.Bar.bar",
+        repeated: true,
+        type: "int32",
+      },
+      declaration = {
+        number: 7,
+        full_name: ".foo.Bar.barbar",
+        type: "string"
+      }
+    ];
+  }
+  repeated Value values = 1;
+}
+
+message GetFoosRequest {
+  map<string, string> kv = 1;
+}
+
+message GetFoosResponse {
+  repeated bytes content = 1;
+  reserved "id", "values";
+}
+
+message Bar {
+  extend GetFooResponse.Value {
+    repeated int32 bar = 3;
+    optional string barbar = 7 [default = "hello"];
+  }
+}

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ func run(
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -101,9 +101,9 @@ func run(
 	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	resp, err := service.GetToken(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.GetTokenRequest{
+		connect.NewRequest(registryv1alpha1.GetTokenRequest_builder{
 			TokenId: flags.TokenID,
-		}),
+		}.Build()),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -115,5 +115,5 @@ func run(
 	if err != nil {
 		return syserror.Wrap(err)
 	}
-	return printer.PrintTokens(ctx, resp.Msg.Token)
+	return printer.PrintTokens(ctx, resp.Msg.GetToken())
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -39,16 +39,16 @@ func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 }
 
 func run(ctx context.Context, container appext.Container) error {
-	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	moduleFullName, err := bufparse.ParseFullName(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	moduleServiceClient := clientProvider.V1ModuleServiceClient(moduleFullName.Registry())
+	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
+	moduleServiceClient := moduleClientProvider.V1ModuleServiceClient(moduleFullName.Registry())
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
 		&connect.Request[modulev1.UpdateModulesRequest]{

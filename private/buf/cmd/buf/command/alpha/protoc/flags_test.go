@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -589,7 +589,6 @@ func TestParseFlags(t *testing.T) {
 	}
 	for i, testCase := range testCases {
 		name := fmt.Sprintf("%d", i)
-		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			env, err := testParseFlags(name, testCase.Args)

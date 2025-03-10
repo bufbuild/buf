@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
@@ -76,6 +77,21 @@ func newMultiReadBucket(
 }
 
 func (m *multiReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
+	if m.overlay {
+		// If overlay is enabled, attempt a Get operation against the first bucket. If the file is
+		// found, we avoid the potentially expensive Stat call.
+		readObjectCloser, err := m.delegates[0].Get(ctx, path)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+			// Fallthrough to expensive logic to check every delegate.
+		} else {
+			// If we did find a ReadObjectCloser, return it, otherwise do the expensive logic to
+			// check every delegate.
+			return readObjectCloser, nil
+		}
+	}
 	_, delegateIndex, err := m.getObjectInfoAndDelegateIndex(ctx, "read", path)
 	if err != nil {
 		return nil, err

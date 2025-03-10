@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ type gitRef struct {
 	depth             uint32
 	recurseSubmodules bool
 	subDirPath        string
+	filter            string
 }
 
 func newGitRef(
@@ -51,6 +52,7 @@ func newGitRef(
 	depth uint32,
 	recurseSubmodules bool,
 	subDirPath string,
+	filter string,
 ) (*gitRef, error) {
 	gitScheme, path, err := getGitSchemeAndPath(format, path)
 	if err != nil {
@@ -74,6 +76,7 @@ func newGitRef(
 		recurseSubmodules,
 		depth,
 		subDirPath,
+		filter,
 	), nil
 }
 
@@ -85,6 +88,7 @@ func newDirectGitRef(
 	recurseSubmodules bool,
 	depth uint32,
 	subDirPath string,
+	filter string,
 ) *gitRef {
 	return &gitRef{
 		format:            format,
@@ -94,6 +98,7 @@ func newDirectGitRef(
 		depth:             depth,
 		recurseSubmodules: recurseSubmodules,
 		subDirPath:        subDirPath,
+		filter:            filter,
 	}
 }
 
@@ -123,6 +128,10 @@ func (r *gitRef) RecurseSubmodules() bool {
 
 func (r *gitRef) SubDirPath() string {
 	return r.subDirPath
+}
+
+func (r *gitRef) Filter() string {
+	return r.filter
 }
 
 func (*gitRef) ref()       {}

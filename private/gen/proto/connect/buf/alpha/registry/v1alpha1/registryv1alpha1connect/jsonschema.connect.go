@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,12 +52,6 @@ const (
 	JSONSchemaServiceGetJSONSchemaProcedure = "/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	jSONSchemaServiceServiceDescriptor             = v1alpha1.File_buf_alpha_registry_v1alpha1_jsonschema_proto.Services().ByName("JSONSchemaService")
-	jSONSchemaServiceGetJSONSchemaMethodDescriptor = jSONSchemaServiceServiceDescriptor.Methods().ByName("GetJSONSchema")
-)
-
 // JSONSchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.JSONSchemaService
 // service.
 type JSONSchemaServiceClient interface {
@@ -76,11 +70,12 @@ type JSONSchemaServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewJSONSchemaServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) JSONSchemaServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	jSONSchemaServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_jsonschema_proto.Services().ByName("JSONSchemaService").Methods()
 	return &jSONSchemaServiceClient{
 		getJSONSchema: connect.NewClient[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse](
 			httpClient,
 			baseURL+JSONSchemaServiceGetJSONSchemaProcedure,
-			connect.WithSchema(jSONSchemaServiceGetJSONSchemaMethodDescriptor),
+			connect.WithSchema(jSONSchemaServiceMethods.ByName("GetJSONSchema")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -111,10 +106,11 @@ type JSONSchemaServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	jSONSchemaServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_jsonschema_proto.Services().ByName("JSONSchemaService").Methods()
 	jSONSchemaServiceGetJSONSchemaHandler := connect.NewUnaryHandler(
 		JSONSchemaServiceGetJSONSchemaProcedure,
 		svc.GetJSONSchema,
-		connect.WithSchema(jSONSchemaServiceGetJSONSchemaMethodDescriptor),
+		connect.WithSchema(jSONSchemaServiceMethods.ByName("GetJSONSchema")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

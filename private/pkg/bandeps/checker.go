@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,23 +16,20 @@ package bandeps
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/zap"
 )
 
 type checker struct {
-	logger *zap.Logger
-	runner command.Runner
+	logger *slog.Logger
 }
 
-func newChecker(logger *zap.Logger, runner command.Runner) *checker {
+func newChecker(logger *slog.Logger) *checker {
 	return &checker{
 		logger: logger,
-		runner: runner,
 	}
 }
 
@@ -41,7 +38,7 @@ func (c *checker) Check(
 	envStdioContainer app.EnvStdioContainer,
 	externalConfig ExternalConfig,
 ) ([]Violation, error) {
-	state := newState(c.logger, envStdioContainer, c.runner)
+	state := newState(c.logger, envStdioContainer)
 	if err := c.populateState(ctx, state, externalConfig); err != nil {
 		return nil, err
 	}
@@ -119,7 +116,6 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 	var lock sync.Mutex
 	var jobs []func(context.Context) error
 	for _, packageExpression := range depPackageExpressions {
-		packageExpression := packageExpression
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
@@ -135,7 +131,6 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 		)
 	}
 	for _, packageExpression := range packageExpressions {
-		packageExpression := packageExpression
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
@@ -144,15 +139,12 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 			},
 		)
 	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
+	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancelOnFailure()); err != nil {
 		return err
 	}
 
 	jobs = make([]func(context.Context) error, 0)
 	for pkg := range depPackages {
-		pkg := pkg
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
@@ -161,5 +153,5 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 			},
 		)
 	}
-	return thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel))
+	return thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancelOnFailure())
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
 package bufgen
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -87,7 +87,7 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 }
 
 func checkRequiredFeatures(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	required *requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
 	configs []bufconfig.GeneratePluginConfig,
@@ -194,7 +194,7 @@ func checkRequiredFeatures(
 			}
 		}
 	}
-	return multierr.Combine(errs...)
+	return errors.Join(errs...)
 }
 
 func featureName(feature pluginpb.CodeGeneratorResponse_Feature) string {

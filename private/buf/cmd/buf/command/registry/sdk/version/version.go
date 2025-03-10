@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -89,15 +89,15 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleRef, err := bufmodule.ParseModuleRef(flags.Module)
+	moduleRef, err := bufparse.ParseRef(flags.Module)
 	if err != nil {
-		return appcmd.NewInvalidArgumentErrorf(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	pluginIdentity, pluginVersion, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
 	if err != nil {
-		return appcmd.NewInvalidArgumentErrorf(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
-	if pluginIdentity.Remote() != moduleRef.ModuleFullName().Registry() {
+	if pluginIdentity.Remote() != moduleRef.FullName().Registry() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same BSR instance")
 	}
 
@@ -107,22 +107,22 @@ func run(
 	}
 	pluginCurationServiceClient := connectclient.Make(
 		clientConfig,
-		moduleRef.ModuleFullName().Registry(),
+		moduleRef.FullName().Registry(),
 		registryv1alpha1connect.NewPluginCurationServiceClient,
 	)
 	resolveServiceClient := connectclient.Make(
 		clientConfig,
-		moduleRef.ModuleFullName().Registry(),
+		moduleRef.FullName().Registry(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
 	getLatestCuratedPluginResponse, err := pluginCurationServiceClient.GetLatestCuratedPlugin(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.GetLatestCuratedPluginRequest{
+			registryv1alpha1.GetLatestCuratedPluginRequest_builder{
 				Owner:   pluginIdentity.Owner(),
 				Name:    pluginIdentity.Plugin(),
 				Version: pluginVersion,
-			},
+			}.Build(),
 		),
 	)
 	if err != nil {
@@ -132,130 +132,130 @@ func run(
 	if pluginRegistryType == 0 {
 		return fmt.Errorf("plugin %q is not associated with a package ecosystem", flags.Plugin)
 	}
-	moduleReference := &registryv1alpha1.LocalModuleReference{
-		Owner:      moduleRef.ModuleFullName().Owner(),
-		Repository: moduleRef.ModuleFullName().Name(),
+	moduleReference := registryv1alpha1.LocalModuleReference_builder{
+		Owner:      moduleRef.FullName().Owner(),
+		Repository: moduleRef.FullName().Name(),
 		Reference:  moduleRef.Ref(),
-	}
-	pluginReference := &registryv1alpha1.GetRemotePackageVersionPlugin{
+	}.Build()
+	pluginReference := registryv1alpha1.GetRemotePackageVersionPlugin_builder{
 		Owner:   pluginIdentity.Owner(),
 		Name:    pluginIdentity.Plugin(),
 		Version: pluginVersion,
-	}
+	}.Build()
 	var version string
 	switch pluginRegistryType {
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO:
 		goVersionResponse, err := resolveServiceClient.GetGoVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetGoVersionRequest{
+				registryv1alpha1.GetGoVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = goVersionResponse.Msg.Version
+		version = goVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM:
 		npmVersionResponse, err := resolveServiceClient.GetNPMVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetNPMVersionRequest{
+				registryv1alpha1.GetNPMVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = npmVersionResponse.Msg.Version
+		version = npmVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN:
 		mavenVersionResponse, err := resolveServiceClient.GetMavenVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetMavenVersionRequest{
+				registryv1alpha1.GetMavenVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = mavenVersionResponse.Msg.Version
+		version = mavenVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT:
 		swiftVersionResponse, err := resolveServiceClient.GetSwiftVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetSwiftVersionRequest{
+				registryv1alpha1.GetSwiftVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = swiftVersionResponse.Msg.Version
+		version = swiftVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON:
 		pythonVersionResponse, err := resolveServiceClient.GetPythonVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetPythonVersionRequest{
+				registryv1alpha1.GetPythonVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = pythonVersionResponse.Msg.Version
+		version = pythonVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO:
 		cargoVersionResponse, err := resolveServiceClient.GetCargoVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetCargoVersionRequest{
+				registryv1alpha1.GetCargoVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = cargoVersionResponse.Msg.Version
+		version = cargoVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET:
 		nugetVersionResponse, err := resolveServiceClient.GetNugetVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetNugetVersionRequest{
+				registryv1alpha1.GetNugetVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = nugetVersionResponse.Msg.Version
+		version = nugetVersionResponse.Msg.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CMAKE:
 		cmakeVersionResponse, err := resolveServiceClient.GetCmakeVersion(
 			ctx,
 			connect.NewRequest(
-				&registryv1alpha1.GetCmakeVersionRequest{
+				registryv1alpha1.GetCmakeVersionRequest_builder{
 					ModuleReference: moduleReference,
 					PluginReference: pluginReference,
-				},
+				}.Build(),
 			),
 		)
 		if err != nil {
 			return err
 		}
-		version = cmakeVersionResponse.Msg.Version
+		version = cmakeVersionResponse.Msg.GetVersion()
 	default:
 		return syserror.Newf("unknown PluginRegistryType: %v", pluginRegistryType)
 	}

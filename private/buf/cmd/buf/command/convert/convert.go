@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
@@ -31,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -196,7 +196,7 @@ func run(
 			var wktErr error
 			schemaImage, wktErr = wellKnownTypeImage(
 				ctx,
-				tracing.NewTracer(container.Tracer()),
+				container.Logger(),
 				flags.Type,
 			)
 			if wktErr != nil {
@@ -262,10 +262,10 @@ func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncodin
 // wellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
 func wellKnownTypeImage(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	wellKnownTypeName string,
 ) (bufimage.Image, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		datawkt.ReadBucket,
 		".",
@@ -277,7 +277,7 @@ func wellKnownTypeImage(
 	}
 	image, err := bufimage.BuildImage(
 		ctx,
-		tracer,
+		logger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
 	if err != nil {

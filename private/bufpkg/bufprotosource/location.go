@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,13 +20,22 @@ import (
 )
 
 type location struct {
+	filePath               string
 	sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location
 }
 
-func newLocation(sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location) *location {
+func newLocation(
+	filePath string,
+	sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location,
+) *location {
 	return &location{
+		filePath:               filePath,
 		sourceCodeInfoLocation: sourceCodeInfoLocation,
 	}
+}
+
+func (l *location) FilePath() string {
+	return l.filePath
 }
 
 func (l *location) StartLine() int {
@@ -95,6 +104,6 @@ func (l *location) LeadingDetachedComments() []string {
 	return l.sourceCodeInfoLocation.LeadingDetachedComments
 }
 
-func (l *location) Path() protoreflect.SourcePath {
+func (l *location) SourcePath() protoreflect.SourcePath {
 	return protoreflect.SourcePath(l.sourceCodeInfoLocation.Path)
 }

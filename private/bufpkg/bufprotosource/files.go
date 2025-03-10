@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,27 +18,31 @@ import (
 	"context"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"google.golang.org/protobuf/reflect/protodesc"
 )
 
 const defaultChunkSizeThreshold = 8
 
-func newFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
-	indexedImageFiles := slicesext.ToIndexed(image.Files())
-	if len(indexedImageFiles) == 0 {
+func newFiles[F InputFile](
+	ctx context.Context,
+	inputFiles []F,
+	resolver protodesc.Resolver,
+) ([]File, error) {
+	indexedInputFiles := slicesext.ToIndexed(inputFiles)
+	if len(indexedInputFiles) == 0 {
 		return nil, nil
 	}
 
 	// Why were we chunking this? We could just send each individual call to thread.Parallelize
 	// and let thread.Parallelize deal with what to do.
 
-	chunkSize := len(indexedImageFiles) / thread.Parallelism()
-	if defaultChunkSizeThreshold != 0 && chunkSize < defaultChunkSizeThreshold {
-		files := make([]File, 0, len(indexedImageFiles))
-		for _, indexedImageFile := range indexedImageFiles {
-			file, err := newFile(indexedImageFile.Value, image.Resolver())
+	chunkSize := len(indexedInputFiles) / thread.Parallelism()
+	if chunkSize < defaultChunkSizeThreshold {
+		files := make([]File, 0, len(indexedInputFiles))
+		for _, indexedInputFile := range indexedInputFiles {
+			file, err := newFile(indexedInputFile.Value, resolver)
 			if err != nil {
 				return nil, err
 			}
@@ -46,21 +50,19 @@ func newFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
 		}
 		return files, nil
 	}
-
-	chunks := slicesext.ToChunks(indexedImageFiles, chunkSize)
-	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedImageFiles))
+	chunks := slicesext.ToChunks(indexedInputFiles, chunkSize)
+	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFiles))
 	jobs := make([]func(context.Context) error, len(chunks))
 	var lock sync.Mutex
-	for i, indexedImageFileChunk := range chunks {
-		indexedImageFileChunk := indexedImageFileChunk
+	for i, indexedInputFileChunk := range chunks {
 		jobs[i] = func(ctx context.Context) error {
-			iIndexedFiles := make([]slicesext.Indexed[File], 0, len(indexedImageFileChunk))
-			for _, indexedImageFile := range indexedImageFileChunk {
-				file, err := newFile(indexedImageFile.Value, image.Resolver())
+			iIndexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFileChunk))
+			for _, indexedInputFile := range indexedInputFileChunk {
+				file, err := newFile(indexedInputFile.Value, resolver)
 				if err != nil {
 					return err
 				}
-				iIndexedFiles = append(iIndexedFiles, slicesext.Indexed[File]{Value: file, Index: indexedImageFile.Index})
+				iIndexedFiles = append(iIndexedFiles, slicesext.Indexed[File]{Value: file, Index: indexedInputFile.Index})
 			}
 			lock.Lock()
 			indexedFiles = append(indexedFiles, iIndexedFiles...)

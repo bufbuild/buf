@@ -1,13 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-# TODO: Remove go-winio v0.6.1 and otel v1.24.0 when we no longer need to support Golang <1.21
-# TODO: Remove antlr when we no longer need Golang <1.22
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/Microsoft/go-winio@v0.6.1 \
-	go.opentelemetry.io/otel@v1.24.0 \
-	go.opentelemetry.io/otel/sdk@v1.24.0 \
-	go.opentelemetry.io/otel/trace@v1.24.0 \
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.24.0 \
-	github.com/antlr4-go/antlr/v4@v4.13.0
+#GO_GET_PKGS := $(GO_GET_PKGS)
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -21,13 +13,20 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
-	private/pkg/licenseheader/cmd/license-header \
-	private/pkg/spdx/cmd/spdx-go-data
+	private/pkg/licenseheader/cmd/license-header
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
-	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
-GO_MOD_VERSION := 1.20
+	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-rpc-ext \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-category \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
+GO_TEST_WASM_BINS := $(GO_TEST_WASM_BINS) \
+	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix
+GO_MOD_VERSION := 1.22
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
@@ -37,14 +36,17 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
-	private/pkg/storage/storageos/tmp/
+	private/pkg/storage/storageos/tmp/ \
+	private/buf/cmd/buf/testdata/imports/cache/v3/modulelocks/ \
+	private/buf/cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/ \
+	private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2024
+LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
-PROTOVALIDATE_VERSION := v0.6.0
+PROTOVALIDATE_VERSION := v0.8.1
 # Comment out to use released buf
-BUF_GO_INSTALL_PATH := ./cmd/buf
+#BUF_GO_INSTALL_PATH := ./cmd/buf
 
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
@@ -81,13 +83,10 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
+godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
-	rm -rf private/gen/data/dataspdx
-	mkdir -p private/gen/data/dataspdx
-	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
 ifdef LEGACY_FEDERATION_FILE_PATH
 	rm -rf private/gen/data/datalegacyfederation
 	mkdir -p private/gen/data/datalegacyfederation
@@ -131,7 +130,7 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
@@ -146,7 +145,10 @@ bufgeneratego:
 bufgeneratebuflinttestdata:
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output private/bufpkg/bufcheck/testdata/lint/protovalidate_predefined/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgeneratego \

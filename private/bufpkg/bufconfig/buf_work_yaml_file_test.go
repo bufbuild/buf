@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -82,7 +82,6 @@ directories:
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			readBucket, err := storagemem.NewReadBucket(
@@ -130,7 +129,6 @@ func TestNewBufWorkYAMLFile(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			bufWorkYAMLFile, err := NewBufWorkYAMLFile(testcase.version, testcase.dirPaths)
@@ -189,7 +187,6 @@ func TestNewWorkYAMLFileFail(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			_, err := NewBufWorkYAMLFile(testcase.version, testcase.dirPaths)

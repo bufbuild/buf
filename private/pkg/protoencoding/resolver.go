@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -216,5 +216,35 @@ func (c combinedResolver) FindEnumByName(enum protoreflect.FullName) (protorefle
 	if lastErr != nil {
 		return nil, lastErr
 	}
+	return nil, protoregistry.NotFound
+}
+
+type emptyResolver struct{}
+
+func (emptyResolver) FindFileByPath(string) (protoreflect.FileDescriptor, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindDescriptorByName(protoreflect.FullName) (protoreflect.Descriptor, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindEnumByName(protoreflect.FullName) (protoreflect.EnumType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindExtensionByName(protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindExtensionByNumber(protoreflect.FullName, protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindMessageByName(protoreflect.FullName) (protoreflect.MessageType, error) {
+	return nil, protoregistry.NotFound
+}
+
+func (emptyResolver) FindMessageByURL(string) (protoreflect.MessageType, error) {
 	return nil, protoregistry.NotFound
 }

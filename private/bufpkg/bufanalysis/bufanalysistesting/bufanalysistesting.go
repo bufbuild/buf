@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,9 +26,13 @@ func NewFileAnnotationNoLocationOrPath(
 	t *testing.T,
 	typeString string,
 ) bufanalysis.FileAnnotation {
-	return NewFileAnnotationNoLocation(
+	return NewFileAnnotation(
 		t,
 		"",
+		0,
+		0,
+		0,
+		0,
 		typeString,
 	)
 }
@@ -45,10 +48,10 @@ func NewFileAnnotationNoLocation(
 	return NewFileAnnotation(
 		t,
 		path,
-		0,
-		0,
-		0,
-		0,
+		1,
+		1,
+		1,
+		1,
 		typeString,
 	)
 }
@@ -72,6 +75,7 @@ func NewFileAnnotation(
 		endColumn,
 		typeString,
 		"",
+		"",
 	)
 }
 
@@ -84,6 +88,7 @@ func newFileAnnotation(
 	endColumn int,
 	typeString string,
 	message string,
+	pluginName string,
 ) bufanalysis.FileAnnotation {
 	var fileInfo bufanalysis.FileInfo
 	if path != "" {
@@ -97,6 +102,7 @@ func newFileAnnotation(
 		endColumn,
 		typeString,
 		message,
+		pluginName,
 	)
 }
 
@@ -110,26 +116,30 @@ func AssertFileAnnotationsEqual(
 	actual = normalizeFileAnnotations(t, actual)
 	if !assert.Equal(
 		t,
-		slicesext.Map(expected, bufanalysis.FileAnnotation.String),
-		slicesext.Map(actual, bufanalysis.FileAnnotation.String),
+		expected,
+		actual,
 	) {
 		t.Log("If actuals are correct, change expectations to the following:")
 		for _, annotation := range actual {
+			var path string
+			if fileInfo := annotation.FileInfo(); fileInfo != nil {
+				path = fileInfo.Path()
+			}
 			if annotation.StartLine() == 0 && annotation.StartColumn() == 0 &&
 				annotation.EndLine() == 0 && annotation.EndColumn() == 0 {
-				if annotation.FileInfo().Path() == "" {
+				if path == "" {
 					t.Logf("    bufanalysistesting.NewFileAnnotationNoLocationOrPath(t, %q),",
 						annotation.Type(),
 					)
 				} else {
 					t.Logf("    bufanalysistesting.NewFileAnnotationNoLocation(t, %q, %q),",
-						annotation.FileInfo().Path(),
+						path,
 						annotation.Type(),
 					)
 				}
 			} else {
 				t.Logf("    bufanalysistesting.NewFileAnnotation(t, %q, %d, %d, %d, %d, %q),",
-					annotation.FileInfo().Path(),
+					path,
 					annotation.StartLine(),
 					annotation.StartColumn(),
 					annotation.EndLine(),
@@ -161,6 +171,7 @@ func normalizeFileAnnotations(
 			a.EndLine(),
 			a.EndColumn(),
 			a.Type(),
+			"",
 			"",
 		)
 	}

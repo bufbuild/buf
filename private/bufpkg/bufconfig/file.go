@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 )
 
 // File is the common interface shared by all config files.
@@ -133,7 +132,7 @@ func putFileForPrefix[F File](
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	return writeFileFunc(writeObjectCloser, f)
 }

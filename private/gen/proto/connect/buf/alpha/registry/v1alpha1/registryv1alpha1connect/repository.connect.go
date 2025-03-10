@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -106,30 +106,6 @@ const (
 	RepositoryServiceGetRepositoryDependencyDOTStringProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDependencyDOTString"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	repositoryServiceServiceDescriptor                                = v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService")
-	repositoryServiceGetRepositoryMethodDescriptor                    = repositoryServiceServiceDescriptor.Methods().ByName("GetRepository")
-	repositoryServiceGetRepositoryByFullNameMethodDescriptor          = repositoryServiceServiceDescriptor.Methods().ByName("GetRepositoryByFullName")
-	repositoryServiceListRepositoriesMethodDescriptor                 = repositoryServiceServiceDescriptor.Methods().ByName("ListRepositories")
-	repositoryServiceListUserRepositoriesMethodDescriptor             = repositoryServiceServiceDescriptor.Methods().ByName("ListUserRepositories")
-	repositoryServiceListRepositoriesUserCanAccessMethodDescriptor    = repositoryServiceServiceDescriptor.Methods().ByName("ListRepositoriesUserCanAccess")
-	repositoryServiceListOrganizationRepositoriesMethodDescriptor     = repositoryServiceServiceDescriptor.Methods().ByName("ListOrganizationRepositories")
-	repositoryServiceCreateRepositoryByFullNameMethodDescriptor       = repositoryServiceServiceDescriptor.Methods().ByName("CreateRepositoryByFullName")
-	repositoryServiceDeleteRepositoryMethodDescriptor                 = repositoryServiceServiceDescriptor.Methods().ByName("DeleteRepository")
-	repositoryServiceDeleteRepositoryByFullNameMethodDescriptor       = repositoryServiceServiceDescriptor.Methods().ByName("DeleteRepositoryByFullName")
-	repositoryServiceDeprecateRepositoryByNameMethodDescriptor        = repositoryServiceServiceDescriptor.Methods().ByName("DeprecateRepositoryByName")
-	repositoryServiceUndeprecateRepositoryByNameMethodDescriptor      = repositoryServiceServiceDescriptor.Methods().ByName("UndeprecateRepositoryByName")
-	repositoryServiceGetRepositoriesByFullNameMethodDescriptor        = repositoryServiceServiceDescriptor.Methods().ByName("GetRepositoriesByFullName")
-	repositoryServiceSetRepositoryContributorMethodDescriptor         = repositoryServiceServiceDescriptor.Methods().ByName("SetRepositoryContributor")
-	repositoryServiceListRepositoryContributorsMethodDescriptor       = repositoryServiceServiceDescriptor.Methods().ByName("ListRepositoryContributors")
-	repositoryServiceGetRepositoryContributorMethodDescriptor         = repositoryServiceServiceDescriptor.Methods().ByName("GetRepositoryContributor")
-	repositoryServiceGetRepositorySettingsMethodDescriptor            = repositoryServiceServiceDescriptor.Methods().ByName("GetRepositorySettings")
-	repositoryServiceUpdateRepositorySettingsByNameMethodDescriptor   = repositoryServiceServiceDescriptor.Methods().ByName("UpdateRepositorySettingsByName")
-	repositoryServiceGetRepositoriesMetadataMethodDescriptor          = repositoryServiceServiceDescriptor.Methods().ByName("GetRepositoriesMetadata")
-	repositoryServiceGetRepositoryDependencyDOTStringMethodDescriptor = repositoryServiceServiceDescriptor.Methods().ByName("GetRepositoryDependencyDOTString")
-)
-
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
 // service.
 type RepositoryServiceClient interface {
@@ -188,133 +164,134 @@ type RepositoryServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewRepositoryServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RepositoryServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	repositoryServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods()
 	return &repositoryServiceClient{
 		getRepository: connect.NewClient[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryProcedure,
-			connect.WithSchema(repositoryServiceGetRepositoryMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepository")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositoryByFullName: connect.NewClient[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryByFullNameProcedure,
-			connect.WithSchema(repositoryServiceGetRepositoryByFullNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryByFullName")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositories: connect.NewClient[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse](
 			httpClient,
 			baseURL+RepositoryServiceListRepositoriesProcedure,
-			connect.WithSchema(repositoryServiceListRepositoriesMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("ListRepositories")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listUserRepositories: connect.NewClient[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse](
 			httpClient,
 			baseURL+RepositoryServiceListUserRepositoriesProcedure,
-			connect.WithSchema(repositoryServiceListUserRepositoriesMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("ListUserRepositories")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoriesUserCanAccess: connect.NewClient[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse](
 			httpClient,
 			baseURL+RepositoryServiceListRepositoriesUserCanAccessProcedure,
-			connect.WithSchema(repositoryServiceListRepositoriesUserCanAccessMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoriesUserCanAccess")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listOrganizationRepositories: connect.NewClient[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse](
 			httpClient,
 			baseURL+RepositoryServiceListOrganizationRepositoriesProcedure,
-			connect.WithSchema(repositoryServiceListOrganizationRepositoriesMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("ListOrganizationRepositories")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		createRepositoryByFullName: connect.NewClient[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceCreateRepositoryByFullNameProcedure,
-			connect.WithSchema(repositoryServiceCreateRepositoryByFullNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("CreateRepositoryByFullName")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		deleteRepository: connect.NewClient[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse](
 			httpClient,
 			baseURL+RepositoryServiceDeleteRepositoryProcedure,
-			connect.WithSchema(repositoryServiceDeleteRepositoryMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepository")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		deleteRepositoryByFullName: connect.NewClient[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceDeleteRepositoryByFullNameProcedure,
-			connect.WithSchema(repositoryServiceDeleteRepositoryByFullNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepositoryByFullName")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		deprecateRepositoryByName: connect.NewClient[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceDeprecateRepositoryByNameProcedure,
-			connect.WithSchema(repositoryServiceDeprecateRepositoryByNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("DeprecateRepositoryByName")),
 			connect.WithClientOptions(opts...),
 		),
 		undeprecateRepositoryByName: connect.NewClient[v1alpha1.UndeprecateRepositoryByNameRequest, v1alpha1.UndeprecateRepositoryByNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceUndeprecateRepositoryByNameProcedure,
-			connect.WithSchema(repositoryServiceUndeprecateRepositoryByNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("UndeprecateRepositoryByName")),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositoriesByFullName: connect.NewClient[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoriesByFullNameProcedure,
-			connect.WithSchema(repositoryServiceGetRepositoriesByFullNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesByFullName")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		setRepositoryContributor: connect.NewClient[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse](
 			httpClient,
 			baseURL+RepositoryServiceSetRepositoryContributorProcedure,
-			connect.WithSchema(repositoryServiceSetRepositoryContributorMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("SetRepositoryContributor")),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryContributors: connect.NewClient[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse](
 			httpClient,
 			baseURL+RepositoryServiceListRepositoryContributorsProcedure,
-			connect.WithSchema(repositoryServiceListRepositoryContributorsMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoryContributors")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositoryContributor: connect.NewClient[v1alpha1.GetRepositoryContributorRequest, v1alpha1.GetRepositoryContributorResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryContributorProcedure,
-			connect.WithSchema(repositoryServiceGetRepositoryContributorMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryContributor")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositorySettings: connect.NewClient[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositorySettingsProcedure,
-			connect.WithSchema(repositoryServiceGetRepositorySettingsMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositorySettings")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		updateRepositorySettingsByName: connect.NewClient[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceUpdateRepositorySettingsByNameProcedure,
-			connect.WithSchema(repositoryServiceUpdateRepositorySettingsByNameMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositorySettingsByName")),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositoriesMetadata: connect.NewClient[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoriesMetadataProcedure,
-			connect.WithSchema(repositoryServiceGetRepositoriesMetadataMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesMetadata")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositoryDependencyDOTString: connect.NewClient[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
-			connect.WithSchema(repositoryServiceGetRepositoryDependencyDOTStringMethodDescriptor),
+			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryDependencyDOTString")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -507,132 +484,133 @@ type RepositoryServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	repositoryServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods()
 	repositoryServiceGetRepositoryHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositoryProcedure,
 		svc.GetRepository,
-		connect.WithSchema(repositoryServiceGetRepositoryMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepository")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceGetRepositoryByFullNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositoryByFullNameProcedure,
 		svc.GetRepositoryByFullName,
-		connect.WithSchema(repositoryServiceGetRepositoryByFullNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryByFullName")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceListRepositoriesHandler := connect.NewUnaryHandler(
 		RepositoryServiceListRepositoriesProcedure,
 		svc.ListRepositories,
-		connect.WithSchema(repositoryServiceListRepositoriesMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("ListRepositories")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceListUserRepositoriesHandler := connect.NewUnaryHandler(
 		RepositoryServiceListUserRepositoriesProcedure,
 		svc.ListUserRepositories,
-		connect.WithSchema(repositoryServiceListUserRepositoriesMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("ListUserRepositories")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceListRepositoriesUserCanAccessHandler := connect.NewUnaryHandler(
 		RepositoryServiceListRepositoriesUserCanAccessProcedure,
 		svc.ListRepositoriesUserCanAccess,
-		connect.WithSchema(repositoryServiceListRepositoriesUserCanAccessMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoriesUserCanAccess")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceListOrganizationRepositoriesHandler := connect.NewUnaryHandler(
 		RepositoryServiceListOrganizationRepositoriesProcedure,
 		svc.ListOrganizationRepositories,
-		connect.WithSchema(repositoryServiceListOrganizationRepositoriesMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("ListOrganizationRepositories")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceCreateRepositoryByFullNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceCreateRepositoryByFullNameProcedure,
 		svc.CreateRepositoryByFullName,
-		connect.WithSchema(repositoryServiceCreateRepositoryByFullNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("CreateRepositoryByFullName")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceDeleteRepositoryHandler := connect.NewUnaryHandler(
 		RepositoryServiceDeleteRepositoryProcedure,
 		svc.DeleteRepository,
-		connect.WithSchema(repositoryServiceDeleteRepositoryMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepository")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceDeleteRepositoryByFullNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceDeleteRepositoryByFullNameProcedure,
 		svc.DeleteRepositoryByFullName,
-		connect.WithSchema(repositoryServiceDeleteRepositoryByFullNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepositoryByFullName")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceDeprecateRepositoryByNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceDeprecateRepositoryByNameProcedure,
 		svc.DeprecateRepositoryByName,
-		connect.WithSchema(repositoryServiceDeprecateRepositoryByNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("DeprecateRepositoryByName")),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceUndeprecateRepositoryByNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceUndeprecateRepositoryByNameProcedure,
 		svc.UndeprecateRepositoryByName,
-		connect.WithSchema(repositoryServiceUndeprecateRepositoryByNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("UndeprecateRepositoryByName")),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceGetRepositoriesByFullNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositoriesByFullNameProcedure,
 		svc.GetRepositoriesByFullName,
-		connect.WithSchema(repositoryServiceGetRepositoriesByFullNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesByFullName")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceSetRepositoryContributorHandler := connect.NewUnaryHandler(
 		RepositoryServiceSetRepositoryContributorProcedure,
 		svc.SetRepositoryContributor,
-		connect.WithSchema(repositoryServiceSetRepositoryContributorMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("SetRepositoryContributor")),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceListRepositoryContributorsHandler := connect.NewUnaryHandler(
 		RepositoryServiceListRepositoryContributorsProcedure,
 		svc.ListRepositoryContributors,
-		connect.WithSchema(repositoryServiceListRepositoryContributorsMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoryContributors")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceGetRepositoryContributorHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositoryContributorProcedure,
 		svc.GetRepositoryContributor,
-		connect.WithSchema(repositoryServiceGetRepositoryContributorMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryContributor")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceGetRepositorySettingsHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositorySettingsProcedure,
 		svc.GetRepositorySettings,
-		connect.WithSchema(repositoryServiceGetRepositorySettingsMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositorySettings")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceUpdateRepositorySettingsByNameHandler := connect.NewUnaryHandler(
 		RepositoryServiceUpdateRepositorySettingsByNameProcedure,
 		svc.UpdateRepositorySettingsByName,
-		connect.WithSchema(repositoryServiceUpdateRepositorySettingsByNameMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositorySettingsByName")),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceGetRepositoriesMetadataHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositoriesMetadataProcedure,
 		svc.GetRepositoriesMetadata,
-		connect.WithSchema(repositoryServiceGetRepositoriesMetadataMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesMetadata")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryServiceGetRepositoryDependencyDOTStringHandler := connect.NewUnaryHandler(
 		RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
 		svc.GetRepositoryDependencyDOTString,
-		connect.WithSchema(repositoryServiceGetRepositoryDependencyDOTStringMethodDescriptor),
+		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryDependencyDOTString")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

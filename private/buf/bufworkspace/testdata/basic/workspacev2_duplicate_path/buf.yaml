@@ -1,0 +1,18 @@
+version: v2
+modules:
+  - path: proto/shared
+    excludes:
+      - proto/shared/prefix/foo
+  - path: proto/shared1
+    includes:
+      - proto/shared1/prefix/x
+  - path: separate  
+  - path: proto/shared/
+    excludes:
+      - proto/shared/prefix/bar
+  - path: proto/shared1
+    excludes:
+      - proto/shared1/prefix/x
+deps:
+  - buf.testing/acme/date
+  - buf.testing/acme/extension

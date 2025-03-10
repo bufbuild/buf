@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
 package configlslintrules
 
 import (
+	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
@@ -31,12 +29,6 @@ func NewCommand(
 	return internal.NewLSCommand(
 		name,
 		builder,
-		"lint",
-		buflint.GetAllRulesV1Beta1,
-		buflint.GetAllRulesV1,
-		buflint.GetAllRulesV2,
-		func(moduleConfig bufconfig.ModuleConfig) ([]bufcheck.Rule, error) {
-			return buflint.RulesForConfig(moduleConfig.LintConfig())
-		},
+		check.RuleTypeLint,
 	)
 }

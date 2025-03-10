@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,23 +101,23 @@ func run(
 	resp, err := service.ListWebhooks(
 		ctx,
 		connect.NewRequest(
-			&registryv1alpha1.ListWebhooksRequest{
+			registryv1alpha1.ListWebhooksRequest_builder{
 				RepositoryName: flags.RepositoryName,
 				OwnerName:      flags.OwnerName,
 				// TODO FUTURE: this should probably be in a loop so we can get page token from
 				//   response and query for the next page
-			},
+			}.Build(),
 		),
 	)
 	if err != nil {
 		return err
 	}
-	if resp.Msg.Webhooks == nil {
+	if resp.Msg.GetWebhooks() == nil {
 		// Ignore errors for writing to stdout.
 		_, _ = container.Stdout().Write([]byte("[]"))
 		return nil
 	}
-	webhooksJSON, err := json.MarshalIndent(resp.Msg.Webhooks, "", "\t")
+	webhooksJSON, err := json.MarshalIndent(resp.Msg.GetWebhooks(), "", "\t")
 	if err != nil {
 		return err
 	}

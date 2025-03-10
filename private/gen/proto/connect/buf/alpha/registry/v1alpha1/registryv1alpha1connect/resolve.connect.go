@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,22 +81,6 @@ const (
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	resolveServiceServiceDescriptor                       = v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService")
-	resolveServiceGetModulePinsMethodDescriptor           = resolveServiceServiceDescriptor.Methods().ByName("GetModulePins")
-	resolveServiceGetGoVersionMethodDescriptor            = resolveServiceServiceDescriptor.Methods().ByName("GetGoVersion")
-	resolveServiceGetSwiftVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetSwiftVersion")
-	resolveServiceGetMavenVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetMavenVersion")
-	resolveServiceGetNPMVersionMethodDescriptor           = resolveServiceServiceDescriptor.Methods().ByName("GetNPMVersion")
-	resolveServiceGetPythonVersionMethodDescriptor        = resolveServiceServiceDescriptor.Methods().ByName("GetPythonVersion")
-	resolveServiceGetCargoVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetCargoVersion")
-	resolveServiceGetNugetVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetNugetVersion")
-	resolveServiceGetCmakeVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetCmakeVersion")
-	localResolveServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService")
-	localResolveServiceGetLocalModulePinsMethodDescriptor = localResolveServiceServiceDescriptor.Methods().ByName("GetLocalModulePins")
-)
-
 // ResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.ResolveService service.
 type ResolveServiceClient interface {
 	// GetModulePins finds all the latest digests and respective dependencies of
@@ -134,67 +118,68 @@ type ResolveServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ResolveServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	resolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods()
 	return &resolveServiceClient{
 		getModulePins: connect.NewClient[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse](
 			httpClient,
 			baseURL+ResolveServiceGetModulePinsProcedure,
-			connect.WithSchema(resolveServiceGetModulePinsMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetModulePins")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getGoVersion: connect.NewClient[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetGoVersionProcedure,
-			connect.WithSchema(resolveServiceGetGoVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetGoVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getSwiftVersion: connect.NewClient[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetSwiftVersionProcedure,
-			connect.WithSchema(resolveServiceGetSwiftVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetSwiftVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getMavenVersion: connect.NewClient[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetMavenVersionProcedure,
-			connect.WithSchema(resolveServiceGetMavenVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetMavenVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getNPMVersion: connect.NewClient[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetNPMVersionProcedure,
-			connect.WithSchema(resolveServiceGetNPMVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetNPMVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getPythonVersion: connect.NewClient[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetPythonVersionProcedure,
-			connect.WithSchema(resolveServiceGetPythonVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetPythonVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getCargoVersion: connect.NewClient[v1alpha1.GetCargoVersionRequest, v1alpha1.GetCargoVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetCargoVersionProcedure,
-			connect.WithSchema(resolveServiceGetCargoVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetCargoVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getNugetVersion: connect.NewClient[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetNugetVersionProcedure,
-			connect.WithSchema(resolveServiceGetNugetVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetNugetVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getCmakeVersion: connect.NewClient[v1alpha1.GetCmakeVersionRequest, v1alpha1.GetCmakeVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetCmakeVersionProcedure,
-			connect.WithSchema(resolveServiceGetCmakeVersionMethodDescriptor),
+			connect.WithSchema(resolveServiceMethods.ByName("GetCmakeVersion")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -294,66 +279,67 @@ type ResolveServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	resolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods()
 	resolveServiceGetModulePinsHandler := connect.NewUnaryHandler(
 		ResolveServiceGetModulePinsProcedure,
 		svc.GetModulePins,
-		connect.WithSchema(resolveServiceGetModulePinsMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetModulePins")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetGoVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetGoVersionProcedure,
 		svc.GetGoVersion,
-		connect.WithSchema(resolveServiceGetGoVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetGoVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetSwiftVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetSwiftVersionProcedure,
 		svc.GetSwiftVersion,
-		connect.WithSchema(resolveServiceGetSwiftVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetSwiftVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetMavenVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetMavenVersionProcedure,
 		svc.GetMavenVersion,
-		connect.WithSchema(resolveServiceGetMavenVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetMavenVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetNPMVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetNPMVersionProcedure,
 		svc.GetNPMVersion,
-		connect.WithSchema(resolveServiceGetNPMVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetNPMVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetPythonVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetPythonVersionProcedure,
 		svc.GetPythonVersion,
-		connect.WithSchema(resolveServiceGetPythonVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetPythonVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetCargoVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetCargoVersionProcedure,
 		svc.GetCargoVersion,
-		connect.WithSchema(resolveServiceGetCargoVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetCargoVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetNugetVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetNugetVersionProcedure,
 		svc.GetNugetVersion,
-		connect.WithSchema(resolveServiceGetNugetVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetNugetVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetCmakeVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetCmakeVersionProcedure,
 		svc.GetCmakeVersion,
-		connect.WithSchema(resolveServiceGetCmakeVersionMethodDescriptor),
+		connect.WithSchema(resolveServiceMethods.ByName("GetCmakeVersion")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -450,11 +436,12 @@ type LocalResolveServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewLocalResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) LocalResolveServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	localResolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService").Methods()
 	return &localResolveServiceClient{
 		getLocalModulePins: connect.NewClient[v1alpha1.GetLocalModulePinsRequest, v1alpha1.GetLocalModulePinsResponse](
 			httpClient,
 			baseURL+LocalResolveServiceGetLocalModulePinsProcedure,
-			connect.WithSchema(localResolveServiceGetLocalModulePinsMethodDescriptor),
+			connect.WithSchema(localResolveServiceMethods.ByName("GetLocalModulePins")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -495,10 +482,11 @@ type LocalResolveServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	localResolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService").Methods()
 	localResolveServiceGetLocalModulePinsHandler := connect.NewUnaryHandler(
 		LocalResolveServiceGetLocalModulePinsProcedure,
 		svc.GetLocalModulePins,
-		connect.WithSchema(localResolveServiceGetLocalModulePinsMethodDescriptor),
+		connect.WithSchema(localResolveServiceMethods.ByName("GetLocalModulePins")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -74,19 +74,19 @@ func run(
 ) error {
 	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	organizationServiceClient := clientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
+	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
+	organizationServiceClient := ownerClientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	resp, err := organizationServiceClient.GetOrganizations(
 		ctx,
 		connect.NewRequest(
@@ -111,8 +111,9 @@ func run(
 	if len(organizations) != 1 {
 		return syserror.Newf("unexpected number of organizations returned from server: %d", len(organizations))
 	}
-	return bufprint.NewOrganizationPrinter(
-		moduleOwner.Registry(),
+	return bufprint.PrintEntity(
 		container.Stdout(),
-	).PrintOrganizationInfo(ctx, format, organizations[0])
+		format,
+		bufprint.NewOrganizationEntity(organizations[0], moduleOwner.Registry()),
+	)
 }

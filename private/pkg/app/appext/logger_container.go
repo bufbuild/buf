@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,19 +15,19 @@
 package appext
 
 import (
-	"go.uber.org/zap"
+	"log/slog"
 )
 
 type loggerContainer struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
-func newLoggerContainer(logger *zap.Logger) *loggerContainer {
+func newLoggerContainer(logger *slog.Logger) *loggerContainer {
 	return &loggerContainer{
 		logger: logger,
 	}
 }
 
-func (c *loggerContainer) Logger() *zap.Logger {
+func (c *loggerContainer) Logger() *slog.Logger {
 	return c.logger
 }

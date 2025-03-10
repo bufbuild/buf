@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@ package depupdate
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -26,8 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -44,8 +45,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Update pinned dependencies in a buf.lock",
-		Long: `Fetch the latest digests for the specified references in buf.yaml,
+		Short: "Update pinned module dependencies in a buf.lock",
+		Long: `Fetch the latest digests for the specified module references in buf.yaml,
 and write them and their transitive dependencies to buf.lock.
 
 The first argument is the directory of the local module to update.
@@ -118,9 +119,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"all deps",
-		zap.Strings("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
+		slog.Any("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
 	)
 
 	// Store the existing buf.lock data.
@@ -128,6 +130,20 @@ func run(
 	if err != nil {
 		return err
 	}
+	if configuredDepModuleKeys == nil && existingDepModuleKeys == nil {
+		// No new configured deps were found, and no existing buf.lock deps were found, so there
+		// is nothing to update, we can return here.
+		// This ensures we do not create an empty buf.lock when one did not exist in the first
+		// place and we do not need to go through the entire operation of updating non-existent
+		// deps and building the image for tamper-proofing.
+		logger.Warn(fmt.Sprintf("No configured dependencies were found to update in %q.", dirPath))
+		return nil
+	}
+	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+
 	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
 	// attempt to revert the buf.lock file.
 	//
@@ -136,11 +152,11 @@ func run(
 	// overlay the new buf.lock file in a union bucket.
 	defer func() {
 		if retErr != nil {
-			retErr = multierr.Append(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys))
+			retErr = errors.Join(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys))
 		}
 	}()
 	// Edit the buf.lock file with the unpruned dependencies.
-	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys); err != nil {
+	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys, existingRemotePluginKeys); err != nil {
 		return err
 	}
 	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())

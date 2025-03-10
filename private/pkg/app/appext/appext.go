@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -26,11 +27,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/spf13/pflag"
-	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -43,6 +40,8 @@ const (
 // Application name foo-bar translates to environment variable prefix FOO_BAR_, which is
 // used for the various functions that NameContainer provides.
 type NameContainer interface {
+	app.Container
+
 	// AppName is the application name.
 	//
 	// The name must be in [a-zA-Z0-9-_].
@@ -77,64 +76,34 @@ type NameContainer interface {
 // NewNameContainer returns a new NameContainer.
 //
 // The name must be in [a-zA-Z0-9-_].
-func NewNameContainer(envContainer app.EnvContainer, appName string) (NameContainer, error) {
-	return newNameContainer(envContainer, appName)
+func NewNameContainer(baseContainer app.Container, appName string) (NameContainer, error) {
+	return newNameContainer(baseContainer, appName)
 }
 
-// LoggerContainer provides a *zap.Logger.
+// LoggerContainer provides a *slog.Logger.
 type LoggerContainer interface {
-	Logger() *zap.Logger
+	Logger() *slog.Logger
 }
 
 // NewLoggerContainer returns a new LoggerContainer.
-func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
+func NewLoggerContainer(logger *slog.Logger) LoggerContainer {
 	return newLoggerContainer(logger)
-}
-
-// TracerContainer provides a trace.Tracer based on the application name.
-type TracerContainer interface {
-	Tracer() trace.Tracer
-}
-
-// NewTracerContainer returns a new TracerContainer for the application name.
-func NewTracerContainer(appName string) TracerContainer {
-	return newTracerContainer(appName)
-}
-
-// VerboseContainer provides a verbose.Printer.
-type VerboseContainer interface {
-	// VerboseEnabled returns true if verbose mode is enabled.
-	VerboseEnabled() bool
-	// VerbosePrinter returns a verbose.Printer to use for verbose printing.
-	VerbosePrinter() verbose.Printer
-}
-
-// NewVerboseContainer returns a new VerboseContainer.
-func NewVerboseContainer(verbosePrinter verbose.Printer) VerboseContainer {
-	return newVerboseContainer(verbosePrinter)
 }
 
 // Container contains not just the base app container, but all extended containers.
 type Container interface {
-	app.Container
 	NameContainer
 	LoggerContainer
-	TracerContainer
-	VerboseContainer
 }
 
 // NewContainer returns a new Container.
 func NewContainer(
-	baseContainer app.Container,
-	appName string,
-	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
-) (Container, error) {
+	nameContainer NameContainer,
+	logger *slog.Logger,
+) Container {
 	return newContainer(
-		baseContainer,
-		appName,
+		nameContainer,
 		logger,
-		verbosePrinter,
 	)
 }
 
@@ -167,13 +136,6 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 	}
 }
 
-// BuilderWithTracing enables zap tracing for the builder.
-func BuilderWithTracing() BuilderOption {
-	return func(builder *builder) {
-		builder.tracing = true
-	}
-}
-
 // BuilderWithInterceptor adds the given interceptor for all run functions.
 func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	return func(builder *builder) {
@@ -181,10 +143,15 @@ func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	}
 }
 
-// BuilderWithDefaultLogLevel adds the given default log level.
-func BuilderWithDefaultLogLevel(defaultLogLevel zapcore.Level) BuilderOption {
+// LoggerProvider provides new Loggers.
+type LoggerProvider func(NameContainer, LogLevel, LogFormat) (*slog.Logger, error)
+
+// BuilderWithLoggerProvider overrides the default LoggerProvider.
+//
+// The default is to use slogbuild.
+func BuilderWithLoggerProvider(loggerProvider LoggerProvider) BuilderOption {
 	return func(builder *builder) {
-		builder.defaultLogLevel = defaultLogLevel
+		builder.loggerProvider = loggerProvider
 	}
 }
 
@@ -201,6 +168,25 @@ func ReadConfig(container NameContainer, value interface{}) error {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
 		}
 		if err := encoding.UnmarshalYAMLStrict(data, value); err != nil {
+			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
+		}
+	}
+	return nil
+}
+
+// ReadConfigNonStrict reads the configuration from the YAML configuration file config.yaml
+// in the configuration directory, ignoring any unknown properties.
+//
+// If the file does not exist, this is a no-op.
+// The value should be a pointer to unmarshal into.
+func ReadConfigNonStrict(container NameContainer, value interface{}) error {
+	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
+	data, err := os.ReadFile(configFilePath)
+	if !errors.Is(err, os.ErrNotExist) {
+		if err != nil {
+			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
+		}
+		if err := encoding.UnmarshalYAMLNonStrict(data, value); err != nil {
 			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
 		}
 	}

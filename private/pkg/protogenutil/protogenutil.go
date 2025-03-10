@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) protop
 			}
 			response := plugin.Response()
 			responseWriter.AddCodeGeneratorResponseFiles(response.GetFile()...)
-			responseWriter.SetError(response.GetError())
+			responseWriter.AddError(response.GetError())
 			responseWriter.SetFeatureProto3Optional()
 			return nil
 		},
@@ -231,7 +231,7 @@ func (g *GoPackageFileSet) Services() []*protogen.Service {
 // NamedHelper is a helper to deal with named golang plugins.
 //
 // Named plugins should be named in the form protoc-gen-go-foobar, where the plugin
-// name is consiered to be "foobar". The plugin name must be lowercase.
+// name is considered to be "foobar". The plugin name must be lowercase.
 type NamedHelper interface {
 	// NewGoPackageName gets the helper GoPackageName for the pluginName.
 	NewGoPackageName(
@@ -248,7 +248,7 @@ type NamedHelper interface {
 		goPackageFileSet *GoPackageFileSet,
 		pluginName string,
 	) (protogen.GoImportPath, error)
-	// NewGlobalImportPath gets the helper GoImportPath for the pluginName.
+	// NewGlobalGoImportPath gets the helper GoImportPath for the pluginName.
 	NewGlobalGoImportPath(
 		pluginName string,
 	) (protogen.GoImportPath, error)
@@ -442,9 +442,6 @@ func GetFieldGoType(
 	generatedFile *protogen.GeneratedFile,
 	field *protogen.Field,
 ) (string, error) {
-	if field.Desc.IsWeak() {
-		return "struct{}", nil
-	}
 	var goType string
 	pointer := field.Desc.HasPresence()
 	switch field.Desc.Kind() {
@@ -500,9 +497,6 @@ func GetFieldGoZeroValue(
 	generatedFile *protogen.GeneratedFile,
 	field *protogen.Field,
 ) (string, error) {
-	if field.Desc.IsWeak() {
-		return "struct{}", nil
-	}
 	if field.Desc.HasPresence() {
 		return "nil", nil
 	}

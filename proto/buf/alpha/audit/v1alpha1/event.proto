@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,9 +41,6 @@ message Actor {
 // ResourceType is the type of the resource that was affected by the audited
 // event.
 enum ResourceType {
-  reserved 7;
-  reserved "RESOURCE_TYPE_PLUGIN";
-
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
@@ -52,12 +49,15 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_PLUGIN = 7;
+  RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
   RESOURCE_TYPE_REPOSITORY_LABEL = 12;
   RESOURCE_TYPE_SERVER = 13;
   RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
+  RESOURCE_TYPE_PLUGIN_LABEL = 16;
 }
 
 // Resource is the affected resource by the audited event.
@@ -81,6 +81,8 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
+  EVENT_TYPE_REPOSITORY_DEPRECATED = 48;
+  EVENT_TYPE_REPOSITORY_UNDEPRECATED = 49;
   EVENT_TYPE_REPOSITORY_DELETED = 7;
   EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
@@ -88,8 +90,9 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
-  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
-  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_PLUGIN_CREATED = 13;
+  EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
   EVENT_TYPE_USER_CREATED = 15;
@@ -102,19 +105,23 @@ enum EventType {
   EVENT_TYPE_USER_REACTIVATED = 25;
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
   EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
-  EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
+  EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28 [deprecated = true];
   EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29;
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
   EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED = 38;
   EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED = 39;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
-  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
+  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34 [deprecated = true];
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
   EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
   EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED = 41;
   EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED = 42;
+  EVENT_TYPE_PLUGIN_LABEL_CREATED = 44;
+  EVENT_TYPE_PLUGIN_LABEL_MOVED = 45;
+  EVENT_TYPE_PLUGIN_LABEL_ARCHIVED = 46;
+  EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED = 47;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -131,9 +138,6 @@ message EventMetadata {
 // what happened, when it happened, who did it, which resource was affected, and
 // more contextual information on the event.
 message Event {
-  reserved 19, 20;
-  reserved "plugin_created", "plugin_deleted";
-
   // Unique id of the audited event.
   string event_id = 1;
   // Type of the audited event. It specifies "what" happened.
@@ -154,6 +158,8 @@ message Event {
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
     PayloadRepositoryCreated repository_created = 12;
+    PayloadRepositoryDeprecated repository_deprecated = 54;
+    PayloadRepositoryUndeprecated repository_undeprecated = 55;
     PayloadRepositoryDeleted repository_deleted = 13;
     PayloadRepositoryCommitPushed repository_commit_pushed = 14;
     PayloadRepositoryContributorAdded repository_contributor_added = 15;
@@ -161,6 +167,9 @@ message Event {
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadPluginCreated plugin_created = 19;
+    PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginCommitPushed plugin_commit_pushed = 49;
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
@@ -174,7 +183,7 @@ message Event {
     PayloadUserReactivated user_reactivated = 31;
     PayloadSCIMTokenCreated scim_token_created = 32;
     PayloadSCIMTokenDeleted scim_token_deleted = 33;
-    PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
+    PayloadRepositoryCommitDeleted repository_commit_deleted = 34 [deprecated = true];
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
     PayloadRepositoryLabelArchived repository_label_archived = 44;
@@ -182,12 +191,16 @@ message Event {
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
-    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
+    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
     PayloadDeviceAuthorizationGrantApproved device_authorization_grant_approved = 47;
     PayloadDeviceAuthorizationGrantDenied device_authorization_grant_denied = 48;
+    PayloadPluginLabelCreated plugin_label_created = 50;
+    PayloadPluginLabelMoved plugin_label_moved = 51;
+    PayloadPluginLabelArchived plugin_label_archived = 52;
+    PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
   }
 }
 
@@ -259,6 +272,26 @@ message PayloadRepositoryCreated {
 }
 
 message PayloadRepositoryDeleted {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadRepositoryDeprecated {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+  // deprecation_message is the deprecation message set by the deprecation actor.
+  string deprecation_message = 4;
+}
+
+message PayloadRepositoryUndeprecated {
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
@@ -349,7 +382,12 @@ message PayloadRepositoryDefaultLabelNameChanged {
   string new_default_label_name = 4;
 }
 
+// PayloadRepositoryDefaultBranchChanged is deprecated.
+//
+// Use PayloadRepositoryDefaultLabelNameChanged instead.
 message PayloadRepositoryDefaultBranchChanged {
+  // Deprecated, use PayloadRepositoryDefaultLabelNameChanged instead.
+  option deprecated = true;
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
@@ -358,6 +396,37 @@ message PayloadRepositoryDefaultBranchChanged {
   string old_default_branch = 3;
   // new_default_branch is the new default branch of the repository.
   string new_default_branch = 4;
+}
+
+message PayloadPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+}
+
+message PayloadPluginDeleted {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+}
+
+message PayloadPluginCommitPushed {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin.
+  string plugin_name = 4;
+  // p1_digest is the p1 digest of the pushed plugin commit.
+  string p1_digest = 5;
 }
 
 message PayloadUserCreated {}
@@ -411,7 +480,12 @@ message PayloadSCIMTokenCreated {
 
 message PayloadSCIMTokenDeleted {}
 
+// PayloadRepositoryCommitDeleted is deprecated.
+//
+// Individual repository commits cannot be deleted.
 message PayloadRepositoryCommitDeleted {
+  // Deprecated, individual repository commits cannot be deleted.
+  option deprecated = true;
   // owner_id is the id of the owner of the repository from which the commit will be deleted.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository from which the commit will be deleted.
@@ -498,4 +572,54 @@ message PayloadDeviceAuthorizationGrantApproved {
 message PayloadDeviceAuthorizationGrantDenied {
   // client_id is the id of the registered oauth2 client of the grant.
   string client_id = 1;
+}
+
+message PayloadPluginLabelCreated {
+  // owner_id is the id of the owner of the plugin on which the label was created.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was created.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was created.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was created.
+  string plugin_name = 4;
+  // commit_id is the id of the commit on which the label was created.
+  string commit_id = 6;
+}
+
+message PayloadPluginLabelMoved {
+  // owner_id is the id of the owner of the plugin on which the label was moved.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was moved.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was moved.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was moved.
+  string plugin_name = 4;
+  // to_commit_id is the id of the commit on which the label was moved to.
+  string to_commit_id = 6;
+  // from_commit_id is the id of the commit on which the label was moved from.
+  string from_commit_id = 7;
+}
+
+message PayloadPluginLabelArchived {
+  // owner_id is the id of the owner of the plugin on which the label was archived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was archived.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was archived.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was archived.
+  string plugin_name = 4;
+}
+
+message PayloadPluginLabelUnarchived {
+  // owner_id is the id of the owner of the plugin on which the label was unarchived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin on which the label was unarchived.
+  string owner_name = 2;
+  // plugin_id is the id of the plugin on which the label was unarchived.
+  string plugin_id = 3;
+  // plugin_name is the name of the plugin from which the label was unarchived.
+  string plugin_name = 4;
 }

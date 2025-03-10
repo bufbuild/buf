@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"slices"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -26,7 +27,7 @@ var _ ImageFile = &imageFile{}
 
 type imageFile struct {
 	fileDescriptorProto     *descriptorpb.FileDescriptorProto
-	moduleFullName          bufmodule.ModuleFullName
+	moduleFullName          bufparse.FullName
 	commitID                uuid.UUID
 	externalPath            string
 	localPath               string
@@ -37,7 +38,7 @@ type imageFile struct {
 
 func newImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -62,7 +63,7 @@ func newImageFile(
 
 func newImageFileNoValidate(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -103,7 +104,7 @@ func (f *imageFile) LocalPath() string {
 	return f.localPath
 }
 
-func (f *imageFile) ModuleFullName() bufmodule.ModuleFullName {
+func (f *imageFile) FullName() bufparse.FullName {
 	return f.moduleFullName
 }
 
@@ -112,7 +113,7 @@ func (f *imageFile) CommitID() uuid.UUID {
 }
 
 func (f *imageFile) Imports() ([]string, error) {
-	return slicesext.Copy(f.fileDescriptorProto.GetDependency()), nil
+	return slices.Clone(f.fileDescriptorProto.GetDependency()), nil
 }
 
 func (f *imageFile) IsImport() bool {

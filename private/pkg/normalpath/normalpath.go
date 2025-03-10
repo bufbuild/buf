@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -349,7 +349,7 @@ func ValidatePathComponents(components ...string) error {
 	return nil
 }
 
-// ValidatePathsNormalizedValidatedUnique validates the file or diretory paths are normalized
+// ValidatePathsNormalizedValidatedUnique validates the file or directory paths are normalized
 // and validated, and not duplicated.
 func ValidatePathsNormalizedValidatedUnique(paths []string) error {
 	pathMap := make(map[string]struct{}, len(paths))

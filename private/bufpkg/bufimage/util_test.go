@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -31,21 +32,21 @@ import (
 
 func TestStripBufExtensionField(t *testing.T) {
 	t.Parallel()
-	file := &imagev1.ImageFile{
-		BufExtension: &imagev1.ImageFileExtension{
+	file := imagev1.ImageFile_builder{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			IsImport:         proto.Bool(true),
 			UnusedDependency: []int32{1, 3, 5},
-			ModuleInfo: &imagev1.ModuleInfo{
-				Name: &imagev1.ModuleName{
+			ModuleInfo: imagev1.ModuleInfo_builder{
+				Name: imagev1.ModuleName_builder{
 					Remote:     proto.String("buf.build"),
 					Owner:      proto.String("foo"),
 					Repository: proto.String("bar"),
-				},
+				}.Build(),
 				Commit: proto.String("1234981234123412341234"),
-			},
-		},
-	}
-	dataToBeStripped, err := proto.Marshal(file)
+			}.Build(),
+		}.Build(),
+	}.Build()
+	dataToBeStripped, err := protoencoding.NewWireMarshaler().Marshal(file)
 	require.NoError(t, err)
 
 	otherData := protowire.AppendTag(nil, 122, protowire.BytesType)
@@ -142,7 +143,7 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	otherData = protowire.AppendFixed32(otherData, 23456)
 	fileDescriptor.ProtoReflect().SetUnknown(otherData)
 
-	moduleFullName, err := bufmodule.ParseModuleFullName("buf.build/foo/bar")
+	moduleFullName, err := bufparse.ParseFullName("buf.build/foo/bar")
 	require.NoError(t, err)
 	commitID, err := uuidutil.New()
 	require.NoError(t, err)
@@ -164,18 +165,18 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	require.Equal(t, otherData, []byte(protoImageFile.ProtoReflect().GetUnknown()))
 
 	// now round-trip it back through
-	imageFileBytes, err := proto.Marshal(protoImageFile)
+	imageFileBytes, err := protoencoding.NewWireMarshaler().Marshal(protoImageFile)
 	require.NoError(t, err)
 
 	roundTrippedFileDescriptor := &descriptorpb.FileDescriptorProto{}
-	err = proto.Unmarshal(imageFileBytes, roundTrippedFileDescriptor)
+	err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(imageFileBytes, roundTrippedFileDescriptor)
 	require.NoError(t, err)
 	// unrecognized now includes image file's buf extension
 	require.Greater(t, len(roundTrippedFileDescriptor.ProtoReflect().GetUnknown()), len(otherData))
 
 	// if we go back through an image file, we should strip out the
 	// buf extension unknown bytes but preserve the rest
-	moduleFullName, err = bufmodule.ParseModuleFullName("buf.build/abc/def")
+	moduleFullName, err = bufparse.ParseFullName("buf.build/abc/def")
 	require.NoError(t, err)
 	// NB: intentionally different metadata
 	commitID2, err := uuidutil.New()
@@ -199,11 +200,11 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 
 	// double-check via round-trip, to make sure resulting image file equals the input
 	// (to verify that the original unknown bytes byf extension didn't interfere)
-	imageFileBytes, err = proto.Marshal(protoImageFile)
+	imageFileBytes, err = protoencoding.NewWireMarshaler().Marshal(protoImageFile)
 	require.NoError(t, err)
 
 	roundTrippedImageFile := &imagev1.ImageFile{}
-	err = proto.Unmarshal(imageFileBytes, roundTrippedImageFile)
+	err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(imageFileBytes, roundTrippedImageFile)
 	require.NoError(t, err)
 
 	diff := cmp.Diff(protoImageFile, roundTrippedImageFile, protocmp.Transform())

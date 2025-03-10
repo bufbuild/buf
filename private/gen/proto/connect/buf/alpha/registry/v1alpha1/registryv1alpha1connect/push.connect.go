@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,13 +54,6 @@ const (
 	PushServicePushManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	pushServiceServiceDescriptor                    = v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService")
-	pushServicePushMethodDescriptor                 = pushServiceServiceDescriptor.Methods().ByName("Push")
-	pushServicePushManifestAndBlobsMethodDescriptor = pushServiceServiceDescriptor.Methods().ByName("PushManifestAndBlobs")
-)
-
 // PushServiceClient is a client for the buf.alpha.registry.v1alpha1.PushService service.
 type PushServiceClient interface {
 	// Push pushes.
@@ -79,18 +72,19 @@ type PushServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewPushServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PushServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	pushServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService").Methods()
 	return &pushServiceClient{
 		push: connect.NewClient[v1alpha1.PushRequest, v1alpha1.PushResponse](
 			httpClient,
 			baseURL+PushServicePushProcedure,
-			connect.WithSchema(pushServicePushMethodDescriptor),
+			connect.WithSchema(pushServiceMethods.ByName("Push")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		pushManifestAndBlobs: connect.NewClient[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse](
 			httpClient,
 			baseURL+PushServicePushManifestAndBlobsProcedure,
-			connect.WithSchema(pushServicePushManifestAndBlobsMethodDescriptor),
+			connect.WithSchema(pushServiceMethods.ByName("PushManifestAndBlobs")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -128,17 +122,18 @@ type PushServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewPushServiceHandler(svc PushServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pushServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService").Methods()
 	pushServicePushHandler := connect.NewUnaryHandler(
 		PushServicePushProcedure,
 		svc.Push,
-		connect.WithSchema(pushServicePushMethodDescriptor),
+		connect.WithSchema(pushServiceMethods.ByName("Push")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	pushServicePushManifestAndBlobsHandler := connect.NewUnaryHandler(
 		PushServicePushManifestAndBlobsProcedure,
 		svc.PushManifestAndBlobs,
-		connect.WithSchema(pushServicePushManifestAndBlobsMethodDescriptor),
+		connect.WithSchema(pushServiceMethods.ByName("PushManifestAndBlobs")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)

@@ -1,0 +1,31 @@
+version: v2
+modules:
+  - path: proto
+    name: buf.test/test/module
+  - path: vendor/protovalidate
+lint:
+  ignore:
+    - vendor/protovalidate
+    - proto/common/v1/breaking.proto
+    - proto/common/v1alpha1/breaking.proto
+plugins:
+  - plugin: buf-plugin-suffix
+    options:
+      service_banned_suffixes:
+        - Mock
+        - Test
+      rpc_banned_suffixes:
+        - Element
+      field_banned_suffixes:
+        - _uuid
+      enum_value_banned_suffixes:
+        - _INVALID
+      service_no_change_suffixes:
+        - Service
+      message_no_change_suffixes:
+        - Request
+        - Response
+      enum_no_change_suffixes:
+        - State
+  - plugin: buf-plugin-protovalidate-ext
+  - plugin: buf-plugin-rpc-ext

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ package bufprotoplugin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protoplugin"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -57,7 +57,7 @@ type Generator interface {
 
 // NewGenerator returns a new Generator.
 func NewGenerator(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	handler protoplugin.Handler,
 ) Generator {
 	return newGenerator(logger, handler)
@@ -81,7 +81,7 @@ type ResponseWriter interface {
 }
 
 // NewResponseWriter returns a new ResponseWriter.
-func NewResponseWriter(logger *zap.Logger) ResponseWriter {
+func NewResponseWriter(logger *slog.Logger) ResponseWriter {
 	return newResponseWriter(logger)
 }
 
@@ -108,7 +108,7 @@ type PluginResponse struct {
 	PluginOut  string
 }
 
-// NewPluginResponse retruns a new *PluginResponse.
+// NewPluginResponse returns a new *PluginResponse.
 func NewPluginResponse(
 	response *pluginpb.CodeGeneratorResponse,
 	pluginName string,

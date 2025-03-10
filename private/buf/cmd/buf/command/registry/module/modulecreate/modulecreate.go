@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -61,7 +61,7 @@ func NewCommand(
 type flags struct {
 	Format       string
 	Visibility   string
-	DefautlLabel string
+	DefaultLabel string
 }
 
 func newFlags() *flags {
@@ -77,7 +77,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
 	flagSet.StringVar(
-		&f.DefautlLabel,
+		&f.DefaultLabel,
 		defaultLabeFlagName,
 		defaultDefaultLabel,
 		"The default label name of the module",
@@ -89,24 +89,24 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+	moduleFullName, err := bufparse.ParseFullName(container.Arg(0))
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	moduleServiceClient := bufapi.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
+	moduleServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
 	resp, err := moduleServiceClient.CreateModules(
 		ctx,
 		connect.NewRequest(
@@ -120,7 +120,7 @@ func run(
 						},
 						Name:             moduleFullName.Name(),
 						Visibility:       visibility,
-						DefaultLabelName: flags.DefautlLabel,
+						DefaultLabelName: flags.DefaultLabel,
 					},
 				},
 			},
@@ -143,9 +143,9 @@ func run(
 		}
 		return nil
 	}
-	return bufprint.NewModulePrinter(
-		clientConfig,
-		moduleFullName.Registry(),
+	return bufprint.PrintNames(
 		container.Stdout(),
-	).PrintModuleInfo(ctx, format, modules[0])
+		format,
+		bufprint.NewModuleEntity(modules[0], moduleFullName),
+	)
 }

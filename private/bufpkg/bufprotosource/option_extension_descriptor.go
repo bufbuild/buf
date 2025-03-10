@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type optionExtensionDescriptor struct {
@@ -68,24 +67,7 @@ func (o *optionExtensionDescriptor) OptionLocation(field protoreflect.FieldDescr
 		// Found an exact match!
 		return loc
 	}
-	// "Fuzzy" search: find a location whose path is at least extensionPathLen long,
-	// preferring the longest matching ancestor path (i.e. as many extraPath elements
-	// as can be found). If we find a *sub*path (a descendant path, that points INTO
-	// the path we are trying to find), use the first such one encountered.
-	var bestMatch *descriptorpb.SourceCodeInfo_Location
-	var bestMatchPathLen int
-	for _, loc := range o.locationStore.sourceCodeInfoLocations {
-		if len(loc.Path) >= extensionPathLen && isDescendantPath(path, loc.Path) && len(loc.Path) > bestMatchPathLen {
-			bestMatch = loc
-			bestMatchPathLen = len(loc.Path)
-		} else if isDescendantPath(loc.Path, path) {
-			return newLocation(loc)
-		}
-	}
-	if bestMatch != nil {
-		return newLocation(bestMatch)
-	}
-	return nil
+	return o.locationStore.getBestMatchOptionExtensionLocation(path, extensionPathLen)
 }
 
 func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
@@ -119,18 +101,6 @@ func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
 	})
 
 	return fieldNumbers
-}
-
-func isDescendantPath(descendant, ancestor []int32) bool {
-	if len(descendant) < len(ancestor) {
-		return false
-	}
-	for i := range ancestor {
-		if descendant[i] != ancestor[i] {
-			return false
-		}
-	}
-	return true
 }
 
 func (o *optionExtensionDescriptor) ForEachPresentOption(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/gofrs/uuid/v5"
-	"go.uber.org/multierr"
+	"github.com/google/uuid"
 )
 
 var (
@@ -42,12 +44,12 @@ var (
 // Modules are also either local or remote.
 //
 // A local Module is one which was built from sources from the "local context", such
-// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest. Local
+// a Workspace containing Modules, or a ModuleNode in a CreateCommitRequest. Local
 // Modules are important for understanding what Modules to push, and what modules to
 // check declared dependencies for unused dependencies.
 //
 // A remote Module is one which was not contained in the local context, such as
-// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
+// dependencies specified in a buf.lock (with no corresponding Module in the Workspace),
 // or a DepNode in a CreateCommitRequest with no corresponding ModuleNode. A module
 // retrieved from a ModuleDataProvider via a ModuleKey is always remote.
 type ModuleSetBuilder interface {
@@ -56,8 +58,8 @@ type ModuleSetBuilder interface {
 	// The Bucket used to construct the module will only be read for .proto files,
 	// license file(s), and documentation file(s).
 	//
-	// The BucketID is required. If LocalModuleWithModuleFullName.* is used, the OpaqueID will
-	// use this ModuleFullName, otherwise the OpaqueID will be the BucketID.
+	// The BucketID is required. If LocalModuleWithFullName.* is used, the OpaqueID will
+	// use this FullName, otherwise the OpaqueID will be the BucketID.
 	//
 	// The dependencies of the Module are unknown, since bufmodule does not parse configuration,
 	// and therefore the dependencies of the Module are *not* automatically added to the ModuleSet.
@@ -77,7 +79,7 @@ type ModuleSetBuilder interface {
 	// The ModuleDataProvider given to the ModuleSetBuilder at construction time will be used to
 	// retrieve this Module.
 	//
-	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
+	// The resulting Module will not have a BucketID but will always have a FullName.
 	//
 	// The dependencies of the Module will are *not* automatically added to the ModuleSet.
 	// It is the caller's responsibility to add transitive dependencies.
@@ -87,7 +89,6 @@ type ModuleSetBuilder interface {
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
 	// ModuleProvider for example with a buf build buf.build/foo/bar call, then this
-
 	// specific Module will be targeted, while its dependencies will not be.
 	//
 	// Returns the same ModuleSetBuilder.
@@ -113,11 +114,11 @@ type ModuleSetBuilder interface {
 // NewModuleSetBuilder returns a new ModuleSetBuilder.
 func NewModuleSetBuilder(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 ) ModuleSetBuilder {
-	return newModuleSetBuilder(ctx, tracer, moduleDataProvider, commitProvider)
+	return newModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 }
 
 // NewModuleSetForRemoteModule is a convenience function that build a ModuleSet for for a single
@@ -127,14 +128,14 @@ func NewModuleSetBuilder(
 // All of the remote Module's transitive dependencies are automatically added as non-targets.
 func NewModuleSetForRemoteModule(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	graphProvider GraphProvider,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 	moduleKey ModuleKey,
 	options ...RemoteModuleOption,
 ) (ModuleSet, error) {
-	moduleSetBuilder := NewModuleSetBuilder(ctx, tracer, moduleDataProvider, commitProvider)
+	moduleSetBuilder := NewModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 	moduleSetBuilder.AddRemoteModule(moduleKey, true, options...)
 	graph, err := graphProvider.GetGraphForModuleKeys(ctx, []ModuleKey{moduleKey})
 	if err != nil {
@@ -157,21 +158,37 @@ func NewModuleSetForRemoteModule(
 // LocalModuleOption is an option for AddLocalModule.
 type LocalModuleOption func(*localModuleOptions)
 
-// LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName to the result Module.
+// LocalModuleWithFullName returns a new LocalModuleOption that adds the given FullName to the result Module.
 //
-// Use LocalModuleWithModuleFullNameAndCommitID if you'd also like to add a CommitID.
-func LocalModuleWithModuleFullName(moduleFullName ModuleFullName) LocalModuleOption {
+// Use LocalModuleWithFullNameAndCommitID if you'd also like to add a CommitID.
+func LocalModuleWithFullName(moduleFullName bufparse.FullName) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
 		localModuleOptions.moduleFullName = moduleFullName
 	}
 }
 
-// LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName and CommitID
+// LocalModuleWithFullNameAndCommitID returns a new LocalModuleOption that adds the given FullName and CommitID
 // to the result Module.
-func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID uuid.UUID) LocalModuleOption {
+func LocalModuleWithFullNameAndCommitID(moduleFullName bufparse.FullName, commitID uuid.UUID) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
 		localModuleOptions.moduleFullName = moduleFullName
 		localModuleOptions.commitID = commitID
+	}
+}
+
+// LocalModuleWithDescription returns a new LocalModuleOption that adds the given description to the Module.
+//
+// This is used to construct descriptive error messages pointing to configured modules.
+// For example, this may return something along the lines of:
+//
+//	path: "proto/foo", includes; ["a", "b"], excludes: "c"
+//
+// This field must be unique within a given ModuleSet.
+//
+// This value must be unique for all Modules constructed in a ModuleSet.
+func LocalModuleWithDescription(description string) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.description = description
 	}
 }
 
@@ -263,7 +280,7 @@ func RemoteModuleWithTargetPaths(
 
 type moduleSetBuilder struct {
 	ctx                context.Context
-	tracer             tracing.Tracer
+	logger             *slog.Logger
 	moduleDataProvider ModuleDataProvider
 	commitProvider     CommitProvider
 
@@ -274,13 +291,13 @@ type moduleSetBuilder struct {
 
 func newModuleSetBuilder(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 ) *moduleSetBuilder {
 	return &moduleSetBuilder{
 		ctx:                ctx,
-		tracer:             tracer,
+		logger:             logger,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
 	}
@@ -302,8 +319,8 @@ func (b *moduleSetBuilder) AddLocalModule(
 	for _, option := range options {
 		option(localModuleOptions)
 	}
-	if localModuleOptions.moduleFullName == nil && !localModuleOptions.commitID.IsNil() {
-		return b.addError(syserror.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
+	if localModuleOptions.moduleFullName == nil && localModuleOptions.commitID != uuid.Nil {
+		return b.addError(syserror.New("cannot set commitID without FullName when calling AddLocalModule"))
 	}
 	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
 		return b.addError(syserror.Newf("cannot set TargetPaths for a non-target Module when calling AddLocalModule, bucketID=%q, targetPaths=%v, targetExcludePaths=%v", bucketID, localModuleOptions.targetPaths, localModuleOptions.targetExcludePaths))
@@ -329,6 +346,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 			},
 		),
 		bucketID,
+		localModuleOptions.description,
 		localModuleOptions.moduleFullName,
 		localModuleOptions.commitID,
 		isTarget,
@@ -338,7 +356,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 		func() ([]ModuleKey, error) {
 			// See comment in added_module.go when we construct remote Modules for why
 			// we have this function in the first place.
-			return nil, syserror.Newf("getDeclaredDepModuleKeysB5 should never be called for a local Module")
+			return nil, syserror.Newf("getDepModuleKeysB5 should never be called for a local Module")
 		},
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,
@@ -386,19 +404,18 @@ func (b *moduleSetBuilder) AddRemoteModule(
 	return b
 }
 
-func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
-	ctx, span := b.tracer.Start(b.ctx, tracing.WithErr(&retErr))
-	defer span.End()
+func (b *moduleSetBuilder) Build() (ModuleSet, error) {
+	defer slogext.DebugProfile(b.logger)()
 
 	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled
 	}
 	if len(b.errs) > 0 {
-		return nil, multierr.Combine(b.errs...)
+		return nil, errors.Join(b.errs...)
 	}
 	if len(b.addedModules) == 0 {
 		// Allow an empty ModuleSet.
-		return newModuleSet(b.tracer, nil)
+		return newModuleSet(nil)
 	}
 	// If not empty, we need at least one target Module.
 	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
@@ -406,20 +423,20 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	}
 
 	// Get the unique modules, preferring targets over non-targets, and local over remote.
-	addedModules, err := getUniqueSortedAddedModulesByOpaqueID(ctx, b.commitProvider, b.addedModules)
+	addedModules, err := getUniqueSortedAddedModulesByOpaqueID(b.ctx, b.commitProvider, b.addedModules)
 	if err != nil {
 		return nil, err
 	}
 	modules, err := slicesext.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
-			return addedModule.ToModule(ctx, b.moduleDataProvider, b.commitProvider)
+			return addedModule.ToModule(b.ctx, b.moduleDataProvider, b.commitProvider)
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleSet(b.tracer, modules)
+	return newModuleSet(modules)
 }
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
@@ -430,8 +447,9 @@ func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
 func (*moduleSetBuilder) isModuleSetBuilder() {}
 
 type localModuleOptions struct {
-	moduleFullName      ModuleFullName
+	moduleFullName      bufparse.FullName
 	commitID            uuid.UUID
+	description         string
 	targetPaths         []string
 	targetExcludePaths  []string
 	protoFileTargetPath string

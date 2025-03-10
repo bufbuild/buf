@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 // Package syserror handles "system errors".
 //
 // A system error is an error that should never actually happen, and should be
-// propogated to the user as a bug in the codebase. System errors are generally
+// propagated to the user as a bug in the codebase. System errors are generally
 // defensive-programming assertions that we want to check for in our codebase.
 //
 // If a system error occurs, you may want to send a specialized help that says

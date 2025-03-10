@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -179,7 +178,7 @@ func run(
 					return syserror.Wrap(err)
 				}
 				if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
-					return multierr.Append(err, moduleFile.Close())
+					return errors.Join(err, moduleFile.Close())
 				}
 				return moduleFile.Close()
 			},
@@ -219,7 +218,7 @@ func run(
 			return syserror.Wrap(err)
 		}
 		if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
-			return multierr.Append(err, moduleFile.Close())
+			return errors.Join(err, moduleFile.Close())
 		}
 		if err := moduleFile.Close(); err != nil {
 			return err

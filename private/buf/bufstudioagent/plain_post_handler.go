@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -29,7 +30,7 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.uber.org/zap"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 )
@@ -50,7 +51,7 @@ const MaxMessageSizeBytesDefault = 1024 * 1024 * 5
 //
 // [1] https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).
 type plainPostHandler struct {
-	Logger              *zap.Logger
+	Logger              *slog.Logger
 	MaxMessageSizeBytes int64
 	B64Encoding         *base64.Encoding
 	TLSClient           *http.Client
@@ -60,7 +61,7 @@ type plainPostHandler struct {
 }
 
 func newPlainPostHandler(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	disallowedHeaders map[string]struct{},
 	forwardHeaders map[string]string,
 	tlsClientConfig *tls.Config,
@@ -124,13 +125,13 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	request := connect.NewRequest(bytes.NewBuffer(envelopeRequest.GetBody()))
-	for _, header := range envelopeRequest.Headers {
-		if _, ok := i.DisallowedHeaders[textproto.CanonicalMIMEHeaderKey(header.Key)]; ok {
-			http.Error(w, fmt.Sprintf("header %q disallowed by agent", header.Key), http.StatusBadRequest)
+	for _, header := range envelopeRequest.GetHeaders() {
+		if _, ok := i.DisallowedHeaders[textproto.CanonicalMIMEHeaderKey(header.GetKey())]; ok {
+			http.Error(w, fmt.Sprintf("header %q disallowed by agent", header.GetKey()), http.StatusBadRequest)
 			return
 		}
-		for _, value := range header.Value {
-			request.Header().Add(header.Key, value)
+		for _, value := range header.GetValue() {
+			request.Header().Add(header.GetKey(), value)
 		}
 	}
 	for fromHeader, toHeader := range i.ForwardHeaders {
@@ -192,25 +193,25 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
-			i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
+			i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
 				// connectErr.Meta contains the trailers for the
 				// caller to find out the error details.
 				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
-			})
+			}.Build())
 			return
 		}
 		i.Logger.Warn(
 			"non_connect_unary_error",
-			zap.Error(err),
+			slogext.ErrorAttr(err),
 		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
+	i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
 		Headers:  goHeadersToProtoHeaders(response.Header()),
 		Body:     response.Msg.Bytes(),
 		Trailers: goHeadersToProtoHeaders(response.Trailer()),
-	})
+	}.Build())
 }
 
 func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOption, error) {
@@ -250,9 +251,9 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 	if n, err := w.Write(responseB64Bytes); n != len(responseB64Bytes) && err != nil {
 		i.Logger.Error(
 			"write_error",
-			zap.Int("expected_bytes", len(responseB64Bytes)),
-			zap.Int("actual_bytes", n),
-			zap.Error(err),
+			slog.Int("expected_bytes", len(responseB64Bytes)),
+			slog.Int("actual_bytes", n),
+			slogext.ErrorAttr(err),
 		)
 	}
 }
@@ -260,10 +261,10 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 func goHeadersToProtoHeaders(in http.Header) []*studiov1alpha1.Headers {
 	var out []*studiov1alpha1.Headers
 	for k, v := range in {
-		out = append(out, &studiov1alpha1.Headers{
+		out = append(out, studiov1alpha1.Headers_builder{
 			Key:   k,
 			Value: v,
-		})
+		}.Build())
 	}
 	return out
 }

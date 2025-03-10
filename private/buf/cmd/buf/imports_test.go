@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -51,7 +52,7 @@ func TestValidImportFromCache(t *testing.T) {
 func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 	t.Parallel()
 
-	moduleFullName, err := bufmodule.NewModuleFullName("bufbuild.test", "bufbot", "people")
+	moduleFullName, err := bufparse.NewFullName("bufbuild.test", "bufbot", "people")
 	require.NoError(t, err)
 	commitID, err := uuidutil.FromDashless("fc7d540124fd42db92511c19a60a1d98")
 	require.NoError(t, err)
@@ -60,7 +61,7 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 	actualDigest, err := bufmodule.ParseDigest("b5:87403abcc5ec8403180536840a46bef8751df78caa8ad4b46939f4673d8bd58663d0f593668651bb2cd23049fedac4989e8b28c7e0e36b9b524f58ab09bf1053")
 	require.NoError(t, err)
 	digestMismatchError := &bufmodule.DigestMismatchError{
-		ModuleFullName: moduleFullName,
+		FullName:       moduleFullName,
 		CommitID:       commitID,
 		ExpectedDigest: expectedDigest,
 		ActualDigest:   actualDigest,
@@ -85,7 +86,7 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 
 func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 	t.Parallel()
-	moduleFullName, err := bufmodule.NewModuleFullName("bufbuild.test", "bufbot", "students")
+	moduleFullName, err := bufparse.NewFullName("bufbuild.test", "bufbot", "students")
 	require.NoError(t, err)
 	commitID, err := uuidutil.FromDashless("6c776ed5bee54462b06d31fb7f7c16b8")
 	require.NoError(t, err)
@@ -94,7 +95,7 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 	actualDigest, err := bufmodule.ParseDigest("b5:975dad3641303843fb6a06eedf038b0e6ff41da82b8a483920afb36011e0b0a24f720a2407f5e0783389530486ff410b7e132f219add69a5c7324d54f6f89a6c")
 	require.NoError(t, err)
 	digestMismatchError := &bufmodule.DigestMismatchError{
-		ModuleFullName: moduleFullName,
+		FullName:       moduleFullName,
 		CommitID:       commitID,
 		ExpectedDigest: expectedDigest,
 		ActualDigest:   actualDigest,

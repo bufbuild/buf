@@ -1,0 +1,302 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+message IntTest {
+  // valid
+  int32 no_protovalidate_option = 1;
+  // valid
+  float other_option = 2 [deprecated = true];
+  // valid
+  int64 only_const = 4 [(buf.validate.field).int64.const = 5];
+  uint32 const_and_other_fields = 5 [
+    (buf.validate.field).uint32.lt = 10,
+    // the next line should be annotated
+    (buf.validate.field).uint32.const = 1,
+    (buf.validate.field).uint32.gt = 8
+  ];
+  double equal_lte_gte = 8 [
+    // the next line should be annotated
+    (buf.validate.field).double.lte = 10.0,
+    (buf.validate.field).required = true,
+    // the next line should be annotated
+    (buf.validate.field).double.gte = 10.0
+  ];
+  sfixed32 invalid_bounds_1 = 9 [
+    // the next line should be annotated
+    (buf.validate.field).sfixed32.lt = 10,
+    (buf.validate.field).required = true,
+    // the next line should be annotated
+    (buf.validate.field).sfixed32.gte = 10
+  ];
+  sfixed64 invalid_bounds_2 = 10 [
+    // the next line should be annotated
+    (buf.validate.field).sfixed64.lte = 10,
+    (buf.validate.field).required = true,
+    // the next line should be annotated
+    (buf.validate.field).sfixed64.gt = 10
+  ];
+  // annotating items inside an option value
+  fixed32 invalid_bound_aggregate_syntax = 11 [(buf.validate.field).fixed32 = {
+    lt: 10 // this line should be annotated
+    gte: 10 // and this one, too
+  }];
+  // valid
+  google.protobuf.Int32Value int32_value_match = 12 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 8
+  ];
+  google.protobuf.Int32Value int32_value_mismatch = 13 [
+    // the next line should be annotated
+    (buf.validate.field).sint32.lt = 5,
+    (buf.validate.field).sint32.gt = 1
+  ];
+  google.protobuf.Int64Value int64_value_match = 14 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 8
+  ];
+  google.protobuf.Int64Value int64_value_mismatch = 15 [
+    // the next line should be annotated
+    (buf.validate.field).sfixed64.lt = 5,
+    (buf.validate.field).sfixed64.gt = 1
+  ];
+  google.protobuf.UInt32Value uint32_value_match = 16 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 8
+  ];
+  google.protobuf.UInt32Value uint32_value_mismatch = 17 [
+    // the next line should be annotated
+    (buf.validate.field).fixed32.lt = 5,
+    (buf.validate.field).fixed32.gt = 1
+  ];
+  google.protobuf.UInt64Value uint64_value_match = 18 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 8
+  ];
+  google.protobuf.UInt64Value uint64_value_mismatch = 19 [
+    // the next line should be annotated
+    (buf.validate.field).sfixed64.lt = 5,
+    (buf.validate.field).sfixed64.gt = 1
+  ];
+  google.protobuf.FloatValue float_value_match = 20 [
+    (buf.validate.field).float.lt = 10,
+    (buf.validate.field).float.gt = 8
+  ];
+  google.protobuf.FloatValue float_value_mismatch = 21 [
+    // the next line should be annotated
+    (buf.validate.field).double.lt = 5,
+    (buf.validate.field).double.gt = 1
+  ];
+  google.protobuf.DoubleValue double_value_match = 22 [
+    (buf.validate.field).double.lt = 10,
+    (buf.validate.field).double.gt = 8
+  ];
+  google.protobuf.DoubleValue double_value_mismatch = 23 [
+    // the next line should be annotated
+    (buf.validate.field).float.lt = 5,
+    (buf.validate.field).float.gt = 1
+  ];
+  int32 int32_match = 24 [(buf.validate.field).int32.lt = 1];
+  int64 int64_match = 25 [(buf.validate.field).int64.lt = 1];
+  fixed32 fixed32_match = 26 [(buf.validate.field).fixed32.lt = 1];
+  fixed64 fixed64_match = 27 [(buf.validate.field).fixed64.lt = 1];
+  sfixed32 sfixed32_match = 28 [(buf.validate.field).sfixed32.lt = 1];
+  sfixed64 sfixed64_match = 29 [(buf.validate.field).sfixed64.lt = 1];
+  sint32 sint32_match = 30 [(buf.validate.field).sint32.lt = 1];
+  sint64 sint64_matchk = 31 [(buf.validate.field).sint64.lt = 1];
+  uint32 uint32_match = 32 [(buf.validate.field).uint32.lt = 1];
+  uint64 uint64_match = 33 [(buf.validate.field).uint64.lt = 1];
+  float float_match = 34 [(buf.validate.field).float.lt = 1];
+  double double_match = 35 [(buf.validate.field).double.lt = 1];
+  // valid
+  repeated google.protobuf.Int32Value wrapper_repeated = 36 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.int32.lt = 5
+  ];
+  // valid
+  google.protobuf.Int64Value int64_value = 37 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 8
+  ];
+  repeated google.protobuf.Int32Value wrapper_repeated_valid = 38 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.int32.lt = 5
+  ];
+  repeated google.protobuf.Int32Value wrapper_repeated_invalid = 39 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.int32.lt = 5,
+    // the next line should be annotated
+    (buf.validate.field).repeated.items.int32.const = 1
+  ];
+  map<int32, float> map_int32_int32 = 40 [
+    (buf.validate.field).map.keys.int32.lt = 1,
+    // the next line should be annotated
+    (buf.validate.field).map.keys.int32.const = 0,
+    (buf.validate.field).map.values.float.lt = 1,
+    // the next line should be annotated
+    (buf.validate.field).map.values.float.const = 0
+  ];
+  int32 valid_range_gt_less_than_lt = 41 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 9
+  ];
+  int32 valid_range_gt_greater_than_lt = 42 [
+    (buf.validate.field).int32.lt = 9,
+    (buf.validate.field).int32.gt = 10
+  ];
+  // examples
+  double valid_double_example = 50 [
+    (buf.validate.field).double.lt = 10,
+    (buf.validate.field).double.example = 9
+  ];
+  double invalid_double_example = 51 [
+    (buf.validate.field).double.lt = 10,
+    (buf.validate.field).double.gt = 5,
+    (buf.validate.field).double.example = 1
+  ];
+  fixed32 valid_fixed32_example = 52 [
+    (buf.validate.field).fixed32.lt = 10,
+    (buf.validate.field).fixed32.gt = 5,
+    (buf.validate.field).fixed32.example = 9
+  ];
+  fixed32 invalid_fixed32_example = 53 [
+    (buf.validate.field).fixed32.lt = 10,
+    (buf.validate.field).fixed32.gt = 5,
+    (buf.validate.field).fixed32.example = 1
+  ];
+  fixed64 valid_fixed64_example = 54 [
+    (buf.validate.field).fixed64.lt = 10,
+    (buf.validate.field).fixed64.gt = 5,
+    (buf.validate.field).fixed64.example = 9
+  ];
+  fixed64 invalid_fixed64_example = 55 [
+    (buf.validate.field).fixed64.lt = 10,
+    (buf.validate.field).fixed64.gt = 5,
+    (buf.validate.field).fixed64.example = 1
+  ];
+  int32 valid_int32_example = 56 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 9
+  ];
+  int32 invalid_int32_example = 57 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 1
+  ];
+  int64 valid_int64_example = 58 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 9
+  ];
+  int64 invalid_int64_example = 59 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 1
+  ];
+  sfixed32 valid_sfixed32_example = 60 [
+    (buf.validate.field).sfixed32.lt = 10,
+    (buf.validate.field).sfixed32.gt = 5,
+    (buf.validate.field).sfixed32.example = 9
+  ];
+  sfixed32 invalid_sfixed32_example = 61 [
+    (buf.validate.field).sfixed32.lt = 10,
+    (buf.validate.field).sfixed32.gt = 5,
+    (buf.validate.field).sfixed32.example = 1
+  ];
+  sfixed64 valid_sfixed64_example = 64 [
+    (buf.validate.field).sfixed64.lt = 10,
+    (buf.validate.field).sfixed64.gt = 5,
+    (buf.validate.field).sfixed64.example = 9
+  ];
+  sfixed64 invalid_sfixed64_example = 65 [
+    (buf.validate.field).sfixed64.lt = 10,
+    (buf.validate.field).sfixed64.gt = 5,
+    (buf.validate.field).sfixed64.example = 1
+  ];
+  sint32 valid_sint32_example = 68 [
+    (buf.validate.field).sint32.lt = 10,
+    (buf.validate.field).sint32.gt = 5,
+    (buf.validate.field).sint32.example = 9
+  ];
+  sint32 invalid_sint32_example = 69 [
+    (buf.validate.field).sint32.lt = 10,
+    (buf.validate.field).sint32.gt = 5,
+    (buf.validate.field).sint32.example = 1
+  ];
+  sint64 valid_sint64_example = 72 [
+    (buf.validate.field).sint64.lt = 10,
+    (buf.validate.field).sint64.gt = 5,
+    (buf.validate.field).sint64.example = 9
+  ];
+  sint64 invalid_sint64_example = 73 [
+    (buf.validate.field).sint64.lt = 10,
+    (buf.validate.field).sint64.gt = 5,
+    (buf.validate.field).sint64.example = 1
+  ];
+  uint32 valid_uint32_example = 74 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 9
+  ];
+  uint32 invalid_uint32_example = 75 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 1
+  ];
+  uint64 valid_uint64_example = 76 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 9
+  ];
+  uint64 invalid_uint64_example = 77 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 1
+  ];
+  google.protobuf.Int64Value valid_wkt_int64_example = 66 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 9
+  ];
+  google.protobuf.Int64Value invalid_wkt_int64_example = 67 [
+    (buf.validate.field).int64.lt = 10,
+    (buf.validate.field).int64.gt = 5,
+    (buf.validate.field).int64.example = 1
+  ];
+  google.protobuf.Int32Value valid_wkt_int32_example = 70 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 9
+  ];
+  google.protobuf.Int32Value invalid_wkt_int32_example = 71 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 5,
+    (buf.validate.field).int32.example = 1
+  ];
+  google.protobuf.UInt32Value valid_wkt_uint32_example = 62 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 9
+  ];
+  google.protobuf.UInt32Value invalid_wkt_uint32_example = 63 [
+    (buf.validate.field).uint32.lt = 10,
+    (buf.validate.field).uint32.gt = 5,
+    (buf.validate.field).uint32.example = 1
+  ];
+  google.protobuf.UInt64Value valid_wkt_uint64_example = 78 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 9
+  ];
+  google.protobuf.UInt64Value invalid_wkt_uint64_example = 79 [
+    (buf.validate.field).uint64.lt = 10,
+    (buf.validate.field).uint64.gt = 5,
+    (buf.validate.field).uint64.example = 1
+  ];
+}

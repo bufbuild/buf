@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@ package bufcli
 
 import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 )
 
 // NewController returns a new Controller.
@@ -37,27 +39,34 @@ func NewController(
 	if err != nil {
 		return nil, err
 	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-	moduleDataProvider, err := newModuleDataProvider(container, clientProvider)
+	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
+	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
+	pluginClientProvider := bufregistryapiplugin.NewClientProvider(clientConfig)
+	moduleDataProvider, err := newModuleDataProvider(container, moduleClientProvider, ownerClientProvider)
 	if err != nil {
 		return nil, err
 	}
-	commitProvider, err := newCommitProvider(container, clientProvider)
+	commitProvider, err := newCommitProvider(container, moduleClientProvider, ownerClientProvider)
 	if err != nil {
 		return nil, err
 	}
-	wktStore, err := newWKTStore(container)
+	pluginDataProvider, err := newPluginDataProvider(container, pluginClientProvider)
+	if err != nil {
+		return nil, err
+	}
+	wktStore, err := NewWKTStore(container)
 	if err != nil {
 		return nil, err
 	}
 	return bufctl.NewController(
 		container.Logger(),
-		tracing.NewTracer(container.Tracer()),
 		container,
-		newGraphProvider(container, clientProvider),
-		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
+		newGraphProvider(container, moduleClientProvider, ownerClientProvider),
+		bufmoduleapi.NewModuleKeyProvider(container.Logger(), moduleClientProvider),
 		moduleDataProvider,
 		commitProvider,
+		bufpluginapi.NewPluginKeyProvider(container.Logger(), pluginClientProvider),
+		pluginDataProvider,
 		wktStore,
 		// TODO FUTURE: Delete defaultHTTPClient and use the one from newConfig
 		defaultHTTPClient,

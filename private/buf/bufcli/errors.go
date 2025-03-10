@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 var (
@@ -54,6 +54,12 @@ func NewLabelNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a label named %q already exists", name)
 }
 
+// NewPluginNameAlreadyExistsError informs the user that a plugin
+// with that name already exists.
+func NewPluginNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a plugin named %q already exists", name)
+}
+
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
@@ -72,20 +78,26 @@ func NewModuleNotFoundError(name string) error {
 	return fmt.Errorf(`a module named %q does not exist, use "buf registry module create" to create one`, name)
 }
 
-// NewModuleRefNotFoundError informs the user that a ModuleRef does not exist.
-func NewModuleRefNotFoundError(moduleRef bufmodule.ModuleRef) error {
-	return fmt.Errorf("%q does not exist", moduleRef)
+// NewRefNotFoundError informs the user that a Ref does not exist.
+func NewRefNotFoundError(ref bufparse.Ref) error {
+	return fmt.Errorf("%q does not exist", ref)
 }
 
-// NewLabelNotFoundError informs the user that a ModuleRef does not exist as a label.
-func NewLabelNotFoundError(moduleRef bufmodule.ModuleRef) error {
-	return fmt.Errorf("label %q does not exist", moduleRef)
+// NewLabelNotFoundError informs the user that a Ref does not exist as a label.
+func NewLabelNotFoundError(ref bufparse.Ref) error {
+	return fmt.Errorf("label %q does not exist", ref)
 }
 
 // NewTokenNotFoundError informs the user that a token with
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {
 	return fmt.Errorf("a token with ID %q does not exist", tokenID)
+}
+
+// NewPluginNotFoundError informs the user that a plugin with
+// that name does not exist.
+func NewPluginNotFoundError(name string) error {
+	return fmt.Errorf("a plugin named %q does not exist", name)
 }
 
 // NewInvalidRemoteError informs the user that the given remote is invalid.

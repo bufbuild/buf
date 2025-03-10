@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
 package protoencoding
 
 import (
+	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
+
+// EmptyResolver is a resolver that never resolves any descriptors. All methods will return (nil, NotFound).
+var EmptyResolver Resolver = emptyResolver{}
 
 // Resolver can resolve files, messages, enums, and extensions.
 type Resolver interface {
@@ -74,7 +77,7 @@ func NewWireMarshaler() Marshaler {
 // NewJSONMarshaler returns a new Marshaler for JSON.
 //
 // This has the potential to be unstable over time.
-// resolver can be nil if unknown and is only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
 	return newJSONMarshaler(resolver, options...)
 }
@@ -112,14 +115,14 @@ func JSONMarshalerWithEmitUnpopulated() JSONMarshalerOption {
 
 // NewTxtpbMarshaler returns a new Marshaler for txtpb.
 //
-// resolver can be nil if unknown and is only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewTxtpbMarshaler(resolver Resolver) Marshaler {
 	return newTxtpbMarshaler(resolver)
 }
 
 // NewYAMLMarshaler returns a new Marshaler for YAML.
 //
-// resolver can be nil if unknown and is only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshaler {
 	return newYAMLMarshaler(resolver, options...)
 }
@@ -162,14 +165,14 @@ type Unmarshaler interface {
 
 // NewWireUnmarshaler returns a new Unmarshaler for wire.
 //
-// resolver can be nil if unknown and are only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
 	return newWireUnmarshaler(resolver)
 }
 
 // NewJSONUnmarshaler returns a new Unmarshaler for json.
 //
-// resolver can be nil if unknown and are only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewJSONUnmarshaler(resolver Resolver, options ...JSONUnmarshalerOption) Unmarshaler {
 	return newJSONUnmarshaler(resolver, options...)
 }
@@ -186,7 +189,7 @@ func JSONUnmarshalerWithDisallowUnknown() JSONUnmarshalerOption {
 
 // NewTxtpbUnmarshaler returns a new Unmarshaler for txtpb.
 //
-// resolver can be nil if unknown and are only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewTxtpbUnmarshaler(resolver Resolver) Unmarshaler {
 	return newTxtpbUnmarshaler(resolver)
 }
@@ -209,7 +212,7 @@ func YAMLUnmarshalerWithValidator(validator protoyaml.Validator) YAMLUnmarshaler
 
 // NewYAMLUnmarshaler returns a new Unmarshaler for yaml.
 //
-// resolver can be nil if unknown and are only needed for extensions.
+// If the resolver is nil, EmptyResolver will be used.
 func NewYAMLUnmarshaler(resolver Resolver, options ...YAMLUnmarshalerOption) Unmarshaler {
 	return newYAMLUnmarshaler(resolver, options...)
 }

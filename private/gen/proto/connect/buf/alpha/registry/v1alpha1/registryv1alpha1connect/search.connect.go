@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,15 +59,6 @@ const (
 	SearchServiceSearchModuleContentProcedure = "/buf.alpha.registry.v1alpha1.SearchService/SearchModuleContent"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	searchServiceServiceDescriptor                   = v1alpha1.File_buf_alpha_registry_v1alpha1_search_proto.Services().ByName("SearchService")
-	searchServiceSearchMethodDescriptor              = searchServiceServiceDescriptor.Methods().ByName("Search")
-	searchServiceSearchTagMethodDescriptor           = searchServiceServiceDescriptor.Methods().ByName("SearchTag")
-	searchServiceSearchDraftMethodDescriptor         = searchServiceServiceDescriptor.Methods().ByName("SearchDraft")
-	searchServiceSearchModuleContentMethodDescriptor = searchServiceServiceDescriptor.Methods().ByName("SearchModuleContent")
-)
-
 // SearchServiceClient is a client for the buf.alpha.registry.v1alpha1.SearchService service.
 type SearchServiceClient interface {
 	// Search searches the BSR.
@@ -89,32 +80,33 @@ type SearchServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SearchServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	searchServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_search_proto.Services().ByName("SearchService").Methods()
 	return &searchServiceClient{
 		search: connect.NewClient[v1alpha1.SearchRequest, v1alpha1.SearchResponse](
 			httpClient,
 			baseURL+SearchServiceSearchProcedure,
-			connect.WithSchema(searchServiceSearchMethodDescriptor),
+			connect.WithSchema(searchServiceMethods.ByName("Search")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		searchTag: connect.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
 			httpClient,
 			baseURL+SearchServiceSearchTagProcedure,
-			connect.WithSchema(searchServiceSearchTagMethodDescriptor),
+			connect.WithSchema(searchServiceMethods.ByName("SearchTag")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		searchDraft: connect.NewClient[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse](
 			httpClient,
 			baseURL+SearchServiceSearchDraftProcedure,
-			connect.WithSchema(searchServiceSearchDraftMethodDescriptor),
+			connect.WithSchema(searchServiceMethods.ByName("SearchDraft")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		searchModuleContent: connect.NewClient[v1alpha1.SearchModuleContentRequest, v1alpha1.SearchModuleContentResponse](
 			httpClient,
 			baseURL+SearchServiceSearchModuleContentProcedure,
-			connect.WithSchema(searchServiceSearchModuleContentMethodDescriptor),
+			connect.WithSchema(searchServiceMethods.ByName("SearchModuleContent")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -168,31 +160,32 @@ type SearchServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	searchServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_search_proto.Services().ByName("SearchService").Methods()
 	searchServiceSearchHandler := connect.NewUnaryHandler(
 		SearchServiceSearchProcedure,
 		svc.Search,
-		connect.WithSchema(searchServiceSearchMethodDescriptor),
+		connect.WithSchema(searchServiceMethods.ByName("Search")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceSearchTagHandler := connect.NewUnaryHandler(
 		SearchServiceSearchTagProcedure,
 		svc.SearchTag,
-		connect.WithSchema(searchServiceSearchTagMethodDescriptor),
+		connect.WithSchema(searchServiceMethods.ByName("SearchTag")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceSearchDraftHandler := connect.NewUnaryHandler(
 		SearchServiceSearchDraftProcedure,
 		svc.SearchDraft,
-		connect.WithSchema(searchServiceSearchDraftMethodDescriptor),
+		connect.WithSchema(searchServiceMethods.ByName("SearchDraft")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceSearchModuleContentHandler := connect.NewUnaryHandler(
 		SearchServiceSearchModuleContentProcedure,
 		svc.SearchModuleContent,
-		connect.WithSchema(searchServiceSearchModuleContentMethodDescriptor),
+		connect.WithSchema(searchServiceMethods.ByName("SearchModuleContent")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

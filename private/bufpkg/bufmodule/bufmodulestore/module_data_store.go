@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,17 +19,19 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 var (
@@ -38,6 +40,7 @@ var (
 	externalModuleDataFilesDir     = "files"
 	externalModuleDataV1BufYAMLDir = "v1_buf_yaml"
 	externalModuleDataV1BufLockDir = "v1_buf_lock"
+	externalModuleDataLockFileExt  = ".lock"
 )
 
 // ModuleDatasResult is a result for a get of ModuleDatas.
@@ -54,9 +57,9 @@ type ModuleDatasResult interface {
 	isModuleDatasResult()
 }
 
-// ModuleStore reads and writes ModulesDatas.
+// ModuleDataStore reads and writes ModulesDatas.
 type ModuleDataStore interface {
-	// GetModuleDatasForModuleKey gets the ModuleDatas from the store for the ModuleKeys.
+	// GetModuleDatasForModuleKeys gets the ModuleDatas from the store for the ModuleKeys.
 	//
 	// Returns the found ModuleDatas, and the input ModuleKeys that were not found, each
 	// ordered by the order of the input ModuleKeys.
@@ -66,7 +69,7 @@ type ModuleDataStore interface {
 		err error,
 	)
 
-	// Put puts the ModuleDatas to the store.
+	// PutModuleDatas puts the ModuleDatas to the store.
 	PutModuleDatas(ctx context.Context, moduleDatas []bufmodule.ModuleData) error
 }
 
@@ -76,11 +79,12 @@ type ModuleDataStore interface {
 //
 // This is typically used to interact with a cache directory.
 func NewModuleDataStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
+	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) ModuleDataStore {
-	return newModuleDataStore(logger, bucket, options...)
+	return newModuleDataStore(logger, bucket, locker, options...)
 }
 
 // ModuleDataStoreOption is an option for a new ModuleDataStore.
@@ -99,20 +103,23 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	bucket storage.ReadWriteBucket
+	locker filelock.Locker
 
 	tar bool
 }
 
 func newModuleDataStore(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
+	locker filelock.Locker,
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
 	moduleDataStore := &moduleDataStore{
 		logger: logger,
 		bucket: bucket,
+		locker: locker,
 	}
 	for _, option := range options {
 		option(moduleDataStore)
@@ -129,9 +136,9 @@ func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	for _, moduleKey := range moduleKeys {
 		moduleData, err := p.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, nil, err
-			}
+			// Any error returned from getModuleDataForModuleKey means that no module data is read
+			// from the cache, and is treated as a cache miss so we can fetch new module data and
+			// repopulate the cache.
 			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
 		} else {
 			foundModuleDatas = append(foundModuleDatas, moduleData)
@@ -152,6 +159,31 @@ func (p *moduleDataStore) PutModuleDatas(
 	return nil
 }
 
+// getModuleDataForModuleKey reads the module data for the module key from the cache.
+//
+// If moduleDataStore is configured to store the module data as tarballs, then we read a
+// single tar for all module data stored under the module key.
+//
+// If moduleDataStore is configured to store module data as individual files, then it
+// takes the following steps to read the module data:
+//
+//  1. Acquire a shared lock on the module data lock file for the module key.
+//  2. Attempt to read the module.yaml file for the module key.
+//  3. If no valid module.yaml is present, then return an error and no data is read from
+//     the cache. The module.yaml is always written to the cache last, so we consider valid
+//     module data to be present if module.yaml is present.
+//  4. If a valid module.yaml is found, then attempt to read the module data files from the
+//     cache.
+//  5. If an error occurs while reading the files and/or an invalid config file is found,
+//     then no module data is read from the cache.
+//  6. Once all files have been read from the cache, release the shared lock on the module
+//     data lock file.
+//
+// It is important to note that when we read from the cache, we use the presence and contents
+// of module.yaml to determine if module data exists in the cache. If there is manual intervention
+// that corrupts the contents of the cache, but leaves module.yaml in-tact, then we read
+// the files as valid module data at this layer, and it fails tamper-proofing digest checks
+// when the module data is accessed.
 func (p *moduleDataStore) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
@@ -162,28 +194,58 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		moduleCacheBucket, err = p.getReadBucketForTar(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, p.deleteInvalidModuleData(ctx, moduleKey, err)
+				// If there is an error fetching the tar bucket that is not because the path does
+				// not exist, we assume this is corrupted and delete the tar.
+				tarPath, err := getModuleDataStoreTarPath(moduleKey)
+				if err != nil {
+					return nil, err
+				}
+				if err := p.bucket.Delete(ctx, tarPath); err != nil {
+					return nil, err
+				}
+				// Return a path error indicating the module data was not found
+				return nil, &fs.PathError{Op: "read", Path: tarPath, Err: fs.ErrNotExist}
 			}
 			return nil, err
 		}
 	} else {
-		moduleCacheBucket, err = p.getReadWriteBucketForDir(moduleKey)
-		// Not checking for fs.ErrNotExist. Function only returns error on actual system error.
+		dirPath, err := getModuleDataStoreDirPath(moduleKey)
 		if err != nil {
 			return nil, err
 		}
-	}
-	defer func() {
-		if retErr != nil {
-			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
+		p.logDebugModuleKey(
+			ctx,
+			moduleKey,
+			"module data store dir read write bucket",
+			slog.String("dirPath", dirPath),
+		)
+		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
+		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
+		if err != nil {
+			return nil, err
 		}
-	}()
+		// Acquire a shared lock for module data lock file for reading module data from the cache.
+		unlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			// Release lock on the module data lock file.
+			if err := unlocker.Unlock(); err != nil {
+				retErr = errors.Join(retErr, err)
+			}
+		}()
+	}
+	// Attempt to read module.yaml from cache. The module.yaml file is always written last,
+	// so if a valid module.yaml file is present, then we proceed to read the rest of the
+	// the module data.
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
+		ctx,
 		moduleKey,
 		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
-		zap.Bool("found", err == nil),
-		zap.Error(err),
+		slog.Bool("found", err == nil),
+		slogext.ErrorAttr(err),
 	)
 	if err != nil {
 		return nil, err
@@ -195,12 +257,14 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if !externalModuleData.isValid() {
 		return nil, fmt.Errorf("invalid %s from cache for %s: %+v", externalModuleDataFileName, moduleKey.String(), externalModuleData)
 	}
+	// A valid module.yaml was found, we proceed to reading module data.
+
 	// We don't want to do this lazily (or anything else in this function) as we want to
 	// make sure everything we have is valid before returning so we can auto-correct
 	// the cache if necessary.
-	declaredDepModuleKeys, err := slicesext.MapError(
+	depModuleKeys, err := slicesext.MapError(
 		externalModuleData.Deps,
-		getDeclaredDepModuleKeyForExternalModuleDataDep,
+		getDepModuleKeyForExternalModuleDataDep,
 	)
 	if err != nil {
 		return nil, err
@@ -252,7 +316,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			), nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
-			return declaredDepModuleKeys, nil
+			return depModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
 			return v1BufYAMLObjectData, nil
@@ -263,49 +327,32 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	), nil
 }
 
-func (p *moduleDataStore) deleteInvalidModuleData(
-	ctx context.Context,
-	moduleKey bufmodule.ModuleKey,
-	invalidErr error,
-) (retErr error) {
-	p.logDebugModuleKey(
-		moduleKey,
-		"module data store invalid module data",
-		zap.Error(invalidErr),
-	)
-	defer func() {
-		if retErr != nil {
-			// Do not return error, just log. We always returns a file not found error.
-			p.logDebugModuleKey(
-				moduleKey,
-				"module data store could not delete module data",
-				zap.Error(retErr),
-			)
-		}
-		// This will act as if the file is not found.
-		retErr = &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
-	}()
-
-	if p.tar {
-		tarPath, err := getModuleDataStoreTarPath(moduleKey)
-		if err != nil {
-			return err
-		}
-		return p.bucket.Delete(ctx, tarPath)
-	}
-	dirPath, err := getModuleDataStoreDirPath(moduleKey)
-	if err != nil {
-		return err
-	}
-	return p.bucket.DeleteAll(ctx, dirPath)
-}
-
+// putModuleData puts the module data into the module cache.
+//
+// If moduleDataStore is configured to store the module data as tarballs, then a single tar
+// for all module data is stored under the module key.
+//
+// If moduleDataStore is configured to store individual files, then it takes the following steps:
+//
+//  1. Acquire a shared lock on the module lock file for the module key.
+//  2. Attempt to read the module.yaml file to ensure that there is no valid module already
+//     stored in the cache. The module.yaml file is always written last in the cache, so if
+//     it is present, then valid module data is present, and no new module data is written.
+//  3. If no module.yaml is present, then we release the shared lock and acquire an exclusive
+//     lock on the module lock file for writing module data.
+//  4. Once the exclusive lock is acquired, we do another check to ensure that there is no
+//     module.yaml present. This is because the shared lock is not upgraded to an exclusive
+//     lock, we released the shared lock before acquiring the exclusive lock, so to ensure
+//     there are absolutely no race conditions, we do another check.
+//  5. Once we determine there is no module.yaml present, we proceed to writing the module
+//     data to the cache.
+//  6. We write the module.yaml after we've written all other module data files.
 func (p *moduleDataStore) putModuleData(
 	ctx context.Context,
 	moduleData bufmodule.ModuleData,
 ) (retErr error) {
 	moduleKey := moduleData.ModuleKey()
-	var moduleCacheBucket storage.WriteBucket
+	var moduleCacheBucket storage.ReadWriteBucket
 	var err error
 	if p.tar {
 		var callback func(ctx context.Context) error
@@ -313,16 +360,108 @@ func (p *moduleDataStore) putModuleData(
 		defer func() {
 			if retErr == nil {
 				// Only call the callback if we have had no error.
-				retErr = multierr.Append(retErr, callback(ctx))
+				retErr = errors.Join(retErr, callback(ctx))
 			}
 		}()
 	} else {
-		moduleCacheBucket, err = p.getReadWriteBucketForDir(moduleKey)
+		dirPath, err := getModuleDataStoreDirPath(moduleKey)
 		if err != nil {
 			return err
 		}
+		p.logDebugModuleKey(
+			ctx,
+			moduleKey,
+			"module data store dir read write bucket",
+			slog.String("dirPath", dirPath),
+		)
+		moduleCacheBucket = storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
+		moduleDataStoreDirLockPath, err := getModuleDataStoreDirLockPath(moduleKey)
+		if err != nil {
+			return err
+		}
+		// Acquire shared lock to check for a valid module.yaml before writing to the module cache.
+		readUnlocker, err := p.locker.RLock(ctx, moduleDataStoreDirLockPath)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if readUnlocker != nil {
+				if err := readUnlocker.Unlock(); err != nil {
+					retErr = errors.Join(retErr, err)
+				}
+			}
+		}()
+		data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
+		p.logDebugModuleKey(
+			ctx,
+			moduleKey,
+			fmt.Sprintf("module data store put read check %s", externalModuleDataFileName),
+			slog.Bool("found", err == nil),
+			slogext.ErrorAttr(err),
+		)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if err == nil {
+			var externalModuleData externalModuleData
+			if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
+				return err
+			}
+			// If a valid module.yaml is present, since module.yaml is always written last, we
+			// assume that there is valid module data, and we do not attempt to write new data here.
+			if externalModuleData.isValid() {
+				return nil
+			}
+		}
+		// Otherwise, release shared lock and set readUnlocker to nil in order to acquire an
+		// exclusive lock for writing module data to the cache. filelock does not allow us to
+		// upgrade the shared lock to an exclusive lock, so we need to release the shared lock
+		// before acquiring an exclusive lock.
+		if readUnlocker != nil {
+			err := readUnlocker.Unlock()
+			readUnlocker = nil // unset the readUnlocker since we are upgrading the lock
+			if err != nil {
+				return err
+			}
+		}
+		// Acquire exclusive lock on module lock file for writing module data to the cache.
+		unlocker, err := p.locker.Lock(ctx, moduleDataStoreDirLockPath)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := unlocker.Unlock(); err != nil {
+				retErr = errors.Join(retErr, err)
+			}
+		}()
+		// Before we start writing module data to the cache, we first check to see if module.yaml
+		// is present again after acquiring the exclusive lock.
+		// This is because the shared lock was released before acquiring the exclusive lock,
+		// and we need to make sure no valid module data was written in the interim.
+		data, err = storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
+		p.logDebugModuleKey(
+			ctx,
+			moduleKey,
+			fmt.Sprintf("module data store put check %s", externalModuleDataFileName),
+			slog.Bool("found", err == nil),
+			slogext.ErrorAttr(err),
+		)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if err == nil {
+			var externalModuleData externalModuleData
+			if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
+				return err
+			}
+			// If a valid module.yaml is present, then we do not overwrite with new data.
+			if externalModuleData.isValid() {
+				return nil
+			}
+		}
 	}
-	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
+	// Proceed to writing module data.
+	depModuleKeys, err := moduleData.DepModuleKeys()
 	if err != nil {
 		return err
 	}
@@ -337,7 +476,7 @@ func (p *moduleDataStore) putModuleData(
 			return err
 		}
 		externalModuleData.Deps[i] = externalModuleDataDep{
-			Name:   depModuleKey.ModuleFullName().String(),
+			Name:   depModuleKey.FullName().String(),
 			Commit: uuidutil.ToDashless(depModuleKey.CommitID()),
 			Digest: digest.String(),
 		}
@@ -351,7 +490,6 @@ func (p *moduleDataStore) putModuleData(
 		ctx,
 		filesBucket,
 		storage.MapWriteBucket(moduleCacheBucket, storage.MapOnPrefix(externalModuleDataFilesDir)),
-		storage.CopyWithAtomic(),
 	); err != nil {
 		return err
 	}
@@ -388,23 +526,13 @@ func (p *moduleDataStore) putModuleData(
 	// Put the module.yaml last, so that we only have a module.yaml if the cache is finished writing.
 	// We can use the existence of the module.yaml file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
-	return storage.PutPath(ctx, moduleCacheBucket, externalModuleDataFileName, data)
-}
-
-// Only returns error on actual system error.
-func (p *moduleDataStore) getReadWriteBucketForDir(
-	moduleKey bufmodule.ModuleKey,
-) (storage.ReadWriteBucket, error) {
-	dirPath, err := getModuleDataStoreDirPath(moduleKey)
-	if err != nil {
-		return nil, err
-	}
-	p.logDebugModuleKey(
-		moduleKey,
-		"module data store dir read write bucket",
-		zap.String("dirPath", dirPath),
+	return storage.PutPath(
+		ctx,
+		moduleCacheBucket,
+		externalModuleDataFileName,
+		data,
+		storage.PutWithAtomic(),
 	)
-	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath)), nil
 }
 
 // May return fs.ErrNotExist error if tar not found.
@@ -418,11 +546,12 @@ func (p *moduleDataStore) getReadBucketForTar(
 	}
 	defer func() {
 		p.logDebugModuleKey(
+			ctx,
 			moduleKey,
 			"module data store get tar read bucket",
-			zap.String("tarPath", tarPath),
-			zap.Bool("found", retErr == nil),
-			zap.Error(retErr),
+			slog.String("tarPath", tarPath),
+			slog.Bool("found", retErr == nil),
+			slog.Any("error", retErr),
 		)
 	}()
 	readObjectCloser, err := p.bucket.Get(ctx, tarPath)
@@ -430,7 +559,7 @@ func (p *moduleDataStore) getReadBucketForTar(
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObjectCloser.Close())
+		retErr = errors.Join(retErr, readObjectCloser.Close())
 	}()
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := storagearchive.Untar(
@@ -445,7 +574,7 @@ func (p *moduleDataStore) getReadBucketForTar(
 
 func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	moduleKey bufmodule.ModuleKey,
-) (storage.WriteBucket, func(context.Context) error) {
+) (storage.ReadWriteBucket, func(context.Context) error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	return readWriteBucket, func(ctx context.Context) (retErr error) {
 		tarPath, err := getModuleDataStoreTarPath(moduleKey)
@@ -454,11 +583,12 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 		}
 		defer func() {
 			p.logDebugModuleKey(
+				ctx,
 				moduleKey,
 				"module data store put tar to write bucket",
-				zap.String("tarPath", tarPath),
-				zap.Bool("found", retErr == nil),
-				zap.Error(retErr),
+				slog.String("tarPath", tarPath),
+				slog.Bool("found", retErr == nil),
+				slog.Any("error", retErr),
 			)
 		}()
 		writeObjectCloser, err := p.bucket.Put(
@@ -471,7 +601,7 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 			return err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			retErr = errors.Join(retErr, writeObjectCloser.Close())
 		}()
 		return storagearchive.Tar(
 			ctx,
@@ -481,8 +611,8 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	}
 }
 
-func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	logDebugModuleKey(p.logger, moduleKey, message, fields...)
+func (p *moduleDataStore) logDebugModuleKey(ctx context.Context, moduleKey bufmodule.ModuleKey, message string, fields ...any) {
+	logDebugModuleKey(ctx, p.logger, moduleKey, message, fields...)
 }
 
 // Returns the module's path within the store if storing individual files.
@@ -497,9 +627,9 @@ func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	}
 	return normalpath.Join(
 		digest.Type().String(),
-		moduleKey.ModuleFullName().Registry(),
-		moduleKey.ModuleFullName().Owner(),
-		moduleKey.ModuleFullName().Name(),
+		moduleKey.FullName().Registry(),
+		moduleKey.FullName().Owner(),
+		moduleKey.FullName().Name(),
 		uuidutil.ToDashless(moduleKey.CommitID()),
 	), nil
 }
@@ -516,18 +646,18 @@ func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	}
 	return normalpath.Join(
 		digest.Type().String(),
-		moduleKey.ModuleFullName().Registry(),
-		moduleKey.ModuleFullName().Owner(),
-		moduleKey.ModuleFullName().Name(),
+		moduleKey.FullName().Registry(),
+		moduleKey.FullName().Owner(),
+		moduleKey.FullName().Name(),
 		uuidutil.ToDashless(moduleKey.CommitID())+".tar",
 	), nil
 }
 
-func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) (bufmodule.ModuleKey, error) {
+func getDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) (bufmodule.ModuleKey, error) {
 	if dep.Name == "" {
 		return nil, errors.New("no module name specified")
 	}
-	moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
+	moduleFullName, err := bufparse.ParseFullName(dep.Name)
 	if err != nil {
 		return nil, fmt.Errorf("invalid module name: %w", err)
 	}
@@ -552,6 +682,14 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 			return digest, nil
 		},
 	)
+}
+
+func getModuleDataStoreDirLockPath(moduleKey bufmodule.ModuleKey) (string, error) {
+	moduleDataStoreDirPath, err := getModuleDataStoreDirPath(moduleKey)
+	if err != nil {
+		return "", err
+	}
+	return moduleDataStoreDirPath + externalModuleDataLockFileExt, nil
 }
 
 // externalModuleData is the store representation of a ModuleData.

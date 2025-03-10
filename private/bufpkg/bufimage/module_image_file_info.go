@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@ package bufimage
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/google/uuid"
 )
 
 type moduleImageFileInfo struct {
@@ -29,8 +30,8 @@ func newModuleImageFileInfo(fileInfo bufmodule.FileInfo) *moduleImageFileInfo {
 	}
 }
 
-func (p *moduleImageFileInfo) ModuleFullName() bufmodule.ModuleFullName {
-	return p.FileInfo.Module().ModuleFullName()
+func (p *moduleImageFileInfo) FullName() bufparse.FullName {
+	return p.FileInfo.Module().FullName()
 }
 
 func (p *moduleImageFileInfo) CommitID() uuid.UUID {

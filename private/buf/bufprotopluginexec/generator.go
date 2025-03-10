@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,34 +16,26 @@ package bufprotopluginexec
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
-	logger            *zap.Logger
-	tracer            tracing.Tracer
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
-	runner            command.Runner
 }
 
 func newGenerator(
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 ) *generator {
 	return &generator{
 		logger:            logger,
-		tracer:            tracer,
 		storageosProvider: storageosProvider,
-		runner:            runner,
 	}
 }
 
@@ -63,9 +55,8 @@ func (g *generator) Generate(
 		HandlerWithProtocPath(generateOptions.protocPath...),
 	}
 	handler, err := NewHandler(
+		g.logger,
 		g.storageosProvider,
-		g.runner,
-		g.tracer,
 		pluginName,
 		handlerOptions...,
 	)

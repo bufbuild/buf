@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 package bufmodule
 
-import "github.com/gofrs/uuid/v5"
+import "github.com/google/uuid"
 
 // RegistryCommitID is the pair of a Commit ID with the registry the commit belongs to.
 //
@@ -35,7 +35,7 @@ func NewRegistryCommitID(registry string, commitID uuid.UUID) RegistryCommitID {
 // ModuleKeyToRegistryCommitID converts the ModuleKey to a RegistryCommitID.
 func ModuleKeyToRegistryCommitID(moduleKey ModuleKey) RegistryCommitID {
 	return NewRegistryCommitID(
-		moduleKey.ModuleFullName().Registry(),
+		moduleKey.FullName().Registry(),
 		moduleKey.CommitID(),
 	)
 }

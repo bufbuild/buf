@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package ioext
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"sync"
-
-	"go.uber.org/multierr"
 )
 
 var (
@@ -37,7 +36,7 @@ var (
 // ReadAllAndClose reads all the data and then closes the ReadCloser.
 func ReadAllAndClose(readCloser io.ReadCloser) ([]byte, error) {
 	data, err := io.ReadAll(readCloser)
-	return data, multierr.Append(err, readCloser.Close())
+	return data, errors.Join(err, readCloser.Close())
 }
 
 // NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.
@@ -137,7 +136,7 @@ type chainCloser struct {
 func (c chainCloser) Close() error {
 	var err error
 	for _, closer := range c.closers {
-		err = multierr.Append(err, closer.Close())
+		err = errors.Join(err, closer.Close())
 	}
 	return err
 }

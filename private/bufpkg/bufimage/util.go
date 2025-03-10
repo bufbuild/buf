@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/bufbuild/protoplugin/protopluginutil"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -302,7 +303,7 @@ func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.Fi
 
 func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) {
 	var protoCommitID string
-	if !imageFile.CommitID().IsNil() {
+	if imageFile.CommitID() != uuid.Nil {
 		protoCommitID = uuidutil.ToDashless(imageFile.CommitID())
 	}
 	return fileDescriptorProtoToProtoImageFile(
@@ -310,7 +311,7 @@ func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) 
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
-		imageFile.ModuleFullName(),
+		imageFile.FullName(),
 		protoCommitID,
 	), nil
 }
@@ -320,27 +321,27 @@ func fileDescriptorProtoToProtoImageFile(
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	// Dashless
 	moduleProtoCommitID string,
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
 	if moduleFullName != nil {
-		protoModuleInfo = &imagev1.ModuleInfo{
-			Name: &imagev1.ModuleName{
+		protoModuleInfo = imagev1.ModuleInfo_builder{
+			Name: imagev1.ModuleName_builder{
 				Remote:     proto.String(moduleFullName.Registry()),
 				Owner:      proto.String(moduleFullName.Owner()),
 				Repository: proto.String(moduleFullName.Name()),
-			},
-		}
+			}.Build(),
+		}.Build()
 		if moduleProtoCommitID != "" {
-			protoModuleInfo.Commit = proto.String(moduleProtoCommitID)
+			protoModuleInfo.SetCommit(moduleProtoCommitID)
 		}
 	}
 	if len(unusedDependencyIndexes) == 0 {
 		unusedDependencyIndexes = nil
 	}
-	resultFile := &imagev1.ImageFile{
+	resultFile := imagev1.ImageFile_builder{
 		Name:             fileDescriptorProto.Name,
 		Package:          fileDescriptorProto.Package,
 		Syntax:           fileDescriptorProto.Syntax,
@@ -354,15 +355,15 @@ func fileDescriptorProtoToProtoImageFile(
 		Options:          fileDescriptorProto.GetOptions(),
 		SourceCodeInfo:   fileDescriptorProto.GetSourceCodeInfo(),
 		Edition:          fileDescriptorProto.Edition,
-		BufExtension: &imagev1.ImageFileExtension{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			// we might actually want to differentiate between unset and false
 			IsImport: proto.Bool(isImport),
 			// we might actually want to differentiate between unset and false
 			IsSyntaxUnspecified: proto.Bool(isSyntaxUnspecified),
 			UnusedDependency:    unusedDependencyIndexes,
 			ModuleInfo:          protoModuleInfo,
-		},
-	}
+		}.Build(),
+	}.Build()
 	resultFile.ProtoReflect().SetUnknown(stripBufExtensionField(fileDescriptorProto.ProtoReflect().GetUnknown()))
 	return resultFile
 }

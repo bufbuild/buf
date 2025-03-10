@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ package githubtesting
 import (
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"sync"
@@ -27,8 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 // since we are in testing, we care less about making sure this times out early
@@ -37,14 +37,14 @@ import (
 const filelockTimeout = 10 * time.Second
 
 type archiveReader struct {
-	logger            *zap.Logger
+	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	httpClient        *http.Client
 	lock              sync.Mutex
 }
 
 func newArchiveReader(
-	logger *zap.Logger,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 ) *archiveReader {
@@ -77,7 +77,7 @@ func (a *archiveReader) GetArchive(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, unlocker.Unlock())
+		retErr = errors.Join(retErr, unlocker.Unlock())
 	}()
 
 	// check if already exists, if so, do nothing
@@ -102,7 +102,7 @@ func (a *archiveReader) GetArchive(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
+		retErr = errors.Join(retErr, response.Body.Close())
 	}()
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
@@ -112,7 +112,7 @@ func (a *archiveReader) GetArchive(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, gzipReader.Close())
+		retErr = errors.Join(retErr, gzipReader.Close())
 	}()
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
 		return err

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 const (
 	// ModuleVisibilityPublic says the Module is public on the registry.
 	ModuleVisibilityPublic = iota + 1
-	// ModuleVisibilityPublic says the Module is private on the registry.
+	// ModuleVisibilityPrivate says the Module is private on the registry.
 	ModuleVisibilityPrivate
 )
 

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,37 +16,38 @@ package interrupt
 
 import (
 	"context"
-	"os"
 	"os/signal"
 )
 
-var signals = append(
-	[]os.Signal{
-		os.Interrupt,
-	},
-	extraSignals...,
-)
-
-// WithCancel returns a context that is cancelled if interrupt signals are sent.
-func WithCancel(ctx context.Context) (context.Context, context.CancelFunc) {
-	signalC, closer := NewSignalChannel()
-	ctx, cancel := context.WithCancel(ctx)
+// Handle returns a copy of the parent [context.Context] that is marked done
+// when an interrupt signal arrives or when the parent Context's Done channel
+// is closed, whichever happens first.
+//
+// Signal handling is unregistered automatically by this function when the
+// first interrupt signal arrives, which will restore the default interrupt
+// signal behavior of Go programs (to exit).
+//
+// In effect, this function is functionally equivalent to:
+//
+//	ctx, cancel := signal.NotifyContext(ctx, interrupt.Signals...)
+//	go func() {
+//	  <-ctx.Done()
+//	  cancel()
+//	}()
+//
+// Most programs should wrap their contexts using this function to enable interrupt
+// signal handling. The first interrupt signal will result in the context's Done
+// channel closing. The second interrupt signal will result in the program exiting.
+//
+//	func main() {
+//	  ctx := interrupt.Handle(context.Background())
+//	  ...
+//	}
+func Handle(ctx context.Context) context.Context {
+	ctx, cancel := signal.NotifyContext(ctx, Signals...)
 	go func() {
-		<-signalC
-		closer()
+		<-ctx.Done()
 		cancel()
 	}()
-	return ctx, cancel
-}
-
-// NewSignalChannel returns a new channel for interrupt signals.
-//
-// Call the returned function to cancel sending to this channel.
-func NewSignalChannel() (<-chan os.Signal, func()) {
-	signalC := make(chan os.Signal, 1)
-	signal.Notify(signalC, signals...)
-	return signalC, func() {
-		signal.Stop(signalC)
-		close(signalC)
-	}
+	return ctx
 }

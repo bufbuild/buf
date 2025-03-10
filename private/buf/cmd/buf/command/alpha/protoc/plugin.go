@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,15 +17,13 @@ package protoc
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -44,10 +42,8 @@ func newPluginInfo() *pluginInfo {
 
 func executePlugin(
 	ctx context.Context,
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	storageosProvider storageos.Provider,
-	runner command.Runner,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,
@@ -55,9 +51,7 @@ func executePlugin(
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	generator := bufprotopluginexec.NewGenerator(
 		logger,
-		tracer,
 		storageosProvider,
-		runner,
 	)
 	requests, err := bufimage.ImagesToCodeGeneratorRequests(
 		images,

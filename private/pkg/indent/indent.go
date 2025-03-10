@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ type Printer interface {
 	In()
 	// Out unindents by one.
 	Out()
-	// String gets the resulting string represntation.
+	// String gets the resulting string representation.
 	//
 	// Returns error if there was an error during printing.
 	String() (string, error)

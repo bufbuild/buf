@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@ package buftarget
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 // BucketTargeting provides targeting information for the bucket based on any controlling
 // workspaces that have been found.
 type BucketTargeting interface {
-	// ControllingWorkpsace returns the information for the controlling workspace, if one was
+	// ControllingWorkspace returns the information for the controlling workspace, if one was
 	// found. If not found, then this will be nil.
 	ControllingWorkspace() ControllingWorkspace
 	// SubDirPath returns the input directory relative to the controlling workspace, if one
 	// was found, otherwise it is relative to the root of the bucket
 	SubDirPath() string
-	// TargetPaths returns the target paths relative to the controlling workpsace, if one was
+	// TargetPaths returns the target paths relative to the controlling workspace, if one was
 	// found, otherwise it is relative to the root of the bucket.
 	TargetPaths() []string
 	// TargetExcludePaths returns the target exclude paths relative to the controlling
@@ -52,7 +52,7 @@ type BucketTargeting interface {
 // Otherwise, the input dir, target paths, and target exclude paths are returned as-is.
 func NewBucketTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	subDirPath string,
 	targetPaths []string,
@@ -83,7 +83,7 @@ type bucketTargeting struct {
 
 func newBucketTargeting(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	subDirPath string,
 	targetPaths []string,
@@ -161,7 +161,7 @@ func (*bucketTargeting) isBucketTargeting() {}
 // controlling workspace and mapped path.
 func mapControllingWorkspaceAndPath(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	bucket storage.ReadBucket,
 	path string,
 	terminateFunc TerminateFunc,
@@ -190,10 +190,11 @@ func mapControllingWorkspaceAndPath(
 			return nil, "", err
 		}
 		if controllingWorkspace != nil {
-			logger.Debug(
+			logger.DebugContext(
+				ctx,
 				"buffetch termination found",
-				zap.String("curDirPath", curDirPath),
-				zap.String("path", path),
+				slog.String("curDirPath", curDirPath),
+				slog.String("path", path),
 			)
 			subDirPath, err := normalpath.Rel(curDirPath, path)
 			if err != nil {
@@ -206,9 +207,10 @@ func mapControllingWorkspaceAndPath(
 		}
 		curDirPath = normalpath.Dir(curDirPath)
 	}
-	logger.Debug(
+	logger.DebugContext(
+		ctx,
 		"buffetch no termination found",
-		zap.String("path", path),
+		slog.String("path", path),
 	)
 	// No controlling workspace is found, we simply return the input dir
 	return nil, path, nil

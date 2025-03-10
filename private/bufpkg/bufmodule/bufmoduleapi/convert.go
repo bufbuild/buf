@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,10 +23,11 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -211,12 +212,12 @@ func commitIDsToV1Beta1ProtoResourceRefs(commitIDs []uuid.UUID) []*modulev1beta1
 	return slicesext.Map(commitIDs, commitIDToV1Beta1ProtoResourceRef)
 }
 
-func moduleRefToV1ProtoResourceRef(moduleRef bufmodule.ModuleRef) *modulev1.ResourceRef {
+func moduleRefToV1ProtoResourceRef(moduleRef bufparse.Ref) *modulev1.ResourceRef {
 	return &modulev1.ResourceRef{
 		Value: &modulev1.ResourceRef_Name_{
 			Name: &modulev1.ResourceRef_Name{
-				Owner:  moduleRef.ModuleFullName().Owner(),
-				Module: moduleRef.ModuleFullName().Name(),
+				Owner:  moduleRef.FullName().Owner(),
+				Module: moduleRef.FullName().Name(),
 				Child: &modulev1.ResourceRef_Name_Ref{
 					Ref: moduleRef.Ref(),
 				},
@@ -225,16 +226,16 @@ func moduleRefToV1ProtoResourceRef(moduleRef bufmodule.ModuleRef) *modulev1.Reso
 	}
 }
 
-func moduleRefsToV1ProtoResourceRefs(moduleRefs []bufmodule.ModuleRef) []*modulev1.ResourceRef {
+func moduleRefsToV1ProtoResourceRefs(moduleRefs []bufparse.Ref) []*modulev1.ResourceRef {
 	return slicesext.Map(moduleRefs, moduleRefToV1ProtoResourceRef)
 }
 
-func moduleRefToV1Beta1ProtoResourceRef(moduleRef bufmodule.ModuleRef) *modulev1beta1.ResourceRef {
+func moduleRefToV1Beta1ProtoResourceRef(moduleRef bufparse.Ref) *modulev1beta1.ResourceRef {
 	return &modulev1beta1.ResourceRef{
 		Value: &modulev1beta1.ResourceRef_Name_{
 			Name: &modulev1beta1.ResourceRef_Name{
-				Owner:  moduleRef.ModuleFullName().Owner(),
-				Module: moduleRef.ModuleFullName().Name(),
+				Owner:  moduleRef.FullName().Owner(),
+				Module: moduleRef.FullName().Name(),
 				Child: &modulev1beta1.ResourceRef_Name_Ref{
 					Ref: moduleRef.Ref(),
 				},
@@ -243,7 +244,7 @@ func moduleRefToV1Beta1ProtoResourceRef(moduleRef bufmodule.ModuleRef) *modulev1
 	}
 }
 
-func moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs []bufmodule.ModuleRef) []*modulev1beta1.ResourceRef {
+func moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs []bufparse.Ref) []*modulev1beta1.ResourceRef {
 	return slicesext.Map(moduleRefs, moduleRefToV1Beta1ProtoResourceRef)
 }
 

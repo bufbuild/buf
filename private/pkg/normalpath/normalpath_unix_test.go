@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -230,8 +230,8 @@ func TestStripComponents(t *testing.T) {
 	testStripComponents(t, 5, "", false, "foo/bar/baz/bat")
 }
 
-func testStripComponents(t *testing.T, count int, expected string, expectedOK bool, path string) {
-	actual, ok := StripComponents(path, uint32(count))
+func testStripComponents(t *testing.T, count uint32, expected string, expectedOK bool, path string) {
+	actual, ok := StripComponents(path, count)
 	assert.Equal(t, expectedOK, ok)
 	assert.Equal(t, expected, actual)
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 type universalProtoContent struct {
@@ -68,9 +68,9 @@ func newUniversalProtoContentForV1Beta1(v1beta1ProtoContent *modulev1beta1.Downl
 
 func getUniversalProtoContentsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider interface {
-		bufapi.V1DownloadServiceClientProvider
-		bufapi.V1Beta1DownloadServiceClientProvider
+	moduleClientProvider interface {
+		bufregistryapimodule.V1DownloadServiceClientProvider
+		bufregistryapimodule.V1Beta1DownloadServiceClientProvider
 	},
 	registry string,
 	commitIDs []uuid.UUID,
@@ -79,14 +79,14 @@ func getUniversalProtoContentsForRegistryAndCommitIDs(
 	switch digestType {
 	case bufmodule.DigestTypeB4:
 		v1beta1ProtoResourceRefs := commitIDsToV1Beta1ProtoResourceRefs(commitIDs)
-		v1beta1ProtoContents, err := getV1Beta1ProtoContentsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
+		v1beta1ProtoContents, err := getV1Beta1ProtoContentsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.Map(v1beta1ProtoContents, newUniversalProtoContentForV1Beta1), nil
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
-		v1ProtoContents, err := getV1ProtoContentsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
+		v1ProtoContents, err := getV1ProtoContentsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
@@ -98,11 +98,11 @@ func getUniversalProtoContentsForRegistryAndCommitIDs(
 
 func getV1ProtoContentsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufapi.V1DownloadServiceClientProvider,
+	moduleClientProvider bufregistryapimodule.V1DownloadServiceClientProvider,
 	registry string,
 	v1ProtoResourceRefs []*modulev1.ResourceRef,
 ) ([]*modulev1.DownloadResponse_Content, error) {
-	response, err := clientProvider.V1DownloadServiceClient(registry).Download(
+	response, err := moduleClientProvider.V1DownloadServiceClient(registry).Download(
 		ctx,
 		connect.NewRequest(
 			&modulev1.DownloadRequest{
@@ -129,7 +129,7 @@ func getV1ProtoContentsForRegistryAndResourceRefs(
 
 func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 	ctx context.Context,
-	clientProvider bufapi.V1Beta1DownloadServiceClientProvider,
+	moduleClientProvider bufregistryapimodule.V1Beta1DownloadServiceClientProvider,
 	registry string,
 	v1beta1ProtoResourceRefs []*modulev1beta1.ResourceRef,
 	digestType bufmodule.DigestType,
@@ -138,7 +138,7 @@ func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 	if err != nil {
 		return nil, err
 	}
-	response, err := clientProvider.V1Beta1DownloadServiceClient(registry).Download(
+	response, err := moduleClientProvider.V1Beta1DownloadServiceClient(registry).Download(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{

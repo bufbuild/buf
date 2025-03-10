@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 type wellKnownTypeImageFileInfo struct {
@@ -38,7 +38,7 @@ func newWellKnownTypeImageFileInfo(
 	}
 }
 
-func (p *wellKnownTypeImageFileInfo) ModuleFullName() bufmodule.ModuleFullName {
+func (p *wellKnownTypeImageFileInfo) FullName() bufparse.FullName {
 	return nil
 }
 

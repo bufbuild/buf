@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package buffetch
 import (
 	"context"
 	"io"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.uber.org/zap"
 )
 
 type writer struct {
@@ -28,7 +28,7 @@ type writer struct {
 }
 
 func newWriter(
-	logger *zap.Logger,
+	logger *slog.Logger,
 ) *writer {
 	return &writer{
 		internalWriter: internal.NewWriter(

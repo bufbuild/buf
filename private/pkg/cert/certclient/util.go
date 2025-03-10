@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ func WithRootCertFilePaths(rootCertFilePaths ...string) TLSOption {
 	}
 }
 
-// NewClientTLScreates a new tls.Config from a root certificate files.
+// NewClientTLS creates a new tls.Config from a root certificate files.
 func NewClientTLS(options ...TLSOption) (*tls.Config, error) {
 	opts := &tlsOptions{}
 	for _, opt := range options {

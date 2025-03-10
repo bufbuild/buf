@@ -1,0 +1,26 @@
+syntax = "proto2";
+
+package custom;
+
+import "buf/validate/validate.proto";
+
+extend buf.validate.StringRules {
+   optional string special_suffix = 1800 [(buf.validate.predefined).cel = {
+    id: "string.special_suffix"
+    expression: "!this.endsWith(rule + '_') ? \'value does not have suffix `%s`\'.format([rule + '_']) : \'\'"
+  }];
+
+  optional string bad_rule = 1900 [(buf.validate.predefined).cel = {
+    id: "string.bad_rule"
+    expression: "bad"
+    message: "this rule does not compile"
+  }];
+}
+
+extend buf.validate.Int32Rules {
+  repeated int32 abs_not_in = 1800 [(buf.validate.predefined).cel = {
+    id: "int32.abs_not_in"
+    expression: "!(this in rule || this in rule.map(n, -n))"
+    message: "value must be in absolute value of list"
+  }];
+}

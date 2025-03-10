@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 
 // ObjectInfo is an embeddable ObjectInfo.
 //
-// This is intentially static and should not be modifiable.
+// This is intentionally static and should not be modifiable.
 // If constructing an object, do not use an ObjectInfo to build it.
 type ObjectInfo struct {
 	path         string

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -449,7 +449,7 @@ func modifyJavaStringCheckUtf8(
 	)
 }
 
-func modifyOptmizeFor(
+func modifyOptimizeFor(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,

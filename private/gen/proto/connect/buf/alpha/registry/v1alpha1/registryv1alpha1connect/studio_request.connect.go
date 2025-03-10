@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,15 +61,6 @@ const (
 	StudioRequestServiceListStudioRequestsProcedure = "/buf.alpha.registry.v1alpha1.StudioRequestService/ListStudioRequests"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	studioRequestServiceServiceDescriptor                   = v1alpha1.File_buf_alpha_registry_v1alpha1_studio_request_proto.Services().ByName("StudioRequestService")
-	studioRequestServiceCreateStudioRequestMethodDescriptor = studioRequestServiceServiceDescriptor.Methods().ByName("CreateStudioRequest")
-	studioRequestServiceRenameStudioRequestMethodDescriptor = studioRequestServiceServiceDescriptor.Methods().ByName("RenameStudioRequest")
-	studioRequestServiceDeleteStudioRequestMethodDescriptor = studioRequestServiceServiceDescriptor.Methods().ByName("DeleteStudioRequest")
-	studioRequestServiceListStudioRequestsMethodDescriptor  = studioRequestServiceServiceDescriptor.Methods().ByName("ListStudioRequests")
-)
-
 // StudioRequestServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioRequestService
 // service.
 type StudioRequestServiceClient interface {
@@ -95,30 +86,31 @@ type StudioRequestServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewStudioRequestServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) StudioRequestServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	studioRequestServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_studio_request_proto.Services().ByName("StudioRequestService").Methods()
 	return &studioRequestServiceClient{
 		createStudioRequest: connect.NewClient[v1alpha1.CreateStudioRequestRequest, v1alpha1.CreateStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceCreateStudioRequestProcedure,
-			connect.WithSchema(studioRequestServiceCreateStudioRequestMethodDescriptor),
+			connect.WithSchema(studioRequestServiceMethods.ByName("CreateStudioRequest")),
 			connect.WithClientOptions(opts...),
 		),
 		renameStudioRequest: connect.NewClient[v1alpha1.RenameStudioRequestRequest, v1alpha1.RenameStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceRenameStudioRequestProcedure,
-			connect.WithSchema(studioRequestServiceRenameStudioRequestMethodDescriptor),
+			connect.WithSchema(studioRequestServiceMethods.ByName("RenameStudioRequest")),
 			connect.WithClientOptions(opts...),
 		),
 		deleteStudioRequest: connect.NewClient[v1alpha1.DeleteStudioRequestRequest, v1alpha1.DeleteStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceDeleteStudioRequestProcedure,
-			connect.WithSchema(studioRequestServiceDeleteStudioRequestMethodDescriptor),
+			connect.WithSchema(studioRequestServiceMethods.ByName("DeleteStudioRequest")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		listStudioRequests: connect.NewClient[v1alpha1.ListStudioRequestsRequest, v1alpha1.ListStudioRequestsResponse](
 			httpClient,
 			baseURL+StudioRequestServiceListStudioRequestsProcedure,
-			connect.WithSchema(studioRequestServiceListStudioRequestsMethodDescriptor),
+			connect.WithSchema(studioRequestServiceMethods.ByName("ListStudioRequests")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -174,29 +166,30 @@ type StudioRequestServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewStudioRequestServiceHandler(svc StudioRequestServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	studioRequestServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_studio_request_proto.Services().ByName("StudioRequestService").Methods()
 	studioRequestServiceCreateStudioRequestHandler := connect.NewUnaryHandler(
 		StudioRequestServiceCreateStudioRequestProcedure,
 		svc.CreateStudioRequest,
-		connect.WithSchema(studioRequestServiceCreateStudioRequestMethodDescriptor),
+		connect.WithSchema(studioRequestServiceMethods.ByName("CreateStudioRequest")),
 		connect.WithHandlerOptions(opts...),
 	)
 	studioRequestServiceRenameStudioRequestHandler := connect.NewUnaryHandler(
 		StudioRequestServiceRenameStudioRequestProcedure,
 		svc.RenameStudioRequest,
-		connect.WithSchema(studioRequestServiceRenameStudioRequestMethodDescriptor),
+		connect.WithSchema(studioRequestServiceMethods.ByName("RenameStudioRequest")),
 		connect.WithHandlerOptions(opts...),
 	)
 	studioRequestServiceDeleteStudioRequestHandler := connect.NewUnaryHandler(
 		StudioRequestServiceDeleteStudioRequestProcedure,
 		svc.DeleteStudioRequest,
-		connect.WithSchema(studioRequestServiceDeleteStudioRequestMethodDescriptor),
+		connect.WithSchema(studioRequestServiceMethods.ByName("DeleteStudioRequest")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	studioRequestServiceListStudioRequestsHandler := connect.NewUnaryHandler(
 		StudioRequestServiceListStudioRequestsProcedure,
 		svc.ListStudioRequests,
-		connect.WithSchema(studioRequestServiceListStudioRequestsMethodDescriptor),
+		connect.WithSchema(studioRequestServiceMethods.ByName("ListStudioRequests")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

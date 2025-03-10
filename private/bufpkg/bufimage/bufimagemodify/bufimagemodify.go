@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ func Modify(
 			modifyJavaPackage,
 			modifyJavaStringCheckUtf8,
 			modifyObjcClassPrefix,
-			modifyOptmizeFor,
+			modifyOptimizeFor,
 			modifyPhpMetadataNamespace,
 			modifyPhpNamespace,
 			modifyRubyPackage,
@@ -205,8 +205,8 @@ func ModifyJavaStringCheckUtf8(
 	)
 }
 
-// ModifyOptmizeFor modifies the optimize_for file option.
-func ModifyOptmizeFor(
+// ModifyOptimizeFor modifies the optimize_for file option.
+func ModifyOptimizeFor(
 	image bufimage.Image,
 	config bufconfig.GenerateManagedConfig,
 	options ...ModifyOption,
@@ -214,7 +214,7 @@ func ModifyOptmizeFor(
 	return modifyImageForSingleOption(
 		image,
 		config,
-		modifyOptmizeFor,
+		modifyOptimizeFor,
 		options...,
 	)
 }

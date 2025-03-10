@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -33,7 +33,7 @@ import (
 func NewImageFile(
 	t testing.TB,
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commit uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -63,14 +63,14 @@ func NewProtoImageFile(
 	path string,
 	importPaths ...string,
 ) *imagev1.ImageFile {
-	return &imagev1.ImageFile{
+	return imagev1.ImageFile_builder{
 		Name:       proto.String(path),
 		Dependency: importPaths,
-		BufExtension: &imagev1.ImageFileExtension{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			IsImport:            proto.Bool(false),
 			IsSyntaxUnspecified: proto.Bool(false),
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 // NewProtoImageFileIsImport returns a new *imagev1.ImageFile for testing that is an import.
@@ -81,14 +81,14 @@ func NewProtoImageFileIsImport(
 	path string,
 	importPaths ...string,
 ) *imagev1.ImageFile {
-	return &imagev1.ImageFile{
+	return imagev1.ImageFile_builder{
 		Name:       proto.String(path),
 		Dependency: importPaths,
-		BufExtension: &imagev1.ImageFileExtension{
+		BufExtension: imagev1.ImageFileExtension_builder{
 			IsImport:            proto.Bool(true),
 			IsSyntaxUnspecified: proto.Bool(false),
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 // AssertImageFilesEqual asserts the expected ImageFiles equal the actual ImageFiles.
@@ -108,7 +108,7 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.FileDescriptorProto().GetName(),
 				imageFile.FileDescriptorProto().GetDependency()...,
 			),
-			imageFile.ModuleFullName(),
+			imageFile.FullName(),
 			imageFile.CommitID(),
 			imageFile.ExternalPath(),
 			imageFile.LocalPath(),

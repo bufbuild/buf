@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
@@ -36,20 +35,18 @@ func TestCompareGoogleapis(t *testing.T) {
 	// code infos that protoc does not
 	image := testBuildGoogleapis(t, false)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
-	runner := command.NewRunner()
-	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, runner, false)
+	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, false)
 	prototesting.AssertFileDescriptorSetsEqual(
 		t,
-		runner,
 		fileDescriptorSet,
 		actualProtocFileDescriptorSet,
 	)
 }
 
-func testBuildActualProtocGoogleapis(t *testing.T, runner command.Runner, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
+func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 0)
-	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, runner, true, includeSourceInfo, googleapisDirPath, filePaths)
+	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath, filePaths)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
 
 	return fileDescriptorSet

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -42,8 +42,8 @@ const (
 )
 
 var (
-	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
-	allVisibiltyStrings = []string{
+	// allVisibilityStrings are the possible options that a user can set the visibility flag with.
+	allVisibilityStrings = []string{
 		publicVisibility,
 		privateVisibility,
 	}
@@ -153,7 +153,7 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, empty
 		addr,
 		flagName,
 		defaultVisibility,
-		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibilityStrings)),
 	)
 }
 
@@ -164,7 +164,7 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 		addr,
 		flagName,
 		privateVisibility,
-		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibilityStrings)),
 	)
 }
 
@@ -179,7 +179,7 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	)
 }
 
-// Binds a string pointer flag, which indicates flag presence, i.e. `--flag ""` is not the same as not passing the flag.
+// BindStringPointer binds a string pointer flag, which indicates flag presence, i.e. `--flag ""` is not the same as not passing the flag.
 //
 // This is useful for buf registry organization/module update, where we only modify the fields specified.
 //
@@ -303,8 +303,23 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (modulev1.Mod
 	}
 }
 
-// ArchiveStatusFlagToArchiveStatusFilter parses the given string as a modulev1.ListLabelsRequest_ArchiveFilter.
-func ArchiveStatusFlagToArchiveStatusFilter(archiveStatus string) (modulev1.ListLabelsRequest_ArchiveFilter, error) {
+// VisibilityFlagToPluginVisibilityAllowUnspecified parses the given string as a pluginv1.PluginVisibility
+// where an empty string will be parsed as unspecified.
+func VisibilityFlagToPluginVisibilityAllowUnspecified(visibility string) (pluginv1beta1.PluginVisibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_PRIVATE, nil
+	case "":
+		return pluginv1beta1.PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s", visibility)
+	}
+}
+
+// ArchiveStatusFlagToModuleArchiveStatusFilter parses the given string as a modulev1.ListLabelsRequest_ArchiveFilter.
+func ArchiveStatusFlagToModuleArchiveStatusFilter(archiveStatus string) (modulev1.ListLabelsRequest_ArchiveFilter, error) {
 	switch archiveStatus {
 	case archivedArchiveStatus:
 		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_ARCHIVED_ONLY, nil
@@ -312,6 +327,20 @@ func ArchiveStatusFlagToArchiveStatusFilter(archiveStatus string) (modulev1.List
 		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
 	case allArchiveStatus:
 		return modulev1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
+	default:
+		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
+	}
+}
+
+// ArchiveStatusFlagToPluginArchiveStatusFilter parses the given string as a pluginv1beta1.ListLabelsRequest_ArchiveFilter.
+func ArchiveStatusFlagToPluginArchiveStatusFilter(archiveStatus string) (pluginv1beta1.ListLabelsRequest_ArchiveFilter, error) {
+	switch archiveStatus {
+	case archivedArchiveStatus:
+		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ARCHIVED_ONLY, nil
+	case unarchivedArchiveStatus:
+		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
+	case allArchiveStatus:
+		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
 	default:
 		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
 	}
@@ -328,7 +357,7 @@ func ValidateRequiredFlag[T comparable](flagName string, value T) error {
 
 // ValidateErrorFormatFlagLint validates the error format flag for lint.
 func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
-	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
+	return validateErrorFormatFlag(AllLintFormatStrings, errorFormatString, errorFormatFlagName)
 }
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {

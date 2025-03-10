@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ func run(
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+		return appcmd.WrapInvalidArgumentError(err)
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -113,11 +113,11 @@ func run(
 	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	resp, err := service.ListTokens(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.ListTokensRequest{
+		connect.NewRequest(registryv1alpha1.ListTokensRequest_builder{
 			PageSize:  flags.PageSize,
 			PageToken: flags.PageToken,
 			Reverse:   flags.Reverse,
-		}),
+		}.Build()),
 	)
 	if err != nil {
 		return err
@@ -128,5 +128,5 @@ func run(
 	}
 	// TODO: flag docs say "next_token" field will be present in the output,
 	//  for paging through results but we are actually ignoring that field now.
-	return printer.PrintTokens(ctx, resp.Msg.Tokens...)
+	return printer.PrintTokens(ctx, resp.Msg.GetTokens()...)
 }

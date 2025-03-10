@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,10 +88,11 @@ func FileAnnotationForErrorWithPos(
 		endColumn,
 		typeString,
 		message,
+		"",
 	), nil
 }
 
-// FileAnnotationSetForErrorWithPos returns new FileAnnotations for the ErrorsWithPos.
+// FileAnnotationSetForErrorsWithPos returns new FileAnnotations for the ErrorsWithPos.
 //
 // This special-cases fs.PathErrors if there is FileInfo information. We know that if there
 // is FileInfo information, and there is a fs.PathError, this can only happen due to import

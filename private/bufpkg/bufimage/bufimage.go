@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,14 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"math"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -30,9 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -45,18 +48,18 @@ import (
 type ImageFileInfo interface {
 	storage.ObjectInfo
 
-	// ModuleFullName returns the full name of the Module that this ImageFile came from,
+	// FullName returns the full name of the Module that this ImageFile came from,
 	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message),
-	// and if the ModuleFullName was known.
+	// and if the FullName was known.
 	//
 	// May be nil. Callers should not rely on this value being present.
-	ModuleFullName() bufmodule.ModuleFullName
+	FullName() bufparse.FullName
 	// CommitID returns the BSR ID of the Commit of the Module that this ImageFile came from.
 	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
 	// if the CommitID was known..
 	//
-	// May be empty, that is CommitID().IsNil() may be true. Callers should not rely on this
-	// value being present. If ModuleFullName is nil, this will always be empty.
+	// May be empty, that is CommitID() == uuid.Nil may be true. Callers should not rely on this
+	// value being present. If FullName is nil, this will always be empty.
 	CommitID() uuid.UUID
 	// Imports returns the imports for this ImageFile.
 	Imports() ([]string, error)
@@ -180,7 +183,7 @@ type ImageFile interface {
 // TODO FUTURE: moduleFullName and commitID should be options since they are optional.
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleFullName bufmodule.ModuleFullName,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	externalPath string,
 	localPath string,
@@ -212,7 +215,7 @@ func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
 	// No need to validate as ImageFile is already validated.
 	return newImageFileNoValidate(
 		imageFile.FileDescriptorProto(),
-		imageFile.ModuleFullName(),
+		imageFile.FullName(),
 		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.LocalPath(),
@@ -229,7 +232,7 @@ type Image interface {
 	// This contains all files, including imports if available.
 	// The returned files are in correct DAG order.
 	//
-	// All files that have the same ModuleFullName will also have the same commit, or no commit.
+	// All files that have the same FullName will also have the same commit, or no commit.
 	// This is enforced at construction time.
 	Files() []ImageFile
 	// GetFile gets the file for the root relative file path.
@@ -261,12 +264,14 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // The given ModuleReadBucket must be self-contained.
 //
 // A ModuleReadBucket is self-contained if it was constructed from
-// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
-// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles. These are likely
-// the only two ways you should have a ModuleReadBucket that you pass to BuildImage.
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles. This is likely the only way you
+// should have a ModuleReadBucket that you pass to BuildImage.
+//
+// The image will contain only files targeted by the input moduleReadBucket,
+// those returned by [bufmodule.GetTargetFileInfos].
 func BuildImage(
 	ctx context.Context,
-	tracer tracing.Tracer,
+	logger *slog.Logger,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	options ...BuildImageOption,
 ) (Image, error) {
@@ -276,7 +281,7 @@ func BuildImage(
 	}
 	return buildImage(
 		ctx,
-		tracer,
+		logger,
 		moduleReadBucket,
 		buildImageOptions.excludeSourceCodeInfo,
 		buildImageOptions.noParallelism,
@@ -333,7 +338,7 @@ func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
 	// The other attributes are already immutable, so we don't need to copy them.
 	return NewImageFile(
 		clonedDescriptor,
-		imageFile.ModuleFullName(),
+		imageFile.FullName(),
 		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.LocalPath(),
@@ -359,7 +364,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	}
 	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
-	resolver := protoencoding.NewLazyResolver(protoImage.File...)
+	resolver := protoencoding.NewLazyResolver(protoImage.GetFile()...)
 	if !newImageOptions.noReparse {
 		if err := reparseImageProto(protoImage, resolver, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
@@ -368,12 +373,12 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	if err := validateProtoImage(protoImage); err != nil {
 		return nil, err
 	}
-	imageFiles := make([]ImageFile, len(protoImage.File))
-	for i, protoImageFile := range protoImage.File {
+	imageFiles := make([]ImageFile, len(protoImage.GetFile()))
+	for i, protoImageFile := range protoImage.GetFile() {
 		var isImport bool
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
-		var moduleFullName bufmodule.ModuleFullName
+		var moduleFullName bufparse.FullName
 		var commitID uuid.UUID
 		var err error
 		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
@@ -382,7 +387,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 			unusedDependencyIndexes = protoImageFileExtension.GetUnusedDependency()
 			if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
 				if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
-					moduleFullName, err = bufmodule.NewModuleFullName(
+					moduleFullName, err = bufparse.NewFullName(
 						protoModuleName.GetRemote(),
 						protoModuleName.GetOwner(),
 						protoModuleName.GetRepository(),
@@ -430,9 +435,9 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, opt
 		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil, "")
 	}
 	image, err := NewImageForProto(
-		&imagev1.Image{
+		imagev1.Image_builder{
 			File: protoImageFiles,
-		},
+		}.Build(),
 		options...,
 	)
 	if err != nil {
@@ -554,15 +559,15 @@ func ImageByDir(image Image) ([]Image, error) {
 // ImageToProtoImage returns a new ProtoImage for the Image.
 func ImageToProtoImage(image Image) (*imagev1.Image, error) {
 	imageFiles := image.Files()
-	protoImage := &imagev1.Image{
+	protoImage := imagev1.Image_builder{
 		File: make([]*imagev1.ImageFile, len(imageFiles)),
-	}
+	}.Build()
 	for i, imageFile := range imageFiles {
 		protoImageFile, err := imageFileToProtoImageFile(imageFile)
 		if err != nil {
 			return nil, err
 		}
-		protoImage.File[i] = protoImageFile
+		protoImage.GetFile()[i] = protoImageFile
 	}
 	return protoImage, nil
 }
@@ -671,7 +676,7 @@ type newImageForProtoOptions struct {
 }
 
 func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolver, computeUnusedImports bool) error {
-	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
+	if err := protoencoding.ReparseExtensions(resolver, protoImage.ProtoReflect()); err != nil {
 		return fmt.Errorf("could not reparse image: %v", err)
 	}
 	if computeUnusedImports {
@@ -681,26 +686,31 @@ func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolve
 		}
 		tracker.findUsedImports(protoImage)
 		// Now we can populated list of unused dependencies
-		for _, file := range protoImage.File {
-			bufExt := file.BufExtension
+		for _, file := range protoImage.GetFile() {
+			bufExt := file.GetBufExtension()
 			if bufExt == nil {
 				bufExt = &imagev1.ImageFileExtension{}
-				file.BufExtension = bufExt
+				file.SetBufExtension(bufExt)
 			}
-			bufExt.UnusedDependency = nil // reset
+			bufExt.SetUnusedDependency(nil) // reset
 			usedImports := tracker.used[file.GetName()]
-			for i, dep := range file.Dependency {
+			for i, dep := range file.GetDependency() {
 				if _, ok := usedImports[dep]; !ok {
 					// it's fine if it's public
 					isPublic := false
-					for _, publicDepIndex := range file.PublicDependency {
+					for _, publicDepIndex := range file.GetPublicDependency() {
 						if i == int(publicDepIndex) {
 							isPublic = true
 							break
 						}
 					}
 					if !isPublic {
-						bufExt.UnusedDependency = append(bufExt.UnusedDependency, int32(i))
+						// This should never happen, however we do a bounds check to ensure that we are
+						// doing a safe conversion for the index.
+						if i > math.MaxInt32 || i < math.MinInt32 {
+							return fmt.Errorf("unused dependency index out-of-bounds for int32 conversion: %v", i)
+						}
+						bufExt.SetUnusedDependency(append(bufExt.GetUnusedDependency(), int32(i)))
 					}
 				}
 			}
@@ -725,10 +735,10 @@ func appendWellKnownTypeImageFileInfos(
 		return nil, err
 	}
 	wktPaths := slicesext.Map(wktObjectInfos, storage.ObjectInfo.Path)
-	if !slicesext.Equal(datawkt.AllFilePaths, wktPaths) {
+	if !slices.Equal(datawkt.AllFilePaths, wktPaths) {
 		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
 	}
-	resultImageFileInfos := slicesext.Copy(imageFileInfos)
+	resultImageFileInfos := slices.Clone(imageFileInfos)
 	for _, wktObjectInfo := range wktObjectInfos {
 		if _, ok := pathToImageFileInfo[wktObjectInfo.Path()]; !ok {
 			fileImports, ok := datawkt.FileImports(wktObjectInfo.Path())

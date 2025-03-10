@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/protocompile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -39,7 +39,7 @@ func TestCountUnrecognized(t *testing.T) {
 	msg := msgType.New()
 	msgData, err := os.ReadFile("./testdata/testdata.txt")
 	require.NoError(t, err)
-	err = prototext.Unmarshal(msgData, msg.Interface())
+	err = protoencoding.NewTxtpbUnmarshaler(nil).Unmarshal(msgData, msg.Interface())
 	require.NoError(t, err)
 	// Add some unrecognized bytes
 	unknownBytes := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1}

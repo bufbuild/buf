@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -46,7 +46,7 @@ func newCommand() *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
-		appext.BuilderWithTracing(),
+		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
 	)
 	flags := newFlags()
 	return &appcmd.Command{
@@ -101,8 +101,7 @@ func run(
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
 	}
-	tracer := tracing.NewTracer(container.Tracer())
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, container.Logger(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	storageosProvider := storageos.NewProvider()
 	for _, dirPath := range dirPaths {
 		bucket, err := storageosProvider.NewReadWriteBucket(dirPath)

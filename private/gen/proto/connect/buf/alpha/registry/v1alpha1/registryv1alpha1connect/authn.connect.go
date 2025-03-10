@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,13 +55,6 @@ const (
 	AuthnServiceGetCurrentUserSubjectProcedure = "/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUserSubject"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	authnServiceServiceDescriptor                     = v1alpha1.File_buf_alpha_registry_v1alpha1_authn_proto.Services().ByName("AuthnService")
-	authnServiceGetCurrentUserMethodDescriptor        = authnServiceServiceDescriptor.Methods().ByName("GetCurrentUser")
-	authnServiceGetCurrentUserSubjectMethodDescriptor = authnServiceServiceDescriptor.Methods().ByName("GetCurrentUserSubject")
-)
-
 // AuthnServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthnService service.
 type AuthnServiceClient interface {
 	// GetCurrentUser gets information associated with the current user.
@@ -83,18 +76,19 @@ type AuthnServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewAuthnServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuthnServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	authnServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_authn_proto.Services().ByName("AuthnService").Methods()
 	return &authnServiceClient{
 		getCurrentUser: connect.NewClient[v1alpha1.GetCurrentUserRequest, v1alpha1.GetCurrentUserResponse](
 			httpClient,
 			baseURL+AuthnServiceGetCurrentUserProcedure,
-			connect.WithSchema(authnServiceGetCurrentUserMethodDescriptor),
+			connect.WithSchema(authnServiceMethods.ByName("GetCurrentUser")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getCurrentUserSubject: connect.NewClient[v1alpha1.GetCurrentUserSubjectRequest, v1alpha1.GetCurrentUserSubjectResponse](
 			httpClient,
 			baseURL+AuthnServiceGetCurrentUserSubjectProcedure,
-			connect.WithSchema(authnServiceGetCurrentUserSubjectMethodDescriptor),
+			connect.WithSchema(authnServiceMethods.ByName("GetCurrentUserSubject")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -135,17 +129,18 @@ type AuthnServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAuthnServiceHandler(svc AuthnServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	authnServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_authn_proto.Services().ByName("AuthnService").Methods()
 	authnServiceGetCurrentUserHandler := connect.NewUnaryHandler(
 		AuthnServiceGetCurrentUserProcedure,
 		svc.GetCurrentUser,
-		connect.WithSchema(authnServiceGetCurrentUserMethodDescriptor),
+		connect.WithSchema(authnServiceMethods.ByName("GetCurrentUser")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	authnServiceGetCurrentUserSubjectHandler := connect.NewUnaryHandler(
 		AuthnServiceGetCurrentUserSubjectProcedure,
 		svc.GetCurrentUserSubject,
-		connect.WithSchema(authnServiceGetCurrentUserSubjectMethodDescriptor),
+		connect.WithSchema(authnServiceMethods.ByName("GetCurrentUserSubject")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,17 +66,6 @@ const (
 	CodeGenerationServiceGenerateCodeProcedure = "/buf.alpha.registry.v1alpha1.CodeGenerationService/GenerateCode"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	pluginCurationServiceServiceDescriptor                      = v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("PluginCurationService")
-	pluginCurationServiceListCuratedPluginsMethodDescriptor     = pluginCurationServiceServiceDescriptor.Methods().ByName("ListCuratedPlugins")
-	pluginCurationServiceCreateCuratedPluginMethodDescriptor    = pluginCurationServiceServiceDescriptor.Methods().ByName("CreateCuratedPlugin")
-	pluginCurationServiceGetLatestCuratedPluginMethodDescriptor = pluginCurationServiceServiceDescriptor.Methods().ByName("GetLatestCuratedPlugin")
-	pluginCurationServiceDeleteCuratedPluginMethodDescriptor    = pluginCurationServiceServiceDescriptor.Methods().ByName("DeleteCuratedPlugin")
-	codeGenerationServiceServiceDescriptor                      = v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("CodeGenerationService")
-	codeGenerationServiceGenerateCodeMethodDescriptor           = codeGenerationServiceServiceDescriptor.Methods().ByName("GenerateCode")
-)
-
 // PluginCurationServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginCurationService
 // service.
 type PluginCurationServiceClient interface {
@@ -100,32 +89,33 @@ type PluginCurationServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewPluginCurationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginCurationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	pluginCurationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("PluginCurationService").Methods()
 	return &pluginCurationServiceClient{
 		listCuratedPlugins: connect.NewClient[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse](
 			httpClient,
 			baseURL+PluginCurationServiceListCuratedPluginsProcedure,
-			connect.WithSchema(pluginCurationServiceListCuratedPluginsMethodDescriptor),
+			connect.WithSchema(pluginCurationServiceMethods.ByName("ListCuratedPlugins")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		createCuratedPlugin: connect.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceCreateCuratedPluginProcedure,
-			connect.WithSchema(pluginCurationServiceCreateCuratedPluginMethodDescriptor),
+			connect.WithSchema(pluginCurationServiceMethods.ByName("CreateCuratedPlugin")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		getLatestCuratedPlugin: connect.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceGetLatestCuratedPluginProcedure,
-			connect.WithSchema(pluginCurationServiceGetLatestCuratedPluginMethodDescriptor),
+			connect.WithSchema(pluginCurationServiceMethods.ByName("GetLatestCuratedPlugin")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		deleteCuratedPlugin: connect.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceDeleteCuratedPluginProcedure,
-			connect.WithSchema(pluginCurationServiceDeleteCuratedPluginMethodDescriptor),
+			connect.WithSchema(pluginCurationServiceMethods.ByName("DeleteCuratedPlugin")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -180,31 +170,32 @@ type PluginCurationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pluginCurationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("PluginCurationService").Methods()
 	pluginCurationServiceListCuratedPluginsHandler := connect.NewUnaryHandler(
 		PluginCurationServiceListCuratedPluginsProcedure,
 		svc.ListCuratedPlugins,
-		connect.WithSchema(pluginCurationServiceListCuratedPluginsMethodDescriptor),
+		connect.WithSchema(pluginCurationServiceMethods.ByName("ListCuratedPlugins")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	pluginCurationServiceCreateCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceCreateCuratedPluginProcedure,
 		svc.CreateCuratedPlugin,
-		connect.WithSchema(pluginCurationServiceCreateCuratedPluginMethodDescriptor),
+		connect.WithSchema(pluginCurationServiceMethods.ByName("CreateCuratedPlugin")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	pluginCurationServiceGetLatestCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceGetLatestCuratedPluginProcedure,
 		svc.GetLatestCuratedPlugin,
-		connect.WithSchema(pluginCurationServiceGetLatestCuratedPluginMethodDescriptor),
+		connect.WithSchema(pluginCurationServiceMethods.ByName("GetLatestCuratedPlugin")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	pluginCurationServiceDeleteCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceDeleteCuratedPluginProcedure,
 		svc.DeleteCuratedPlugin,
-		connect.WithSchema(pluginCurationServiceDeleteCuratedPluginMethodDescriptor),
+		connect.WithSchema(pluginCurationServiceMethods.ByName("DeleteCuratedPlugin")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -260,11 +251,12 @@ type CodeGenerationServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewCodeGenerationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CodeGenerationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	codeGenerationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("CodeGenerationService").Methods()
 	return &codeGenerationServiceClient{
 		generateCode: connect.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
 			httpClient,
 			baseURL+CodeGenerationServiceGenerateCodeProcedure,
-			connect.WithSchema(codeGenerationServiceGenerateCodeMethodDescriptor),
+			connect.WithSchema(codeGenerationServiceMethods.ByName("GenerateCode")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -293,10 +285,11 @@ type CodeGenerationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	codeGenerationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("CodeGenerationService").Methods()
 	codeGenerationServiceGenerateCodeHandler := connect.NewUnaryHandler(
 		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
-		connect.WithSchema(codeGenerationServiceGenerateCodeMethodDescriptor),
+		connect.WithSchema(codeGenerationServiceMethods.ByName("GenerateCode")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.CodeGenerationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

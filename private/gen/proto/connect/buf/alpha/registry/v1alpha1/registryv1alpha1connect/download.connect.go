@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,13 +55,6 @@ const (
 	DownloadServiceDownloadManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	downloadServiceServiceDescriptor                        = v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService")
-	downloadServiceDownloadMethodDescriptor                 = downloadServiceServiceDescriptor.Methods().ByName("Download")
-	downloadServiceDownloadManifestAndBlobsMethodDescriptor = downloadServiceServiceDescriptor.Methods().ByName("DownloadManifestAndBlobs")
-)
-
 // DownloadServiceClient is a client for the buf.alpha.registry.v1alpha1.DownloadService service.
 type DownloadServiceClient interface {
 	// Download downloads a BSR module.
@@ -80,18 +73,19 @@ type DownloadServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewDownloadServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DownloadServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	downloadServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService").Methods()
 	return &downloadServiceClient{
 		download: connect.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
 			httpClient,
 			baseURL+DownloadServiceDownloadProcedure,
-			connect.WithSchema(downloadServiceDownloadMethodDescriptor),
+			connect.WithSchema(downloadServiceMethods.ByName("Download")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		downloadManifestAndBlobs: connect.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
 			httpClient,
 			baseURL+DownloadServiceDownloadManifestAndBlobsProcedure,
-			connect.WithSchema(downloadServiceDownloadManifestAndBlobsMethodDescriptor),
+			connect.WithSchema(downloadServiceMethods.ByName("DownloadManifestAndBlobs")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -131,17 +125,18 @@ type DownloadServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	downloadServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService").Methods()
 	downloadServiceDownloadHandler := connect.NewUnaryHandler(
 		DownloadServiceDownloadProcedure,
 		svc.Download,
-		connect.WithSchema(downloadServiceDownloadMethodDescriptor),
+		connect.WithSchema(downloadServiceMethods.ByName("Download")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	downloadServiceDownloadManifestAndBlobsHandler := connect.NewUnaryHandler(
 		DownloadServiceDownloadManifestAndBlobsProcedure,
 		svc.DownloadManifestAndBlobs,
-		connect.WithSchema(downloadServiceDownloadManifestAndBlobsMethodDescriptor),
+		connect.WithSchema(downloadServiceMethods.ByName("DownloadManifestAndBlobs")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

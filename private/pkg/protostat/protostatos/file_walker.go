@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@ package protostatos
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
-
-	"go.uber.org/multierr"
 )
 
 type fileWalker struct {
@@ -43,7 +42,7 @@ func (f *fileWalker) Walk(ctx context.Context, fu func(io.Reader) error) error {
 			return err
 		}
 		if err := fu(file); err != nil {
-			return multierr.Append(err, file.Close())
+			return errors.Join(err, file.Close())
 		}
 		if err := file.Close(); err != nil {
 			return err

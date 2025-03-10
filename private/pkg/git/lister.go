@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,24 +15,21 @@
 package git
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
-type lister struct {
-	runner command.Runner
-}
+type lister struct{}
 
-func newLister(runner command.Runner) *lister {
-	return &lister{
-		runner: runner,
-	}
+func newLister() *lister {
+	return &lister{}
 }
 
 func (l *lister) ListFilesAndUnstagedFiles(
@@ -40,10 +37,9 @@ func (l *lister) ListFilesAndUnstagedFiles(
 	container app.EnvStdioContainer,
 	options ListFilesAndUnstagedFilesOptions,
 ) ([]string, error) {
-	allFilesOutput, err := command.RunStdout(
+	allFilesOutput, err := runStdout(
 		ctx,
 		container,
-		l.runner,
 		"git",
 		"ls-files",
 		"--cached",
@@ -54,10 +50,9 @@ func (l *lister) ListFilesAndUnstagedFiles(
 	if err != nil {
 		return nil, err
 	}
-	deletedFilesOutput, err := command.RunStdout(
+	deletedFilesOutput, err := runStdout(
 		ctx,
 		container,
-		l.runner,
 		"git",
 		"ls-files",
 		"--deleted",
@@ -129,4 +124,20 @@ func filterNonRegularFiles(files []string) []string {
 		}
 	}
 	return filteredFiles
+}
+
+func runStdout(ctx context.Context, container app.EnvStdioContainer, name string, args ...string) ([]byte, error) {
+	buffer := bytes.NewBuffer(nil)
+	if err := execext.Run(
+		ctx,
+		name,
+		execext.WithArgs(args...),
+		execext.WithEnv(app.Environ(container)),
+		execext.WithStdin(container.Stdin()),
+		execext.WithStdout(buffer),
+		execext.WithStderr(container.Stderr()),
+	); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }

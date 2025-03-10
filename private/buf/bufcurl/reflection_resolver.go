@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	reflectionv1 "github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -154,25 +155,28 @@ func (r *reflectionResolver) ListServices() ([]protoreflect.FullName, error) {
 	defer r.mu.Unlock()
 
 	r.printer.Printf("* Using server reflection to list services\n")
-	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
-		MessageRequest: &reflectionv1.ServerReflectionRequest_ListServices{
-			ListServices: "",
-		},
-	})
+	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
+		ListServices: proto.String(""),
+	}.Build())
 	if err != nil {
 		return nil, err
 	}
-	switch response := resp.MessageResponse.(type) {
-	case *reflectionv1.ServerReflectionResponse_ErrorResponse:
-		return nil, connect.NewWireError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
-	case *reflectionv1.ServerReflectionResponse_ListServicesResponse:
-		serviceNames := make([]protoreflect.FullName, len(response.ListServicesResponse.Service))
-		for i, service := range response.ListServicesResponse.Service {
-			serviceNames[i] = protoreflect.FullName(service.Name)
+	switch resp.WhichMessageResponse() {
+	case reflectionv1.ServerReflectionResponse_ErrorResponse_case:
+		// This should never happen, however we do a bounds check to ensure we are doing a safe
+		// conversion from int32 (ErrorResponse.ErrorCode) to uint32 (connect.Code).
+		if resp.GetErrorResponse().GetErrorCode() < 0 {
+			return nil, fmt.Errorf("server replied with unsupported error code: %v", resp.GetErrorResponse().GetErrorCode())
+		}
+		return nil, connect.NewWireError(connect.Code(resp.GetErrorResponse().GetErrorCode()), errors.New(resp.GetErrorResponse().GetErrorMessage()))
+	case reflectionv1.ServerReflectionResponse_ListServicesResponse_case:
+		serviceNames := make([]protoreflect.FullName, len(resp.GetListServicesResponse().GetService()))
+		for i, service := range resp.GetListServicesResponse().GetService() {
+			serviceNames[i] = protoreflect.FullName(service.GetName())
 		}
 		return serviceNames, nil
 	default:
-		return nil, fmt.Errorf("server replied with unsupported response type: %T", resp.MessageResponse)
+		return nil, fmt.Errorf("server replied with unsupported response type: %v", resp.WhichMessageResponse())
 	}
 }
 
@@ -295,11 +299,9 @@ func (r *reflectionResolver) FindExtensionByNumber(message protoreflect.FullName
 
 func (r *reflectionResolver) fileContainingSymbolLocked(name protoreflect.FullName) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to resolve %q\n", name)
-	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
-		MessageRequest: &reflectionv1.ServerReflectionRequest_FileContainingSymbol{
-			FileContainingSymbol: string(name),
-		},
-	})
+	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
+		FileContainingSymbol: proto.String(string(name)),
+	}.Build())
 	if err != nil {
 		return nil, err
 	}
@@ -308,14 +310,12 @@ func (r *reflectionResolver) fileContainingSymbolLocked(name protoreflect.FullNa
 
 func (r *reflectionResolver) fileContainingExtensionLocked(message protoreflect.FullName, field protoreflect.FieldNumber) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to retrieve extension %d for %q\n", field, message)
-	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
-		MessageRequest: &reflectionv1.ServerReflectionRequest_FileContainingExtension{
-			FileContainingExtension: &reflectionv1.ExtensionRequest{
-				ContainingType:  string(message),
-				ExtensionNumber: int32(field),
-			},
-		},
-	})
+	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
+		FileContainingExtension: reflectionv1.ExtensionRequest_builder{
+			ContainingType:  string(message),
+			ExtensionNumber: int32(field),
+		}.Build(),
+	}.Build())
 	if err != nil {
 		return nil, err
 	}
@@ -324,11 +324,9 @@ func (r *reflectionResolver) fileContainingExtensionLocked(message protoreflect.
 
 func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to download file %q\n", name)
-	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
-		MessageRequest: &reflectionv1.ServerReflectionRequest_FileByFilename{
-			FileByFilename: name,
-		},
-	})
+	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
+		FileByFilename: proto.String(name),
+	}.Build())
 	if err != nil {
 		return nil, err
 	}
@@ -336,12 +334,17 @@ func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.File
 }
 
 func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*descriptorpb.FileDescriptorProto, error) {
-	switch response := resp.MessageResponse.(type) {
-	case *reflectionv1.ServerReflectionResponse_ErrorResponse:
-		return nil, connect.NewWireError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
-	case *reflectionv1.ServerReflectionResponse_FileDescriptorResponse:
-		files := make([]*descriptorpb.FileDescriptorProto, len(response.FileDescriptorResponse.FileDescriptorProto))
-		for i, data := range response.FileDescriptorResponse.FileDescriptorProto {
+	switch resp.WhichMessageResponse() {
+	case reflectionv1.ServerReflectionResponse_ErrorResponse_case:
+		// This should never happen, however we do a bounds check to ensure we are doing a safe
+		// conversion from int32 (ErrorResponse.ErrorCode) to uint32 (connect.Code).
+		if resp.GetErrorResponse().GetErrorCode() < 0 {
+			return nil, fmt.Errorf("server replied with unsupported error code: %v", resp.GetErrorResponse().GetErrorCode())
+		}
+		return nil, connect.NewWireError(connect.Code(resp.GetErrorResponse().GetErrorCode()), errors.New(resp.GetErrorResponse().GetErrorMessage()))
+	case reflectionv1.ServerReflectionResponse_FileDescriptorResponse_case:
+		files := make([]*descriptorpb.FileDescriptorProto, len(resp.GetFileDescriptorResponse().GetFileDescriptorProto()))
+		for i, data := range resp.GetFileDescriptorResponse().GetFileDescriptorProto() {
 			var file descriptorpb.FileDescriptorProto
 			if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, &file); err != nil {
 				return nil, err
@@ -350,7 +353,7 @@ func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*desc
 		}
 		return files, nil
 	default:
-		return nil, fmt.Errorf("server replied with unsupported response type: %T", resp.MessageResponse)
+		return nil, fmt.Errorf("server replied with unsupported response type: %v", resp.WhichMessageResponse())
 	}
 }
 

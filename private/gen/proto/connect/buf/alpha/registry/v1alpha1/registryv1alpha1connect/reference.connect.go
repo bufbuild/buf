@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,12 +52,6 @@ const (
 	ReferenceServiceGetReferenceByNameProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/GetReferenceByName"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	referenceServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService")
-	referenceServiceGetReferenceByNameMethodDescriptor = referenceServiceServiceDescriptor.Methods().ByName("GetReferenceByName")
-)
-
 // ReferenceServiceClient is a client for the buf.alpha.registry.v1alpha1.ReferenceService service.
 type ReferenceServiceClient interface {
 	// GetReferenceByName takes a reference name and returns the
@@ -75,11 +69,12 @@ type ReferenceServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewReferenceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ReferenceServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	referenceServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService").Methods()
 	return &referenceServiceClient{
 		getReferenceByName: connect.NewClient[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse](
 			httpClient,
 			baseURL+ReferenceServiceGetReferenceByNameProcedure,
-			connect.WithSchema(referenceServiceGetReferenceByNameMethodDescriptor),
+			connect.WithSchema(referenceServiceMethods.ByName("GetReferenceByName")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -110,10 +105,11 @@ type ReferenceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	referenceServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService").Methods()
 	referenceServiceGetReferenceByNameHandler := connect.NewUnaryHandler(
 		ReferenceServiceGetReferenceByNameProcedure,
 		svc.GetReferenceByName,
-		connect.WithSchema(referenceServiceGetReferenceByNameMethodDescriptor),
+		connect.WithSchema(referenceServiceMethods.ByName("GetReferenceByName")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

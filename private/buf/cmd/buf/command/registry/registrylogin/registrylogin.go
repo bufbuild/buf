@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/oauth2"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/pkg/browser"
 	"github.com/spf13/pflag"
@@ -52,9 +53,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <domain>",
+		Use:   name + " [domain]",
 		Short: `Log in to the Buf Schema Registry`,
-		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags --%s or --%s to complete an alternative login flow. The token is saved to your %s file. The <domain> argument will default to buf.build if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename),
+		Long:  fmt.Sprintf(`This command will open a browser to complete the login process. Use the flags --%s or --%s to complete an alternative login flow. The token is saved to your %s file. The [domain] argument will default to %s if not specified.`, promptFlagName, tokenStdinFlagName, netrc.Filename, bufconnect.DefaultRemote),
 		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -178,7 +179,7 @@ func inner(
 		var err error
 		token, err = doBrowserLogin(ctx, container, remote)
 		if err != nil {
-			if !errors.Is(err, oauth2.ErrUnsupported) {
+			if !errors.Is(err, errors.ErrUnsupported) {
 				return fmt.Errorf("unable to complete authorize device grant: %w", err)
 			}
 			token, err = doPromptLogin(ctx, container, remote)
@@ -206,17 +207,17 @@ func inner(
 		}
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
-		return errors.New("invalid token provided")
+		return fmt.Errorf("invalid token provided for %s", remote)
 	}
-	user := resp.Msg.User
+	user := resp.Msg.GetUser()
 	if user == nil {
-		return errors.New("no user found for provided token")
+		return syserror.New("no user found for registry login token")
 	}
 	if err := netrc.PutMachines(
 		container,
 		netrc.NewMachine(
 			remote,
-			user.Username,
+			user.GetUsername(),
 			token,
 		),
 	); err != nil {
@@ -229,7 +230,7 @@ func inner(
 	if err != nil {
 		return err
 	}
-	loggedInMessage := fmt.Sprintf("Logged in as %s. Credentials saved to %s.\n", user.Username, netrcFilePath)
+	loggedInMessage := fmt.Sprintf("Logged in as %s. Credentials saved to %s.\n", user.GetUsername(), netrcFilePath)
 	// Unless we did not prompt at all, print a newline first
 	if !flags.TokenStdin {
 		loggedInMessage = "\n" + loggedInMessage

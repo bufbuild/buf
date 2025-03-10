@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@ package bufmodule
 
 import (
 	"context"
+	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 // Module presents a BSR module.
@@ -55,10 +56,7 @@ type Module interface {
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
 	// Modules commonly built from a ModuleSetBuilder.
 	//
-	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
-	//
-	// While this should not be relied upion, this ID is currently equal to the ModuleFullName,
-	// and if the ModuleFullName is not present, then the BucketID.
+	// If two Modules have the same FullName, they will have the same OpaqueID.
 	OpaqueID() string
 	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
 	// with via ModuleSetProvider.
@@ -74,23 +72,40 @@ type Module interface {
 	//
 	// May be empty if a Module was not constructed with a Bucket via a ModuleSetProvider.
 	BucketID() string
-	// ModuleFullName returns the full name of the Module.
+	// FullName returns the full name of the Module.
 	//
 	// May be nil. Callers should not rely on this value being present.
 	// However, this is always present for remote Modules.
 	//
-	// At least one of ModuleFullName and BucketID will always be present. Use OpaqueID
+	// At least one of FullName and BucketID will always be present. Use OpaqueID
 	// as an always-present identifier.
-	ModuleFullName() ModuleFullName
+	FullName() bufparse.FullName
 	// CommitID returns the BSR ID of the Commit.
 	//
 	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
-	// May be empty, that is CommitID().IsNil() may be true.
+	// May be empty, that is CommitID() == uuid.Nil may be true.
 	// Callers should not rely on this value being present.
 	//
-	// If ModuleFullName is nil, this will always be empty.
+	// If FullName is nil, this will always be empty.
 	CommitID() uuid.UUID
+	// Description returns a human-readable description of the Module.
+	//
+	// This can be manually set by a constructor of a Module. In practice, the only current way
+	// to specifically set this string is by calling LocalModuleWithDescription when constructing
+	// a ModuleSet.
+	//
+	// This is used to construct descriptive error messages pointing to configured modules.
+	// For example, this may return something along the lines of:
+	//
+	//   path: proto/foo, includes; ["a", "b"], excludes: "c"
+	//
+	// The shape of this field should not be relied upon.
+	// This field will be unique within a given ModuleSet.
+	//
+	// This will never be empty. If a description was not explicitly set, this falls back to
+	// OpaqueID.
+	Description() string
 
 	// Digest returns the Module digest for the given DigestType.
 	//
@@ -107,7 +122,7 @@ type Module interface {
 	// This list is pruned - only Modules that this Module actually depends on (either directly or transitively)
 	// via import statements within its .proto files will be returned.
 	//
-	// Dependencies with the same ModuleFullName will always have the same Commits and Digests.
+	// Dependencies with the same FullName will always have the same Commits and Digests.
 	//
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
@@ -137,15 +152,15 @@ type Module interface {
 	// Modules are either local or remote.
 	//
 	// A local Module is one which was built from sources from the "local context", such
-	// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest. Local
+	// a Workspace containing Modules, or a ModuleNode in a CreateCommitRequest. Local
 	// Modules are important for understanding what Modules to push, and what modules to
 	// check declared dependencies for unused dependencies.
 	//
 	// A remote Module is one which was not contained in the local context, such as
-	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
+	// dependencies specified in a buf.lock (with no corresponding Module in the Workspace),
 	// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
 	//
-	// Remote Modules will always have ModuleFullNames.
+	// Remote Modules will always have FullNames.
 	IsLocal() bool
 
 	// V1Beta1OrV1BufYAMLObjectData returns the original source buf.yaml associated with this Module, if the
@@ -185,41 +200,15 @@ type Module interface {
 
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
-// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
+// The given Module must have a FullName and CommitID, otherwise this will return error.
 func ModuleToModuleKey(module Module, digestType DigestType) (ModuleKey, error) {
 	return newModuleKey(
-		module.ModuleFullName(),
+		module.FullName(),
 		module.CommitID(),
 		func() (Digest, error) {
 			return module.Digest(digestType)
 		},
 	)
-}
-
-// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles converts the Module to a
-// ModuleReadBucket that contains all the .proto files of the Module and its dependencies.
-//
-// Targeting information will remain the same. Note that this means that the result ModuleReadBucket
-// may have no target files! This can occur when path filtering was applied, but the path filters did
-// not match any files in the Module, and none of the Module's files were targeted.
-// It can also happen if the Module nor any of its dependencies were targeted.
-//
-// *** THIS IS PROBABLY NOT THE FUNCTION YOU ARE LOOKING FOR. *** You probably want
-// ModuleSetToModuleReadBucketWithOnlyProtoFiles to convert a ModuleSet/Workspace to a
-// ModuleReadBucket. This function is used for cases where we want to create an Image
-// specifically for one Module, such as when we need to associate LintConfig and BreakingConfig
-// on a per-Module basis for buf lint and buf breaking. See bufctl.Controller, which is likely
-// the only place this should be used outside of testing.
-func ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module Module) (ModuleReadBucket, error) {
-	modules := []Module{module}
-	moduleDeps, err := module.ModuleDeps()
-	if err != nil {
-		return nil, err
-	}
-	for _, moduleDep := range moduleDeps {
-		modules = append(modules, moduleDep)
-	}
-	return newMultiProtoFileModuleReadBucket(modules, true), nil
 }
 
 // ModuleDirectModuleDeps is a convenience function that returns only the direct dependencies of the Module.
@@ -241,16 +230,17 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
-	ctx                        context.Context
-	getBucket                  func() (storage.ReadBucket, error)
-	bucketID                   string
-	moduleFullName             ModuleFullName
-	commitID                   uuid.UUID
-	isTarget                   bool
-	isLocal                    bool
-	getV1BufYAMLObjectData     func() (ObjectData, error)
-	getV1BufLockObjectData     func() (ObjectData, error)
-	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error)
+	ctx                    context.Context
+	getBucket              func() (storage.ReadBucket, error)
+	bucketID               string
+	description            string
+	moduleFullName         bufparse.FullName
+	commitID               uuid.UUID
+	isTarget               bool
+	isLocal                bool
+	getV1BufYAMLObjectData func() (ObjectData, error)
+	getV1BufLockObjectData func() (ObjectData, error)
+	getDepModuleKeysB5     func() ([]ModuleKey, error)
 
 	moduleSet ModuleSet
 
@@ -261,16 +251,17 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
-	// This function must already be filtered to include only module files and must be syncext.OnceValues wrapped!
+	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
-	moduleFullName ModuleFullName,
+	description string,
+	moduleFullName bufparse.FullName,
 	commitID uuid.UUID,
 	isTarget bool,
 	isLocal bool,
 	getV1BufYAMLObjectData func() (ObjectData, error),
 	getV1BufLockObjectData func() (ObjectData, error),
-	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error),
+	getDepModuleKeysB5 func() ([]ModuleKey, error),
 	targetPaths []string,
 	targetExcludePaths []string,
 	protoFileTargetPath string,
@@ -289,7 +280,7 @@ func newModule(
 	if !isLocal && moduleFullName == nil {
 		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
 	}
-	if moduleFullName == nil && !commitID.IsNil() {
+	if moduleFullName == nil && commitID != uuid.Nil {
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
 	}
 
@@ -313,16 +304,17 @@ func newModule(
 	}
 
 	module := &module{
-		ctx:                        ctx,
-		getBucket:                  syncOnceValuesGetBucketWithStorageMatcherApplied,
-		bucketID:                   bucketID,
-		moduleFullName:             moduleFullName,
-		commitID:                   commitID,
-		isTarget:                   isTarget,
-		isLocal:                    isLocal,
-		getV1BufYAMLObjectData:     syncext.OnceValues(getV1BufYAMLObjectData),
-		getV1BufLockObjectData:     syncext.OnceValues(getV1BufLockObjectData),
-		getDeclaredDepModuleKeysB5: syncext.OnceValues(getDeclaredDepModuleKeysB5),
+		ctx:                    ctx,
+		getBucket:              syncOnceValuesGetBucketWithStorageMatcherApplied,
+		bucketID:               bucketID,
+		description:            description,
+		moduleFullName:         moduleFullName,
+		commitID:               commitID,
+		isTarget:               isTarget,
+		isLocal:                isLocal,
+		getV1BufYAMLObjectData: sync.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData: sync.OnceValues(getV1BufLockObjectData),
+		getDepModuleKeysB5:     sync.OnceValues(getDepModuleKeysB5),
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -338,14 +330,14 @@ func newModule(
 	}
 	module.ModuleReadBucket = moduleReadBucket
 	module.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForModule(module)
-	module.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(module))
+	module.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
 
 func (m *module) OpaqueID() string {
 	// We know that one of bucketID and moduleFullName are present via construction.
 	//
-	// Prefer moduleFullName since modules with the same ModuleFullName should have the same OpaqueID.
+	// Prefer moduleFullName since modules with the same FullName should have the same OpaqueID.
 	if m.moduleFullName != nil {
 		return m.moduleFullName.String()
 	}
@@ -356,12 +348,19 @@ func (m *module) BucketID() string {
 	return m.bucketID
 }
 
-func (m *module) ModuleFullName() ModuleFullName {
+func (m *module) FullName() bufparse.FullName {
 	return m.moduleFullName
 }
 
 func (m *module) CommitID() uuid.UUID {
 	return m.commitID
+}
+
+func (m *module) Description() string {
+	if m.description != "" {
+		return m.description
+	}
+	return m.OpaqueID()
 }
 
 func (m *module) Digest(digestType DigestType) (Digest, error) {
@@ -397,18 +396,19 @@ func (m *module) ModuleSet() ModuleSet {
 }
 
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
-	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
+	// We don't just call newModule directly as we don't want to double sync.OnceValues stuff.
 	newModule := &module{
-		ctx:                        m.ctx,
-		getBucket:                  m.getBucket,
-		bucketID:                   m.bucketID,
-		moduleFullName:             m.moduleFullName,
-		commitID:                   m.commitID,
-		isTarget:                   isTarget,
-		isLocal:                    m.isLocal,
-		getV1BufYAMLObjectData:     m.getV1BufYAMLObjectData,
-		getV1BufLockObjectData:     m.getV1BufLockObjectData,
-		getDeclaredDepModuleKeysB5: m.getDeclaredDepModuleKeysB5,
+		ctx:                    m.ctx,
+		getBucket:              m.getBucket,
+		bucketID:               m.bucketID,
+		description:            m.description,
+		moduleFullName:         m.moduleFullName,
+		commitID:               m.commitID,
+		isTarget:               isTarget,
+		isLocal:                m.isLocal,
+		getV1BufYAMLObjectData: m.getV1BufYAMLObjectData,
+		getV1BufLockObjectData: m.getV1BufLockObjectData,
+		getDepModuleKeysB5:     m.getDepModuleKeysB5,
 	}
 	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
 	if !ok {
@@ -416,7 +416,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
 	newModule.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForModule(newModule)
-	newModule.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(newModule))
+	newModule.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
 
@@ -429,7 +429,7 @@ func (*module) isModule() {}
 func newSyncOnceValueDigestTypeToGetDigestFuncForModule(module *module) map[DigestType]func() (Digest, error) {
 	m := make(map[DigestType]func() (Digest, error))
 	for digestType := range digestTypeToString {
-		m[digestType] = syncext.OnceValues(newGetDigestFuncForModuleAndDigestType(module, digestType))
+		m[digestType] = sync.OnceValues(newGetDigestFuncForModuleAndDigestType(module, digestType))
 	}
 	return m
 }
@@ -452,33 +452,31 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 			}
 			return getB4Digest(module.ctx, bucket, v1BufYAMLObjectData, v1BufLockObjectData)
 		case DigestTypeB5:
-			moduleDeps, err := module.ModuleDeps()
-			if err != nil {
-				return nil, err
-			}
-			// For remote modules to have consistent B5 digests, they must not change the digests of their
-			// dependencies based on the local workspace. Use the pruned b5 module keys from
-			// ModuleData.DeclaredDepModuleKeys to calculate the digest.
+			// B5 digests are calculated from the Module's content and its dependencies.
+			//
+			// Dependencies are all direct and transitive dependencies of the Module.
+			// For local Modules, the dependencies are resolved to the current ModuleSet.
+			// For remote Modules, the dependencies are the ModuleKeys of
+			// the direct and transitive dependencies of the Module at the specific commit.
+			//
+			// This is effectively the same. The local Modules have a dependency at the current commit,
+			// and the remote Modules have a dependency at a specific commit. Pushing up a local Module
+			// as a remote Module will result in the same Digest.
+			//
+			// See the comment on getDepModuleKeysB5 for more information.
 			if !module.isLocal {
-				declaredDepModuleKeys, err := module.getDeclaredDepModuleKeysB5()
+				depModuleKeys, err := module.getDepModuleKeysB5()
 				if err != nil {
 					return nil, err
 				}
-				moduleDepFullNames := make(map[string]struct{}, len(moduleDeps))
-				for _, dep := range moduleDeps {
-					fullName := dep.ModuleFullName()
-					if fullName == nil {
-						return nil, syserror.Newf("remote module dependencies should have full names")
-					}
-					moduleDepFullNames[fullName.String()] = struct{}{}
-				}
-				prunedDepModuleKeys := make([]ModuleKey, 0, len(declaredDepModuleKeys))
-				for _, dep := range declaredDepModuleKeys {
-					if _, ok := moduleDepFullNames[dep.ModuleFullName().String()]; ok {
-						prunedDepModuleKeys = append(prunedDepModuleKeys, dep)
-					}
-				}
-				return getB5DigestForBucketAndDepModuleKeys(module.ctx, bucket, prunedDepModuleKeys)
+				return getB5DigestForBucketAndDepModuleKeys(module.ctx, bucket, depModuleKeys)
+			}
+			// ModuleDeps returns the dependent Modules resolved for the target Module in the ModuleSet.
+			// A local Module will recursively resolve the Digest of other dependent local Modules.
+			// This is done by calling Module.Digest(DigestTypeB5) on each ModuleDep.
+			moduleDeps, err := module.ModuleDeps()
+			if err != nil {
+				return nil, err
 			}
 			return getB5DigestForBucketAndModuleDeps(module.ctx, bucket, moduleDeps)
 		default:

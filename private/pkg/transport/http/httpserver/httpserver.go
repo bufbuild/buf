@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
@@ -103,7 +103,7 @@ func RunWithoutH2C() RunOption {
 // The Run function can be configured further by passing a variety of options.
 func Run(
 	ctx context.Context,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	listener net.Listener,
 	handler http.Handler,
 	options ...RunOption,
@@ -115,14 +115,10 @@ func Run(
 	for _, option := range options {
 		option(s)
 	}
-	stdLogger, err := zap.NewStdLogAt(logger.Named("httpserver"), zap.ErrorLevel)
-	if err != nil {
-		return err
-	}
 	httpServer := &http.Server{
 		Handler:           handler,
 		ReadHeaderTimeout: s.readHeaderTimeout,
-		ErrorLog:          stdLogger,
+		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		TLSConfig:         s.tlsConfig,
 	}
 	if s.tlsConfig == nil && !s.disableH2C {
@@ -146,9 +142,9 @@ func Run(
 	eg.Go(func() error {
 		<-ctx.Done()
 		start := time.Now()
-		logger.Info("shutdown_starting", zap.Duration("shutdown_timeout", s.shutdownTimeout))
+		logger.Info("shutdown_starting", slog.Duration("shutdown_timeout", s.shutdownTimeout))
 		defer func() {
-			logger.Info("shutdown_finished", zap.Duration("duration", time.Since(start)))
+			logger.Info("shutdown_finished", slog.Duration("duration", time.Since(start)))
 		}()
 		if s.shutdownTimeout != 0 {
 			ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
@@ -160,9 +156,9 @@ func Run(
 
 	logger.Info(
 		"starting",
-		zap.String("address", listener.Addr().String()),
-		zap.Duration("shutdown_timeout", s.shutdownTimeout),
-		zap.Bool("tls", s.tlsConfig != nil),
+		slog.String("address", listener.Addr().String()),
+		slog.Duration("shutdown_timeout", s.shutdownTimeout),
+		slog.Bool("tls", s.tlsConfig != nil),
 	)
 	if err := eg.Wait(); err != http.ErrServerClosed {
 		return err

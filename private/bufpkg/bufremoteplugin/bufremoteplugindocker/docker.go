@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -29,10 +31,9 @@ import (
 	"github.com/docker/docker/api/types"
 	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	imagev1 "github.com/docker/docker/image/v1"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -45,6 +46,13 @@ const (
 	// Example: User-Agent = [docker/20.10.21 go/go1.18.7 git-commit/3056208 kernel/5.15.49-linuxkit os/linux arch/arm64 UpstreamClient(buf-cli-1.11.0)]
 	BufUpstreamClientUserAgentPrefix = "buf-cli-"
 )
+
+// imageDigestRe is a regular expression for extracting the image digest from the output of a docker
+// push command. It is tightly coupled to the string representation because the stream response
+// itself is not very well defined.
+//
+// https://github.com/moby/moby/blob/1c282d1f1b90ff188a1b46f48548ac3151ca2ddf/daemon/containerd/image_push.go#L130
+var imageDigestRe = regexp.MustCompile(`digest:\s*(\S+)`)
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
 // It ensures that we pass the appropriate parameters to build images (i.e. platform 'linux/amd64').
@@ -95,7 +103,7 @@ type InspectResponse struct {
 
 type dockerAPIClient struct {
 	cli        *client.Client
-	logger     *zap.Logger
+	logger     *slog.Logger
 	lock       sync.RWMutex // protects negotiated
 	negotiated bool
 }
@@ -106,13 +114,13 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 	if err := d.negotiateVersion(ctx); err != nil {
 		return nil, err
 	}
-	response, err := d.cli.ImageLoad(ctx, image, true)
+	response, err := d.cli.ImageLoad(ctx, image, client.ImageLoadWithQuiet(true))
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("docker load response body close error: %w", err))
+			retErr = errors.Join(retErr, fmt.Errorf("docker load response body close error: %w", err))
 		}
 	}()
 	imageID := ""
@@ -125,11 +133,11 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 				continue
 			}
 			if !strings.HasPrefix(loadedImageID, "sha256:") {
-				d.logger.Warn("Unsupported image digest", zap.String("imageID", loadedImageID))
+				d.logger.Warn("Unsupported image digest", slog.String("imageID", loadedImageID))
 				continue
 			}
-			if err := stringid.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
-				d.logger.Warn("Invalid image id", zap.String("imageID", loadedImageID))
+			if err := imagev1.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
+				d.logger.Warn("Invalid image id", slog.String("imageID", loadedImageID))
 				continue
 			}
 			imageID = loadedImageID
@@ -171,23 +179,18 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, pushReader.Close())
+		retErr = errors.Join(retErr, pushReader.Close())
 	}()
 	var imageDigest string
 	pushScanner := bufio.NewScanner(pushReader)
 	for pushScanner.Scan() {
-		d.logger.Debug(pushScanner.Text())
+		d.logger.DebugContext(ctx, pushScanner.Text())
 		var message jsonmessage.JSONMessage
 		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil {
 			if message.Error != nil {
 				return nil, message.Error
 			}
-			if message.Aux != nil {
-				var pushResult types.PushResult
-				if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
-					imageDigest = pushResult.Digest
-				}
-			}
+			imageDigest = getImageDigestFromMessage(message)
 		}
 	}
 	if err := pushScanner.Err(); err != nil {
@@ -196,7 +199,24 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	if len(imageDigest) == 0 {
 		return nil, fmt.Errorf("failed to determine image digest after push")
 	}
+	d.logger.DebugContext(ctx, "docker image digest", slog.String("imageDigest", imageDigest))
 	return &PushResponse{Digest: imageDigest}, nil
+}
+
+func getImageDigestFromMessage(message jsonmessage.JSONMessage) string {
+	if message.Aux != nil {
+		var pushResult types.PushResult
+		if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
+			return pushResult.Digest
+		}
+	}
+	// If the message has no aux field, we fall back to parsing the status field.
+	if message.Status != "" {
+		if match := imageDigestRe.FindStringSubmatch(message.Status); len(match) > 1 {
+			return match[1]
+		}
+	}
+	return ""
 }
 
 func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResponse, error) {
@@ -214,7 +234,7 @@ func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectRe
 	if err := d.negotiateVersion(ctx); err != nil {
 		return nil, err
 	}
-	inspect, _, err := d.cli.ImageInspectWithRaw(ctx, image)
+	inspect, err := d.cli.ImageInspect(ctx, image)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +275,7 @@ func (d *dockerAPIClient) negotiateVersion(ctx context.Context) error {
 }
 
 // NewClient creates a new Client to use to build Docker plugins.
-func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (Client, error) {
+func NewClient(logger *slog.Logger, cliVersion string, options ...ClientOption) (Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger required")
 	}

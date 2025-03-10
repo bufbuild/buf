@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ type jsonMarshaler struct {
 }
 
 func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
+	if resolver == nil {
+		resolver = EmptyResolver
+	}
 	jsonMarshaler := &jsonMarshaler{
 		resolver: resolver,
 	}
@@ -38,7 +41,7 @@ func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshal
 }
 
 func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
-	if err := ReparseUnrecognized(m.resolver, message.ProtoReflect()); err != nil {
+	if err := ReparseExtensions(m.resolver, message.ProtoReflect()); err != nil {
 		return nil, err
 	}
 	options := protojson.MarshalOptions{

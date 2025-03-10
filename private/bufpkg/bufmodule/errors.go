@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ import (
 	"io/fs"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -76,69 +77,10 @@ func (i *ImportNotExistError) Unwrap() error {
 	return fs.ErrNotExist
 }
 
-// ParseError is an error that occurred during parsing.
-//
-// This is returned by all Parse.* functions in this package.
-type ParseError struct {
-	// typeString is the user-consumable string representing of the type that was attempted to be parsed.
-	//
-	// Users cannot rely on this data being structured.
-	// Examples: "digest", "digest type".
-	typeString string
-	// input is the input string that was attempted to be parsed.
-	input string
-	// err is the underlying error.
-	//
-	// Err may be a *ParseError itself.
-	//
-	// This is an error we may give back to the user, use pretty strings that should
-	// be read.
-	err error
-}
-
-// Error implements the error interface.
-func (p *ParseError) Error() string {
-	if p == nil {
-		return ""
-	}
-	var builder strings.Builder
-	_, _ = builder.WriteString(`could not parse`)
-	if p.typeString != "" {
-		_, _ = builder.WriteString(` `)
-		_, _ = builder.WriteString(p.typeString)
-	}
-	if p.input != "" {
-		_, _ = builder.WriteString(` "`)
-		_, _ = builder.WriteString(p.input)
-		_, _ = builder.WriteString(`"`)
-	}
-	if p.err != nil {
-		_, _ = builder.WriteString(`: `)
-		_, _ = builder.WriteString(p.err.Error())
-	}
-	return builder.String()
-}
-
-// Unwrap returns the underlying error.
-func (p *ParseError) Unwrap() error {
-	if p == nil {
-		return nil
-	}
-	return p.err
-}
-
-// Input returns the input string that was attempted to be parsed.
-func (p *ParseError) Input() string {
-	if p == nil {
-		return ""
-	}
-	return p.input
-}
-
 // ModuleCycleError is the error returned if a cycle is detected in module dependencies.
 type ModuleCycleError struct {
-	// OpaqueIDs are the OpaqueIDs that represent the cycle.
-	OpaqueIDs []string
+	// Descriptions are the module descriptions that represent the cycle.
+	Descriptions []string
 }
 
 // Error implements the error interface.
@@ -147,11 +89,16 @@ func (m *ModuleCycleError) Error() string {
 		return ""
 	}
 	var builder strings.Builder
-	_, _ = builder.WriteString(`cycle detected in module dependencies: `)
-	for i, opaqueID := range m.OpaqueIDs {
-		_, _ = builder.WriteString(opaqueID)
-		if i != len(m.OpaqueIDs)-1 {
-			_, _ = builder.WriteString(` -> `)
+	_, _ = builder.WriteString("cycle detected in module dependencies:\n")
+	for i, description := range m.Descriptions {
+		if i == 0 {
+			_, _ = builder.WriteString("    ")
+		} else {
+			_, _ = builder.WriteString(" -> ")
+		}
+		_, _ = builder.WriteString(description)
+		if i != len(m.Descriptions)-1 {
+			_, _ = builder.WriteString("\n")
 		}
 	}
 	return builder.String()
@@ -166,10 +113,10 @@ type DuplicateProtoPathError struct {
 	//
 	// A well-formed DuplicateProtoPathError will have a normalized and non-empty ProtoPath.
 	ProtoPath string
-	// OpaqueIDs are the OpaqueIDs of the Module that contain the ProtoPath.
+	// ModuleDescriptions are the Module descriptions that contain the ProtoPath.
 	//
-	// A well-formed DuplicateProtoPathError will have two or more OpaqueIDs.
-	OpaqueIDs []string
+	// A well-formed DuplicateProtoPathError will have two or more Module descriptions.
+	ModuleDescriptions []string
 }
 
 // Error implements the error interface.
@@ -180,11 +127,12 @@ func (d *DuplicateProtoPathError) Error() string {
 	var builder strings.Builder
 	// Writing even if the error is malformed via d.Path being empty.
 	_, _ = builder.WriteString(d.ProtoPath)
-	_, _ = builder.WriteString(` is contained in multiple modules: `)
-	for i, opaqueID := range d.OpaqueIDs {
-		_, _ = builder.WriteString(opaqueID)
-		if i != len(d.OpaqueIDs)-1 {
-			_, _ = builder.WriteString(`, `)
+	_, _ = builder.WriteString(" is contained in multiple modules:\n")
+	for i, moduleDescription := range d.ModuleDescriptions {
+		_, _ = builder.WriteString("  ")
+		_, _ = builder.WriteString(moduleDescription)
+		if i != len(d.ModuleDescriptions)-1 {
+			_, _ = builder.WriteString("\n")
 		}
 	}
 	return builder.String()
@@ -194,10 +142,10 @@ func (d *DuplicateProtoPathError) Error() string {
 //
 // This check is done as part of ModuleReadBucket.Walks.
 type NoProtoFilesError struct {
-	// OpaqueID is the OpaqueID of the Module that has no .proto files.
+	// ModuleDescription is the description of the Module that has no .proto files.
 	//
-	// A well-formed NoProtoFilesError will have a non-empty OpaqueID.
-	OpaqueID string
+	// A well-formed NoProtoFilesError will have a non-empty ModuleDescription.
+	ModuleDescription string
 }
 
 // Error implements the error interface.
@@ -206,9 +154,9 @@ func (n *NoProtoFilesError) Error() string {
 		return ""
 	}
 	var builder strings.Builder
-	_, _ = builder.WriteString(`"`)
-	// Writing even if the error is malformed via d.OpaqueID being empty.
-	_, _ = builder.WriteString(n.OpaqueID)
+	_, _ = builder.WriteString(`Module "`)
+	// Writing even if the error is malformed via d.ModuleDescription being empty.
+	_, _ = builder.WriteString(n.ModuleDescription)
 	_, _ = builder.WriteString(`" had no .proto files`)
 	return builder.String()
 }
@@ -216,7 +164,7 @@ func (n *NoProtoFilesError) Error() string {
 // DigestMismatchError is the error returned if the Digest of a downloaded Module or Commit
 // does not match the expected digest in a buf.lock file.
 type DigestMismatchError struct {
-	ModuleFullName ModuleFullName
+	FullName       bufparse.FullName
 	CommitID       uuid.UUID
 	ExpectedDigest Digest
 	ActualDigest   Digest
@@ -229,10 +177,10 @@ func (m *DigestMismatchError) Error() string {
 	}
 	var builder strings.Builder
 	_, _ = builder.WriteString(`*** Digest verification failed`)
-	if m.ModuleFullName != nil {
+	if m.FullName != nil {
 		_, _ = builder.WriteString(` for "`)
-		_, _ = builder.WriteString(m.ModuleFullName.String())
-		if !m.CommitID.IsNil() {
+		_, _ = builder.WriteString(m.FullName.String())
+		if m.CommitID != uuid.Nil {
 			_, _ = builder.WriteString(`:`)
 			_, _ = builder.WriteString(uuidutil.ToDashless(m.CommitID))
 		}

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	for _, cacheModuleRelDirPath := range bufcli.AllCacheModuleRelDirPaths {
+	for _, cacheModuleRelDirPath := range bufcli.AllCacheRelDirPaths {
 		dirPath := filepath.Join(container.CacheDirPath(), normalpath.Unnormalize(cacheModuleRelDirPath))
 		fileInfo, err := os.Stat(dirPath)
 		if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 Buf Technologies, Inc.
+// Copyright 2020-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ import (
 	"errors"
 	"io"
 	"sort"
-
-	"go.uber.org/multierr"
 )
 
 // errIsNotEmpty is used to break out of the Walk function early in IsEmpty.
@@ -30,14 +28,14 @@ var errIsNotEmpty = errors.New("__is_not_empty__")
 
 // ReadPath is analogous to os.ReadFile.
 //
-// Returns an error that fufills IsNotExist if the path does not exist.
+// Returns an error that fulfills IsNotExist if the path does not exist.
 func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte, retErr error) {
 	readObject, err := readBucket.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObject.Close())
+		retErr = errors.Join(retErr, readObject.Close())
 	}()
 	return io.ReadAll(readObject)
 }
@@ -49,7 +47,7 @@ func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []b
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	_, err = writeObjectCloser.Write(data)
 	return err
@@ -62,7 +60,7 @@ func ForReadObject(ctx context.Context, readBucket ReadBucket, path string, f fu
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObjectCloser.Close())
+		retErr = errors.Join(retErr, readObjectCloser.Close())
 	}()
 	return f(readObjectCloser)
 }
@@ -74,7 +72,7 @@ func ForWriteObject(ctx context.Context, writeBucket WriteBucket, path string, f
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
 	}()
 	return f(writeObjectCloser)
 }
@@ -95,7 +93,7 @@ func WalkReadObjects(
 			if err != nil {
 				return err
 			}
-			return multierr.Append(f(readObjectCloser), readObjectCloser.Close())
+			return errors.Join(f(readObjectCloser), readObjectCloser.Close())
 		},
 	)
 }
