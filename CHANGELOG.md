@@ -2,7 +2,7 @@
 
 ## [v1.50.1] - 2025-03-10
 
-- No changes yet.
+- Minor fixes and dependency updates.
 
 ## [v1.50.0] - 2025-01-17
 
