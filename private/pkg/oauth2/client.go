@@ -254,7 +254,7 @@ func validateDeviceAuthorizationResponse(deviceAuthorizationResponse DeviceAutho
 func validateURIScheme(rawURI string) error {
 	parsed, err := url.Parse(rawURI)
 	if err != nil {
-		return err
+		return fmt.Errorf("oauth2: invalid verification URI, %s: %w", rawURI, err)
 	}
 	if parsed.Scheme != "https" && parsed.Scheme != "http" {
 		return fmt.Errorf("oauth2: invalid verification URI scheme, %q, received: %s", parsed.Scheme, parsed)
