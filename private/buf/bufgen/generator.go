@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"sort"
 
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
@@ -521,6 +522,10 @@ func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) 
 		Strategy:       Strategy(pluginConfig.Strategy()),
 		RemoteHost:     pluginConfig.RemoteHost(),
 	}
+	sort.Strings(key.Types)
+	sort.Strings(key.ExcludeTypes)
+	sort.Strings(key.Options)
+	sort.Strings(key.ExcludeOptions)
 	bytes, err := json.Marshal(key)
 	if err != nil {
 		return "", err
