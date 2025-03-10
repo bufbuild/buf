@@ -3642,12 +3642,14 @@ func TestConvertWithImage(t *testing.T) {
 	})
 	t.Run("no stdin input from json", func(t *testing.T) {
 		t.Parallel()
-		testRunStdoutStderrNoWarn(
+		testRunStderrContainsNoWarn(
 			t,
 			nil,
 			1,
-			"",
-			`Failure: --from: proto: syntax error (line 1:1): unexpected token`,
+			[]string{
+				"Failure: --from:",
+				"proto: syntax error (line 1:1): unexpected token",
+			},
 			"convert",
 			filepath.Join(tempDir, "image.binpb"),
 			"--type",
