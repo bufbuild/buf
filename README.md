@@ -14,7 +14,7 @@ The [`buf`][buf] CLI is the best tool for working with [Protocol Buffers][protob
 
 - A [linter][lint_usage] that enforces good API design choices and structure.
 - A [breaking change detector][breaking_tutorial] that enforces compatibility at the source code or wire level.
-- A [generator][generate_usage] that invokes your plugins based on configurable [templates][templates].
+- A [generator][generate_usage] that invokes your plugins based on [configuration files][templates].
 - A [formatter][format_usage] that formats your Protobuf files in accordance with industry standards.
 - Integration with the [Buf Schema Registry][bsr], including full dependency management.
 
@@ -108,48 +108,48 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 
 [badges_slack]: https://buf.build/links/slack
 [bash]: https://www.gnu.org/software/bash
-[binary]: https://buf.build/docs/installation#binary
-[breaking]: https://buf.build/docs/breaking/overview
-[breaking_rules]: https://buf.build/docs/breaking/rules
-[breaking_tutorial]: https://buf.build/docs/breaking/tutorial
+[binary]: https://buf.build/docs/installation/#__tabbed_1_3
+[breaking]: https://buf.build/docs/breaking/overview/
+[breaking_rules]: https://buf.build/docs/breaking/rules/
+[breaking_tutorial]: https://buf.build/docs/breaking/tutorial/
 [brew]: https://brew.sh
-[bsr]: https://buf.build/docs/bsr/introduction
+[bsr]: https://buf.build/docs/bsr/
 [bsr_plugins]: https://buf.build/plugins
-[bsr_usage]: https://buf.build/docs/bsr/module/dependency-management
+[bsr_usage]: https://buf.build/docs/bsr/quickstart/
 [buf]: https://buf.build
 [build_config]: https://buf.build/docs/build/usage/#key-concepts
 [build_usage]: https://buf.build/docs/build/usage
-[cli-tutorial]: https://buf.build/docs/tutorials/getting-started-with-buf-cli
-[compiler]: https://buf.build/docs/reference/internal-compiler
-[docker]: https://buf.build/docs/installation#use-the-docker-image
+[cli-tutorial]: https://buf.build/docs/cli/quickstart/
+[compiler]: https://buf.build/docs/reference/internal-compiler/
+[docker]: https://buf.build/docs/installation/#__tabbed_1_5
 [docs]: https://buf.build/docs
 [email_dev]: mailto:dev@buf.build
 [email_info]: mailto:info@buf.build
 [features]: #features
 [fish]: https://fishshell.com
-[format_usage]: https://buf.build/docs/format/style
-[generate_usage]: https://buf.build/docs/generate/tutorial
-[ide]: https://buf.build/docs/editor-integration
+[format_usage]: https://buf.build/docs/format/style/
+[generate_usage]: https://buf.build/docs/generate/tutorial/
+[ide]: https://buf.build/docs/cli/editor-integration/
 [idl]: https://en.wikipedia.org/wiki/Interface_description_language
-[images]: https://buf.build/docs/reference/images
-[inputs]: https://buf.build/docs/reference/inputs
-[install]: https://buf.build/docs/installation
-[jetbrains]: https://buf.build/docs/editor-integration#jetbrains-ides
-[lint]: https://buf.build/docs/lint/overview
-[lint_rules]: https://buf.build/docs/lint/rules
-[lint_usage]: https://buf.build/docs/lint/tutorial
-[npm]: https://buf.build/docs/installation#npm
+[images]: https://buf.build/docs/reference/images/
+[inputs]: https://buf.build/docs/reference/inputs/
+[install]: https://buf.build/docs/installation/
+[jetbrains]: https://buf.build/docs/cli/editor-integration/#jetbrains-ides
+[lint]: https://buf.build/docs/lint/overview/
+[lint_rules]: https://buf.build/docs/lint/rules/
+[lint_usage]: https://buf.build/docs/lint/tutorial/
+[npm]: https://buf.build/docs/installation/#__tabbed_1_2
 [minisign]: https://github.com/jedisct1/minisign
 [powershell]: https://docs.microsoft.com/en-us/powershell
 [protobuf]: https://protobuf.dev
-[pushing]: https://buf.build/docs/bsr/module/dependency-management#push-a-module
-[releases]: https://buf.build/docs/installation#github-releases
+[pushing]: https://buf.build/docs/bsr/module/publish/
+[releases]: https://buf.build/docs/installation/#__tabbed_1_3
 [repo]: https://github.com/bufbuild/buf/
-[repositories]: https://buf.build/docs/bsr/introduction#module
-[source]: https://buf.build/docs/installation#from-source
-[tarball]: https://buf.build/docs/installation#tarball
-[templates]: https://buf.build/docs/configuration/v1/buf-gen-yaml
-[users]: https://buf.build/docs/admin/manage-members
-[verifying]: https://buf.build/docs/installation#var-selection-github-verifying-a-release
-[windows]: https://buf.build/docs/installation#windows-support
+[repositories]: https://buf.build/docs/concepts/repositories/
+[source]: https://buf.build/docs/installation/#__tabbed_1_4
+[tarball]: https://buf.build/docs/installation/#__tabbed_1_3
+[templates]: https://buf.build/docs/configuration/v2/buf-gen-yaml/
+[users]: https://buf.build/docs/admin/manage-members/
+[verifying]: https://buf.build/docs/installation/#__tabbed_1_3
+[windows]: https://buf.build/docs/installation/#__tabbed_1_6
 [zsh]: https://zsh.org
