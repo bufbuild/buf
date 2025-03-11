@@ -108,7 +108,6 @@ func TestTypes(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/options", "pkg.FooService.mixed.txtar", WithIncludeTypes("pkg.FooService"), WithExcludeTypes("pkg.FooService.Do"))
 	})
-
 }
 
 func TestNesting(t *testing.T) {
