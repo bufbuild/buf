@@ -806,11 +806,9 @@ func (t *transitiveClosure) exploreCustomOptions(
 		return fmt.Errorf("unexpected type for exploring options %T", descriptor)
 	}
 
-	count := 0
 	optionsName := options.Descriptor().FullName()
 	var err error
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-		count++
 		if !t.hasOption(fd, imageIndex, opts) {
 			return true
 		}
