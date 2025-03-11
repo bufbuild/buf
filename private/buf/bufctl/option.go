@@ -141,8 +141,6 @@ type functionOptions struct {
 	imageExcludeImports             bool
 	imageTypes                      []string
 	imageExcludeTypes               []string
-	imageOptions                    []string
-	imageExcludeOptions             []string
 	imageAsFileDescriptorSet        bool
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool

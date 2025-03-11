@@ -1330,9 +1330,7 @@ func filterImage(
 	}
 	includeTypes := functionOptions.imageTypes
 	excludeTypes := functionOptions.imageExcludeTypes
-	includeOptions := functionOptions.imageOptions
-	excludeOptions := functionOptions.imageExcludeOptions
-	if len(includeTypes) > 0 || len(excludeTypes) > 0 || len(includeOptions) > 0 || len(excludeOptions) > 0 {
+	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
 		newImage, err = bufimageutil.FilterImage(
 			newImage,
 			bufimageutil.WithIncludeTypes(includeTypes...),
