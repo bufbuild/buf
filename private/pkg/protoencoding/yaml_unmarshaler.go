@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"buf.build/go/protoyaml"
 	"google.golang.org/protobuf/proto"
 )
@@ -44,5 +46,8 @@ func (m *yamlUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 		Validator: m.validator,
 		Path:      m.path,
 	}
-	return options.Unmarshal(data, message)
+	if err := options.Unmarshal(data, message); err != nil {
+		return fmt.Errorf("yaml unmarshal: %w", err)
+	}
+	return nil
 }

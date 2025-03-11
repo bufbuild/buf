@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -35,5 +37,8 @@ func (m *wireUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 	options := proto.UnmarshalOptions{
 		Resolver: m.resolver,
 	}
-	return options.Unmarshal(data, message)
+	if err := options.Unmarshal(data, message); err != nil {
+		return fmt.Errorf("wire unmarshal: %w", err)
+	}
+	return nil
 }

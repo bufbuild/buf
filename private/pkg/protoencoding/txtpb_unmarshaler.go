@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 )
@@ -38,5 +40,8 @@ func (m *txtpbUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 		// TODO: make this an option
 		DiscardUnknown: true,
 	}
-	return options.Unmarshal(data, message)
+	if err := options.Unmarshal(data, message); err != nil {
+		return fmt.Errorf("txtpb unmarshal: %w", err)
+	}
+	return nil
 }

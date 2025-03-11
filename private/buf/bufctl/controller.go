@@ -725,9 +725,6 @@ func (c *controller) GetMessage(
 	if err != nil {
 		return nil, 0, err
 	}
-	if len(data) == 0 {
-		return nil, 0, fmt.Errorf("length of data read from %q was zero", messageInput)
-	}
 	message, err := bufreflect.NewMessage(ctx, schemaImage, typeName)
 	if err != nil {
 		return nil, 0, err
