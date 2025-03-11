@@ -213,7 +213,6 @@ func (g *generator) execPlugins(
 	requiredFeatures := computeRequiredFeatures(image)
 
 	// Group the pluginConfigs by the properties ExcludeOptions, Strategy, and RemoteHost.
-
 	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, createPluginConfigKeyForImage)
 	if err != nil {
 		return nil, err
