@@ -108,6 +108,7 @@ func TestTypes(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/options", "pkg.FooService.mixed.txtar", WithIncludeTypes("pkg.FooService"), WithExcludeTypes("pkg.FooService.Do"))
 	})
+
 }
 
 func TestNesting(t *testing.T) {
@@ -149,6 +150,17 @@ func TestNesting(t *testing.T) {
 	t.Run("mixed", func(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/nesting", "mixed.txtar", WithIncludeTypes("pkg.Foo", "pkg.FooEnum"), WithExcludeTypes("pkg.Foo.NestedFoo", "pkg.Baz"))
+	})
+
+	t.Run("include-excluded", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/nesting", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("pkg.Foo.NestedFoo"), WithExcludeTypes("pkg.Foo"))
+		require.ErrorContains(t, err, "inclusion of excluded type \"pkg.Foo.NestedFoo\"")
+		_, err = FilterImage(image, WithIncludeTypes("pkg.Foo.NestedButNotUsed"), WithExcludeTypes("pkg.Foo"))
+		require.ErrorContains(t, err, "inclusion of excluded type \"pkg.Foo.NestedButNotUsed\"")
 	})
 }
 

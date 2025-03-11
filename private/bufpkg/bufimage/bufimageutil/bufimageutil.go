@@ -360,7 +360,14 @@ func (t *transitiveClosure) includeType(
 		if !options.allowImportedTypes && descriptorInfo.file.IsImport() {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
 		}
-		return t.addElement(descriptorInfo.element, "", false, imageIndex, options)
+		// Check if the type is already excluded.
+		if mode := t.elements[descriptorInfo.element]; mode == inclusionModeExcluded {
+			return fmt.Errorf("inclusion of excluded type %q", typeName)
+		}
+		if err := t.addElement(descriptorInfo.element, "", false, imageIndex, options); err != nil {
+			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
+		}
+		return nil
 	}
 	// It could be a package name
 	pkg, ok := imageIndex.Packages[string(typeName)]
@@ -384,7 +391,7 @@ func (t *transitiveClosure) includeType(
 	for _, file := range pkg.files {
 		fileDescriptor := file.FileDescriptorProto()
 		if err := t.addElement(fileDescriptor, "", false, imageIndex, options); err != nil {
-			return err
+			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
 		}
 	}
 	return nil
