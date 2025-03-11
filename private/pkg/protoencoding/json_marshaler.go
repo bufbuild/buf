@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -51,5 +53,9 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		EmitUnpopulated: m.emitUnpopulated,
 		Indent:          m.indent,
 	}
-	return options.Marshal(message)
+	data, err := options.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal: %w", err)
+	}
+	return data, err
 }

@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -42,5 +44,8 @@ func (m *jsonUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 		Resolver:       m.resolver,
 		DiscardUnknown: !m.disallowUnknown,
 	}
-	return options.Unmarshal(data, message)
+	if err := options.Unmarshal(data, message); err != nil {
+		return fmt.Errorf("json unmarshal: %w", err)
+	}
+	return nil
 }

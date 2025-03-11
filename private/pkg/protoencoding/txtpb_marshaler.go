@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 )
@@ -37,5 +39,9 @@ func (m *txtpbMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		Resolver: m.resolver,
 		Indent:   "  ",
 	}
-	return options.Marshal(message)
+	data, err := options.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("txtpb marshal: %w", err)
+	}
+	return data, err
 }

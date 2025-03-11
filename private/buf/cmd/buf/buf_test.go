@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,7 +67,6 @@ var (
 		{ID: "FIELD_LOWER_SNAKE_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that field names are lower_snake_case."},
 		{ID: "FIELD_NOT_REQUIRED", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that fields are not configured to be required."},
 		{ID: "IMPORT_NO_PUBLIC", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that imports are not public."},
-		{ID: "IMPORT_NO_WEAK", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that imports are not weak."},
 		{ID: "IMPORT_USED", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that imports are used."},
 		{ID: "MESSAGE_PASCAL_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that messages are PascalCase."},
 		{ID: "ONEOF_LOWER_SNAKE_CASE", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that oneof names are lower_snake_case."},
@@ -678,7 +678,6 @@ ENUM_PASCAL_CASE                  BASIC, STANDARD           *        Checks that
 ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, STANDARD           *        Checks that enum values are UPPER_SNAKE_CASE.
 FIELD_LOWER_SNAKE_CASE            BASIC, STANDARD           *        Checks that field names are lower_snake_case.
 IMPORT_NO_PUBLIC                  BASIC, STANDARD           *        Checks that imports are not public.
-IMPORT_NO_WEAK                    BASIC, STANDARD           *        Checks that imports are not weak.
 IMPORT_USED                       BASIC, STANDARD           *        Checks that imports are used.
 MESSAGE_PASCAL_CASE               BASIC, STANDARD           *        Checks that messages are PascalCase.
 ONEOF_LOWER_SNAKE_CASE            BASIC, STANDARD           *        Checks that oneof names are lower_snake_case.
@@ -875,7 +874,6 @@ PACKAGE_SAME_SWIFT_PREFIX         MINIMAL, BASIC, STANDARD, PACKAGE_AFFINITY    
 ENUM_NO_ALLOW_ALIAS               MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that enums do not have the allow_alias option set.
 FIELD_NO_DESCRIPTOR               MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that field names are not any capitalization of "descriptor" with any number of prefix or suffix underscores.
 IMPORT_NO_PUBLIC                  MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that imports are not public.
-IMPORT_NO_WEAK                    MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that imports are not weak.
 PACKAGE_DEFINED                   MINIMAL, BASIC, STANDARD, SENSIBLE            *        Checks that all files have a package defined.
 ENUM_PASCAL_CASE                  BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that enums are PascalCase.
 ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, STANDARD, STYLE_BASIC, STYLE_STANDARD  *        Checks that enum values are UPPER_SNAKE_CASE.
@@ -932,7 +930,6 @@ ENUM_VALUE_UPPER_SNAKE_CASE        BASIC, STANDARD           *        Checks tha
 FIELD_LOWER_SNAKE_CASE             BASIC, STANDARD           *        Checks that field names are lower_snake_case.
 FIELD_NOT_REQUIRED                 BASIC, STANDARD           *        Checks that fields are not configured to be required.
 IMPORT_NO_PUBLIC                   BASIC, STANDARD           *        Checks that imports are not public.
-IMPORT_NO_WEAK                     BASIC, STANDARD           *        Checks that imports are not weak.
 IMPORT_USED                        BASIC, STANDARD           *        Checks that imports are used.
 MESSAGE_PASCAL_CASE                BASIC, STANDARD           *        Checks that messages are PascalCase.
 ONEOF_LOWER_SNAKE_CASE             BASIC, STANDARD           *        Checks that oneof names are lower_snake_case.
@@ -1259,7 +1256,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		}`,
 		append(
 			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
-				return slicesext.ElementsContained(breakingRule.Categories, []string{"WIRE"})
+				return slices.Contains(breakingRule.Categories, "WIRE")
 			}),
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
 			&outputCheckRule{ID: "MESSAGE_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that messages with configured suffixes are not deleted and do not have new fields or delete fields.", Plugin: "buf-plugin-suffix"},
@@ -1295,7 +1292,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		}`,
 		append(
 			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
-				return slicesext.ElementsContained(breakingRule.Categories, []string{"PACKAGE"})
+				return slices.Contains(breakingRule.Categories, "PACKAGE")
 			}),
 			&outputCheckRule{ID: "FIELD_WIRE_COMPATIBLE_TYPE", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible types in a given message."},
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
@@ -1314,7 +1311,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 		}`,
 		append(
 			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
-				return slicesext.ElementsContained(breakingRule.Categories, []string{"PACKAGE"}) || breakingRule.ID == "FIELD_WIRE_COMPATIBLE_TYPE"
+				return slices.Contains(breakingRule.Categories, "PACKAGE") || breakingRule.ID == "FIELD_WIRE_COMPATIBLE_TYPE"
 			}),
 			&outputCheckRule{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
@@ -3579,7 +3576,6 @@ func TestConvertWithImage(t *testing.T) {
 		"-o",
 		filepath.Join(tempDir, "image.binpb"),
 	)
-
 	t.Run("stdin input", func(t *testing.T) {
 		t.Parallel()
 		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
@@ -3599,18 +3595,69 @@ func TestConvertWithImage(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 
-	t.Run("no stdin input", func(t *testing.T) {
+	t.Run("no stdin input from binpb", func(t *testing.T) {
 		t.Parallel()
-		testRunStdoutStderrNoWarn(
+		testRun(
 			t,
+			0,
 			nil,
-			1,
-			"",
-			`Failure: --from: length of data read from "-" was zero`,
+			nil,
 			"convert",
 			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
+			"--from=-#format=binpb",
+			"--to=-#format=txtpb",
+		)
+	})
+	t.Run("no stdin input from txtpb", func(t *testing.T) {
+		t.Parallel()
+		testRun(
+			t,
+			0,
+			nil,
+			nil,
+			"convert",
+			filepath.Join(tempDir, "image.binpb"),
+			"--type",
+			"buf.Foo",
+			"--from=-#format=txtpb",
+			"--to=-#format=binpb",
+		)
+	})
+	t.Run("no stdin input from yaml", func(t *testing.T) {
+		t.Parallel()
+		testRun(
+			t,
+			0,
+			nil,
+			nil,
+			"convert",
+			filepath.Join(tempDir, "image.binpb"),
+			"--type",
+			"buf.Foo",
+			"--from=-#format=yaml",
+			"--to=-#format=binpb",
+		)
+	})
+	t.Run("no stdin input from json", func(t *testing.T) {
+		t.Parallel()
+		testRunStderrContainsNoWarn(
+			t,
+			nil,
+			1,
+			[]string{
+				"Failure: --from:",
+				"json unmarshal:",
+				"proto:",
+				"syntax error (line 1:1): unexpected token",
+			},
+			"convert",
+			filepath.Join(tempDir, "image.binpb"),
+			"--type",
+			"buf.Foo",
+			"--from=-#format=json",
+			"--to=-#format=binpb",
 		)
 	})
 }

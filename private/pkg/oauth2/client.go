@@ -23,6 +23,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -124,6 +125,9 @@ func (c *Client) AuthorizeDevice(
 	}
 	if code := response.StatusCode; code != http.StatusOK {
 		return nil, fmt.Errorf("oauth2: invalid status: %v", code)
+	}
+	if err := validateDeviceAuthorizationResponse(payload.DeviceAuthorizationResponse); err != nil {
+		return nil, err
 	}
 	return &payload.DeviceAuthorizationResponse, nil
 }
@@ -234,6 +238,26 @@ func parseJSONResponse(response *http.Response, payload any) error {
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return fmt.Errorf("oauth2: failed to unmarshal response: %w: %s", err, body)
+	}
+	return nil
+}
+
+func validateDeviceAuthorizationResponse(deviceAuthorizationResponse DeviceAuthorizationResponse) error {
+	// Validate that the verification URI with and without the code
+	// are valid web URLs, and not a file system URI, for example.
+	if err := validateURIScheme(deviceAuthorizationResponse.VerificationURI); err != nil {
+		return err
+	}
+	return validateURIScheme(deviceAuthorizationResponse.VerificationURIComplete)
+}
+
+func validateURIScheme(rawURI string) error {
+	parsed, err := url.Parse(rawURI)
+	if err != nil {
+		return fmt.Errorf("oauth2: invalid verification URI, %s: %w", rawURI, err)
+	}
+	if parsed.Scheme != "https" && parsed.Scheme != "http" {
+		return fmt.Errorf("oauth2: invalid verification URI scheme, %q, received: %s", parsed.Scheme, parsed)
 	}
 	return nil
 }

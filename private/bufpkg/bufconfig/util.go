@@ -14,12 +14,12 @@
 
 package bufconfig
 
-import "github.com/bufbuild/buf/private/pkg/slicesext"
+import "slices"
 
 func copyStringToStringSliceMap(m map[string][]string) map[string][]string {
 	c := make(map[string][]string)
 	for k, v := range m {
-		c[k] = slicesext.Copy(v)
+		c[k] = slices.Clone(v)
 	}
 	return c
 }

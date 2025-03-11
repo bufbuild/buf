@@ -39,7 +39,7 @@ func newFiles[F InputFile](
 	// and let thread.Parallelize deal with what to do.
 
 	chunkSize := len(indexedInputFiles) / thread.Parallelism()
-	if defaultChunkSizeThreshold != 0 && chunkSize < defaultChunkSizeThreshold {
+	if chunkSize < defaultChunkSizeThreshold {
 		files := make([]File, 0, len(indexedInputFiles))
 		for _, indexedInputFile := range indexedInputFiles {
 			file, err := newFile(indexedInputFile.Value, resolver)
@@ -50,7 +50,6 @@ func newFiles[F InputFile](
 		}
 		return files, nil
 	}
-
 	chunks := slicesext.ToChunks(indexedInputFiles, chunkSize)
 	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFiles))
 	jobs := make([]func(context.Context) error, len(chunks))

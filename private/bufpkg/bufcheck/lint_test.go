@@ -172,17 +172,6 @@ func TestRunImportNoPublic(t *testing.T) {
 	)
 }
 
-func TestRunImportNoWeak(t *testing.T) {
-	t.Parallel()
-	testLint(
-		t,
-		"import_no_weak",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 6, 1, 6, 30, "IMPORT_NO_WEAK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 7, 1, 7, 29, "IMPORT_NO_WEAK"),
-		bufanalysistesting.NewFileAnnotation(t, "one/one.proto", 6, 1, 6, 30, "IMPORT_NO_WEAK"),
-	)
-}
-
 func TestRunImportUsed(t *testing.T) {
 	t.Parallel()
 	testLint(
