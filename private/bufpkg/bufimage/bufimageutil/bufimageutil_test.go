@@ -362,7 +362,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
 
 	// allowed if we specify option
-	_, err = FilterImage(image, WithIncludeTypes("dependency.Dep"), WithAllowFilterByImportedType())
+	_, err = FilterImage(image, WithIncludeTypes("dependency.Dep"), WithAllowIncludeOfImportedType())
 	require.NoError(t, err)
 
 	_, err = FilterImage(image, WithIncludeTypes("nonexisting"))

@@ -90,10 +90,11 @@ func WithExcludeKnownExtensions() ImageFilterOption {
 	}
 }
 
-// WithAllowFilterByImportedType returns an option for ImageFilteredByTypesWithOptions
-// that allows a named filter type to be in an imported file or module. Without this
+// WithAllowIncludeOfImportedType returns an option for ImageFilteredByTypesWithOptions
+// that allows a named included type to be in an imported file or module. Without this
 // option, only types defined directly in the image to be filtered are allowed.
-func WithAllowFilterByImportedType() ImageFilterOption {
+// Excluded types are always allowed to be in imported files or modules.
+func WithAllowIncludeOfImportedType() ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		opts.allowImportedTypes = true
 	}
@@ -103,9 +104,10 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 // the set of types that should be included in the filtered image.
 //
 // May be provided multiple times. The type names should be fully qualified.
-// For example, "google.protobuf.Any" or "buf.validate". Types and package names
-// are accepted. Types may be nested, and can be Messages, Enums, Services, Methods,
-// or Extensions. If the type does not exist in the image, an error wrapping
+// For example, "google.protobuf.Any" or "buf.validate". Types may be nested,
+// and can be any package, message, enum, extension, service or method name.
+//
+// If the  type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
@@ -122,9 +124,10 @@ func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 // specifies the set of types that should be excluded from the filtered image.
 //
 // May be provided multiple times. The type names should be fully qualified.
-// For example, "google.protobuf.Any" or "buf.validate". Types and package names
-// are accepted. Types may be nested, and can be Messages, Enums, Services, Methods,
-// or Extensions. If the type does not exist in the image, an error wrapping
+// For example, "google.protobuf.Any" or "buf.validate". Types may be nested,
+// and can be any package, message, enum, extension, service or method name.
+//
+// If the  type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
@@ -559,19 +562,6 @@ func (t *transitiveClosure) excludeType(
 	if !ok {
 		// but it's not...
 		return fmt.Errorf("exclusion of type %q: %w", typeName, ErrImageFilterTypeNotFound)
-	}
-	if !options.allowImportedTypes {
-		// if package includes only imported files, then reject
-		onlyImported := true
-		for _, file := range pkg.files {
-			if !file.IsImport() {
-				onlyImported = false
-				break
-			}
-		}
-		if onlyImported {
-			return fmt.Errorf("exclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
-		}
 	}
 	// Exclude the package and all of its files.
 	for _, file := range pkg.files {
