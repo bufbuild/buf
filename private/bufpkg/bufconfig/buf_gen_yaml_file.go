@@ -519,10 +519,6 @@ type externalGeneratePluginConfigV2 struct {
 	Types []string `json:"types,omitempty" yaml:"types,omitempty"`
 	// ExcludeTypes removes types from the image.
 	ExcludeTypes []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
-	// Options is a list of options to include in the image.
-	Options []string `json:"options,omitempty" yaml:"options,omitempty"`
-	// ExcludeOptions removes options from the image.
-	ExcludeOptions []string `json:"exclude_options,omitempty" yaml:"exclude_options,omitempty"`
 }
 
 // externalGenerateManagedConfigV2 represents the managed mode config in a v2 buf.gen.yaml file.
@@ -573,13 +569,11 @@ type externalInputConfigV2 struct {
 	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
 	YAMLImage   *string `json:"yaml_image,omitempty" yaml:"yaml_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
-	// Types, ExcludeTypes, Options, ExcludeOptions, TargetPaths and ExcludePaths are available for all formats.
-	Types          []string `json:"types,omitempty" yaml:"types,omitempty"`
-	ExcludeTypes   []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
-	Options        []string `json:"options,omitempty" yaml:"options,omitempty"`
-	ExcludeOptions []string `json:"exclude_options,omitempty" yaml:"exclude_options,omitempty"`
-	TargetPaths    []string `json:"paths,omitempty" yaml:"paths,omitempty"`
-	ExcludePaths   []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
+	// Types, ExcludeTypes, TargetPaths and ExcludePaths are available for all formats.
+	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
+	ExcludeTypes []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
+	TargetPaths  []string `json:"paths,omitempty" yaml:"paths,omitempty"`
+	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
 	// The following options are available depending on input format.
 	Compression         *string `json:"compression,omitempty" yaml:"compression,omitempty"`
 	StripComponents     *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`

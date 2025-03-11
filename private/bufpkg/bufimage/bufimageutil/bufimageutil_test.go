@@ -154,35 +154,19 @@ func TestNesting(t *testing.T) {
 
 func TestOptions(t *testing.T) {
 	t.Parallel()
-	t.Run("include_jstype", func(t *testing.T) {
+	t.Run("include_option", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", "options.jstype.include.txtar", WithIncludeOptions("google.protobuf.FieldOptions.jstype"))
-		WithIncludeOptions("google.protobuf.FieldOptions.jstype")
-	})
-	t.Run("exclude_jstype", func(t *testing.T) {
-		t.Parallel()
-		runDiffTest(t, "testdata/options", "options.jstype.exclude.txtar", WithExcludeOptions("google.protobuf.FieldOptions.jstype"))
-	})
-	t.Run("include_message", func(t *testing.T) {
-		t.Parallel()
-		runDiffTest(t, "testdata/options", "options.message.include.txtar", WithIncludeOptions("message_foo", "message_baz"))
+		// Including an option is an error.
+		ctx := context.Background()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("message_foo"))
+		require.Error(t, err)
+		require.ErrorContains(t, err, "extension")
 	})
 	t.Run("exclude_foo", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", "options.foo.exclude.txtar", WithExcludeOptions(
-			"message_foo",
-			"field_foo",
-			"oneof_foo",
-			"enum_foo",
-			"enum_value_foo",
-			"service_foo",
-			"method_foo",
-			"UsedOption.file_foo",
-		))
-	})
-	t.Run("include_foo", func(t *testing.T) {
-		t.Parallel()
-		runDiffTest(t, "testdata/options", "options.foo.include.txtar", WithIncludeOptions(
+		runDiffTest(t, "testdata/options", "options.foo.exclude.txtar", WithExcludeTypes(
 			"message_foo",
 			"field_foo",
 			"oneof_foo",
@@ -195,7 +179,7 @@ func TestOptions(t *testing.T) {
 	})
 	t.Run("only_file", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/options", "options.only_file.txtar", WithExcludeOptions(
+		runDiffTest(t, "testdata/options", "options.only_file.txtar", WithExcludeTypes(
 			"message_foo", "message_bar", "message_baz",
 			"field_foo", "field_bar", "field_baz",
 			"oneof_foo", "oneof_bar", "oneof_baz",
@@ -236,24 +220,19 @@ func TestOptionImports(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	t.Run("none_excluded", func(t *testing.T) {
-		t.Parallel()
-		generated := runFilterImage(t, image, WithExcludeOptions("google.protobuf.FieldOptions.jstype"))
-		checkExpectation(t, context.Background(), generated, bucket, "none_excluded.txtar")
-	})
 	t.Run("exclude_foo", func(t *testing.T) {
 		t.Parallel()
-		generated := runFilterImage(t, image, WithExcludeOptions("message_foo"))
+		generated := runFilterImage(t, image, WithExcludeTypes("message_foo"))
 		checkExpectation(t, context.Background(), generated, bucket, "foo.txtar")
 	})
 	t.Run("exclude_foo_bar", func(t *testing.T) {
 		t.Parallel()
-		generated := runFilterImage(t, image, WithExcludeOptions("message_foo", "message_bar"))
+		generated := runFilterImage(t, image, WithExcludeTypes("message_foo", "message_bar"))
 		checkExpectation(t, context.Background(), generated, bucket, "foo_bar.txtar")
 	})
 	t.Run("exclude_bar", func(t *testing.T) {
 		t.Parallel()
-		generated := runFilterImage(t, image, WithIncludeOptions("message_foo"), WithExcludeOptions("message_bar"))
+		generated := runFilterImage(t, image, WithIncludeTypes("pkg.Foo"), WithExcludeTypes("message_bar"))
 		checkExpectation(t, context.Background(), generated, bucket, "bar.txtar")
 	})
 }

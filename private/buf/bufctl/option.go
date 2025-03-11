@@ -78,18 +78,6 @@ func WithImageExcludeTypes(imageExcludeTypes []string) FunctionOption {
 	}
 }
 
-func WithImageOptions(imageOptions []string) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.imageOptions = imageOptions
-	}
-}
-
-func WithImageExcludeOptions(imageExcludeOptions []string) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.imageExcludeOptions = imageExcludeOptions
-	}
-}
-
 func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageAsFileDescriptorSet = imageAsFileDescriptorSet

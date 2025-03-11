@@ -135,40 +135,6 @@ func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	}
 }
 
-// WithIncludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
-// the set of options that should be included in the filtered image.
-//
-// May be provided multiple times. The option names should be fully qualified.
-// For example, "google.protobuf.FieldOptions.jstype" or "buf.validate.field".
-// If the option does not exist in the image, it will be ignored.
-func WithIncludeOptions(typeNames ...string) ImageFilterOption {
-	return func(opts *imageFilterOptions) {
-		if len(typeNames) > 0 && opts.includeOptions == nil {
-			opts.includeOptions = make(map[string]struct{}, len(typeNames))
-		}
-		for _, typeName := range typeNames {
-			opts.includeOptions[typeName] = struct{}{}
-		}
-	}
-}
-
-// WithExcludeOptions returns an option for ImageFilteredByTypesWithOptions that specifies
-// the set of options that should be excluded from the filtered image.
-//
-// May be provided multiple times. The option names should be fully qualified.
-// For example, "google.protobuf.FieldOptions.jstype" or "buf.validate.field".
-// If the option does not exist in the image, it will be ignored.
-func WithExcludeOptions(typeNames ...string) ImageFilterOption {
-	return func(opts *imageFilterOptions) {
-		if len(typeNames) > 0 && opts.excludeOptions == nil {
-			opts.excludeOptions = make(map[string]struct{}, len(typeNames))
-		}
-		for _, typeName := range typeNames {
-			opts.excludeOptions[typeName] = struct{}{}
-		}
-	}
-}
-
 // WithMutateInPlace returns an option for ImageFilteredByTypesWithOptions that specifies
 // that the filtered image should be mutated in place. This option is useful when the
 // unfiltered image is no longer needed and the caller wants to avoid the overhead of
@@ -265,12 +231,11 @@ func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.I
 	for _, option := range options {
 		option(filterOptions)
 	}
+	// Check for defaults that would result in no filtering.
 	if filterOptions.includeCustomOptions &&
 		filterOptions.includeKnownExtensions &&
 		len(filterOptions.excludeTypes) == 0 &&
-		len(filterOptions.includeTypes) == 0 &&
-		len(filterOptions.excludeOptions) == 0 &&
-		len(filterOptions.includeOptions) == 0 {
+		len(filterOptions.includeTypes) == 0 {
 		return image, nil
 	}
 	return filterImage(image, filterOptions)
@@ -352,25 +317,28 @@ func (t *transitiveClosure) hasType(
 
 func (t *transitiveClosure) hasOption(
 	fieldDescriptor protoreflect.FieldDescriptor,
+	imageIndex *imageIndex,
 	options *imageFilterOptions,
 ) (isIncluded bool) {
-	fullName := fieldDescriptor.FullName()
 	if options == nil {
 		return true // no filter
 	}
-	if options.excludeOptions != nil {
-		if _, ok := options.excludeOptions[string(fullName)]; ok {
-			return false
-		}
+	if !fieldDescriptor.IsExtension() {
+		return true
 	}
-	if options.includeOptions != nil {
-		_, isIncluded = options.includeOptions[string(fullName)]
-		return isIncluded
-	}
-	if fieldDescriptor.IsExtension() && !options.includeCustomOptions {
+	if !options.includeCustomOptions {
 		return false
 	}
-	return true
+	fullName := fieldDescriptor.FullName()
+	descriptor := imageIndex.ByName[fullName].element
+	switch mode := t.elements[descriptor]; mode {
+	case inclusionModeExplicit, inclusionModeImplicit, inclusionModeEnclosing, inclusionModeUnknown:
+		return true
+	case inclusionModeExcluded:
+		return false
+	default:
+		return false
+	}
 }
 
 func (t *transitiveClosure) includeType(
@@ -382,9 +350,13 @@ func (t *transitiveClosure) includeType(
 	//   matching, such as ability to get a package AND all of its sub-packages.
 	descriptorInfo, ok := imageIndex.ByName[typeName]
 	if ok {
+		// If an extension field, error. Extension fields can not be included only excluded.
+		if field, ok := descriptorInfo.element.(*descriptorpb.FieldDescriptorProto); ok && field.GetExtendee() != "" {
+			return fmt.Errorf("inclusion of type %q: extension fields can not be included", typeName)
+		}
 		// It's a type name
 		if !options.allowImportedTypes && descriptorInfo.file.IsImport() {
-			return fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
+			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
 		}
 		return t.addElement(descriptorInfo.element, "", false, imageIndex, options)
 	}
@@ -392,7 +364,7 @@ func (t *transitiveClosure) includeType(
 	pkg, ok := imageIndex.Packages[string(typeName)]
 	if !ok {
 		// but it's not...
-		return fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeNotFound)
+		return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeNotFound)
 	}
 	if !options.allowImportedTypes {
 		// if package includes only imported files, then reject
@@ -404,7 +376,7 @@ func (t *transitiveClosure) includeType(
 			}
 		}
 		if onlyImported {
-			return fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
+			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
 		}
 	}
 	for _, file := range pkg.files {
@@ -581,17 +553,13 @@ func (t *transitiveClosure) excludeType(
 ) error {
 	descriptorInfo, ok := imageIndex.ByName[typeName]
 	if ok {
-		// It's a type name
-		if !options.allowImportedTypes && descriptorInfo.file.IsImport() {
-			return fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
-		}
 		return t.excludeElement(descriptorInfo.element, imageIndex, options)
 	}
 	// It could be a package name
 	pkg, ok := imageIndex.Packages[string(typeName)]
 	if !ok {
 		// but it's not...
-		return fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeNotFound)
+		return fmt.Errorf("exclusion of type %q: %w", typeName, ErrImageFilterTypeNotFound)
 	}
 	if !options.allowImportedTypes {
 		// if package includes only imported files, then reject
@@ -603,7 +571,7 @@ func (t *transitiveClosure) excludeType(
 			}
 		}
 		if onlyImported {
-			return fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
+			return fmt.Errorf("exclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
 		}
 	}
 	// Exclude the package and all of its files.
@@ -628,7 +596,6 @@ func (t *transitiveClosure) excludeElement(
 		}
 		return nil
 	}
-	t.elements[descriptor] = inclusionModeExcluded
 
 	switch descriptor := descriptor.(type) {
 	case *descriptorpb.FileDescriptorProto:
@@ -678,9 +645,15 @@ func (t *transitiveClosure) excludeElement(
 			}
 		}
 	case *descriptorpb.MethodDescriptorProto:
+	case *descriptorpb.FieldDescriptorProto:
+		if descriptor.GetExtendee() == "" {
+			return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
+		}
+		// Is an extension field.
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
+	t.elements[descriptor] = inclusionModeExcluded
 	return nil
 }
 
@@ -837,10 +810,12 @@ func (t *transitiveClosure) exploreCustomOptions(
 		return fmt.Errorf("unexpected type for exploring options %T", descriptor)
 	}
 
+	count := 0
 	optionsName := options.Descriptor().FullName()
 	var err error
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-		if !t.hasOption(fd, opts) {
+		count++
+		if !t.hasOption(fd, imageIndex, opts) {
 			return true
 		}
 		// If the value contains an Any message, we should add the message type
@@ -1019,8 +994,6 @@ type imageFilterOptions struct {
 	mutateInPlace          bool
 	includeTypes           map[string]struct{}
 	excludeTypes           map[string]struct{}
-	includeOptions         map[string]struct{}
-	excludeOptions         map[string]struct{}
 }
 
 func newImageFilterOptions() *imageFilterOptions {

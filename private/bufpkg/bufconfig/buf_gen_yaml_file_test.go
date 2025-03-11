@@ -180,8 +180,12 @@ plugins:
     strategy: all
     include_imports: true
     include_wkt: true
-    exclude_options:
+    types:
+      - "foo.v1.User"
+    exclude_types:
       - buf.validate.oneof
+      - buf.validate.message
+      - buf.validate.field
 inputs:
   - git_repo: github.com/acme/weather
     branch: dev
@@ -191,6 +195,8 @@ inputs:
     types:
       - "foo.v1.User"
       - "foo.v1.UserService"
+    exclude_types:
+      - buf.validate.oneof
     paths:
       - a/b/c
       - a/b/d

@@ -166,12 +166,6 @@ type InputConfig interface {
 	// ExcludeTypes returns the types to exclude. An empty slice means to exclude no types.
 	// This is unioned with IncludeTypes.
 	ExcludeTypes() []string
-	// IncludeOptions returns the options to include. An empty slice means to include all options.
-	// This is unioned with ExcludeOptions.
-	IncludeOptions() []string
-	// ExcludeOptions returns the options to exclude. An empty slice means to exclude no options.
-	// This is unioned with IncludeOptions.
-	ExcludeOptions() []string
 
 	isInputConfig()
 }
@@ -354,8 +348,6 @@ type inputConfig struct {
 	includePackageFiles bool
 	includeTypes        []string
 	excludeTypes        []string
-	includeOptions      []string
-	excludeOptions      []string
 	targetPaths         []string
 	excludePaths        []string
 }
@@ -531,14 +523,6 @@ func (i *inputConfig) IncludeTypes() []string {
 
 func (i *inputConfig) ExcludeTypes() []string {
 	return i.excludeTypes
-}
-
-func (i *inputConfig) IncludeOptions() []string {
-	return i.includeOptions
-}
-
-func (i *inputConfig) ExcludeOptions() []string {
-	return i.excludeOptions
 }
 
 func (i *inputConfig) isInputConfig() {}

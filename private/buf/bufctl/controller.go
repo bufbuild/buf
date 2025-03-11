@@ -1340,8 +1340,6 @@ func filterImage(
 			newImage,
 			bufimageutil.WithIncludeTypes(includeTypes...),
 			bufimageutil.WithExcludeTypes(excludeTypes...),
-			bufimageutil.WithIncludeOptions(includeTypes...),
-			bufimageutil.WithExcludeOptions(excludeOptions...),
 			bufimageutil.WithMutateInPlace(),
 		)
 		if err != nil {

@@ -225,16 +225,12 @@ func (g *generator) execPlugins(
 		// Apply per-config filters.
 		includeTypes := hashPluginConfig.Types()
 		excludeTypes := hashPluginConfig.ExcludeTypes()
-		includeOptions := hashPluginConfig.Options()
-		excludeOptions := hashPluginConfig.ExcludeOptions()
-		if len(includeTypes) > 0 || len(excludeTypes) > 0 || len(includeOptions) > 0 || len(excludeOptions) > 0 {
+		if len(includeTypes) > 0 || len(excludeTypes) > 0 {
 			var err error
 			image, err = bufimageutil.FilterImage(
 				image,
 				bufimageutil.WithIncludeTypes(includeTypes...),
 				bufimageutil.WithExcludeTypes(excludeTypes...),
-				bufimageutil.WithIncludeOptions(includeOptions...),
-				bufimageutil.WithExcludeOptions(excludeOptions...),
 			)
 			if err != nil {
 				return nil, err
@@ -507,25 +503,19 @@ func newGenerateOptions() *generateOptions {
 //   - RemoteHost
 func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
 	type pluginConfigKey struct {
-		Types          []string `json:"types"`
-		ExcludeTypes   []string `json:"exclude_types"`
-		Options        []string `json:"options"`
-		ExcludeOptions []string `json:"exclude_options"`
-		Strategy       Strategy `json:"strategy"`
-		RemoteHost     string   `json:"remote_host"`
+		Types        []string `json:"types"`
+		ExcludeTypes []string `json:"exclude_types"`
+		Strategy     Strategy `json:"strategy"`
+		RemoteHost   string   `json:"remote_host"`
 	}
 	key := &pluginConfigKey{
-		Types:          pluginConfig.Types(),
-		ExcludeTypes:   pluginConfig.ExcludeTypes(),
-		Options:        pluginConfig.Options(),
-		ExcludeOptions: pluginConfig.ExcludeOptions(),
-		Strategy:       Strategy(pluginConfig.Strategy()),
-		RemoteHost:     pluginConfig.RemoteHost(),
+		Types:        pluginConfig.Types(),
+		ExcludeTypes: pluginConfig.ExcludeTypes(),
+		Strategy:     Strategy(pluginConfig.Strategy()),
+		RemoteHost:   pluginConfig.RemoteHost(),
 	}
 	sort.Strings(key.Types)
 	sort.Strings(key.ExcludeTypes)
-	sort.Strings(key.Options)
-	sort.Strings(key.ExcludeOptions)
 	bytes, err := json.Marshal(key)
 	if err != nil {
 		return "", err

@@ -480,6 +480,5 @@ message OptionFoo {
   string foo = 1;
 }
 extend google.protobuf.MessageOptions {
-  OptionFoo message_foo = 50000;
   OptionBar message_bar = 50001;
 }

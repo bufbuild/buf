@@ -635,8 +635,6 @@ func getInputImages(
 			includeTypes = includeTypesOverride
 		}
 		excludeTypes := inputConfig.ExcludeTypes()
-		includeOptions := inputConfig.IncludeOptions()
-		excludeOptions := inputConfig.ExcludeOptions()
 		inputImage, err := controller.GetImageForInputConfig(
 			ctx,
 			inputConfig,
@@ -644,8 +642,6 @@ func getInputImages(
 			bufctl.WithTargetPaths(targetPaths, excludePaths),
 			bufctl.WithImageTypes(includeTypes),
 			bufctl.WithImageExcludeTypes(excludeTypes),
-			bufctl.WithImageOptions(includeOptions),
-			bufctl.WithImageExcludeOptions(excludeOptions),
 		)
 		if err != nil {
 			return nil, err

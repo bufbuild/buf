@@ -504,38 +504,3 @@ message UsedOption {
     string file_baz = 50002;
   }
 }
-extend google.protobuf.EnumOptions {
-  UsedOption enum_foo = 50000;
-  UnusedOption enum_bar = 50001;
-  string enum_baz = 50002;
-}
-extend google.protobuf.EnumValueOptions {
-  UsedOption enum_value_foo = 50000;
-  UnusedOption enum_value_bar = 50001;
-  string enum_value_baz = 50002;
-}
-extend google.protobuf.FieldOptions {
-  UsedOption field_foo = 50000;
-  UnusedOption field_bar = 50001;
-  string field_baz = 50002;
-}
-extend google.protobuf.MessageOptions {
-  UsedOption message_foo = 50000;
-  UnusedOption message_bar = 50001;
-  string message_baz = 50002;
-}
-extend google.protobuf.MethodOptions {
-  UsedOption method_foo = 50000;
-  UnusedOption method_bar = 50001;
-  string method_baz = 50002;
-}
-extend google.protobuf.OneofOptions {
-  UsedOption oneof_foo = 50000;
-  UnusedOption oneof_bar = 50001;
-  string oneof_baz = 50002;
-}
-extend google.protobuf.ServiceOptions {
-  UsedOption service_foo = 50000;
-  UnusedOption service_bar = 50001;
-  string service_baz = 50002;
-}
