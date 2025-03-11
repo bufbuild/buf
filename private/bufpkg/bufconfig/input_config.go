@@ -406,6 +406,7 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 	inputConfig.inputConfigType = inputConfigType
 	// Types, TargetPaths, and ExcludePaths.
 	inputConfig.includeTypes = externalConfig.Types
+	inputConfig.excludeTypes = externalConfig.ExcludeTypes
 	inputConfig.targetPaths = externalConfig.TargetPaths
 	inputConfig.excludePaths = externalConfig.ExcludePaths
 	// Options depending on input format.

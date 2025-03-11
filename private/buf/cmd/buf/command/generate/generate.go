@@ -50,6 +50,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	excludeTypeFlagName         = "exclude-type"
 )
 
 // NewCommand returns a new Command.
@@ -95,6 +96,16 @@ func NewCommand(
         # Whether to generate code for the well-known types.
         # Optional.
         include_wkt: false
+	# Include only these types for this plugin.
+        # Optional.
+	types:
+	  - "foo.v1.User"
+	# Exclude these types for this plugin.
+        # Optional.
+	exclude_types:
+          - "buf.validate.oneof"
+          - "buf.validate.message"
+          - "buf.validate.field""
 
         # The name of a local plugin if discoverable in "${PATH}" or its path in the file system.
       - local: protoc-gen-es
@@ -248,6 +259,10 @@ func NewCommand(
         types:
           - "foo.v1.User"
           - "foo.v1.UserService"
+	# Exclude these types.
+	# Optional.
+	exclude_types:
+	  - "buf.validate"
         # Only generate code for files in these paths.
         # If empty, include all paths.
         paths:
@@ -388,6 +403,7 @@ type flags struct {
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
+	ExcludeTypes    []string
 	// special
 	InputHashtag string
 }
@@ -462,6 +478,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
+	flagSet.StringSliceVar(
+		&f.ExcludeTypes,
+		excludeTypeFlagName,
+		nil,
+		"The types (package, message, enum, extension, service, method) that should be excluded from this image. When specified, the resulting image will not include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
+	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
@@ -517,6 +539,7 @@ func run(
 		flags.Paths,
 		flags.ExcludePaths,
 		flags.Types,
+		flags.ExcludeTypes,
 	)
 	if err != nil {
 		return err
@@ -591,6 +614,7 @@ func getInputImages(
 	targetPathsOverride []string,
 	excludePathsOverride []string,
 	includeTypesOverride []string,
+	excludeTypesOverride []string,
 ) ([]bufimage.Image, error) {
 	// If input is specified on the command line, we use that. If input is not
 	// specified on the command line, use the default input.
@@ -628,13 +652,16 @@ func getInputImages(
 		if len(excludePathsOverride) > 0 {
 			excludePaths = excludePathsOverride
 		}
-		// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
+		// In V1 we do not need to look at generateTypeConfig.IncludeTypes()
 		// because it is always nil.
 		includeTypes := inputConfig.IncludeTypes()
 		if len(includeTypesOverride) > 0 {
 			includeTypes = includeTypesOverride
 		}
 		excludeTypes := inputConfig.ExcludeTypes()
+		if len(excludeTypesOverride) > 0 {
+			excludeTypes = excludeTypesOverride
+		}
 		inputImage, err := controller.GetImageForInputConfig(
 			ctx,
 			inputConfig,
