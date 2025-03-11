@@ -59,7 +59,7 @@ For more comprehensive usage information, consult Buf's [documentation][docs], e
 * [`buf generate`][generate_usage]
 * [`buf lint`][lint_usage]
 * [`buf format`][format_usage]
-* [`buf registry`][bsr_usage] (for using the [BSR])
+* [`buf registry`][bsr_quickstart] (for using the [BSR])
 
 ## CLI breaking change policy
 
