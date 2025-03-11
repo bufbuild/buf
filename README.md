@@ -115,7 +115,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [brew]: https://brew.sh
 [bsr]: https://buf.build/docs/bsr/
 [bsr_plugins]: https://buf.build/plugins
-[bsr_usage]: https://buf.build/docs/bsr/quickstart/
+[bsr_quickstart]: https://buf.build/docs/bsr/quickstart/
 [buf]: https://buf.build
 [build_config]: https://buf.build/docs/build/usage/#key-concepts
 [build_usage]: https://buf.build/docs/build/usage
