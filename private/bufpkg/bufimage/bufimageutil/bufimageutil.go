@@ -117,13 +117,13 @@ func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	}
 }
 
-// WithExcludeTypes returns an option for ImageFilteredByTypesWithOptions that specifies
-// the set of types that should be excluded from the filtered image.
+// WithExcludeTypes returns an option for ImageFilteredByTypesWithOptions that
+// specifies the set of types that should be excluded from the filtered image.
 //
 // May be provided multiple times. The type names should be fully qualified.
-// For example, "google.protobuf.Any" or "buf.validate". Type or package names
-// are accepted. If the type does not exist in the image, an error
-// [ErrImageFilterTypeNotFound] will be returned.
+// For example, "google.protobuf.Any" or "buf.validate". Type, package names,
+// or extension names are accepted. If the type does not exist in the image, an
+// error [ErrImageFilterTypeNotFound] will be returned.
 func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if len(typeNames) > 0 && opts.excludeTypes == nil {
@@ -155,14 +155,15 @@ func WithMutateInPlace() ImageFilterOption {
 // required to define the specified types will be included in the filtered image.
 //
 // Excluded types and options are not included in the filtered image. If an
-// included type transitively depens on the excluded type, the descriptor will
+// included type transitively depends on the excluded type, the descriptor will
 // be altered to remove the dependency.
 //
 // This returns a new [bufimage.Image] that is a shallow copy of the underlying
 // [descriptorpb.FileDescriptorProto]s of the original. The new image may
 // therefore share state with the original image, so it should not be modified.
-// If the original image is no longer needed, it should be discarded. To avoid
-// this sharing, use the [WithMutateInPlace] option.
+// If the original image is no longer needed, it should be discarded. To mutate
+// the original image, use the [WithMutateInPlace] option. Otherwise, to avoid
+// sharing of state clone the image before filtering.
 //
 // A descriptor is said to require another descriptor if the dependent
 // descriptor is needed to accurately and completely describe that descriptor.
@@ -271,21 +272,21 @@ type closureInclusionMode int
 
 const (
 	// Element is explicitly excluded from the closure.
-	inclusionModeExcluded = closureInclusionMode(iota - 1) // -1
+	inclusionModeExcluded = closureInclusionMode(iota - 1)
 	// Element is not yet known to be included or excluded.
-	inclusionModeUnknown // 0
+	inclusionModeUnknown
 	// Element is included in closure because it is directly reachable from a root.
-	inclusionModeExplicit // 1
+	inclusionModeExplicit
 	// Element is included in closure because it is a message or service that
 	// *contains* an explicitly included element but is not itself directly
 	// reachable.
-	inclusionModeEnclosing // 2
+	inclusionModeEnclosing
 	// Element is included in closure because it is implied by the presence of a
 	// custom option. For example, a field element with a custom option implies
 	// the presence of google.protobuf.FieldOptions. An option type could instead be
 	// explicitly included if it is also directly reachable (i.e. some type in the
 	// graph explicitly refers to the option type).
-	inclusionModeImplicit // 3
+	inclusionModeImplicit
 )
 
 func newTransitiveClosure() *transitiveClosure {
