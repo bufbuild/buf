@@ -156,13 +156,16 @@ func TestOptions(t *testing.T) {
 	t.Parallel()
 	t.Run("include_option", func(t *testing.T) {
 		t.Parallel()
-		// Including an option is an error.
-		ctx := context.Background()
-		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
-		require.NoError(t, err)
-		_, err = FilterImage(image, WithIncludeTypes("message_foo"))
-		require.Error(t, err)
-		require.ErrorContains(t, err, "extension")
+		runDiffTest(t, "testdata/options", "options.foo.include.txtar", WithIncludeTypes(
+			"message_foo",
+			"field_foo",
+			"oneof_foo",
+			"enum_foo",
+			"enum_value_foo",
+			"service_foo",
+			"method_foo",
+			"UsedOption.file_foo",
+		))
 	})
 	t.Run("exclude_foo", func(t *testing.T) {
 		t.Parallel()

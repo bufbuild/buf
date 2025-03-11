@@ -103,8 +103,9 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 // the set of types that should be included in the filtered image.
 //
 // May be provided multiple times. The type names should be fully qualified.
-// For example, "google.protobuf.Any" or "buf.validate". Type or package names
-// are accepted. If the type does not exist in the image, an error
+// For example, "google.protobuf.Any" or "buf.validate". Types and package names
+// are accepted. Types may be nested, and can be Messages, Enums, Services, Methods,
+// or Extensions. If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
@@ -121,9 +122,10 @@ func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 // specifies the set of types that should be excluded from the filtered image.
 //
 // May be provided multiple times. The type names should be fully qualified.
-// For example, "google.protobuf.Any" or "buf.validate". Type, package names,
-// or extension names are accepted. If the type does not exist in the image, an
-// error [ErrImageFilterTypeNotFound] will be returned.
+// For example, "google.protobuf.Any" or "buf.validate". Types and package names
+// are accepted. Types may be nested, and can be Messages, Enums, Services, Methods,
+// or Extensions. If the type does not exist in the image, an error wrapping
+// [ErrImageFilterTypeNotFound] will be returned.
 func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		if len(typeNames) > 0 && opts.excludeTypes == nil {
@@ -351,10 +353,6 @@ func (t *transitiveClosure) includeType(
 	//   matching, such as ability to get a package AND all of its sub-packages.
 	descriptorInfo, ok := imageIndex.ByName[typeName]
 	if ok {
-		// If an extension field, error. Extension fields can not be included only excluded.
-		if field, ok := descriptorInfo.element.(*descriptorpb.FieldDescriptorProto); ok && field.GetExtendee() != "" {
-			return fmt.Errorf("inclusion of type %q: extension fields can not be included", typeName)
-		}
 		// It's a type name
 		if !options.allowImportedTypes && descriptorInfo.file.IsImport() {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
