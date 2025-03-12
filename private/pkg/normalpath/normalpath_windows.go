@@ -20,6 +20,7 @@ package normalpath
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
