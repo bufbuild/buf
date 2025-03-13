@@ -1,0 +1,90 @@
+# This job will build and push the Docker image to Docker Hub.
+name: docker-publish
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        required: true
+        description: The release version (e.g., X.Y.Z), without the v.
+      latest:
+        type: boolean
+        description: Whether to push the image with the latest tag
+      publish:
+        type: boolean
+        description: Whether to push the image to Docker Hub
+permissions: read-all
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    if: github.repository == 'bufbuild/buf'
+    steps:
+      - name: Validate SemVer
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          # Check matches semver: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+          SEMVER_REGEX='^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
+          if [[ ! $VERSION =~ $SEMVER_REGEX ]]; then
+            echo "Error: '$VERSION' is not a valid SemVer version"
+            exit 1
+          else
+            echo "Version '$VERSION' is a valid SemVer version"
+          fi
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/v${{ github.event.inputs.version }}
+      - name: setup-qemu
+        uses: docker/setup-qemu-action@v3
+        id: qemu
+        with:
+          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+      - name: setup-docker-buildx
+        uses: docker/setup-buildx-action@v3
+      - name: login-docker
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: docker-meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            bufbuild/buf
+          tags: |
+            type=raw,value=latest,enable={{ github.event.inputs.latest }}
+            type=semver,pattern={{major}},value=v{{ github.event.inputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v{{ github.event.inputs.version }}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},value=v{{ github.event.inputs.version }}
+            type=semver,pattern={{version}},value=v{{ github.event.inputs.version }}
+          flavor: |
+            latest=false
+      - name: docker-build-push
+        uses: docker/build-push-action@v6
+        with:
+          context: . # This uses the checkout context
+          file: Dockerfile.buf
+          load: true
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Test
+        run: |
+          OUTPUT=$(docker run --rm bufbuild/buf:${{ github.event.inputs.version }} buf --version)
+          if [ "$OUTPUT" == "${{ github.event.inputs.version }}" ]; then
+            echo "Version matches"
+          else
+            echo "Version does not match: expected ${{ github.event.inputs.version }}, got $OUTPUT"
+            exit 1
+          fi
+      - name: docker-build-push
+        uses: docker/build-push-action@v6
+        if: ${{ github.event.inputs.publish }
+        with:
+          context: . # This uses the checkout context
+          file: Dockerfile.buf
+          platforms: ${{ steps.qemu.outputs.platforms }}
+          push: ${{ github.event.inputs.publish }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
