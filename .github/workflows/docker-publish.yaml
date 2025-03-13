@@ -9,10 +9,10 @@ on:
         description: The release version (e.g., X.Y.Z), without the v.
       latest:
         type: boolean
-        description: Whether to push the image with the latest tag
+        description: Tag with latest
       publish:
         type: boolean
-        description: Whether to push the image to Docker Hub
+        description: Publish the image to Docker Hub
 permissions: read-all
 jobs:
   docker:
