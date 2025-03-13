@@ -60,7 +60,18 @@ jobs:
           context: . # This uses the checkout context
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Test
+        run: |
+          docker run --rm ${{ github.event.inputs.version }} buf --version
+      - name: docker-build-push
+        uses: docker/build-push-action@v6
+        with:
+          context: . # This uses the checkout context
+          file: Dockerfile.buf
+          platforms: ${{ steps.qemu.outputs.platforms }}
           push: ${{ github.event.inputs.publish }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
