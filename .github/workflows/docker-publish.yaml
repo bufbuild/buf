@@ -10,9 +10,11 @@ on:
       latest:
         type: boolean
         description: Tag with latest
+        default: false
       publish:
         type: boolean
         description: Publish the image to Docker Hub
+        default: false
 permissions: read-all
 jobs:
   docker:
@@ -79,11 +81,11 @@ jobs:
           fi
       - name: docker-build-publish
         uses: docker/build-push-action@v6
-        if: ${{ github.event.inputs.publish }}
+        if: ${{ github.event.inputs.publish == 'true' }}
         with:
           context: . # This uses the checkout context
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
-          push: ${{ github.event.inputs.publish }}
+          push: ${{ github.event.inputs.publish == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
