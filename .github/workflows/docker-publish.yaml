@@ -80,6 +80,7 @@ jobs:
           fi
       - name: docker-build-push
         uses: docker/build-push-action@v6
+        if: ${{ github.event.inputs.publish }
         with:
           context: . # This uses the checkout context
           file: Dockerfile.buf
