@@ -1,0 +1,60 @@
+# This job will build and push the Docker image to Docker Hub.
+name: docker-publish
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        description: The release tag (eg vx.y.z)
+      publish:
+        type: boolean
+        description: Whether to push the image to Docker Hub
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ github.event.inputs.tag }}
+      # qemu is used when executing things like `apk` in the final build
+      # stage which must execute on the target platform. We currently do
+      # not have any CGO and care should be taken in the Dockerfile to ensure
+      # that go cross compilation happens on the build platform.
+      - name: setup-qemu
+        uses: docker/setup-qemu-action@v3
+        id: qemu
+        with:
+          # alpine image doesn't support linux/riscv64
+          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+          context: . # This uses the checkout context
+      - name: setup-docker-buildx
+        uses: docker/setup-buildx-action@v3
+      - name: login-docker
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: docker-meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            bufbuild/buf
+          tags: |
+            type=semver,pattern={{major}},value={{ github.event.inputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value={{ github.event.inputs.tag }}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},value={{ github.event.inputs.tag }}
+            type=semver,pattern={{version}},value={{ github.event.inputs.tag }}
+          flavor: |
+            latest=auto
+      - name: docker-build-push
+        uses: docker/build-push-action@v6
+        with:
+          file: Dockerfile.buf
+          platforms: ${{ steps.qemu.outputs.platforms }}
+          push: ${{ github.event.inputs.publish }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+
