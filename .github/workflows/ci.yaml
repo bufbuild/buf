@@ -108,7 +108,6 @@ jobs:
           tags: |
             type=edge,branch=main
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
           flavor: |
