@@ -32,6 +32,7 @@ jobs:
             echo "Version '$VERSION' is a valid SemVer version"
           fi
       - name: checkout
+        id: checkout
         uses: actions/checkout@v4
         with:
           ref: refs/tags/v${{ github.event.inputs.version }}
@@ -59,6 +60,9 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},value=v${{ github.event.inputs.version }}
             type=semver,pattern={{major}}.{{minor}}.{{patch}},value=v${{ github.event.inputs.version }}
             type=semver,pattern={{version}},value=v${{ github.event.inputs.version }}
+          labels: |
+            org.opencontainers.image.revision=${{ steps.checkout.outputs.commit }}
+            org.opencontainers.image.version=${{ github.event.inputs.version }}
           flavor: |
             latest=false
       - name: docker-build
