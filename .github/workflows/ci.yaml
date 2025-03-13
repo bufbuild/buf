@@ -107,10 +107,10 @@ jobs:
             bufbuild/buf
           tags: |
             type=edge,branch=main
-            type=semver,pattern={{major}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
           flavor: |
             latest=auto
       - name: docker-build-push
