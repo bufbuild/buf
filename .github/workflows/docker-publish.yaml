@@ -53,11 +53,11 @@ jobs:
           images: |
             bufbuild/buf
           tags: |
-            type=raw,value=latest,enable=${{ github.event.inputs.latest }}
-            type=semver,pattern={{major}},value={{ github.event.inputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value={{ github.event.inputs.version }}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}},value={{ github.event.inputs.version }}
-            type=semver,pattern={{version}},value={{ github.event.inputs.version }}
+            type=raw,value=latest,enable={{ github.event.inputs.latest }}
+            type=semver,pattern={{major}},value=v{{ github.event.inputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v{{ github.event.inputs.version }}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},value=v{{ github.event.inputs.version }}
+            type=semver,pattern={{version}},value=v{{ github.event.inputs.version }}
           flavor: |
             latest=false
       - name: docker-build-push
@@ -71,7 +71,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       - name: Test
         run: |
-          docker run --rm bufbuild/buf:${{ github.event.inputs.version }} buf --version
+          OUTPUT=$(docker run --rm bufbuild/buf:${{ github.event.inputs.version }} buf --version)
+          if [ "$OUTPUT" == "${{ github.event.inputs.version }}" ]; then
+            echo "Version matches"
+          else
+            echo "Version does not match: expected ${{ github.event.inputs.version }}, got $OUTPUT"
+            exit 1
+          fi
       - name: docker-build-push
         uses: docker/build-push-action@v6
         with:
