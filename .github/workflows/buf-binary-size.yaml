@@ -1,6 +1,5 @@
 name: binary-size
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
