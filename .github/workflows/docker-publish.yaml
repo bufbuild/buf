@@ -59,7 +59,7 @@ jobs:
             type=semver,pattern={{version}},value=v${{ github.event.inputs.version }}
           flavor: |
             latest=false
-      - name: docker-build-push
+      - name: docker-build
         uses: docker/build-push-action@v6
         with:
           context: . # This uses the checkout context
@@ -68,7 +68,7 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Test
+      - name: docker-test
         run: |
           OUTPUT=$(docker run --rm bufbuild/buf:${{ github.event.inputs.version }} --version)
           if [ "$OUTPUT" == "${{ github.event.inputs.version }}" ]; then
@@ -77,7 +77,7 @@ jobs:
             echo "Version does not match: expected ${{ github.event.inputs.version }}, got $OUTPUT"
             exit 1
           fi
-      - name: docker-build-push
+      - name: docker-build-publish
         uses: docker/build-push-action@v6
         if: ${{ github.event.inputs.publish }}
         with:
