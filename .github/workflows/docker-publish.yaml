@@ -27,7 +27,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
         with:
-          ref: refs/tags/v${{ github.event.inputs.tag }}
+          ref: refs/tags/v${{ github.event.inputs.version }}
       - name: setup-qemu
         uses: docker/setup-qemu-action@v3
         id: qemu
