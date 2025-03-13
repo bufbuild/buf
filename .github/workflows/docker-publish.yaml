@@ -19,11 +19,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'bufbuild/buf'
     steps:
-      - name: Validate Version
-        if: ${{ startsWith(inputs.buf_version, 'v') }}
+      - name: Validate SemVer
         run: |
-          echo "error: buf version must not start with 'v'."
-          exit 1
+          VERSION=${{ github.event.inputs.version }}
+          # Check matches semver: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+          SEMVER_REGEX='^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
+          if [[ ! $VERSION =~ $SEMVER_REGEX ]]; then
+            echo "Error: '$VERSION' is not a valid SemVer version"
+            exit 1
+          else
+            echo "Version '$VERSION' is a valid SemVer version"
+          fi
       - name: checkout
         uses: actions/checkout@v4
         with:
