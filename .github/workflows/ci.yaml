@@ -1,6 +1,9 @@
 name: ci
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "The Git reference to build."
   push:
     branches:
       - main
@@ -17,6 +20,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
       - name: setup-go
         uses: actions/setup-go@v5
         with:
@@ -53,6 +58,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
       - name: setup-go
         uses: actions/setup-go@v5
         with:
@@ -81,8 +88,12 @@ jobs:
     # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/buf
     # 3. The workflow run is trigged by main branch OR a tag with v prefix
     # See https://github.com/bufbuild/buf/pull/289/files#r596207623 for the discussion
-    if:  ${{ github.repository == 'bufbuild/buf' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v')) }}
+    if:  ${{ github.repository == 'bufbuild/buf' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v') || github.event.inputs.ref != '') }}
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
       # qemu is used when executing things like `apk` in the final build
       # stage which must execute on the target platform. We currently do
       # not have any CGO and care should be taken in the Dockerfile to ensure
@@ -117,6 +128,7 @@ jobs:
       - name: docker-build-push
         uses: docker/build-push-action@v6
         with:
+          context: .
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
