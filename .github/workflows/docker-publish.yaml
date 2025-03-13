@@ -3,31 +3,36 @@ name: docker-publish
 on:
   workflow_dispatch:
     inputs:
-      tag:
+      version:
         type: string
-        description: The release tag (eg vx.y.z)
+        required: true
+        description: The release version (e.g., X.Y.Z), without the v.
+      latest:
+        type: boolean
+        description: Whether to push the image with the latest tag
       publish:
         type: boolean
         description: Whether to push the image to Docker Hub
+permissions: read-all
 jobs:
   docker:
     runs-on: ubuntu-latest
+    if: github.repository == 'bufbuild/buf'
     steps:
+      - name: Validate Version
+        if: ${{ startsWith(inputs.buf_version, 'v') }}
+        run: |
+          echo "error: buf version must not start with 'v'."
+          exit 1
       - name: checkout
         uses: actions/checkout@v4
         with:
-          ref: refs/tags/${{ github.event.inputs.tag }}
-      # qemu is used when executing things like `apk` in the final build
-      # stage which must execute on the target platform. We currently do
-      # not have any CGO and care should be taken in the Dockerfile to ensure
-      # that go cross compilation happens on the build platform.
+          ref: refs/tags/v${{ github.event.inputs.tag }}
       - name: setup-qemu
         uses: docker/setup-qemu-action@v3
         id: qemu
         with:
-          # alpine image doesn't support linux/riscv64
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
-          context: . # This uses the checkout context
       - name: setup-docker-buildx
         uses: docker/setup-buildx-action@v3
       - name: login-docker
@@ -42,19 +47,20 @@ jobs:
           images: |
             bufbuild/buf
           tags: |
-            type=semver,pattern={{major}},value={{ github.event.inputs.tag }}
-            type=semver,pattern={{major}}.{{minor}},value={{ github.event.inputs.tag }}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}},value={{ github.event.inputs.tag }}
-            type=semver,pattern={{version}},value={{ github.event.inputs.tag }}
+            type=raw,value=latest,enable=${{ github.event.inputs.latest }}
+            type=semver,pattern={{major}},value={{ github.event.inputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value={{ github.event.inputs.version }}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},value={{ github.event.inputs.version }}
+            type=semver,pattern={{version}},value={{ github.event.inputs.version }}
           flavor: |
-            latest=auto
+            latest=false
       - name: docker-build-push
         uses: docker/build-push-action@v6
         with:
+          context: . # This uses the checkout context
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: ${{ github.event.inputs.publish }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
 
