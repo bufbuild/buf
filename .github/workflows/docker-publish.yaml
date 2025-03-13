@@ -59,7 +59,7 @@ jobs:
         with:
           context: . # This uses the checkout context
           file: Dockerfile.buf
-          platforms: ${{ steps.qemu.outputs.platforms }}
+          load: true
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
