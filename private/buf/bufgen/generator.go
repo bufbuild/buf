@@ -16,7 +16,6 @@ package bufgen
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -213,10 +212,7 @@ func (g *generator) execPlugins(
 	requiredFeatures := computeRequiredFeatures(image)
 
 	// Group the pluginConfigs by the properties ExcludeOptions, Strategy, and RemoteHost.
-	pluginConfigsForImage, err := slicesext.ToIndexedValuesMapError(pluginConfigs, createPluginConfigKeyForImage)
-	if err != nil {
-		return nil, err
-	}
+	pluginConfigsForImage := slicesext.ToIndexedValuesMap(pluginConfigs, createPluginConfigKeyForImage)
 	for _, indexedPluginConfigs := range pluginConfigsForImage {
 		image := image
 		hashPluginConfig := indexedPluginConfigs[0].Value
@@ -494,30 +490,28 @@ func newGenerateOptions() *generateOptions {
 	return &generateOptions{}
 }
 
-// createPluginConfigKeyForImage returns a string of the plugin config with
+type pluginConfigKeyForImage struct {
+	types        string // string representation of []string
+	excludeTypes string // string representation of []string
+	strategy     Strategy
+	remoteHost   string
+}
+
+// createPluginConfigKeyForImage returns a key of the plugin config with
 // a subset of properties. This is used to batch plugins that have similar
 // configuration. The key is based on the following properties:
-//   - ExcludeOptions
+//   - Types
+//   - ExcludeTypes
 //   - Strategy
 //   - RemoteHost
-func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) (string, error) {
-	type pluginConfigKey struct {
-		Types        []string `json:"types"`
-		ExcludeTypes []string `json:"exclude_types"`
-		Strategy     Strategy `json:"strategy"`
-		RemoteHost   string   `json:"remote_host"`
+func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) pluginConfigKeyForImage {
+	// Sort the types and excludeTypes so that the key is deterministic.
+	sort.Strings(pluginConfig.Types())
+	sort.Strings(pluginConfig.ExcludeTypes())
+	return pluginConfigKeyForImage{
+		types:        fmt.Sprintf("%v", pluginConfig.Types()),
+		excludeTypes: fmt.Sprintf("%v", pluginConfig.ExcludeTypes()),
+		strategy:     Strategy(pluginConfig.Strategy()),
+		remoteHost:   pluginConfig.RemoteHost(),
 	}
-	key := &pluginConfigKey{
-		Types:        pluginConfig.Types(),
-		ExcludeTypes: pluginConfig.ExcludeTypes(),
-		Strategy:     Strategy(pluginConfig.Strategy()),
-		RemoteHost:   pluginConfig.RemoteHost(),
-	}
-	sort.Strings(key.Types)
-	sort.Strings(key.ExcludeTypes)
-	bytes, err := json.Marshal(key)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
 }
