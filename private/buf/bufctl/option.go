@@ -72,6 +72,12 @@ func WithImageTypes(imageTypes []string) FunctionOption {
 	}
 }
 
+func WithImageExcludeTypes(imageExcludeTypes []string) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageExcludeTypes = imageExcludeTypes
+	}
+}
+
 func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageAsFileDescriptorSet = imageAsFileDescriptorSet
@@ -134,6 +140,7 @@ type functionOptions struct {
 	imageExcludeSourceInfo          bool
 	imageExcludeImports             bool
 	imageTypes                      []string
+	imageExcludeTypes               []string
 	imageAsFileDescriptorSet        bool
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool
