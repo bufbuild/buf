@@ -69,8 +69,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	dirty := false
 	newImageFiles := make([]bufimage.ImageFile, 0, len(image.Files()))
 	importsByFilePath := make(map[string]struct{})
-	for i := len(image.Files()) - 1; i >= 0; i-- {
-		imageFile := imageFiles[i]
+	for _, imageFile := range slices.Backward(imageFiles) {
 		imageFilePath := imageFile.Path()
 		_, isFileImported := importsByFilePath[imageFilePath]
 		if imageFile.IsImport() && !options.allowImportedTypes {
