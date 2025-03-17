@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protovalidate-go/celext"
+	celpv "github.com/bufbuild/protovalidate-go/cel"
 	"github.com/google/cel-go/cel"
 )
 
@@ -59,7 +59,9 @@ func checkPredefinedRuleExtension(
 	if predefinedConstraints == nil {
 		return nil
 	}
-	celEnv, err := celext.DefaultEnv(false)
+	celEnv, err := cel.NewEnv(
+		cel.Lib(celpv.NewLibrary()),
+	)
 	if err != nil {
 		return err
 	}
@@ -80,7 +82,7 @@ func checkPredefinedRuleExtension(
 	//	 }];
 	// }
 	//
-	ruleType := celext.ProtoFieldToCELType(extensionDescriptor, false, false)
+	ruleType := celpv.ProtoFieldToType(extensionDescriptor, false, false)
 	// To check for the type of "this", we check the descriptor for the rule type we are extending.
 	thisType := celTypeForStandardRuleMessageDescriptor(extendedStandardRuleDescriptor)
 	if thisType == nil {
@@ -88,7 +90,7 @@ func checkPredefinedRuleExtension(
 	}
 	celEnv, err = celEnv.Extend(
 		append(
-			celext.RequiredCELEnvOptions(extensionDescriptor),
+			celpv.RequiredEnvOptions(extensionDescriptor),
 			cel.Variable("rule", ruleType),
 			cel.Variable("this", thisType),
 		)...,

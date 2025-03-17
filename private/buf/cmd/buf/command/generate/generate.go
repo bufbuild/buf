@@ -516,7 +516,7 @@ func run(
 		flags.Config,
 		flags.Paths,
 		flags.ExcludePaths,
-		flags.Types,
+		append(flags.Types, flags.TypesDeprecated...),
 	)
 	if err != nil {
 		return err

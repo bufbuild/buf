@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Fix `buf convert` to allow for zero length for `binpb`, `txtpb`, and `yaml` formats.
+- Fix use of deprecated flag `--include-types` for `buf generate`.
 
 ## [v1.50.1] - 2025-03-10
 
