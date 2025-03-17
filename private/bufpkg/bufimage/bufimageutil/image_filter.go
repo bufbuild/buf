@@ -163,7 +163,7 @@ func filterImageFile(
 		imageFile.LocalPath(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
-		imageFile.UnusedDependencyIndexes(),
+		nil, // There are no unused dependencies.
 	)
 }
 
