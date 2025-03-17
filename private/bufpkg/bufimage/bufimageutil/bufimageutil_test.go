@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -309,6 +310,12 @@ func TestSourceCodeInfo(t *testing.T) {
 	runSourceCodeInfoTest(t, "foo.bar", "all.txtar")
 }
 
+func TestUnusedDeps(t *testing.T) {
+	t.Parallel()
+	runDiffTest(t, "testdata/unuseddeps", "a.txtar", WithIncludeTypes("a.A"))
+	runDiffTest(t, "testdata/unuseddeps", "ab.txtar", WithIncludeTypes("a.A"), WithExcludeTypes("b.B"))
+}
+
 func TestTransitivePublic(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -451,15 +458,22 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 	assert.NotNil(t, image)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
 
+	// Convert the filtered image back to a proto image and then back to an image to ensure that the
+	// image is still valid after filtering.
+	protoImage, err := bufimage.ImageToProtoImage(filteredImage)
+	require.NoError(t, err)
+	filteredImage, err = bufimage.NewImageForProto(protoImage)
+	require.NoError(t, err)
+
 	// We may have filtered out custom options from the set in the step above. However, the options messages
 	// still contain extension fields that refer to the custom options, as a result of building the image.
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
-	data, err := protoencoding.NewWireMarshaler().Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
-	require.NoError(t, err)
-	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	err = protoencoding.NewWireUnmarshaler(filteredImage.Resolver()).Unmarshal(data, fileDescriptorSet)
-	require.NoError(t, err)
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
+		File: slicesext.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
+			return imageFile.FileDescriptorProto()
+		}),
+	}
 
 	files, err := protodesc.NewFiles(fileDescriptorSet)
 	require.NoError(t, err)
