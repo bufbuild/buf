@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protovalidate-go/resolver"
+	"github.com/bufbuild/protovalidate-go/resolve"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -163,7 +163,7 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
+	constraints := resolve.FieldConstraints(fieldDescriptor)
 	return checkConstraintsForField(
 		&adder{
 			field:               field,
@@ -301,15 +301,6 @@ func checkFieldFlags(
 		fieldCount++
 		return true
 	})
-	if fieldConstraints.GetSkipped() && fieldCount > 1 {
-		adder.addForPathf(
-			[]int32{skippedFieldNumber},
-			"Field %q has %s and therefore other rules in %s are not applied and should be removed.",
-			adder.fieldName(),
-			adder.getFieldRuleName(skippedFieldNumber),
-			adder.getFieldRuleName(),
-		)
-	}
 	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS && fieldCount > 1 {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
@@ -318,18 +309,6 @@ func checkFieldFlags(
 			adder.getFieldRuleName(ignoreFieldNumber),
 			validate.Ignore_IGNORE_ALWAYS,
 			adder.getFieldRuleName(),
-		)
-	}
-	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnoreEmpty() {
-		adder.addForPathsf(
-			[][]int32{
-				{requiredFieldNumber},
-				{ignoreEmptyFieldNumber},
-			},
-			"Field %q has both %s and %s. A field cannot be empty if it is required.",
-			adder.fieldName(),
-			adder.getFieldRuleName(requiredFieldNumber),
-			adder.getFieldRuleName(ignoreEmptyFieldNumber),
 		)
 	}
 	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
@@ -393,14 +372,6 @@ func checkConstraintsForExtension(
 			"Field %q is an extension field and cannot have %s.",
 			adder.fieldName(),
 			adder.getFieldRuleName(requiredFieldNumber),
-		)
-	}
-	if fieldConstraints.GetIgnoreEmpty() {
-		adder.addForPathf(
-			[]int32{ignoreEmptyFieldNumber},
-			"Field %q is an extension field and cannot have %s.",
-			adder.fieldName(),
-			adder.getFieldRuleName(ignoreEmptyFieldNumber),
 		)
 	}
 	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
@@ -799,62 +770,55 @@ func checkExampleValues(
 	// and validate this message instance with protovalidate and filter the structured
 	// errors by field name to determine whether this example value fails rules defined
 	// on the same field.
-	//
-	// Pass a constraint resolver interceptor so that constraints on other
-	// fields are not looked at by the validator.
-	constraintInterceptor := func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
-		return &constraintsResolverForTargetField{
-			StandardConstraintResolver: res,
-			targetField:                fieldDescriptor,
-		}
-	}
-	// For map fields, we want to resolve the constraints on the parentMapFieldDescriptor rather
-	// than the MapEntry.
-	if parentMapFieldDescriptor != nil {
-		constraintInterceptor = func(res protovalidate.StandardConstraintResolver) protovalidate.StandardConstraintResolver {
-			// Pass a constraint resolver interceptor so that constraints on other
-			// fields are not looked at by the validator.
-			return &constraintsResolverForTargetField{
-				StandardConstraintResolver: res,
-				targetField:                parentMapFieldDescriptor,
-			}
-		}
-	}
-	validator, err := protovalidate.New(protovalidate.WithStandardConstraintInterceptor(constraintInterceptor))
+	validator, err := protovalidate.New()
 	if err != nil {
 		return err
 	}
 	// The shape of field path in a protovalidate.Violation depends on the type of the field descriptor.
 	violationFilterFunc := func(violation *validate.Violation) bool {
-		return protovalidate.FieldPathString(violation.GetField()) == string(fieldDescriptor.Name())
+		return len(violation.GetField().GetElements()) == 1 &&
+			violation.GetField().GetElements()[0].GetFieldNumber() == int32(fieldDescriptor.Number()) &&
+			violation.GetField().GetElements()[0].GetSubscript() == nil
 	}
 	switch {
 	case fieldDescriptor.IsList():
 		// Field path looks like repeated_field[10]
 		violationFilterFunc = func(violation *validate.Violation) bool {
-			prefix := fieldDescriptor.Name() + "["
-			suffix := "]"
-			fieldPath := protovalidate.FieldPathString(violation.GetField())
-			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix)
+			if len(violation.GetField().GetElements()) != 1 ||
+				violation.GetField().GetElements()[0].GetFieldNumber() != int32(fieldDescriptor.Number()) ||
+				violation.GetField().GetElements()[0].GetSubscript() == nil {
+				return false
+			}
+			_, ok := violation.GetField().GetElements()[0].Subscript.(*validate.FieldPathElement_Index)
+			return ok
 		}
 	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "key":
 		// Field path looks like map_field["the key value that failed"] and ForKey is set to true.
 		violationFilterFunc = func(violation *validate.Violation) bool {
-			prefix := parentMapFieldDescriptor.Name() + "["
-			suffix := "]"
-			fieldPath := protovalidate.FieldPathString(violation.GetField())
-			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && violation.GetForKey()
+			if !violation.GetForKey() ||
+				len(violation.GetField().GetElements()) != 1 ||
+				violation.GetField().GetElements()[0].GetFieldNumber() != int32(parentMapFieldDescriptor.Number()) ||
+				violation.GetField().GetElements()[0].GetSubscript() == nil {
+				return false
+			}
+			_, ok := violation.GetField().GetElements()[0].Subscript.(*validate.FieldPathElement_Index)
+			return !ok
 		}
 	case parentMapFieldDescriptor != nil && fieldDescriptor.Name() == "value":
 		// Field path looks like map_field["the key value that failed"], but ForKey is set to false.
 		violationFilterFunc = func(violation *validate.Violation) bool {
-			prefix := parentMapFieldDescriptor.Name() + "["
-			suffix := "]"
-			fieldPath := protovalidate.FieldPathString(violation.GetField())
-			return strings.HasPrefix(fieldPath, string(prefix)) && strings.HasSuffix(fieldPath, suffix) && !violation.GetForKey()
+			if violation.GetForKey() ||
+				len(violation.GetField().GetElements()) != 1 ||
+				violation.GetField().GetElements()[0].GetFieldNumber() != int32(parentMapFieldDescriptor.Number()) ||
+				violation.GetField().GetElements()[0].GetSubscript() == nil {
+				return false
+			}
+			_, ok := violation.GetField().GetElements()[0].Subscript.(*validate.FieldPathElement_Index)
+			return !ok
 		}
 	}
 	for exampleValueIndex, exampleValue := range exampleValues {
+		filterFieldDescriptor := fieldDescriptor
 		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
 		switch {
 		case fieldDescriptor.IsList():
@@ -862,6 +826,10 @@ func checkExampleValues(
 			list.Append(exampleValue)
 			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOfList(list))
 		case parentMapFieldDescriptor != nil:
+			// In the case of map fields, we need to filter for the parent field descriptor in the
+			// Filter function. The violationFilterFunc will filter to approrpriate violation for
+			// "key" and "value" example values.
+			filterFieldDescriptor = parentMapFieldDescriptor
 			mapEntryMessageDescriptor := fieldDescriptor.ContainingMessage()
 			// We are being very defensive, because a type mismatch may cause a panic in protoreflect.
 			if !mapEntryMessageDescriptor.IsMapEntry() {
@@ -1013,7 +981,16 @@ func checkExampleValues(
 		default:
 			messageToValidate.Set(fieldDescriptor, exampleValue)
 		}
-		err := validator.Validate(messageToValidate)
+		err := validator.Validate(messageToValidate,
+			protovalidate.WithFilter(
+				protovalidate.FilterFunc(func(
+					_ protoreflect.Message,
+					d protoreflect.Descriptor,
+				) bool {
+					return d == filterFieldDescriptor
+				}),
+			),
+		)
 		if err == nil {
 			continue
 		}

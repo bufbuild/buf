@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Fix `buf convert` to allow for zero length for `binpb`, `txtpb`, and `yaml` formats.
+- Fix use of deprecated flag `--include-types` for `buf generate`.
 - Improve type filtering for `buf generate`. Adds the ability to exclude types with the parameter
   `exclude_types` in `buf.gen.yaml` and a flag `--exclude-types` in the CLI.
   Type filters may now also be specified as plugin parameters in `buf.gen.yaml`.

@@ -13,13 +13,13 @@
 // limitations under the License.
 
 //go:build windows
-// +build windows
 
 package normalpath
 
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -167,15 +167,9 @@ func Components(path string) []string {
 
 		dir = strings.TrimSuffix(dir, stringOSPathSeparator)
 	}
-
-	// https://github.com/golang/go/wiki/SliceTricks#reversing
-	for i := len(components)/2 - 1; i >= 0; i-- {
-		opp := len(components) - 1 - i
-		components[i], components[opp] = components[opp], components[i]
-	}
+	slices.Reverse(components)
 	for i, component := range components {
 		components[i] = Normalize(component)
 	}
-
 	return components
 }

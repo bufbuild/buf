@@ -20,7 +20,7 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/protovalidate-go/celext"
+	celpv "github.com/bufbuild/protovalidate-go/cel"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -40,7 +40,9 @@ func checkCELForMessage(
 	messageDescriptor protoreflect.MessageDescriptor,
 	message bufprotosource.Message,
 ) error {
-	celEnv, err := celext.DefaultEnv(false)
+	celEnv, err := cel.NewEnv(
+		cel.Lib(celpv.NewLibrary()),
+	)
 	if err != nil {
 		return err
 	}
@@ -79,14 +81,16 @@ func checkCELForField(
 	if len(fieldConstraints.GetCel()) == 0 {
 		return nil
 	}
-	celEnv, err := celext.DefaultEnv(false)
+	celEnv, err := cel.NewEnv(
+		cel.Lib(celpv.NewLibrary()),
+	)
 	if err != nil {
 		return err
 	}
 	celEnv, err = celEnv.Extend(
 		append(
-			celext.RequiredCELEnvOptions(fieldDescriptor),
-			cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, forItems)),
+			celpv.RequiredEnvOptions(fieldDescriptor),
+			cel.Variable("this", celpv.ProtoFieldToType(fieldDescriptor, false, forItems)),
 		)...,
 	)
 	if err != nil {
