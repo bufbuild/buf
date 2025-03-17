@@ -16,12 +16,12 @@
 // on "path/filepath", i.e. https://cs.opensource.google/go/go/+/refs/tags/go1.17:src/path/filepath/path_unix.go;l=5-6
 
 //go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
 
 package normalpath
 
 import (
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -149,11 +149,7 @@ func Components(path string) []string {
 			break
 		}
 	}
-	// https://github.com/golang/go/wiki/SliceTricks#reversing
-	for i := len(components)/2 - 1; i >= 0; i-- {
-		opp := len(components) - 1 - i
-		components[i], components[opp] = components[opp], components[i]
-	}
+	slices.Reverse(components)
 	for i, component := range components {
 		components[i] = Normalize(component)
 	}
