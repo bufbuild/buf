@@ -16,7 +16,7 @@ require (
 	connectrpc.com/otelconnect v0.7.1
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250106231243-3a819552c9d9
-	github.com/bufbuild/protovalidate-go v0.9.3-0.20250226194538-ac81279d2673
+	github.com/bufbuild/protovalidate-go v0.9.3-0.20250313221327-d7d210481a26
 	github.com/docker/docker v28.0.0+incompatible
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gofrs/flock v0.12.1

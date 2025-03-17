@@ -818,6 +818,7 @@ func checkExampleValues(
 		}
 	}
 	for exampleValueIndex, exampleValue := range exampleValues {
+		filterFieldDescriptor := fieldDescriptor
 		messageToValidate := dynamicpb.NewMessage(containingMessageDescriptor)
 		switch {
 		case fieldDescriptor.IsList():
@@ -825,6 +826,10 @@ func checkExampleValues(
 			list.Append(exampleValue)
 			messageToValidate.Set(fieldDescriptor, protoreflect.ValueOfList(list))
 		case parentMapFieldDescriptor != nil:
+			// In the case of map fields, we need to filter for the parent field descriptor in the
+			// Filter function. The violationFilterFunc will filter to approrpriate violation for
+			// "key" and "value" example values.
+			filterFieldDescriptor = parentMapFieldDescriptor
 			mapEntryMessageDescriptor := fieldDescriptor.ContainingMessage()
 			// We are being very defensive, because a type mismatch may cause a panic in protoreflect.
 			if !mapEntryMessageDescriptor.IsMapEntry() {
@@ -982,7 +987,7 @@ func checkExampleValues(
 					_ protoreflect.Message,
 					d protoreflect.Descriptor,
 				) bool {
-					return d == fieldDescriptor
+					return d == filterFieldDescriptor
 				}),
 			),
 		)

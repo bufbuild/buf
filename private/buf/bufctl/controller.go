@@ -1287,6 +1287,9 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 	}
 }
 
+// Implements [protoyaml.Validator] using [protovalidate.Validator]. This allows us to pass
+// a [protovalidate.Validator] to the [protoencoding.NewYAMLUnmarshaler] and validate types
+// when unmarshalling.
 type yamlValidator struct{ protovalidateValidator protovalidate.Validator }
 
 func (v yamlValidator) Validate(msg proto.Message) error {

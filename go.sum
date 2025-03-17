@@ -34,6 +34,8 @@ github.com/bufbuild/protoplugin v0.0.0-20250106231243-3a819552c9d9 h1:kAWER21Dzh
 github.com/bufbuild/protoplugin v0.0.0-20250106231243-3a819552c9d9/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
 github.com/bufbuild/protovalidate-go v0.9.3-0.20250226194538-ac81279d2673 h1:DCoQi77THlzYLLkjEpBCVwHYDjA5AEpH6tMmWmOx/N4=
 github.com/bufbuild/protovalidate-go v0.9.3-0.20250226194538-ac81279d2673/go.mod h1:b8sJsG1DU8vSap8XccjsyBYHrvBb1CtKGqdiSrDiG7Y=
+github.com/bufbuild/protovalidate-go v0.9.3-0.20250313221327-d7d210481a26 h1:G9DqgCoSaNp3lfyQu09GKTEFF9uRSBiP3w1lGJ5RbyI=
+github.com/bufbuild/protovalidate-go v0.9.3-0.20250313221327-d7d210481a26/go.mod h1:SZN6Qr3lPWuKMoQtIhKdhESkb+3m2vk0lqN9WMuZDDU=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/chromedp/cdproto v0.0.0-20230802225258-3cf4e6d46a89/go.mod h1:GKljq0VrfU4D5yc+2qA6OVr8pmO/MBbPEWqWQ/oqGEs=
