@@ -6,17 +6,17 @@ toolchain go1.23.5
 
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.4-20250121211742-6d880cc6cc8d.1
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.4-20241127180247-a33202765966.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20250219170025-d39267d9df8f.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250116203702-1c024d64352b.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.4-20250116203702-1c024d64352b.1
-	buf.build/go/bufplugin v0.7.0
+	buf.build/go/bufplugin v0.8.0
 	buf.build/go/protoyaml v0.3.1
 	buf.build/go/spdx v0.2.0
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.7.1
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250106231243-3a819552c9d9
-	github.com/bufbuild/protovalidate-go v0.8.2
+	github.com/bufbuild/protovalidate-go v0.9.3-0.20250317160558-38a17488914d
 	github.com/docker/docker v28.0.0+incompatible
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gofrs/flock v0.12.1
@@ -53,7 +53,7 @@ require (
 
 require (
 	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.4-20241007202033-cf42259fcbfc.1 // indirect
-	cel.dev/expr v0.19.2 // indirect
+	cel.dev/expr v0.21.2 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -119,7 +119,7 @@ require (
 	golang.org/x/exp v0.0.0-20250228200357-dead58393ab7 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250127172529-29210b9bc287 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250224174004-546df14abb99 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250224174004-546df14abb99 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 )
