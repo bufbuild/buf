@@ -120,14 +120,14 @@ func filterImageFile(
 		closure:    closure,
 		options:    options,
 	}
-	newFileDescriptor, err := builder.remapFileDescriptor(&sourcePathsRemap, fileDescriptor)
+	newFileDescriptor, changed, err := builder.remapFileDescriptor(&sourcePathsRemap, fileDescriptor)
 	if err != nil {
 		return nil, err
 	}
 	if newFileDescriptor == nil {
 		return nil, nil // Filtered out.
 	}
-	if newFileDescriptor == fileDescriptor {
+	if !changed {
 		return imageFile, nil // No changes required.
 	}
 
@@ -167,6 +167,9 @@ func filterImageFile(
 	)
 }
 
+// sourcePathsBuilder is a helper for building the new source paths.
+// Each method return the new value, whether it was changed, and an error if any.
+// The value is nil if it was filtered out.
 type sourcePathsBuilder struct {
 	imageIndex *imageIndex
 	closure    *transitiveClosure
@@ -176,9 +179,9 @@ type sourcePathsBuilder struct {
 func (b *sourcePathsBuilder) remapFileDescriptor(
 	sourcePathsRemap *sourcePathsRemapTrie,
 	fileDescriptor *descriptorpb.FileDescriptorProto,
-) (*descriptorpb.FileDescriptorProto, error) {
+) (*descriptorpb.FileDescriptorProto, bool, error) {
 	if !b.closure.hasType(fileDescriptor, b.options) {
-		return nil, nil
+		return nil, true, nil
 	}
 
 	sourcePath := make(protoreflect.SourcePath, 0, 8)
@@ -187,32 +190,32 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	isDirty := false
 	newMessages, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileMessagesTag), fileDescriptor.MessageType, b.remapDescriptor, b.options)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	isDirty = isDirty || changed
 	newEnums, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileEnumsTag), fileDescriptor.EnumType, b.remapEnum, b.options)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	isDirty = isDirty || changed
 	newServices, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileServicesTag), fileDescriptor.Service, b.remapService, b.options)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	isDirty = isDirty || changed
 	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, fileExtensionsTag), fileDescriptor.Extension, b.remapField, b.options)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	isDirty = isDirty || changed
 	newOptions, changed, err := remapMessage(nil, append(sourcePath, fileOptionsTag), fileDescriptor.Options, b.remapOptions)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	isDirty = isDirty || changed
 
 	if !isDirty {
-		return fileDescriptor, nil
+		return fileDescriptor, false, nil
 	}
 
 	newFileDescriptor := maybeClone(fileDescriptor, b.options)
@@ -270,7 +273,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 			}
 		}
 	}
-	return newFileDescriptor, nil
+	return newFileDescriptor, true, nil
 }
 
 func (b *sourcePathsBuilder) remapDescriptor(

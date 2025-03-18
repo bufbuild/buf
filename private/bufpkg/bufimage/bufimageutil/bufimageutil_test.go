@@ -391,7 +391,7 @@ func TestTypesFromMainModule(t *testing.T) {
 func TestMutateInPlace(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+	_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options")
 	require.NoError(t, err)
 
 	aProtoFile := image.GetFile("a.proto")
@@ -400,11 +400,16 @@ func TestMutateInPlace(t *testing.T) {
 	assert.Len(t, aFileDescriptorProto.EnumType, 1)    // FooEnum
 	assert.Len(t, aFileDescriptorProto.Service, 1)
 
+	locationLen := len(aFileDescriptorProto.SourceCodeInfo.Location)
+
 	// Shallow copy
 	shallowFilteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Foo"))
 	require.NoError(t, err)
 
-	assert.NotSame(t, aFileDescriptorProto, shallowFilteredImage.GetFile("a.proto").FileDescriptorProto())
+	filteredAFileDescriptorProto := shallowFilteredImage.GetFile("a.proto").FileDescriptorProto()
+	assert.NotSame(t, aFileDescriptorProto, filteredAFileDescriptorProto)
+	filterLocationLen := len(filteredAFileDescriptorProto.SourceCodeInfo.Location)
+	assert.Less(t, filterLocationLen, locationLen)
 
 	// Mutate in place
 	mutateFilteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Foo"), WithMutateInPlace())
@@ -421,6 +426,7 @@ func TestMutateInPlace(t *testing.T) {
 	}
 	assert.Nil(t, aFileDescriptorProto.EnumType)
 	assert.Nil(t, aFileDescriptorProto.Service)
+	assert.Equal(t, filterLocationLen, len(aFileDescriptorProto.SourceCodeInfo.Location))
 }
 
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
