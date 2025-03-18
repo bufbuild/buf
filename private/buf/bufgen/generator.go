@@ -211,13 +211,13 @@ func (g *generator) execPlugins(
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(pluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
 
-	// Group the pluginConfigs by the properties ExcludeOptions, Strategy, and RemoteHost.
+	// Group the pluginConfigs by similar properties to batch image processing.
 	pluginConfigsForImage := slicesext.ToIndexedValuesMap(pluginConfigs, createPluginConfigKeyForImage)
 	for _, indexedPluginConfigs := range pluginConfigsForImage {
 		image := image
 		hashPluginConfig := indexedPluginConfigs[0].Value
 
-		// Apply per-config filters.
+		// Apply per-plugin filters.
 		includeTypes := hashPluginConfig.Types()
 		excludeTypes := hashPluginConfig.ExcludeTypes()
 		if len(includeTypes) > 0 || len(excludeTypes) > 0 {
@@ -491,7 +491,7 @@ func newGenerateOptions() *generateOptions {
 }
 
 type pluginConfigKeyForImage struct {
-	types        string // string representation of []string
+	includeTypes string // string representation of []string
 	excludeTypes string // string representation of []string
 	strategy     Strategy
 	remoteHost   string
@@ -509,7 +509,7 @@ func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) 
 	sort.Strings(pluginConfig.Types())
 	sort.Strings(pluginConfig.ExcludeTypes())
 	return pluginConfigKeyForImage{
-		types:        fmt.Sprintf("%v", pluginConfig.Types()),
+		includeTypes: fmt.Sprintf("%v", pluginConfig.Types()),
 		excludeTypes: fmt.Sprintf("%v", pluginConfig.ExcludeTypes()),
 		strategy:     Strategy(pluginConfig.Strategy()),
 		remoteHost:   pluginConfig.RemoteHost(),
