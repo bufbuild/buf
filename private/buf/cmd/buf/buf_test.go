@@ -3558,6 +3558,30 @@ testdata/check_plugins/current/proto/common/v1/breaking.proto:18:1:Enum "common.
 	)
 }
 
+func TestBreakingAgainstRegistryFlag(t *testing.T) {
+	t.Parallel()
+	testRunStderr(
+		t,
+		nil,
+		1,
+		"Failure: Cannot set both --against and --against-registry",
+		"breaking",
+		filepath.Join("testdata", "check_plugins", "current", "proto"),
+		"--against",
+		filepath.Join("testdata", "check_plugins", "previous", "proto"),
+		"--against-registry",
+	)
+	testRunStderr(
+		t,
+		nil,
+		1,
+		filepath.FromSlash(`Failure: cannot use --against-registry with unamed module, testdata/success`),
+		"breaking",
+		filepath.Join("testdata", "success"),
+		"--against-registry",
+	)
+}
+
 func TestVersion(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, bufcli.Version, "--version")
