@@ -3575,7 +3575,7 @@ func TestBreakingAgainstRegistryFlag(t *testing.T) {
 		t,
 		nil,
 		1,
-		filepath.FromSlash(`Failure: cannot use --against-registry with unnamed module, testdata/success`),
+		"Failure: cannot use --against-registry with unnamed module, testdata/success",
 		"breaking",
 		filepath.Join("testdata", "success"),
 		"--against-registry",

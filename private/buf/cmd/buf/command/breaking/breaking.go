@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 )
@@ -223,12 +224,19 @@ func run(
 		}
 		// We do not require the check configs from the against target once built, so they can
 		// be dropped here.
-		againstImages = slicesext.Map(
+		againstImages, err = slicesext.MapError(
 			againstImagesWithConfigs,
-			func(imageWithConfig bufctl.ImageWithConfig) bufimage.Image {
-				return imageWithConfig.(bufimage.Image)
+			func(imageWithConfig bufctl.ImageWithConfig) (bufimage.Image, error) {
+				againstImage, ok := imageWithConfig.(bufimage.Image)
+				if !ok {
+					return nil, syserror.New("imageWithConfig could not be converted to Image")
+				}
+				return againstImage, nil
 			},
 		)
+		if err != nil {
+			return err
+		}
 	}
 	if flags.AgainstRegistry {
 		for _, imageWithConfig := range imageWithConfigs {
