@@ -244,7 +244,6 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		if !ok {
 			continue
 		}
-		includedFiles = append(includedFiles, imageFile)
 		imageFileDescriptor := imageFile.FileDescriptorProto()
 
 		importsRequired := closure.imports[imageFile.Path()]
@@ -365,6 +364,20 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			}
 			imageFileDescriptor.SourceCodeInfo.Location = imageFileDescriptor.SourceCodeInfo.Location[:i]
 		}
+		imageFile, err = bufimage.NewImageFile(
+			imageFileDescriptor,
+			imageFile.FullName(),
+			imageFile.CommitID(),
+			imageFile.ExternalPath(),
+			imageFile.LocalPath(),
+			imageFile.IsImport(),
+			imageFile.IsSyntaxUnspecified(),
+			nil, // There are no unused dependencies.
+		)
+		if err != nil {
+			return nil, err
+		}
+		includedFiles = append(includedFiles, imageFile)
 	}
 	return bufimage.NewImage(includedFiles)
 }
