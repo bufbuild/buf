@@ -54,10 +54,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// ImageWithConfig pairs an Image with lint and breaking configuration.
+// ImageWithConfig pairs an Image with its corresponding [bufmodule.Module] full name
+// (which may be nil), [bufmodule.Module] opaque ID, and lint and breaking configurations.
 type ImageWithConfig interface {
 	bufimage.Image
 
+	ModuleFullName() bufparse.FullName
+	ModuleOpaqueID() string
 	LintConfig() bufconfig.LintConfig
 	BreakingConfig() bufconfig.BreakingConfig
 	PluginConfigs() []bufconfig.PluginConfig
@@ -476,6 +479,8 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 		imageWithConfigs := []ImageWithConfig{
 			newImageWithConfig(
 				image,
+				nil, // No module name for a single message ref
+				"",  // No module opaque ID for a single message ref
 				lintConfig,
 				breakingConfig,
 				pluginConfigs,
@@ -1170,6 +1175,8 @@ func (c *controller) buildTargetImageWithConfigs(
 			imageWithConfigs,
 			newImageWithConfig(
 				image,
+				module.FullName(),
+				module.OpaqueID(),
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
 				workspace.PluginConfigs(),
