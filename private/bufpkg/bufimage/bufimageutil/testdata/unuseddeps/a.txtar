@@ -1,0 +1,12 @@
+-- a.proto --
+syntax = "proto3";
+package a;
+import "b.proto";
+message A {
+  b.B b = 1;
+}
+-- b.proto --
+syntax = "proto3";
+package b;
+message B {
+}
