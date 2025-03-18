@@ -234,7 +234,7 @@ func run(
 		for _, imageWithConfig := range imageWithConfigs {
 			if imageWithConfig.ModuleFullName() == nil {
 				return fmt.Errorf(
-					"cannot use --%s with unamed module, %s",
+					"cannot use --%s with unnamed module, %s",
 					againstRegistryFlagName,
 					imageWithConfig.ModuleOpaqueID(),
 				)
