@@ -238,9 +238,7 @@ func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.I
 		option(filterOptions)
 	}
 	// Check for defaults that would result in no filtering.
-	if filterOptions.includeCustomOptions &&
-		filterOptions.includeKnownExtensions &&
-		len(filterOptions.excludeTypes) == 0 &&
+	if len(filterOptions.excludeTypes) == 0 &&
 		len(filterOptions.includeTypes) == 0 {
 		return image, nil
 	}
