@@ -654,7 +654,7 @@ func remapSlice[T any](
 }
 
 func maybeClone[T proto.Message](value T, options *imageFilterOptions) T {
-	if options == nil || !options.mutateInPlace {
+	if !options.mutateInPlace {
 		return shallowClone(value)
 	}
 	return value

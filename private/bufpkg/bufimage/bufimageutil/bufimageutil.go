@@ -305,9 +305,6 @@ func (t *transitiveClosure) hasType(
 	descriptor namedDescriptor,
 	options *imageFilterOptions,
 ) (isIncluded bool) {
-	if options == nil {
-		return true // no filter
-	}
 	switch mode := t.elements[descriptor]; mode {
 	case inclusionModeExplicit, inclusionModeImplicit, inclusionModeEnclosing:
 		return true
@@ -326,9 +323,6 @@ func (t *transitiveClosure) hasOption(
 	imageIndex *imageIndex,
 	options *imageFilterOptions,
 ) (isIncluded bool) {
-	if options == nil {
-		return true // no filter
-	}
 	if !fieldDescriptor.IsExtension() {
 		return true
 	}
