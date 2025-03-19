@@ -161,10 +161,8 @@ type InputConfig interface {
 	// ExcludePaths returns paths not to generate for.
 	ExcludePaths() []string
 	// IncludeTypes returns the types to generate. An empty slice means to generate for all types.
-	// This is unioned with ExcludeTypes.
 	IncludeTypes() []string
 	// ExcludeTypes returns the types to exclude. An empty slice means to exclude no types.
-	// This is unioned with IncludeTypes.
 	ExcludeTypes() []string
 
 	isInputConfig()
