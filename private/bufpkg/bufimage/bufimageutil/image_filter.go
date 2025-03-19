@@ -74,11 +74,10 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for _, imageFile := range slices.Backward(imageFiles) {
 		imageFilePath := imageFile.Path()
 		_, isFileImported := importsByFilePath[imageFilePath]
-		if imageFile.IsImport() && !options.allowImportedTypes {
-			// Check if this import is still used.
-			if !isFileImported {
-				continue
-			}
+		// Check if this import is still used. If allowImportedTypes is true, we
+		// must check the imported file to see if it is used.
+		if imageFile.IsImport() && !options.allowImportedTypes && !isFileImported {
+			continue
 		}
 		newImageFile, err := filterImageFile(
 			imageFile,
