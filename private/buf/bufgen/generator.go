@@ -271,11 +271,11 @@ func (g *generator) execPlugins(
 		}
 		for _, indexedPluginConfig := range indexedPluginConfigs {
 			jobs = append(jobs, func(ctx context.Context) error {
-				includeImports := pluginConfigForKey.IncludeImports()
+				includeImports := indexedPluginConfig.Value.IncludeImports()
 				if includeImportsOverride != nil {
 					includeImports = *includeImportsOverride
 				}
-				includeWellKnownTypes := pluginConfigForKey.IncludeWKT()
+				includeWellKnownTypes := indexedPluginConfig.Value.IncludeWKT()
 				if includeWellKnownTypesOverride != nil {
 					includeWellKnownTypes = *includeWellKnownTypesOverride
 				}
