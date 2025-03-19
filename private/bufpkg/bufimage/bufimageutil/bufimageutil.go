@@ -634,10 +634,13 @@ func (t *transitiveClosure) excludeElement(
 		}
 	case *descriptorpb.MethodDescriptorProto:
 	case *descriptorpb.FieldDescriptorProto:
-		if descriptor.GetExtendee() == "" {
+		// Only extension fields can be excluded.
+		if descriptor.Extendee == nil {
 			return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 		}
-		// Is an extension field.
+		if descriptor.GetExtendee() == "" {
+			return fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
+		}
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
