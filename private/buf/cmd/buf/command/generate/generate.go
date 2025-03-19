@@ -652,8 +652,6 @@ func getInputImages(
 		if len(excludePathsOverride) > 0 {
 			excludePaths = excludePathsOverride
 		}
-		// In V1 we do not need to look at generateTypeConfig.IncludeTypes()
-		// because it is always nil.
 		includeTypes := inputConfig.IncludeTypes()
 		if len(includeTypesOverride) > 0 {
 			includeTypes = includeTypesOverride
