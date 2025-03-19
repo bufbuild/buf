@@ -365,17 +365,17 @@ func (g *generator) execRemotePluginsV2(
 	includeWellKnownTypesOverride *bool,
 ) ([]slicesext.Indexed[*pluginpb.CodeGeneratorResponse], error) {
 	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(indexedPluginConfigs))
-	for i, pluginConfig := range indexedPluginConfigs {
-		includeImports := pluginConfig.Value.IncludeImports()
+	for i, indexedPluginConfig := range indexedPluginConfigs {
+		includeImports := indexedPluginConfig.Value.IncludeImports()
 		if includeImportsOverride != nil {
 			includeImports = *includeImportsOverride
 		}
-		includeWellKnownTypes := pluginConfig.Value.IncludeWKT()
+		includeWellKnownTypes := indexedPluginConfig.Value.IncludeWKT()
 		if includeWellKnownTypesOverride != nil {
 			includeWellKnownTypes = *includeWellKnownTypesOverride
 		}
 		request, err := getPluginGenerationRequest(
-			pluginConfig.Value,
+			indexedPluginConfig.Value,
 			includeImports,
 			includeWellKnownTypes,
 		)
