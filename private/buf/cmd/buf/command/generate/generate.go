@@ -482,7 +482,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ExcludeTypes,
 		excludeTypeFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be excluded from this image. When specified, the resulting image will not include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
+		"The types (package, message, enum, extension, service, method) that should be excluded from this image. When specified, the resulting image will omit descriptors for the specified types and remove any references to them, such as fields typed to an excluded message or enum, or custom options tied to an excluded extension. The image is first filtered by the included types, then further reduced by the excluded. Flag usage overrides buf.gen.yaml",
 	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
