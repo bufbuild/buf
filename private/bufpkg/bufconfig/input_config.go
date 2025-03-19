@@ -163,6 +163,10 @@ type InputConfig interface {
 	// IncludeTypes returns the types to generate. An empty slice means to generate for all types.
 	IncludeTypes() []string
 	// ExcludeTypes returns the types to exclude. An empty slice means to exclude no types.
+	// First ExcludeTypes are removed from the image.
+	// Then IncludeTypes are traversed to compute the full set of types in the schema.
+	// Not only are the types removed, but all references to the types must also be
+	// removed in order for the resulting schema to be valid.
 	ExcludeTypes() []string
 
 	isInputConfig()
