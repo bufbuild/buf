@@ -317,7 +317,7 @@ inputs:
 		"--type",
 		"b.v1.Bar",
 	)
-	// Include and exclude types on input and plugin.
+	// buf.gen.yaml has types and exclude_types on inputs and plugins
 	testRunTypeArgs(t, map[string][]byte{
 		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Foo
@@ -329,7 +329,7 @@ inputs:
 		"--template",
 		filepath.Join("testdata", "v2", "types", "buf.gen.yaml"),
 	)
-	// --exclude-type
+	// --exclude-type override
 	testRunTypeArgs(t, map[string][]byte{
 		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Foo
