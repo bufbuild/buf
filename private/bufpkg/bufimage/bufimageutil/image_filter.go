@@ -289,21 +289,26 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	isDirty := false
 	if mode := b.closure.elements[descriptor]; mode == inclusionModeEnclosing {
 		// If the type is only enclosing, only the namespace matters.
-		// TODO: improve isDirty check to avoid cloning the descriptor
-		//   if this type is already only an enclosing type.
-		isDirty = true
-		newDescriptor = maybeClone(descriptor, b.options)
-		sourcePathsRemap.markNoComment(sourcePath)
-		sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
-		sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
-		sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
-		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedRangesTag))
-		sourcePathsRemap.markDeleted(append(sourcePath, messageReservedNamesTag))
-		newDescriptor.Field = nil
-		newDescriptor.OneofDecl = nil
-		newDescriptor.ExtensionRange = nil
-		newDescriptor.ReservedRange = nil
-		newDescriptor.ReservedName = nil
+		if len(descriptor.Field) > 0 ||
+			len(descriptor.OneofDecl) > 0 ||
+			len(descriptor.ExtensionRange) > 0 ||
+			len(descriptor.ReservedRange) > 0 ||
+			len(descriptor.ReservedName) > 0 {
+			// Clear unnecessary fields.
+			isDirty = true
+			newDescriptor = maybeClone(descriptor, b.options)
+			sourcePathsRemap.markNoComment(sourcePath)
+			sourcePathsRemap.markDeleted(append(sourcePath, messageFieldsTag))
+			sourcePathsRemap.markDeleted(append(sourcePath, messageOneofsTag))
+			sourcePathsRemap.markDeleted(append(sourcePath, messageExtensionRangesTag))
+			sourcePathsRemap.markDeleted(append(sourcePath, messageReservedRangesTag))
+			sourcePathsRemap.markDeleted(append(sourcePath, messageReservedNamesTag))
+			newDescriptor.Field = nil
+			newDescriptor.OneofDecl = nil
+			newDescriptor.ExtensionRange = nil
+			newDescriptor.ReservedRange = nil
+			newDescriptor.ReservedName = nil
+		}
 	} else {
 		newFields, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageFieldsTag), descriptor.GetField(), b.remapField, b.options)
 		if err != nil {
