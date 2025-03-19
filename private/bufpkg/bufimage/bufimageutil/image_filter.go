@@ -100,12 +100,12 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		newImageFiles = append(newImageFiles, newImageFile)
 	}
-	if dirty {
-		// Reverse the image files back to DAG order.
-		slices.Reverse(newImageFiles)
-		return bufimage.NewImage(newImageFiles)
+	if !dirty {
+		return image, nil
 	}
-	return image, nil
+	// Reverse the image files back to DAG order.
+	slices.Reverse(newImageFiles)
+	return bufimage.NewImage(newImageFiles)
 }
 
 func filterImageFile(
@@ -289,6 +289,8 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	isDirty := false
 	if mode := b.closure.elements[descriptor]; mode == inclusionModeEnclosing {
 		// If the type is only enclosing, only the namespace matters.
+		// TODO: improve isDirty check to avoid cloning the descriptor
+		//   if this type is already only an enclosing type.
 		isDirty = true
 		newDescriptor = maybeClone(descriptor, b.options)
 		sourcePathsRemap.markNoComment(sourcePath)
