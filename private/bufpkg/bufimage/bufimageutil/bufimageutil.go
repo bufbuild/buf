@@ -346,8 +346,6 @@ func (t *transitiveClosure) includeType(
 	imageIndex *imageIndex,
 	options *imageFilterOptions,
 ) error {
-	// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
-	//   matching, such as ability to get a package AND all of its sub-packages.
 	descriptorInfo, ok := imageIndex.ByName[typeName]
 	if ok {
 		// It's a type name

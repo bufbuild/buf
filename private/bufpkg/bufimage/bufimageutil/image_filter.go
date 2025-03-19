@@ -33,6 +33,8 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	}
 	closure := newTransitiveClosure()
 	// All excludes are added first, then includes walk included all non excluded types.
+	// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
+	//   matching, such as ability to get a package AND all of its sub-packages.
 	for excludeType := range options.excludeTypes {
 		excludeType := protoreflect.FullName(excludeType)
 		if err := closure.excludeType(excludeType, imageIndex, options); err != nil {
