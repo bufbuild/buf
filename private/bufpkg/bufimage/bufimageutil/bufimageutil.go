@@ -332,10 +332,14 @@ func (t *transitiveClosure) hasOption(
 	fullName := fieldDescriptor.FullName()
 	descriptor := imageIndex.ByName[fullName].element
 	switch mode := t.elements[descriptor]; mode {
-	case inclusionModeExplicit, inclusionModeImplicit, inclusionModeEnclosing, inclusionModeUnknown:
+	case inclusionModeExplicit, inclusionModeImplicit, inclusionModeEnclosing:
 		return true
 	case inclusionModeExcluded:
 		return false
+	case inclusionModeUnknown:
+		// True as option type is not explicitly excluded.
+		// Occurs on first transversal when adding included types.
+		return true
 	default:
 		return false
 	}
