@@ -112,8 +112,8 @@ type GeneratePluginConfig interface {
 	//
 	// This is not empty only when the plugin is remote.
 	Revision() int
-	// Types returns the types to include.
-	Types() []string
+	// IncludeTypes returns the types to include.
+	IncludeTypes() []string
 	// ExcludeTypes returns the types to exclude.
 	ExcludeTypes() []string
 
@@ -247,7 +247,7 @@ type generatePluginConfig struct {
 	opts                     []string
 	includeImports           bool
 	includeWKT               bool
-	types                    []string
+	includeTypes             []string
 	excludeTypes             []string
 	strategy                 *GenerateStrategy
 	path                     []string
@@ -532,7 +532,7 @@ func newRemoteGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		types:                    types,
+		includeTypes:             types,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -558,7 +558,7 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		types:                    types,
+		includeTypes:             types,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -589,7 +589,7 @@ func newLocalGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		types:                    types,
+		includeTypes:             types,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -617,7 +617,7 @@ func newProtocBuiltinGeneratePluginConfig(
 		strategy:                 strategy,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		types:                    types,
+		includeTypes:             types,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -646,8 +646,8 @@ func (p *generatePluginConfig) IncludeWKT() bool {
 	return p.includeWKT
 }
 
-func (p *generatePluginConfig) Types() []string {
-	return p.types
+func (p *generatePluginConfig) IncludeTypes() []string {
+	return p.includeTypes
 }
 
 func (p *generatePluginConfig) ExcludeTypes() []string {

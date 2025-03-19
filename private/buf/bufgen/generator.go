@@ -218,7 +218,7 @@ func (g *generator) execPlugins(
 		pluginConfigForKey := indexedPluginConfigs[0].Value
 
 		// Apply per-plugin filters.
-		includeTypes := pluginConfigForKey.Types()
+		includeTypes := pluginConfigForKey.IncludeTypes()
 		excludeTypes := pluginConfigForKey.ExcludeTypes()
 		if len(includeTypes) > 0 || len(excludeTypes) > 0 {
 			var err error
@@ -506,10 +506,10 @@ type pluginConfigKeyForImage struct {
 //   - RemoteHost
 func createPluginConfigKeyForImage(pluginConfig bufconfig.GeneratePluginConfig) pluginConfigKeyForImage {
 	// Sort the types and excludeTypes so that the key is deterministic.
-	sort.Strings(pluginConfig.Types())
+	sort.Strings(pluginConfig.IncludeTypes())
 	sort.Strings(pluginConfig.ExcludeTypes())
 	return pluginConfigKeyForImage{
-		includeTypes: fmt.Sprintf("%v", pluginConfig.Types()),
+		includeTypes: fmt.Sprintf("%v", pluginConfig.IncludeTypes()),
 		excludeTypes: fmt.Sprintf("%v", pluginConfig.ExcludeTypes()),
 		strategy:     Strategy(pluginConfig.Strategy()),
 		remoteHost:   pluginConfig.RemoteHost(),
