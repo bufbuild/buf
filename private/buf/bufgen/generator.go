@@ -215,11 +215,11 @@ func (g *generator) execPlugins(
 	pluginConfigsForImage := slicesext.ToIndexedValuesMap(pluginConfigs, createPluginConfigKeyForImage)
 	for _, indexedPluginConfigs := range pluginConfigsForImage {
 		image := image
-		hashPluginConfig := indexedPluginConfigs[0].Value
+		pluginConfigForKey := indexedPluginConfigs[0].Value
 
 		// Apply per-plugin filters.
-		includeTypes := hashPluginConfig.Types()
-		excludeTypes := hashPluginConfig.ExcludeTypes()
+		includeTypes := pluginConfigForKey.Types()
+		excludeTypes := pluginConfigForKey.ExcludeTypes()
 		if len(includeTypes) > 0 || len(excludeTypes) > 0 {
 			var err error
 			image, err = bufimageutil.FilterImage(
@@ -233,7 +233,7 @@ func (g *generator) execPlugins(
 		}
 
 		// Batch for each remote.
-		if remote := hashPluginConfig.RemoteHost(); remote != "" {
+		if remote := pluginConfigForKey.RemoteHost(); remote != "" {
 			jobs = append(jobs, func(ctx context.Context) error {
 				results, err := g.execRemotePluginsV2(
 					ctx,
@@ -257,7 +257,7 @@ func (g *generator) execPlugins(
 
 		// Local plugins.
 		var images []bufimage.Image
-		switch Strategy(hashPluginConfig.Strategy()) {
+		switch Strategy(pluginConfigForKey.Strategy()) {
 		case StrategyAll:
 			images = []bufimage.Image{image}
 		case StrategyDirectory:
@@ -267,15 +267,15 @@ func (g *generator) execPlugins(
 				return nil, err
 			}
 		default:
-			return nil, fmt.Errorf("unknown strategy: %v", hashPluginConfig.Strategy())
+			return nil, fmt.Errorf("unknown strategy: %v", pluginConfigForKey.Strategy())
 		}
 		for _, indexedPluginConfig := range indexedPluginConfigs {
 			jobs = append(jobs, func(ctx context.Context) error {
-				includeImports := hashPluginConfig.IncludeImports()
+				includeImports := pluginConfigForKey.IncludeImports()
 				if includeImportsOverride != nil {
 					includeImports = *includeImportsOverride
 				}
-				includeWellKnownTypes := hashPluginConfig.IncludeWKT()
+				includeWellKnownTypes := pluginConfigForKey.IncludeWKT()
 				if includeWellKnownTypesOverride != nil {
 					includeWellKnownTypes = *includeWellKnownTypesOverride
 				}
