@@ -586,7 +586,7 @@ func (t *transitiveClosure) excludeElement(
 		}
 		return nil
 	}
-
+	t.elements[descriptor] = inclusionModeExcluded
 	switch descriptor := descriptor.(type) {
 	case *descriptorpb.FileDescriptorProto:
 		for _, descriptor := range descriptor.GetMessageType() {
@@ -643,7 +643,6 @@ func (t *transitiveClosure) excludeElement(
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
-	t.elements[descriptor] = inclusionModeExcluded
 	return nil
 }
 
