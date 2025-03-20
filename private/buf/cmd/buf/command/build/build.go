@@ -158,7 +158,7 @@ func run(
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithImageExcludeSourceInfo(flags.ExcludeSourceInfo),
 		bufctl.WithImageExcludeImports(flags.ExcludeImports),
-		bufctl.WithImageTypes(flags.Types),
+		bufctl.WithImageIncludeTypes(flags.Types),
 		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {

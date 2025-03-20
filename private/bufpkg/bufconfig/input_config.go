@@ -162,6 +162,12 @@ type InputConfig interface {
 	ExcludePaths() []string
 	// IncludeTypes returns the types to generate. An empty slice means to generate for all types.
 	IncludeTypes() []string
+	// ExcludeTypes returns the types to exclude. An empty slice means to exclude no types.
+	// First ExcludeTypes are removed from the image.
+	// Then IncludeTypes are traversed to compute the full set of types in the schema.
+	// Not only are the types removed, but all references to the types must also be
+	// removed in order for the resulting schema to be valid.
+	ExcludeTypes() []string
 
 	isInputConfig()
 }
@@ -343,6 +349,7 @@ type inputConfig struct {
 	recurseSubmodules   bool
 	includePackageFiles bool
 	includeTypes        []string
+	excludeTypes        []string
 	targetPaths         []string
 	excludePaths        []string
 }
@@ -401,6 +408,7 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 	inputConfig.inputConfigType = inputConfigType
 	// Types, TargetPaths, and ExcludePaths.
 	inputConfig.includeTypes = externalConfig.Types
+	inputConfig.excludeTypes = externalConfig.ExcludeTypes
 	inputConfig.targetPaths = externalConfig.TargetPaths
 	inputConfig.excludePaths = externalConfig.ExcludePaths
 	// Options depending on input format.
@@ -514,6 +522,10 @@ func (i *inputConfig) TargetPaths() []string {
 
 func (i *inputConfig) IncludeTypes() []string {
 	return i.includeTypes
+}
+
+func (i *inputConfig) ExcludeTypes() []string {
+	return i.excludeTypes
 }
 
 func (i *inputConfig) isInputConfig() {}

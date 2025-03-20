@@ -351,12 +351,6 @@ issues:
       text: "G115:"
     - linters:
         - gosec
-      # bufimageutil is handling images and converting loop indices to int32. Since it is
-      # parsing from an Image, the operation should be safe.
-      path: private/bufpkg/bufimage/bufimageutil/bufimageutil.go
-      text: "G115:"
-    - linters:
-        - gosec
       # Bounds checks have been added with assertion statements to ensure safe int -> int32
       # conversions, this is a false positive.
       path: private/bufpkg/bufprotosource/option_extension_descriptor_test.go

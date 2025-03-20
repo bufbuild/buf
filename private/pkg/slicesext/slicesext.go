@@ -244,6 +244,11 @@ func ToIndexedValuesMap[K comparable, V any](values []V, f func(V) K) map[K][]In
 	return ToValuesMap(ToIndexed(values), func(indexedV Indexed[V]) K { return f(indexedV.Value) })
 }
 
+// ToIndexedValuesMapError calls ToValuesMapError on the indexed values.
+func ToIndexedValuesMapError[K comparable, V any](values []V, f func(V) (K, error)) (map[K][]Indexed[V], error) {
+	return ToValuesMapError(ToIndexed(values), func(indexedV Indexed[V]) (K, error) { return f(indexedV.Value) })
+}
+
 // ToUniqueIndexedValuesMap calls ToUniqueValuesMap on the indexed values.
 func ToUniqueIndexedValuesMap[K comparable, V any](values []V, f func(V) K) (map[K]Indexed[V], error) {
 	return ToUniqueValuesMap(ToIndexed(values), func(indexedV Indexed[V]) K { return f(indexedV.Value) })

@@ -1,0 +1,23 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: java_package_prefix
+      value: net
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+    strategy: all
+    types:
+      - "a.v1.Foo"
+    exclude_types:
+      - "a.v1.Foo.Bar"
+      - "pkg.v1.message_foo"
+      - "pkg.v1.message_bar"
+inputs:
+  - directory: ./testdata/v2/types
+    types:
+      - "a.v1.FooBar"
+    exclude_types:
+      - "a.v1.Empty"
+      - "pkg.v1.message_baz"

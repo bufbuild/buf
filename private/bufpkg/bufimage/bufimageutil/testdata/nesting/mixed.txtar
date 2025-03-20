@@ -1,0 +1,10 @@
+-- a.proto --
+syntax = "proto3";
+package pkg;
+message Foo {
+  string x = 1;
+}
+enum FooEnum {
+  FOO_ENUM_X = 0;
+  FOO_ENUM_Y = 1;
+}
