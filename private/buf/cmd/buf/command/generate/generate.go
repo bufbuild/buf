@@ -635,7 +635,7 @@ func getInputImages(
 			input,
 			bufctl.WithConfigOverride(moduleConfigOverride),
 			bufctl.WithTargetPaths(targetPathsOverride, excludePathsOverride),
-			bufctl.WithImageTypes(includeTypes),
+			bufctl.WithImageIncludeTypes(includeTypes),
 		)
 		if err != nil {
 			return nil, err
@@ -665,7 +665,7 @@ func getInputImages(
 			inputConfig,
 			bufctl.WithConfigOverride(moduleConfigOverride),
 			bufctl.WithTargetPaths(targetPaths, excludePaths),
-			bufctl.WithImageTypes(includeTypes),
+			bufctl.WithImageIncludeTypes(includeTypes),
 			bufctl.WithImageExcludeTypes(excludeTypes),
 		)
 		if err != nil {

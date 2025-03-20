@@ -1337,7 +1337,7 @@ func filterImage(
 	if functionOptions.imageExcludeImports {
 		newImage = bufimage.ImageWithoutImports(newImage)
 	}
-	includeTypes := functionOptions.imageTypes
+	includeTypes := functionOptions.imageIncludeTypes
 	excludeTypes := functionOptions.imageExcludeTypes
 	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
 		newImage, err = bufimageutil.FilterImage(

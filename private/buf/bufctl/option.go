@@ -66,9 +66,9 @@ func WithImageExcludeImports(imageExcludeImports bool) FunctionOption {
 	}
 }
 
-func WithImageTypes(imageTypes []string) FunctionOption {
+func WithImageIncludeTypes(imageTypes []string) FunctionOption {
 	return func(functionOptions *functionOptions) {
-		functionOptions.imageTypes = imageTypes
+		functionOptions.imageIncludeTypes = imageTypes
 	}
 }
 
@@ -139,7 +139,7 @@ type functionOptions struct {
 	targetExcludePaths              []string
 	imageExcludeSourceInfo          bool
 	imageExcludeImports             bool
-	imageTypes                      []string
+	imageIncludeTypes               []string
 	imageExcludeTypes               []string
 	imageAsFileDescriptorSet        bool
 	configOverride                  string
