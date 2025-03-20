@@ -3,16 +3,16 @@ package pkg;
 import "google/protobuf/descriptor.proto";
 
 message Foo {
-	oneof oneofFoo {
-		option (oneof_foo) = "str";
+  oneof oneofFoo {
+    option (oneof_foo) = "str";
     string foo = 1;
     FooEnum foo_enum = 2;
-	}
-	oneof oneofBar {
-		option (oneof_bar) = "str";
+  }
+  oneof oneofBar {
+    option (oneof_bar) = "str";
     Bar bar = 3;
     Bar.BarNested bar_nested = 4;
-	}
+  }
 }
 
 enum FooEnum {
@@ -26,6 +26,6 @@ message Bar {
   }
 }
 extend google.protobuf.OneofOptions {
-	optional string oneof_foo = 50000;
-	optional string oneof_bar = 50001;
+  optional string oneof_foo = 50000;
+  optional string oneof_bar = 50001;
 }
