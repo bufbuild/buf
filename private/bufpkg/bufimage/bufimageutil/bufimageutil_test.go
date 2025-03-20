@@ -176,6 +176,18 @@ func TestNesting(t *testing.T) {
 	})
 }
 
+func TestOneof(t *testing.T) {
+	t.Parallel()
+	t.Run("exclude-partial", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/oneofs", "pkg.Foo.exclude-partial.txtar", WithIncludeTypes("pkg.Foo"), WithExcludeTypes("pkg.FooEnum", "pkg.Bar.BarNested"))
+	})
+	t.Run("exclude-bar", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/oneofs", "pkg.Foo.exclude-bar.txtar", WithIncludeTypes("pkg.Foo"), WithExcludeTypes("pkg.FooEnum", "pkg.Bar"))
+	})
+}
+
 func TestOptions(t *testing.T) {
 	t.Parallel()
 	t.Run("include_option", func(t *testing.T) {

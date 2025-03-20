@@ -443,6 +443,7 @@ func (t *transitiveClosure) addElement(
 		}
 
 	case *descriptorpb.DescriptorProto:
+		oneofFieldCounts := make([]int, len(typedDescriptor.GetOneofDecl()))
 		// Options and types for all fields
 		for _, field := range typedDescriptor.GetField() {
 			isIncluded, err := t.addFieldType(field, descriptorInfo.file.Path(), imageIndex, opts)
@@ -452,12 +453,21 @@ func (t *transitiveClosure) addElement(
 			if !isIncluded {
 				continue
 			}
+			if index := field.OneofIndex; index != nil {
+				oneofFieldCounts[*index]++
+			}
 			if err := t.exploreCustomOptions(field, referrerFile, imageIndex, opts); err != nil {
 				return err
 			}
 		}
 		// Options for all oneofs in this message
-		for _, oneOfDescriptor := range typedDescriptor.GetOneofDecl() {
+		for index, oneOfDescriptor := range typedDescriptor.GetOneofDecl() {
+			if oneofFieldCounts[index] == 0 {
+				// An empty oneof is not a valid protobuf construct, so we can
+				// safely exclude it.
+				t.elements[oneOfDescriptor] = inclusionModeExcluded
+				continue
+			}
 			if err := t.exploreCustomOptions(oneOfDescriptor, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
 				return err
 			}
