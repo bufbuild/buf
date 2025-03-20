@@ -127,7 +127,7 @@ func NewRemoteGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
-	types []string,
+	includeTypes []string,
 	excludeTypes []string,
 	revision int,
 ) (GeneratePluginConfig, error) {
@@ -137,7 +137,7 @@ func NewRemoteGeneratePluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
-		types,
+		includeTypes,
 		excludeTypes,
 		revision,
 	)
@@ -509,7 +509,7 @@ func newRemoteGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
-	types []string,
+	includeTypes []string,
 	excludeTypes []string,
 	revision int,
 ) (*generatePluginConfig, error) {
@@ -532,7 +532,7 @@ func newRemoteGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		includeTypes:             types,
+		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -543,7 +543,7 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
-	types []string,
+	includeTypes []string,
 	excludeTypes []string,
 	strategy *GenerateStrategy,
 ) (*generatePluginConfig, error) {
@@ -558,7 +558,7 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		includeTypes:             types,
+		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -569,7 +569,7 @@ func newLocalGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
-	types []string,
+	includeTypes []string,
 	excludeTypes []string,
 	strategy *GenerateStrategy,
 	path []string,
@@ -589,7 +589,7 @@ func newLocalGeneratePluginConfig(
 		opts:                     opt,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		includeTypes:             types,
+		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
@@ -600,7 +600,7 @@ func newProtocBuiltinGeneratePluginConfig(
 	opt []string,
 	includeImports bool,
 	includeWKT bool,
-	types []string,
+	includeTypes []string,
 	excludeTypes []string,
 	strategy *GenerateStrategy,
 	protocPath []string,
@@ -617,7 +617,7 @@ func newProtocBuiltinGeneratePluginConfig(
 		strategy:                 strategy,
 		includeImports:           includeImports,
 		includeWKT:               includeWKT,
-		includeTypes:             types,
+		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
 	}, nil
 }
