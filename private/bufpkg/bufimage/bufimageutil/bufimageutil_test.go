@@ -109,6 +109,18 @@ func TestTypes(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/options", "pkg.FooService.mixed.txtar", WithIncludeTypes("pkg.FooService"), WithExcludeTypes("pkg.FooService.Do"))
 	})
+	t.Run("include-service-exclude-method-types", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.FooService.exclude-method-types.txtar", WithIncludeTypes("pkg.FooService"), WithExcludeTypes("pkg.Empty"))
+	})
+	t.Run("include-method-exclude-method-types", func(t *testing.T) {
+		t.Parallel()
+		_, image, err := getImage(context.Background(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("pkg.FooService", "pkg.FooService.Do"), WithExcludeTypes("pkg.Empty"))
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "cannot include method \"pkg.FooService.Do\"")
+	})
 }
 
 func TestNesting(t *testing.T) {
@@ -461,7 +473,7 @@ func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...
 func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOption) []byte {
 	filteredImage, err := FilterImage(image, opts...)
 	require.NoError(t, err)
-	assert.NotNil(t, image)
+	assert.NotNil(t, filteredImage)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
 
 	// Convert the filtered image back to a proto image and then back to an image to ensure that the

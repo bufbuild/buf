@@ -478,6 +478,22 @@ func (t *transitiveClosure) addElement(
 
 	case *descriptorpb.ServiceDescriptorProto:
 		for _, method := range typedDescriptor.GetMethod() {
+			inputName := protoreflect.FullName(strings.TrimPrefix(method.GetInputType(), "."))
+			inputInfo, ok := imageIndex.ByName[inputName]
+			if !ok {
+				return fmt.Errorf("missing %q", inputName)
+			}
+			outputName := protoreflect.FullName(strings.TrimPrefix(method.GetOutputType(), "."))
+			outputInfo, ok := imageIndex.ByName[outputName]
+			if !ok {
+				return fmt.Errorf("missing %q", outputName)
+			}
+			inputMode, outputMode := t.elements[inputInfo.element], t.elements[outputInfo.element]
+			if inputMode == inclusionModeExcluded || outputMode == inclusionModeExcluded {
+				// The input or ouptut is excluded, so this method is also excluded.
+				t.elements[inputInfo.element] = inclusionModeExcluded
+				continue
+			}
 			if err := t.addElement(method, "", false, imageIndex, opts); err != nil {
 				return err
 			}
@@ -489,14 +505,21 @@ func (t *transitiveClosure) addElement(
 		if !ok {
 			return fmt.Errorf("missing %q", inputName)
 		}
-		if err := t.addElement(inputInfo.element, descriptorInfo.file.Path(), false, imageIndex, opts); err != nil {
-			return err
-		}
-
 		outputName := protoreflect.FullName(strings.TrimPrefix(typedDescriptor.GetOutputType(), "."))
 		outputInfo, ok := imageIndex.ByName[outputName]
 		if !ok {
 			return fmt.Errorf("missing %q", outputName)
+		}
+		if inputMode := t.elements[inputInfo.element]; inputMode == inclusionModeExcluded {
+			// The input is excluded, it's an error to include the method.
+			return fmt.Errorf("cannot include method %q as the input type %q is excluded", descriptorInfo.fullName, inputInfo.fullName)
+		}
+		if outputMode := t.elements[outputInfo.element]; outputMode == inclusionModeExcluded {
+			// The output is excluded, it's an error to include the method.
+			return fmt.Errorf("cannot include method %q as the output type %q is excluded", descriptorInfo.fullName, outputInfo.fullName)
+		}
+		if err := t.addElement(inputInfo.element, descriptorInfo.file.Path(), false, imageIndex, opts); err != nil {
+			return err
 		}
 		if err := t.addElement(outputInfo.element, descriptorInfo.file.Path(), false, imageIndex, opts); err != nil {
 			return err
