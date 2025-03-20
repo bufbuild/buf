@@ -121,6 +121,15 @@ func TestTypes(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "cannot include method \"pkg.FooService.Do\"")
 	})
+
+	t.Run("include-extension-exclude-extendee", func(t *testing.T) {
+		t.Parallel()
+		_, image, err := getImage(context.Background(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("pkg.extension"), WithExcludeTypes("pkg.Foo"))
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "cannot include extension field \"pkg.extension\" as the extendee type \"pkg.Foo\" is excluded")
+	})
 }
 
 func TestNesting(t *testing.T) {

@@ -358,6 +358,17 @@ func (t *transitiveClosure) includeType(
 		if mode := t.elements[descriptorInfo.element]; mode == inclusionModeExcluded {
 			return fmt.Errorf("inclusion of excluded type %q", typeName)
 		}
+		// If an extension field, check if the extendee is excluded.
+		if field, ok := descriptorInfo.element.(*descriptorpb.FieldDescriptorProto); ok && field.Extendee != nil {
+			extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
+			extendeeInfo, ok := imageIndex.ByName[extendeeName]
+			if !ok {
+				return fmt.Errorf("missing %q", extendeeName)
+			}
+			if mode := t.elements[extendeeInfo.element]; mode == inclusionModeExcluded {
+				return fmt.Errorf("cannot include extension field %q as the extendee type %q is excluded", typeName, extendeeName)
+			}
+		}
 		if err := t.addElement(descriptorInfo.element, "", false, imageIndex, options); err != nil {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
 		}
