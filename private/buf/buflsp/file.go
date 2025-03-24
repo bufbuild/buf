@@ -311,6 +311,9 @@ func (f *file) Refresh(ctx context.Context) {
 		f.BuildImages(ctx)
 		f.RunLints(ctx)
 		f.RunBreaking(ctx)
+
+		// Ensure diagnostics are published after checks are run.
+		f.PublishDiagnostics(ctx)
 	}()
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
