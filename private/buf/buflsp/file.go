@@ -313,8 +313,9 @@ func (f *file) Refresh(ctx context.Context) {
 //
 // Checks are executed in a background goroutine to avoid blocking the LSP
 // call. Each call to RunChecks invalidates any ongoing checks, triggering a
-// fresh run. The checks acquire the LSP mutex. Subsequent LSP calls will wait
-// for the current check to complete before proceeding.
+// fresh run. However, previous checks are not interrupted. The checks acquire
+// the LSP mutex. Subsequent LSP calls will wait for the current check to
+// complete before proceeding.
 //
 // Checks are debounce (with the delay defined by checkRefreshPeriod) to avoid
 // overwhelming the client with expensive checks. If the file is not open in the
