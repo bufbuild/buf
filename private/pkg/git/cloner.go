@@ -193,10 +193,18 @@ func (c *cloner) CloneToBucket(
 	// Always checkout the FETCH_HEAD to populate the working directory.
 	// This allows for referencing HEAD in checkouts.
 	buffer.Reset()
+
+	// Include auth when using git-filters, so git can pull the required
+	// objects from the origin.
+	checkoutArgs := []string{"checkout", "--force", "FETCH_HEAD"}
+	if options.Filter != "" {
+		checkoutArgs = append(gitConfigAuthArgs, checkoutArgs...)
+	}
+
 	if err := execext.Run(
 		ctx,
 		"git",
-		execext.WithArgs("checkout", "--force", "FETCH_HEAD"),
+		execext.WithArgs(checkoutArgs...),
 		execext.WithEnv(app.Environ(envContainer)),
 		execext.WithStderr(buffer),
 		execext.WithDir(baseDir.Path()),
