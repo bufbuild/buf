@@ -308,14 +308,17 @@ func (f *file) Refresh(ctx context.Context) {
 	f.PublishDiagnostics(ctx)
 }
 
-// RunChecks starts the process of running checks on this file. Returns
-// immediately.
+// RunChecks initiates background checks (lint and breaking) on this file and
+// returns immediately.
 //
-// Checks are run in a background goroutine to avoid blocking this LSP call.
-// Every time RunChecks is called, the current check goroutine is invalidated
-// causing checks to be re-run. Checks will lock the LSP mutex.
-// If another LSP call is made, we allow checks to finish before resolving a
-// subsequent LSP request.
+// Checks are executed in a background goroutine to avoid blocking the LSP
+// call. Each call to RunChecks invalidates any ongoing checks, triggering a
+// fresh run. The checks acquire the LSP mutex. Subsequent LSP calls will wait
+// for the current check to complete before proceeding.
+//
+// Checks are debounce (with the delay defined by checkRefreshPeriod) to avoid
+// overwhelming the client with expensive checks. If the file is not open in the
+// editor, checks are skipped. Diagnostics are published after checks are run.
 func (f *file) RunChecks(ctx context.Context) {
 	// If we have not yet started a goroutine to run checks, start one.
 	// This goroutine will run checks in the background and publish diagnostics.
@@ -328,32 +331,31 @@ func (f *file) RunChecks(ctx context.Context) {
 			f.lsp.lock.Lock()
 			defer f.lsp.lock.Unlock()
 			if !f.IsOpenInEditor() {
-				// If the file is not open in the editor, we do not need to run checks.
+				// Skip checks if the file is not open in the editor.
 				return
 			}
 			f.lsp.logger.Info(fmt.Sprintf("running checks for %v, %v", f.uri, f.version))
 			f.BuildImages(ctx)
 			f.RunLints(ctx)
 			f.RunBreaking(ctx)
-			// Publish the latest diagnostics.
-			f.PublishDiagnostics(ctx)
+			f.PublishDiagnostics(ctx) // Publish the latest diagnostics.
 		}
 		// Start a goroutine to process checks.
 		go func() {
-			// Child context may outlive the parent RPC context.
+			// Detach from the parent RPC context.
 			ctx := context.WithoutCancel(ctx)
 			for range work {
 				runChecks(ctx)
-				// Ensure checks are debounced to avoid spamming the client.
+				// Debounce checks to prevent thrashing expensive checks.
 				time.Sleep(checkRefreshPeriod)
 			}
 		}()
 	}
-	// Write to the work channel to invalidate the current checks.
+	// Signal the goroutine to invalidate and rerun checks.
 	select {
 	case f.checkWork <- struct{}{}:
 	default:
-		// Channel is full, already invalidated.
+		// Channel is full, checks are already invalidated and will be rerun.
 	}
 }
 
