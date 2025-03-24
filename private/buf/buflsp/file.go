@@ -744,7 +744,7 @@ func (f *file) appendLintErrors(source string, err error) bool {
 				},
 			},
 			Code:     annotation.Type(),
-			Severity: protocol.DiagnosticSeverityError,
+			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
 		})
