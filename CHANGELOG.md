@@ -4,6 +4,8 @@
 
 - Fix `buf convert` to allow for zero length for `binpb`, `txtpb`, and `yaml` formats.
 - Fix use of deprecated flag `--include-types` for `buf generate`.
+- Add `--against-registry` flag to `buf breaking` that runs breaking checks against the latest
+  commit on the default branch of the corresponding module in the registry.
 
 ## [v1.50.1] - 2025-03-10
 

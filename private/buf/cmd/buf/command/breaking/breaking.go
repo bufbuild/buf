@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 )
@@ -42,6 +43,7 @@ const (
 	configFlagName            = "config"
 	againstFlagName           = "against"
 	againstConfigFlagName     = "against-config"
+	againstRegistryFlagName   = "against-registry"
 	excludePathsFlagName      = "exclude-path"
 	disableSymlinksFlagName   = "disable-symlinks"
 )
@@ -77,6 +79,7 @@ type flags struct {
 	Config            string
 	Against           string
 	AgainstConfig     string
+	AgainstRegistry   bool
 	ExcludePaths      []string
 	DisableSymlinks   bool
 	// special
@@ -129,7 +132,8 @@ Overrides --%s`,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source, module, or image to check against. Must be one of format %s`,
+			`Required, except if --%s is set. The source, module, or image to check against. Must be one of format %s`,
+			againstRegistryFlagName,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -139,6 +143,16 @@ Overrides --%s`,
 		"",
 		`The buf.yaml file or data to use to configure the against source, module, or image`,
 	)
+	flagSet.BoolVar(
+		&f.AgainstRegistry,
+		againstRegistryFlagName,
+		false,
+		fmt.Sprintf(
+			`Run breaking checks against the latest commit on the default branch in the registry. All modules in the input must have a name configured, otherwise this will fail.
+If a remote module is not found with the configured name, then this will fail. This cannot be set with --%s.`,
+			againstFlagName,
+		),
+	)
 }
 
 func run(
@@ -146,7 +160,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if err := bufcli.ValidateRequiredFlag(againstFlagName, flags.Against); err != nil {
+	if err := validateFlags(flags); err != nil {
 		return err
 	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
@@ -194,19 +208,64 @@ func run(
 			return err
 		}
 	}
-	// Do not exclude imports here. bufcheck's Client requires all imports.
-	// Use bufcheck's BreakingWithExcludeImports.
-	againstImageWithConfigs, _, err := controller.GetTargetImageWithConfigsAndCheckClient(
-		ctx,
-		flags.Against,
-		wasm.UnimplementedRuntime,
-		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
-		bufctl.WithConfigOverride(flags.AgainstConfig),
-	)
-	if err != nil {
-		return err
+	var againstImages []bufimage.Image
+	if flags.Against != "" {
+		// Do not exclude imports here. bufcheck's Client requires all imports.
+		// Use bufcheck's BreakingWithExcludeImports.
+		againstImagesWithConfigs, _, err := controller.GetTargetImageWithConfigsAndCheckClient(
+			ctx,
+			flags.Against,
+			wasm.UnimplementedRuntime,
+			bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
+			bufctl.WithConfigOverride(flags.AgainstConfig),
+		)
+		if err != nil {
+			return err
+		}
+		// We do not require the check configs from the against target once built, so they can
+		// be dropped here.
+		againstImages, err = slicesext.MapError(
+			againstImagesWithConfigs,
+			func(imageWithConfig bufctl.ImageWithConfig) (bufimage.Image, error) {
+				againstImage, ok := imageWithConfig.(bufimage.Image)
+				if !ok {
+					return nil, syserror.New("imageWithConfig could not be converted to Image")
+				}
+				return againstImage, nil
+			},
+		)
+		if err != nil {
+			return err
+		}
 	}
-	if len(imageWithConfigs) != len(againstImageWithConfigs) {
+	if flags.AgainstRegistry {
+		for _, imageWithConfig := range imageWithConfigs {
+			if imageWithConfig.ModuleFullName() == nil {
+				if imageWithConfig.ModuleOpaqueID() == "" {
+					// This can occur in the case of a [buffetch.MessageRef], where we resolve the message
+					// ref directly from the bucket without building the [bufmodule.Module]. In that case,
+					// we are unnable to use --against-registry.
+					return fmt.Errorf("cannot use --%s with unnamed module", againstRegistryFlagName)
+				}
+				return fmt.Errorf(
+					"cannot use --%s with unnamed module, %s",
+					againstRegistryFlagName,
+					imageWithConfig.ModuleOpaqueID(),
+				)
+			}
+			againstImage, err := controller.GetImage(
+				ctx,
+				imageWithConfig.ModuleFullName().String(),
+				bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
+				bufctl.WithConfigOverride(flags.AgainstConfig),
+			)
+			if err != nil {
+				return err
+			}
+			againstImages = append(againstImages, againstImage)
+		}
+	}
+	if len(imageWithConfigs) != len(againstImages) {
 		// If workspaces are being used as input, the number
 		// of images MUST match. Otherwise the results will
 		// be meaningless and yield false positives.
@@ -216,7 +275,7 @@ func run(
 		return fmt.Errorf(
 			"input contained %d images, whereas against contained %d images",
 			len(imageWithConfigs),
-			len(againstImageWithConfigs),
+			len(againstImages),
 		)
 	}
 	// We add all check configs (both lint and breaking) as related configs to check if plugins
@@ -240,7 +299,7 @@ func run(
 			ctx,
 			imageWithConfig.BreakingConfig(),
 			imageWithConfig,
-			againstImageWithConfigs[i],
+			againstImages[i],
 			breakingOptions...,
 		); err != nil {
 			var fileAnnotationSet bufanalysis.FileAnnotationSet
@@ -273,4 +332,14 @@ func getExternalPathsForImages[I bufimage.Image, S ~[]I](images S) ([]string, er
 		}
 	}
 	return slicesext.MapKeysToSlice(externalPaths), nil
+}
+
+func validateFlags(flags *flags) error {
+	if flags.Against == "" && !flags.AgainstRegistry {
+		return fmt.Errorf("Must set --%s or --%s", againstFlagName, againstRegistryFlagName)
+	}
+	if flags.Against != "" && flags.AgainstRegistry {
+		return fmt.Errorf("Cannot set both --%s and --%s", againstFlagName, againstRegistryFlagName)
+	}
+	return nil
 }
