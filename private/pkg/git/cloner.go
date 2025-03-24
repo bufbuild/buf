@@ -173,34 +173,34 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 
-	checkoutArgs := []string{"checkout", "--force", "FETCH_HEAD"}
-
 	// As a further optimization, if a filter is applied with a subdir, we run
 	// a sparse checkout to reduce the size of the working directory.
 	buffer.Reset()
-	if options.Filter != "" {
-		// Include auth credentials when a git filter is set, so that git can
-		// pull the required objects upon checkout.
-		checkoutArgs = append(gitConfigAuthArgs, checkoutArgs...)
-
-		if options.SubDir != "" {
-			// Set the subdir for sparse checkout.
-			if err := execext.Run(
-				ctx,
-				"git",
-				execext.WithArgs("sparse-checkout", "set", options.SubDir),
-				execext.WithEnv(app.Environ(envContainer)),
-				execext.WithStderr(buffer),
-				execext.WithDir(baseDir.Path()),
-			); err != nil {
-				return newGitCommandError(err, buffer)
-			}
+	if options.Filter != "" && options.SubDir != "" {
+		// Set the subdir for sparse checkout.
+		if err := execext.Run(
+			ctx,
+			"git",
+			execext.WithArgs("sparse-checkout", "set", options.SubDir),
+			execext.WithEnv(app.Environ(envContainer)),
+			execext.WithStderr(buffer),
+			execext.WithDir(baseDir.Path()),
+		); err != nil {
+			return newGitCommandError(err, buffer)
 		}
 	}
 
 	// Always checkout the FETCH_HEAD to populate the working directory.
 	// This allows for referencing HEAD in checkouts.
 	buffer.Reset()
+
+	// Include auth when using git-filters, so git can pull the required
+	// objects from the origin.
+	checkoutArgs := []string{"checkout", "--force", "FETCH_HEAD"}
+	if options.Filter != "" {
+		checkoutArgs = append(gitConfigAuthArgs, checkoutArgs...)
+	}
+
 	if err := execext.Run(
 		ctx,
 		"git",
