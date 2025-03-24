@@ -241,6 +241,12 @@ func run(
 	if flags.AgainstRegistry {
 		for _, imageWithConfig := range imageWithConfigs {
 			if imageWithConfig.ModuleFullName() == nil {
+				if imageWithConfig.ModuleOpaqueID() == "" {
+					// This can occur in the case of a [buffetch.MessageRef], where we resolve the message
+					// ref directly from the bucket without building the [bufmodule.Module]. In that case,
+					// we are unnable to use --against-registry.
+					return fmt.Errorf("cannot use --%s with unnamed module", againstRegistryFlagName)
+				}
 				return fmt.Errorf(
 					"cannot use --%s with unnamed module, %s",
 					againstRegistryFlagName,
