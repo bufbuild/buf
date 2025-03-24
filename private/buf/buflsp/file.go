@@ -45,16 +45,17 @@ import (
 )
 
 const (
-	descriptorPath      = "google/protobuf/descriptor.proto"
-	refreshCheckStagger = 5 * time.Millisecond
+	descriptorPath     = "google/protobuf/descriptor.proto"
+	checkRefreshPeriod = 3 * time.Second
 )
 
 // file is a file that has been opened by the client.
 //
 // Mutating a file is thread-safe.
 type file struct {
-	lsp *lsp
-	uri protocol.URI
+	lsp       *lsp
+	uri       protocol.URI
+	checkWork chan<- struct{}
 
 	text string
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -134,6 +135,10 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.lsp.fileManager.Close(ctx, f.uri)
+	if f.checkWork != nil {
+		close(f.checkWork)
+		f.checkWork = nil
+	}
 }
 
 // IsOpenInEditor returns whether this file was opened in the LSP client's
@@ -290,28 +295,7 @@ func (f *file) Refresh(ctx context.Context) {
 	f.FindModule(ctx)
 
 	progress.Report(ctx, "Running Checks", 4.0/6)
-	// Since checks are a more expensive operation, we do not want to run a check on every
-	// Refresh call. Instead, we can stagger the checks and only run them periodically by
-	// spinning them off into a go routine. Then we attempt to lock using the top-level LSP
-	// lock. It is safe to use because if another LSP call is made, we allow checks to finish
-	// before resolving a subsequent LSP request.
-	go func() {
-		// We stagger the check operation by 5ms and run it for the latest Refresh state.
-		time.Sleep(refreshCheckStagger)
-		// Call TryLock, if unnsuccessful, then another thread holds the lock, so we provide a
-		// debug log and move on.
-		if !f.lsp.lock.TryLock() {
-			f.lsp.logger.Debug(
-				fmt.Sprintf("another thread holds the LSP lock, no new checks started for %v", f.uri),
-			)
-			return
-		}
-		// We have successfully obtained the lock, we can now run the checks.
-		defer f.lsp.lock.Unlock()
-		f.BuildImages(ctx)
-		f.RunLints(ctx)
-		f.RunBreaking(ctx)
-	}()
+	f.RunChecks(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)
@@ -322,6 +306,55 @@ func (f *file) Refresh(ctx context.Context) {
 	// if we have zero diagnostics, so that the client correctly ticks over from
 	// n > 0 diagnostics to 0 diagnostics.
 	f.PublishDiagnostics(ctx)
+}
+
+// RunChecks starts the process of running checks on this file. Returns
+// immediately.
+//
+// Checks are run in a background goroutine to avoid blocking this LSP call.
+// Every time RunChecks is called, the current check goroutine is invalidated
+// causing checks to be re-run. Checks will lock the LSP mutex.
+// If another LSP call is made, we allow checks to finish before resolving a
+// subsequent LSP request.
+func (f *file) RunChecks(ctx context.Context) {
+	// If we have not yet started a goroutine to run checks, start one.
+	// This goroutine will run checks in the background and publish diagnostics.
+	// We debounce checks to avoid spamming the client.
+	if f.checkWork == nil {
+		// We use a buffered channel of length one as the check invalidation mechanism.
+		work := make(chan struct{}, 1)
+		f.checkWork = work
+		runChecks := func(ctx context.Context) {
+			f.lsp.lock.Lock()
+			defer f.lsp.lock.Unlock()
+			if !f.IsOpenInEditor() {
+				// If the file is not open in the editor, we do not need to run checks.
+				return
+			}
+			f.lsp.logger.Info(fmt.Sprintf("running checks for %v, %v", f.uri, f.version))
+			f.BuildImages(ctx)
+			f.RunLints(ctx)
+			f.RunBreaking(ctx)
+			// Publish the latest diagnostics.
+			f.PublishDiagnostics(ctx)
+		}
+		// Start a goroutine to process checks.
+		go func() {
+			// Child context may outlive the parent RPC context.
+			ctx := context.WithoutCancel(ctx)
+			for range work {
+				runChecks(ctx)
+				// Ensure checks are debounced to avoid spamming the client.
+				time.Sleep(checkRefreshPeriod)
+			}
+		}()
+	}
+	// Write to the work channel to invalidate the current checks.
+	select {
+	case f.checkWork <- struct{}{}:
+	default:
+		// Channel is full, already invalidated.
+	}
 }
 
 // RefreshAST reparses the file and generates diagnostics if necessary.
