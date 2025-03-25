@@ -569,15 +569,15 @@ func (f *file) newFileOpener() fileOpener {
 	}
 
 	return func(path string) (io.ReadCloser, error) {
-		var newUri protocol.URI
+		var newURI protocol.URI
 		fileInfo, ok := f.importablePathToObject[path]
 		if ok {
-			newUri = uri.File(fileInfo.LocalPath())
+			newURI = uri.File(fileInfo.LocalPath())
 		} else {
-			newUri = uri.File(path)
+			newURI = uri.File(path)
 		}
 
-		if file := f.Manager().Get(newUri); file != nil {
+		if file := f.Manager().Get(newURI); file != nil {
 			return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
 		} else if !ok {
 			return nil, os.ErrNotExist
