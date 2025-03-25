@@ -564,8 +564,13 @@ func (b *sourcePathsBuilder) remapOptions(
 	numFieldsToKeep := 0
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
 		if !b.closure.hasOption(fd, b.imageIndex, b.options) {
-			// Options don't need to be removed and can just be left
-			// as unrecognized bytes.
+			// Remove this option.
+			optionPath := append(optionsPath, int32(fd.Number()))
+			sourcePathsRemap.markDeleted(optionPath)
+			if newOptions == nil {
+				newOptions = maybeClone(optionsMessage, b.options).ProtoReflect()
+			}
+			newOptions.Clear(fd)
 			return true
 		}
 		numFieldsToKeep++
