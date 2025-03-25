@@ -6,6 +6,7 @@
 - Fix use of deprecated flag `--include-types` for `buf generate`.
 - Add `--against-registry` flag to `buf breaking` that runs breaking checks against the latest
   commit on the default branch of the corresponding module in the registry.
+- Fix type filter with unused image dependencies for `buf generate`.
 
 ## [v1.50.1] - 2025-03-10
 
