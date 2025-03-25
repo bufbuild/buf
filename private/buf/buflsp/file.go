@@ -42,6 +42,7 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 const (
@@ -518,7 +519,7 @@ func (f *file) IndexImports(ctx context.Context) {
 		if fileInfo.LocalPath() == f.uri.Filename() {
 			imported = f
 		} else {
-			imported = f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
+			imported = f.Manager().Open(ctx, uri.File(fileInfo.LocalPath()))
 		}
 
 		imported.objectInfo = fileInfo
@@ -528,7 +529,7 @@ func (f *file) IndexImports(ctx context.Context) {
 	// descriptor.proto is always implicitly imported.
 	if _, ok := f.importToFile[descriptorPath]; !ok {
 		descriptorFile := importable[descriptorPath]
-		descriptorURI := protocol.URI("file://" + descriptorFile.LocalPath())
+		descriptorURI := uri.File(descriptorFile.LocalPath())
 		if f.uri == descriptorURI {
 			f.importToFile[descriptorPath] = f
 		} else {
@@ -568,15 +569,15 @@ func (f *file) newFileOpener() fileOpener {
 	}
 
 	return func(path string) (io.ReadCloser, error) {
-		var uri protocol.URI
+		var newURI protocol.URI
 		fileInfo, ok := f.importablePathToObject[path]
 		if ok {
-			uri = protocol.URI("file://" + fileInfo.LocalPath())
+			newURI = uri.File(fileInfo.LocalPath())
 		} else {
-			uri = protocol.URI("file://" + path)
+			newURI = uri.File(path)
 		}
 
-		if file := f.Manager().Get(uri); file != nil {
+		if file := f.Manager().Get(newURI); file != nil {
 			return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
 		} else if !ok {
 			return nil, os.ErrNotExist
