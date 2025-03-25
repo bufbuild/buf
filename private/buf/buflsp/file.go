@@ -42,19 +42,21 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 const (
-	descriptorPath      = "google/protobuf/descriptor.proto"
-	refreshCheckStagger = 5 * time.Millisecond
+	descriptorPath     = "google/protobuf/descriptor.proto"
+	checkRefreshPeriod = 3 * time.Second
 )
 
 // file is a file that has been opened by the client.
 //
 // Mutating a file is thread-safe.
 type file struct {
-	lsp *lsp
-	uri protocol.URI
+	lsp       *lsp
+	uri       protocol.URI
+	checkWork chan<- struct{}
 
 	text string
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -134,6 +136,10 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.lsp.fileManager.Close(ctx, f.uri)
+	if f.checkWork != nil {
+		close(f.checkWork)
+		f.checkWork = nil
+	}
 }
 
 // IsOpenInEditor returns whether this file was opened in the LSP client's
@@ -290,28 +296,7 @@ func (f *file) Refresh(ctx context.Context) {
 	f.FindModule(ctx)
 
 	progress.Report(ctx, "Running Checks", 4.0/6)
-	// Since checks are a more expensive operation, we do not want to run a check on every
-	// Refresh call. Instead, we can stagger the checks and only run them periodically by
-	// spinning them off into a go routine. Then we attempt to lock using the top-level LSP
-	// lock. It is safe to use because if another LSP call is made, we allow checks to finish
-	// before resolving a subsequent LSP request.
-	go func() {
-		// We stagger the check operation by 5ms and run it for the latest Refresh state.
-		time.Sleep(refreshCheckStagger)
-		// Call TryLock, if unnsuccessful, then another thread holds the lock, so we provide a
-		// debug log and move on.
-		if !f.lsp.lock.TryLock() {
-			f.lsp.logger.Debug(
-				fmt.Sprintf("another thread holds the LSP lock, no new checks started for %v", f.uri),
-			)
-			return
-		}
-		// We have successfully obtained the lock, we can now run the checks.
-		defer f.lsp.lock.Unlock()
-		f.BuildImages(ctx)
-		f.RunLints(ctx)
-		f.RunBreaking(ctx)
-	}()
+	f.RunChecks(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 5.0/6)
 	f.IndexSymbols(ctx)
@@ -322,6 +307,58 @@ func (f *file) Refresh(ctx context.Context) {
 	// if we have zero diagnostics, so that the client correctly ticks over from
 	// n > 0 diagnostics to 0 diagnostics.
 	f.PublishDiagnostics(ctx)
+}
+
+// RunChecks initiates background checks (lint and breaking) on this file and
+// returns immediately.
+//
+// Checks are executed in a background goroutine to avoid blocking the LSP
+// call. Each call to RunChecks invalidates any ongoing checks, triggering a
+// fresh run. However, previous checks are not interrupted. The checks acquire
+// the LSP mutex. Subsequent LSP calls will wait for the current check to
+// complete before proceeding.
+//
+// Checks are debounce (with the delay defined by checkRefreshPeriod) to avoid
+// overwhelming the client with expensive checks. If the file is not open in the
+// editor, checks are skipped. Diagnostics are published after checks are run.
+func (f *file) RunChecks(ctx context.Context) {
+	// If we have not yet started a goroutine to run checks, start one.
+	// This goroutine will run checks in the background and publish diagnostics.
+	// We debounce checks to avoid spamming the client.
+	if f.checkWork == nil {
+		// We use a buffered channel of length one as the check invalidation mechanism.
+		work := make(chan struct{}, 1)
+		f.checkWork = work
+		runChecks := func(ctx context.Context) {
+			f.lsp.lock.Lock()
+			defer f.lsp.lock.Unlock()
+			if !f.IsOpenInEditor() {
+				// Skip checks if the file is not open in the editor.
+				return
+			}
+			f.lsp.logger.Info(fmt.Sprintf("running checks for %v, %v", f.uri, f.version))
+			f.BuildImages(ctx)
+			f.RunLints(ctx)
+			f.RunBreaking(ctx)
+			f.PublishDiagnostics(ctx) // Publish the latest diagnostics.
+		}
+		// Start a goroutine to process checks.
+		go func() {
+			// Detach from the parent RPC context.
+			ctx := context.WithoutCancel(ctx)
+			for range work {
+				runChecks(ctx)
+				// Debounce checks to prevent thrashing expensive checks.
+				time.Sleep(checkRefreshPeriod)
+			}
+		}()
+	}
+	// Signal the goroutine to invalidate and rerun checks.
+	select {
+	case f.checkWork <- struct{}{}:
+	default:
+		// Channel is full, checks are already invalidated and will be rerun.
+	}
 }
 
 // RefreshAST reparses the file and generates diagnostics if necessary.
@@ -518,7 +555,7 @@ func (f *file) IndexImports(ctx context.Context) {
 		if fileInfo.LocalPath() == f.uri.Filename() {
 			imported = f
 		} else {
-			imported = f.Manager().Open(ctx, protocol.URI("file://"+fileInfo.LocalPath()))
+			imported = f.Manager().Open(ctx, uri.File(fileInfo.LocalPath()))
 		}
 
 		imported.objectInfo = fileInfo
@@ -528,7 +565,7 @@ func (f *file) IndexImports(ctx context.Context) {
 	// descriptor.proto is always implicitly imported.
 	if _, ok := f.importToFile[descriptorPath]; !ok {
 		descriptorFile := importable[descriptorPath]
-		descriptorURI := protocol.URI("file://" + descriptorFile.LocalPath())
+		descriptorURI := uri.File(descriptorFile.LocalPath())
 		if f.uri == descriptorURI {
 			f.importToFile[descriptorPath] = f
 		} else {
@@ -568,15 +605,15 @@ func (f *file) newFileOpener() fileOpener {
 	}
 
 	return func(path string) (io.ReadCloser, error) {
-		var uri protocol.URI
+		var newURI protocol.URI
 		fileInfo, ok := f.importablePathToObject[path]
 		if ok {
-			uri = protocol.URI("file://" + fileInfo.LocalPath())
+			newURI = uri.File(fileInfo.LocalPath())
 		} else {
-			uri = protocol.URI("file://" + path)
+			newURI = uri.File(path)
 		}
 
-		if file := f.Manager().Get(uri); file != nil {
+		if file := f.Manager().Get(newURI); file != nil {
 			return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
 		} else if !ok {
 			return nil, os.ErrNotExist
@@ -744,7 +781,7 @@ func (f *file) appendLintErrors(source string, err error) bool {
 				},
 			},
 			Code:     annotation.Type(),
-			Severity: protocol.DiagnosticSeverityError,
+			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
 		})

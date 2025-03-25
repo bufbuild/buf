@@ -181,7 +181,7 @@ func (c *cloner) CloneToBucket(
 		if err := execext.Run(
 			ctx,
 			"git",
-			execext.WithArgs("sparse-checkout", "set", options.SubDir),
+			execext.WithArgs(append(gitConfigAuthArgs, "sparse-checkout", "set", options.SubDir)...),
 			execext.WithEnv(app.Environ(envContainer)),
 			execext.WithStderr(buffer),
 			execext.WithDir(baseDir.Path()),
@@ -196,7 +196,7 @@ func (c *cloner) CloneToBucket(
 	if err := execext.Run(
 		ctx,
 		"git",
-		execext.WithArgs("checkout", "--force", "FETCH_HEAD"),
+		execext.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", "FETCH_HEAD")...),
 		execext.WithEnv(app.Environ(envContainer)),
 		execext.WithStderr(buffer),
 		execext.WithDir(baseDir.Path()),
@@ -210,7 +210,7 @@ func (c *cloner) CloneToBucket(
 		if err := execext.Run(
 			ctx,
 			"git",
-			execext.WithArgs("checkout", "--force", checkoutRef),
+			execext.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", checkoutRef)...),
 			execext.WithEnv(app.Environ(envContainer)),
 			execext.WithStderr(buffer),
 			execext.WithDir(baseDir.Path()),
