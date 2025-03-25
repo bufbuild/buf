@@ -17,11 +17,14 @@ package bufctl
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 type imageWithConfig struct {
 	bufimage.Image
 
+	moduleFullName bufparse.FullName
+	moduleOpaqueID string
 	lintConfig     bufconfig.LintConfig
 	breakingConfig bufconfig.BreakingConfig
 	pluginConfigs  []bufconfig.PluginConfig
@@ -29,16 +32,28 @@ type imageWithConfig struct {
 
 func newImageWithConfig(
 	image bufimage.Image,
+	moduleFullName bufparse.FullName,
+	moduleOpaqueID string,
 	lintConfig bufconfig.LintConfig,
 	breakingConfig bufconfig.BreakingConfig,
 	pluginConfigs []bufconfig.PluginConfig,
 ) *imageWithConfig {
 	return &imageWithConfig{
 		Image:          image,
+		moduleFullName: moduleFullName,
+		moduleOpaqueID: moduleOpaqueID,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
 		pluginConfigs:  pluginConfigs,
 	}
+}
+
+func (i *imageWithConfig) ModuleFullName() bufparse.FullName {
+	return i.moduleFullName
+}
+
+func (i *imageWithConfig) ModuleOpaqueID() string {
+	return i.moduleOpaqueID
 }
 
 func (i *imageWithConfig) LintConfig() bufconfig.LintConfig {
