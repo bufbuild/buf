@@ -76,7 +76,8 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
   EVENT_TYPE_ORGANIZATION_DELETED = 2;
   EVENT_TYPE_ORGANIZATION_MEMBER_ADDED = 3;
-  EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4;
+  EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4 [deprecated = true];
+  EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED = 50;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
@@ -156,6 +157,7 @@ message Event {
     PayloadOrganizationDeleted organization_deleted = 8;
     PayloadOrganizationMemberAdded organization_member_added = 9;
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
+    PayloadOrganizationMemberRolesChanged organization_member_roles_changed = 56;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
     PayloadRepositoryCreated repository_created = 12;
     PayloadRepositoryDeprecated repository_deprecated = 54;
@@ -220,6 +222,8 @@ message PayloadOrganizationMemberAdded {
 }
 
 message PayloadOrganizationMemberRoleChanged {
+  option deprecated = true;
+
   // organization_id is the id of the organization within which the role was changed.
   string organization_id = 1;
   // organization_name is the name of the organization within which the role was changed.
@@ -232,6 +236,23 @@ message PayloadOrganizationMemberRoleChanged {
   buf.alpha.registry.v1alpha1.OrganizationRoleSource old_member_role_source = 5;
   // new_member_role_source is the new source of the role granted to the member.
   buf.alpha.registry.v1alpha1.OrganizationRoleSource new_member_role_source = 6;
+}
+
+message PayloadOrganizationMemberRolesChanged {
+  message OrganizationRole {
+    // role is the role of the member.
+    buf.alpha.registry.v1alpha1.OrganizationRole role = 1;
+    // source is the source of the role granted to the member.
+    buf.alpha.registry.v1alpha1.OrganizationRoleSource source = 2;
+  }
+  // organization_id is the id of the organization within which the roles was changed.
+  string organization_id = 1;
+  // organization_name is the name of the organization within which the roles was changed.
+  string organization_name = 2;
+  // old_roles are the old roles of the member.
+  repeated OrganizationRole old_roles = 3;
+  // new_roles are the new roles of the member.
+  repeated OrganizationRole new_roles = 4;
 }
 
 message PayloadOrganizationMemberRemoved {
