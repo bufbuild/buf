@@ -469,7 +469,11 @@ func (t *transitiveClosure) addElement(
 				continue
 			}
 			if index := field.OneofIndex; index != nil {
-				oneofFieldCounts[*index]++
+				index := *index
+				if index < 0 || int(index) >= len(oneofFieldCounts) {
+					return fmt.Errorf("invalid oneof index %d for field %q", index, field.GetName())
+				}
+				oneofFieldCounts[index]++
 			}
 			if err := t.exploreCustomOptions(field, referrerFile, imageIndex, opts); err != nil {
 				return err
