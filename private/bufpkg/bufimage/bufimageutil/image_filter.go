@@ -427,7 +427,7 @@ func (b *sourcePathsBuilder) remapOneof(
 	oneof *descriptorpb.OneofDescriptorProto,
 ) (*descriptorpb.OneofDescriptorProto, bool, error) {
 	if mode, ok := b.closure.elements[oneof]; ok && mode == inclusionModeExcluded {
-		// Oneofs can be explicitly excluded when all fields for it are excluded.
+		// Oneofs are implicitly excluded when all of its fields types are excluded.
 		return nil, true, nil
 	}
 	options, changed, err := remapMessage(nil, append(sourcePath, oneofOptionsTag), oneof.GetOptions(), b.remapOptions)

@@ -336,7 +336,7 @@ func (t *transitiveClosure) hasOption(
 		return false
 	case inclusionModeUnknown:
 		// True as option type is not explicitly excluded.
-		// Occurs on first transversal when adding included types.
+		// Occurs on first traversal when adding included types.
 		return true
 	default:
 		return false
