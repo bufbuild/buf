@@ -403,6 +403,12 @@ func (t *transitiveClosure) includeType(
 }
 
 func (t *transitiveClosure) addImport(fromPath, toPath string) {
+	if _, ok := t.imports[toPath]; !ok {
+		t.imports[toPath] = nil // mark as seen
+	}
+	if fromPath == "" {
+		return // the base included type, not imported
+	}
 	if fromPath == toPath {
 		return // no need for a file to import itself
 	}
@@ -422,9 +428,7 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	if referrerFile != "" {
-		t.addImport(referrerFile, descriptorInfo.file.Path())
-	}
+	t.addImport(referrerFile, descriptorInfo.file.Path())
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure

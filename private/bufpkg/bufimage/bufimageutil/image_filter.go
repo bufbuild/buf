@@ -67,17 +67,13 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 
 	// Loop over image files in revserse DAG order. Imports that are no longer
 	// imported by a previous file are dropped from the image.
-	imageFiles := image.Files()
 	dirty := false
 	newImageFiles := make([]bufimage.ImageFile, 0, len(image.Files()))
-	importsByFilePath := make(map[string]struct{})
-	for _, imageFile := range slices.Backward(imageFiles) {
+	for _, imageFile := range slices.Backward(image.Files()) {
 		imageFilePath := imageFile.Path()
-		_, isFileImported := importsByFilePath[imageFilePath]
-		// Check if this import is still used. If allowImportedTypes is true, we
-		// must check the imported file to see if it is used.
-		if imageFile.IsImport() && !options.allowImportedTypes && !isFileImported {
-			continue
+		// Check if the file is used.
+		if _, ok := closure.imports[imageFilePath]; !ok {
+			continue // Filtered out.
 		}
 		newImageFile, err := filterImageFile(
 			imageFile,
@@ -90,13 +86,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
-			if isFileImported {
-				return nil, fmt.Errorf("imported file %q was filtered out", imageFilePath)
-			}
-			continue // Filtered out.
-		}
-		for _, filePath := range newImageFile.FileDescriptorProto().Dependency {
-			importsByFilePath[filePath] = struct{}{}
+			return nil, fmt.Errorf("imported file %q was filtered out", imageFilePath)
 		}
 		newImageFiles = append(newImageFiles, newImageFile)
 	}
