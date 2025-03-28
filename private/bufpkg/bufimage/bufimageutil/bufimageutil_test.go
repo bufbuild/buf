@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -501,6 +502,8 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 	// image is still valid after filtering.
 	protoImage, err := bufimage.ImageToProtoImage(filteredImage)
 	require.NoError(t, err)
+	// Clone here as `bufimage.NewImageForProto` mutates protoImage.
+	protoImage, _ = proto.Clone(protoImage).(*imagev1.Image) // Safe to assert.
 	filteredImage, err = bufimage.NewImageForProto(protoImage)
 	require.NoError(t, err)
 
