@@ -873,8 +873,8 @@ func (t *transitiveClosure) exploreCustomOptions(
 		optionsByNumber := imageIndex.NameToOptions[optionsName]
 		field, ok := optionsByNumber[int32(fd.Number())]
 		if !ok {
-			err = fmt.Errorf("cannot find ext no %d on %s", fd.Number(), optionsName)
-			return false
+			// Option is unrecognized, ignore it.
+			return true
 		}
 		err = t.addElement(field, referrerFile, true, imageIndex, opts)
 		return err == nil

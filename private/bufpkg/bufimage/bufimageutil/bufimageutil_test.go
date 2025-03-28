@@ -463,6 +463,22 @@ func TestMutateInPlace(t *testing.T) {
 	assert.Equal(t, filterLocationLen, len(aFileDescriptorProto.SourceCodeInfo.Location))
 }
 
+func TestConsecutiveFilters(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options")
+	require.NoError(t, err)
+
+	t.Run("options", func(t *testing.T) {
+		t.Parallel()
+		filteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Foo"), WithExcludeTypes("message_baz"))
+		require.NoError(t, err)
+		_, err = FilterImage(filteredImage, WithExcludeTypes("message_foo"))
+		require.NoError(t, err)
+	})
+}
+
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
