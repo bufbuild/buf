@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -119,6 +120,9 @@ func filterImageFile(
 		return nil, nil // Filtered out.
 	}
 	if !changed {
+		if len(sourcePathsRemap) > 0 {
+			return nil, syserror.Newf("unexpected %d sourcePathsRemaps", len(sourcePathsRemap))
+		}
 		return imageFile, nil // No changes required.
 	}
 
@@ -199,7 +203,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newDependencies, newPublicDependencies, newWeakDependencies, changed, err := b.remapDependencies(sourcePathsRemap, append(sourcePath, fileDependencyTag), fileDescriptor)
+	newDependencies, newPublicDependencies, newWeakDependencies, changed, err := b.remapDependencies(sourcePathsRemap, sourcePath, fileDescriptor)
 	if err != nil {
 		return nil, false, err
 	}
@@ -477,27 +481,6 @@ func (b *sourcePathsBuilder) remapField(
 	return field, false, nil
 }
 
-func remapMessage[T proto.Message](
-	sourcePathsRemap *sourcePathsRemapTrie,
-	sourcePath protoreflect.SourcePath,
-	message T,
-	remapMessage func(*sourcePathsRemapTrie, protoreflect.SourcePath, proto.Message) (proto.Message, bool, error),
-) (T, bool, error) {
-	var zeroValue T
-	newMessageOpaque, changed, err := remapMessage(sourcePathsRemap, sourcePath, message)
-	if err != nil {
-		return zeroValue, false, err
-	}
-	if newMessageOpaque == nil {
-		return zeroValue, true, nil
-	}
-	if !changed {
-		return message, false, nil
-	}
-	newMessage, _ := newMessageOpaque.(T) // Safe to assert.
-	return newMessage, true, nil
-}
-
 func remapSlice[T any](
 	sourcePathsRemap *sourcePathsRemapTrie,
 	sourcePath protoreflect.SourcePath,
@@ -518,7 +501,7 @@ func remapSlice[T any](
 		isDirty = isDirty || changed
 		if isDirty && newList == nil {
 			if options.mutateInPlace {
-				newList = list[:toIndex:cap(list)]
+				newList = list[:toIndex]
 			} else {
 				newList = append(newList, list[:toIndex]...)
 			}
@@ -538,13 +521,14 @@ func remapSlice[T any](
 		fromIndex++
 	}
 	if toIndex == 0 {
+		isDirty = true
 		sourcePathsRemap.markDeleted(sourcePath)
 	}
 	if isDirty {
 		if len(newList) == 0 {
 			return nil, true, nil
 		}
-		if options.mutateInPlace && newList != nil {
+		if options.mutateInPlace {
 			// Zero out the remaining elements.
 			for i := int(toIndex); i < len(list); i++ {
 				list[i] = nil
