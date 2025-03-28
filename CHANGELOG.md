@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.51.0] - 2025-03-28
 
 - Fix `buf convert` to allow for zero length for `binpb`, `txtpb`, and `yaml` formats.
@@ -1342,6 +1346,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.51.0...HEAD
 [v1.51.0]: https://github.com/bufbuild/buf/compare/v1.50.1...v1.51.0
 [v1.50.1]: https://github.com/bufbuild/buf/compare/v1.50.0...v1.50.1
 [v1.50.0]: https://github.com/bufbuild/buf/compare/v1.49.0...v1.50.0
