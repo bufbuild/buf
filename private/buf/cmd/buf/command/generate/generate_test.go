@@ -317,6 +317,29 @@ inputs:
 		"--type",
 		"b.v1.Bar",
 	)
+	// buf.gen.yaml has types and exclude_types on inputs and plugins
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Baz
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "types", "buf.gen.yaml"),
+	)
+	// --exclude-type override
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "types", "buf.gen.yaml"),
+		"--exclude-type",
+		"b.v1.Baz",
+	)
 }
 
 func TestOutputFlag(t *testing.T) {

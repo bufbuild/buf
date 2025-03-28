@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+    strategy: all
+inputs:
+  - directory: ./testdata/v2/types
+    types:
+      - "a.v1.Foo.Bar"
+    exclude_types:
+      - "a.v1.Foo"

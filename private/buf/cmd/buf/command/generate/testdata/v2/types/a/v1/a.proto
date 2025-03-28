@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package a.v1;
+
+import "b/v1/b.proto";
+import "pkg/v1/options.proto";
+
+message Foo {
+  option (pkg.v1.message_foo).foo = "str";
+  message Bar {
+    option (pkg.v1.message_bar).bar = "str";
+    string bar = 1;
+  }
+  Bar nested_bar = 1;
+  b.v1.Baz baz = 2;
+}
+
+message Empty {}
+
+message FooBar {
+  Foo foo = 1;
+  Foo.Bar bar = 2;
+}

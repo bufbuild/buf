@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package b.v1;
+
+import "pkg/v1/options.proto";
+
+message Baz {
+  option (pkg.v1.message_baz) = "str";
+}

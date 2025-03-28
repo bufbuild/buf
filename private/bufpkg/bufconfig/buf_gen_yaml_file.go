@@ -514,6 +514,11 @@ type externalGeneratePluginConfigV2 struct {
 	IncludeWKT     bool `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
 	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+
+	// Types is a list of types to include in the image.
+	Types []string `json:"types,omitempty" yaml:"types,omitempty"`
+	// ExcludeTypes removes types from the image.
+	ExcludeTypes []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
 }
 
 // externalGenerateManagedConfigV2 represents the managed mode config in a v2 buf.gen.yaml file.
@@ -564,8 +569,9 @@ type externalInputConfigV2 struct {
 	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
 	YAMLImage   *string `json:"yaml_image,omitempty" yaml:"yaml_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
-	// Types, TargetPaths and ExcludePaths are available for all formats.
+	// Types, ExcludeTypes, TargetPaths and ExcludePaths are available for all formats.
 	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
+	ExcludeTypes []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
 	TargetPaths  []string `json:"paths,omitempty" yaml:"paths,omitempty"`
 	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
 	// The following options are available depending on input format.

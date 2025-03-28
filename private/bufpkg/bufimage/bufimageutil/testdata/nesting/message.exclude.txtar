@@ -1,0 +1,17 @@
+-- a.proto --
+syntax = "proto3";
+package pkg;
+message Bar {
+  FooEnum foo_enum = 1;
+  enum NestedBarEnum {
+    NESTED_BAR_ENUM_X = 0;
+    NESTED_BAR_ENUM_Y = 1;
+  }
+}
+message Baz {
+  Bar.NestedBarEnum nested_bar_enum = 1;
+}
+enum FooEnum {
+  FOO_ENUM_X = 0;
+  FOO_ENUM_Y = 1;
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pkg;
+import "options.proto";
+
+message Foo {
+	option (message_foo).foo = "str";
+	message Bar {
+		option (message_bar).bar = "str";
+		string bar = 1;
+	}
+	Bar nested_bar = 2;
+}

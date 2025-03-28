@@ -7,6 +7,9 @@
 - Add `--against-registry` flag to `buf breaking` that runs breaking checks against the latest
   commit on the default branch of the corresponding module in the registry.
 - Fix type filter with unused image dependencies for `buf generate`.
+- Improve type filtering for `buf generate`. Adds the ability to exclude types with the parameter
+  `exclude_types` in `buf.gen.yaml` and a flag `--exclude-types` in the CLI.
+  Type filters may now also be specified as plugin parameters in `buf.gen.yaml`.
 
 ## [v1.50.1] - 2025-03-10
 

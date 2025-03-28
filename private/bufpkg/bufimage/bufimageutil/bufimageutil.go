@@ -90,23 +90,85 @@ func WithExcludeKnownExtensions() ImageFilterOption {
 	}
 }
 
-// WithAllowFilterByImportedType returns an option for ImageFilteredByTypesWithOptions
-// that allows a named filter type to be in an imported file or module. Without this
+// WithAllowIncludeOfImportedType returns an option for ImageFilteredByTypesWithOptions
+// that allows a named included type to be in an imported file or module. Without this
 // option, only types defined directly in the image to be filtered are allowed.
-func WithAllowFilterByImportedType() ImageFilterOption {
+// Excluded types are always allowed to be in imported files or modules.
+func WithAllowIncludeOfImportedType() ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		opts.allowImportedTypes = true
 	}
 }
 
-// ImageFilteredByTypes returns a minimal image containing only the descriptors
-// required to define those types. The resulting contains only files in which
-// those descriptors and their transitive closure of required descriptors, with
-// each file only contains the minimal required types and imports.
+// WithIncludeTypes returns an option for ImageFilteredByTypesWithOptions that specifies
+// the set of types that should be included in the filtered image.
 //
-// Although this returns a new [bufimage.Image], it mutates the original image's
-// underlying file's [descriptorpb.FileDescriptorProto]. So the old image should
-// not continue to be used.
+// May be provided multiple times. The type names should be fully qualified.
+// For example, "google.protobuf.Any" or "buf.validate". Types may be nested,
+// and can be any package, message, enum, extension, service or method name.
+//
+// If the  type does not exist in the image, an error wrapping
+// [ErrImageFilterTypeNotFound] will be returned.
+func WithIncludeTypes(typeNames ...string) ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		if len(typeNames) > 0 && opts.includeTypes == nil {
+			opts.includeTypes = make(map[string]struct{}, len(typeNames))
+		}
+		for _, typeName := range typeNames {
+			opts.includeTypes[typeName] = struct{}{}
+		}
+	}
+}
+
+// WithExcludeTypes returns an option for ImageFilteredByTypesWithOptions that
+// specifies the set of types that should be excluded from the filtered image.
+//
+// May be provided multiple times. The type names should be fully qualified.
+// For example, "google.protobuf.Any" or "buf.validate". Types may be nested,
+// and can be any package, message, enum, extension, service or method name.
+//
+// If the  type does not exist in the image, an error wrapping
+// [ErrImageFilterTypeNotFound] will be returned.
+func WithExcludeTypes(typeNames ...string) ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		if len(typeNames) > 0 && opts.excludeTypes == nil {
+			opts.excludeTypes = make(map[string]struct{}, len(typeNames))
+		}
+		for _, typeName := range typeNames {
+			opts.excludeTypes[typeName] = struct{}{}
+		}
+	}
+}
+
+// WithMutateInPlace returns an option for ImageFilteredByTypesWithOptions that specifies
+// that the filtered image should be mutated in place. This option is useful when the
+// unfiltered image is no longer needed and the caller wants to avoid the overhead of
+// copying the image.
+func WithMutateInPlace() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.mutateInPlace = true
+	}
+}
+
+// FilterImage returns a minimal image containing only the descriptors
+// required to define the set of types provided by the filter options. If no
+// filter options are provided, the original image is returned.
+//
+// The filtered image will contain only the files that contain the definitions of
+// the specified types, and their transitive dependencies. If a file is no longer
+// required, it will be removed from the image. Only the minimal set of types
+// required to define the specified types will be included in the filtered image.
+//
+// Excluded types and options are not included in the filtered image. If an
+// included type transitively depends on the excluded type, the descriptor will
+// be altered to remove the dependency.
+//
+// This returns a new [bufimage.Image] that is a shallow copy of the underlying
+// [descriptorpb.FileDescriptorProto]s of the original. The new image may
+// therefore share state with the original image, so it should not be modified.
+// If the original image is no longer needed, it should be discarded. To mutate
+// the original image, use the [WithMutateInPlace] option. Otherwise, to avoid
+// sharing of state clone the image before filtering.
 //
 // A descriptor is said to require another descriptor if the dependent
 // descriptor is needed to accurately and completely describe that descriptor.
@@ -167,219 +229,20 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 //	 files:      [foo.proto, bar.proto]
 //	 messages:   [pkg.Baz, other.Quux, other.Qux]
 //	 extensions: [other.my_option]
-func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image, error) {
-	return ImageFilteredByTypesWithOptions(image, types)
-}
-
-// ImageFilteredByTypesWithOptions returns a minimal image containing only the descriptors
-// required to define those types. See ImageFilteredByTypes for more details. This version
-// allows for customizing the behavior with options.
-func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts ...ImageFilterOption) (bufimage.Image, error) {
-	options := newImageFilterOptions()
-	for _, o := range opts {
-		o(options)
+func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.Image, error) {
+	if len(options) == 0 {
+		return image, nil
 	}
-
-	imageIndex, err := newImageIndexForImage(image, options)
-	if err != nil {
-		return nil, err
+	filterOptions := newImageFilterOptions()
+	for _, option := range options {
+		option(filterOptions)
 	}
-	// Check types exist
-	startingDescriptors := make([]namedDescriptor, 0, len(types))
-	var startingPackages []*protoPackage
-	for _, typeName := range types {
-		// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
-		//   matching, such as ability to get a package AND all of its sub-packages.
-		startingDescriptor, ok := imageIndex.ByName[typeName]
-		if ok {
-			// It's a type name
-			typeInfo := imageIndex.ByDescriptor[startingDescriptor]
-			if image.GetFile(typeInfo.file).IsImport() && !options.allowImportedTypes {
-				return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
-			}
-			startingDescriptors = append(startingDescriptors, startingDescriptor)
-			continue
-		}
-		// It could be a package name
-		pkg, ok := imageIndex.Packages[typeName]
-		if !ok {
-			// but it's not...
-			return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeNotFound)
-		}
-		if !options.allowImportedTypes {
-			// if package includes only imported files, then reject
-			onlyImported := true
-			for _, file := range pkg.files {
-				if !file.IsImport() {
-					onlyImported = false
-					break
-				}
-			}
-			if onlyImported {
-				return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
-			}
-		}
-		startingPackages = append(startingPackages, pkg)
+	// Check for defaults that would result in no filtering.
+	if len(filterOptions.excludeTypes) == 0 &&
+		len(filterOptions.includeTypes) == 0 {
+		return image, nil
 	}
-	// Find all types to include in filtered image.
-	closure := newTransitiveClosure()
-	for _, startingPackage := range startingPackages {
-		if err := closure.addPackage(startingPackage, imageIndex, options); err != nil {
-			return nil, err
-		}
-	}
-	for _, startingDescriptor := range startingDescriptors {
-		if err := closure.addElement(startingDescriptor, "", false, imageIndex, options); err != nil {
-			return nil, err
-		}
-	}
-	// After all types are added, add their known extensions
-	if err := closure.addExtensions(imageIndex, options); err != nil {
-		return nil, err
-	}
-	// Create a new image with only the required descriptors.
-	var includedFiles []bufimage.ImageFile
-	for _, imageFile := range image.Files() {
-		_, ok := closure.files[imageFile.Path()]
-		if !ok {
-			continue
-		}
-		imageFileDescriptor := imageFile.FileDescriptorProto()
-
-		importsRequired := closure.imports[imageFile.Path()]
-		// If the file has source code info, we need to remap paths to correctly
-		// update this info for the elements retained after filtering.
-		var sourcePathRemapper *sourcePathsRemapTrie
-		if len(imageFileDescriptor.SourceCodeInfo.GetLocation()) > 0 {
-			sourcePathRemapper = &sourcePathsRemapTrie{}
-		}
-		// We track the source path as we go through the model, so that we can
-		// mark paths as moved or deleted. Whenever an element is deleted, any
-		// subsequent elements of the same type in the same scope have are "moved",
-		// because their index is shifted down.
-		basePath := make([]int32, 1, 16)
-		basePath[0] = fileDependencyTag
-		// While employing
-		// https://github.com/golang/go/wiki/SliceTricks#filter-in-place,
-		// also keep a record of which index moved where, so we can fixup
-		// the file's WeakDependency field.
-		indexFromTo := make(map[int32]int32)
-		indexTo := 0
-		// Only handle imports and dependencies if there are any.
-		for indexFrom, importPath := range imageFileDescriptor.GetDependency() {
-			path := append(basePath, int32(indexFrom))
-			// We check if the import path exists among required imports. If yes, we
-			// move and then delete from required imports as we go.
-			if importsRequired != nil && importsRequired.index(importPath) != -1 {
-				sourcePathRemapper.markMoved(path, int32(indexTo))
-				indexFromTo[int32(indexFrom)] = int32(indexTo)
-				imageFileDescriptor.Dependency[indexTo] = importPath
-				indexTo++
-				// delete them as we go, so we know which ones weren't in the list
-				importsRequired.delete(importPath)
-			} else {
-				// Path did not exist in required imports, we mark as deleted.
-				sourcePathRemapper.markDeleted(path)
-			}
-		}
-		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:indexTo]
-
-		// Add any other imports (which may not have been in the list because
-		// they were picked up via a public import). The filtered files will not
-		// use public imports.
-		// The imports are added in the order they are encountered when importing
-		// to maintain a deterministic ordering.
-		if importsRequired != nil {
-			imageFileDescriptor.Dependency = append(imageFileDescriptor.Dependency, importsRequired.keys()...)
-		}
-
-		imageFileDescriptor.PublicDependency = nil
-		sourcePathRemapper.markDeleted([]int32{filePublicDependencyTag})
-
-		basePath = basePath[:1]
-		basePath[0] = fileWeakDependencyTag
-		i := 0
-		for _, indexFrom := range imageFileDescriptor.WeakDependency {
-			path := append(basePath, indexFrom)
-			if indexTo, ok := indexFromTo[indexFrom]; ok {
-				sourcePathRemapper.markMoved(path, indexTo)
-				imageFileDescriptor.WeakDependency[i] = indexTo
-				i++
-			} else {
-				sourcePathRemapper.markDeleted(path)
-			}
-		}
-		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
-
-		if _, ok := closure.completeFiles[imageFile.Path()]; !ok {
-			// if not keeping entire file, filter contents now
-			basePath = basePath[:0]
-			imageFileDescriptor.MessageType = trimMessageDescriptors(imageFileDescriptor.MessageType, closure.elements, sourcePathRemapper, append(basePath, fileMessagesTag))
-			imageFileDescriptor.EnumType = trimSlice(imageFileDescriptor.EnumType, closure.elements, sourcePathRemapper, append(basePath, fileEnumsTag))
-			// TODO: We could end up removing all extensions from a particular extend block
-			// but we then don't mark that extend block's source code info for deletion. This
-			// is because extend blocks don't have distinct paths -- we have to actually look
-			// at the span information to determine which extensions correspond to which blocks
-			// to decide which blocks to remove. That is possible, but non-trivial, and it's
-			// unclear if the "juice is worth the squeeze", so we leave it. The best we do is
-			// to remove comments for extend blocks when there are NO extensions.
-			extsPath := append(basePath, fileExtensionsTag)
-			imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements, sourcePathRemapper, extsPath)
-			if len(imageFileDescriptor.Extension) == 0 {
-				sourcePathRemapper.markDeleted(extsPath)
-			}
-			svcsPath := append(basePath, fileServicesTag)
-			// We must iterate through the services *before* we trim the slice. That way the
-			// index we see is for the "old path", which we need to know to mark elements as
-			// moved or deleted with the sourcePathRemapper.
-			for index, serviceDescriptor := range imageFileDescriptor.Service {
-				if _, ok := closure.elements[serviceDescriptor]; !ok {
-					continue
-				}
-				methodPath := append(svcsPath, int32(index), serviceMethodsTag)
-				serviceDescriptor.Method = trimSlice(serviceDescriptor.Method, closure.elements, sourcePathRemapper, methodPath)
-			}
-			imageFileDescriptor.Service = trimSlice(imageFileDescriptor.Service, closure.elements, sourcePathRemapper, svcsPath)
-		}
-
-		if len(imageFileDescriptor.SourceCodeInfo.GetLocation()) > 0 {
-			// Now the sourcePathRemapper has been fully populated for all of the deletions
-			// and moves above. So we can use it to reconstruct the source code info slice
-			// of locations.
-			i := 0
-			for _, location := range imageFileDescriptor.SourceCodeInfo.Location {
-				// This function returns newPath==nil if the element at the given path
-				// was marked for deletion (so this location should be omitted).
-				newPath, noComment := sourcePathRemapper.newPath(location.Path)
-				if newPath != nil {
-					imageFileDescriptor.SourceCodeInfo.Location[i] = location
-					location.Path = newPath
-					if noComment {
-						location.LeadingDetachedComments = nil
-						location.LeadingComments = nil
-						location.TrailingComments = nil
-					}
-					i++
-				}
-			}
-			imageFileDescriptor.SourceCodeInfo.Location = imageFileDescriptor.SourceCodeInfo.Location[:i]
-		}
-		imageFile, err = bufimage.NewImageFile(
-			imageFileDescriptor,
-			imageFile.FullName(),
-			imageFile.CommitID(),
-			imageFile.ExternalPath(),
-			imageFile.LocalPath(),
-			imageFile.IsImport(),
-			imageFile.IsSyntaxUnspecified(),
-			nil, // There are no unused dependencies.
-		)
-		if err != nil {
-			return nil, err
-		}
-		includedFiles = append(includedFiles, imageFile)
-	}
-	return bufimage.NewImage(includedFiles)
+	return filterImage(image, filterOptions)
 }
 
 // StripSourceRetentionOptions strips any options with a retention of "source" from
@@ -397,87 +260,12 @@ func StripSourceRetentionOptions(image bufimage.Image) (bufimage.Image, error) {
 	return bufimage.NewImage(updatedFiles)
 }
 
-// trimMessageDescriptors removes (nested) messages and nested enums from a slice
-// of message descriptors if their type names are not found in the toKeep map.
-func trimMessageDescriptors(
-	in []*descriptorpb.DescriptorProto,
-	toKeep map[namedDescriptor]closureInclusionMode,
-	sourcePathRemapper *sourcePathsRemapTrie,
-	pathSoFar []int32,
-) []*descriptorpb.DescriptorProto {
-	// We must iterate through the messages *before* we trim the slice. That way the
-	// index we see is for the "old path", which we need to know to mark elements as
-	// moved or deleted with the sourcePathRemapper.
-	for index, messageDescriptor := range in {
-		path := append(pathSoFar, int32(index))
-		mode, ok := toKeep[messageDescriptor]
-		if !ok {
-			continue
-		}
-		if mode == inclusionModeEnclosing {
-			// if this is just an enclosing element, we only care about it as a namespace for
-			// other types and don't care about the rest of its contents
-			messageDescriptor.Field = nil
-			messageDescriptor.OneofDecl = nil
-			messageDescriptor.ExtensionRange = nil
-			messageDescriptor.ReservedRange = nil
-			messageDescriptor.ReservedName = nil
-			sourcePathRemapper.markNoComment(path)
-			sourcePathRemapper.markDeleted(append(path, messageFieldsTag))
-			sourcePathRemapper.markDeleted(append(path, messageOneofsTag))
-			sourcePathRemapper.markDeleted(append(path, messageExtensionRangesTag))
-			sourcePathRemapper.markDeleted(append(path, messageReservedRangesTag))
-			sourcePathRemapper.markDeleted(append(path, messageReservedNamesTag))
-		}
-		messageDescriptor.NestedType = trimMessageDescriptors(messageDescriptor.NestedType, toKeep, sourcePathRemapper, append(path, messageNestedMessagesTag))
-		messageDescriptor.EnumType = trimSlice(messageDescriptor.EnumType, toKeep, sourcePathRemapper, append(path, messageEnumsTag))
-		// TODO: We could end up removing all extensions from a particular extend block
-		// but we then don't mark that extend block's source code info for deletion. The
-		// best we do is to remove comments for extend blocks when there are NO extensions.
-		// See comment above for file extensions for more info.
-		extsPath := append(path, messageExtensionsTag)
-		messageDescriptor.Extension = trimSlice(messageDescriptor.Extension, toKeep, sourcePathRemapper, extsPath)
-		if len(messageDescriptor.Extension) == 0 {
-			sourcePathRemapper.markDeleted(extsPath)
-		}
-	}
-	return trimSlice(in, toKeep, sourcePathRemapper, pathSoFar)
-}
-
-// trimSlice removes elements from a slice of descriptors if they are
-// not present in the given map.
-func trimSlice[T namedDescriptor](
-	in []T,
-	toKeep map[namedDescriptor]closureInclusionMode,
-	sourcePathRemapper *sourcePathsRemapTrie,
-	pathSoFar []int32,
-) []T {
-	i := 0
-	for index, descriptor := range in {
-		path := append(pathSoFar, int32(index))
-		if _, ok := toKeep[descriptor]; ok {
-			sourcePathRemapper.markMoved(path, int32(i))
-			in[i] = descriptor
-			i++
-		} else {
-			sourcePathRemapper.markDeleted(path)
-		}
-	}
-	return in[:i]
-}
-
 // transitiveClosure accumulates the elements, files, and needed imports for a
 // subset of an image. When an element is added to the closure, all of its
 // dependencies are recursively added.
 type transitiveClosure struct {
 	// The elements included in the transitive closure.
 	elements map[namedDescriptor]closureInclusionMode
-	// The set of files that contain all items in elements.
-	files map[string]struct{}
-	// Any files that are part of the closure in their entirety (due to an
-	// entire package being included). The above fields are used to filter the
-	// contents of files. But files named in this set will not be filtered.
-	completeFiles map[string]struct{}
 	// The ordered set of imports for each file. This allows for re-writing imports
 	// for files whose contents have been pruned.
 	imports map[string]*orderedImports
@@ -486,8 +274,12 @@ type transitiveClosure struct {
 type closureInclusionMode int
 
 const (
+	// Element is explicitly excluded from the closure.
+	inclusionModeExcluded = closureInclusionMode(iota - 1)
+	// Element is not yet known to be included or excluded.
+	inclusionModeUnknown
 	// Element is included in closure because it is directly reachable from a root.
-	inclusionModeExplicit = closureInclusionMode(iota)
+	inclusionModeExplicit
 	// Element is included in closure because it is a message or service that
 	// *contains* an explicitly included element but is not itself directly
 	// reachable.
@@ -502,14 +294,121 @@ const (
 
 func newTransitiveClosure() *transitiveClosure {
 	return &transitiveClosure{
-		elements:      map[namedDescriptor]closureInclusionMode{},
-		files:         map[string]struct{}{},
-		completeFiles: map[string]struct{}{},
-		imports:       map[string]*orderedImports{},
+		elements: map[namedDescriptor]closureInclusionMode{},
+		imports:  map[string]*orderedImports{},
 	}
 }
 
+func (t *transitiveClosure) hasType(
+	descriptor namedDescriptor,
+	options *imageFilterOptions,
+) (isIncluded bool) {
+	switch mode := t.elements[descriptor]; mode {
+	case inclusionModeExplicit, inclusionModeImplicit, inclusionModeEnclosing:
+		return true
+	case inclusionModeExcluded:
+		return false
+	case inclusionModeUnknown:
+		// True if no includes are specified.
+		return options.includeTypes == nil
+	default:
+		return false
+	}
+}
+
+func (t *transitiveClosure) hasOption(
+	fieldDescriptor protoreflect.FieldDescriptor,
+	imageIndex *imageIndex,
+	options *imageFilterOptions,
+) (isIncluded bool) {
+	if !fieldDescriptor.IsExtension() {
+		return true
+	}
+	if !options.includeCustomOptions {
+		return false
+	}
+	fullName := fieldDescriptor.FullName()
+	descriptor := imageIndex.ByName[fullName].element
+	switch mode := t.elements[descriptor]; mode {
+	case inclusionModeExplicit, inclusionModeImplicit, inclusionModeEnclosing:
+		return true
+	case inclusionModeExcluded:
+		return false
+	case inclusionModeUnknown:
+		// True as option type is not explicitly excluded.
+		// Occurs on first traversal when adding included types.
+		return true
+	default:
+		return false
+	}
+}
+
+func (t *transitiveClosure) includeType(
+	typeName protoreflect.FullName,
+	imageIndex *imageIndex,
+	options *imageFilterOptions,
+) error {
+	descriptorInfo, ok := imageIndex.ByName[typeName]
+	if ok {
+		// It's a type name
+		if !options.allowImportedTypes && descriptorInfo.file.IsImport() {
+			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
+		}
+		// Check if the type is already excluded.
+		if mode := t.elements[descriptorInfo.element]; mode == inclusionModeExcluded {
+			return fmt.Errorf("inclusion of excluded type %q", typeName)
+		}
+		// If an extension field, check if the extendee is excluded.
+		if field, ok := descriptorInfo.element.(*descriptorpb.FieldDescriptorProto); ok && field.Extendee != nil {
+			extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
+			extendeeInfo, ok := imageIndex.ByName[extendeeName]
+			if !ok {
+				return fmt.Errorf("missing %q", extendeeName)
+			}
+			if mode := t.elements[extendeeInfo.element]; mode == inclusionModeExcluded {
+				return fmt.Errorf("cannot include extension field %q as the extendee type %q is excluded", typeName, extendeeName)
+			}
+		}
+		if err := t.addElement(descriptorInfo.element, "", false, imageIndex, options); err != nil {
+			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
+		}
+		return nil
+	}
+	// It could be a package name
+	pkg, ok := imageIndex.Packages[string(typeName)]
+	if !ok {
+		// but it's not...
+		return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeNotFound)
+	}
+	if !options.allowImportedTypes {
+		// if package includes only imported files, then reject
+		onlyImported := true
+		for _, file := range pkg.files {
+			if !file.IsImport() {
+				onlyImported = false
+				break
+			}
+		}
+		if onlyImported {
+			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeIsImport)
+		}
+	}
+	for _, file := range pkg.files {
+		fileDescriptor := file.FileDescriptorProto()
+		if err := t.addElement(fileDescriptor, "", false, imageIndex, options); err != nil {
+			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
+		}
+	}
+	return nil
+}
+
 func (t *transitiveClosure) addImport(fromPath, toPath string) {
+	if _, ok := t.imports[toPath]; !ok {
+		t.imports[toPath] = nil // mark as seen
+	}
+	if fromPath == "" {
+		return // the base included type, not imported
+	}
 	if fromPath == toPath {
 		return // no need for a file to import itself
 	}
@@ -521,33 +420,6 @@ func (t *transitiveClosure) addImport(fromPath, toPath string) {
 	imps.add(toPath)
 }
 
-func (t *transitiveClosure) addFile(file string, imageIndex *imageIndex, opts *imageFilterOptions) error {
-	if _, ok := t.files[file]; ok {
-		return nil // already added
-	}
-	t.files[file] = struct{}{}
-	return t.exploreCustomOptions(imageIndex.Files[file], file, imageIndex, opts)
-}
-
-func (t *transitiveClosure) addPackage(
-	pkg *protoPackage,
-	imageIndex *imageIndex,
-	opts *imageFilterOptions,
-) error {
-	for _, file := range pkg.files {
-		if err := t.addFile(file.Path(), imageIndex, opts); err != nil {
-			return err
-		}
-		t.completeFiles[file.Path()] = struct{}{}
-	}
-	for _, descriptor := range pkg.elements {
-		if err := t.addElement(descriptor, "", false, imageIndex, opts); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (t *transitiveClosure) addElement(
 	descriptor namedDescriptor,
 	referrerFile string,
@@ -556,13 +428,7 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	if err := t.addFile(descriptorInfo.file, imageIndex, opts); err != nil {
-		return err
-	}
-	if referrerFile != "" {
-		t.addImport(referrerFile, descriptorInfo.file)
-	}
-
+	t.addImport(referrerFile, descriptorInfo.file.Path())
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
@@ -576,69 +442,115 @@ func (t *transitiveClosure) addElement(
 		t.elements[descriptor] = inclusionModeExplicit
 	}
 
-	// if this type is enclosed inside another, add enclosing types
-	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file, imageIndex, opts); err != nil {
-		return err
-	}
-	// add any custom options and their dependencies
-	if err := t.exploreCustomOptions(descriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-		return err
-	}
-
 	switch typedDescriptor := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		typeNames, ok := imageIndex.FileTypes[typedDescriptor.GetName()]
+		if !ok {
+			return fmt.Errorf("missing %q", typedDescriptor.GetName())
+		}
+		// A file includes all elements. The types are resolved in the image index
+		// to ensure all nested types are included.
+		for _, typeName := range typeNames {
+			typeInfo := imageIndex.ByName[typeName]
+			if err := t.addElement(typeInfo.element, "", false, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+
 	case *descriptorpb.DescriptorProto:
+		oneofFieldCounts := make([]int, len(typedDescriptor.GetOneofDecl()))
 		// Options and types for all fields
 		for _, field := range typedDescriptor.GetField() {
-			if err := t.addFieldType(field, descriptorInfo.file, imageIndex, opts); err != nil {
+			isIncluded, err := t.addFieldType(field, descriptorInfo.file.Path(), imageIndex, opts)
+			if err != nil {
 				return err
+			}
+			if !isIncluded {
+				continue
+			}
+			if index := field.OneofIndex; index != nil {
+				index := *index
+				if index < 0 || int(index) >= len(oneofFieldCounts) {
+					return fmt.Errorf("invalid oneof index %d for field %q", index, field.GetName())
+				}
+				oneofFieldCounts[index]++
 			}
 			if err := t.exploreCustomOptions(field, referrerFile, imageIndex, opts); err != nil {
 				return err
 			}
 		}
 		// Options for all oneofs in this message
-		for _, oneOfDescriptor := range typedDescriptor.GetOneofDecl() {
-			if err := t.exploreCustomOptions(oneOfDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+		for index, oneOfDescriptor := range typedDescriptor.GetOneofDecl() {
+			if oneofFieldCounts[index] == 0 {
+				// An empty oneof is not a valid protobuf construct, so we can
+				// safely exclude it.
+				t.elements[oneOfDescriptor] = inclusionModeExcluded
+				continue
+			}
+			if err := t.exploreCustomOptions(oneOfDescriptor, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
 				return err
 			}
 		}
 		// Options for all extension ranges in this message
 		for _, extRange := range typedDescriptor.GetExtensionRange() {
-			if err := t.exploreCustomOptions(extRange, descriptorInfo.file, imageIndex, opts); err != nil {
+			if err := t.exploreCustomOptions(extRange, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
 				return err
 			}
 		}
 
 	case *descriptorpb.EnumDescriptorProto:
 		for _, enumValue := range typedDescriptor.GetValue() {
-			if err := t.exploreCustomOptions(enumValue, descriptorInfo.file, imageIndex, opts); err != nil {
+			if err := t.exploreCustomOptions(enumValue, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
 				return err
 			}
 		}
 
 	case *descriptorpb.ServiceDescriptorProto:
 		for _, method := range typedDescriptor.GetMethod() {
+			inputName := protoreflect.FullName(strings.TrimPrefix(method.GetInputType(), "."))
+			inputInfo, ok := imageIndex.ByName[inputName]
+			if !ok {
+				return fmt.Errorf("missing %q", inputName)
+			}
+			outputName := protoreflect.FullName(strings.TrimPrefix(method.GetOutputType(), "."))
+			outputInfo, ok := imageIndex.ByName[outputName]
+			if !ok {
+				return fmt.Errorf("missing %q", outputName)
+			}
+			inputMode, outputMode := t.elements[inputInfo.element], t.elements[outputInfo.element]
+			if inputMode == inclusionModeExcluded || outputMode == inclusionModeExcluded {
+				// The input or ouptut is excluded, so this method is also excluded.
+				t.elements[inputInfo.element] = inclusionModeExcluded
+				continue
+			}
 			if err := t.addElement(method, "", false, imageIndex, opts); err != nil {
 				return err
 			}
 		}
 
 	case *descriptorpb.MethodDescriptorProto:
-		inputName := strings.TrimPrefix(typedDescriptor.GetInputType(), ".")
-		inputDescriptor, ok := imageIndex.ByName[inputName]
+		inputName := protoreflect.FullName(strings.TrimPrefix(typedDescriptor.GetInputType(), "."))
+		inputInfo, ok := imageIndex.ByName[inputName]
 		if !ok {
 			return fmt.Errorf("missing %q", inputName)
 		}
-		if err := t.addElement(inputDescriptor, descriptorInfo.file, false, imageIndex, opts); err != nil {
-			return err
-		}
-
-		outputName := strings.TrimPrefix(typedDescriptor.GetOutputType(), ".")
-		outputDescriptor, ok := imageIndex.ByName[outputName]
+		outputName := protoreflect.FullName(strings.TrimPrefix(typedDescriptor.GetOutputType(), "."))
+		outputInfo, ok := imageIndex.ByName[outputName]
 		if !ok {
 			return fmt.Errorf("missing %q", outputName)
 		}
-		if err := t.addElement(outputDescriptor, descriptorInfo.file, false, imageIndex, opts); err != nil {
+		if inputMode := t.elements[inputInfo.element]; inputMode == inclusionModeExcluded {
+			// The input is excluded, it's an error to include the method.
+			return fmt.Errorf("cannot include method %q as the input type %q is excluded", descriptorInfo.fullName, inputInfo.fullName)
+		}
+		if outputMode := t.elements[outputInfo.element]; outputMode == inclusionModeExcluded {
+			// The output is excluded, it's an error to include the method.
+			return fmt.Errorf("cannot include method %q as the output type %q is excluded", descriptorInfo.fullName, outputInfo.fullName)
+		}
+		if err := t.addElement(inputInfo.element, descriptorInfo.file.Path(), false, imageIndex, opts); err != nil {
+			return err
+		}
+		if err := t.addElement(outputInfo.element, descriptorInfo.file.Path(), false, imageIndex, opts); err != nil {
 			return err
 		}
 
@@ -651,26 +563,145 @@ func (t *transitiveClosure) addElement(
 		if typedDescriptor.GetExtendee() == "" {
 			return fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
 		}
-		extendeeName := strings.TrimPrefix(typedDescriptor.GetExtendee(), ".")
-		extendeeDescriptor, ok := imageIndex.ByName[extendeeName]
+		extendeeName := protoreflect.FullName(strings.TrimPrefix(typedDescriptor.GetExtendee(), "."))
+		extendeeInfo, ok := imageIndex.ByName[extendeeName]
 		if !ok {
 			return fmt.Errorf("missing %q", extendeeName)
 		}
-		if err := t.addElement(extendeeDescriptor, descriptorInfo.file, impliedByCustomOption, imageIndex, opts); err != nil {
+		if mode := t.elements[extendeeInfo.element]; mode == inclusionModeExcluded {
+			// The extendee is excluded, so this extension is also excluded.
+			t.elements[descriptor] = inclusionModeExcluded
+			return nil
+		}
+		if err := t.addElement(extendeeInfo.element, descriptorInfo.file.Path(), impliedByCustomOption, imageIndex, opts); err != nil {
 			return err
 		}
-		if err := t.addFieldType(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+		isIncluded, err := t.addFieldType(typedDescriptor, descriptorInfo.file.Path(), imageIndex, opts)
+		if err != nil {
 			return err
+		}
+		if !isIncluded {
+			t.elements[descriptor] = inclusionModeExcluded
+			return nil
 		}
 
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
 
+	// if this type is enclosed inside another, add enclosing types
+	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
+		return err
+	}
+	// add any custom options and their dependencies
+	if err := t.exploreCustomOptions(descriptor, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func errorUnsupportedFilterType(descriptor namedDescriptor, fullName string) error {
+func (t *transitiveClosure) excludeType(
+	typeName protoreflect.FullName,
+	imageIndex *imageIndex,
+	options *imageFilterOptions,
+) error {
+	descriptorInfo, ok := imageIndex.ByName[typeName]
+	if ok {
+		return t.excludeElement(descriptorInfo.element, imageIndex, options)
+	}
+	// It could be a package name
+	pkg, ok := imageIndex.Packages[string(typeName)]
+	if !ok {
+		// but it's not...
+		return fmt.Errorf("exclusion of type %q: %w", typeName, ErrImageFilterTypeNotFound)
+	}
+	// Exclude the package and all of its files.
+	for _, file := range pkg.files {
+		fileDescriptor := file.FileDescriptorProto()
+		if err := t.excludeElement(fileDescriptor, imageIndex, options); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *transitiveClosure) excludeElement(
+	descriptor namedDescriptor,
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	descriptorInfo := imageIndex.ByDescriptor[descriptor]
+	if existingMode, ok := t.elements[descriptor]; ok {
+		if existingMode != inclusionModeExcluded {
+			return fmt.Errorf("type %q is already included", descriptorInfo.fullName)
+		}
+		return nil
+	}
+	t.elements[descriptor] = inclusionModeExcluded
+	switch descriptor := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		for _, descriptor := range descriptor.GetMessageType() {
+			if err := t.excludeElement(descriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+		for _, descriptor := range descriptor.GetEnumType() {
+			if err := t.excludeElement(descriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+		for _, descriptor := range descriptor.GetService() {
+			if err := t.excludeElement(descriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+		for _, extension := range descriptor.GetExtension() {
+			if err := t.excludeElement(extension, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+	case *descriptorpb.DescriptorProto:
+		// Exclude all sub-elements
+		for _, descriptor := range descriptor.GetNestedType() {
+			if err := t.excludeElement(descriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+		for _, enumDescriptor := range descriptor.GetEnumType() {
+			if err := t.excludeElement(enumDescriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+		for _, extensionDescriptor := range descriptor.GetExtension() {
+			if err := t.excludeElement(extensionDescriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+	case *descriptorpb.EnumDescriptorProto:
+		// Enum values are not included in the closure, so nothing to do here.
+	case *descriptorpb.ServiceDescriptorProto:
+		for _, descriptor := range descriptor.GetMethod() {
+			if err := t.excludeElement(descriptor, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+	case *descriptorpb.MethodDescriptorProto:
+	case *descriptorpb.FieldDescriptorProto:
+		// Only extension fields can be excluded.
+		if descriptor.Extendee == nil {
+			return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
+		}
+		if descriptor.GetExtendee() == "" {
+			return fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
+		}
+	default:
+		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
+	}
+	return nil
+}
+
+func errorUnsupportedFilterType(descriptor namedDescriptor, fullName protoreflect.FullName) error {
 	var descriptorType string
 	switch d := descriptor.(type) {
 	case *descriptorpb.FileDescriptorProto:
@@ -705,7 +736,8 @@ func (t *transitiveClosure) addEnclosing(descriptor namedDescriptor, enclosingFi
 	for descriptor != nil {
 		_, isMsg := descriptor.(*descriptorpb.DescriptorProto)
 		_, isSvc := descriptor.(*descriptorpb.ServiceDescriptorProto)
-		if !isMsg && !isSvc {
+		_, isFile := descriptor.(*descriptorpb.FileDescriptorProto)
+		if !isMsg && !isSvc && !isFile {
 			break // not an enclosing type
 		}
 		if _, ok := t.elements[descriptor]; ok {
@@ -721,19 +753,23 @@ func (t *transitiveClosure) addEnclosing(descriptor namedDescriptor, enclosingFi
 	return nil
 }
 
-func (t *transitiveClosure) addFieldType(field *descriptorpb.FieldDescriptorProto, referrerFile string, imageIndex *imageIndex, opts *imageFilterOptions) error {
+func (t *transitiveClosure) addFieldType(field *descriptorpb.FieldDescriptorProto, referrerFile string, imageIndex *imageIndex, opts *imageFilterOptions) (bool, error) {
 	switch field.GetType() {
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
-		typeName := strings.TrimPrefix(field.GetTypeName(), ".")
-		typeDescriptor, ok := imageIndex.ByName[typeName]
+		typeName := protoreflect.FullName(strings.TrimPrefix(field.GetTypeName(), "."))
+		info, ok := imageIndex.ByName[typeName]
 		if !ok {
-			return fmt.Errorf("missing %q", typeName)
+			return false, fmt.Errorf("missing %q", typeName)
 		}
-		err := t.addElement(typeDescriptor, referrerFile, false, imageIndex, opts)
+		if mode := t.elements[info.element]; mode == inclusionModeExcluded {
+			// The field's type is excluded, so this field is also excluded.
+			return false, nil
+		}
+		err := t.addElement(info.element, referrerFile, false, imageIndex, opts)
 		if err != nil {
-			return err
+			return false, err
 		}
 	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
 		descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
@@ -752,9 +788,9 @@ func (t *transitiveClosure) addFieldType(field *descriptorpb.FieldDescriptorProt
 		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 	// nothing to follow, custom options handled below.
 	default:
-		return fmt.Errorf("unknown field type %d", field.GetType())
+		return false, fmt.Errorf("unknown field type %d", field.GetType())
 	}
-	return nil
+	return true, nil
 }
 
 func (t *transitiveClosure) addExtensions(
@@ -818,9 +854,12 @@ func (t *transitiveClosure) exploreCustomOptions(
 		return fmt.Errorf("unexpected type for exploring options %T", descriptor)
 	}
 
-	optionsName := string(options.Descriptor().FullName())
+	optionsName := options.Descriptor().FullName()
 	var err error
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		if !t.hasOption(fd, imageIndex, opts) {
+			return true
+		}
 		// If the value contains an Any message, we should add the message type
 		// therein to the closure.
 		if err = t.exploreOptionValueForAny(fd, val, referrerFile, imageIndex, opts); err != nil {
@@ -834,8 +873,8 @@ func (t *transitiveClosure) exploreCustomOptions(
 		optionsByNumber := imageIndex.NameToOptions[optionsName]
 		field, ok := optionsByNumber[int32(fd.Number())]
 		if !ok {
-			err = fmt.Errorf("cannot find ext no %d on %s", fd.Number(), optionsName)
-			return false
+			// Option is unrecognized, ignore it.
+			return true
 		}
 		err = t.addElement(field, referrerFile, true, imageIndex, opts)
 		return err == nil
@@ -897,8 +936,8 @@ func (t *transitiveClosure) exploreOptionSingularValueForAny(
 		}
 		typeURL := msg.Get(typeURLFd).String()
 		pos := strings.LastIndexByte(typeURL, '/')
-		msgType := typeURL[pos+1:]
-		d, _ := imageIndex.ByName[msgType].(*descriptorpb.DescriptorProto)
+		msgType := protoreflect.FullName(typeURL[pos+1:])
+		d, _ := imageIndex.ByName[msgType].element.(*descriptorpb.DescriptorProto)
 		if d != nil {
 			if err := t.addElement(d, referrerFile, false, imageIndex, opts); err != nil {
 				return err
@@ -994,6 +1033,9 @@ type imageFilterOptions struct {
 	includeCustomOptions   bool
 	includeKnownExtensions bool
 	allowImportedTypes     bool
+	mutateInPlace          bool
+	includeTypes           map[string]struct{}
+	excludeTypes           map[string]struct{}
 }
 
 func newImageFilterOptions() *imageFilterOptions {
@@ -1005,9 +1047,13 @@ func newImageFilterOptions() *imageFilterOptions {
 }
 
 func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage.ImageFile, error) {
-	updatedFileDescriptor, err := protopluginutil.StripSourceRetentionOptions(imageFile.FileDescriptorProto())
+	fileDescriptor := imageFile.FileDescriptorProto()
+	updatedFileDescriptor, err := protopluginutil.StripSourceRetentionOptions(fileDescriptor)
 	if err != nil {
 		return nil, err
+	}
+	if updatedFileDescriptor == fileDescriptor {
+		return imageFile, nil
 	}
 	return bufimage.NewImageFile(
 		updatedFileDescriptor,
@@ -1071,4 +1117,9 @@ func (o *orderedImports) keys() []string {
 		}
 	}
 	return keys
+}
+
+// len returns the number of paths in the ordered imports.
+func (o *orderedImports) len() int {
+	return len(o.pathToIndex)
 }

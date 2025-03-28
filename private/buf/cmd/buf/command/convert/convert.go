@@ -185,7 +185,11 @@ func run(
 			resolveWellKnownType = true
 		}
 		if schemaImage != nil {
-			_, filterErr := bufimageutil.ImageFilteredByTypes(schemaImage, flags.Type)
+			_, filterErr := bufimageutil.FilterImage(
+				schemaImage,
+				bufimageutil.WithIncludeTypes(flags.Type),
+				bufimageutil.WithMutateInPlace(),
+			)
 			if errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
 				resolveWellKnownType = true
 			}
@@ -283,5 +287,9 @@ func wellKnownTypeImage(
 	if err != nil {
 		return nil, err
 	}
-	return bufimageutil.ImageFilteredByTypes(image, wellKnownTypeName)
+	return bufimageutil.FilterImage(
+		image,
+		bufimageutil.WithIncludeTypes(wellKnownTypeName),
+		bufimageutil.WithMutateInPlace(),
+	)
 }

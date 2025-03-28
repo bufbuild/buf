@@ -1344,8 +1344,15 @@ func filterImage(
 	if functionOptions.imageExcludeImports {
 		newImage = bufimage.ImageWithoutImports(newImage)
 	}
-	if len(functionOptions.imageTypes) > 0 {
-		newImage, err = bufimageutil.ImageFilteredByTypes(newImage, functionOptions.imageTypes...)
+	includeTypes := functionOptions.imageIncludeTypes
+	excludeTypes := functionOptions.imageExcludeTypes
+	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
+		newImage, err = bufimageutil.FilterImage(
+			newImage,
+			bufimageutil.WithIncludeTypes(includeTypes...),
+			bufimageutil.WithExcludeTypes(excludeTypes...),
+			bufimageutil.WithMutateInPlace(),
+		)
 		if err != nil {
 			return nil, err
 		}
