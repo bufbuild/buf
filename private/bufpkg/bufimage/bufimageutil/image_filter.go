@@ -199,7 +199,11 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-
+	newDependencies, newPublicDependencies, newWeakDependencies, changed, err := b.remapDependencies(sourcePathsRemap, append(sourcePath, fileDependencyTag), fileDescriptor)
+	if err != nil {
+		return nil, false, err
+	}
+	isDirty = isDirty || changed
 	if !isDirty {
 		return fileDescriptor, false, nil
 	}
@@ -209,22 +213,55 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	newFileDescriptor.EnumType = newEnums
 	newFileDescriptor.Service = newServices
 	newFileDescriptor.Extension = newExtensions
+	newFileDescriptor.Dependency = newDependencies
+	newFileDescriptor.PublicDependency = newPublicDependencies
+	newFileDescriptor.WeakDependency = newWeakDependencies
+	return newFileDescriptor, true, nil
+}
 
-	// Fix the imports to remove any that are no longer used.
+func (b *sourcePathsBuilder) remapDependencies(
+	sourcePathsRemap *sourcePathsRemapTrie,
+	sourcePath protoreflect.SourcePath,
+	fileDescriptor *descriptorpb.FileDescriptorProto,
+) ([]string, []int32, []int32, bool, error) {
+	dependencies := fileDescriptor.GetDependency()
+	publicDependencies := fileDescriptor.GetPublicDependency()
+	weakDependencies := fileDescriptor.GetWeakDependency()
+
+	// Check if the imports need to be remapped.
 	importsRequired := b.closure.imports[fileDescriptor.GetName()]
+	importsCount := 0
+	if importsRequired != nil {
+		importsCount = importsRequired.len()
+	}
+	for _, importPath := range dependencies {
+		if importsRequired != nil && importsRequired.index(importPath) != -1 {
+			importsCount--
+		} else {
+			importsCount = -1
+			break
+		}
+	}
+	if importsCount == 0 && len(publicDependencies) == 0 {
+		// Imports match and no public dependencies.
+		return dependencies, publicDependencies, weakDependencies, false, nil
+	}
 
 	indexFrom, indexTo := int32(0), int32(0)
-	newFileDescriptor.Dependency = nil
+	var newDependencies []string
+	if b.options.mutateInPlace {
+		newDependencies = dependencies[:0]
+	}
 	dependencyPath := append(sourcePath, fileDependencyTag)
-	dependencyChanges := make([]int32, len(fileDescriptor.Dependency))
-	for _, importPath := range fileDescriptor.Dependency {
+	dependencyChanges := make([]int32, len(dependencies))
+	for _, importPath := range dependencies {
 		path := append(dependencyPath, indexFrom)
 		if importsRequired != nil && importsRequired.index(importPath) != -1 {
 			dependencyChanges[indexFrom] = indexTo
 			if indexTo != indexFrom {
 				sourcePathsRemap.markMoved(path, indexTo)
 			}
-			newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, importPath)
+			newDependencies = append(newDependencies, importPath)
 			indexTo++
 			// delete them as we go, so we know which ones weren't in the list
 			importsRequired.delete(importPath)
@@ -235,17 +272,20 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		indexFrom++
 	}
 	if importsRequired != nil {
-		newFileDescriptor.Dependency = append(newFileDescriptor.Dependency, importsRequired.keys()...)
+		newDependencies = append(newDependencies, importsRequired.keys()...)
 	}
 
-	newFileDescriptor.PublicDependency = nil
+	// Pulbic dependencies are always removed on remapping.
 	publicDependencyPath := append(sourcePath, filePublicDependencyTag)
 	sourcePathsRemap.markDeleted(publicDependencyPath)
 
-	newFileDescriptor.WeakDependency = nil
-	if len(fileDescriptor.WeakDependency) > 0 {
+	var newWeakDependencies []int32
+	if len(weakDependencies) > 0 {
+		if b.options.mutateInPlace {
+			newWeakDependencies = weakDependencies[:0]
+		}
 		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
-		for _, indexFrom := range fileDescriptor.WeakDependency {
+		for _, indexFrom := range weakDependencies {
 			path := append(weakDependencyPath, indexFrom)
 			indexTo := dependencyChanges[indexFrom]
 			if indexTo == -1 {
@@ -254,11 +294,11 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 				if indexTo != indexFrom {
 					sourcePathsRemap.markMoved(path, indexTo)
 				}
-				newFileDescriptor.WeakDependency = append(newFileDescriptor.WeakDependency, indexTo)
+				newWeakDependencies = append(newWeakDependencies, indexTo)
 			}
 		}
 	}
-	return newFileDescriptor, true, nil
+	return newDependencies, nil, newWeakDependencies, true, nil
 }
 
 func (b *sourcePathsBuilder) remapDescriptor(

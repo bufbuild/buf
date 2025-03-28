@@ -1118,3 +1118,8 @@ func (o *orderedImports) keys() []string {
 	}
 	return keys
 }
+
+// len returns the number of paths in the ordered imports.
+func (o *orderedImports) len() int {
+	return len(o.pathToIndex)
+}
