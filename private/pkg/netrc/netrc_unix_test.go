@@ -137,7 +137,7 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)
 	for i := 0; i < size; i++ {
 		// Write the file manually in single-line format as this is where the failure happens.
-		_, _ = buffer.WriteString(fmt.Sprintf("machine foo%d login bar%d password %s\n", i, i, password))
+		_, _ = fmt.Fprintf(buffer, "machine foo%d login bar%d password %s\n", i, i, password)
 		machines = append(
 			machines,
 			NewMachine(
