@@ -717,7 +717,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			}
 		case FileVersionV1Beta1:
 			// If "." -> empty, do not add anything.
-			if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
+			if len(rootToExcludes) != 1 || !ok || len(excludes) != 0 {
 				roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
 				for _, root := range roots {
 					externalBufYAMLFile.Build.Roots = append(

@@ -306,7 +306,7 @@ func toSnakeCase(s string, options ...SnakeCaseOption) string {
 				(snakeCaseOptions.newWordOnDigits && unicode.IsDigit(c)) ||
 				(unicode.IsLower(rune(s[i-1])))) {
 			output += "_" + string(c)
-		} else if !(isDelimiter(c) && output[len(output)-1] == '_') {
+		} else if !isDelimiter(c) || output[len(output)-1] != '_' {
 			output += string(c)
 		}
 	}

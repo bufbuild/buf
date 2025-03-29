@@ -1110,7 +1110,7 @@ func transformGolangProtocVersionToUnknown(t *testing.T) storage.DiffOption {
 		commentPrefix := []byte("//")
 		protocVersionIndicator := []byte("protoc")
 		for _, line := range lines {
-			if !(bytes.HasPrefix(line, commentPrefix) && bytes.Contains(line, protocVersionIndicator)) {
+			if !bytes.HasPrefix(line, commentPrefix) || !bytes.Contains(line, protocVersionIndicator) {
 				filteredLines = append(filteredLines, line)
 			}
 		}

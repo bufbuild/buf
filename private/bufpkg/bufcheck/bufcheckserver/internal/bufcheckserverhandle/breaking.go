@@ -614,7 +614,7 @@ func handleBreakingFieldSameCppStringType(
 	}
 	if (previousStringType != stringType || previousIsStringPiece != isStringPiece) &&
 		// it is NOT breaking to move from string_piece -> string
-		!(previousIsStringPiece && stringType == protobuf.CppFeatures_STRING) {
+		!previousIsStringPiece || stringType != protobuf.CppFeatures_STRING {
 		var previousType, currentType fmt.Stringer
 		if previousIsStringPiece {
 			previousType = descriptorpb.FieldOptions_STRING_PIECE

@@ -1081,7 +1081,7 @@ func handleLintRPCRequestResponseUnique(
 		for _, method := range allFullNameToMethod {
 			if method.InputTypeName() == method.OutputTypeName() {
 				// if we allow both empty requests and responses, we do not want to add a FileAnnotation
-				if !(method.InputTypeName() == "google.protobuf.Empty" && allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
+				if method.InputTypeName() != "google.protobuf.Empty" || !allowGoogleProtobufEmptyRequests || !allowGoogleProtobufEmptyResponses {
 					responseWriter.AddProtosourceAnnotation(
 						method.Location(),
 						nil,
@@ -1116,7 +1116,7 @@ func handleLintRPCRequestResponseUnique(
 		if requestResponseType == "google.protobuf.Empty" && (allowGoogleProtobufEmptyRequests || allowGoogleProtobufEmptyResponses) {
 			// if both requests and responses can be google.protobuf.Empty, then do not add any error
 			// else, we check
-			if !(allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
+			if !allowGoogleProtobufEmptyRequests || !allowGoogleProtobufEmptyResponses {
 				// inside this if statement, one of allowGoogleProtobufEmptyRequests or allowGoogleProtobufEmptyResponses is true
 				var requestMethods []bufprotosource.Method
 				var responseMethods []bufprotosource.Method

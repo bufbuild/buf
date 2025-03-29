@@ -289,7 +289,7 @@ func (a *refParser) parseRawRef(
 	_, gitOK := a.gitFormatToInfo[rawRef.Format]
 	_, moduleOK := a.moduleFormatToInfo[rawRef.Format]
 	_, protoFileOK := a.protoFileFormatToInfo[rawRef.Format]
-	if !(singleOK || archiveOK || dirOK || gitOK || moduleOK || protoFileOK) {
+	if !singleOK && !archiveOK && !dirOK && !gitOK && !moduleOK && !protoFileOK {
 		return nil, NewFormatUnknownError(rawRef.Format)
 	}
 	if len(allowedFormats) > 0 {

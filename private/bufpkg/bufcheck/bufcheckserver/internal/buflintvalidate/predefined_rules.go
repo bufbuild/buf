@@ -45,7 +45,7 @@ func checkPredefinedRuleExtension(
 	extendedStandardRuleDescriptor := extensionDescriptor.ContainingMessage()
 	extendedRuleFullName := extendedStandardRuleDescriptor.FullName()
 	// This function only lints extensions extending buf.validate.*Rules, e.g. buf.validate.StringRules.
-	if !(strings.HasPrefix(string(extendedRuleFullName), "buf.validate.") && strings.HasSuffix(string(extendedRuleFullName), "Rules")) {
+	if !strings.HasPrefix(string(extendedRuleFullName), "buf.validate.") || !strings.HasSuffix(string(extendedRuleFullName), "Rules") {
 		return nil
 	}
 	// Just to be extra sure.

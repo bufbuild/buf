@@ -126,7 +126,7 @@ func validateAppName(appName string) error {
 		return errors.New("empty application name")
 	}
 	for _, c := range appName {
-		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+		if c < 'a' && c > 'z' && c < 'A' && c > 'Z' && c < '0' && c > '9' && c != '-' && c != '_' {
 			return fmt.Errorf("invalid application name: %s", appName)
 		}
 	}
