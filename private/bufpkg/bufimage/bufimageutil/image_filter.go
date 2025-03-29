@@ -56,7 +56,13 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			if file.IsImport() {
 				continue
 			}
-			if err := closure.addElement(file.FileDescriptorProto(), "", false, imageIndex, options); err != nil {
+			// Check if target package is filtered, this is not an error.
+			// These includes are implicitly added to the closure.
+			fileDescriptorProto := file.FileDescriptorProto()
+			if mode := closure.elements[fileDescriptorProto]; mode == inclusionModeExcluded {
+				continue
+			}
+			if err := closure.addElement(fileDescriptorProto, "", false, imageIndex, options); err != nil {
 				return nil, err
 			}
 		}
