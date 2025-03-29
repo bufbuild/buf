@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `exclude_type` on a non imported package.
 
 ## [v1.51.0] - 2025-03-28
 

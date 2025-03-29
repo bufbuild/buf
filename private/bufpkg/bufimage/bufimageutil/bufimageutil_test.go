@@ -101,6 +101,10 @@ func TestTypes(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/options", "pkg.FooService.Do.exclude.txtar", WithExcludeTypes("pkg.FooService.Do"))
 	})
+	t.Run("exclude-package", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/options", "pkg.Pkg.exclude.txtar", WithExcludeTypes("pkg"))
+	})
 	t.Run("exclude-all", func(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/options", "all.exclude.txtar", WithExcludeTypes("pkg.Foo", "pkg.FooEnum", "pkg.FooService"))
