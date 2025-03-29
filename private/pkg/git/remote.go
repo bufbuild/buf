@@ -171,7 +171,7 @@ func validateRemoteExists(
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			if exitErr.ProcessState.ExitCode() == 128 {
+			if exitErr.ExitCode() == 128 {
 				return fmt.Errorf("remote %s: %w", name, ErrRemoteNotFound)
 			}
 		}

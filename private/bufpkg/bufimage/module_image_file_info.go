@@ -39,11 +39,11 @@ func (p *moduleImageFileInfo) CommitID() uuid.UUID {
 }
 
 func (p *moduleImageFileInfo) Imports() ([]string, error) {
-	return p.FileInfo.ProtoFileImports()
+	return p.ProtoFileImports()
 }
 
 func (p *moduleImageFileInfo) IsImport() bool {
-	return !p.FileInfo.IsTargetFile()
+	return !p.IsTargetFile()
 }
 
 func (*moduleImageFileInfo) isImageFileInfo() {}

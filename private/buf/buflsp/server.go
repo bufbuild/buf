@@ -163,7 +163,7 @@ func (s *server) SetTrace(
 	ctx context.Context,
 	params *protocol.SetTraceParams,
 ) error {
-	s.lsp.traceValue.Store(&params.Value)
+	s.traceValue.Store(&params.Value)
 	return nil
 }
 
@@ -180,7 +180,7 @@ func (s *server) Exit(ctx context.Context) error {
 
 	// Close the connection. This will let the server shut down gracefully once this
 	// notification is replied to.
-	return s.lsp.conn.Close()
+	return s.conn.Close()
 }
 
 // DidChangeConfiguration is sent whenever the client changes its config settings.

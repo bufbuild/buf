@@ -38,7 +38,7 @@ func newRule(checkRule check.Rule, pluginName string) *rule {
 
 func (r *rule) BufcheckCategories() []Category {
 	return slicesext.Map(
-		r.Rule.Categories(),
+		r.Categories(),
 		func(checkCategory check.Category) Category {
 			return newCategory(checkCategory, r.pluginName)
 		},

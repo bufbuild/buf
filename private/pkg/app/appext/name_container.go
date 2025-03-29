@@ -92,7 +92,7 @@ func (c *nameContainer) setPort() {
 }
 
 func (c *nameContainer) getDirPath(envSuffix string, getBaseDirPath func(app.EnvContainer) (string, error)) string {
-	dirPath := c.Container.Env(getAppNameEnvPrefix(c.appName) + envSuffix)
+	dirPath := c.Env(getAppNameEnvPrefix(c.appName) + envSuffix)
 	if dirPath == "" {
 		baseDirPath, err := getBaseDirPath(c.Container)
 		if err == nil {
@@ -103,9 +103,9 @@ func (c *nameContainer) getDirPath(envSuffix string, getBaseDirPath func(app.Env
 }
 
 func (c *nameContainer) getPort() (uint16, error) {
-	portString := c.Container.Env(getAppNameEnvPrefix(c.appName) + "PORT")
+	portString := c.Env(getAppNameEnvPrefix(c.appName) + "PORT")
 	if portString == "" {
-		portString = c.Container.Env("PORT")
+		portString = c.Env("PORT")
 		if portString == "" {
 			return 0, nil
 		}

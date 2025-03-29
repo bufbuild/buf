@@ -63,5 +63,5 @@ func (w *responseWriter) AddProtosourceAnnotation(
 			check.WithAgainstFileNameAndSourcePath(againstLocation.FilePath(), againstLocation.SourcePath()),
 		)
 	}
-	w.ResponseWriter.AddAnnotation(addAnnotationOptions...)
+	w.AddAnnotation(addAnnotationOptions...)
 }

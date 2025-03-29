@@ -63,7 +63,7 @@ func (r *readBucketCloser) copyToInMemory(ctx context.Context) (*readBucketClose
 	return &readBucketCloser{
 		ReadBucketCloser: compositeStorageReadBucketCloser{
 			ReadBucket: storageReadBucket,
-			closeFunc:  r.ReadBucketCloser.Close,
+			closeFunc:  r.Close,
 		},
 		subDirPath: r.subDirPath,
 	}, nil
