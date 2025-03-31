@@ -484,11 +484,14 @@ func TestConsecutiveFilters(t *testing.T) {
 }
 
 func TestDependencies(t *testing.T) {
-	// Checks options referred files to resolve imports.
+	t.Parallel()
+	// Test referred file for options of imported types.
 	t.Run("FieldA", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/deps", "test.FieldA.txtar", WithIncludeTypes("test.FieldA"))
 	})
 	t.Run("EnumA", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/deps", "test.EnumA.txtar", WithIncludeTypes("test.EnumA"))
 	})
 }
