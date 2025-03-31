@@ -483,6 +483,19 @@ func TestConsecutiveFilters(t *testing.T) {
 	})
 }
 
+func TestDependencies(t *testing.T) {
+	t.Parallel()
+	// Test referred file for options of imported types.
+	t.Run("FieldA", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.FieldA.txtar", WithIncludeTypes("test.FieldA"))
+	})
+	t.Run("EnumA", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.EnumA.txtar", WithIncludeTypes("test.EnumA"))
+	})
+}
+
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {

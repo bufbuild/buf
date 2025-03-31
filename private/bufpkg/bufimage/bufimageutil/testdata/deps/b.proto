@@ -1,0 +1,34 @@
+syntax = "proto3";
+package b;
+
+import "c.proto";
+import "google/protobuf/descriptor.proto";
+
+message B {
+  extend google.protobuf.FileOptions {
+    optional c.C file_c = 50000;
+  }
+  string b = 1;
+}
+
+extend google.protobuf.MessageOptions {
+  optional c.C message_c = 50000;
+}
+extend google.protobuf.FieldOptions {
+  optional c.C field_c = 50000;
+}
+extend google.protobuf.OneofOptions {
+  optional c.C oneof_c = 50000;
+}
+extend google.protobuf.EnumOptions {
+  optional c.C enum_c = 50000;
+}
+extend google.protobuf.EnumValueOptions {
+  optional c.C enum_value_c = 50000;
+}
+extend google.protobuf.ServiceOptions {
+  optional c.C service_c = 50000;
+}
+extend google.protobuf.MethodOptions {
+  optional c.C method_c = 50000;
+}
