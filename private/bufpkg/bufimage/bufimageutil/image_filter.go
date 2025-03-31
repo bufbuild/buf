@@ -209,7 +209,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, fileOptionsTag), fileDescriptor.Options, b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, fileOptionsTag), fileDescriptor.Options, b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -387,7 +387,7 @@ func (b *sourcePathsBuilder) remapDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, messageOptionsTag), descriptor.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -411,7 +411,7 @@ func (b *sourcePathsBuilder) remapExtensionRange(
 	sourcePath protoreflect.SourcePath,
 	extensionRange *descriptorpb.DescriptorProto_ExtensionRange,
 ) (*descriptorpb.DescriptorProto_ExtensionRange, bool, error) {
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, extensionRangeOptionsTag), extensionRange.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, extensionRangeOptionsTag), extensionRange.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -433,7 +433,7 @@ func (b *sourcePathsBuilder) remapEnum(
 		return nil, true, nil
 	}
 	var isDirty bool
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, enumOptionsTag), enum.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, enumOptionsTag), enum.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -459,7 +459,7 @@ func (b *sourcePathsBuilder) remapEnumValue(
 	sourcePath protoreflect.SourcePath,
 	enumValue *descriptorpb.EnumValueDescriptorProto,
 ) (*descriptorpb.EnumValueDescriptorProto, bool, error) {
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, enumValueOptionsTag), enumValue.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, enumValueOptionsTag), enumValue.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -480,7 +480,7 @@ func (b *sourcePathsBuilder) remapOneof(
 		// Oneofs are implicitly excluded when all of its fields types are excluded.
 		return nil, true, nil
 	}
-	options, changed, err := remapMessage(nil, append(sourcePath, oneofOptionsTag), oneof.GetOptions(), b.remapOptions)
+	options, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, oneofOptionsTag), oneof.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -507,7 +507,7 @@ func (b *sourcePathsBuilder) remapService(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, serviceOptionsTag), service.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, serviceOptionsTag), service.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -529,7 +529,7 @@ func (b *sourcePathsBuilder) remapMethod(
 	if !b.closure.hasType(method, b.options) {
 		return nil, true, nil
 	}
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, methodOptionsTag), method.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, methodOptionsTag), method.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -579,7 +579,7 @@ func (b *sourcePathsBuilder) remapField(
 	default:
 		return nil, false, fmt.Errorf("unknown field type %d", field.GetType())
 	}
-	newOptions, changed, err := remapMessage(nil, append(sourcePath, fieldOptionsTag), field.GetOptions(), b.remapOptions)
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, fieldOptionsTag), field.GetOptions(), b.remapOptions)
 	if err != nil {
 		return nil, false, err
 	}
