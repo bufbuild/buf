@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `--exclude_types` flag for `buf generate` when an input is specified.
 
 ## [v1.51.0] - 2025-03-28
 
