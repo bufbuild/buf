@@ -1,0 +1,12 @@
+syntax = "proto3";
+package test;
+
+import "a.proto";
+
+message FieldA {
+  a.A a = 1;
+}
+
+message EnumA {
+  a.A.AEnum a = 1;
+}

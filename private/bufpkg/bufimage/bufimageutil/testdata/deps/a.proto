@@ -1,0 +1,34 @@
+syntax = "proto3";
+package a;
+
+import "b.proto";
+
+option (b.B.file_c).c = "c";
+
+message A {
+  option (b.message_c).c = "c";
+
+  string a = 1 [(b.field_c).c = "c"];
+
+  oneof oneof_a {
+    option (b.oneof_c).c = "c";
+
+    string foo = 2;
+    string bar = 3;
+  }
+
+  enum AEnum {
+    option (b.enum_c).c = "c";
+
+    FOO_ENUM_A = 0;
+    FOO_ENUM_B = 1 [(b.enum_value_c).c = "c"];
+  }
+}
+
+service AService {
+  option (b.service_c).c = "c";
+
+  rpc Method(A) returns (A) {
+    option (b.method_c).c = "c";
+  }
+}

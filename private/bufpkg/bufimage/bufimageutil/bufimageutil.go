@@ -475,7 +475,7 @@ func (t *transitiveClosure) addElement(
 				}
 				oneofFieldCounts[index]++
 			}
-			if err := t.exploreCustomOptions(field, referrerFile, imageIndex, opts); err != nil {
+			if err := t.exploreCustomOptions(field, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
 				return err
 			}
 		}
