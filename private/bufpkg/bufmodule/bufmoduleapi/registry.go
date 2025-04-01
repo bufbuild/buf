@@ -68,7 +68,7 @@ func getPrimarySecondaryRegistry[T hasFullName](s []T, publicRegistry string) (s
 		}
 		return registries[0], registries[1], nil
 	default:
-		return "", "", fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(registries, ", "))
+		return "", "", fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not a supported feature.", strings.Join(registries, ", "))
 	}
 }
 
@@ -159,6 +159,6 @@ func validateDepRegistries(primaryRegistry string, depRegistries []string, publi
 		}
 		return nil
 	default:
-		return fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(depRegistries, ", "))
+		return fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not a supported feature.", strings.Join(depRegistries, ", "))
 	}
 }
