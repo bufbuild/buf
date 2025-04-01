@@ -219,7 +219,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 		// that we're in an error state if we already have a secondary registry from the input.
 		if secondaryRegistry != "" {
 			return nil, fmt.Errorf(
-				"attempting to perform a BSR operation for more than two registries: %s, %s. You may be attempting to use dependencies between registries - this is not a supported feature.",
+				"dependencies across multiple registries are not allowed: %s, %s",
 				primaryRegistry,
 				secondaryRegistry,
 			)
