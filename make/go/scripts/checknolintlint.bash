@@ -17,7 +17,7 @@ NOLINTLINT_ENABLED=0
 if [[ `yq '.linters.enable // [] | any_c(. == "nolintlint")' .golangci.yml` == "true" ]]; then
     # Enabled individually
     NOLINTLINT_ENABLED=1
-elif [[ `yq '.linters.enable-all' .golangci.yml` == "true" ]]; then
+elif [[ `yq '.linters.default' .golangci.yml` == "all" ]]; then
     # Enabled with enable-all
     NOLINTLINT_ENABLED=1
 fi
@@ -48,7 +48,7 @@ require_explanation=
 require_specific=
 allow_no_explanation_0=
 
-eval $(yq --output-format shell '.linters-settings.nolintlint' .golangci.yml)
+eval $(yq --output-format shell '.linters.settings.nolintlint' .golangci.yml)
 if [[ "${allow_unused}" != "false" ]]; then
     echo ".golangci.yml: nolintlint allow-unused must be set to false" >&2
     exit 1
