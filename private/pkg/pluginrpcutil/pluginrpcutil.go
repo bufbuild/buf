@@ -25,7 +25,8 @@ import (
 // NewLocalRunner returns a new pluginrpc.Runner for the local program.
 //
 // The programName is the path or name of the program. Any program args are passed to
-// the program when it is run. The programArgs may be nil.
+// the program when it is run. The programArgs may be nil. The environment is set to
+// os.Environ().
 func NewLocalRunner(programName string, programArgs ...string) pluginrpc.Runner {
 	return newRunner(programName, programArgs...)
 }
