@@ -494,6 +494,10 @@ func TestDependencies(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/deps", "test.EnumA.txtar", WithIncludeTypes("test.EnumA"))
 	})
+	t.Run("PublicOrder", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.PublicOrder.txtar", WithIncludeTypes("test.PublicOrder"))
+	})
 }
 
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
