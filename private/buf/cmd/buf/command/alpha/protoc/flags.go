@@ -202,7 +202,7 @@ func (f *flagsBuilder) Normalize(flagSet *pflag.FlagSet, name string) string {
 		f.pluginFakeParse(name, "_opt", false)
 		return pluginFakeFlagName
 	}
-	return strings.Replace(name, "-", "_", -1)
+	return strings.ReplaceAll(name, "-", "_")
 }
 
 func (f *flagsBuilder) Build(args []string) (*env, error) {

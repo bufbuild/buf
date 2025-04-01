@@ -2,8 +2,8 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="29.3"
-PROTOC_GEN_GO_VERSION="v1.36.3"
+PROTOC_VERSION="30.2"
+PROTOC_GEN_GO_VERSION="v1.36.6"
 CONNECT_VERSION="v1.18.1"
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
