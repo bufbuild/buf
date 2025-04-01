@@ -17,6 +17,7 @@ package bufimageutil
 import (
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -240,12 +241,9 @@ func (b *sourcePathsBuilder) remapDependencies(
 
 	// Check if the imports need to be remapped.
 	importsRequired := b.closure.imports[fileDescriptor.GetName()]
-	importsCount := 0
-	if importsRequired != nil {
-		importsCount = importsRequired.len()
-	}
+	importsCount := len(importsRequired)
 	for _, importPath := range dependencies {
-		if importsRequired != nil && importsRequired.index(importPath) != -1 {
+		if _, ok := importsRequired[importPath]; ok {
 			importsCount--
 		} else {
 			importsCount = -1
@@ -266,7 +264,7 @@ func (b *sourcePathsBuilder) remapDependencies(
 	dependencyChanges := make([]int32, len(dependencies))
 	for _, importPath := range dependencies {
 		path := append(dependencyPath, indexFrom)
-		if importsRequired != nil && importsRequired.index(importPath) != -1 {
+		if _, ok := importsRequired[importPath]; ok {
 			dependencyChanges[indexFrom] = indexTo
 			if indexTo != indexFrom {
 				sourcePathsRemap.markMoved(path, indexTo)
@@ -274,18 +272,24 @@ func (b *sourcePathsBuilder) remapDependencies(
 			newDependencies = append(newDependencies, importPath)
 			indexTo++
 			// delete them as we go, so we know which ones weren't in the list
-			importsRequired.delete(importPath)
+			delete(importsRequired, importPath)
 		} else {
 			sourcePathsRemap.markDeleted(path)
 			dependencyChanges[indexFrom] = -1
 		}
 		indexFrom++
 	}
-	if importsRequired != nil {
-		newDependencies = append(newDependencies, importsRequired.keys()...)
+	// Add imports picked up via a public import. The filtered files do no
+	// use public imports.
+	if n := len(importsRequired); n > 0 {
+		for key := range importsRequired {
+			newDependencies = append(newDependencies, key)
+		}
+		// Sort the public imports to ensure the output is deterministic.
+		sort.Strings(newDependencies[len(newDependencies)-n:])
 	}
 
-	// Pulbic dependencies are always removed on remapping.
+	// Public dependencies are always removed on remapping.
 	publicDependencyPath := append(sourcePath, filePublicDependencyTag)
 	sourcePathsRemap.markDeleted(publicDependencyPath)
 
