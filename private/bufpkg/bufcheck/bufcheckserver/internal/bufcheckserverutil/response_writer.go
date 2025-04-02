@@ -23,10 +23,17 @@ import (
 type ResponseWriter interface {
 	check.ResponseWriter
 
-	// AddProtosourceAnnotation adds a check.Annotation for bufprotosource.Locations.
+	// AddProtosourceAnnotation adds a [check.Annotation] for the given
+	// [bufprotosource.Location]s. The input file name is provided, if available, as a
+	// back-up to populate the input file name in cases where source code info is not
+	// available, and so the [bufprotosource.Location]s are nil. In the case where the
+	// [bufprotosource.Location] is available, the input file name is ignored.
+	// The against location is not required, so we don't need to pass a back-up file path
+	// for against.
 	AddProtosourceAnnotation(
 		location bufprotosource.Location,
 		againstLocation bufprotosource.Location,
+		inputFileName string,
 		format string,
 		args ...any,
 	)
@@ -45,6 +52,7 @@ func newResponseWriter(checkResponseWriter check.ResponseWriter) *responseWriter
 func (w *responseWriter) AddProtosourceAnnotation(
 	location bufprotosource.Location,
 	againstLocation bufprotosource.Location,
+	inputFileName string,
 	format string,
 	args ...any,
 ) {
@@ -55,6 +63,11 @@ func (w *responseWriter) AddProtosourceAnnotation(
 		addAnnotationOptions = append(
 			addAnnotationOptions,
 			check.WithFileNameAndSourcePath(location.FilePath(), location.SourcePath()),
+		)
+	} else if inputFileName != "" {
+		addAnnotationOptions = append(
+			addAnnotationOptions,
+			check.WithFileName(inputFileName),
 		)
 	}
 	if againstLocation != nil {
