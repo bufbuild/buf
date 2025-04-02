@@ -23,13 +23,14 @@ import (
 type ResponseWriter interface {
 	check.ResponseWriter
 
-	// AddProtosourceAnnotation adds a [check.Annotation] for the given
-	// [bufprotosource.Location]s. The input file name is provided, if available, as a
-	// back-up to populate the input file name in cases where source code info is not
-	// available, and so the [bufprotosource.Location]s are nil. In the case where the
-	// [bufprotosource.Location] is available, the input file name is ignored.
-	// The against location is not required, so we don't need to pass a back-up file path
-	// for against.
+	// AddProtosourceAnnotation adds a [check.Annotation] for the specified [bufprotosource.Location]s.
+	//
+	// If location is non-nil, it is used to populate the annotation's source code information,
+	// and inputFileName is ignored. If location is nil and inputFileName is provided, the
+	// latter is used as a fallback to set the input file name in the annotation.
+	// againstLocation is optional and may be nil.
+	//
+	// The format string and args are used to construct the annotation message.
 	AddProtosourceAnnotation(
 		location bufprotosource.Location,
 		againstLocation bufprotosource.Location,
