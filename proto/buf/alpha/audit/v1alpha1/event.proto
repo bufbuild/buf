@@ -49,6 +49,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_POLICY = 17;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -91,6 +92,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
+  EVENT_TYPE_POLICY_CREATED = 51;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
@@ -169,6 +171,7 @@ message Event {
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadPolicyCreated policy_created = 57;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
     PayloadPluginCommitPushed plugin_commit_pushed = 49;
@@ -417,6 +420,13 @@ message PayloadRepositoryDefaultBranchChanged {
   string old_default_branch = 3;
   // new_default_branch is the new default branch of the repository.
   string new_default_branch = 4;
+}
+
+message PayloadPolicyCreated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
 }
 
 message PayloadPluginCreated {
