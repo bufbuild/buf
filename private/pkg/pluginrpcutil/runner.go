@@ -17,6 +17,7 @@ package pluginrpcutil
 import (
 	"context"
 	"errors"
+	"os"
 	"os/exec"
 	"slices"
 
@@ -51,6 +52,7 @@ func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 		execext.WithStdin(env.Stdin),
 		execext.WithStdout(env.Stdout),
 		execext.WithStderr(env.Stderr),
+		execext.WithEnv(os.Environ()),
 	); err != nil {
 		execExitError := &exec.ExitError{}
 		if errors.As(err, &execExitError) {
