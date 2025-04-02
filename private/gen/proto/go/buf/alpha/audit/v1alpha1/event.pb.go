@@ -5023,11 +5023,13 @@ func (b0 PayloadRepositoryDefaultBranchChanged_builder) Build() *PayloadReposito
 }
 
 type PayloadPolicyCreated struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OwnerId   string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3"`
-	xxx_hidden_OwnerName string                 `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OwnerId     string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3"`
+	xxx_hidden_OwnerName   string                 `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3"`
+	xxx_hidden_Visibility  v1alpha1.Visibility    `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility"`
+	xxx_hidden_Description string                 `protobuf:"bytes,4,opt,name=description,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PayloadPolicyCreated) Reset() {
@@ -5069,12 +5071,34 @@ func (x *PayloadPolicyCreated) GetOwnerName() string {
 	return ""
 }
 
+func (x *PayloadPolicyCreated) GetVisibility() v1alpha1.Visibility {
+	if x != nil {
+		return x.xxx_hidden_Visibility
+	}
+	return v1alpha1.Visibility(0)
+}
+
+func (x *PayloadPolicyCreated) GetDescription() string {
+	if x != nil {
+		return x.xxx_hidden_Description
+	}
+	return ""
+}
+
 func (x *PayloadPolicyCreated) SetOwnerId(v string) {
 	x.xxx_hidden_OwnerId = v
 }
 
 func (x *PayloadPolicyCreated) SetOwnerName(v string) {
 	x.xxx_hidden_OwnerName = v
+}
+
+func (x *PayloadPolicyCreated) SetVisibility(v v1alpha1.Visibility) {
+	x.xxx_hidden_Visibility = v
+}
+
+func (x *PayloadPolicyCreated) SetDescription(v string) {
+	x.xxx_hidden_Description = v
 }
 
 type PayloadPolicyCreated_builder struct {
@@ -5084,6 +5108,10 @@ type PayloadPolicyCreated_builder struct {
 	OwnerId string
 	// owner_name is the name of the owner of the policy.
 	OwnerName string
+	// visibility is the visibility of the policy.
+	Visibility v1alpha1.Visibility
+	// description of the policy.
+	Description string
 }
 
 func (b0 PayloadPolicyCreated_builder) Build() *PayloadPolicyCreated {
@@ -5092,6 +5120,8 @@ func (b0 PayloadPolicyCreated_builder) Build() *PayloadPolicyCreated {
 	_, _ = b, x
 	x.xxx_hidden_OwnerId = b.OwnerId
 	x.xxx_hidden_OwnerName = b.OwnerName
+	x.xxx_hidden_Visibility = b.Visibility
+	x.xxx_hidden_Description = b.Description
 	return m0
 }
 
@@ -7773,11 +7803,15 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\n" +
 	"owner_name\x18\x02 \x01(\tR\townerName\x12,\n" +
 	"\x12old_default_branch\x18\x03 \x01(\tR\x10oldDefaultBranch\x12,\n" +
-	"\x12new_default_branch\x18\x04 \x01(\tR\x10newDefaultBranch:\x02\x18\x01\"P\n" +
+	"\x12new_default_branch\x18\x04 \x01(\tR\x10newDefaultBranch:\x02\x18\x01\"\xbb\x01\n" +
 	"\x14PayloadPolicyCreated\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
-	"owner_name\x18\x02 \x01(\tR\townerName\"q\n" +
+	"owner_name\x18\x02 \x01(\tR\townerName\x12G\n" +
+	"\n" +
+	"visibility\x18\x03 \x01(\x0e2'.buf.alpha.registry.v1alpha1.VisibilityR\n" +
+	"visibility\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\"q\n" +
 	"\x14PayloadPluginCreated\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
@@ -8131,16 +8165,17 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	63, // 75: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
 	62, // 76: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
 	62, // 77: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	59, // 78: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	59, // 79: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	64, // 80: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
-	60, // 81: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	61, // 82: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	83, // [83:83] is the sub-list for method output_type
-	83, // [83:83] is the sub-list for method input_type
-	83, // [83:83] is the sub-list for extension type_name
-	83, // [83:83] is the sub-list for extension extendee
-	0,  // [0:83] is the sub-list for field type_name
+	62, // 78: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	59, // 79: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	59, // 80: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	64, // 81: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
+	60, // 82: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	61, // 83: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	84, // [84:84] is the sub-list for method output_type
+	84, // [84:84] is the sub-list for method input_type
+	84, // [84:84] is the sub-list for extension type_name
+	84, // [84:84] is the sub-list for extension extendee
+	0,  // [0:84] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_audit_v1alpha1_event_proto_init() }

@@ -427,6 +427,10 @@ message PayloadPolicyCreated {
   string owner_id = 1;
   // owner_name is the name of the owner of the policy.
   string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+  // description of the policy.
+  string description = 4;
 }
 
 message PayloadPluginCreated {
