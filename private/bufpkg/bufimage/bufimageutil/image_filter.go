@@ -279,14 +279,13 @@ func (b *sourcePathsBuilder) remapDependencies(
 		}
 		indexFrom++
 	}
-	// Add imports picked up via a public import. The filtered files do no
-	// use public imports.
-	if n := len(importsRequired); n > 0 {
-		for key := range importsRequired {
-			newDependencies = append(newDependencies, key)
+	// Add imports picked up via a public import. The filtered files do not use public imports.
+	if publicImportCount := len(importsRequired); publicImportCount > 0 {
+		for importPath := range importsRequired {
+			newDependencies = append(newDependencies, importPath)
 		}
 		// Sort the public imports to ensure the output is deterministic.
-		sort.Strings(newDependencies[len(newDependencies)-n:])
+		sort.Strings(newDependencies[len(newDependencies)-publicImportCount:])
 	}
 
 	// Public dependencies are always removed on remapping.
