@@ -94,14 +94,17 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
-			// File was filtered out.
-			// TODO: File was filtered out. We should be able to use
-			//   the import list to determine if the file is used.
-			//   See: TestDeps/IncludeWithExcludeExtensions
-			//   Currently, with an explicitly included type we add the extensions
-			//   to the import list. If the extension fields types are excluded,
-			//   this file is not used, but the import list is not updated.
-			continue // skip for now
+			// The file was filtered out. Check if it was used by another file.
+			for filePath, dependencies := range closure.imports {
+				if _, isImported := dependencies[imageFilePath]; isImported {
+					return nil, syserror.Newf("file %q was filtered out, but is still used by %q", imageFilePath, filePath)
+				}
+			}
+			// Currently, with an explicitly included type we add the extensions
+			// to the import list. If all the extension fields types are excluded,
+			// the file may be empty. The import list still contains the empty file.
+			// Skip the file. See: TestDeps/IncludeWithExcludeExtensions
+			continue
 		}
 		newImageFiles = append(newImageFiles, newImageFile)
 	}
