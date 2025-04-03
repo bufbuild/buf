@@ -431,7 +431,7 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeExcluded {
+	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
 		if existingMode == inclusionModeExcluded {
 			return nil // already excluded
 		}
