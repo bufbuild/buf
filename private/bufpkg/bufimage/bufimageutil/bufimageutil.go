@@ -395,6 +395,9 @@ func (t *transitiveClosure) includeType(
 	}
 	for _, file := range pkg.files {
 		fileDescriptor := file.FileDescriptorProto()
+		if mode := t.elements[fileDescriptor]; mode == inclusionModeExcluded {
+			return fmt.Errorf("inclusion of excluded package %q", typeName)
+		}
 		if err := t.addElement(fileDescriptor, "", false, imageIndex, options); err != nil {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
 		}
@@ -428,8 +431,11 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	t.addImport(referrerFile, descriptorInfo.file.Path())
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
+		if existingMode == inclusionModeExcluded {
+			return nil // already excluded
+		}
+		t.addImport(referrerFile, descriptorInfo.file.Path())
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
 			t.elements[descriptor] = inclusionModeExplicit
@@ -588,6 +594,9 @@ func (t *transitiveClosure) addElement(
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
+
+	// Add the file to the imports for this file.
+	t.addImport(referrerFile, descriptorInfo.file.Path())
 
 	// if this type is enclosed inside another, add enclosing types
 	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
@@ -812,6 +821,10 @@ func (t *transitiveClosure) addExtensions(
 		}
 		descriptorInfo := imageIndex.ByDescriptor[msgDescriptor]
 		for _, extendsDescriptor := range imageIndex.NameToExtensions[descriptorInfo.fullName] {
+			if mode := t.elements[extendsDescriptor]; mode == inclusionModeExcluded {
+				// This extension field is excluded.
+				continue
+			}
 			if err := t.addElement(extendsDescriptor, "", false, imageIndex, opts); err != nil {
 				return err
 			}

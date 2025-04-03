@@ -498,6 +498,11 @@ func TestDependencies(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/deps", "test.PublicOrder.txtar", WithIncludeTypes("test.PublicOrder"))
 	})
+	// Test an included type with implicitly excluded extensions fields.
+	t.Run("IncludeWithExcludeExtensions", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.IncludeWithExcludeExt.txtar", WithIncludeTypes("google.protobuf.MessageOptions"), WithExcludeTypes("a", "b", "c"), WithAllowIncludeOfImportedType())
+	})
 }
 
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
