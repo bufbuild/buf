@@ -431,11 +431,10 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	existingMode, ok := t.elements[descriptor]
-	if existingMode == inclusionModeExcluded {
-		return nil // already excluded
-	}
-	if ok && existingMode != inclusionModeEnclosing {
+	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeExcluded {
+		if existingMode == inclusionModeExcluded {
+			return nil // already excluded
+		}
 		t.addImport(referrerFile, descriptorInfo.file.Path())
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
