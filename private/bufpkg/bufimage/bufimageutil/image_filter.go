@@ -94,8 +94,14 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
-			// Assert that the newImageFile is not excluded. An import cannot also be excluded.
-			return nil, syserror.Newf("excluded file %q imported", imageFilePath)
+			// File was filtered out.
+			// TODO: This should be an error, but we need to handle the case where
+			//   an extension from a file is included, but the file itself is not.
+			//   See: TestDeps/IncludeWithExcludeExtensions
+			//   Currently, when transversing extensions, we are adding the import
+			//   before we can validate the extension types. This leads to this
+			//   error.
+			continue // skip for now
 		}
 		newImageFiles = append(newImageFiles, newImageFile)
 	}

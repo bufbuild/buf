@@ -435,8 +435,8 @@ func (t *transitiveClosure) addElement(
 	if existingMode == inclusionModeExcluded {
 		return nil // already excluded
 	}
-	t.addImport(referrerFile, descriptorInfo.file.Path())
 	if ok && existingMode != inclusionModeEnclosing {
+		t.addImport(referrerFile, descriptorInfo.file.Path())
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
 			t.elements[descriptor] = inclusionModeExplicit
@@ -595,6 +595,9 @@ func (t *transitiveClosure) addElement(
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
+
+	// Add the file to the imports for this file.
+	t.addImport(referrerFile, descriptorInfo.file.Path())
 
 	// if this type is enclosed inside another, add enclosing types
 	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
