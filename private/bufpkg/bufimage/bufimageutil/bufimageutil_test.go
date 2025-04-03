@@ -498,7 +498,7 @@ func TestDependencies(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/deps", "test.PublicOrder.txtar", WithIncludeTypes("test.PublicOrder"))
 	})
-	// Test that included a type with implicilty excluded extensions.
+	// Test an included type with implicitly excluded extensions fields.
 	t.Run("IncludeWithExcludeExtensions", func(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/deps", "test.IncludeWithExcludeExt.txtar", WithIncludeTypes("google.protobuf.MessageOptions"), WithExcludeTypes("a", "b", "c"), WithAllowIncludeOfImportedType())
