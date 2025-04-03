@@ -49,6 +49,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_POLICY = 17;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -91,8 +92,16 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
+  EVENT_TYPE_POLICY_CREATED = 54;
+  EVENT_TYPE_POLICY_DELETED = 55;
+  EVENT_TYPE_POLICY_DEPRECATED = 56;
+  EVENT_TYPE_POLICY_UNDEPRECATED = 57;
+  EVENT_TYPE_POLICY_VISIBILITY_CHANGED = 58;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_DEPRECATED = 51;
+  EVENT_TYPE_PLUGIN_UNDEPRECATED = 52;
+  EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED = 53;
   EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
@@ -169,8 +178,16 @@ message Event {
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadPolicyCreated policy_created = 60;
+    PayloadPolicyDeleted policy_deleted = 61;
+    PayloadPolicyDeprecated policy_deprecated = 62;
+    PayloadPolicyUndeprecated policy_undeprecated = 63;
+    PayloadPolicyVisibilityChanged policy_visibility_changed = 64;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginDeprecated plugin_deprecated = 57;
+    PayloadPluginUndeprecated plugin_undeprecated = 58;
+    PayloadPluginVisibilityChanged plugin_visibility_changed = 59;
     PayloadPluginCommitPushed plugin_commit_pushed = 49;
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
@@ -419,6 +436,53 @@ message PayloadRepositoryDefaultBranchChanged {
   string new_default_branch = 4;
 }
 
+message PayloadPolicyCreated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyDeleted {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyDeprecated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyUndeprecated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyVisibilityChanged {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // old_visibility is the old visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 4;
+  // new_visibility is the new visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 5;
+}
+
 message PayloadPluginCreated {
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
@@ -426,6 +490,8 @@ message PayloadPluginCreated {
   string owner_name = 2;
   // plugin_type is the type of the plugin.
   string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
 }
 
 message PayloadPluginDeleted {
@@ -435,6 +501,43 @@ message PayloadPluginDeleted {
   string owner_name = 2;
   // plugin_type is the type of the plugin.
   string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
+}
+
+message PayloadPluginDeprecated {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
+}
+
+message PayloadPluginUndeprecated {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
+}
+
+message PayloadPluginVisibilityChanged {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+  // old_visibility is the old visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 4;
+  // new_visibility is the new visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 5;
 }
 
 message PayloadPluginCommitPushed {
