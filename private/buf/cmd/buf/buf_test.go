@@ -4419,6 +4419,42 @@ func TestLintDisabledForModuleInWorkspace(t *testing.T) {
 	)
 }
 
+func TestLintNoSourceCodeInfoIgnores(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	// Build image without source code info
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"--exclude-source-info",
+		filepath.Join("testdata", "fail"),
+		"-o",
+		filepath.Join(tempDir, "image.binpb"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"lint",
+		filepath.Join(tempDir, "image.binpb"),
+		"--config",
+		`{
+		"version": "v2",
+		"lint": {
+			"ignore_only": {
+				"FIELD_LOWER_SNAKE_CASE": ["buf/buf.proto"],
+				"PACKAGE_DIRECTORY_MATCH": ["buf/buf.proto"],
+				"PACKAGE_VERSION_SUFFIX": ["buf/buf.proto"],
+				},
+			},
+		}`,
+	)
+}
+
 // testBuildLsFilesFormatImport does effectively an ls-files, but via doing a build of an Image, and then
 // listing the files from the image as if --format=import was set.
 func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFiles []string, buildArgs ...string) {

@@ -57,26 +57,13 @@ func handleBreakingEnumNoDelete(
 			if err != nil {
 				return err
 			}
-			if location != nil {
-				responseWriter.AddProtosourceAnnotation(
-					location,
-					previousEnum.Location(),
-					`Previously present enum %q was deleted from file.`,
-					previousNestedName,
-				)
-			} else {
-				responseWriter.AddAnnotation(
-					check.WithFileName(descriptor.File().Path()),
-					check.WithAgainstFileNameAndSourcePath(
-						previousEnum.Location().FilePath(),
-						previousEnum.Location().SourcePath(),
-					),
-					check.WithMessagef(
-						`Previously present enum %q was deleted from file.`,
-						previousNestedName,
-					),
-				)
-			}
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				previousEnum.Location(),
+				descriptor.File().Path(),
+				`Previously present enum %q was deleted from file.`,
+				previousNestedName,
+			)
 		}
 	}
 	return nil
@@ -105,26 +92,13 @@ func handleBreakingExtensionNoDelete(
 			if err != nil {
 				return err
 			}
-			if location != nil {
-				responseWriter.AddProtosourceAnnotation(
-					location,
-					previousExtension.Location(),
-					`Previously present extension %q was deleted from file.`,
-					previousNestedName,
-				)
-			} else {
-				responseWriter.AddAnnotation(
-					check.WithFileName(descriptor.File().Path()),
-					check.WithAgainstFileNameAndSourcePath(
-						previousExtension.File().Path(),
-						previousExtension.Location().SourcePath(),
-					),
-					check.WithMessagef(
-						`Previously present extension %q was deleted from file.`,
-						previousNestedName,
-					),
-				)
-			}
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				previousExtension.Location(),
+				descriptor.File().Path(),
+				`Previously present extension %q was deleted from file.`,
+				previousNestedName,
+			)
 		}
 	}
 	return nil
@@ -180,26 +154,13 @@ func handleBreakingMessageNoDelete(
 	for previousNestedName, previousMessage := range previousNestedNameToMessage {
 		if _, ok := nestedNameToMessage[previousNestedName]; !ok {
 			descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-			if location != nil {
-				responseWriter.AddProtosourceAnnotation(
-					location,
-					previousMessage.Location(),
-					`Previously present message %q was deleted from file.`,
-					previousNestedName,
-				)
-			} else {
-				responseWriter.AddAnnotation(
-					check.WithFileName(descriptor.File().Path()),
-					check.WithAgainstFileNameAndSourcePath(
-						previousMessage.Location().FilePath(),
-						previousMessage.Location().SourcePath(),
-					),
-					check.WithMessagef(
-						`Previously present message %q was deleted from file.`,
-						previousNestedName,
-					),
-				)
-			}
+			responseWriter.AddProtosourceAnnotation(
+				location,
+				previousMessage.Location(),
+				descriptor.File().Path(),
+				`Previously present message %q was deleted from file.`,
+				previousNestedName,
+			)
 		}
 	}
 	return nil
@@ -224,22 +185,13 @@ func handleBreakingServiceNoDelete(
 	}
 	for previousName, previousService := range previousNameToService {
 		if _, ok := nameToService[previousName]; !ok {
-			var previousSourcePath protoreflect.SourcePath
-			if previousService.Location() != nil {
-				previousSourcePath = previousService.Location().SourcePath()
-			}
-			addAnnotationOptions := []check.AddAnnotationOption{
-				check.WithMessagef(
-					`Previously present service %q was deleted from file.`,
-					previousName,
-				),
-				check.WithFileName(file.Path()),
-				check.WithAgainstFileNameAndSourcePath(
-					previousFile.Path(),
-					previousSourcePath,
-				),
-			}
-			responseWriter.AddAnnotation(addAnnotationOptions...)
+			responseWriter.AddProtosourceAnnotation(
+				nil, // Deleted service does not have an input location
+				previousService.Location(),
+				file.Path(),
+				`Previously present service %q was deleted from file.`,
+				previousName,
+			)
 		}
 	}
 	return nil
@@ -270,6 +222,7 @@ func handleBreakingEnumSameType(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(enum.Features().EnumTypeLocation(), enum.Location()),
 			withBackupLocation(previousEnum.Features().EnumTypeLocation(), previousEnum.Location()),
+			enum.File().Path(),
 			`Enum %q changed from %s to %s.`,
 			enum.Name(),
 			previousState,
@@ -374,6 +327,7 @@ func checkEnumValueNoDeleteWithRules(
 				responseWriter.AddProtosourceAnnotation(
 					enum.Location(),
 					previousEnum.Location(),
+					previousEnum.File().Path(),
 					`Previously present enum value "%d" on enum %q was deleted%s.`,
 					previousNumber,
 					enum.Name(),
@@ -515,6 +469,7 @@ func checkFieldNoDeleteWithRules(
 				responseWriter.AddProtosourceAnnotation(
 					message.Location(),
 					previousMessage.Location(),
+					message.File().Path(),
 					`Previously present %s was deleted%s.`,
 					description,
 					suffix,
@@ -568,6 +523,7 @@ func handleBreakingFieldSameCardinality(
 		responseWriter.AddProtosourceAnnotation(
 			field.Location(),
 			previousField.Location(),
+			field.File().Path(),
 			`%s changed cardinality from %q to %q.`,
 			fieldDescription(field),
 			previousCardinality,
@@ -629,6 +585,7 @@ func handleBreakingFieldSameCppStringType(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
 			withBackupLocation(previousField.CTypeLocation(), fieldCppStringTypeLocation(previousField), previousField.Location()),
+			field.File().Path(),
 			`%s changed C++ string type from %q to %q.`,
 			fieldDescription(field),
 			previousType,
@@ -671,6 +628,7 @@ func handleBreakingFieldSameJavaUTF8Validation(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(field.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(field), field.Location()),
 			withBackupLocation(previousField.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(previousField), previousField.Location()),
+			field.File().Path(),
 			`%s changed Java string UTF8 validation from %q to %q.`,
 			fieldDescription(field),
 			previousValidation,
@@ -697,6 +655,7 @@ func handleBreakingFieldSameJSType(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(field.JSTypeLocation(), field.Location()),
 			withBackupLocation(previousField.JSTypeLocation(), previousField.Location()),
+			field.File().Path(),
 			`%s changed option "jstype" from %q to %q.`,
 			fieldDescription(field),
 			previousField.JSType().String(), field.JSType().String())
@@ -910,6 +869,7 @@ func addEnumGroupMessageFieldChangedTypeName(
 	responseWriter.AddProtosourceAnnotation(
 		field.TypeNameLocation(),
 		previousField.TypeNameLocation(),
+		field.File().Path(),
 		`%s changed type from %q to %q.`,
 		fieldDescription(field),
 		strings.TrimPrefix(previousField.TypeName(), "."),
@@ -949,6 +909,7 @@ func addFieldChangedType(
 	responseWriter.AddProtosourceAnnotation(
 		fieldLocation,
 		previousFieldLocation,
+		field.File().Path(),
 		`%s changed type from %q to %q.%s`,
 		fieldDescription(field),
 		fieldDescriptorTypePrettyString(previousDescriptor),
@@ -995,6 +956,7 @@ func handleBreakingFieldSameUTF8Validation(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location()),
 			withBackupLocation(previousField.Features().UTF8ValidationLocation(), previousField.Location()),
+			field.File().Path(),
 			`%s changed UTF8 validation from %v to %v.`,
 			fieldDescription(field),
 			previousUTF8Validation,
@@ -1196,7 +1158,8 @@ func handleBreakingFileSameOptimizeFor(
 	return checkFileSameValue(
 		responseWriter,
 		previousFile.OptimizeFor().String(),
-		file.OptimizeFor().String(), file,
+		file.OptimizeFor().String(),
+		file,
 		file.OptimizeForLocation(),
 		previousFile.OptimizeForLocation(),
 		`option "optimize_for"`,
@@ -1384,6 +1347,7 @@ func checkFileSameValue(
 		responseWriter.AddProtosourceAnnotation(
 			location,
 			previousLocation,
+			file.Path(),
 			`File %s changed from %q to %q.`,
 			name,
 			previousValue,
@@ -1408,6 +1372,7 @@ func handleBreakingMessageNoRemoveStandardDescriptorAccessor(
 		responseWriter.AddProtosourceAnnotation(
 			message.NoStandardDescriptorAccessorLocation(),
 			previousMessage.NoStandardDescriptorAccessorLocation(),
+			message.File().Path(),
 			`Message option "no_standard_descriptor_accessor" changed from %q to %q.`,
 			previous,
 			current,
@@ -1449,6 +1414,7 @@ func handleBreakingOneofNoDelete(
 			responseWriter.AddProtosourceAnnotation(
 				message.Location(),
 				previousMessage.Location(),
+				message.File().Path(),
 				`Previously present oneof %q on message %q was deleted.`,
 				previousName, message.Name(),
 			)
@@ -1479,6 +1445,7 @@ func handleBreakingRPCNoDelete(
 			responseWriter.AddProtosourceAnnotation(
 				service.Location(),
 				previousService.Location(),
+				service.File().Path(),
 				`Previously present RPC %q on service %q was deleted.`,
 				previousName,
 				service.Name(),
@@ -1523,6 +1490,7 @@ func handleBreakingEnumSameJSONFormat(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(enum.Features().JSONFormatLocation(), enum.Location()),
 			withBackupLocation(previousEnum.Features().JSONFormatLocation(), previousEnum.Location()),
+			enum.File().Path(),
 			`Enum %q JSON format support changed from %v to %v.`,
 			enum.Name(),
 			previousJSONFormat,
@@ -1562,6 +1530,7 @@ func handleBreakingEnumValueSameName(
 			responseWriter.AddProtosourceAnnotation(
 				enumValue.NumberLocation(),
 				previousEnumValueNumberLocation,
+				enumValue.File().Path(),
 				`Enum value "%d" on enum %q changed name%s from %s to %s.`,
 				enumValue.Number(),
 				enumValue.Enum().Name(),
@@ -1591,6 +1560,7 @@ func handleBreakingFieldSameJSONName(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(field.JSONNameLocation(), field.Location()),
 			withBackupLocation(previousField.JSONNameLocation(), previousField.Location()),
+			field.File().Path(),
 			`%s changed option "json_name" from %q to %q.`,
 			fieldDescription(field),
 			previousField.JSONName(),
@@ -1621,6 +1591,7 @@ func handleBreakingFieldSameName(
 		responseWriter.AddProtosourceAnnotation(
 			field.NameLocation(),
 			previousField.NameLocation(),
+			field.File().Path(),
 			`%s changed name from %q to %q.`,
 			fieldDescriptionWithName(field, ""), // don't include name in description
 			previousName,
@@ -1666,6 +1637,7 @@ func handleBreakingMessageSameJSONFormat(
 			withBackupLocation(message.Features().JSONFormatLocation(), message.Location()),
 			withBackupLocation(previousMessage.Features().JSONFormatLocation(), previousMessage.Location()),
 			`Message %q JSON format support changed from %v to %v.`,
+			message.File().Path(),
 			message.Name(),
 			previousJSONFormat,
 			jsonFormat,
@@ -1704,6 +1676,7 @@ func handleBreakingFieldSameDefault(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(field.DefaultLocation(), field.Location()),
 			withBackupLocation(previousField.DefaultLocation(), previousField.Location()),
+			field.File().Path(),
 			`% changed default value from %v to %v.`,
 			fieldDescription(field),
 			previousDefault.printable,
@@ -1762,6 +1735,7 @@ func handleBreakingFieldSameOneof(
 			responseWriter.AddProtosourceAnnotation(
 				field.Location(),
 				previousField.Location(),
+				field.File().Path(),
 				`%sq moved from oneof %q to oneof %q.`,
 				fieldDescription(field),
 				previousOneof.Name(),
@@ -1780,6 +1754,7 @@ func handleBreakingFieldSameOneof(
 	responseWriter.AddProtosourceAnnotation(
 		field.Location(),
 		previousField.Location(),
+		field.File().Path(),
 		`%s moved from %s to %s a oneof.`,
 		fieldDescription(field),
 		previous,
@@ -1817,6 +1792,7 @@ func handleBreakingMessageSameRequiredFields(
 			responseWriter.AddProtosourceAnnotation(
 				message.Location(),
 				previousMessage.Location(),
+				message.File().Path(),
 				`Message %q had required field "%d" deleted. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`,
 				previousMessage.Name(),
 				previousNumber,
@@ -1829,6 +1805,7 @@ func handleBreakingMessageSameRequiredFields(
 			responseWriter.AddProtosourceAnnotation(
 				requiredField.Location(),
 				nil,
+				requiredField.File().Path(),
 				`Message %q had required field "%d" added. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`,
 				message.Name(),
 				number,
@@ -1864,6 +1841,7 @@ func handleBreakingReservedEnumNoDelete(
 			responseWriter.AddProtosourceAnnotation(
 				enum.Location(),
 				previousEnum.Location(),
+				enum.File().Path(),
 				`Previously present reserved name %q on enum %q was deleted.`,
 				previousValue,
 				enum.Name(),
@@ -1899,6 +1877,7 @@ func handleBreakingReservedMessageNoDelete(
 			responseWriter.AddProtosourceAnnotation(
 				message.Location(),
 				previousMessage.Location(),
+				message.File().Path(),
 				`Previously present reserved name %q on message %q was deleted.`,
 				previousValue,
 				message.Name(),
@@ -1927,6 +1906,7 @@ func handleBreakingRPCSameClientStreaming(
 		responseWriter.AddProtosourceAnnotation(
 			method.Location(),
 			previousMethod.Location(),
+			method.File().Path(),
 			`RPC %q on service %q changed from client %s to client %s.`,
 			method.Name(),
 			method.Service().Name(),
@@ -1949,30 +1929,15 @@ func handleBreakingRPCSameIdempotencyLevel(
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
 	if previous != current {
-		var currentLocationSourcePath protoreflect.SourcePath
-		var previousLocationSourcePath protoreflect.SourcePath
-		if method.IdempotencyLevelLocation() != nil {
-			currentLocationSourcePath = method.IdempotencyLevelLocation().SourcePath()
-		}
-		if previousMethod.IdempotencyLevelLocation() != nil {
-			previousLocationSourcePath = previousMethod.IdempotencyLevelLocation().SourcePath()
-		}
-		responseWriter.AddAnnotation(
-			check.WithFileNameAndSourcePath(
-				method.File().Path(),
-				currentLocationSourcePath,
-			),
-			check.WithAgainstFileNameAndSourcePath(
-				previousMethod.File().Path(),
-				previousLocationSourcePath,
-			),
-			check.WithMessagef(
-				`RPC %q on service %q changed option "idempotency_level" from %q to %q.`,
-				method.Name(),
-				method.Service().Name(),
-				previous.String(),
-				current.String(),
-			),
+		responseWriter.AddProtosourceAnnotation(
+			method.IdempotencyLevelLocation(),
+			previousMethod.IdempotencyLevelLocation(),
+			method.File().Path(),
+			`RPC %q on service %q changed option "idempotency_level" from %q to %q.`,
+			method.Name(),
+			method.Service().Name(),
+			previous.String(),
+			current.String(),
 		)
 	}
 	return nil
@@ -1991,6 +1956,7 @@ func handleBreakingRPCSameRequestType(
 		responseWriter.AddProtosourceAnnotation(
 			method.InputTypeLocation(),
 			previousMethod.InputTypeLocation(),
+			method.File().Path(),
 			`RPC %q on service %q changed request type from %q to %q.`,
 			method.Name(),
 			method.Service().Name(),
@@ -2014,6 +1980,7 @@ func handleBreakingRPCSameResponseType(
 		responseWriter.AddProtosourceAnnotation(
 			method.OutputTypeLocation(),
 			previousMethod.OutputTypeLocation(),
+			method.File().Path(),
 			`RPC %q on service %q changed response type from %q to %q.`,
 			method.Name(),
 			method.Service().Name(),
@@ -2043,6 +2010,7 @@ func handleBreakingRPCSameServerStreaming(
 		responseWriter.AddProtosourceAnnotation(
 			method.Location(),
 			previousMethod.Location(),
+			method.File().Path(),
 			`RPC %q on service %q changed from server %s to server %s.`,
 			method.Name(),
 			method.Service().Name(),
@@ -2084,47 +2052,29 @@ func handleBreakingPackageEnumNoDelete(
 					}
 					// Check if the file still exists.
 					file, ok := filePathToFile[previousEnum.File().Path()]
+					var location bufprotosource.Location
+					var filePath string
 					if ok {
+						var descriptor bufprotosource.Descriptor
 						// File exists, try to get a location to attach the error to.
-						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						descriptor, location, err = getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 						if err != nil {
 							return err
 						}
-						if location != nil {
-							responseWriter.AddProtosourceAnnotation(
-								location,
-								previousEnum.Location(),
-								`Previously present enum %q was deleted from package %q.`,
-								previousNestedName,
-								previousPackage,
-							)
-						} else {
-							responseWriter.AddAnnotation(
-								check.WithFileName(descriptor.File().Path()),
-								check.WithAgainstFileNameAndSourcePath(
-									previousEnum.Location().FilePath(),
-									previousEnum.Location().SourcePath(),
-								),
-								check.WithMessagef(
-									`Previously present enum %q was deleted from package %q.`,
-									previousNestedName,
-									previousPackage,
-								),
-							)
-						}
-					} else {
-						// File does not exist, we don't know where the enum was deleted from.
-						// Add the previous enum to check for ignores. This means that if
+						filePath = descriptor.File().Path()
+						// If the file does not exist, we don't know where the enum was deleted from.
+						// The previous enum location is used to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous enum was in an unstable package.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousEnum.Location(),
-							`Previously present enum %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
 					}
+					responseWriter.AddProtosourceAnnotation(
+						location,
+						previousEnum.Location(),
+						filePath,
+						`Previously present enum %q was deleted from package %q.`,
+						previousNestedName,
+						previousPackage,
+					)
 				}
 			}
 		}
@@ -2163,47 +2113,29 @@ func handleBreakingPackageExtensionNoDelete(
 					}
 					// Check if the file still exists.
 					file, ok := filePathToFile[previousExtension.File().Path()]
+					var location bufprotosource.Location
+					var filePath string
 					if ok {
+						var descriptor bufprotosource.Descriptor
 						// File exists, try to get a location to attach the error to.
-						descriptor, location, err := getDescriptorAndLocationForDeletedElement(file, previousNestedName)
+						descriptor, location, err = getDescriptorAndLocationForDeletedElement(file, previousNestedName)
 						if err != nil {
 							return err
 						}
-						if location != nil {
-							responseWriter.AddProtosourceAnnotation(
-								location,
-								previousExtension.Location(),
-								`Previously present extension %q was deleted from package %q.`,
-								previousNestedName,
-								previousPackage,
-							)
-						} else {
-							responseWriter.AddAnnotation(
-								check.WithFileName(descriptor.File().Path()),
-								check.WithAgainstFileNameAndSourcePath(
-									previousExtension.Location().FilePath(),
-									previousExtension.Location().SourcePath(),
-								),
-								check.WithMessagef(
-									`Previously present extension %q was deleted from package %q.`,
-									previousNestedName,
-									previousPackage,
-								),
-							)
-						}
-					} else {
-						// File does not exist, we don't know where the enum was deleted from.
-						// Add the previous enum to check for ignores. This means that if
+						filePath = descriptor.File().Path()
+						// If the file does not exist, we don't know where the enum was deleted from.
+						// The previous enum location is used to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous enum was in an unstable package.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousExtension.Location(),
-							`Previously present extension %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
 					}
+					responseWriter.AddProtosourceAnnotation(
+						location,
+						previousExtension.Location(),
+						filePath,
+						`Previously present extension %q was deleted from package %q.`,
+						previousNestedName,
+						previousPackage,
+					)
 				}
 			}
 		}
@@ -2242,44 +2174,26 @@ func handleBreakingPackageMessageNoDelete(
 					}
 					// Check if the file still exists.
 					file, ok := filePathToFile[previousMessage.File().Path()]
+					var location bufprotosource.Location
+					var filePath string
 					if ok {
+						var descriptor bufprotosource.Descriptor
 						// File exists, try to get a location to attach the error to.
-						descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-						if location != nil {
-							responseWriter.AddProtosourceAnnotation(
-								location,
-								previousMessage.Location(),
-								`Previously present message %q was deleted from package %q.`,
-								previousNestedName,
-								previousPackage,
-							)
-						} else {
-							responseWriter.AddAnnotation(
-								check.WithFileName(descriptor.File().Path()),
-								check.WithAgainstFileNameAndSourcePath(
-									previousMessage.Location().FilePath(),
-									previousMessage.Location().SourcePath(),
-								),
-								check.WithMessagef(
-									`Previously present message %q was deleted from package %q.`,
-									previousNestedName,
-									previousPackage,
-								),
-							)
-						}
-					} else {
-						// File does not exist, we don't know where the message was deleted from.
-						// Add the previous message to check for ignores. This means that if
+						descriptor, location = getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
+						filePath = descriptor.File().Path()
+						// If the file does not exist, we don't know where the message was deleted from.
+						// The previous message location is used to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous message was in an unstable package.
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousMessage.Location(),
-							`Previously present message %q was deleted from package %q.`,
-							previousNestedName,
-							previousPackage,
-						)
 					}
+					responseWriter.AddProtosourceAnnotation(
+						location,
+						previousMessage.Location(),
+						filePath,
+						`Previously present message %q was deleted from package %q.`,
+						previousNestedName,
+						previousPackage,
+					)
 				}
 			}
 		}
@@ -2371,34 +2285,24 @@ func handleBreakingPackageServiceNoDelete(
 					}
 					// Check if the file still exists.
 					file, ok := filePathToFile[previousService.File().Path()]
+					var filePath string
 					if ok {
 						// File exists.
-						responseWriter.AddAnnotation(
-							check.WithFileName(file.Path()),
-							check.WithAgainstFileNameAndSourcePath(
-								previousService.Location().FilePath(),
-								previousService.Location().SourcePath(),
-							),
-							check.WithMessagef(
-								`Previously present service %q was deleted from package %q.`,
-								previousName,
-								previousPackage,
-							),
-						)
-					} else {
-						// File does not exist, we don't know where the service was deleted from.
-						// Add the previous service to check for ignores. This means that if
+						filePath = file.Path()
+						// If the file does not exist, we don't know where the service was deleted from.
+						// The previous service location is used to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous service was in an unstable package.
 						// TODO: find the service and print that this moved?
-						responseWriter.AddProtosourceAnnotation(
-							nil,
-							previousService.Location(),
-							`Previously present service %q was deleted from package %q.`,
-							previousName,
-							previousPackage,
-						)
 					}
+					responseWriter.AddProtosourceAnnotation(
+						nil,
+						previousService.Location(),
+						filePath,
+						`Previously present service %q was deleted from package %q.`,
+						previousName,
+						previousPackage,
+					)
 				}
 			}
 		}
@@ -2439,6 +2343,7 @@ func handleBreakingFieldWireJSONCompatibleCardinality(
 		responseWriter.AddProtosourceAnnotation(
 			field.Location(),
 			previousField.Location(),
+			field.File().Path(),
 			`%s changed cardinality from %q to %q.`,
 			fieldDescription(field),
 			previousCardinality,
@@ -2481,6 +2386,7 @@ func handleBreakingFieldWireCompatibleCardinality(
 		responseWriter.AddProtosourceAnnotation(
 			field.Location(),
 			previousField.Location(),
+			field.File().Path(),
 			`%s changed cardinality from %q to %q.`,
 			fieldDescription(field),
 			previousCardinality,

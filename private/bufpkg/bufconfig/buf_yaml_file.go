@@ -777,12 +777,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// We could make other decisions: if there are two or more matching configs, do a default,
 		// and then just override the non-matching, but this gets complicated. The current logic
 		// takes care of the base case when writing buf.yaml files.
-		//
-		// Edit: We added in plugin configs to this as well, so assume the above applies to
-		// plugin configs too.
 		stringToExternalLint := make(map[string]externalBufYAMLFileLintV2)
 		stringToExternalBreaking := make(map[string]externalBufYAMLFileBreakingV1Beta1V1V2)
-		stringToExternalPlugins := make(map[string][]externalBufYAMLFilePluginV2)
 
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
@@ -833,7 +829,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
 
-		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 && len(stringToExternalPlugins) <= 1 {
+		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 {
 			externalLint, err := getZeroOrSingleValueForMap(stringToExternalLint)
 			if err != nil {
 				return syserror.Wrap(err)
@@ -842,13 +838,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if err != nil {
 				return syserror.Wrap(err)
 			}
-			externalPlugins, err := getZeroOrSingleValueForMap(stringToExternalPlugins)
-			if err != nil {
-				return syserror.Wrap(err)
-			}
 			externalBufYAMLFile.Lint = externalLint
 			externalBufYAMLFile.Breaking = externalBreaking
-			externalBufYAMLFile.Plugins = externalPlugins
 			for i := 0; i < len(externalBufYAMLFile.Modules); i++ {
 				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV2{}
 				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
