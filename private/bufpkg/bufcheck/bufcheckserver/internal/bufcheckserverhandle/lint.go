@@ -152,6 +152,7 @@ func handleLintCommentNamedDescriptor(
 		responseWriter.AddProtosourceAnnotation(
 			location,
 			nil,
+			namedDescriptor.File().Path(),
 			"%s %q should have a non-empty comment for documentation.",
 			typeName,
 			namedDescriptor.Name(),
@@ -188,17 +189,13 @@ func handleLintDirectorySamePackage(
 			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range dirFiles {
-			var sourcePath protoreflect.SourcePath
-			if packageLocation := file.PackageLocation(); packageLocation != nil {
-				sourcePath = packageLocation.SourcePath()
-			}
-			responseWriter.AddAnnotation(
-				check.WithFileNameAndSourcePath(file.Path(), sourcePath),
-				check.WithMessagef(
-					"%s detected within directory %q.",
-					messagePrefix,
-					dirPath,
-				),
+			responseWriter.AddProtosourceAnnotation(
+				file.PackageLocation(),
+				nil,
+				file.Path(),
+				"%s detected within directory %q.",
+				messagePrefix,
+				dirPath,
 			)
 		}
 	}
@@ -217,6 +214,7 @@ func handleLintEnumNoAllowAlias(
 		responseWriter.AddProtosourceAnnotation(
 			enum.AllowAliasLocation(),
 			nil,
+			enum.File().Path(),
 			`Enum option "allow_alias" on enum %q must be false.`,
 			enum.Name(),
 		)
@@ -238,6 +236,7 @@ func handleLintEnumPascalCase(
 		responseWriter.AddProtosourceAnnotation(
 			enum.NameLocation(),
 			nil,
+			enum.File().Path(),
 			"Enum name %q should be PascalCase, such as %q.",
 			name,
 			expectedName,
@@ -260,6 +259,7 @@ func handleLintEnumFirstValueZero(
 			responseWriter.AddProtosourceAnnotation(
 				firstEnumValue.NumberLocation(),
 				nil,
+				firstEnumValue.File().Path(),
 				"First enum value %q should have a numeric value of 0",
 				firstEnumValue.Name(),
 			)
@@ -282,6 +282,7 @@ func handleLintEnumValuePrefix(
 		responseWriter.AddProtosourceAnnotation(
 			enumValue.NameLocation(),
 			nil,
+			enumValue.File().Path(),
 			"Enum value name %q should be prefixed with %q.",
 			name,
 			expectedPrefix,
@@ -304,6 +305,7 @@ func handleLintEnumValueUpperSnakeCase(
 		responseWriter.AddProtosourceAnnotation(
 			enumValue.NameLocation(),
 			nil,
+			enumValue.File().Path(),
 			"Enum value name %q should be UPPER_SNAKE_CASE, such as %q.",
 			name,
 			expectedName,
@@ -333,6 +335,7 @@ func handleLintEnumZeroValueSuffix(
 		responseWriter.AddProtosourceAnnotation(
 			enumValue.NameLocation(),
 			nil,
+			enumValue.File().Path(),
 			"Enum zero value name %q should be suffixed with %q.",
 			name,
 			suffix,
@@ -360,6 +363,7 @@ func handleLintFieldLowerSnakeCase(
 		responseWriter.AddProtosourceAnnotation(
 			field.NameLocation(),
 			nil,
+			field.File().Path(),
 			"Field name %q should be lower_snake_case, such as %q.",
 			name,
 			expectedName,
@@ -381,6 +385,7 @@ func handleLintFieldNoDescriptor(
 		responseWriter.AddProtosourceAnnotation(
 			field.NameLocation(),
 			nil,
+			field.File().Path(),
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,
 		)
@@ -407,6 +412,7 @@ func handleLintFieldNotRequired(
 		responseWriter.AddProtosourceAnnotation(
 			field.NameLocation(),
 			nil,
+			field.File().Path(),
 			`Field named %q should not be required.`,
 			field.Name(),
 		)
@@ -428,14 +434,15 @@ func handleLintFileLowerSnakeCase(
 	baseWithoutExt := strings.TrimSuffix(base, ext)
 	expectedBaseWithoutExt := stringutil.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
-		responseWriter.AddAnnotation(
-			check.WithFileName(filename),
-			check.WithMessagef(`Filename %q should be lower_snake_case%s, such as "%s%s".`,
-				base,
-				ext,
-				expectedBaseWithoutExt,
-				ext,
-			),
+		responseWriter.AddProtosourceAnnotation(
+			nil,
+			nil,
+			filename,
+			`Filename %q should be lower_snake_case%s, such as "%s%s".`,
+			base,
+			ext,
+			expectedBaseWithoutExt,
+			ext,
 		)
 	}
 	return nil
@@ -453,6 +460,7 @@ func handleLintImportNoPublic(
 		responseWriter.AddProtosourceAnnotation(
 			fileImport.Location(),
 			nil,
+			fileImport.File().Path(),
 			`Import %q must not be public.`,
 			fileImport.Import(),
 		)
@@ -472,6 +480,7 @@ func handleLintImportUsed(
 		responseWriter.AddProtosourceAnnotation(
 			fileImport.Location(),
 			nil,
+			fileImport.File().Path(),
 			`Import %q is unused.`,
 			fileImport.Import(),
 		)
@@ -497,6 +506,7 @@ func handleLintMessagePascalCase(
 		responseWriter.AddProtosourceAnnotation(
 			message.NameLocation(),
 			nil,
+			message.File().Path(),
 			"Message name %q should be PascalCase, such as %q.",
 			name,
 			expectedName,
@@ -526,6 +536,7 @@ func handleLintOneofLowerSnakeCase(
 		responseWriter.AddProtosourceAnnotation(
 			oneof.NameLocation(),
 			nil,
+			oneof.File().Path(),
 			"Oneof name %q should be lower_snake_case, such as %q.",
 			name,
 			expectedName,
@@ -571,6 +582,7 @@ func handleLintPackageDirectoryMatch(
 		responseWriter.AddProtosourceAnnotation(
 			file.PackageLocation(),
 			nil,
+			file.Path(),
 			`Files with package %q must be within a directory "%s" relative to root but were in directory "%s".`,
 			pkg,
 			normalpath.Unnormalize(expectedDirPath),
@@ -601,6 +613,7 @@ func handleLintPackageLowerSnakeCase(
 		responseWriter.AddProtosourceAnnotation(
 			file.PackageLocation(),
 			nil,
+			file.Path(),
 			"Package name %q should be lower_snake.case, such as %q.",
 			pkg,
 			expectedPkg,
@@ -670,6 +683,7 @@ func handleLintPackageNoImportCycle(
 					responseWriter.AddProtosourceAnnotation(
 						fileImport.Location(),
 						nil,
+						fileImport.File().Path(),
 						`Package import cycle: %s`,
 						strings.Join(importCycle, ` -> `),
 					)
@@ -696,17 +710,13 @@ func handleLintPackageSameDirectory(
 	if len(dirMap) > 1 {
 		dirs := slicesext.MapKeysToSortedSlice(dirMap)
 		for _, file := range pkgFiles {
-			var sourcePath protoreflect.SourcePath
-			if packageLocation := file.PackageLocation(); packageLocation != nil {
-				sourcePath = packageLocation.SourcePath()
-			}
-			responseWriter.AddAnnotation(
-				check.WithFileNameAndSourcePath(file.Path(), sourcePath),
-				check.WithMessagef(
-					"Multiple directories %q contain files with package %q.",
-					strings.Join(dirs, ","),
-					pkg,
-				),
+			responseWriter.AddProtosourceAnnotation(
+				file.PackageLocation(),
+				nil,
+				file.Path(),
+				"Multiple directories %q contain files with package %q.",
+				strings.Join(dirs, ","),
+				pkg,
 			)
 		}
 	}
@@ -881,13 +891,11 @@ func handleLintPackageSameOptionValue(
 					name,
 				)
 			}
-			var sourcePath protoreflect.SourcePath
-			if fileOptionLocation := getFileOptionLocation(file); fileOptionLocation != nil {
-				sourcePath = fileOptionLocation.SourcePath()
-			}
-			responseWriter.AddAnnotation(
-				check.WithFileNameAndSourcePath(file.Path(), sourcePath),
-				check.WithMessage(message),
+			responseWriter.AddProtosourceAnnotation(
+				getFileOptionLocation(file),
+				nil,
+				file.Path(),
+				message,
 			)
 		}
 	}
@@ -910,6 +918,7 @@ func handleLintPackageVersionSuffix(
 		responseWriter.AddProtosourceAnnotation(
 			file.PackageLocation(),
 			nil,
+			file.Path(),
 			`Package name %q should be suffixed with a correctly formed version, such as %q.`,
 			pkg,
 			pkg+".v1",
@@ -932,7 +941,7 @@ func handleLintProtovalidate(
 	// TODO: addAnnotationFunc is used to set add annotations to responseWriter. A follow-up
 	// will be made to refactor the code so we no longer need this.
 	addAnnotationFunc := func(
-		_ bufprotosource.Descriptor,
+		descriptor bufprotosource.Descriptor,
 		location bufprotosource.Location,
 		_ []bufprotosource.Location,
 		format string,
@@ -941,6 +950,7 @@ func handleLintProtovalidate(
 		responseWriter.AddProtosourceAnnotation(
 			location,
 			nil,
+			descriptor.File().Path(),
 			format,
 			args...,
 		)
@@ -1002,6 +1012,7 @@ func handleLintRPCNoClientStreaming(
 		responseWriter.AddProtosourceAnnotation(
 			method.Location(),
 			nil,
+			method.File().Path(),
 			"RPC %q is client streaming.",
 			method.Name(),
 		)
@@ -1021,6 +1032,7 @@ func handleLintRPCNoServerStreaming(
 		responseWriter.AddProtosourceAnnotation(
 			method.Location(),
 			nil,
+			method.File().Path(),
 			"RPC %q is server streaming.",
 			method.Name(),
 		)
@@ -1042,6 +1054,7 @@ func handleLintRPCPascalCase(
 		responseWriter.AddProtosourceAnnotation(
 			method.NameLocation(),
 			nil,
+			method.File().Path(),
 			"RPC name %q should be PascalCase, such as %q.",
 			name,
 			expectedName,
@@ -1085,6 +1098,7 @@ func handleLintRPCRequestResponseUnique(
 					responseWriter.AddProtosourceAnnotation(
 						method.Location(),
 						nil,
+						method.File().Path(),
 						"RPC %q has the same type %q for the request and response.",
 						method.Name(),
 						method.InputTypeName(),
@@ -1133,6 +1147,7 @@ func handleLintRPCRequestResponseUnique(
 						responseWriter.AddProtosourceAnnotation(
 							method.Location(),
 							nil,
+							method.File().Path(),
 							"%q is used as the request for multiple RPCs.",
 							requestResponseType,
 						)
@@ -1143,6 +1158,7 @@ func handleLintRPCRequestResponseUnique(
 						responseWriter.AddProtosourceAnnotation(
 							method.Location(),
 							nil,
+							method.File().Path(),
 							"%q is used as the response for multiple RPCs.",
 							requestResponseType,
 						)
@@ -1155,6 +1171,7 @@ func handleLintRPCRequestResponseUnique(
 				responseWriter.AddProtosourceAnnotation(
 					method.Location(),
 					nil,
+					method.File().Path(),
 					"%q is used as the request or response type for multiple RPCs.",
 					requestResponseType,
 				)
@@ -1194,6 +1211,7 @@ func handleLintRPCRequestStandardName(
 		responseWriter.AddProtosourceAnnotation(
 			method.InputTypeLocation(),
 			nil,
+			method.File().Path(),
 			"RPC request type %q should be named %q or %q.",
 			name,
 			expectedName1,
@@ -1234,6 +1252,7 @@ func handleLintRPCResponseStandardName(
 		responseWriter.AddProtosourceAnnotation(
 			method.OutputTypeLocation(),
 			nil,
+			method.File().Path(),
 			"RPC response type %q should be named %q or %q.",
 			name,
 			expectedName1,
@@ -1257,6 +1276,7 @@ func handleLintServicePascalCase(
 		responseWriter.AddProtosourceAnnotation(
 			service.NameLocation(),
 			nil,
+			service.File().Path(),
 			"Service name %q should be PascalCase, such as %q.",
 			name,
 			expectedName,
@@ -1282,6 +1302,7 @@ func handleLintServiceSuffix(
 		responseWriter.AddProtosourceAnnotation(
 			service.NameLocation(),
 			nil,
+			service.File().Path(),
 			"Service name %q should be suffixed with %q.",
 			name,
 			suffix,
@@ -1323,6 +1344,7 @@ func handleLintStablePackageNoImportUnstable(
 					responseWriter.AddProtosourceAnnotation(
 						fileImport.Location(),
 						nil,
+						fileImport.File().Path(),
 						`This file is in stable package %q, so it should not depend on %q from unstable package %q.`,
 						file.Package(),
 						fileImport.Import(),
