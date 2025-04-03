@@ -93,7 +93,8 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
-			return nil, fmt.Errorf("imported file %q was filtered out", imageFilePath)
+			// Assert that the newImageFile is not excluded. An import cannot also be excluded.
+			return nil, syserror.Newf("excluded file %q imported", imageFilePath)
 		}
 		newImageFiles = append(newImageFiles, newImageFile)
 	}
