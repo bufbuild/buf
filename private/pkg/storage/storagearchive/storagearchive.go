@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"io/fs"
 	"strings"
@@ -162,11 +163,17 @@ func Zip(
 	readBucket storage.ReadBucket,
 	writer io.Writer,
 	compressed bool,
+	options ...ZipOption,
 ) (retErr error) {
 	zipWriter := zip.NewWriter(writer)
 	defer func() {
 		retErr = errors.Join(retErr, zipWriter.Close())
 	}()
+	zipOptions := newZipOptions()
+	for _, option := range options {
+		option(zipOptions)
+	}
+	crcW := crc32.NewIEEE()
 	return storage.WalkReadObjects(
 		ctx,
 		readBucket,
@@ -176,18 +183,43 @@ func Zip(
 			if compressed {
 				method = zip.Deflate
 			}
+			content, err := io.ReadAll(readObject)
+			if err != nil {
+				return fmt.Errorf("read all object: %w", err)
+			}
+			var crc32 uint32
+			if zipOptions.calculateCRCHeader {
+				if _, err := crcW.Write(content); err != nil {
+					return fmt.Errorf("write content to crc hasher: %w", err)
+				}
+				crc32 = crcW.Sum32()
+			}
 			header := &zip.FileHeader{
 				Name:   readObject.Path(),
 				Method: method,
+				CRC32:  crc32,
 			}
 			writer, err := zipWriter.CreateHeader(header)
 			if err != nil {
-				return err
+				return fmt.Errorf("create writer header: %w", err)
 			}
-			_, err = io.Copy(writer, readObject)
-			return err
+			if _, err = writer.Write(content); err != nil {
+				return fmt.Errorf("write content: %w", err)
+			}
+			return nil
 		},
 	)
+}
+
+// ZipOption is an option for Zip.
+type ZipOption func(*zipOptions)
+
+// ZipWithCRC32Header returns a new ZipOption that sets the function to calculate the CRC32 header
+// for packed files.
+func ZipWithCRC32Header() ZipOption {
+	return func(zipOptions *zipOptions) {
+		zipOptions.calculateCRCHeader = true
+	}
 }
 
 // Unzip unzips the given zip archive from the reader into the bucket.
@@ -326,6 +358,14 @@ type untarOptions struct {
 
 func newUntarOptions() *untarOptions {
 	return &untarOptions{}
+}
+
+type zipOptions struct {
+	calculateCRCHeader bool
+}
+
+func newZipOptions() *zipOptions {
+	return &zipOptions{}
 }
 
 type unzipOptions struct {
