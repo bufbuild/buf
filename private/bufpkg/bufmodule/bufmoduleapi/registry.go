@@ -33,50 +33,63 @@ type hasFullName interface {
 	FullName() bufparse.FullName
 }
 
-// getPrimarySecondaryRegistry returns the primary and secondary registry for a call that supports
-// federation.
+// getPrimaryRegistryAndLegacyFederationAllowed returns the primary registry and whether
+// legacyFederation is allowed.
 //
 // If there is only a single registry for all the input values, this registry is returned as
-// the primary, and empty is returned for the secondary.
+// the primary.
 //
-// If there are two registries, the primary will be the non-public registry, the secondary
-// will be buf.build.
+// If there is more than one registry, in the case where legacy federation is not allowed,
+// we return an error to the user.
 //
-// If there are more than two registries, an error is returned - we have never supported federation
-// beyond a non-public registry depending on buf.build.
+// If legacy federation is allowed, a check is made on the number of registries parsed
+// among input values.
+//
+// If there are two registries, the primary will be the non-public registry, and we validate
+// the secondary is the public registry (buf.build).
+//
+// If there are more than two registries, an error is returned - we have never supported
+// federation beyond a single non-public registry depending on the public registry (buf.build).
 //
 // This is used to support legacy federation.
-func getPrimarySecondaryRegistry[T hasFullName](s []T, publicRegistry string) (string, string, error) {
+func getPrimaryRegistryAndLegacyFederationAllowed[T hasFullName](
+	s []T,
+	publicRegistry string,
+	additionalLegacyFederationRegistry string,
+) (string, bool, error) {
 	if len(s) == 0 {
-		return "", "", syserror.New("must have at least one value in getPrimarySecondaryRegistry")
+		return "", false, syserror.New("must have at least one value in getPrimarySecondaryRegistry")
 	}
 	registries, err := getRegistries(s)
 	if err != nil {
-		return "", "", err
+		return "", false, err
+	}
+	legacyFederationAllowed, err := isLegacyFederationAllowed(registries, additionalLegacyFederationRegistry)
+	if err != nil {
+		return "", false, err
 	}
 	switch len(registries) {
 	case 0:
-		return "", "", syserror.New("no registries detected in getPrimarySecondaryRegistry")
+		return "", false, syserror.New("no registries detected in getPrimarySecondaryRegistry")
 	case 1:
-		return registries[0], "", nil
+		return registries[0], legacyFederationAllowed, nil
 	case 2:
-		if registries[0] != publicRegistry && registries[1] != publicRegistry {
-			return "", "", fmt.Errorf("cannot use federation between two non-public registries: %s, %s", registries[0], registries[1])
+		if legacyFederationAllowed {
+			if registries[0] != publicRegistry && registries[1] != publicRegistry {
+				return "", legacyFederationAllowed, fmt.Errorf("cannot use federation between two non-public registries: %s, %s", registries[0], registries[1])
+			}
+			if registries[0] == publicRegistry {
+				return registries[1], legacyFederationAllowed, nil
+			}
+			return registries[0], legacyFederationAllowed, nil
 		}
-		if registries[0] == publicRegistry {
-			return registries[1], registries[0], nil
-		}
-		return registries[0], registries[1], nil
+		fallthrough
 	default:
-		return "", "", fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(registries, ", "))
+		return "", false, fmt.Errorf("dependencies across multiple registries are not allowed: %s", strings.Join(registries, ", "))
 	}
 }
 
-func isLegacyFederationAllowed[T hasFullName](s []T, additionalLegacyFederationRegistry string) (bool, error) {
-	registries, err := getRegistries(s)
-	if err != nil {
-		return false, err
-	}
+func isLegacyFederationAllowed(registries []string, additionalLegacyFederationRegistry string) (bool, error) {
 	for _, registry := range registries {
 		exists, err := datalegacyfederation.Exists(registry)
 		if err != nil {
@@ -159,6 +172,6 @@ func validateDepRegistries(primaryRegistry string, depRegistries []string, publi
 		}
 		return nil
 	default:
-		return fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(depRegistries, ", "))
+		return fmt.Errorf("dependencies across multiple registries are not allowed: %s", strings.Join(depRegistries, ", "))
 	}
 }
