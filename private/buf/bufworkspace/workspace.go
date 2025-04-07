@@ -81,6 +81,14 @@ type Workspace interface {
 	//
 	// These come from the buf.lock file. Only v2 supports plugins.
 	RemotePluginKeys() []bufplugin.PluginKey
+	// PolicyConfigs gets the configured PolicyConfigs of the Workspace.
+	//
+	// These come from the buf.yaml files.
+	PolicyConfigs() []bufconfig.PolicyConfig
+	// RemotePolicyKeys gets the remote PolicyKeys of the Workspace.
+	//
+	// These come from the buf.lock file. Only v2 supports plugins.
+	RemotePolicyKeys() []bufplugin.PluginKey
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as Refs.
 	//
 	// These come from buf.yaml files.
@@ -114,6 +122,7 @@ type workspace struct {
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	pluginConfigs            []bufconfig.PluginConfig
 	remotePluginKeys         []bufplugin.PluginKey
+	policyConfigs            []bufconfig.PolicyConfig
 	configuredDepModuleRefs  []bufparse.Ref
 
 	// If true, the workspace was created from v2 buf.yamls.
@@ -127,6 +136,7 @@ func newWorkspace(
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
 	pluginConfigs []bufconfig.PluginConfig,
 	remotePluginKeys []bufplugin.PluginKey,
+	policyConfigs []bufconfig.PolicyConfig,
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
 ) *workspace {
@@ -136,6 +146,7 @@ func newWorkspace(
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		pluginConfigs:            pluginConfigs,
 		remotePluginKeys:         remotePluginKeys,
+		policyConfigs:            policyConfigs,
 		configuredDepModuleRefs:  configuredDepModuleRefs,
 		isV2:                     isV2,
 	}
@@ -155,6 +166,10 @@ func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
 
 func (w *workspace) RemotePluginKeys() []bufplugin.PluginKey {
 	return slices.Clone(w.remotePluginKeys)
+}
+
+func (w *workspace) PolicyConfigs() []bufconfig.PolicyConfig {
+	return slices.Clone(w.policyConfigs)
 }
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufparse.Ref {

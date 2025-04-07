@@ -174,23 +174,29 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOp
 	}
 }
 
-// RunnerProvider provides pluginrpc.Runners for a given plugin config.
+// WithPolicyConfigs returns a new ClientFunctionOption that says to also use the given policies.
+func WithPolicyConfigs(policyConfigs ...bufconfig.PolicyConfig) ClientFunctionOption {
+	return &policyConfigsOption{
+		policyConfigs: policyConfigs,
+	}
+}
+
+// RunnerProvider provides pluginrpc.Runners for a given plugin config and an optional policy config.
 type RunnerProvider interface {
-	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
+	NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
 }
 
 // RunnerProviderFunc is a function that implements RunnerProvider.
-type RunnerProviderFunc func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
+type RunnerProviderFunc func(bufplugin.Plugin) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
 //
 // RunnerProvider selects the correct Runner based on the type of pluginConfig.
-func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
-	return r(pluginConfig)
+func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig, pluginData func() ([]byte, error)) (pluginrpc.Runner, error) {
+	return r(pluginConfig, pluginData)
 }
 
-// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime and
-// the given plugin providers.
+// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
@@ -203,28 +209,17 @@ func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (plug
 //
 // If the PluginConfigType is not supported, an error is returned.
 // To disable support for Wasm plugins, set wasmRuntime to wasm.UnimplementedRuntime.
-// To disable support for bufconfig.PluginConfigTypeRemoteWasm Plugins, set
-// pluginKeyProvider and pluginDataProvider to bufplugin.NopPluginKeyProvider
-// and bufplugin.NopPluginDataProvider.
-func NewLocalRunnerProvider(
-	wasmRuntime wasm.Runtime,
-	pluginKeyProvider bufplugin.PluginKeyProvider,
-	pluginDataProvider bufplugin.PluginDataProvider,
-) RunnerProvider {
-	return newRunnerProvider(
-		wasmRuntime,
-		pluginKeyProvider,
-		pluginDataProvider,
-	)
+func NewLocalRunnerProvider(wasmRuntime wasm.Runtime) RunnerProvider {
+	return newRunnerProvider(wasmRuntime)
 }
 
 // NewClient returns a new Client.
 func NewClient(
 	logger *slog.Logger,
-	runnerProvider RunnerProvider,
+	wasmRuntime wasm.Runtime,
 	options ...ClientOption,
 ) (Client, error) {
-	return newClient(logger, runnerProvider, options...)
+	return newClient(logger, wasmRuntime, options...)
 }
 
 // ClientOption is an option for a new Client.
@@ -236,6 +231,21 @@ type ClientOption func(*clientOptions)
 func ClientWithStderr(stderr io.Writer) ClientOption {
 	return func(clientOptions *clientOptions) {
 		clientOptions.stderr = stderr
+	}
+}
+
+func ClientWithWasmRuntime(wasmRuntime wasm.Runtime) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.wasmRuntiem = wasmRuntime
+	}
+}
+
+// ClientWithWasmRuntime returns a new ClientOption that specifies a wasm.Runtime to use.
+//
+// The default is wasm.UnimplementedRuntime, disabling Wasm plugins.
+func ClientWithWasmRuntime(wasmRuntime wasm.Runtime) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.wasmRuntime = wasmRuntime
 	}
 }
 

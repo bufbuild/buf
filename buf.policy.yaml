@@ -1,0 +1,7 @@
+version: v1
+name: buf.build/acme/buf-policy-aep
+lint:
+  use:
+  - AEP_CORE
+plugins:
+  - plugin: buf.build/acme/buf-plugin-aep

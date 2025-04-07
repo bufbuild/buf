@@ -163,6 +163,7 @@ func NewFileAnnotation(
 	typeString string,
 	message string,
 	pluginName string,
+	policyName string,
 ) FileAnnotation {
 	return newFileAnnotation(
 		fileInfo,
@@ -173,6 +174,7 @@ func NewFileAnnotation(
 		typeString,
 		message,
 		pluginName,
+		policyName,
 	)
 }
 

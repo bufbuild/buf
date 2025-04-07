@@ -15,11 +15,6 @@
 package bufcheck
 
 import (
-	"context"
-	"sync"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -28,50 +23,45 @@ import (
 )
 
 type runnerProvider struct {
-	wasmRuntime        wasm.Runtime
-	pluginKeyProvider  bufplugin.PluginKeyProvider
-	pluginDataProvider bufplugin.PluginDataProvider
+	wasmRuntime wasm.Runtime
 }
 
 func newRunnerProvider(
 	wasmRuntime wasm.Runtime,
-	pluginKeyProvider bufplugin.PluginKeyProvider,
-	pluginDataProvider bufplugin.PluginDataProvider,
 ) *runnerProvider {
 	return &runnerProvider{
-		wasmRuntime:        wasmRuntime,
-		pluginKeyProvider:  pluginKeyProvider,
-		pluginDataProvider: pluginDataProvider,
+		wasmRuntime: wasmRuntime,
 	}
 }
 
-func (r *runnerProvider) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
-	switch pluginConfig.Type() {
-	case bufconfig.PluginConfigTypeLocal:
+func (r *runnerProvider) NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error) {
+	switch isLocal, isWasm := plugin.IsLocal(), plugin.IsWasm(); {
+	case isLocal && !isWasm:
 		return pluginrpcutil.NewLocalRunner(
-			pluginConfig.Name(),
-			pluginConfig.Args()...,
+			plugin.Name(),
+			plugin.Args()...,
 		), nil
-	case bufconfig.PluginConfigTypeLocalWasm:
+	case isLocal && isWasm:
 		return pluginrpcutil.NewLocalWasmRunner(
 			r.wasmRuntime,
-			pluginConfig.Name(),
-			pluginConfig.Args()...,
+			plugin.Name(),
+			plugin.Args()...,
 		), nil
-	case bufconfig.PluginConfigTypeRemoteWasm:
-		return newRemoteWasmPluginRunner(
+	case !isLocal && isWasm:
+		return pluginrpcutil.NewWasmRunner(
 			r.wasmRuntime,
-			r.pluginKeyProvider,
-			r.pluginDataProvider,
-			pluginConfig.Ref(),
-			pluginConfig.Args(),
-		)
+			plugin.Data,
+			plugin.Name(),
+			plugin.Args()...,
+		), nil
 	default:
-		return nil, syserror.Newf("unknown PluginConfigType: %v", pluginConfig.Type())
+		return nil, syserror.Newf("unhandled Plugin: %v", plugin.OpaqueID())
 	}
 }
 
 // *** PRIVATE ***
+
+/*
 
 // remoteWasmPluginRunner is a Runner that runs a remote Wasm plugin.
 //
@@ -158,3 +148,4 @@ func (r *remoteWasmPluginRunner) loadRunner(ctx context.Context) (pluginrpc.Runn
 	programName := r.pluginRef.FullName().String()
 	return pluginrpcutil.NewWasmRunner(r.wasmRuntime, data.Data, programName, r.pluginArgs...), nil
 }
+*/

@@ -155,6 +155,7 @@ func run(
 	for _, imageWithConfig := range imageWithConfigs {
 		lintOptions := []bufcheck.LintOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(imageWithConfig.PolicyConfigs()...),
 			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if err := checkClient.Lint(
@@ -170,6 +171,24 @@ func run(
 				return err
 			}
 		}
+		//// TODO: remove me.
+		//// Run policy checks.
+		//for _, policyConfig := range imageWithConfig.PolicyConfigs() {
+
+		//	lintOptions := []bufcheck.LintOption{
+		//		bufcheck.WithPluginConfigs(
+		//	}
+		//
+		//	// Load the LintConfig.
+		//	// Load the PluginConfig.
+		//	if err := checkClient.Lint(
+		//		ctx,
+		//		policyConfig.Name
+		//		imageWithConfig.LintConfig(),
+		//		imageWithConfig,
+		//		lintOptions...,
+		//	)
+		//}
 	}
 	if len(allFileAnnotations) > 0 {
 		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
