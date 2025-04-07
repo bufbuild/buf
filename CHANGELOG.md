@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.52.0] - 2025-04-07
 
 - Fix `exclude_type` on a non imported package.
 - Fix `--exclude-type` flag for `buf generate` when an input is specified.
@@ -1352,7 +1352,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.51.0...HEAD
+[v1.52.0]: https://github.com/bufbuild/buf/compare/v1.51.0...v1.52.0
 [v1.51.0]: https://github.com/bufbuild/buf/compare/v1.50.1...v1.51.0
 [v1.50.1]: https://github.com/bufbuild/buf/compare/v1.50.0...v1.50.1
 [v1.50.0]: https://github.com/bufbuild/buf/compare/v1.49.0...v1.50.0
