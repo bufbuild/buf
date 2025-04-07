@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix language version for pre-commit hooks.
 
 ## [v1.52.0] - 2025-04-07
 
