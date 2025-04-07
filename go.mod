@@ -10,7 +10,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250116203702-1c024d64352b.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250116203702-1c024d64352b.1
 	buf.build/go/bufplugin v0.8.0
-	buf.build/go/protoyaml v0.3.1
+	buf.build/go/protoyaml v0.3.2
 	buf.build/go/spdx v0.2.0
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.7.2
