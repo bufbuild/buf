@@ -150,6 +150,7 @@ func run(
 	for _, imageWithConfig := range imageWithConfigs {
 		lintOptions := []bufcheck.LintOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(imageWithConfig.PolicyConfigs()...),
 			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if err := checkClient.Lint(

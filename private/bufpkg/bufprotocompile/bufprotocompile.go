@@ -88,7 +88,8 @@ func FileAnnotationForErrorWithPos(
 		endColumn,
 		typeString,
 		message,
-		"",
+		"", // pluginName
+		"", // policyName
 	), nil
 }
 

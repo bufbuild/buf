@@ -17,15 +17,17 @@ package bufpolicy
 import (
 	"context"
 	"io/fs"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 )
 
 var (
-	// NopPolicyDataProvider is a no-op PolicyDataProvider.
-	NopPolicyDataProvider PolicyDataProvider = nopPolicyDataProvider{}
+	// NopPolicyPluginDataProvider is a no-op PolicyDataProvider.
+	NopPolicyPluginDataProvider PolicyPluginDataProvider = nopPolicyPluginDataProvider{}
 )
 
-// PolicyDataProvider provides PolicyDatas.
-type PolicyDataProvider interface {
+// PolicyPluginDataProvider provides PluginData for a specific policy.
+type PolicyPluginDataProvider interface {
 	// GetPolicyDatasForPolicyKeys gets the PolicyDatas for the PolicyKeys.
 	//
 	// Returned PolicyDatas will be in the same order as the input PolicyKeys.
@@ -39,16 +41,23 @@ type PolicyDataProvider interface {
 	// If there is no error, the length of the PolicyDatas returned will match the length of the PolicyKeys.
 	// If there is an error, no PolicyDatas will be returned.
 	// If any PolicyKey is not found, an error with fs.ErrNotExist will be returned.
-	GetPolicyDatasForPolicyKeys(context.Context, []PolicyKey) ([]PolicyData, error)
+	GetPolicyPluginDatasForPluginKeys(
+		context.Context,
+		PolicyKey,
+		[]bufplugin.PluginKey,
+	) ([]bufplugin.PluginData, error)
 }
 
 // *** PRIVATE ***
 
-type nopPolicyDataProvider struct{}
+type nopPolicyPluginDataProvider struct{}
 
-func (nopPolicyDataProvider) GetPolicyDatasForPolicyKeys(
+var _ PolicyPluginDataProvider = nopPolicyPluginDataProvider{}
+
+func (nopPolicyPluginDataProvider) GetPolicyPluginDatasForPluginKeys(
 	context.Context,
-	[]PolicyKey,
-) ([]PolicyData, error) {
+	PolicyKey,
+	[]bufplugin.PluginKey,
+) ([]bufplugin.PluginData, error) {
 	return nil, fs.ErrNotExist
 }

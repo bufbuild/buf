@@ -194,9 +194,17 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
 	_, _ = buffer.WriteString(typeString)
 	_, _ = buffer.WriteString(" : ")
 	_, _ = buffer.WriteString(message)
-	if pluginName := f.PluginName(); pluginName != "" {
+	if pluginName, policyName := f.PluginName(), f.PolicyName(); pluginName != "" || policyName != "" {
 		_, _ = buffer.WriteString(" (")
-		_, _ = buffer.WriteString(pluginName)
+		if pluginName != "" {
+			_, _ = buffer.WriteString(pluginName)
+		}
+		if pluginName != "" && policyName != "" {
+			_, _ = buffer.WriteString(", ")
+		}
+		if policyName != "" {
+			_, _ = buffer.WriteString(policyName)
+		}
 		_, _ = buffer.WriteRune(')')
 	}
 	return nil
@@ -251,9 +259,17 @@ func printFileAnnotationAsGithubActions(buffer *bytes.Buffer, f FileAnnotation) 
 
 	_, _ = buffer.WriteString("::")
 	_, _ = buffer.WriteString(f.Message())
-	if pluginName := f.PluginName(); pluginName != "" {
+	if pluginName, policyName := f.PluginName(), f.PolicyName(); pluginName != "" || policyName != "" {
 		_, _ = buffer.WriteString(" (")
-		_, _ = buffer.WriteString(pluginName)
+		if pluginName != "" {
+			_, _ = buffer.WriteString(pluginName)
+		}
+		if pluginName != "" && policyName != "" {
+			_, _ = buffer.WriteString(", ")
+		}
+		if policyName != "" {
+			_, _ = buffer.WriteString(policyName)
+		}
 		_, _ = buffer.WriteRune(')')
 	}
 	return nil
@@ -268,6 +284,7 @@ type externalFileAnnotation struct {
 	Type        string `json:"type,omitempty" yaml:"type,omitempty"`
 	Message     string `json:"message,omitempty" yaml:"message,omitempty"`
 	Plugin      string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Policy      string `json:"policy,omitempty" yaml:"policy,omitempty"`
 }
 
 func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
@@ -284,6 +301,7 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 		Type:        f.Type(),
 		Message:     f.Message(),
 		Plugin:      f.PluginName(),
+		Policy:      f.PolicyName(),
 	}
 }
 

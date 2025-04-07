@@ -1229,15 +1229,42 @@ func TestRunLintCustomPlugins(t *testing.T) {
 		t,
 		"custom_plugins",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 1, 17, 2, "PAGE_REQUEST_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 1, 25, 2, "PAGE_RESPONSE_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 5, 21, 19, "VALIDATE_ID_DASHLESS"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 1, 27, 26, "PAGE_REQUEST_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 1, 28, 27, "PAGE_RESPONSE_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 15, 1, 17, 2, "PAGE_REQUEST_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 19, 1, 25, 2, "PAGE_RESPONSE_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 21, 5, 21, 19, "VALIDATE_ID_DASHLESS",
+			bufanalysistesting.WithPluginName("buf-plugin-protovalidate-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 27, 1, 27, 26, "PAGE_REQUEST_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 28, 1, 28, 27, "PAGE_RESPONSE_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
 	)
 }
 
@@ -1252,10 +1279,22 @@ func TestRunLintCustomWasmPlugins(t *testing.T) {
 		"",
 		nil,
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
 	)
 }
 
@@ -1265,6 +1304,37 @@ func TestRunLintEditionsGoFeatures(t *testing.T) {
 		t,
 		"editions_go_features",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
+	)
+}
+
+func TestRunLintPolicyLocal(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"policy_local",
+		"",
+		nil,
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy1.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy1.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
+		),
 	)
 }
 
@@ -1357,6 +1427,7 @@ func testLintWithOptions(
 		logger,
 		bufcheck.ClientWithRunnerProvider(bufcheck.NewLocalRunnerProvider(wasmRuntime)),
 		bufcheck.ClientWithLocalWasmPluginsFromOS(),
+		bufcheck.ClientWithLocalPolicies(readWriteBucket),
 	)
 	require.NoError(t, err)
 	err = client.Lint(
@@ -1364,6 +1435,7 @@ func testLintWithOptions(
 		lintConfig,
 		image,
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)
