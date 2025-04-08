@@ -70,6 +70,8 @@ linters:
         - pattern: ^(proto|prototext|protojson|protoyaml).Unmarshal$
         - pattern: ^(proto|prototext|protojson|protoyaml).MarshalOptions$
         - pattern: ^(proto|prototext|protojson|protoyaml).UnmarshalOptions$
+        - pattern: ^proto\.Clone$
+          msg: please use proto.CloneOf
     govet:
       enable:
         - nilness
@@ -419,6 +421,8 @@ linters:
         # to set the source path for the location, this operation should be safe.
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/predefined_rules.go
         text: 'G115:'
+issues:
+  max-same-issues: 0
 formatters:
   enable:
     - gci
