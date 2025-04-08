@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
 )
 
@@ -183,11 +182,7 @@ func lsRun(
 			return err
 		}
 	}
-	wasmRuntimeCacheDir, err := bufcli.CreateWasmRuntimeCacheDir(container)
-	if err != nil {
-		return err
-	}
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(wasmRuntimeCacheDir))
+	wasmRuntime, err := bufcli.NewWasmRuntime(ctx, container)
 	if err != nil {
 		return err
 	}
