@@ -325,13 +325,7 @@ func CloneImage(image Image) (Image, error) {
 
 // CloneImageFile returns a deep copy of the given image file.
 func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
-	clonedProto := proto.Clone(imageFile.FileDescriptorProto())
-	clonedDescriptor, ok := clonedProto.(*descriptorpb.FileDescriptorProto)
-	if !ok {
-		// Shouldn't actually be possible...
-		return nil, fmt.Errorf("failed to clone image file %q: input %T; clone is %T but expecting %T",
-			imageFile.Path(), imageFile, clonedProto, (*descriptorpb.FileDescriptorProto)(nil))
-	}
+	clonedDescriptor := proto.CloneOf(imageFile.FileDescriptorProto())
 	originalUnusedDeps := imageFile.UnusedDependencyIndexes()
 	unusedDeps := make([]int32, len(originalUnusedDeps))
 	copy(unusedDeps, originalUnusedDeps)
