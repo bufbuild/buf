@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.52.1] - 2025-04-08
 
 - Fix language version for pre-commit hooks.
@@ -1356,6 +1360,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.52.1...HEAD
 [v1.52.1]: https://github.com/bufbuild/buf/compare/v1.52.0...v1.52.1
 [v1.52.0]: https://github.com/bufbuild/buf/compare/v1.51.0...v1.52.0
 [v1.51.0]: https://github.com/bufbuild/buf/compare/v1.50.1...v1.51.0
