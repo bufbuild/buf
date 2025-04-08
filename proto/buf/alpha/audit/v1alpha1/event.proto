@@ -288,6 +288,8 @@ message PayloadOrganizationIDPGroupAdded {
   string organization_id = 1;
   // organization_name is the name of the organization with the new IDP group.
   string organization_name = 2;
+  // role_override is the role override associated with the new IDP group.
+  buf.alpha.registry.v1alpha1.OrganizationRole role_override = 3;
 }
 
 message PayloadOrganizationIDPGroupRemoved {
@@ -295,6 +297,8 @@ message PayloadOrganizationIDPGroupRemoved {
   string organization_id = 1;
   // organization_name is the name of the organization with the removed IDP group.
   string organization_name = 2;
+  // role_override is the role override associated with the removed IDP group.
+  buf.alpha.registry.v1alpha1.OrganizationRole role_override = 3;
 }
 
 message PayloadRepositoryCreated {
