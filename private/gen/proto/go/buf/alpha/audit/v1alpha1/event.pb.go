@@ -3976,9 +3976,10 @@ func (b0 PayloadOrganizationMemberRemoved_builder) Build() *PayloadOrganizationM
 }
 
 type PayloadOrganizationIDPGroupAdded struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId   string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3"`
-	xxx_hidden_OrganizationName string                 `protobuf:"bytes,2,opt,name=organization_name,json=organizationName,proto3"`
+	state                       protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId   string                    `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3"`
+	xxx_hidden_OrganizationName string                    `protobuf:"bytes,2,opt,name=organization_name,json=organizationName,proto3"`
+	xxx_hidden_RoleOverride     v1alpha1.OrganizationRole `protobuf:"varint,3,opt,name=role_override,json=roleOverride,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -4022,12 +4023,23 @@ func (x *PayloadOrganizationIDPGroupAdded) GetOrganizationName() string {
 	return ""
 }
 
+func (x *PayloadOrganizationIDPGroupAdded) GetRoleOverride() v1alpha1.OrganizationRole {
+	if x != nil {
+		return x.xxx_hidden_RoleOverride
+	}
+	return v1alpha1.OrganizationRole(0)
+}
+
 func (x *PayloadOrganizationIDPGroupAdded) SetOrganizationId(v string) {
 	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *PayloadOrganizationIDPGroupAdded) SetOrganizationName(v string) {
 	x.xxx_hidden_OrganizationName = v
+}
+
+func (x *PayloadOrganizationIDPGroupAdded) SetRoleOverride(v v1alpha1.OrganizationRole) {
+	x.xxx_hidden_RoleOverride = v
 }
 
 type PayloadOrganizationIDPGroupAdded_builder struct {
@@ -4037,6 +4049,8 @@ type PayloadOrganizationIDPGroupAdded_builder struct {
 	OrganizationId string
 	// organization_name is the name of the organization with the new IDP group.
 	OrganizationName string
+	// role_override is the role override associated with the new IDP group.
+	RoleOverride v1alpha1.OrganizationRole
 }
 
 func (b0 PayloadOrganizationIDPGroupAdded_builder) Build() *PayloadOrganizationIDPGroupAdded {
@@ -4045,13 +4059,15 @@ func (b0 PayloadOrganizationIDPGroupAdded_builder) Build() *PayloadOrganizationI
 	_, _ = b, x
 	x.xxx_hidden_OrganizationId = b.OrganizationId
 	x.xxx_hidden_OrganizationName = b.OrganizationName
+	x.xxx_hidden_RoleOverride = b.RoleOverride
 	return m0
 }
 
 type PayloadOrganizationIDPGroupRemoved struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OrganizationId   string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3"`
-	xxx_hidden_OrganizationName string                 `protobuf:"bytes,2,opt,name=organization_name,json=organizationName,proto3"`
+	state                       protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId   string                    `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3"`
+	xxx_hidden_OrganizationName string                    `protobuf:"bytes,2,opt,name=organization_name,json=organizationName,proto3"`
+	xxx_hidden_RoleOverride     v1alpha1.OrganizationRole `protobuf:"varint,3,opt,name=role_override,json=roleOverride,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -4095,12 +4111,23 @@ func (x *PayloadOrganizationIDPGroupRemoved) GetOrganizationName() string {
 	return ""
 }
 
+func (x *PayloadOrganizationIDPGroupRemoved) GetRoleOverride() v1alpha1.OrganizationRole {
+	if x != nil {
+		return x.xxx_hidden_RoleOverride
+	}
+	return v1alpha1.OrganizationRole(0)
+}
+
 func (x *PayloadOrganizationIDPGroupRemoved) SetOrganizationId(v string) {
 	x.xxx_hidden_OrganizationId = v
 }
 
 func (x *PayloadOrganizationIDPGroupRemoved) SetOrganizationName(v string) {
 	x.xxx_hidden_OrganizationName = v
+}
+
+func (x *PayloadOrganizationIDPGroupRemoved) SetRoleOverride(v v1alpha1.OrganizationRole) {
+	x.xxx_hidden_RoleOverride = v
 }
 
 type PayloadOrganizationIDPGroupRemoved_builder struct {
@@ -4110,6 +4137,8 @@ type PayloadOrganizationIDPGroupRemoved_builder struct {
 	OrganizationId string
 	// organization_name is the name of the organization with the removed IDP group.
 	OrganizationName string
+	// role_override is the role override associated with the removed IDP group.
+	RoleOverride v1alpha1.OrganizationRole
 }
 
 func (b0 PayloadOrganizationIDPGroupRemoved_builder) Build() *PayloadOrganizationIDPGroupRemoved {
@@ -4118,6 +4147,7 @@ func (b0 PayloadOrganizationIDPGroupRemoved_builder) Build() *PayloadOrganizatio
 	_, _ = b, x
 	x.xxx_hidden_OrganizationId = b.OrganizationId
 	x.xxx_hidden_OrganizationName = b.OrganizationName
+	x.xxx_hidden_RoleOverride = b.RoleOverride
 	return m0
 }
 
@@ -8758,13 +8788,15 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x11organization_name\x18\x02 \x01(\tR\x10organizationName\x12N\n" +
 	"\vmember_role\x18\x03 \x01(\x0e2-.buf.alpha.registry.v1alpha1.OrganizationRoleR\n" +
 	"memberRole\x12a\n" +
-	"\x12member_role_source\x18\x04 \x01(\x0e23.buf.alpha.registry.v1alpha1.OrganizationRoleSourceR\x10memberRoleSource\"x\n" +
+	"\x12member_role_source\x18\x04 \x01(\x0e23.buf.alpha.registry.v1alpha1.OrganizationRoleSourceR\x10memberRoleSource\"\xcc\x01\n" +
 	" PayloadOrganizationIDPGroupAdded\x12'\n" +
 	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12+\n" +
-	"\x11organization_name\x18\x02 \x01(\tR\x10organizationName\"z\n" +
+	"\x11organization_name\x18\x02 \x01(\tR\x10organizationName\x12R\n" +
+	"\rrole_override\x18\x03 \x01(\x0e2-.buf.alpha.registry.v1alpha1.OrganizationRoleR\froleOverride\"\xce\x01\n" +
 	"\"PayloadOrganizationIDPGroupRemoved\x12'\n" +
 	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12+\n" +
-	"\x11organization_name\x18\x02 \x01(\tR\x10organizationName\"\xcb\x01\n" +
+	"\x11organization_name\x18\x02 \x01(\tR\x10organizationName\x12R\n" +
+	"\rrole_override\x18\x03 \x01(\x0e2-.buf.alpha.registry.v1alpha1.OrganizationRoleR\froleOverride\"\xcb\x01\n" +
 	"\x18PayloadRepositoryCreated\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
@@ -9276,38 +9308,40 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	65,  // 72: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
 	67,  // 73: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
 	68,  // 74: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	69,  // 75: buf.alpha.audit.v1alpha1.PayloadRepositoryCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 76: buf.alpha.audit.v1alpha1.PayloadRepositoryDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 77: buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 78: buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	70,  // 79: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorAdded.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	70,  // 80: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	70,  // 81: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	70,  // 82: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	69,  // 83: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 84: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 85: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 86: buf.alpha.audit.v1alpha1.PayloadPolicyDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 87: buf.alpha.audit.v1alpha1.PayloadPolicyDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 88: buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 89: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 90: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 91: buf.alpha.audit.v1alpha1.PayloadPluginCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 92: buf.alpha.audit.v1alpha1.PayloadPluginDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 93: buf.alpha.audit.v1alpha1.PayloadPluginDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 94: buf.alpha.audit.v1alpha1.PayloadPluginUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 95: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	69,  // 96: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	66,  // 97: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	66,  // 98: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	71,  // 99: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
-	67,  // 100: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	68,  // 101: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	102, // [102:102] is the sub-list for method output_type
-	102, // [102:102] is the sub-list for method input_type
-	102, // [102:102] is the sub-list for extension type_name
-	102, // [102:102] is the sub-list for extension extendee
-	0,   // [0:102] is the sub-list for field type_name
+	67,  // 75: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	67,  // 76: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	69,  // 77: buf.alpha.audit.v1alpha1.PayloadRepositoryCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 78: buf.alpha.audit.v1alpha1.PayloadRepositoryDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 79: buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 80: buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	70,  // 81: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorAdded.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	70,  // 82: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	70,  // 83: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	70,  // 84: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	69,  // 85: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 86: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 87: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 88: buf.alpha.audit.v1alpha1.PayloadPolicyDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 89: buf.alpha.audit.v1alpha1.PayloadPolicyDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 90: buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 91: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 92: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 93: buf.alpha.audit.v1alpha1.PayloadPluginCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 94: buf.alpha.audit.v1alpha1.PayloadPluginDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 95: buf.alpha.audit.v1alpha1.PayloadPluginDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 96: buf.alpha.audit.v1alpha1.PayloadPluginUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 97: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	69,  // 98: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	66,  // 99: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	66,  // 100: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	71,  // 101: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
+	67,  // 102: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	68,  // 103: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	104, // [104:104] is the sub-list for method output_type
+	104, // [104:104] is the sub-list for method input_type
+	104, // [104:104] is the sub-list for extension type_name
+	104, // [104:104] is the sub-list for extension extendee
+	0,   // [0:104] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_audit_v1alpha1_event_proto_init() }

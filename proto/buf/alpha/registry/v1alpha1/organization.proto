@@ -231,6 +231,13 @@ message GetOrganizationSettingsRequest {
 }
 
 message GetOrganizationSettingsResponse {
+  message IdPGroup {
+    // The name of the IdP group.
+    string name = 1;
+    // The role override associated with this group.
+    OrganizationRole role_override = 2;
+  }
+
   reserved 2, 3;
   reserved "plugin_base_role", "template_base_role";
 
@@ -238,7 +245,7 @@ message GetOrganizationSettingsResponse {
   // The number of members in the organization.
   uint32 members_count = 4;
   // The IdP groups associated with the organization.
-  repeated string idp_groups = 5;
+  repeated IdPGroup idp_groups = 5;
 }
 
 message UpdateOrganizationSettingsRequest {
@@ -262,6 +269,11 @@ message AddOrganizationGroupRequest {
   string organization_id = 1;
   // The name of the group to add.
   string group_name = 2;
+  // The role to associate with this organization group.
+  //
+  // Any user who maps to this organization via this group will be granted this role. If no role is
+  // set, the user will be granted the 'member' role.
+  OrganizationRole role_override = 3;
 }
 
 message AddOrganizationGroupResponse {}
