@@ -14,7 +14,14 @@
 
 package bufpolicy
 
-import "github.com/bufbuild/buf/private/bufpkg/bufparse"
+import (
+	"sync"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/google/uuid"
+)
 
 // Policy presents a BSR policy.
 type Policy interface {
@@ -28,6 +35,13 @@ type Policy interface {
 	//
 	// If two Policies have the same Name, they will have the same OpaqueID.
 	OpaqueID() string
+	// Name returns the name of the Policy.
+	//  - For local Policies, this is the path to the policy yaml file.
+	//  - For remote Policies, this is the FullName of the Policy in the form
+	//    remote/owner/name.
+	//
+	// This is never empty.
+	Name() string
 	// FullName returns the full name of the Policy.
 	//
 	// May be nil. Callers should not rely on this value being present.
@@ -35,10 +49,135 @@ type Policy interface {
 	//
 	// Use OpaqueID as an always-present identifier.
 	FullName() bufparse.FullName
+	// CommitID returns the BSR ID of the Commit.
+	//
+	// It is up to the caller to convert this to a dashless ID when necessary.
+	//
+	// May be empty, that is CommitID() == uuid.Nil may be true.
+	// Callers should not rely on this value being present.
+	//
+	// If FullName is nil, this will always be empty.
+	CommitID() uuid.UUID
+	// Description returns a human-readable description of the Policy.
+	//
+	// This is used to construct descriptive error messages pointing to configured policies.
+	//
+	// This will never be empty. If a description was not explicitly set, this falls back to
+	// OpaqueID.
+	Description() string
 	// Digest returns the Policy digest for the given DigestType.
 	Digest(DigestType) (Digest, error)
 	// Data returns the bytes of the Policy in yaml.
 	Data() []byte
+	// IsLocal return true if the Policy is a local Policy.
+	//
+	// Policies are either local or remote.
+	//
+	// A local Policy is one which was contained in the local context.
+	//
+	// A remote Policy is one which was not contained in the local context,
+	// and is a remote reference to a Policy.
+	//
+	// Remote Policies will always have FullNames.
+	IsLocal() bool
 
 	isPolicy()
+}
+
+// *** PRIVATE ***
+
+type policy struct {
+	description           string
+	fullName              bufparse.FullName
+	name                  string
+	commitID              uuid.UUID
+	getData               func() ([]byte, error)
+	digestTypeToGetDigest map[DigestType]func() (Digest, error)
+}
+
+func newPolicy(
+	description string,
+	fullName bufparse.FullName,
+	name string,
+	commitID uuid.UUID,
+	getData func() ([]byte, error),
+) (*policy, error) {
+	if name == "" {
+		return nil, syserror.New("name not present when constructing a Policy")
+	}
+	if fullName == nil && commitID != uuid.Nil {
+		return nil, syserror.New("commitID present when constructing a local Policy")
+	}
+	policy := &policy{
+		description: description,
+		fullName:    fullName,
+		name:        name,
+		commitID:    commitID,
+		getData:     sync.OnceValues(getData),
+	}
+	policy.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForPolicy(policy)
+	return policy, nil
+}
+
+func (p *policy) OpaqueID() string {
+	return p.name
+}
+
+func (p *policy) Name() string {
+	return p.name
+}
+
+func (p *policy) FullName() bufparse.FullName {
+	return p.fullName
+}
+
+func (p *policy) CommitID() uuid.UUID {
+	return p.commitID
+}
+
+func (p *policy) Description() string {
+	if p.description != "" {
+		return p.description
+	}
+	return p.OpaqueID()
+}
+
+func (p *policy) Data() ([]byte, error) {
+	return p.getData()
+}
+
+func (p *policy) Digest(digestType DigestType) (Digest, error) {
+	getDigest, ok := p.digestTypeToGetDigest[digestType]
+	if !ok {
+		return nil, syserror.Newf("DigestType %v was not in policy.digestTypeToGetDigest", digestType)
+	}
+	return getDigest()
+}
+
+func (p *policy) IsLocal() bool {
+	return p.commitID == uuid.Nil
+}
+
+func (p *policy) isPolicy() {}
+
+func newSyncOnceValueDigestTypeToGetDigestFuncForPolicy(policy *policy) map[DigestType]func() (Digest, error) {
+	m := make(map[DigestType]func() (Digest, error))
+	for digestType := range digestTypeToString {
+		m[digestType] = sync.OnceValues(newGetDigestFuncForPolicyAndDigestType(policy, digestType))
+	}
+	return m
+}
+
+func newGetDigestFuncForPolicyAndDigestType(policy *policy, digestType DigestType) func() (Digest, error) {
+	return func() (Digest, error) {
+		data, err := policy.getData()
+		if err != nil {
+			return nil, err
+		}
+		bufcasDigest, err := bufcas.NewDigest(data)
+		if err != nil {
+			return nil, err
+		}
+		return NewDigest(digestType, bufcasDigest)
+	}
 }
