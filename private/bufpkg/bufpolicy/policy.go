@@ -68,7 +68,7 @@ type Policy interface {
 	// Digest returns the Policy digest for the given DigestType.
 	Digest(DigestType) (Digest, error)
 	// Data returns the bytes of the Policy in yaml.
-	Data() []byte
+	Data() ([]byte, error)
 	// IsLocal return true if the Policy is a local Policy.
 	//
 	// Policies are either local or remote.
@@ -82,6 +82,17 @@ type Policy interface {
 	IsLocal() bool
 
 	isPolicy()
+}
+
+// NewPolicy creates a new Policy.
+func NewPolicy(
+	description string,
+	fullName bufparse.FullName,
+	name string,
+	commitID uuid.UUID,
+	getData func() ([]byte, error),
+) (Policy, error) {
+	return newPolicy(description, fullName, name, commitID, getData)
 }
 
 // *** PRIVATE ***
