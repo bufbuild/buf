@@ -1355,11 +1355,8 @@ func testLintWithOptions(
 	})
 	client, err := bufcheck.NewClient(
 		logger,
-		bufcheck.NewLocalRunnerProvider(
-			wasmRuntime,
-			bufplugin.NopPluginKeyProvider,
-			bufplugin.NopPluginDataProvider,
-		),
+		bufcheck.ClientWithRunnerProvider(bufcheck.NewLocalRunnerProvider(wasmRuntime)),
+		bufcheck.ClientWithLocalWasmPluginsFromOS(),
 	)
 	require.NoError(t, err)
 	err = client.Lint(

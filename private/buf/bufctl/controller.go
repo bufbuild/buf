@@ -486,15 +486,14 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 				pluginConfigs,
 			),
 		}
-		pluginRunnerProvider := bufcheck.NewLocalRunnerProvider(
-			wasmRuntime,
-			pluginKeyProvider,
-			c.pluginDataProvider,
-		)
 		checkClient, err := bufcheck.NewClient(
 			c.logger,
-			pluginRunnerProvider,
 			bufcheck.ClientWithStderr(c.container.Stderr()),
+			bufcheck.ClientWithRunnerProvider(
+				bufcheck.NewLocalRunnerProvider(wasmRuntime),
+			),
+			bufcheck.ClientWithLocalWasmPluginsFromOS(),
+			bufcheck.ClientWithRemoteWasmPlugins(pluginKeyProvider, c.pluginDataProvider),
 		)
 		if err != nil {
 			return nil, nil, err
@@ -801,15 +800,17 @@ func (c *controller) GetCheckClientForWorkspace(
 	if err != nil {
 		return nil, err
 	}
-	pluginRunnerProvider := bufcheck.NewLocalRunnerProvider(
-		wasmRuntime,
-		pluginKeyProvider,
-		c.pluginDataProvider,
-	)
 	return bufcheck.NewClient(
 		c.logger,
-		pluginRunnerProvider,
 		bufcheck.ClientWithStderr(c.container.Stderr()),
+		bufcheck.ClientWithRunnerProvider(
+			bufcheck.NewLocalRunnerProvider(wasmRuntime),
+		),
+		bufcheck.ClientWithLocalWasmPluginsFromOS(),
+		bufcheck.ClientWithRemoteWasmPlugins(
+			pluginKeyProvider,
+			c.pluginDataProvider,
+		),
 	)
 }
 
