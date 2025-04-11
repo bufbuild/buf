@@ -358,7 +358,6 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 
 	var indexedPluginRefs []slicesext.Indexed[bufparse.Ref]
 	for index, pluginConfig := range pluginConfigs {
-		// We don't have a ref, so we need to create a plugin.
 		switch pluginConfig.Type() {
 		case bufconfig.PluginConfigTypeLocal:
 			plugin, err := bufplugin.NewLocalPlugin(
@@ -366,13 +365,13 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 				pluginConfig.Args(),
 			)
 			if err != nil {
-				return nil, fmt.Errorf("could not create local plugin %q: %w", pluginConfig.Name(), err)
+				return nil, fmt.Errorf("could not create local Plugin %q: %w", pluginConfig.Name(), err)
 			}
 			plugins[index] = plugin
 		case bufconfig.PluginConfigTypeLocalWasm:
 			if c.pluginReadFile == nil {
 				// Local Wasm plugins are not supported without a pluginReadFile.
-				return nil, fmt.Errorf("unable to read local Wasm plugin %q", pluginConfig.Name())
+				return nil, fmt.Errorf("unable to read local Wasm Plugin %q", pluginConfig.Name())
 			}
 			var pluginFullName bufparse.FullName
 			if ref := pluginConfig.Ref(); ref != nil {
@@ -403,7 +402,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 			return nil, fmt.Errorf("unknown PluginConfig type %q", pluginConfig.Type())
 		}
 	}
-	// We need to load the plugin data for each remote plugin.
+	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
 		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
@@ -429,7 +428,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 				pluginData.Data,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("could not create remote plugin %q: %w", pluginRef.String(), err)
+				return nil, fmt.Errorf("could not create remote Plugin %q: %w", pluginRef.String(), err)
 			}
 			plugins[index] = plugin
 		}
