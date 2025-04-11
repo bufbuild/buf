@@ -100,6 +100,10 @@ service OrganizationService {
   rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // UpdateOrganizationGroup updates an IdP Group for the organization.
+  rpc UpdateOrganizationGroup(UpdateOrganizationGroupRequest) returns (UpdateOrganizationGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // RemoveOrganizationGroup removes an IdP Group from the organization.
   rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -277,6 +281,20 @@ message AddOrganizationGroupRequest {
 }
 
 message AddOrganizationGroupResponse {}
+
+message UpdateOrganizationGroupRequest {
+  // The ID of the organization to which this group belongs.
+  string organization_id = 1;
+  // The name of the group to update.
+  string group_name = 2;
+  // The role to associate with this organization group.
+  //
+  // Setting this to 'UNSPECIFIED' will remove the override. Leaving this unset will not update this
+  // property.
+  optional OrganizationRole role_override = 3;
+}
+
+message UpdateOrganizationGroupResponse {}
 
 message RemoveOrganizationGroupRequest {
   // The ID of the organization for which to remove the group.
