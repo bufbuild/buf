@@ -105,6 +105,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 				annotations := slicesext.Map(
 					delegateResponse.Annotations(),
 					func(checkAnnotation check.Annotation) *annotation {
+						fmt.Printf("ADDING: %s %s (%s %s)\n", checkAnnotation.RuleID(), checkAnnotation.Message(), delegate.PluginName, delegate.PolicyName)
 						return newAnnotation(checkAnnotation, delegate.PluginName, delegate.PolicyName)
 					},
 				)

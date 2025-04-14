@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - plugin: buf-plugin-suffix
+    options:
+      service_no_change_suffixes:
+        - Legacy
+        - Bridge
+      message_no_change_suffixes:
+        - Stable
+      enum_no_change_suffixes:
+        - Status

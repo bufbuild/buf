@@ -126,7 +126,7 @@ func (f *fileAnnotation) String() string {
 			_, _ = buffer.WriteString(", ")
 		}
 		if f.policyName != "" {
-			_, _ = buffer.WriteString(f.pluginName)
+			_, _ = buffer.WriteString(f.policyName)
 		}
 		_, _ = buffer.WriteRune(')')
 	}

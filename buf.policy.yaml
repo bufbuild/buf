@@ -1,7 +1,10 @@
-version: v1
-name: buf.build/acme/buf-policy-aep
+version: v2
+name: buf_policy_yaml
 lint:
   use:
   - AEP_CORE
+breaking:
+  use:
+  - WIRE
 plugins:
-  - plugin: buf.build/acme/buf-plugin-aep
+  - plugin: buf-plugin-aep

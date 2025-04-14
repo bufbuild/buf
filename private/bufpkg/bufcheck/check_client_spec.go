@@ -33,7 +33,7 @@ type checkClientSpec struct {
 func newCheckClientSpec(pluginName string, policyName string, client check.Client, options option.Options) *checkClientSpec {
 	return &checkClientSpec{
 		PluginName: pluginName,
-		PolicyName: pluginName,
+		PolicyName: policyName,
 		Client:     client,
 		Options:    options,
 	}

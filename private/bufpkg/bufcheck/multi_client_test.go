@@ -200,6 +200,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
 		},
+		nil,
 		false,
 		emptyOptions,
 	)
@@ -294,6 +295,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
 		},
+		nil,
 		false,
 		emptyOptions,
 	)

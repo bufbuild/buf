@@ -1,0 +1,7 @@
+version: v2
+breaking:
+  use:
+    - ENUM_NO_DELETE
+policies:
+  - policy: buf.policy1.yaml
+  - policy: buf.policy2.yaml

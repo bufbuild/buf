@@ -8,6 +8,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 )
 
+var (
+	// NopPolicyPluginKeyProvider is a no-op PolicyPluginKeyProvider.
+	NopPolicyPluginKeyProvider PolicyPluginKeyProvider = nopPolicyPluginKeyProvider{}
+)
+
 // PolicyPluginKeyProvider provides PluginKeys for a specific policy.
 type PolicyPluginKeyProvider interface {
 	// GetPolicyKeysForPolicyRefs gets the PolicyKeys for the given plugin Refs.
