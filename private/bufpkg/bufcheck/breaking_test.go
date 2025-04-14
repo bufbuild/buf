@@ -1346,11 +1346,10 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheck.NewClient(logger, bufcheck.NewLocalRunnerProvider(
-		wasm.UnimplementedRuntime,
-		bufplugin.NopPluginKeyProvider,
-		bufplugin.NopPluginDataProvider,
-	))
+	client, err := bufcheck.NewClient(
+		logger,
+		bufcheck.ClientWithRunnerProvider(bufcheck.NewLocalRunnerProvider(wasm.UnimplementedRuntime)),
+	)
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,

@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -192,34 +193,32 @@ type RunnerProviderFunc func(bufplugin.Plugin) (pluginrpc.Runner, error)
 // NewRunner implements RunnerProvider.
 //
 // RunnerProvider selects the correct Runner based on the type of pluginConfig.
-func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig, pluginData func() ([]byte, error)) (pluginrpc.Runner, error) {
-	return r(pluginConfig, pluginData)
+func (r RunnerProviderFunc) NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error) {
+	return r(plugin)
 }
 
-// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime.
+// NewLocalRunnerProvider returns a new RunnerProvider to invoke plugins locally.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
 //
-// The RunnerProvider selects the correct Runner based on the PluginConfigType.
-// The supported types are:
-//   - bufconfig.PluginConfigTypeLocal
-//   - bufconfig.PluginConfigTypeLocalWasm
-//   - bufconfig.PluginConfigTypeRemoteWasm
+// The RunnerProvider selects the correct Runner based on the Plugin:
+//   - Local plugins will be run with pluginrpcutil.NewLocalRunner.
+//   - Local Wasm plugins will be run with pluginrpcutil.NewWasmRunner.
+//   - Remote Wasm plugins will be run with pluginrpcutil.NewWasmRunner.
 //
-// If the PluginConfigType is not supported, an error is returned.
+// If the plugin type is not supported, an error is returned.
 // To disable support for Wasm plugins, set wasmRuntime to wasm.UnimplementedRuntime.
 func NewLocalRunnerProvider(wasmRuntime wasm.Runtime) RunnerProvider {
-	return newRunnerProvider(wasmRuntime)
+	return newLocalRunnerProvider(wasmRuntime)
 }
 
 // NewClient returns a new Client.
 func NewClient(
 	logger *slog.Logger,
-	wasmRuntime wasm.Runtime,
 	options ...ClientOption,
 ) (Client, error) {
-	return newClient(logger, wasmRuntime, options...)
+	return newClient(logger, options...)
 }
 
 // ClientOption is an option for a new Client.
@@ -234,18 +233,44 @@ func ClientWithStderr(stderr io.Writer) ClientOption {
 	}
 }
 
-func ClientWithWasmRuntime(wasmRuntime wasm.Runtime) ClientOption {
+// ClientWithRunnerProvider returns a new ClientOption that specifies a RunnerProvider.
+//
+// The runnerProvider is used to create pluginrpc.Runners for the plugins.
+// By default, only builtin plugins are used.
+func ClientWithRunnerProvider(runnerProvider RunnerProvider) ClientOption {
 	return func(clientOptions *clientOptions) {
-		clientOptions.wasmRuntiem = wasmRuntime
+		clientOptions.runnerProvider = runnerProvider
 	}
 }
 
-// ClientWithWasmRuntime returns a new ClientOption that specifies a wasm.Runtime to use.
+// ClientWithLocalWasmPlugins returns a new ClientOption that specifies reading Wasm plugins.
 //
-// The default is wasm.UnimplementedRuntime, disabling Wasm plugins.
-func ClientWithWasmRuntime(wasmRuntime wasm.Runtime) ClientOption {
+// The readBucket is used to read the Wasm plugin data from the filesystem.
+func ClientWithLocalWasmPlugins(readFile func(string) ([]byte, error)) ClientOption {
 	return func(clientOptions *clientOptions) {
-		clientOptions.wasmRuntime = wasmRuntime
+		clientOptions.pluginReadFile = readFile
+	}
+}
+
+// ClientWithLocalWasmPluginsFromOS returns a new ClientOption that specifies reading Wasm plugins
+// from the OS.
+//
+// This is only used for local applications.
+func ClientWithLocalWasmPluginsFromOS() ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.pluginReadFile = pluginrpcutil.ReadWasmFileFromOS
+	}
+}
+
+// ClientWithRemoteWasmPlugins returns a new ClientOption that specifies the remote plugin key
+// and data providers.
+func ClientWithRemoteWasmPlugins(
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
+) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.pluginKeyProvider = pluginKeyProvider
+		clientOptions.pluginDataProvider = pluginDataProvider
 	}
 }
 
