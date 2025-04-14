@@ -197,7 +197,6 @@ func readBufPolicyYAMLFile(
 		return nil, err
 	}
 	if fileVersion != FileVersionV2 {
-		fmt.Println("objectData", objectData)
 		return nil, newUnsupportedFileVersionError(objectData.Name(), fileVersion)
 	}
 	var externalBufPolicyYAMLFile externalBufPolicyYAMLFileV2
