@@ -32,8 +32,8 @@ github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1 h1:V1xulAoqLqVg44rY97xOR+mQpD2N+GzhMHVwJ030WEU=
 github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
-github.com/bufbuild/protovalidate-go v0.9.3-0.20250403190939-663657418457 h1:Sa5rWJF1c3HdWoF5QcBDyCIoqPdIQf1Jh4HTos7UZsM=
-github.com/bufbuild/protovalidate-go v0.9.3-0.20250403190939-663657418457/go.mod h1:2lUDP6fNd3wxznRNH3Nj64VB07+PySeslamkerwP6tE=
+github.com/bufbuild/protovalidate-go v0.9.3 h1:XvdtwQuppS3wjzGfpOirsqwN5ExH2+PiIuA/XZd3MTM=
+github.com/bufbuild/protovalidate-go v0.9.3/go.mod h1:2lUDP6fNd3wxznRNH3Nj64VB07+PySeslamkerwP6tE=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/chromedp/cdproto v0.0.0-20230802225258-3cf4e6d46a89/go.mod h1:GKljq0VrfU4D5yc+2qA6OVr8pmO/MBbPEWqWQ/oqGEs=
