@@ -49,3 +49,10 @@ enum RepositoryRole {
   REPOSITORY_ROLE_READ = 4;
   REPOSITORY_ROLE_LIMITED_WRITE = 5;
 }
+
+// The source of a user's role in a Repository.
+enum RepositoryRoleSource {
+  REPOSITORY_ROLE_SOURCE_UNSPECIFIED = 0;
+  REPOSITORY_ROLE_SOURCE_DIRECT = 1;
+  REPOSITORY_ROLE_SOURCE_IDP_GROUP = 2;
+}

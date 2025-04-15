@@ -170,6 +170,18 @@ service RepositoryService {
   rpc GetRepositoryDependencyDOTString(GetRepositoryDependencyDOTStringRequest) returns (GetRepositoryDependencyDOTStringResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // AddRepositoryGroup adds an IdP Group to the repository.
+  rpc AddRepositoryGroup(AddRepositoryGroupRequest) returns (AddRepositoryGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // UpdateRepositoryGroup updates an IdP Group for the repository.
+  rpc UpdateRepositoryGroup(UpdateRepositoryGroupRequest) returns (UpdateRepositoryGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // RemoveRepositoryGroup removes an IdP Group from the repository.
+  rpc RemoveRepositoryGroup(RemoveRepositoryGroupRequest) returns (RemoveRepositoryGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -387,3 +399,37 @@ message GetRepositoryDependencyDOTStringResponse {
   // DOT language reference: https://graphviz.org/doc/info/lang.html
   string dot_string = 1;
 }
+
+message AddRepositoryGroupRequest {
+  // The ID of the repository for which to add the group.
+  string repository_id = 1;
+  // The name of the group to add.
+  string group_name = 2;
+  // The role to associate with any user who is added to the repository via this group.
+  RepositoryRole repository_role = 3;
+}
+
+message AddRepositoryGroupResponse {}
+
+message UpdateRepositoryGroupRequest {
+  // The ID of the repository to which this group belongs.
+  string repository_id = 1;
+  // The name of the group to update.
+  string group_name = 2;
+  // The role to associate with this repository group.
+  //
+  // Setting this to 'UNSPECIFIED' will remove the override. Leaving this unset will not update this
+  // property.
+  optional RepositoryRole role_override = 3;
+}
+
+message UpdateRepositoryGroupResponse {}
+
+message RemoveRepositoryGroupRequest {
+  // The ID of the repository for which to remove the group.
+  string repository_id = 1;
+  // The name of the group to remove.
+  string group_name = 2;
+}
+
+message RemoveRepositoryGroupResponse {}

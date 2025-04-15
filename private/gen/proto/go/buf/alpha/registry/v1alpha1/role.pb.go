@@ -232,6 +232,51 @@ func (x RepositoryRole) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// The source of a user's role in a Repository.
+type RepositoryRoleSource int32
+
+const (
+	RepositoryRoleSource_REPOSITORY_ROLE_SOURCE_UNSPECIFIED RepositoryRoleSource = 0
+	RepositoryRoleSource_REPOSITORY_ROLE_SOURCE_DIRECT      RepositoryRoleSource = 1
+	RepositoryRoleSource_REPOSITORY_ROLE_SOURCE_IDP_GROUP   RepositoryRoleSource = 2
+)
+
+// Enum value maps for RepositoryRoleSource.
+var (
+	RepositoryRoleSource_name = map[int32]string{
+		0: "REPOSITORY_ROLE_SOURCE_UNSPECIFIED",
+		1: "REPOSITORY_ROLE_SOURCE_DIRECT",
+		2: "REPOSITORY_ROLE_SOURCE_IDP_GROUP",
+	}
+	RepositoryRoleSource_value = map[string]int32{
+		"REPOSITORY_ROLE_SOURCE_UNSPECIFIED": 0,
+		"REPOSITORY_ROLE_SOURCE_DIRECT":      1,
+		"REPOSITORY_ROLE_SOURCE_IDP_GROUP":   2,
+	}
+)
+
+func (x RepositoryRoleSource) Enum() *RepositoryRoleSource {
+	p := new(RepositoryRoleSource)
+	*p = x
+	return p
+}
+
+func (x RepositoryRoleSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RepositoryRoleSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_buf_alpha_registry_v1alpha1_role_proto_enumTypes[4].Descriptor()
+}
+
+func (RepositoryRoleSource) Type() protoreflect.EnumType {
+	return &file_buf_alpha_registry_v1alpha1_role_proto_enumTypes[4]
+}
+
+func (x RepositoryRoleSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 var File_buf_alpha_registry_v1alpha1_role_proto protoreflect.FileDescriptor
 
 const file_buf_alpha_registry_v1alpha1_role_proto_rawDesc = "" +
@@ -259,15 +304,20 @@ const file_buf_alpha_registry_v1alpha1_role_proto_rawDesc = "" +
 	"\x15REPOSITORY_ROLE_ADMIN\x10\x02\x12\x19\n" +
 	"\x15REPOSITORY_ROLE_WRITE\x10\x03\x12\x18\n" +
 	"\x14REPOSITORY_ROLE_READ\x10\x04\x12!\n" +
-	"\x1dREPOSITORY_ROLE_LIMITED_WRITE\x10\x05B\x96\x02\n" +
+	"\x1dREPOSITORY_ROLE_LIMITED_WRITE\x10\x05*\x87\x01\n" +
+	"\x14RepositoryRoleSource\x12&\n" +
+	"\"REPOSITORY_ROLE_SOURCE_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dREPOSITORY_ROLE_SOURCE_DIRECT\x10\x01\x12$\n" +
+	" REPOSITORY_ROLE_SOURCE_IDP_GROUP\x10\x02B\x96\x02\n" +
 	"\x1fcom.buf.alpha.registry.v1alpha1B\tRoleProtoP\x01ZYgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1\xa2\x02\x03BAR\xaa\x02\x1bBuf.Alpha.Registry.V1alpha1\xca\x02\x1bBuf\\Alpha\\Registry\\V1alpha1\xe2\x02'Buf\\Alpha\\Registry\\V1alpha1\\GPBMetadata\xea\x02\x1eBuf::Alpha::Registry::V1alpha1b\x06proto3"
 
-var file_buf_alpha_registry_v1alpha1_role_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_buf_alpha_registry_v1alpha1_role_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_buf_alpha_registry_v1alpha1_role_proto_goTypes = []any{
 	(ServerRole)(0),             // 0: buf.alpha.registry.v1alpha1.ServerRole
 	(OrganizationRole)(0),       // 1: buf.alpha.registry.v1alpha1.OrganizationRole
 	(OrganizationRoleSource)(0), // 2: buf.alpha.registry.v1alpha1.OrganizationRoleSource
 	(RepositoryRole)(0),         // 3: buf.alpha.registry.v1alpha1.RepositoryRole
+	(RepositoryRoleSource)(0),   // 4: buf.alpha.registry.v1alpha1.RepositoryRoleSource
 }
 var file_buf_alpha_registry_v1alpha1_role_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -287,7 +337,7 @@ func file_buf_alpha_registry_v1alpha1_role_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_registry_v1alpha1_role_proto_rawDesc), len(file_buf_alpha_registry_v1alpha1_role_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,
