@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix buf breaking annotations for JSON format.
 
 ## [v1.52.1] - 2025-04-08
 
