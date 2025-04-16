@@ -15,6 +15,7 @@
 package bufcli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -37,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/wasm"
 )
 
 var (
@@ -173,17 +175,21 @@ func NewPluginDataProvider(container appext.Container) (bufplugin.PluginDataProv
 	)
 }
 
-// CreateWasmRuntimeCacheDir creates the cache directory for the Wasm runtime.
-//
-// This is used by the Wasm runtime to cache compiled Wasm plugins. This is an
-// implementation specific cache and opaque outside of the runtime. The runtime
-// will manage the cache versioning itself within this directory.
-func CreateWasmRuntimeCacheDir(container appext.Container) (string, error) {
+// NewWasmRuntime returns a new Wasm runtime while creating the required cache
+// directories.
+func NewWasmRuntime(ctx context.Context, container appext.Container) (wasm.Runtime, error) {
+	// This is used by the Wasm runtime to cache compiled Wasm plugins. This is an
+	// implementation specific cache and opaque outside of the runtime. The runtime
+	// will manage the cache versioning itself within this directory.
 	if err := createCacheDir(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath); err != nil {
-		return "", err
+		return nil, err
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath)
-	return fullCacheDirPath, nil
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(fullCacheDirPath))
+	if err != nil {
+		return nil, err
+	}
+	return wasmRuntime, nil
 }
 
 // NewWKTStore returns a new bufwktstore.Store while creating the required cache directories.
