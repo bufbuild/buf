@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 )
 
@@ -151,10 +150,10 @@ func upload(
 	case flags.Binary != "":
 		// We create a local plugin reference to the Wasm binary.
 		var err error
-		plugin, err = bufplugin.NewRemoteWasmPlugin(
+		plugin, err = bufplugin.NewLocalWasmPlugin(
 			pluginFullName,
+			flags.Binary,
 			nil, // args
-			uuid.Nil,
 			func() ([]byte, error) {
 				wasmBinary, err := os.ReadFile(flags.Binary)
 				if err != nil {
