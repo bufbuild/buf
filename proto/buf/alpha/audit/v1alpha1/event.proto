@@ -81,6 +81,7 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED = 50;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED = 59;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DEPRECATED = 48;
@@ -196,6 +197,7 @@ message Event {
     PayloadUserLoggedOut user_logged_out = 25;
     PayloadCuratedPluginCreated curated_plugin_created = 26;
     PayloadOrganizationIDPGroupAdded idp_group_added = 27;
+    PayloadOrganizationIDPGroupUpdated idp_group_updated = 65;
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
     PayloadTokenCreated token_created = 29;
     PayloadTokenDeleted token_deleted = 30;
@@ -290,6 +292,19 @@ message PayloadOrganizationIDPGroupAdded {
   string organization_name = 2;
   // role_override is the role override associated with the new IDP group.
   buf.alpha.registry.v1alpha1.OrganizationRole role_override = 3;
+}
+
+message PayloadOrganizationIDPGroupUpdated {
+  // organization_id is the id of the organization with the updated IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the updated IDP group.
+  string organization_name = 2;
+  // old_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.OrganizationRole old_role_override = 3;
+  // new_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.OrganizationRole new_role_override = 4;
 }
 
 message PayloadOrganizationIDPGroupRemoved {

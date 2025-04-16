@@ -92,6 +92,9 @@ const (
 	// OrganizationServiceAddOrganizationGroupProcedure is the fully-qualified name of the
 	// OrganizationService's AddOrganizationGroup RPC.
 	OrganizationServiceAddOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup"
+	// OrganizationServiceUpdateOrganizationGroupProcedure is the fully-qualified name of the
+	// OrganizationService's UpdateOrganizationGroup RPC.
+	OrganizationServiceUpdateOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationGroup"
 	// OrganizationServiceRemoveOrganizationGroupProcedure is the fully-qualified name of the
 	// OrganizationService's RemoveOrganizationGroup RPC.
 	OrganizationServiceRemoveOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup"
@@ -129,6 +132,8 @@ type OrganizationServiceClient interface {
 	UpdateOrganizationSettings(context.Context, *connect.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
 	// AddOrganizationGroup adds an IdP Group to the organization.
 	AddOrganizationGroup(context.Context, *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error)
+	// UpdateOrganizationGroup updates an IdP Group for the organization.
+	UpdateOrganizationGroup(context.Context, *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
 	RemoveOrganizationGroup(context.Context, *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
 }
@@ -247,6 +252,13 @@ func NewOrganizationServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
+		updateOrganizationGroup: connect.NewClient[v1alpha1.UpdateOrganizationGroupRequest, v1alpha1.UpdateOrganizationGroupResponse](
+			httpClient,
+			baseURL+OrganizationServiceUpdateOrganizationGroupProcedure,
+			connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationGroup")),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
 		removeOrganizationGroup: connect.NewClient[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse](
 			httpClient,
 			baseURL+OrganizationServiceRemoveOrganizationGroupProcedure,
@@ -274,6 +286,7 @@ type organizationServiceClient struct {
 	getOrganizationSettings    *connect.Client[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse]
 	updateOrganizationSettings *connect.Client[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse]
 	addOrganizationGroup       *connect.Client[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse]
+	updateOrganizationGroup    *connect.Client[v1alpha1.UpdateOrganizationGroupRequest, v1alpha1.UpdateOrganizationGroupResponse]
 	removeOrganizationGroup    *connect.Client[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse]
 }
 
@@ -361,6 +374,12 @@ func (c *organizationServiceClient) AddOrganizationGroup(ctx context.Context, re
 	return c.addOrganizationGroup.CallUnary(ctx, req)
 }
 
+// UpdateOrganizationGroup calls
+// buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationGroup.
+func (c *organizationServiceClient) UpdateOrganizationGroup(ctx context.Context, req *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error) {
+	return c.updateOrganizationGroup.CallUnary(ctx, req)
+}
+
 // RemoveOrganizationGroup calls
 // buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup.
 func (c *organizationServiceClient) RemoveOrganizationGroup(ctx context.Context, req *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
@@ -399,6 +418,8 @@ type OrganizationServiceHandler interface {
 	UpdateOrganizationSettings(context.Context, *connect.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
 	// AddOrganizationGroup adds an IdP Group to the organization.
 	AddOrganizationGroup(context.Context, *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error)
+	// UpdateOrganizationGroup updates an IdP Group for the organization.
+	UpdateOrganizationGroup(context.Context, *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
 	RemoveOrganizationGroup(context.Context, *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
 }
@@ -512,6 +533,13 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
+	organizationServiceUpdateOrganizationGroupHandler := connect.NewUnaryHandler(
+		OrganizationServiceUpdateOrganizationGroupProcedure,
+		svc.UpdateOrganizationGroup,
+		connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationGroup")),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
 	organizationServiceRemoveOrganizationGroupHandler := connect.NewUnaryHandler(
 		OrganizationServiceRemoveOrganizationGroupProcedure,
 		svc.RemoveOrganizationGroup,
@@ -551,6 +579,8 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 			organizationServiceUpdateOrganizationSettingsHandler.ServeHTTP(w, r)
 		case OrganizationServiceAddOrganizationGroupProcedure:
 			organizationServiceAddOrganizationGroupHandler.ServeHTTP(w, r)
+		case OrganizationServiceUpdateOrganizationGroupProcedure:
+			organizationServiceUpdateOrganizationGroupHandler.ServeHTTP(w, r)
 		case OrganizationServiceRemoveOrganizationGroupProcedure:
 			organizationServiceRemoveOrganizationGroupHandler.ServeHTTP(w, r)
 		default:
@@ -620,6 +650,10 @@ func (UnimplementedOrganizationServiceHandler) UpdateOrganizationSettings(contex
 
 func (UnimplementedOrganizationServiceHandler) AddOrganizationGroup(context.Context, *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationGroup is not implemented"))
+}
+
+func (UnimplementedOrganizationServiceHandler) UpdateOrganizationGroup(context.Context, *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationGroup is not implemented"))
 }
 
 func (UnimplementedOrganizationServiceHandler) RemoveOrganizationGroup(context.Context, *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
