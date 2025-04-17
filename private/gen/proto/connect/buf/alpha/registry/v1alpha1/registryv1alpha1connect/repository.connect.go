@@ -104,6 +104,15 @@ const (
 	// RepositoryServiceGetRepositoryDependencyDOTStringProcedure is the fully-qualified name of the
 	// RepositoryService's GetRepositoryDependencyDOTString RPC.
 	RepositoryServiceGetRepositoryDependencyDOTStringProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDependencyDOTString"
+	// RepositoryServiceAddRepositoryGroupProcedure is the fully-qualified name of the
+	// RepositoryService's AddRepositoryGroup RPC.
+	RepositoryServiceAddRepositoryGroupProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/AddRepositoryGroup"
+	// RepositoryServiceUpdateRepositoryGroupProcedure is the fully-qualified name of the
+	// RepositoryService's UpdateRepositoryGroup RPC.
+	RepositoryServiceUpdateRepositoryGroupProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryGroup"
+	// RepositoryServiceRemoveRepositoryGroupProcedure is the fully-qualified name of the
+	// RepositoryService's RemoveRepositoryGroup RPC.
+	RepositoryServiceRemoveRepositoryGroupProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/RemoveRepositoryGroup"
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
@@ -152,6 +161,12 @@ type RepositoryServiceClient interface {
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
+	// AddRepositoryGroup adds an IdP Group to the repository.
+	AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error)
+	// UpdateRepositoryGroup updates an IdP Group for the repository.
+	UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error)
+	// RemoveRepositoryGroup removes an IdP Group from the repository.
+	RemoveRepositoryGroup(context.Context, *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
@@ -295,6 +310,27 @@ func NewRepositoryServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		addRepositoryGroup: connect.NewClient[v1alpha1.AddRepositoryGroupRequest, v1alpha1.AddRepositoryGroupResponse](
+			httpClient,
+			baseURL+RepositoryServiceAddRepositoryGroupProcedure,
+			connect.WithSchema(repositoryServiceMethods.ByName("AddRepositoryGroup")),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
+		updateRepositoryGroup: connect.NewClient[v1alpha1.UpdateRepositoryGroupRequest, v1alpha1.UpdateRepositoryGroupResponse](
+			httpClient,
+			baseURL+RepositoryServiceUpdateRepositoryGroupProcedure,
+			connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositoryGroup")),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
+		removeRepositoryGroup: connect.NewClient[v1alpha1.RemoveRepositoryGroupRequest, v1alpha1.RemoveRepositoryGroupResponse](
+			httpClient,
+			baseURL+RepositoryServiceRemoveRepositoryGroupProcedure,
+			connect.WithSchema(repositoryServiceMethods.ByName("RemoveRepositoryGroup")),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -319,6 +355,9 @@ type repositoryServiceClient struct {
 	updateRepositorySettingsByName   *connect.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
 	getRepositoriesMetadata          *connect.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
 	getRepositoryDependencyDOTString *connect.Client[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse]
+	addRepositoryGroup               *connect.Client[v1alpha1.AddRepositoryGroupRequest, v1alpha1.AddRepositoryGroupResponse]
+	updateRepositoryGroup            *connect.Client[v1alpha1.UpdateRepositoryGroupRequest, v1alpha1.UpdateRepositoryGroupResponse]
+	removeRepositoryGroup            *connect.Client[v1alpha1.RemoveRepositoryGroupRequest, v1alpha1.RemoveRepositoryGroupResponse]
 }
 
 // GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
@@ -430,6 +469,21 @@ func (c *repositoryServiceClient) GetRepositoryDependencyDOTString(ctx context.C
 	return c.getRepositoryDependencyDOTString.CallUnary(ctx, req)
 }
 
+// AddRepositoryGroup calls buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup.
+func (c *repositoryServiceClient) AddRepositoryGroup(ctx context.Context, req *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error) {
+	return c.addRepositoryGroup.CallUnary(ctx, req)
+}
+
+// UpdateRepositoryGroup calls buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup.
+func (c *repositoryServiceClient) UpdateRepositoryGroup(ctx context.Context, req *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error) {
+	return c.updateRepositoryGroup.CallUnary(ctx, req)
+}
+
+// RemoveRepositoryGroup calls buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup.
+func (c *repositoryServiceClient) RemoveRepositoryGroup(ctx context.Context, req *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error) {
+	return c.removeRepositoryGroup.CallUnary(ctx, req)
+}
+
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
@@ -476,6 +530,12 @@ type RepositoryServiceHandler interface {
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
+	// AddRepositoryGroup adds an IdP Group to the repository.
+	AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error)
+	// UpdateRepositoryGroup updates an IdP Group for the repository.
+	UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error)
+	// RemoveRepositoryGroup removes an IdP Group from the repository.
+	RemoveRepositoryGroup(context.Context, *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error)
 }
 
 // NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -614,6 +674,27 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	repositoryServiceAddRepositoryGroupHandler := connect.NewUnaryHandler(
+		RepositoryServiceAddRepositoryGroupProcedure,
+		svc.AddRepositoryGroup,
+		connect.WithSchema(repositoryServiceMethods.ByName("AddRepositoryGroup")),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
+	repositoryServiceUpdateRepositoryGroupHandler := connect.NewUnaryHandler(
+		RepositoryServiceUpdateRepositoryGroupProcedure,
+		svc.UpdateRepositoryGroup,
+		connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositoryGroup")),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
+	repositoryServiceRemoveRepositoryGroupHandler := connect.NewUnaryHandler(
+		RepositoryServiceRemoveRepositoryGroupProcedure,
+		svc.RemoveRepositoryGroup,
+		connect.WithSchema(repositoryServiceMethods.ByName("RemoveRepositoryGroup")),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RepositoryServiceGetRepositoryProcedure:
@@ -654,6 +735,12 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
 		case RepositoryServiceGetRepositoryDependencyDOTStringProcedure:
 			repositoryServiceGetRepositoryDependencyDOTStringHandler.ServeHTTP(w, r)
+		case RepositoryServiceAddRepositoryGroupProcedure:
+			repositoryServiceAddRepositoryGroupHandler.ServeHTTP(w, r)
+		case RepositoryServiceUpdateRepositoryGroupProcedure:
+			repositoryServiceUpdateRepositoryGroupHandler.ServeHTTP(w, r)
+		case RepositoryServiceRemoveRepositoryGroupProcedure:
+			repositoryServiceRemoveRepositoryGroupHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -737,4 +824,16 @@ func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Con
 
 func (UnimplementedRepositoryServiceHandler) GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) RemoveRepositoryGroup(context.Context, *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup is not implemented"))
 }
