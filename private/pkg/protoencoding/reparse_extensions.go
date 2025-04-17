@@ -94,7 +94,7 @@ func reparseInField(
 	}
 	if fieldDescriptor.IsList() {
 		list := value.List()
-		for i := 0; i < list.Len(); i++ {
+		for i := range list.Len() {
 			if err := ReparseExtensions(resolver, list.Get(i).Message()); err != nil {
 				return err
 			}

@@ -921,7 +921,7 @@ func (t *transitiveClosure) exploreOptionValueForAny(
 	case isMessageKind(fd.Kind()):
 		if fd.IsList() {
 			listVal := val.List()
-			for i := 0; i < listVal.Len(); i++ {
+			for i := range listVal.Len() {
 				if err := t.exploreOptionSingularValueForAny(listVal.Get(i).Message(), referrerFile, imageIndex, opts); err != nil {
 					return err
 				}

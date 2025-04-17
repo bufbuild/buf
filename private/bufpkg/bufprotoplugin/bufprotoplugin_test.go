@@ -172,7 +172,7 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 	inflatedLines := 1100
 
 	inflatedTargetFileContent := targetFileContent
-	for i := 0; i < inflatedLines-1; i++ {
+	for range inflatedLines - 1 {
 		inflatedTargetFileContent += "// this is just extra garbage\n"
 	}
 	// no trailing newline
@@ -222,7 +222,7 @@ that has more than one insertion point
     // @@protoc_insertion_point(ip2)
 
 at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(ip3)\n")
-		for i := 0; i < inflatedLines-1; i++ {
+		for range inflatedLines - 1 {
 			inflatedExpectContent = append(inflatedExpectContent, []byte("// this is just extra garbage\n")...)
 		}
 		// no trailing newline

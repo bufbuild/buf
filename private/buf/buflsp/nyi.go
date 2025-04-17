@@ -101,10 +101,10 @@ func (nyi) DocumentLink(ctx context.Context, params *protocol.DocumentLinkParams
 func (nyi) DocumentLinkResolve(ctx context.Context, params *protocol.DocumentLink) (result *protocol.DocumentLink, err error) {
 	return nil, newNYIError()
 }
-func (nyi) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) (result []interface{}, err error) {
+func (nyi) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) (result []any, err error) {
 	return nil, newNYIError()
 }
-func (nyi) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (result interface{}, err error) {
+func (nyi) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (result any, err error) {
 	return nil, newNYIError()
 }
 func (nyi) Exit(ctx context.Context) (err error) {
@@ -161,13 +161,13 @@ func (nyi) References(ctx context.Context, params *protocol.ReferenceParams) (re
 func (nyi) Rename(ctx context.Context, params *protocol.RenameParams) (result *protocol.WorkspaceEdit, err error) {
 	return nil, newNYIError()
 }
-func (nyi) Request(ctx context.Context, method string, params interface{}) (result interface{}, err error) {
+func (nyi) Request(ctx context.Context, method string, params any) (result any, err error) {
 	return nil, newNYIError()
 }
 func (nyi) SemanticTokensFull(ctx context.Context, params *protocol.SemanticTokensParams) (result *protocol.SemanticTokens, err error) {
 	return nil, newNYIError()
 }
-func (nyi) SemanticTokensFullDelta(ctx context.Context, params *protocol.SemanticTokensDeltaParams) (result interface{}, err error) {
+func (nyi) SemanticTokensFullDelta(ctx context.Context, params *protocol.SemanticTokensDeltaParams) (result any, err error) {
 	return nil, newNYIError()
 }
 func (nyi) SemanticTokensRange(ctx context.Context, params *protocol.SemanticTokensRangeParams) (result *protocol.SemanticTokens, err error) {

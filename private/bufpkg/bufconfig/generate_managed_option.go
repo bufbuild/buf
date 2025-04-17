@@ -138,7 +138,7 @@ var (
 		"ruby_package":                  FileOptionRubyPackage,
 		"ruby_package_suffix":           FileOptionRubyPackageSuffix,
 	}
-	fileOptionToParseOverrideValueFunc = map[FileOption]func(interface{}) (interface{}, error){
+	fileOptionToParseOverrideValueFunc = map[FileOption]func(any) (any, error){
 		FileOptionJavaPackage:                parseOverrideValue[string],
 		FileOptionJavaPackagePrefix:          parseOverrideValue[string],
 		FileOptionJavaPackageSuffix:          parseOverrideValue[string],
@@ -164,7 +164,7 @@ var (
 	stringToFieldOption = map[string]FieldOption{
 		"jstype": FieldOptionJSType,
 	}
-	fieldOptionToParseOverrideValueFunc = map[FieldOption]func(interface{}) (interface{}, error){
+	fieldOptionToParseOverrideValueFunc = map[FieldOption]func(any) (any, error){
 		FieldOptionJSType: parseOverrideValueJSType,
 	}
 )
@@ -193,7 +193,7 @@ func parseFieldOption(s string) (FieldOption, error) {
 	return 0, fmt.Errorf("unknown field_option: %q", s)
 }
 
-func parseOverrideValue[T string | bool](overrideValue interface{}) (interface{}, error) {
+func parseOverrideValue[T string | bool](overrideValue any) (any, error) {
 	parsedValue, ok := overrideValue.(T)
 	if !ok {
 		return nil, fmt.Errorf("expected a %T, got %T", parsedValue, overrideValue)
@@ -201,7 +201,7 @@ func parseOverrideValue[T string | bool](overrideValue interface{}) (interface{}
 	return parsedValue, nil
 }
 
-func parseOverrideValueOptimizeMode(overrideValue interface{}) (interface{}, error) {
+func parseOverrideValueOptimizeMode(overrideValue any) (any, error) {
 	optimizeModeName, ok := overrideValue.(string)
 	if !ok {
 		return nil, errors.New("must be one of SPEED, CODE_SIZE or LITE_RUNTIME")
@@ -213,7 +213,7 @@ func parseOverrideValueOptimizeMode(overrideValue interface{}) (interface{}, err
 	return descriptorpb.FileOptions_OptimizeMode(optimizeMode), nil
 }
 
-func parseOverrideValueJSType(override interface{}) (interface{}, error) {
+func parseOverrideValueJSType(override any) (any, error) {
 	jsTypeName, ok := override.(string)
 	if !ok {
 		return nil, errors.New("must be one of JS_NORMAL, JS_STRING or JS_NUMBER")
@@ -229,7 +229,7 @@ func parseOverrideValueJSType(override interface{}) (interface{}, error) {
 // then we want to write out the string representation of the enum value, not
 // the corresponding int32.
 // Otherwise we just return the value.
-func getOverrideValue(fileOptionName string, fieldOptionName string, value interface{}) (interface{}, error) {
+func getOverrideValue(fileOptionName string, fieldOptionName string, value any) (any, error) {
 	var optionName string
 	if fileOptionName != "" && fieldOptionName != "" {
 		return externalGenerateManagedConfigV2{}, fmt.Errorf("field option %s and file option %s set on the same override", fileOptionName, fieldOptionName)

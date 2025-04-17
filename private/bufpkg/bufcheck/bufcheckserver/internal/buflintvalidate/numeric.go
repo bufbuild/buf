@@ -51,7 +51,7 @@ func checkNumberRules[
 		ruleMessage,
 		getNumericPointerFromValue[T],
 		compareNumber[T],
-		func(t *T) interface{} { return *t },
+		func(t *T) any { return *t },
 	)
 }
 
@@ -66,7 +66,7 @@ func checkNumericRules[
 	// equalFunc returns whether two values are equal.
 	equalFunc func(*T, *T) bool,
 	// formatFunc returns the value suitable for printing with %v.
-	formatFunc func(*T) interface{},
+	formatFunc func(*T) any,
 ) error {
 	var fieldCount int
 	var constant, lowerBound, upperBound *T

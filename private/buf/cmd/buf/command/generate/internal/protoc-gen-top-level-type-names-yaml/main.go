@@ -43,15 +43,15 @@ func handle(
 	for _, fileDescriptor := range fileDescriptors {
 		externalFile := &externalFile{}
 		enumDescriptors := fileDescriptor.Enums()
-		for i := 0; i < enumDescriptors.Len(); i++ {
+		for i := range enumDescriptors.Len() {
 			externalFile.Enums = append(externalFile.Enums, string(enumDescriptors.Get(i).FullName()))
 		}
 		messageDescriptors := fileDescriptor.Messages()
-		for i := 0; i < messageDescriptors.Len(); i++ {
+		for i := range messageDescriptors.Len() {
 			externalFile.Messages = append(externalFile.Messages, string(messageDescriptors.Get(i).FullName()))
 		}
 		serviceDescriptors := fileDescriptor.Services()
-		for i := 0; i < serviceDescriptors.Len(); i++ {
+		for i := range serviceDescriptors.Len() {
 			externalFile.Services = append(externalFile.Services, string(serviceDescriptors.Get(i).FullName()))
 		}
 		sort.Strings(externalFile.Enums)

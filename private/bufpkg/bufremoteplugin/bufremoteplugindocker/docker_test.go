@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -298,10 +299,8 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (d *dockerServer) findImageIDFromName(name string) string {
 	for imageID, builtImageInfo := range d.pushedImages {
-		for _, imageTag := range builtImageInfo.tags {
-			if imageTag == name {
-				return imageID
-			}
+		if slices.Contains(builtImageInfo.tags, name) {
+			return imageID
 		}
 	}
 	return ""

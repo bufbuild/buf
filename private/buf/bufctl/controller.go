@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
 	"sort"
 
 	"buf.build/go/protoyaml"
@@ -1458,10 +1459,8 @@ func validateFileAnnotationErrorFormat(fileAnnotationErrorFormat string) error {
 	if fileAnnotationErrorFormat == "" {
 		return nil
 	}
-	for _, formatString := range bufanalysis.AllFormatStrings {
-		if fileAnnotationErrorFormat == formatString {
-			return nil
-		}
+	if slices.Contains(bufanalysis.AllFormatStrings, fileAnnotationErrorFormat) {
+		return nil
 	}
 	// TODO FUTURE: get standard flag names and bindings into this package.
 	fileAnnotationErrorFormatFlagName := "error-format"

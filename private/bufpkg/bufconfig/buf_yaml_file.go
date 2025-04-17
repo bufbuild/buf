@@ -385,7 +385,7 @@ func readBufYAMLFile(
 	}
 	// Check if this file has the docs link comment from "buf config init" as its first line
 	// so we can preserve the comment in our round trip.
-	includeDocsLink := bytes.HasPrefix(data, []byte(fmt.Sprintf(docsLinkComment, fileVersion.String())))
+	includeDocsLink := bytes.HasPrefix(data, fmt.Appendf(nil, docsLinkComment, fileVersion.String()))
 	switch fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
 		var externalBufYAMLFile externalBufYAMLFileV1Beta1V1
@@ -747,7 +747,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		if bufYAMLFile.IncludeDocsLink() {
 			data = bytes.Join(
 				[][]byte{
-					[]byte(fmt.Sprintf(docsLinkComment, fileVersion.String())),
+					fmt.Appendf(nil, docsLinkComment, fileVersion.String()),
 					data,
 				},
 				[]byte("\n"),
@@ -840,7 +840,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			}
 			externalBufYAMLFile.Lint = externalLint
 			externalBufYAMLFile.Breaking = externalBreaking
-			for i := 0; i < len(externalBufYAMLFile.Modules); i++ {
+			for i := range externalBufYAMLFile.Modules {
 				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV2{}
 				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
 			}
@@ -868,7 +868,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		if bufYAMLFile.IncludeDocsLink() {
 			data = bytes.Join(
 				[][]byte{
-					[]byte(fmt.Sprintf(docsLinkComment, fileVersion.String())),
+					fmt.Appendf(nil, docsLinkComment, fileVersion.String()),
 					data,
 				},
 				[]byte("\n"),

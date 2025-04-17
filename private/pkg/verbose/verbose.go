@@ -39,7 +39,7 @@ type Printer interface {
 	//
 	// Callers should not rely on the print calls being reliable, i.e. errors to
 	// a backing Writer will be ignored.
-	Printf(format string, args ...interface{})
+	Printf(format string, args ...any)
 
 	isPrinter()
 }
@@ -63,7 +63,7 @@ func NewPrinterForFlagValue(writer io.Writer, prefix string, verboseValue bool) 
 
 type nopPrinter struct{}
 
-func (nopPrinter) Printf(string, ...interface{}) {}
+func (nopPrinter) Printf(string, ...any) {}
 
 func (nopPrinter) Enabled() bool {
 	return false
@@ -87,7 +87,7 @@ func newWritePrinter(writer io.Writer, prefix string) *writePrinter {
 	}
 }
 
-func (w *writePrinter) Printf(format string, args ...interface{}) {
+func (w *writePrinter) Printf(format string, args ...any) {
 	if value := strings.TrimSpace(fmt.Sprintf(format, args...)); value != "" {
 		// Errors are ignored per the interface spec.
 		_, _ = w.writer.Write([]byte(w.prefix + value + "\n"))

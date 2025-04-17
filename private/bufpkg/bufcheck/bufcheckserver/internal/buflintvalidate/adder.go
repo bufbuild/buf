@@ -44,7 +44,7 @@ type adder struct {
 	field               bufprotosource.Field
 	fieldPrettyTypeName string
 	basePath            []int32
-	addFunc             func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{})
+	addFunc             func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any)
 }
 
 func (a *adder) cloneWithNewBasePath(basePath ...int32) *adder {
@@ -56,7 +56,7 @@ func (a *adder) cloneWithNewBasePath(basePath ...int32) *adder {
 	}
 }
 
-func (a *adder) addForPathf(path []int32, format string, args ...interface{}) {
+func (a *adder) addForPathf(path []int32, format string, args ...any) {
 	// Copy a.basePath so it won't be modified by append.
 	combinedPath := make([]int32, len(a.basePath), len(a.basePath)+len(path))
 	copy(combinedPath, a.basePath)
@@ -69,7 +69,7 @@ func (a *adder) addForPathf(path []int32, format string, args ...interface{}) {
 	)
 }
 
-func (a *adder) addForPathsf(paths [][]int32, format string, args ...interface{}) {
+func (a *adder) addForPathsf(paths [][]int32, format string, args ...any) {
 	locations := make([]bufprotosource.Location, 0, len(paths))
 	for _, path := range paths {
 		// Copy a.basePath so it won't be modified by append.

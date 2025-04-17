@@ -28,7 +28,7 @@ const disabledFieldNumberInMessageConstraints = 1
 // It also checks all predefined rule extensions on the messages.
 func CheckMessage(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
-	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	message bufprotosource.Message,
 ) error {
 	messageDescriptor, err := message.AsDescriptor()
@@ -60,7 +60,7 @@ func CheckMessage(
 //  2. have a type compatible with the field it validates.
 func CheckField(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
-	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	field bufprotosource.Field,
 	extensionTypeResolver protoencoding.Resolver,
 ) error {
@@ -70,7 +70,7 @@ func CheckField(
 // CheckPredefinedRuleExtension checks that a predefined extension is valid, and any CEL expressions compile.
 func CheckPredefinedRuleExtension(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
-	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	field bufprotosource.Field,
 	extensionResolver protoencoding.Resolver,
 ) error {

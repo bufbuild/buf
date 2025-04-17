@@ -282,11 +282,11 @@ type externalBufGenYAMLFileV1Beta1 struct {
 
 // externalGeneratePluginConfigV1Beta1 represents a single plugin config in a v1beta1 buf.gen.yaml file.
 type externalGeneratePluginConfigV1Beta1 struct {
-	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
-	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
-	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
+	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt      any    `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
+	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
 // externalGenerateManagedConfigV1Beta1 represents the options (for managed mode) config in a v1beta1 buf.gen.yaml file.
@@ -315,7 +315,7 @@ type externalGeneratePluginConfigV1 struct {
 	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
 	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`
 	// Opt can be one string or multiple strings.
-	Opt interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Opt any `json:"opt,omitempty" yaml:"opt,omitempty"`
 	// Path can be one string or multiple strings.
 	Path       any    `json:"path,omitempty" yaml:"path,omitempty"`
 	ProtocPath any    `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
@@ -347,21 +347,21 @@ type externalJavaPackagePrefixConfigV1 struct {
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface. This is done to maintain backward compatibility
 // of accepting a plain string value for java_package_prefix.
-func (e *externalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (e *externalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(any) error) error {
 	return e.unmarshalWith(unmarshal)
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface. This is done to maintain backward compatibility
 // of accepting a plain string value for java_package_prefix.
 func (e *externalJavaPackagePrefixConfigV1) UnmarshalJSON(data []byte) error {
-	unmarshal := func(v interface{}) error {
+	unmarshal := func(v any) error {
 		return json.Unmarshal(data, v)
 	}
 	return e.unmarshalWith(unmarshal)
 }
 
 // unmarshalWith is used to unmarshal into json/yaml. See https://abhinavg.net/posts/flexible-yaml for details.
-func (e *externalJavaPackagePrefixConfigV1) unmarshalWith(unmarshal func(interface{}) error) error {
+func (e *externalJavaPackagePrefixConfigV1) unmarshalWith(unmarshal func(any) error) error {
 	var prefix string
 	if err := unmarshal(&prefix); err == nil {
 		e.Default = prefix
@@ -390,21 +390,21 @@ type externalOptimizeForConfigV1 struct {
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface. This is done to maintain backward compatibility
 // of accepting a plain string value for optimize_for.
-func (e *externalOptimizeForConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (e *externalOptimizeForConfigV1) UnmarshalYAML(unmarshal func(any) error) error {
 	return e.unmarshalWith(unmarshal)
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface. This is done to maintain backward compatibility
 // of accepting a plain string value for optimize_for.
 func (e *externalOptimizeForConfigV1) UnmarshalJSON(data []byte) error {
-	unmarshal := func(v interface{}) error {
+	unmarshal := func(v any) error {
 		return json.Unmarshal(data, v)
 	}
 	return e.unmarshalWith(unmarshal)
 }
 
 // unmarshalWith is used to unmarshal into json/yaml. See https://abhinavg.net/posts/flexible-yaml for details.
-func (e *externalOptimizeForConfigV1) unmarshalWith(unmarshal func(interface{}) error) error {
+func (e *externalOptimizeForConfigV1) unmarshalWith(unmarshal func(any) error) error {
 	var optimizeFor string
 	if err := unmarshal(&optimizeFor); err == nil {
 		e.Default = optimizeFor
@@ -552,7 +552,7 @@ type externalManagedOverrideConfigV2 struct {
 	// Field must not be set if FileOption is set.
 	Field string `json:"field,omitempty" yaml:"field,omitempty"`
 	// Value is required
-	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
+	Value any `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // externalInputConfigV2 is an external input configuration.

@@ -135,7 +135,7 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	password := strings.Repeat("abcdefghijklmnopqrstuvwxyz", size)
 	machines := make([]Machine, 0, size)
 	buffer := bytes.NewBuffer(nil)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		// Write the file manually in single-line format as this is where the failure happens.
 		fmt.Fprintf(buffer, "machine foo%d login bar%d password %s\n", i, i, password)
 		machines = append(
@@ -177,7 +177,7 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 
 	// Modify some of the existing machines.
 	machines = make([]Machine, 0, size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		modifiedPassword := password
 		if i%2 == 0 {
 			modifiedPassword = modifiedPassword + "Z"

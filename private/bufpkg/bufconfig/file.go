@@ -176,14 +176,14 @@ func writeFile[F File](
 	return nil
 }
 
-func getUnmarshalStrict(allowJSON bool) func([]byte, interface{}) error {
+func getUnmarshalStrict(allowJSON bool) func([]byte, any) error {
 	if allowJSON {
 		return encoding.UnmarshalJSONOrYAMLStrict
 	}
 	return encoding.UnmarshalYAMLStrict
 }
 
-func getUnmarshalNonStrict(allowJSON bool) func([]byte, interface{}) error {
+func getUnmarshalNonStrict(allowJSON bool) func([]byte, any) error {
 	if allowJSON {
 		return encoding.UnmarshalJSONOrYAMLNonStrict
 	}

@@ -36,7 +36,7 @@ func newOptionExtensionDescriptor(message proto.Message, optionsPath []int32, lo
 	}
 }
 
-func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool) {
+func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.ExtensionType) (any, bool) {
 	if extensionType.TypeDescriptor().ContainingMessage().FullName() != o.message.ProtoReflect().Descriptor().FullName() {
 		return nil, false
 	}

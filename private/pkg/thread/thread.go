@@ -63,10 +63,7 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 	case 1:
 		return jobs[0](ctx)
 	}
-	multiplier := parallelizeOptions.multiplier
-	if multiplier < 1 {
-		multiplier = 1
-	}
+	multiplier := max(parallelizeOptions.multiplier, 1)
 	var cancel context.CancelFunc
 	if parallelizeOptions.cancelOnFailure {
 		ctx, cancel = context.WithCancel(ctx)

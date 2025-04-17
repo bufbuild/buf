@@ -839,7 +839,7 @@ func newTestFileOptionOverrideRule(
 	path string,
 	moduleFullName string,
 	fileOption bufconfig.FileOption,
-	value interface{},
+	value any,
 ) bufconfig.ManagedOverrideRule {
 	fileOptionOverride, err := bufconfig.NewManagedOverrideRuleForFileOption(
 		path,

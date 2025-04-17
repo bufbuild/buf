@@ -30,7 +30,7 @@ const (
 )
 
 func checkPredefinedRuleExtension(
-	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	extension bufprotosource.Field,
 	extensionResolver protoencoding.Resolver,
 ) error {
@@ -104,7 +104,7 @@ func checkPredefinedRuleExtension(
 		"extension field",
 		"Extension field",
 		"(buf.validate.predefined).cel",
-		func(index int, format string, args ...interface{}) {
+		func(index int, format string, args ...any) {
 			addAnnotationFunc(
 				extension,
 				extension.OptionExtensionLocation(validate.E_Predefined, celFieldNumberPath, int32(index)),

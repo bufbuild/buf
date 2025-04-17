@@ -91,8 +91,8 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					{
 						Name:     "go",
 						Out:      "go/out",
-						Path:     slicesext.Map([]string{"go", "run", "goplugin"}, func(s string) interface{} { return s }),
-						Opt:      slicesext.Map([]string{"a=b", "c"}, func(s string) interface{} { return s }),
+						Path:     slicesext.Map([]string{"go", "run", "goplugin"}, func(s string) any { return s }),
+						Opt:      slicesext.Map([]string{"a=b", "c"}, func(s string) any { return s }),
 						Strategy: "directory",
 					},
 				},
@@ -119,8 +119,8 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					{
 						Plugin:   "go",
 						Out:      "go/out",
-						Path:     slicesext.Map([]string{"go", "run", "goplugin"}, func(s string) interface{} { return s }),
-						Opt:      slicesext.Map([]string{"a=b", "c"}, func(s string) interface{} { return s }),
+						Path:     slicesext.Map([]string{"go", "run", "goplugin"}, func(s string) any { return s }),
+						Opt:      slicesext.Map([]string{"a=b", "c"}, func(s string) any { return s }),
 						Strategy: "directory",
 					},
 				},

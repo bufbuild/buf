@@ -22,7 +22,7 @@ import (
 
 func TestRoundTrip(t *testing.T) {
 	t.Parallel()
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		id, err := New()
 		require.NoError(t, err)
 		dashless := ToDashless(id)

@@ -233,7 +233,7 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	// We already know the paths are unique due to above validation.
 	// We sort to print deterministic errors.
 	sortedNormalizedDirPaths := slicesext.MapKeysToSortedSlice(normalizedDirPathToDirPath)
-	for i := 0; i < len(sortedNormalizedDirPaths); i++ {
+	for i := range sortedNormalizedDirPaths {
 		for j := i + 1; j < len(sortedNormalizedDirPaths); j++ {
 			left := sortedNormalizedDirPaths[i]
 			right := sortedNormalizedDirPaths[j]

@@ -1386,14 +1386,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 					expectedIDs := make([]string, 0, len(allPackageIDs))
 					replacements := deprecations[deprecatedRule]
 					for _, id := range allPackageIDs {
-						var skip bool
-						for _, replacement := range replacements {
-							if id == replacement {
-								skip = true
-								break
-							}
-						}
-						if skip {
+						if slices.Contains(replacements, id) {
 							continue
 						}
 						expectedIDs = append(expectedIDs, id)

@@ -17,6 +17,7 @@ package bufcli
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
@@ -361,10 +362,8 @@ func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName s
 }
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {
-	for _, formatString := range validFormatStrings {
-		if errorFormatString == formatString {
-			return nil
-		}
+	if slices.Contains(validFormatStrings, errorFormatString) {
+		return nil
 	}
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", errorFormatFlagName, errorFormatString)
 }

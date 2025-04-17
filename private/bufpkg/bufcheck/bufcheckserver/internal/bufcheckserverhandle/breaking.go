@@ -1336,8 +1336,8 @@ func handleBreakingFileSamePackage(
 
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
-	previousValue interface{},
-	value interface{},
+	previousValue any,
+	value any,
 	file bufprotosource.File,
 	location bufprotosource.Location,
 	previousLocation bufprotosource.Location,

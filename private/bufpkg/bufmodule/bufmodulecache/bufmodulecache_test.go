@@ -233,7 +233,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	cacheDir := filepath.Join(tempDir, "cache")
 	logger := slogtestext.NewLogger(t)
 
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
 		jobs, err := slicesext.MapError(
 			[]int{0, 1, 2, 3, 4},

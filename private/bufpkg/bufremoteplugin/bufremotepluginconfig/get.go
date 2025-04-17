@@ -82,8 +82,8 @@ func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) 
 
 func getConfigForDataInternal(
 	ctx context.Context,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
+	unmarshalNonStrict func([]byte, any) error,
+	unmarshalStrict func([]byte, any) error,
 	data []byte,
 	id string,
 	options []ConfigOption,
