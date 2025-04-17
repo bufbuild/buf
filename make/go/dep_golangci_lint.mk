@@ -30,6 +30,7 @@ GOLANGCI_LINT_VERSION ?= v2.0.2
 GOLANGCI_LINT := $(CACHE_VERSIONS)/golangci-lint/$(GOLANGCI_LINT_VERSION)
 $(GOLANGCI_LINT):
 	@rm -f $(CACHE_BIN)/golangci-lint
+	@mkdir -p $(CACHE_BIN)
 	$(eval GOLANGCI_LINT_TMP := $(shell mktemp -d))
 	curl -fsSL -o $(GOLANGCI_LINT_TMP)/golangci-lint.tar.gz \
 		https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION)/golangci-lint-$(subst v,,$(GOLANGCI_LINT_VERSION))-$(GOLANGCI_LINT_OS)-$(GOLANGCI_LINT_ARCH).tar.gz
