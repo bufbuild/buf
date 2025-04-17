@@ -23,6 +23,8 @@ const (
 	FileTypeBufGenYAML
 	// FileTypeBufWorkYAML represents buf.work.yaml files.
 	FileTypeBufWorkYAML
+	// FileTypeBufPolicyYAML represents buf.policy.yaml files.
+	FileTypeBufPolicyYAML
 )
 
 var (

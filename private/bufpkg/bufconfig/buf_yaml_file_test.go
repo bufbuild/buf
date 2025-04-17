@@ -480,6 +480,31 @@ modules:
       - proto/foo
 `,
 	)
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+policies:
+  - policy: buf.policy.yaml
+  - policy: buf.build/org/policy2:v1
+    ignore:
+      - foo/bar.proto
+    ignore_only:
+      ENUM_PASCAL_CASE:
+        - foo/foo.proto
+`,
+		// expected output
+		`version: v2
+policies:
+  - policy: buf.policy.yaml
+  - policy: buf.build/org/policy2:v1
+    ignore:
+      - foo/bar.proto
+    ignore_only:
+      ENUM_PASCAL_CASE:
+        - foo/foo.proto
+`,
+	)
 }
 
 func TestBufYAMLFileLintDisabled(t *testing.T) {

@@ -105,6 +105,10 @@ type BufYAMLFile interface {
 	//
 	// For v1 buf.yaml files, this will always return nil.
 	PluginConfigs() []PluginConfig
+	// PolicyConfigs returns the PolicyConfigs for the File.
+	//
+	// For v1 buf.yaml files, this will always return nil.
+	PolicyConfigs() []PolicyConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -126,6 +130,7 @@ func NewBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
 	pluginConfigs []PluginConfig,
+	policyConfigs []PolicyConfig,
 	configuredDepModuleRefs []bufparse.Ref,
 	options ...BufYAMLFileOption,
 ) (BufYAMLFile, error) {
@@ -140,6 +145,7 @@ func NewBufYAMLFile(
 		nil, // Do not set top-level lint config, use only module configs
 		nil, // Do not set top-level breaking config, use only module configs
 		pluginConfigs,
+		policyConfigs,
 		configuredDepModuleRefs,
 		bufYAMLFileOptions.includeDocsLink,
 	)
@@ -254,6 +260,7 @@ type bufYAMLFile struct {
 	topLevelLintConfig      LintConfig
 	topLevelBreakingConfig  BreakingConfig
 	pluginConfigs           []PluginConfig
+	policyConfigs           []PolicyConfig
 	configuredDepModuleRefs []bufparse.Ref
 	includeDocsLink         bool
 }
@@ -265,6 +272,7 @@ func newBufYAMLFile(
 	topLevelLintConfig LintConfig,
 	topLevelBreakingConfig BreakingConfig,
 	pluginConfigs []PluginConfig,
+	policyConfigs []PolicyConfig,
 	configuredDepModuleRefs []bufparse.Ref,
 	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
@@ -320,6 +328,7 @@ func newBufYAMLFile(
 		topLevelLintConfig:      topLevelLintConfig,
 		topLevelBreakingConfig:  topLevelBreakingConfig,
 		pluginConfigs:           pluginConfigs,
+		policyConfigs:           policyConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 		includeDocsLink:         includeDocsLink,
 	}, nil
@@ -351,6 +360,10 @@ func (c *bufYAMLFile) TopLevelBreakingConfig() BreakingConfig {
 
 func (c *bufYAMLFile) PluginConfigs() []PluginConfig {
 	return c.pluginConfigs
+}
+
+func (c *bufYAMLFile) PolicyConfigs() []PolicyConfig {
+	return c.policyConfigs
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufparse.Ref {
@@ -454,6 +467,7 @@ func readBufYAMLFile(
 			},
 			lintConfig,
 			breakingConfig,
+			nil,
 			nil,
 			configuredDepModuleRefs,
 			includeDocsLink,
@@ -651,6 +665,14 @@ func readBufYAMLFile(
 			}
 			pluginConfigs = append(pluginConfigs, pluginConfig)
 		}
+		var policyConfigs []PolicyConfig
+		for _, externalPolicyConfig := range externalBufYAMLFile.Policies {
+			policyConfig, err := newPolicyConfigForExternalV2(externalPolicyConfig)
+			if err != nil {
+				return nil, err
+			}
+			policyConfigs = append(policyConfigs, policyConfig)
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -662,6 +684,7 @@ func readBufYAMLFile(
 			topLevelLintConfig,
 			topLevelBreakingConfig,
 			pluginConfigs,
+			policyConfigs,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -860,6 +883,16 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalPlugins = append(externalPlugins, externalPlugin)
 		}
 		externalBufYAMLFile.Plugins = externalPlugins
+
+		var externalPolicies []externalBufYAMLFilePolicyV2
+		for _, policyConfig := range bufYAMLFile.PolicyConfigs() {
+			externalPolicy, err := newExternalV2ForPolicyConfig(policyConfig)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			externalPolicies = append(externalPolicies, externalPolicy)
+		}
+		externalBufYAMLFile.Policies = externalPolicies
 
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
@@ -1272,6 +1305,7 @@ type externalBufYAMLFileV2 struct {
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Policies []externalBufYAMLFilePolicyV2          `json:"policies,omitempty" yaml:"policies,omitempty"`
 }
 
 // externalBufYAMLFileModuleV2 represents a single module configuration within a v2 buf.yaml file.
@@ -1302,7 +1336,7 @@ type externalBufYAMLFileLintV1Beta1V1 struct {
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// Ignore are the paths to ignore.
 	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
-	/// IgnoreOnly are the ID/category to paths to ignore.
+	// IgnoreOnly are the ID/category to paths to ignore.
 	IgnoreOnly                           map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	EnumZeroValueSuffix                  string              `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
 	RPCAllowSameRequestResponse          bool                `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
@@ -1389,10 +1423,19 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 		!eb.DisableBuiltin
 }
 
-// externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.gyaml file.
+// externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.yaml file.
 type externalBufYAMLFilePluginV2 struct {
 	Plugin  any            `json:"plugin,omitempty" yaml:"plugin,omitempty"`
 	Options map[string]any `json:"options,omitempty" yaml:"options,omitempty"`
+}
+
+// externalBufYAMLFilePolicyV2 represents a single policy config in a v2 buf.yaml file.
+type externalBufYAMLFilePolicyV2 struct {
+	Policy string `json:"policy,omitempty" yaml:"policy,omitempty"`
+	// Ignore are the paths to ignore.
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// IgnoreOnly are the ID/category to paths to ignore.
+	IgnoreOnly map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 }
 
 func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {
