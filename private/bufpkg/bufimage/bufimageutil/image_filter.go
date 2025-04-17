@@ -220,6 +220,11 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, fileOptionsTag), fileDescriptor.Options, b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	isDirty = isDirty || changed
 	newDependencies, newPublicDependencies, newWeakDependencies, changed, err := b.remapDependencies(sourcePathsRemap, sourcePath, fileDescriptor)
 	if err != nil {
 		return nil, false, err
@@ -234,6 +239,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	newFileDescriptor.EnumType = newEnums
 	newFileDescriptor.Service = newServices
 	newFileDescriptor.Extension = newExtensions
+	newFileDescriptor.Options = newOptions
 	newFileDescriptor.Dependency = newDependencies
 	newFileDescriptor.PublicDependency = newPublicDependencies
 	newFileDescriptor.WeakDependency = newWeakDependencies
@@ -367,10 +373,16 @@ func (b *sourcePathsBuilder) remapDescriptor(
 			return nil, false, err
 		}
 		isDirty = isDirty || changed
+		newExtensionRange, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionRangesTag), descriptor.ExtensionRange, b.remapExtensionRange, b.options)
+		if err != nil {
+			return nil, false, err
+		}
+		isDirty = isDirty || changed
 		if isDirty {
 			newDescriptor = maybeClone(descriptor, b.options)
 			newDescriptor.Field = newFields
 			newDescriptor.OneofDecl = newOneofs
+			newDescriptor.ExtensionRange = newExtensionRange
 		}
 	}
 	newExtensions, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, messageExtensionsTag), descriptor.GetExtension(), b.remapField, b.options)
@@ -388,6 +400,11 @@ func (b *sourcePathsBuilder) remapDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, messageOptionsTag), descriptor.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	isDirty = isDirty || changed
 
 	if !isDirty {
 		return descriptor, false, nil
@@ -398,7 +415,25 @@ func (b *sourcePathsBuilder) remapDescriptor(
 	newDescriptor.Extension = newExtensions
 	newDescriptor.NestedType = newDescriptors
 	newDescriptor.EnumType = newEnums
+	newDescriptor.Options = newOptions
 	return newDescriptor, true, nil
+}
+
+func (b *sourcePathsBuilder) remapExtensionRange(
+	sourcePathsRemap *sourcePathsRemapTrie,
+	sourcePath protoreflect.SourcePath,
+	extensionRange *descriptorpb.DescriptorProto_ExtensionRange,
+) (*descriptorpb.DescriptorProto_ExtensionRange, bool, error) {
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, extensionRangeOptionsTag), extensionRange.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return extensionRange, false, nil
+	}
+	newExtensionRange := maybeClone(extensionRange, b.options)
+	newExtensionRange.Options = newOptions
+	return newExtensionRange, true, nil
 }
 
 func (b *sourcePathsBuilder) remapEnum(
@@ -410,7 +445,43 @@ func (b *sourcePathsBuilder) remapEnum(
 		// The type is excluded, enum values cannot be excluded individually.
 		return nil, true, nil
 	}
-	return enum, false, nil
+	var isDirty bool
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, enumOptionsTag), enum.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	isDirty = changed
+
+	// Walk the enum values.
+	newEnumValues, changed, err := remapSlice(sourcePathsRemap, append(sourcePath, enumValuesTag), enum.Value, b.remapEnumValue, b.options)
+	if err != nil {
+		return nil, false, err
+	}
+	isDirty = isDirty || changed
+	if !isDirty {
+		return enum, true, nil
+	}
+	newEnum := maybeClone(enum, b.options)
+	newEnum.Options = newOptions
+	newEnum.Value = newEnumValues
+	return newEnum, true, nil
+}
+
+func (b *sourcePathsBuilder) remapEnumValue(
+	sourcePathsRemap *sourcePathsRemapTrie,
+	sourcePath protoreflect.SourcePath,
+	enumValue *descriptorpb.EnumValueDescriptorProto,
+) (*descriptorpb.EnumValueDescriptorProto, bool, error) {
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, enumValueOptionsTag), enumValue.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return enumValue, false, nil
+	}
+	newEnumValue := maybeClone(enumValue, b.options)
+	newEnumValue.Options = newOptions
+	return newEnumValue, true, nil
 }
 
 func (b *sourcePathsBuilder) remapOneof(
@@ -422,7 +493,16 @@ func (b *sourcePathsBuilder) remapOneof(
 		// Oneofs are implicitly excluded when all of its fields types are excluded.
 		return nil, true, nil
 	}
-	return oneof, false, nil
+	options, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, oneofOptionsTag), oneof.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return oneof, false, nil
+	}
+	newOneof := maybeClone(oneof, b.options)
+	newOneof.Options = options
+	return newOneof, true, nil
 }
 
 func (b *sourcePathsBuilder) remapService(
@@ -440,11 +520,17 @@ func (b *sourcePathsBuilder) remapService(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, serviceOptionsTag), service.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	isDirty = isDirty || changed
 	if !isDirty {
 		return service, false, nil
 	}
 	newService := maybeClone(service, b.options)
 	newService.Method = newMethods
+	newService.Options = newOptions
 	return newService, true, nil
 }
 
@@ -456,7 +542,16 @@ func (b *sourcePathsBuilder) remapMethod(
 	if !b.closure.hasType(method, b.options) {
 		return nil, true, nil
 	}
-	return method, false, nil
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, methodOptionsTag), method.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return method, false, nil
+	}
+	newMethod := maybeClone(method, b.options)
+	newMethod.Options = newOptions
+	return newMethod, true, nil
 }
 
 func (b *sourcePathsBuilder) remapField(
@@ -497,7 +592,73 @@ func (b *sourcePathsBuilder) remapField(
 	default:
 		return nil, false, fmt.Errorf("unknown field type %d", field.GetType())
 	}
-	return field, false, nil
+	newOptions, changed, err := remapMessage(sourcePathsRemap, append(sourcePath, fieldOptionsTag), field.GetOptions(), b.remapOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	if !changed {
+		return field, false, nil
+	}
+	newField := maybeClone(field, b.options)
+	newField.Options = newOptions
+	return newField, true, nil
+}
+
+func (b *sourcePathsBuilder) remapOptions(
+	sourcePathsRemap *sourcePathsRemapTrie,
+	optionsPath protoreflect.SourcePath,
+	optionsMessage proto.Message,
+) (proto.Message, bool, error) {
+	if optionsMessage == nil {
+		return nil, false, nil
+	}
+	var newOptions protoreflect.Message
+	options := optionsMessage.ProtoReflect()
+	numFieldsToKeep := 0
+	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		if !b.closure.hasOption(fd, b.imageIndex, b.options) {
+			// Remove this option.
+			optionPath := append(optionsPath, int32(fd.Number()))
+			sourcePathsRemap.markDeleted(optionPath)
+			if newOptions == nil {
+				newOptions = maybeClone(optionsMessage, b.options).ProtoReflect()
+			}
+			newOptions.Clear(fd)
+			return true
+		}
+		numFieldsToKeep++
+		return true
+	})
+	if numFieldsToKeep == 0 {
+		// No options to keep.
+		sourcePathsRemap.markDeleted(optionsPath)
+		return nil, true, nil
+	}
+	if newOptions == nil {
+		return optionsMessage, false, nil
+	}
+	return newOptions.Interface(), true, nil
+}
+
+func remapMessage[T proto.Message](
+	sourcePathsRemap *sourcePathsRemapTrie,
+	sourcePath protoreflect.SourcePath,
+	message T,
+	remapMessage func(*sourcePathsRemapTrie, protoreflect.SourcePath, proto.Message) (proto.Message, bool, error),
+) (T, bool, error) {
+	var zeroValue T
+	newMessageOpaque, changed, err := remapMessage(sourcePathsRemap, sourcePath, message)
+	if err != nil {
+		return zeroValue, false, err
+	}
+	if newMessageOpaque == nil {
+		return zeroValue, true, nil
+	}
+	if !changed {
+		return message, false, nil
+	}
+	newMessage, _ := newMessageOpaque.(T) // Safe to assert.
+	return newMessage, true, nil
 }
 
 func remapSlice[T any](
