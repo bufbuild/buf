@@ -30,7 +30,7 @@ var (
 
 // PluginKeyProvider provides PluginKeys for bufparse.Refs.
 type PluginKeyProvider interface {
-	// GetPluginKeysForPluginRefs gets the PluginKets for the given PluginRefs.
+	// GetPluginKeysForPluginRefs gets the PluginKeys for the given PluginRefs.
 	//
 	// Returned PluginKeys will be in the same order as the input PluginRefs.
 	//
