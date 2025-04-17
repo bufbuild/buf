@@ -41,14 +41,7 @@ func (r *localRunnerProvider) NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runn
 			plugin.Name(),
 			plugin.Args()...,
 		), nil
-	case isLocal && isWasm:
-		return pluginrpcutil.NewWasmRunner(
-			r.wasmRuntime,
-			plugin.Data,
-			plugin.Name(),
-			plugin.Args()...,
-		), nil
-	case !isLocal && isWasm:
+	case isWasm:
 		return pluginrpcutil.NewWasmRunner(
 			r.wasmRuntime,
 			plugin.Data,

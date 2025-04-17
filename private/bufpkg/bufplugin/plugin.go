@@ -134,7 +134,7 @@ func NewLocalPlugin(
 
 // NewLocalWasmPlugin returns a new Plugin for a local Wasm plugin.
 //
-// The pluginFullName may be nil,
+// The pluginFullName may be nil.
 // The name is the path to the Wasm plugin and must end with .wasm.
 // The args are the arguments to the Wasm plugin. These are passed to the Wasm plugin
 // as command line arguments.
