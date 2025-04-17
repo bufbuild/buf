@@ -94,6 +94,7 @@ const (
 	ResourceType_RESOURCE_TYPE_REPOSITORY                 ResourceType = 4
 	ResourceType_RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR     ResourceType = 5
 	ResourceType_RESOURCE_TYPE_REPOSITORY_COMMIT          ResourceType = 6
+	ResourceType_RESOURCE_TYPE_REPOSITORY_IDP_GROUP       ResourceType = 18
 	ResourceType_RESOURCE_TYPE_POLICY                     ResourceType = 17
 	ResourceType_RESOURCE_TYPE_PLUGIN                     ResourceType = 7
 	ResourceType_RESOURCE_TYPE_PLUGIN_COMMIT              ResourceType = 15
@@ -117,6 +118,7 @@ var (
 		4:  "RESOURCE_TYPE_REPOSITORY",
 		5:  "RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR",
 		6:  "RESOURCE_TYPE_REPOSITORY_COMMIT",
+		18: "RESOURCE_TYPE_REPOSITORY_IDP_GROUP",
 		17: "RESOURCE_TYPE_POLICY",
 		7:  "RESOURCE_TYPE_PLUGIN",
 		15: "RESOURCE_TYPE_PLUGIN_COMMIT",
@@ -137,6 +139,7 @@ var (
 		"RESOURCE_TYPE_REPOSITORY":                 4,
 		"RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR":     5,
 		"RESOURCE_TYPE_REPOSITORY_COMMIT":          6,
+		"RESOURCE_TYPE_REPOSITORY_IDP_GROUP":       18,
 		"RESOURCE_TYPE_POLICY":                     17,
 		"RESOURCE_TYPE_PLUGIN":                     7,
 		"RESOURCE_TYPE_PLUGIN_COMMIT":              15,
@@ -9938,7 +9941,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\tActorType\x12\x1a\n" +
 	"\x16ACTOR_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fACTOR_TYPE_USER\x10\x01\x12\x15\n" +
-	"\x11ACTOR_TYPE_SYSTEM\x10\x02*\xdd\x04\n" +
+	"\x11ACTOR_TYPE_SYSTEM\x10\x02*\x85\x05\n" +
 	"\fResourceType\x12\x1d\n" +
 	"\x19RESOURCE_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12RESOURCE_TYPE_USER\x10\x01\x12\x1e\n" +
@@ -9947,7 +9950,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"$RESOURCE_TYPE_ORGANIZATION_IDP_GROUP\x10\t\x12\x1c\n" +
 	"\x18RESOURCE_TYPE_REPOSITORY\x10\x04\x12(\n" +
 	"$RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR\x10\x05\x12#\n" +
-	"\x1fRESOURCE_TYPE_REPOSITORY_COMMIT\x10\x06\x12\x18\n" +
+	"\x1fRESOURCE_TYPE_REPOSITORY_COMMIT\x10\x06\x12&\n" +
+	"\"RESOURCE_TYPE_REPOSITORY_IDP_GROUP\x10\x12\x12\x18\n" +
 	"\x14RESOURCE_TYPE_POLICY\x10\x11\x12\x18\n" +
 	"\x14RESOURCE_TYPE_PLUGIN\x10\a\x12\x1f\n" +
 	"\x1bRESOURCE_TYPE_PLUGIN_COMMIT\x10\x0f\x12 \n" +
