@@ -1636,8 +1636,8 @@ func handleBreakingMessageSameJSONFormat(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(message.Features().JSONFormatLocation(), message.Location()),
 			withBackupLocation(previousMessage.Features().JSONFormatLocation(), previousMessage.Location()),
-			`Message %q JSON format support changed from %v to %v.`,
 			message.File().Path(),
+			`Message %q JSON format support changed from %v to %v.`,
 			message.Name(),
 			previousJSONFormat,
 			jsonFormat,
