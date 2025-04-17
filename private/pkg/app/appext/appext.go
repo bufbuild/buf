@@ -160,7 +160,7 @@ func BuilderWithLoggerProvider(loggerProvider LoggerProvider) BuilderOption {
 //
 // If the file does not exist, this is a no-op.
 // The value should be a pointer to unmarshal into.
-func ReadConfig(container NameContainer, value interface{}) error {
+func ReadConfig(container NameContainer, value any) error {
 	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
 	data, err := os.ReadFile(configFilePath)
 	if !errors.Is(err, os.ErrNotExist) {
@@ -179,7 +179,7 @@ func ReadConfig(container NameContainer, value interface{}) error {
 //
 // If the file does not exist, this is a no-op.
 // The value should be a pointer to unmarshal into.
-func ReadConfigNonStrict(container NameContainer, value interface{}) error {
+func ReadConfigNonStrict(container NameContainer, value any) error {
 	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
 	data, err := os.ReadFile(configFilePath)
 	if !errors.Is(err, os.ErrNotExist) {
@@ -209,7 +209,7 @@ func ReadSecret(container NameContainer, name string) (string, error) {
 //
 // The directory is created if it does not exist.
 // The value should be a pointer to marshal.
-func WriteConfig(container NameContainer, value interface{}) error {
+func WriteConfig(container NameContainer, value any) error {
 	data, err := encoding.MarshalYAML(value)
 	if err != nil {
 		return err

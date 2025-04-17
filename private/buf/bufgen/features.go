@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -141,9 +141,7 @@ func checkRequiredFeatures(
 			for edition := range required.editionToFilenames {
 				requiredEditions = append(requiredEditions, edition)
 			}
-			sort.Slice(requiredEditions, func(i, j int) bool {
-				return requiredEditions[i] < requiredEditions[j]
-			})
+			slices.Sort(requiredEditions)
 			for _, requiredEdition := range requiredEditions {
 				if int32(requiredEdition) < response.GetMinimumEdition() ||
 					int32(requiredEdition) > response.GetMaximumEdition() {
@@ -154,9 +152,7 @@ func checkRequiredFeatures(
 		}
 
 		if len(failedFeatures) > 0 {
-			sort.Slice(failedFeatures, func(i, j int) bool {
-				return failedFeatures[i] < failedFeatures[j]
-			})
+			slices.Sort(failedFeatures)
 			for _, feature := range failedFeatures {
 				// For CLI versions pre-1.32.0, we logged unsupported features. However, this is an
 				// unsafe behavior for editions. So, in keeping with pre-1.32.0 CLI versions, we
@@ -183,9 +179,7 @@ func checkRequiredFeatures(
 			}
 		}
 		if len(failedEditions) > 0 {
-			sort.Slice(failedEditions, func(i, j int) bool {
-				return failedEditions[i] < failedEditions[j]
-			})
+			slices.Sort(failedEditions)
 			for _, edition := range failedEditions {
 				for _, file := range failed.editionToFilenames[edition] {
 					errs = append(errs, fmt.Errorf("plugin %q does not support edition %q which is required by %q",
@@ -226,12 +220,7 @@ func fileHasProto3Optional(fileDescriptorProto *descriptorpb.FileDescriptorProto
 		// can't have proto3 optional unless syntax is proto3
 		return false
 	}
-	for _, msg := range fileDescriptorProto.MessageType {
-		if messageHasProto3Optional(msg) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(fileDescriptorProto.MessageType, messageHasProto3Optional)
 }
 
 func messageHasProto3Optional(descriptorProto *descriptorpb.DescriptorProto) bool {
@@ -240,12 +229,7 @@ func messageHasProto3Optional(descriptorProto *descriptorpb.DescriptorProto) boo
 			return true
 		}
 	}
-	for _, nested := range descriptorProto.NestedType {
-		if messageHasProto3Optional(nested) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(descriptorProto.NestedType, messageHasProto3Optional)
 }
 
 func fileHasEditions(fileDescriptorProto *descriptorpb.FileDescriptorProto) bool {

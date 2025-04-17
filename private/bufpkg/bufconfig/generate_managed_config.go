@@ -120,7 +120,7 @@ type ManagedOverrideRule interface {
 	// FieldOption returns the field option to disable managed mode for.
 	FieldOption() FieldOption
 	// Value returns the override value.
-	Value() interface{}
+	Value() any
 
 	isManagedOverrideRule()
 }
@@ -130,7 +130,7 @@ func NewManagedOverrideRuleForFileOption(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
-	value interface{},
+	value any,
 ) (ManagedOverrideRule, error) {
 	return newFileOptionManagedOverrideRule(
 		path,
@@ -146,7 +146,7 @@ func NewManagedOverrideRuleForFieldOption(
 	moduleFullName string,
 	fieldName string,
 	fieldOption FieldOption,
-	value interface{},
+	value any,
 ) (ManagedOverrideRule, error) {
 	return newFieldOptionManagedOverrideRule(
 		path,
@@ -572,14 +572,14 @@ type managedOverrideRule struct {
 	fieldName      string
 	fileOption     FileOption
 	fieldOption    FieldOption
-	value          interface{}
+	value          any
 }
 
 func newFileOptionManagedOverrideRule(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
-	value interface{},
+	value any,
 ) (*managedOverrideRule, error) {
 	// All valid file options have a parse func. This lookup implicitly validates the option.
 	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
@@ -616,7 +616,7 @@ func newFieldOptionManagedOverrideRule(
 	moduleFullName string,
 	fieldName string,
 	fieldOption FieldOption,
-	value interface{},
+	value any,
 ) (ManagedOverrideRule, error) {
 	// All valid field options have a parse func. This lookup implicitly validates the option.
 	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
@@ -669,7 +669,7 @@ func (m *managedOverrideRule) FieldOption() FieldOption {
 	return m.fieldOption
 }
 
-func (m *managedOverrideRule) Value() interface{} {
+func (m *managedOverrideRule) Value() any {
 	return m.value
 }
 
@@ -747,7 +747,7 @@ func overrideRulesForPerFileOverridesV1(
 				return nil, fmt.Errorf("invalid import path for override %s: %w", fileOptionString, err)
 			}
 			overrideString := filePathToOverride[filePath]
-			var overrideValue interface{} = overrideString
+			var overrideValue any = overrideString
 			switch fileOption {
 			case FileOptionCcEnableArenas, FileOptionJavaMultipleFiles, FileOptionJavaStringCheckUtf8:
 				overrideValue, err = strconv.ParseBool(overrideString)

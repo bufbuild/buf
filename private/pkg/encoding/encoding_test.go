@@ -25,9 +25,9 @@ func TestInterfaceSliceOrStringToCommaSepString(t *testing.T) {
 	testInterfaceSliceOrStringToCommaSepString(t, "mystring", "mystring")
 	testInterfaceSliceOrStringToCommaSepString(
 		t,
-		[]interface{}{
-			interface{}("mystring"),
-			interface{}("mystring2"),
+		[]any{
+			any("mystring"),
+			any("mystring2"),
 		},
 		"mystring,mystring2",
 	)
@@ -37,7 +37,7 @@ func TestInterfaceSliceOrStringToCommaSepString(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testInterfaceSliceOrStringToCommaSepString(t *testing.T, in interface{}, expected string) {
+func testInterfaceSliceOrStringToCommaSepString(t *testing.T, in any, expected string) {
 	v, err := InterfaceSliceOrStringToCommaSepString(in)
 	require.NoError(t, err)
 	require.Equal(t, expected, v)

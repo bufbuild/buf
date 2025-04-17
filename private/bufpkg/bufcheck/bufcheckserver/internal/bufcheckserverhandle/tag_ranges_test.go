@@ -132,7 +132,7 @@ func doCollapseRanges(t *testing.T, input, expected []simpleTagRange) {
 	assert.Equal(t, expected, collapsed)
 	// Try some random permutations of the inputs and make sure
 	// they resolve in the same way.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		rand.Shuffle(len(input), func(i, j int) {
 			input[i], input[j] = input[j], input[i]
 		})

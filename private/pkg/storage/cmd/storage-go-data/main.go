@@ -150,10 +150,7 @@ var (
 `)
 		data := pathToData[path]
 		for len(data) > 0 {
-			n := sliceLength
-			if n > len(data) {
-				n = len(data)
-			}
+			n := min(sliceLength, len(data))
 			accum := ""
 			for _, elem := range data[:n] {
 				accum += fmt.Sprintf("0x%02x,", elem)

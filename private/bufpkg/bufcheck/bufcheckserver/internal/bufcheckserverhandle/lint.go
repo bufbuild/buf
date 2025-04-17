@@ -945,7 +945,7 @@ func handleLintProtovalidate(
 		location bufprotosource.Location,
 		_ []bufprotosource.Location,
 		format string,
-		args ...interface{},
+		args ...any,
 	) {
 		responseWriter.AddProtosourceAnnotation(
 			location,

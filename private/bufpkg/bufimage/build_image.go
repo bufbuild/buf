@@ -303,7 +303,7 @@ func getImageFilesRec(
 		unusedDependencyIndexes = make([]int32, 0, len(unusedDependencyFilenames))
 	}
 	var err error
-	for i := 0; i < fileDescriptor.Imports().Len(); i++ {
+	for i := range fileDescriptor.Imports().Len() {
 		dependency := fileDescriptor.Imports().Get(i).FileDescriptor
 		if unusedDependencyFilenames != nil {
 			if _, ok := unusedDependencyFilenames[dependency.Path()]; ok {
@@ -533,7 +533,7 @@ func findExtension(d container, message protoreflect.FullName, field protoreflec
 			return extension
 		}
 	}
-	for i := 0; i < d.Messages().Len(); i++ {
+	for i := range d.Messages().Len() {
 		if ext := findExtension(d.Messages().Get(i), message, field); ext != nil {
 			return ext
 		}

@@ -16,6 +16,7 @@ package bufconvert
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -138,10 +139,8 @@ func checkNoMessageSetWireFormat(descriptor protoreflect.MessageDescriptor, imag
 	// any message_set_wire_format option. So we must examine the file descriptor proto
 	// in the image to see if the option is set. If it is, we cannot support this message.
 	name := descriptor.FullName()
-	for _, alreadyChecked := range checked {
-		if name == alreadyChecked {
-			return nil
-		}
+	if slices.Contains(checked, name) {
+		return nil
 	}
 	checked = append(checked, name)
 

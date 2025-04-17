@@ -29,6 +29,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"sort"
 	"strconv"
@@ -71,9 +72,7 @@ func NewEnvContainerForOS() (EnvContainer, error) {
 // Empty values are effectively ignored. To unset a key, set the value to "" in overrides.
 func NewEnvContainerWithOverrides(envContainer EnvContainer, overrides map[string]string) EnvContainer {
 	m := EnvironMap(envContainer)
-	for key, value := range overrides {
-		m[key] = value
-	}
+	maps.Copy(m, overrides)
 	return newEnvContainer(m)
 }
 
@@ -268,7 +267,7 @@ func EnvironMap(envContainer EnvContainer) map[string]string {
 func Args(argList ArgContainer) []string {
 	numArgs := argList.NumArgs()
 	args := make([]string, numArgs)
-	for i := 0; i < numArgs; i++ {
+	for i := range numArgs {
 		args[i] = argList.Arg(i)
 	}
 	return args
@@ -343,7 +342,7 @@ func NewError(exitCode int, message string) error {
 // NewErrorf returns a new error that contains an exit code.
 //
 // The exit code cannot be 0.
-func NewErrorf(exitCode int, format string, args ...interface{}) error {
+func NewErrorf(exitCode int, format string, args ...any) error {
 	return newAppError(exitCode, fmt.Errorf(format, args...))
 }
 

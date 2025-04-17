@@ -36,7 +36,7 @@ func resolveExtension[C proto.Message](
 	num := extType.TypeDescriptor().Number()
 	var message proto.Message
 
-	proto.RangeExtensions(options, func(typ protoreflect.ExtensionType, i interface{}) bool {
+	proto.RangeExtensions(options, func(typ protoreflect.ExtensionType, i any) bool {
 		if num != typ.TypeDescriptor().Number() {
 			return true
 		}

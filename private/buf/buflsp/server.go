@@ -295,7 +295,7 @@ func (s *server) Formatting(
 	// number of lines in the file. This is comparatively cheap, compared to sending the
 	// entire file over a domain socket.
 	var lastLine, lastLineStart int
-	for i := 0; i < len(file.text); i++ {
+	for i := range len(file.text) {
 		// NOTE: we are iterating over bytes, not runes.
 		if file.text[i] == '\n' {
 			lastLine++

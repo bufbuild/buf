@@ -33,7 +33,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 			executed atomic.Int64
 			jobs     = make([]func(context.Context) error, 0, jobsToExecute)
 		)
-		for i := 0; i < jobsToExecute; i++ {
+		for range jobsToExecute {
 			jobs = append(jobs, func(_ context.Context) error {
 				executed.Add(1)
 				return nil
@@ -47,7 +47,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 		t.Parallel()
 		var executed atomic.Int64
 		var jobs []func(context.Context) error
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			jobs = append(jobs, func(_ context.Context) error {
 				executed.Add(1)
 				return nil

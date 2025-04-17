@@ -19,6 +19,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"testing"
 
@@ -520,7 +521,7 @@ func verifyDependencies(t testing.TB, validConfigBytes []byte, fail bool, invali
 	var cloned *ExternalConfig
 	err := yaml.Unmarshal(validConfigBytes, &cloned)
 	require.NoError(t, err)
-	cloned.Deps = append([]ExternalDependency{}, invalidDependencies...)
+	cloned.Deps = slices.Clone(invalidDependencies)
 	yamlBytes, err := yaml.Marshal(cloned)
 	require.NoError(t, err)
 	_, err = GetConfigForData(context.Background(), yamlBytes)

@@ -366,7 +366,7 @@ func getFieldNamesAndValuesForInfo(entity any) ([]string, []string, error) {
 	reflectValue := reflect.ValueOf(entity)
 	var fieldNames []string
 	var fieldValues []string
-	for i := 0; i < numField; i++ {
+	for i := range numField {
 		field := reflectType.Field(i)
 		bufprintTag, ok := field.Tag.Lookup("bufprint")
 		if !ok {
@@ -427,7 +427,7 @@ func (p *entityPage) MarshalJSON() ([]byte, error) {
 	value := reflect.ValueOf(*p)
 	t := value.Type()
 	fields := make([]reflect.StructField, 0)
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		fields = append(fields, t.Field(i))
 		if t.Field(i).Name == "Entities" {
 			fields[i].Tag = reflect.StructTag(fmt.Sprintf(`json:"%s"`, p.pluralEntityName))

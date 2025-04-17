@@ -228,7 +228,7 @@ func TestGetDefault(t *testing.T) {
 		"repeated": {},
 		"map":      {},
 	}
-	for i := 0; i < msg.Fields().Len(); i++ {
+	for i := range msg.Fields().Len() {
 		field := msg.Fields().Get(i)
 		if _, nope := cannotHaveDefault[string(field.Name())]; nope {
 			assert.False(t, canHaveDefault(field))

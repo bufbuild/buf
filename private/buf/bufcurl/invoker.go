@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -130,9 +131,7 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 	}
 
 	req := connect.NewRequest(msg)
-	for k, v := range headers {
-		req.Header()[k] = v
-	}
+	maps.Copy(req.Header(), headers)
 	resp, err := inv.client.CallUnary(ctx, req)
 	if err != nil {
 		var connErr *connect.Error
@@ -149,9 +148,7 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 	provider := newStreamMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	stream := inv.client.CallClientStream(ctx)
-	for k, v := range headers {
-		stream.RequestHeader()[k] = v
-	}
+	maps.Copy(stream.RequestHeader(), headers)
 	defer func() {
 		if retErr != nil {
 			var connErr *connect.Error
@@ -191,9 +188,7 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 	}
 
 	req := connect.NewRequest(msg)
-	for k, v := range headers {
-		req.Header()[k] = v
-	}
+	maps.Copy(req.Header(), headers)
 	defer func() {
 		if retErr != nil {
 			var connErr *connect.Error
@@ -215,9 +210,7 @@ func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, dat
 	provider := newStreamMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	stream := inv.client.CallBidiStream(ctx)
-	for k, v := range headers {
-		stream.RequestHeader()[k] = v
-	}
+	maps.Copy(stream.RequestHeader(), headers)
 
 	defer func() {
 		if retErr != nil {

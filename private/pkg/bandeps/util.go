@@ -15,6 +15,7 @@
 package bandeps
 
 import (
+	"maps"
 	"sort"
 	"strings"
 )
@@ -52,16 +53,14 @@ func getNonEmptyLines(s string) []string {
 	return lines
 }
 
-func addMaps(base map[string]struct{}, maps ...map[string]struct{}) {
-	for _, m := range maps {
-		for k, v := range m {
-			base[k] = v
-		}
+func addMaps(base map[string]struct{}, toAdd ...map[string]struct{}) {
+	for _, m := range toAdd {
+		maps.Copy(base, m)
 	}
 }
 
-func subtractMaps(base map[string]struct{}, maps ...map[string]struct{}) {
-	for _, m := range maps {
+func subtractMaps(base map[string]struct{}, toSubtract ...map[string]struct{}) {
+	for _, m := range toSubtract {
 		for k := range m {
 			delete(base, k)
 		}

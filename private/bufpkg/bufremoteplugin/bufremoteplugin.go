@@ -16,6 +16,7 @@ package bufremoteplugin
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -116,9 +117,7 @@ func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.Plu
 		}
 		return nil, fmt.Errorf("invalid plugin output language: %q\nsupported languages: %s", language, strings.Join(supportedLanguages, ", "))
 	}
-	sort.Slice(protoLanguages, func(i, j int) bool {
-		return protoLanguages[i] < protoLanguages[j]
-	})
+	slices.Sort(protoLanguages)
 	return protoLanguages, nil
 }
 

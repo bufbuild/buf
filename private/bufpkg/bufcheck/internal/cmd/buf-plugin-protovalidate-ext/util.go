@@ -96,7 +96,7 @@ func forEachMessage(
 	againstMessages protoreflect.MessageDescriptors,
 	f func(message, againstMessage protoreflect.MessageDescriptor) error,
 ) error {
-	for i := 0; i < againstMessages.Len(); i++ {
+	for i := range againstMessages.Len() {
 		againstMessage := againstMessages.Get(i)
 		if message := messages.ByName(againstMessage.Name()); message != nil {
 			if err := f(message, againstMessage); err != nil {
@@ -115,7 +115,7 @@ func forEachField(
 	againstFields protoreflect.FieldDescriptors,
 	f func(field, againstField protoreflect.FieldDescriptor) error,
 ) error {
-	for i := 0; i < againstFields.Len(); i++ {
+	for i := range againstFields.Len() {
 		againstField := againstFields.Get(i)
 		if field := fields.ByName(againstField.Name()); field != nil {
 			if err := f(field, againstField); err != nil {
