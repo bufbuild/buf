@@ -28,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
@@ -40,14 +42,16 @@ import (
 
 type client struct {
 	logger                          *slog.Logger
-	runnerProvider                  RunnerProvider
 	stderr                          io.Writer
 	fileVersionToDefaultCheckClient map[bufconfig.FileVersion]check.Client
+	runnerProvider                  RunnerProvider
+	pluginReadFile                  func(string) ([]byte, error)
+	pluginKeyProvider               bufplugin.PluginKeyProvider
+	pluginDataProvider              bufplugin.PluginDataProvider
 }
 
 func newClient(
 	logger *slog.Logger,
-	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (*client, error) {
 	clientOptions := newClientOptions()
@@ -69,14 +73,17 @@ func newClient(
 	}
 
 	return &client{
-		logger:         logger,
-		runnerProvider: runnerProvider,
-		stderr:         clientOptions.stderr,
+		logger: logger,
+		stderr: clientOptions.stderr,
 		fileVersionToDefaultCheckClient: map[bufconfig.FileVersion]check.Client{
 			bufconfig.FileVersionV1Beta1: v1beta1DefaultCheckClient,
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
 			bufconfig.FileVersionV2:      v2DefaultCheckClient,
 		},
+		runnerProvider:     clientOptions.runnerProvider,
+		pluginReadFile:     clientOptions.pluginReadFile,
+		pluginKeyProvider:  clientOptions.pluginKeyProvider,
+		pluginDataProvider: clientOptions.pluginDataProvider,
 	}, nil
 }
 
@@ -123,6 +130,7 @@ func (c *client) Lint(
 		return err
 	}
 	multiClient, err := c.getMultiClient(
+		ctx,
 		lintConfig.FileVersion(),
 		lintOptions.pluginConfigs,
 		lintConfig.DisableBuiltin(),
@@ -194,6 +202,7 @@ func (c *client) Breaking(
 		return err
 	}
 	multiClient, err := c.getMultiClient(
+		ctx,
 		breakingConfig.FileVersion(),
 		breakingOptions.pluginConfigs,
 		breakingConfig.DisableBuiltin(),
@@ -281,7 +290,7 @@ func (c *client) allRulesAndCategories(
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
-	multiClient, err := c.getMultiClient(fileVersion, pluginConfigs, disableBuiltin, option.EmptyOptions)
+	multiClient, err := c.getMultiClient(ctx, fileVersion, pluginConfigs, disableBuiltin, option.EmptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -289,6 +298,7 @@ func (c *client) allRulesAndCategories(
 }
 
 func (c *client) getMultiClient(
+	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
 	disableBuiltin bool,
@@ -306,12 +316,19 @@ func (c *client) getMultiClient(
 			newCheckClientSpec("", defaultCheckClient, defaultOptions),
 		)
 	}
-	for _, pluginConfig := range pluginConfigs {
+	plugins, err := c.getPlugins(ctx, pluginConfigs)
+	if err != nil {
+		return nil, err
+	}
+	for index, pluginConfig := range pluginConfigs {
 		options, err := option.NewOptions(pluginConfig.Options())
 		if err != nil {
 			return nil, fmt.Errorf("could not parse options for plugin %q: %w", pluginConfig.Name(), err)
 		}
-		runner, err := c.runnerProvider.NewRunner(pluginConfig)
+		if c.runnerProvider == nil {
+			return nil, fmt.Errorf("must set a RunnerProvider to use plugins")
+		}
+		runner, err := c.runnerProvider.NewRunner(plugins[index])
 		if err != nil {
 			return nil, fmt.Errorf("could not create runner for plugin %q: %w", pluginConfig.Name(), err)
 		}
@@ -334,6 +351,89 @@ func (c *client) getMultiClient(
 		)
 	}
 	return newMultiClient(c.logger, checkClientSpecs), nil
+}
+
+func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig) ([]bufplugin.Plugin, error) {
+	plugins := make([]bufplugin.Plugin, len(pluginConfigs))
+
+	var indexedPluginRefs []slicesext.Indexed[bufparse.Ref]
+	for index, pluginConfig := range pluginConfigs {
+		switch pluginConfig.Type() {
+		case bufconfig.PluginConfigTypeLocal:
+			plugin, err := bufplugin.NewLocalPlugin(
+				pluginConfig.Name(),
+				pluginConfig.Args(),
+			)
+			if err != nil {
+				return nil, fmt.Errorf("could not create local Plugin %q: %w", pluginConfig.Name(), err)
+			}
+			plugins[index] = plugin
+		case bufconfig.PluginConfigTypeLocalWasm:
+			if c.pluginReadFile == nil {
+				// Local Wasm plugins are not supported without a pluginReadFile.
+				return nil, fmt.Errorf("unable to read local Wasm Plugin %q", pluginConfig.Name())
+			}
+			var pluginFullName bufparse.FullName
+			if ref := pluginConfig.Ref(); ref != nil {
+				pluginFullName = ref.FullName()
+			}
+			plugin, err := bufplugin.NewLocalWasmPlugin(
+				pluginFullName,
+				pluginConfig.Name(),
+				pluginConfig.Args(),
+				func() ([]byte, error) {
+					return c.pluginReadFile(pluginConfig.Name())
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			plugins[index] = plugin
+		case bufconfig.PluginConfigTypeRemoteWasm:
+			pluginRef := pluginConfig.Ref()
+			if pluginRef == nil {
+				return nil, syserror.Newf("missing Ref for remote PluginConfig %q", pluginConfig.Name())
+			}
+			indexedPluginRefs = append(indexedPluginRefs, slicesext.Indexed[bufparse.Ref]{
+				Value: pluginRef,
+				Index: index,
+			})
+		default:
+			return nil, fmt.Errorf("unknown PluginConfig type %q", pluginConfig.Type())
+		}
+	}
+	// Load the remote plugin data for each plugin ref.
+	if len(indexedPluginRefs) > 0 {
+		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
+		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
+		if err != nil {
+			return nil, err
+		}
+		pluginDatas, err := c.pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)
+		if err != nil {
+			return nil, err
+		}
+		if len(pluginDatas) != len(pluginRefs) {
+			return nil, syserror.Newf("expected %d PluginData, got %d", len(pluginRefs), len(pluginDatas))
+		}
+		for dataIndex, indexedPluginRef := range indexedPluginRefs {
+			pluginData := pluginDatas[dataIndex]
+			pluginRef := indexedPluginRef.Value
+			index := indexedPluginRef.Index
+			pluginConfig := pluginConfigs[index]
+			plugin, err := bufplugin.NewRemoteWasmPlugin(
+				pluginRef.FullName(),
+				pluginConfig.Args(),
+				pluginData.PluginKey().CommitID(),
+				pluginData.Data,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("could not create remote Plugin %q: %w", pluginRef.String(), err)
+			}
+			plugins[index] = plugin
+		}
+	}
+	return plugins, nil
 }
 
 func annotationsToFilteredFileAnnotationSetOrError(
@@ -521,11 +621,18 @@ func newAllCategoriesOptions() *allCategoriesOptions {
 }
 
 type clientOptions struct {
-	stderr io.Writer
+	stderr             io.Writer
+	runnerProvider     RunnerProvider
+	pluginReadFile     func(name string) ([]byte, error)
+	pluginKeyProvider  bufplugin.PluginKeyProvider
+	pluginDataProvider bufplugin.PluginDataProvider
 }
 
 func newClientOptions() *clientOptions {
-	return &clientOptions{}
+	return &clientOptions{
+		pluginKeyProvider:  bufplugin.NopPluginKeyProvider,
+		pluginDataProvider: bufplugin.NopPluginDataProvider,
+	}
 }
 
 type excludeImportsOption struct{}

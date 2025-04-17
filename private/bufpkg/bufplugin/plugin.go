@@ -111,10 +111,66 @@ type Plugin interface {
 	isPlugin()
 }
 
+// NewLocalPlugin returns a new Plugin for a local plugin.
+//
+// The name is the path to the executable binary.
+// The args are the arguments to invoke the Plugin. These are passed to the Plugin
+// as command line arguments.
+func NewLocalPlugin(
+	name string,
+	args []string,
+) (Plugin, error) {
+	return newPlugin(
+		"", // description
+		nil,
+		name,
+		args,
+		uuid.Nil, // commitID
+		false,    // isWasm
+		true,     // isLocal
+		nil,      // getData
+	)
+}
+
 // NewLocalWasmPlugin returns a new Plugin for a local Wasm plugin.
+//
+// The pluginFullName may be nil.
+// The name is the path to the Wasm plugin and must end with .wasm.
+// The args are the arguments to the Wasm plugin. These are passed to the Wasm plugin
+// as command line arguments.
+// The getData function is called to get the bytes of the Wasm plugin.
+// This is the raw bytes of the Wasm module in an uncompressed form.
 func NewLocalWasmPlugin(
 	pluginFullName bufparse.FullName,
+	name string,
 	args []string,
+	getData func() ([]byte, error),
+) (Plugin, error) {
+	return newPlugin(
+		"", // description
+		pluginFullName,
+		name,
+		args,
+		uuid.Nil, // commitID
+		true,     // isWasm
+		true,     // isLocal
+		getData,
+	)
+}
+
+// NewRemoteWasmPlugin returns a new Plugin for a remote Wasm plugin.
+//
+// The pluginFullName is the remote reference to the plugin.
+// The args are the arguments to the remote plugin. These are passed to the remote plugin
+// as command line arguments.
+// The commitID is the BSR ID of the Commit.
+// It is up to the caller to convert this to a dashless ID when necessary.
+// The getData function is called to get the bytes of the Wasm plugin.
+// This is the raw bytes of the Wasm module in an uncompressed form.
+func NewRemoteWasmPlugin(
+	pluginFullName bufparse.FullName,
+	args []string,
+	commitID uuid.UUID,
 	getData func() ([]byte, error),
 ) (Plugin, error) {
 	return newPlugin(
@@ -122,9 +178,9 @@ func NewLocalWasmPlugin(
 		pluginFullName,
 		pluginFullName.String(),
 		args,
-		uuid.Nil, // commitID
-		true,     // isWasm
-		true,     // isLocal
+		commitID,
+		true,  // isWasm
+		false, // isLocal
 		getData,
 	)
 }
@@ -164,7 +220,7 @@ func newPlugin(
 		return nil, syserror.New("pluginFullName not present when constructing a remote Plugin")
 	}
 	if !isLocal && !isWasm {
-		return nil, syserror.New("non-Wasm remote Plugins are not supported")
+		return nil, syserror.New("remote non-Wasm Plugins are not supported")
 	}
 	if isLocal && commitID != uuid.Nil {
 		return nil, syserror.New("commitID present when constructing a local Plugin")

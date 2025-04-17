@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -176,55 +177,41 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOp
 
 // RunnerProvider provides pluginrpc.Runners for a given plugin config.
 type RunnerProvider interface {
-	NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
+	NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
 }
 
 // RunnerProviderFunc is a function that implements RunnerProvider.
-type RunnerProviderFunc func(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error)
+type RunnerProviderFunc func(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
 //
 // RunnerProvider selects the correct Runner based on the type of pluginConfig.
-func (r RunnerProviderFunc) NewRunner(pluginConfig bufconfig.PluginConfig) (pluginrpc.Runner, error) {
-	return r(pluginConfig)
+func (r RunnerProviderFunc) NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error) {
+	return r(plugin)
 }
 
-// NewLocalRunnerProvider returns a new RunnerProvider for the wasm.Runtime and
-// the given plugin providers.
+// NewLocalRunnerProvider returns a new RunnerProvider to invoke plugins locally.
 //
 // This implementation should only be used for local applications. It is safe to
 // use concurrently.
 //
-// The RunnerProvider selects the correct Runner based on the PluginConfigType.
-// The supported types are:
-//   - bufconfig.PluginConfigTypeLocal
-//   - bufconfig.PluginConfigTypeLocalWasm
-//   - bufconfig.PluginConfigTypeRemoteWasm
+// The RunnerProvider selects the correct Runner based on the Plugin:
+//   - Local plugins will be run with pluginrpcutil.NewLocalRunner.
+//   - Local Wasm plugins will be run with pluginrpcutil.NewWasmRunner.
+//   - Remote Wasm plugins will be run with pluginrpcutil.NewWasmRunner.
 //
-// If the PluginConfigType is not supported, an error is returned.
+// If the plugin type is not supported, an error is returned.
 // To disable support for Wasm plugins, set wasmRuntime to wasm.UnimplementedRuntime.
-// To disable support for bufconfig.PluginConfigTypeRemoteWasm Plugins, set
-// pluginKeyProvider and pluginDataProvider to bufplugin.NopPluginKeyProvider
-// and bufplugin.NopPluginDataProvider.
-func NewLocalRunnerProvider(
-	wasmRuntime wasm.Runtime,
-	pluginKeyProvider bufplugin.PluginKeyProvider,
-	pluginDataProvider bufplugin.PluginDataProvider,
-) RunnerProvider {
-	return newRunnerProvider(
-		wasmRuntime,
-		pluginKeyProvider,
-		pluginDataProvider,
-	)
+func NewLocalRunnerProvider(wasmRuntime wasm.Runtime) RunnerProvider {
+	return newLocalRunnerProvider(wasmRuntime)
 }
 
 // NewClient returns a new Client.
 func NewClient(
 	logger *slog.Logger,
-	runnerProvider RunnerProvider,
 	options ...ClientOption,
 ) (Client, error) {
-	return newClient(logger, runnerProvider, options...)
+	return newClient(logger, options...)
 }
 
 // ClientOption is an option for a new Client.
@@ -236,6 +223,47 @@ type ClientOption func(*clientOptions)
 func ClientWithStderr(stderr io.Writer) ClientOption {
 	return func(clientOptions *clientOptions) {
 		clientOptions.stderr = stderr
+	}
+}
+
+// ClientWithRunnerProvider returns a new ClientOption that specifies a RunnerProvider.
+//
+// The runnerProvider is used to create pluginrpc.Runners for the plugins.
+// By default, only builtin plugins are used.
+func ClientWithRunnerProvider(runnerProvider RunnerProvider) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.runnerProvider = runnerProvider
+	}
+}
+
+// ClientWithLocalWasmPlugins returns a new ClientOption that specifies reading Wasm plugins.
+//
+// The readBucket is used to read the Wasm plugin data from the filesystem.
+func ClientWithLocalWasmPlugins(readFile func(string) ([]byte, error)) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.pluginReadFile = readFile
+	}
+}
+
+// ClientWithLocalWasmPluginsFromOS returns a new ClientOption that specifies reading Wasm plugins
+// from the OS.
+//
+// This is only used for local applications.
+func ClientWithLocalWasmPluginsFromOS() ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.pluginReadFile = pluginrpcutil.ReadWasmFileFromOS
+	}
+}
+
+// ClientWithRemoteWasmPlugins returns a new ClientOption that specifies the remote plugin key
+// and data providers.
+func ClientWithRemoteWasmPlugins(
+	pluginKeyProvider bufplugin.PluginKeyProvider,
+	pluginDataProvider bufplugin.PluginDataProvider,
+) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.pluginKeyProvider = pluginKeyProvider
+		clientOptions.pluginDataProvider = pluginDataProvider
 	}
 }
 
