@@ -27,7 +27,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -1039,9 +1039,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		sort.Slice(serviceNames, func(i, j int) bool {
-			return serviceNames[i] < serviceNames[j]
-		})
+		slices.Sort(serviceNames)
 		for _, serviceName := range serviceNames {
 			if f.ListServices {
 				if _, err := fmt.Fprintf(container.Stdout(), "%s\n", serviceName); err != nil {
@@ -1055,12 +1053,10 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 				methods := serviceDescriptor.Methods()
 				length := methods.Len()
 				methodNames := make([]protoreflect.Name, length)
-				for i := 0; i < length; i++ {
+				for i := range length {
 					methodNames[i] = methods.Get(i).Name()
 				}
-				sort.Slice(methodNames, func(i, j int) bool {
-					return methodNames[i] < methodNames[j]
-				})
+				slices.Sort(methodNames)
 				for _, methodName := range methodNames {
 					if _, err := fmt.Fprintf(container.Stdout(), "%s/%s\n", serviceName, methodName); err != nil {
 						return err

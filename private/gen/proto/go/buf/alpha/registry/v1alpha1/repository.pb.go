@@ -3550,6 +3550,407 @@ func (b0 GetRepositoryDependencyDOTStringResponse_builder) Build() *GetRepositor
 	return m0
 }
 
+type AddRepositoryGroupRequest struct {
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId   string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
+	xxx_hidden_GroupName      string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3"`
+	xxx_hidden_RepositoryRole RepositoryRole         `protobuf:"varint,3,opt,name=repository_role,json=repositoryRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *AddRepositoryGroupRequest) Reset() {
+	*x = AddRepositoryGroupRequest{}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddRepositoryGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddRepositoryGroupRequest) ProtoMessage() {}
+
+func (x *AddRepositoryGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *AddRepositoryGroupRequest) GetRepositoryId() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryId
+	}
+	return ""
+}
+
+func (x *AddRepositoryGroupRequest) GetGroupName() string {
+	if x != nil {
+		return x.xxx_hidden_GroupName
+	}
+	return ""
+}
+
+func (x *AddRepositoryGroupRequest) GetRepositoryRole() RepositoryRole {
+	if x != nil {
+		return x.xxx_hidden_RepositoryRole
+	}
+	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
+}
+
+func (x *AddRepositoryGroupRequest) SetRepositoryId(v string) {
+	x.xxx_hidden_RepositoryId = v
+}
+
+func (x *AddRepositoryGroupRequest) SetGroupName(v string) {
+	x.xxx_hidden_GroupName = v
+}
+
+func (x *AddRepositoryGroupRequest) SetRepositoryRole(v RepositoryRole) {
+	x.xxx_hidden_RepositoryRole = v
+}
+
+type AddRepositoryGroupRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository for which to add the group.
+	RepositoryId string
+	// The name of the group to add.
+	GroupName string
+	// The role to associate with any user who is added to the repository via this group.
+	RepositoryRole RepositoryRole
+}
+
+func (b0 AddRepositoryGroupRequest_builder) Build() *AddRepositoryGroupRequest {
+	m0 := &AddRepositoryGroupRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_GroupName = b.GroupName
+	x.xxx_hidden_RepositoryRole = b.RepositoryRole
+	return m0
+}
+
+type AddRepositoryGroupResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddRepositoryGroupResponse) Reset() {
+	*x = AddRepositoryGroupResponse{}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddRepositoryGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddRepositoryGroupResponse) ProtoMessage() {}
+
+func (x *AddRepositoryGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type AddRepositoryGroupResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 AddRepositoryGroupResponse_builder) Build() *AddRepositoryGroupResponse {
+	m0 := &AddRepositoryGroupResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type UpdateRepositoryGroupRequest struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
+	xxx_hidden_GroupName    string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3"`
+	xxx_hidden_RoleOverride RepositoryRole         `protobuf:"varint,3,opt,name=role_override,json=roleOverride,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole,oneof"`
+	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
+	XXX_presence            [1]uint32
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *UpdateRepositoryGroupRequest) Reset() {
+	*x = UpdateRepositoryGroupRequest{}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRepositoryGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRepositoryGroupRequest) ProtoMessage() {}
+
+func (x *UpdateRepositoryGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateRepositoryGroupRequest) GetRepositoryId() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryId
+	}
+	return ""
+}
+
+func (x *UpdateRepositoryGroupRequest) GetGroupName() string {
+	if x != nil {
+		return x.xxx_hidden_GroupName
+	}
+	return ""
+}
+
+func (x *UpdateRepositoryGroupRequest) GetRoleOverride() RepositoryRole {
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
+			return x.xxx_hidden_RoleOverride
+		}
+	}
+	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
+}
+
+func (x *UpdateRepositoryGroupRequest) SetRepositoryId(v string) {
+	x.xxx_hidden_RepositoryId = v
+}
+
+func (x *UpdateRepositoryGroupRequest) SetGroupName(v string) {
+	x.xxx_hidden_GroupName = v
+}
+
+func (x *UpdateRepositoryGroupRequest) SetRoleOverride(v RepositoryRole) {
+	x.xxx_hidden_RoleOverride = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+}
+
+func (x *UpdateRepositoryGroupRequest) HasRoleOverride() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+}
+
+func (x *UpdateRepositoryGroupRequest) ClearRoleOverride() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_RoleOverride = RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
+}
+
+type UpdateRepositoryGroupRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository to which this group belongs.
+	RepositoryId string
+	// The name of the group to update.
+	GroupName string
+	// The role to associate with this repository group.
+	//
+	// Setting this to 'UNSPECIFIED' will remove the override. Leaving this unset will not update this
+	// property.
+	RoleOverride *RepositoryRole
+}
+
+func (b0 UpdateRepositoryGroupRequest_builder) Build() *UpdateRepositoryGroupRequest {
+	m0 := &UpdateRepositoryGroupRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_GroupName = b.GroupName
+	if b.RoleOverride != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_RoleOverride = *b.RoleOverride
+	}
+	return m0
+}
+
+type UpdateRepositoryGroupResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateRepositoryGroupResponse) Reset() {
+	*x = UpdateRepositoryGroupResponse{}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRepositoryGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRepositoryGroupResponse) ProtoMessage() {}
+
+func (x *UpdateRepositoryGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type UpdateRepositoryGroupResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 UpdateRepositoryGroupResponse_builder) Build() *UpdateRepositoryGroupResponse {
+	m0 := &UpdateRepositoryGroupResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type RemoveRepositoryGroupRequest struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
+	xxx_hidden_GroupName    string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *RemoveRepositoryGroupRequest) Reset() {
+	*x = RemoveRepositoryGroupRequest{}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveRepositoryGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveRepositoryGroupRequest) ProtoMessage() {}
+
+func (x *RemoveRepositoryGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RemoveRepositoryGroupRequest) GetRepositoryId() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryId
+	}
+	return ""
+}
+
+func (x *RemoveRepositoryGroupRequest) GetGroupName() string {
+	if x != nil {
+		return x.xxx_hidden_GroupName
+	}
+	return ""
+}
+
+func (x *RemoveRepositoryGroupRequest) SetRepositoryId(v string) {
+	x.xxx_hidden_RepositoryId = v
+}
+
+func (x *RemoveRepositoryGroupRequest) SetGroupName(v string) {
+	x.xxx_hidden_GroupName = v
+}
+
+type RemoveRepositoryGroupRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the repository for which to remove the group.
+	RepositoryId string
+	// The name of the group to remove.
+	GroupName string
+}
+
+func (b0 RemoveRepositoryGroupRequest_builder) Build() *RemoveRepositoryGroupRequest {
+	m0 := &RemoveRepositoryGroupRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_GroupName = b.GroupName
+	return m0
+}
+
+type RemoveRepositoryGroupResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveRepositoryGroupResponse) Reset() {
+	*x = RemoveRepositoryGroupResponse{}
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveRepositoryGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveRepositoryGroupResponse) ProtoMessage() {}
+
+func (x *RemoveRepositoryGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type RemoveRepositoryGroupResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 RemoveRepositoryGroupResponse_builder) Build() *RemoveRepositoryGroupResponse {
+	m0 := &RemoveRepositoryGroupResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
 var File_buf_alpha_registry_v1alpha1_repository_proto protoreflect.FileDescriptor
 
 const file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc = "" +
@@ -3730,12 +4131,30 @@ const file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc = "" +
 	"\treference\x18\x03 \x01(\tR\treference\"I\n" +
 	"(GetRepositoryDependencyDOTStringResponse\x12\x1d\n" +
 	"\n" +
-	"dot_string\x18\x01 \x01(\tR\tdotString*W\n" +
+	"dot_string\x18\x01 \x01(\tR\tdotString\"\xb5\x01\n" +
+	"\x19AddRepositoryGroupRequest\x12#\n" +
+	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12\x1d\n" +
+	"\n" +
+	"group_name\x18\x02 \x01(\tR\tgroupName\x12T\n" +
+	"\x0frepository_role\x18\x03 \x01(\x0e2+.buf.alpha.registry.v1alpha1.RepositoryRoleR\x0erepositoryRole\"\x1c\n" +
+	"\x1aAddRepositoryGroupResponse\"\xcb\x01\n" +
+	"\x1cUpdateRepositoryGroupRequest\x12#\n" +
+	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12\x1d\n" +
+	"\n" +
+	"group_name\x18\x02 \x01(\tR\tgroupName\x12U\n" +
+	"\rrole_override\x18\x03 \x01(\x0e2+.buf.alpha.registry.v1alpha1.RepositoryRoleH\x00R\froleOverride\x88\x01\x01B\x10\n" +
+	"\x0e_role_override\"\x1f\n" +
+	"\x1dUpdateRepositoryGroupResponse\"b\n" +
+	"\x1cRemoveRepositoryGroupRequest\x12#\n" +
+	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12\x1d\n" +
+	"\n" +
+	"group_name\x18\x02 \x01(\tR\tgroupName\"\x1f\n" +
+	"\x1dRemoveRepositoryGroupResponse*W\n" +
 	"\n" +
 	"Visibility\x12\x1a\n" +
 	"\x16VISIBILITY_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11VISIBILITY_PUBLIC\x10\x01\x12\x16\n" +
-	"\x12VISIBILITY_PRIVATE\x10\x022\xc5\x17\n" +
+	"\x12VISIBILITY_PRIVATE\x10\x022\xfe\x1a\n" +
 	"\x11RepositoryService\x12{\n" +
 	"\rGetRepository\x121.buf.alpha.registry.v1alpha1.GetRepositoryRequest\x1a2.buf.alpha.registry.v1alpha1.GetRepositoryResponse\"\x03\x90\x02\x01\x12\x99\x01\n" +
 	"\x17GetRepositoryByFullName\x12;.buf.alpha.registry.v1alpha1.GetRepositoryByFullNameRequest\x1a<.buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse\"\x03\x90\x02\x01\x12\x84\x01\n" +
@@ -3755,11 +4174,14 @@ const file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc = "" +
 	"\x15GetRepositorySettings\x129.buf.alpha.registry.v1alpha1.GetRepositorySettingsRequest\x1a:.buf.alpha.registry.v1alpha1.GetRepositorySettingsResponse\"\x03\x90\x02\x01\x12\xa9\x01\n" +
 	"\x1eUpdateRepositorySettingsByName\x12B.buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest\x1aC.buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameResponse\x12\x99\x01\n" +
 	"\x17GetRepositoriesMetadata\x12;.buf.alpha.registry.v1alpha1.GetRepositoriesMetadataRequest\x1a<.buf.alpha.registry.v1alpha1.GetRepositoriesMetadataResponse\"\x03\x90\x02\x01\x12\xb4\x01\n" +
-	" GetRepositoryDependencyDOTString\x12D.buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringRequest\x1aE.buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringResponse\"\x03\x90\x02\x01B\x9c\x02\n" +
+	" GetRepositoryDependencyDOTString\x12D.buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringRequest\x1aE.buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringResponse\"\x03\x90\x02\x01\x12\x8a\x01\n" +
+	"\x12AddRepositoryGroup\x126.buf.alpha.registry.v1alpha1.AddRepositoryGroupRequest\x1a7.buf.alpha.registry.v1alpha1.AddRepositoryGroupResponse\"\x03\x90\x02\x02\x12\x93\x01\n" +
+	"\x15UpdateRepositoryGroup\x129.buf.alpha.registry.v1alpha1.UpdateRepositoryGroupRequest\x1a:.buf.alpha.registry.v1alpha1.UpdateRepositoryGroupResponse\"\x03\x90\x02\x02\x12\x93\x01\n" +
+	"\x15RemoveRepositoryGroup\x129.buf.alpha.registry.v1alpha1.RemoveRepositoryGroupRequest\x1a:.buf.alpha.registry.v1alpha1.RemoveRepositoryGroupResponse\"\x03\x90\x02\x02B\x9c\x02\n" +
 	"\x1fcom.buf.alpha.registry.v1alpha1B\x0fRepositoryProtoP\x01ZYgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1\xa2\x02\x03BAR\xaa\x02\x1bBuf.Alpha.Registry.V1alpha1\xca\x02\x1bBuf\\Alpha\\Registry\\V1alpha1\xe2\x02'Buf\\Alpha\\Registry\\V1alpha1\\GPBMetadata\xea\x02\x1eBuf::Alpha::Registry::V1alpha1b\x06proto3"
 
 var file_buf_alpha_registry_v1alpha1_repository_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_buf_alpha_registry_v1alpha1_repository_proto_goTypes = []any{
 	(Visibility)(0),                                  // 0: buf.alpha.registry.v1alpha1.Visibility
 	(*Repository)(nil),                               // 1: buf.alpha.registry.v1alpha1.Repository
@@ -3804,20 +4226,26 @@ var file_buf_alpha_registry_v1alpha1_repository_proto_goTypes = []any{
 	(*GetRepositoriesMetadataResponse)(nil),          // 40: buf.alpha.registry.v1alpha1.GetRepositoriesMetadataResponse
 	(*GetRepositoryDependencyDOTStringRequest)(nil),  // 41: buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringRequest
 	(*GetRepositoryDependencyDOTStringResponse)(nil), // 42: buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringResponse
-	(*timestamppb.Timestamp)(nil),                    // 43: google.protobuf.Timestamp
-	(*User)(nil),                                     // 44: buf.alpha.registry.v1alpha1.User
-	(RepositoryRole)(0),                              // 45: buf.alpha.registry.v1alpha1.RepositoryRole
-	(VerificationStatus)(0),                          // 46: buf.alpha.registry.v1alpha1.VerificationStatus
+	(*AddRepositoryGroupRequest)(nil),                // 43: buf.alpha.registry.v1alpha1.AddRepositoryGroupRequest
+	(*AddRepositoryGroupResponse)(nil),               // 44: buf.alpha.registry.v1alpha1.AddRepositoryGroupResponse
+	(*UpdateRepositoryGroupRequest)(nil),             // 45: buf.alpha.registry.v1alpha1.UpdateRepositoryGroupRequest
+	(*UpdateRepositoryGroupResponse)(nil),            // 46: buf.alpha.registry.v1alpha1.UpdateRepositoryGroupResponse
+	(*RemoveRepositoryGroupRequest)(nil),             // 47: buf.alpha.registry.v1alpha1.RemoveRepositoryGroupRequest
+	(*RemoveRepositoryGroupResponse)(nil),            // 48: buf.alpha.registry.v1alpha1.RemoveRepositoryGroupResponse
+	(*timestamppb.Timestamp)(nil),                    // 49: google.protobuf.Timestamp
+	(*User)(nil),                                     // 50: buf.alpha.registry.v1alpha1.User
+	(RepositoryRole)(0),                              // 51: buf.alpha.registry.v1alpha1.RepositoryRole
+	(VerificationStatus)(0),                          // 52: buf.alpha.registry.v1alpha1.VerificationStatus
 }
 var file_buf_alpha_registry_v1alpha1_repository_proto_depIdxs = []int32{
-	43, // 0: buf.alpha.registry.v1alpha1.Repository.create_time:type_name -> google.protobuf.Timestamp
-	43, // 1: buf.alpha.registry.v1alpha1.Repository.update_time:type_name -> google.protobuf.Timestamp
+	49, // 0: buf.alpha.registry.v1alpha1.Repository.create_time:type_name -> google.protobuf.Timestamp
+	49, // 1: buf.alpha.registry.v1alpha1.Repository.update_time:type_name -> google.protobuf.Timestamp
 	0,  // 2: buf.alpha.registry.v1alpha1.Repository.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	44, // 3: buf.alpha.registry.v1alpha1.RepositoryContributor.user:type_name -> buf.alpha.registry.v1alpha1.User
-	45, // 4: buf.alpha.registry.v1alpha1.RepositoryContributor.explicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	45, // 5: buf.alpha.registry.v1alpha1.RepositoryContributor.implicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	46, // 6: buf.alpha.registry.v1alpha1.RepositoryMetadata.owner_verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
-	43, // 7: buf.alpha.registry.v1alpha1.RepositoryMetadata.latest_commit_time:type_name -> google.protobuf.Timestamp
+	50, // 3: buf.alpha.registry.v1alpha1.RepositoryContributor.user:type_name -> buf.alpha.registry.v1alpha1.User
+	51, // 4: buf.alpha.registry.v1alpha1.RepositoryContributor.explicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	51, // 5: buf.alpha.registry.v1alpha1.RepositoryContributor.implicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	52, // 6: buf.alpha.registry.v1alpha1.RepositoryMetadata.owner_verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
+	49, // 7: buf.alpha.registry.v1alpha1.RepositoryMetadata.latest_commit_time:type_name -> google.protobuf.Timestamp
 	1,  // 8: buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
 	1,  // 9: buf.alpha.registry.v1alpha1.GetRepositoryResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
 	2,  // 10: buf.alpha.registry.v1alpha1.GetRepositoryResponse.counts:type_name -> buf.alpha.registry.v1alpha1.RepositoryCounts
@@ -3831,54 +4259,62 @@ var file_buf_alpha_registry_v1alpha1_repository_proto_depIdxs = []int32{
 	1,  // 18: buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
 	1,  // 19: buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
 	1,  // 20: buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
-	45, // 21: buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest.repository_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	51, // 21: buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest.repository_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
 	3,  // 22: buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse.users:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
 	3,  // 23: buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse.user:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
 	0,  // 24: buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
 	4,  // 25: buf.alpha.registry.v1alpha1.GetRepositoriesMetadataResponse.metadata:type_name -> buf.alpha.registry.v1alpha1.RepositoryMetadata
-	7,  // 26: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryRequest
-	9,  // 27: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameRequest
-	11, // 28: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesRequest
-	13, // 29: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:input_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesRequest
-	15, // 30: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessRequest
-	17, // 31: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesRequest
-	19, // 32: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameRequest
-	21, // 33: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryRequest
-	23, // 34: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameRequest
-	25, // 35: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameRequest
-	27, // 36: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameRequest
-	5,  // 37: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameRequest
-	29, // 38: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest
-	31, // 39: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:input_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsRequest
-	33, // 40: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorRequest
-	35, // 41: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:input_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsRequest
-	37, // 42: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:input_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest
-	39, // 43: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata:input_type -> buf.alpha.registry.v1alpha1.GetRepositoriesMetadataRequest
-	41, // 44: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringRequest
-	8,  // 45: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryResponse
-	10, // 46: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse
-	12, // 47: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesResponse
-	14, // 48: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:output_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesResponse
-	16, // 49: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessResponse
-	18, // 50: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesResponse
-	20, // 51: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse
-	22, // 52: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryResponse
-	24, // 53: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameResponse
-	26, // 54: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse
-	28, // 55: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse
-	6,  // 56: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse
-	30, // 57: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorResponse
-	32, // 58: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:output_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse
-	34, // 59: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse
-	36, // 60: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:output_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsResponse
-	38, // 61: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:output_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameResponse
-	40, // 62: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata:output_type -> buf.alpha.registry.v1alpha1.GetRepositoriesMetadataResponse
-	42, // 63: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringResponse
-	45, // [45:64] is the sub-list for method output_type
-	26, // [26:45] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	51, // 26: buf.alpha.registry.v1alpha1.AddRepositoryGroupRequest.repository_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	51, // 27: buf.alpha.registry.v1alpha1.UpdateRepositoryGroupRequest.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	7,  // 28: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryRequest
+	9,  // 29: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameRequest
+	11, // 30: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesRequest
+	13, // 31: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:input_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesRequest
+	15, // 32: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessRequest
+	17, // 33: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesRequest
+	19, // 34: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameRequest
+	21, // 35: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryRequest
+	23, // 36: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameRequest
+	25, // 37: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameRequest
+	27, // 38: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameRequest
+	5,  // 39: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameRequest
+	29, // 40: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest
+	31, // 41: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:input_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsRequest
+	33, // 42: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorRequest
+	35, // 43: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:input_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsRequest
+	37, // 44: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:input_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest
+	39, // 45: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata:input_type -> buf.alpha.registry.v1alpha1.GetRepositoriesMetadataRequest
+	41, // 46: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringRequest
+	43, // 47: buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup:input_type -> buf.alpha.registry.v1alpha1.AddRepositoryGroupRequest
+	45, // 48: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup:input_type -> buf.alpha.registry.v1alpha1.UpdateRepositoryGroupRequest
+	47, // 49: buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup:input_type -> buf.alpha.registry.v1alpha1.RemoveRepositoryGroupRequest
+	8,  // 50: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryResponse
+	10, // 51: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse
+	12, // 52: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesResponse
+	14, // 53: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:output_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesResponse
+	16, // 54: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessResponse
+	18, // 55: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesResponse
+	20, // 56: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse
+	22, // 57: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryResponse
+	24, // 58: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameResponse
+	26, // 59: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse
+	28, // 60: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse
+	6,  // 61: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse
+	30, // 62: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorResponse
+	32, // 63: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:output_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse
+	34, // 64: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse
+	36, // 65: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:output_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsResponse
+	38, // 66: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:output_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameResponse
+	40, // 67: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata:output_type -> buf.alpha.registry.v1alpha1.GetRepositoriesMetadataResponse
+	42, // 68: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryDependencyDOTStringResponse
+	44, // 69: buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup:output_type -> buf.alpha.registry.v1alpha1.AddRepositoryGroupResponse
+	46, // 70: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup:output_type -> buf.alpha.registry.v1alpha1.UpdateRepositoryGroupResponse
+	48, // 71: buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup:output_type -> buf.alpha.registry.v1alpha1.RemoveRepositoryGroupResponse
+	50, // [50:72] is the sub-list for method output_type
+	28, // [28:50] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_repository_proto_init() }
@@ -3894,13 +4330,14 @@ func file_buf_alpha_registry_v1alpha1_repository_proto_init() {
 		(*repository_OrganizationId)(nil),
 	}
 	file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[36].OneofWrappers = []any{}
+	file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[44].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc), len(file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   42,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

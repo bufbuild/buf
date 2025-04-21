@@ -15,6 +15,6 @@
 package bufprint
 
 type paginationWrapper struct {
-	NextPage string      `json:"next_page,omitempty"`
-	Results  interface{} `json:"results"`
+	NextPage string `json:"next_page,omitempty"`
+	Results  any    `json:"results"`
 }

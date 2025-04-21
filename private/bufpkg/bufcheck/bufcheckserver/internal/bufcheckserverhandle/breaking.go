@@ -1336,8 +1336,8 @@ func handleBreakingFileSamePackage(
 
 func checkFileSameValue(
 	responseWriter bufcheckserverutil.ResponseWriter,
-	previousValue interface{},
-	value interface{},
+	previousValue any,
+	value any,
 	file bufprotosource.File,
 	location bufprotosource.Location,
 	previousLocation bufprotosource.Location,
@@ -1636,8 +1636,8 @@ func handleBreakingMessageSameJSONFormat(
 		responseWriter.AddProtosourceAnnotation(
 			withBackupLocation(message.Features().JSONFormatLocation(), message.Location()),
 			withBackupLocation(previousMessage.Features().JSONFormatLocation(), previousMessage.Location()),
-			`Message %q JSON format support changed from %v to %v.`,
 			message.File().Path(),
+			`Message %q JSON format support changed from %v to %v.`,
 			message.Name(),
 			previousJSONFormat,
 			jsonFormat,

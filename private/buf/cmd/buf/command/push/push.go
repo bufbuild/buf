@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -401,15 +402,11 @@ func validateLabelFlagCombinations(flags *flags) error {
 }
 
 func validateLabelFlagValues(flags *flags) error {
-	for _, label := range flags.Labels {
-		if label == "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
-		}
+	if slices.Contains(flags.Labels, "") {
+		return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
 	}
-	for _, tag := range flags.Tags {
-		if tag == "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", tagFlagName)
-		}
+	if slices.Contains(flags.Tags, "") {
+		return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", tagFlagName)
 	}
 	return nil
 }

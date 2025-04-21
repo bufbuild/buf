@@ -29,7 +29,7 @@ import (
 // UnmarshalJSONStrict unmarshals the data as JSON, returning a user error on failure.
 //
 // If the data length is 0, this is a no-op.
-func UnmarshalJSONStrict(data []byte, v interface{}) error {
+func UnmarshalJSONStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -44,7 +44,7 @@ func UnmarshalJSONStrict(data []byte, v interface{}) error {
 // UnmarshalYAMLStrict unmarshals the data as YAML, returning a user error on failure.
 //
 // If the data length is 0, this is a no-op.
-func UnmarshalYAMLStrict(data []byte, v interface{}) error {
+func UnmarshalYAMLStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -59,7 +59,7 @@ func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 // a user error with both errors on failure.
 //
 // If the data length is 0, this is a no-op.
-func UnmarshalJSONOrYAMLStrict(data []byte, v interface{}) error {
+func UnmarshalJSONOrYAMLStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -74,7 +74,7 @@ func UnmarshalJSONOrYAMLStrict(data []byte, v interface{}) error {
 // UnmarshalJSONNonStrict unmarshals the data as JSON, returning a user error on failure.
 //
 // If the data length is 0, this is a no-op.
-func UnmarshalJSONNonStrict(data []byte, v interface{}) error {
+func UnmarshalJSONNonStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -88,7 +88,7 @@ func UnmarshalJSONNonStrict(data []byte, v interface{}) error {
 // UnmarshalYAMLNonStrict unmarshals the data as YAML, returning a user error on failure.
 //
 // If the data length is 0, this is a no-op.
-func UnmarshalYAMLNonStrict(data []byte, v interface{}) error {
+func UnmarshalYAMLNonStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -103,7 +103,7 @@ func UnmarshalYAMLNonStrict(data []byte, v interface{}) error {
 // a user error with both errors on failure.
 //
 // If the data length is 0, this is a no-op.
-func UnmarshalJSONOrYAMLNonStrict(data []byte, v interface{}) error {
+func UnmarshalJSONOrYAMLNonStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -131,7 +131,7 @@ func GetJSONStringOrStringValue(rawMessage json.RawMessage) string {
 }
 
 // MarshalYAML marshals the given value into YAML.
-func MarshalYAML(v interface{}) (_ []byte, retErr error) {
+func MarshalYAML(v any) (_ []byte, retErr error) {
 	buffer := bytes.NewBuffer(nil)
 	yamlEncoder := NewYAMLEncoder(buffer)
 	defer func() {
@@ -167,7 +167,7 @@ func NewYAMLDecoderNonStrict(reader io.Reader) *yaml.Decoder {
 // slice or string into a comma separated string. This is commonly
 // used with JSON or YAML fields that need to support both string slices
 // and string literals.
-func InterfaceSliceOrStringToCommaSepString(in interface{}) (string, error) {
+func InterfaceSliceOrStringToCommaSepString(in any) (string, error) {
 	values, err := InterfaceSliceOrStringToStringSlice(in)
 	if err != nil {
 		return "", err
@@ -175,7 +175,7 @@ func InterfaceSliceOrStringToCommaSepString(in interface{}) (string, error) {
 	return strings.Join(values, ","), nil
 }
 
-func InterfaceSliceOrStringToStringSlice(in interface{}) ([]string, error) {
+func InterfaceSliceOrStringToStringSlice(in any) ([]string, error) {
 	if in == nil {
 		return nil, nil
 	}

@@ -35,7 +35,7 @@ const (
 )
 
 func checkCELForMessage(
-	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	messageConstraints *validate.MessageConstraints,
 	messageDescriptor protoreflect.MessageDescriptor,
 	message bufprotosource.Message,
@@ -59,7 +59,7 @@ func checkCELForMessage(
 		fmt.Sprintf("message %q", message.Name()),
 		fmt.Sprintf("Message %q", message.Name()),
 		"(buf.validate.message).cel",
-		func(index int, format string, args ...interface{}) {
+		func(index int, format string, args ...any) {
 			messageConstraintsOptionLocation := message.OptionExtensionLocation(
 				validate.E_Message,
 				celFieldNumberInMessageConstraints,
@@ -102,7 +102,7 @@ func checkCELForField(
 		fmt.Sprintf("field %q", adder.fieldName()),
 		fmt.Sprintf("Field %q", adder.fieldName()),
 		adder.getFieldRuleName(celFieldNumberInFieldConstraints),
-		func(index int, format string, args ...interface{}) {
+		func(index int, format string, args ...any) {
 			adder.addForPathf(
 				[]int32{celFieldNumberInFieldConstraints, int32(index)},
 				format,
@@ -120,7 +120,7 @@ func checkCEL(
 	parentName string,
 	parentNameCapitalized string,
 	celName string,
-	add func(int, string, ...interface{}),
+	add func(int, string, ...any),
 ) bool {
 	allCelExpressionsCompile := true
 	idToConstraintIndices := make(map[string][]int, len(celConstraints))

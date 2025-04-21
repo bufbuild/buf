@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -152,6 +153,7 @@ func upload(
 		var err error
 		plugin, err = bufplugin.NewLocalWasmPlugin(
 			pluginFullName,
+			flags.Binary,
 			nil, // args
 			func() ([]byte, error) {
 				wasmBinary, err := os.ReadFile(flags.Binary)
@@ -242,10 +244,8 @@ func validateTypeFlags(flags *flags) error {
 }
 
 func validateLabelFlagValues(flags *flags) error {
-	for _, label := range flags.Labels {
-		if label == "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
-		}
+	if slices.Contains(flags.Labels, "") {
+		return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
 	}
 	return nil
 }

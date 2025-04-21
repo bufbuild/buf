@@ -34,7 +34,7 @@ import (
 
 func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 	var imageFiles []bufimage.ImageFile
-	for i := 0; i < 3000; i++ {
+	for i := range 3000 {
 		imageFiles = append(
 			imageFiles,
 			NewImageFile(
@@ -67,7 +67,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 
 func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 	var imageFiles []bufimage.ImageFile
-	for i := 0; i < 3000; i++ {
+	for i := range 3000 {
 		imageFiles = append(
 			imageFiles,
 			NewImageFile(

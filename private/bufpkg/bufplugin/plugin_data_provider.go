@@ -24,7 +24,7 @@ var (
 	NopPluginDataProvider PluginDataProvider = nopPluginDataProvider{}
 )
 
-// PluginDataProvider provides PluginsDatas.
+// PluginDataProvider provides PluginDatas.
 type PluginDataProvider interface {
 	// GetPluginDatasForPluginKeys gets the PluginDatas for the PluginKeys.
 	//

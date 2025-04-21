@@ -1475,7 +1475,7 @@ func RunTestSuite(
 			writtenBytes atomic.Int64
 			triedBytes   atomic.Int64
 		)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()

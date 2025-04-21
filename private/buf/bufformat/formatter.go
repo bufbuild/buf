@@ -500,7 +500,7 @@ func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 //	(custom.thing)
 //	(custom.thing).bridge.(another.thing)
 func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
-	for i := 0; i < len(optionNameNode.Parts); i++ {
+	for i := range optionNameNode.Parts {
 		if f.inCompactOptions && i == 0 {
 			// The leading comments of the first token (either open rune or the
 			// name) will have already been written, so we need to handle this
@@ -748,7 +748,7 @@ func arrayLiteralHasNestedMessageOrArray(arrayLiteralNode *ast.ArrayLiteralNode)
 //	foo: 1
 //	foo: 2
 func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageLiteralNode) {
-	for i := 0; i < len(messageLiteralNode.Elements); i++ {
+	for i := range messageLiteralNode.Elements {
 		// Separators ("," or ";") are optional. To avoid inconsistent formatted output,
 		// we suppress them, since they aren't needed. So we just write the element and
 		// ignore any optional separator in the AST.
@@ -1140,7 +1140,7 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) {
 func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNode) {
 	f.writeStart(extensionRangeNode.Keyword)
 	f.Space()
-	for i := 0; i < len(extensionRangeNode.Ranges); i++ {
+	for i := range extensionRangeNode.Ranges {
 		if i > 0 {
 			// The length of this slice must be exactly len(Ranges)-1.
 			f.writeInline(extensionRangeNode.Commas[i-1])
@@ -1179,7 +1179,7 @@ func (f *formatter) writeReserved(reservedNode *ast.ReservedNode) {
 		}
 	}
 	f.Space()
-	for i := 0; i < len(elements); i++ {
+	for i := range elements {
 		if i > 0 {
 			// The length of this slice must be exactly len({Names,Ranges})-1.
 			f.writeInline(reservedNode.Commas[i-1])
@@ -1327,7 +1327,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 	var elementWriterFunc func()
 	if len(arrayLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {
-			for i := 0; i < len(arrayLiteralNode.Elements); i++ {
+			for i := range arrayLiteralNode.Elements {
 				lastElement := i == len(arrayLiteralNode.Elements)-1
 				if compositeNode, ok := arrayLiteralNode.Elements[i].(ast.CompositeNode); ok {
 					f.writeCompositeValueForArrayLiteral(compositeNode, lastElement)
@@ -1491,7 +1491,7 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 	if compoundIdentNode.LeadingDot != nil {
 		f.writeInline(compoundIdentNode.LeadingDot)
 	}
-	for i := 0; i < len(compoundIdentNode.Components); i++ {
+	for i := range compoundIdentNode.Components {
 		if i > 0 {
 			// The length of this slice must be exactly len(Components)-1.
 			f.writeInline(compoundIdentNode.Dots[i-1])
@@ -1513,7 +1513,7 @@ func (f *formatter) writeCompoundIdentForFieldName(compoundIdentNode *ast.Compou
 	if compoundIdentNode.LeadingDot != nil {
 		f.writeStart(compoundIdentNode.LeadingDot)
 	}
-	for i := 0; i < len(compoundIdentNode.Components); i++ {
+	for i := range compoundIdentNode.Components {
 		if i == 0 && compoundIdentNode.LeadingDot == nil {
 			f.writeStart(compoundIdentNode.Components[i])
 			continue
@@ -2055,7 +2055,7 @@ func (f *formatter) writeMultilineComments(comments ast.Comments) {
 
 func (f *formatter) writeMultilineCommentsMaybeCompact(comments ast.Comments, forceCompact bool) {
 	compact := forceCompact || isOpenBrace(f.previousNode)
-	for i := 0; i < comments.Len(); i++ {
+	for i := range comments.Len() {
 		comment := comments.Index(i)
 		if !compact && newlineCount(comment.LeadingWhitespace()) > 1 {
 			// Newlines between blocks of comments should be preserved.
@@ -2096,7 +2096,7 @@ func (f *formatter) writeMultilineCommentsMaybeCompact(comments ast.Comments, fo
 //	  optional string label = 20000;
 //	}
 func (f *formatter) writeInlineComments(comments ast.Comments) {
-	for i := 0; i < comments.Len(); i++ {
+	for i := range comments.Len() {
 		if i > 0 || comments.Index(i).LeadingWhitespace() != "" || f.lastWritten == ';' || f.lastWritten == '}' {
 			f.Space()
 		}
@@ -2132,7 +2132,7 @@ func (f *formatter) writeInlineComments(comments ast.Comments) {
 //	// This comment is attached to the '}'
 //	// So is this one.
 func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
-	for i := 0; i < comments.Len(); i++ {
+	for i := range comments.Len() {
 		comment := comments.Index(i)
 		if i > 0 || comment.LeadingWhitespace() != "" {
 			f.Space()
@@ -2303,7 +2303,7 @@ func computeIndent(s string) (int, bool) {
 func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
 	info := f.nodeInfo(n)
 	comments := info.LeadingComments()
-	for i := 0; i < comments.Len(); i++ {
+	for i := range comments.Len() {
 		if newlineCount(comments.Index(i).LeadingWhitespace()) > 1 {
 			return true
 		}

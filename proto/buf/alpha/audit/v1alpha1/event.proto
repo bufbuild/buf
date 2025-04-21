@@ -49,6 +49,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_REPOSITORY_IDP_GROUP = 18;
   RESOURCE_TYPE_POLICY = 17;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
@@ -90,9 +91,13 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED = 63;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
+  EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED = 60;
+  EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED = 61;
+  EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED = 62;
   EVENT_TYPE_POLICY_CREATED = 54;
   EVENT_TYPE_POLICY_DELETED = 55;
   EVENT_TYPE_POLICY_DEPRECATED = 56;
@@ -176,9 +181,13 @@ message Event {
     PayloadRepositoryCommitPushed repository_commit_pushed = 14;
     PayloadRepositoryContributorAdded repository_contributor_added = 15;
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
+    PayloadRepositoryContributorRolesChanged repository_contributor_roles_changed = 69;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadRepositoryIDPGroupAdded repository_idp_group_added = 66;
+    PayloadRepositoryIDPGroupUpdated repository_idp_group_updated = 67;
+    PayloadRepositoryIDPGroupRemoved repository_idp_group_removed = 68;
     PayloadPolicyCreated policy_created = 60;
     PayloadPolicyDeleted policy_deleted = 61;
     PayloadPolicyDeprecated policy_deprecated = 62;
@@ -241,6 +250,7 @@ message PayloadOrganizationMemberAdded {
 }
 
 message PayloadOrganizationMemberRoleChanged {
+  // Deprecated, use PayloadOrganizationMemberRolesChanged instead.
   option deprecated = true;
 
   // organization_id is the id of the organization within which the role was changed.
@@ -390,6 +400,9 @@ message PayloadRepositoryContributorAdded {
 }
 
 message PayloadRepositoryContributorRoleChanged {
+  // Deprecated, use PayloadRepositoryContributorRolesChanged instead.
+  option deprecated = true;
+
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
@@ -402,6 +415,27 @@ message PayloadRepositoryContributorRoleChanged {
   buf.alpha.registry.v1alpha1.RepositoryRole old_role = 5;
   // new_role is the new role of the contributor whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole new_role = 6;
+}
+
+message PayloadRepositoryContributorRolesChanged {
+  message RepositoryRole {
+    // role is the role of the member.
+    buf.alpha.registry.v1alpha1.RepositoryRole role = 1;
+    // source is the source of the role granted to the member.
+    buf.alpha.registry.v1alpha1.RepositoryRoleSource source = 2;
+  }
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // repository_id is the id of the repository within which the role was changed.
+  string repository_id = 3;
+  // repository_name is the name of the repository within which the role was changed.
+  string repository_name = 4;
+  // old_roles are the old roles of the contributor.
+  repeated RepositoryRole old_roles = 5;
+  // new_roles are the new roles of the contributor.
+  repeated RepositoryRole new_roles = 6;
 }
 
 message PayloadRepositoryContributorRemoved {
@@ -453,6 +487,37 @@ message PayloadRepositoryDefaultBranchChanged {
   string old_default_branch = 3;
   // new_default_branch is the new default branch of the repository.
   string new_default_branch = 4;
+}
+
+message PayloadRepositoryIDPGroupAdded {
+  // repository_id is the id of the repository with the new IDP group.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the new IDP group.
+  string repository_name = 2;
+  // role_override is the role override associated with the new IDP group.
+  buf.alpha.registry.v1alpha1.RepositoryRole role_override = 3;
+}
+
+message PayloadRepositoryIDPGroupUpdated {
+  // repository_id is the id of the repository with the updated IDP group.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the updated IDP group.
+  string repository_name = 2;
+  // old_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.RepositoryRole old_role_override = 3;
+  // new_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.RepositoryRole new_role_override = 4;
+}
+
+message PayloadRepositoryIDPGroupRemoved {
+  // repository_id is the id of the repository with the removed IDP group.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the removed IDP group.
+  string repository_name = 2;
+  // role_override is the role override associated with the removed IDP group.
+  buf.alpha.registry.v1alpha1.RepositoryRole role_override = 3;
 }
 
 message PayloadPolicyCreated {

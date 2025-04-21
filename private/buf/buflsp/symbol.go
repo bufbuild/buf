@@ -565,7 +565,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	allComments := []ast.Comments{info.LeadingComments(), info.TrailingComments()}
 	var printed bool
 	for _, comments := range allComments {
-		for i := 0; i < comments.Len(); i++ {
+		for i := range comments.Len() {
 			// The compiler does not currently provide comments without their
 			// delimited removed, so we have to do this ourselves.
 			comment := commentToMarkdown(comments.Index(i).RawText())
@@ -644,7 +644,7 @@ func newWalker(file *file) *symbolWalker {
 	}
 
 	// NOTE: Don't use range here, that produces runes, not bytes.
-	for i := 0; i < len(file.text); i++ {
+	for i := range len(file.text) {
 		if file.text[i] == '\n' {
 			walker.lineSum = append(walker.lineSum, i+1)
 		}

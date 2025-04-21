@@ -287,10 +287,7 @@ const Version = "`)
 `)
 		data := pathToData[path]
 		for len(data) > 0 {
-			n := bytesPerLine
-			if n > len(data) {
-				n = len(data)
-			}
+			n := min(bytesPerLine, len(data))
 			var accum strings.Builder
 			for _, elem := range data[:n] {
 				_, _ = fmt.Fprintf(&accum, "0x%02x,", elem)

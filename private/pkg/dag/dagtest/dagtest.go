@@ -92,11 +92,6 @@ func normalizeKeys[Key cmp.Ordered](keys []Key) []Key {
 		return []Key{}
 	}
 	keys = slices.Clone(keys)
-	sort.Slice(
-		keys,
-		func(i int, j int) bool {
-			return keys[i] < keys[j]
-		},
-	)
+	slices.Sort(keys)
 	return keys
 }

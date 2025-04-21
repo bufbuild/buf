@@ -30,7 +30,7 @@ func TestManifest(t *testing.T) {
 	t.Parallel()
 	var digests []Digest
 	var fileNodes []FileNode
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		digest, err := NewDigestForContent(strings.NewReader(fmt.Sprintf("content%d", i)))
 		require.NoError(t, err)
 		digests = append(digests, digest)
@@ -48,7 +48,7 @@ func TestManifest(t *testing.T) {
 		},
 	)
 	manifestFileNodes := manifest.FileNodes()
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		digest := manifest.GetDigest(fmt.Sprintf("%d", i))
 		require.NotNil(t, digest)
 		assert.Equal(t, digests[i], digest)

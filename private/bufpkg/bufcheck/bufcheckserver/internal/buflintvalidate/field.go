@@ -155,7 +155,7 @@ var (
 // checkField validates that protovalidate rules defined for this field are
 // valid, not including CEL expressions.
 func checkField(
-	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	field bufprotosource.Field,
 	extensionTypeResolver protoencoding.Resolver,
 ) error {
@@ -247,7 +247,7 @@ func checkConstraintsForField(
 			exampleFieldNumber = int32(fd.Number())
 			// This assumed all *Rules.Example are repeated, otherwise it panics.
 			list := value.List()
-			for i := 0; i < list.Len(); i++ {
+			for i := range list.Len() {
 				exampleValues = append(exampleValues, list.Get(i))
 			}
 			return false
@@ -677,7 +677,7 @@ func checkDurationRules(adder *adder, r *validate.DurationRules) error {
 		r.ProtoReflect(),
 		getDurationFromValue,
 		compareDuration,
-		func(d *durationpb.Duration) interface{} { return d },
+		func(d *durationpb.Duration) any { return d },
 	)
 }
 
@@ -688,7 +688,7 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 		timestampRules.ProtoReflect(),
 		getTimestampFromValue,
 		compareTimestamp,
-		func(t *timestamppb.Timestamp) interface{} { return t },
+		func(t *timestamppb.Timestamp) any { return t },
 	); err != nil {
 		return err
 	}

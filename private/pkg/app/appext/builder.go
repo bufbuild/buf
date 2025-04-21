@@ -194,7 +194,7 @@ func runProfile(
 		profile.ProfilePath(profilePath),
 		profileFunc,
 	)
-	for i := 0; i < profileLoops; i++ {
+	for range profileLoops {
 		if err := f(); err != nil {
 			if !profileAllowError {
 				return err

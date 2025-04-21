@@ -28,7 +28,7 @@ func TestStartSimple(t *testing.T) {
 
 	ctx := context.Background()
 	processes := make([]Process, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		process, err := Start(ctx, "sleep", WithArgs("1"))
 		require.NoError(t, err)
 		processes[i] = process

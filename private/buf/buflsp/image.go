@@ -85,7 +85,7 @@ func buildImage(
 		}
 
 		imports := descriptor.Imports()
-		for i := 0; i < imports.Len(); i++ {
+		for i := range imports.Len() {
 			dep := imports.Get(i).FileDescriptor
 			if dep == nil {
 				logger.Warn(fmt.Sprintf("found nil FileDescriptor for import %s", imports.Get(i).Path()))

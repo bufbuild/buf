@@ -1079,7 +1079,7 @@ func testParseBoolPointer(t *testing.T, flagName string, expectedResult *bool, a
 }
 
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := make(map[string]interface{})
+	externalConfig := make(map[string]any)
 	externalConfig["version"] = "v1"
 	pluginConfigs := []map[string]string{}
 	for _, plugin := range plugins {

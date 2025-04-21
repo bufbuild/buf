@@ -175,12 +175,12 @@ func tryModifyHeader(
 	if filename1 == filename2 {
 		filename1 = filename1 + ".orig"
 	}
-	bs[0] = []byte(fmt.Sprintf("--- %s%s", filename1, t0))
-	bs[1] = []byte(fmt.Sprintf("+++ %s%s", filename2, t1))
+	bs[0] = fmt.Appendf(nil, "--- %s%s", filename1, t0)
+	bs[1] = fmt.Appendf(nil, "+++ %s%s", filename2, t1)
 	if !suppressCommands {
 		bs = append(
 			[][]byte{
-				[]byte(fmt.Sprintf("diff -u %s %s", filename1, filename2)),
+				fmt.Appendf(nil, "diff -u %s %s", filename1, filename2),
 			},
 			bs...,
 		)
