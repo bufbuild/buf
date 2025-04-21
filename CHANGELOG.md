@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `CSR` category to breaking rules.
 
 ## [v1.53.0] - 2025-04-21
 
