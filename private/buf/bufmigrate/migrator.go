@@ -30,12 +30,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/google/uuid"
 )
 
@@ -697,11 +695,7 @@ func equivalentCheckConfigInV2(
 ) (bufconfig.CheckConfig, error) {
 	// No need for custom lint/breaking plugins since there's no plugins to migrate from <=v1.
 	// TODO: If we ever need v3, then we will have to deal with this.
-	client, err := bufcheck.NewClient(logger, bufcheck.NewLocalRunnerProvider(
-		wasm.UnimplementedRuntime,
-		bufplugin.NopPluginKeyProvider,
-		bufplugin.NopPluginDataProvider,
-	))
+	client, err := bufcheck.NewClient(logger)
 	if err != nil {
 		return nil, err
 	}

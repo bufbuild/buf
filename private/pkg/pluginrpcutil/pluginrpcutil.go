@@ -40,27 +40,24 @@ func NewWasmRunner(delegate wasm.Runtime, getData func() ([]byte, error), progra
 	return newWasmRunner(delegate, getData, programName, programArgs...)
 }
 
-// NewLocalWasmRunner returns a new pluginrpc.Runner for the local wasm file.
+// ReadWasmFileFromOS reads the Wasm data from the OS.
 //
-// This is used for local Wasm plugins. The program name is the path to the Wasm file.
-// The program args are the arguments to the program. May be empty.
-// The Wasm file is read from the filesystem.
-func NewLocalWasmRunner(delegate wasm.Runtime, programName string, programArgs ...string) pluginrpc.Runner {
-	getData := func() ([]byte, error) {
-		// Find the plugin path. We use the same logic as exec.LookPath, but we do
-		// not require the file to be executable. So check the local directory
-		// first before checking the PATH.
-		var path string
-		if fileInfo, err := os.Stat(programName); err == nil && !fileInfo.IsDir() {
-			path = programName
-		} else {
-			var err error
-			path, err = unsafeLookPath(programName)
-			if err != nil {
-				return nil, fmt.Errorf("could not find file %q in PATH: %v", programName, err)
-			}
+// This is used for local Wasm plugins. The lookup is similar to exec.LookPath.
+// The file must be in the local directory or in the PATH. The file is not
+// required to be executable.
+func ReadWasmFileFromOS(name string) ([]byte, error) {
+	// Find the plugin path. We use the same logic as exec.LookPath, but we do
+	// not require the file to be executable. So check the local directory
+	// first before checking the PATH.
+	var path string
+	if fileInfo, err := os.Stat(name); err == nil && !fileInfo.IsDir() {
+		path = name
+	} else {
+		var err error
+		path, err = unsafeLookPath(name)
+		if err != nil {
+			return nil, fmt.Errorf("could not find file %q in PATH: %v", name, err)
 		}
-		return os.ReadFile(path)
 	}
-	return NewWasmRunner(delegate, getData, programName, programArgs...)
+	return os.ReadFile(path)
 }
