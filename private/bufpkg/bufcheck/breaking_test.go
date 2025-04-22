@@ -1299,7 +1299,7 @@ func testBreaking(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second) // Increased timeout for Wasm runtime
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for Wasm runtime
 	defer cancel()
 	logger := slogtestext.NewLogger(t)
 
