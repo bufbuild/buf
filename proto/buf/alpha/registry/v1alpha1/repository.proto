@@ -406,7 +406,7 @@ message AddRepositoryGroupRequest {
   // The name of the group to add.
   string group_name = 2;
   // The role to associate with any user who is added to the repository via this group.
-  RepositoryRole repository_role = 3;
+  RepositoryRole role_override = 3;
 }
 
 message AddRepositoryGroupResponse {}
