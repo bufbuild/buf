@@ -16,6 +16,7 @@ package bufconfig
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
@@ -45,20 +46,20 @@ deps:
     commit: ffded0b4cf6b47cab74da08d291a3c2f
     digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
   - name: buf.testing/acme/extension
-    commit: b8488077ea6d4f6d9562a337b98259c8
+    commit: 6d880cc6cc8d4131bdb5a51399df8faf
     digest: b5:d2c1da8f8331c5c75b50549c79fc360394dedfb6a11f5381c4523592018964119f561088fc8aaddfc9f5773ba02692e6fd9661853450f76a3355dec62c1f57b4
 plugins:
   - name: buf.testing/acme/plugin
     commit: ffded0b4cf6b47cab74da08d291a3c2f
-    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
 policies:
   - name: buf.testing/acme/policy
     commit: b8488077ea6d4f6d9562a337b98259c8
-    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
     plugins:
       - name: buf.testing/acme/plugin
         commit: ffded0b4cf6b47cab74da08d291a3c2f
-        digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
 `,
 		// expected output
 		`version: v2
@@ -67,23 +68,59 @@ deps:
     commit: ffded0b4cf6b47cab74da08d291a3c2f
     digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
   - name: buf.testing/acme/extension
-    commit: b8488077ea6d4f6d9562a337b98259c8
+    commit: 6d880cc6cc8d4131bdb5a51399df8faf
     digest: b5:d2c1da8f8331c5c75b50549c79fc360394dedfb6a11f5381c4523592018964119f561088fc8aaddfc9f5773ba02692e6fd9661853450f76a3355dec62c1f57b4
 plugins:
   - name: buf.testing/acme/plugin
     commit: ffded0b4cf6b47cab74da08d291a3c2f
-    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
 policies:
   - name: buf.testing/acme/policy
-    commit: ffded0b4cf6b47cab74da08d291a3c2f
-    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    commit: b8488077ea6d4f6d9562a337b98259c8
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
     plugins:
       - name: buf.testing/acme/plugin
         commit: ffded0b4cf6b47cab74da08d291a3c2f
-        digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
 `,
 	)
 
+	// Test a buf.lock file with a local policy file with remote plugins.
+	testReadWriteBufLockFileRoundTrip(
+		t,
+		// input
+		`version: v2
+policies:
+  - name: buf.policy.yaml
+    plugins:
+      - name: buf.testing/acme/plugin
+        commit: ffded0b4cf6b47cab74da08d291a3c2f
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+  - name: buf.testing/acme/policy
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    plugins:
+      - name: buf.testing/acme/plugin
+        commit: ffded0b4cf6b47cab74da08d291a3c2f
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+`,
+		// expected output
+		`version: v2
+policies:
+  - name: buf.policy.yaml
+    plugins:
+      - name: buf.testing/acme/plugin
+        commit: ffded0b4cf6b47cab74da08d291a3c2f
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+  - name: buf.testing/acme/policy
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    plugins:
+      - name: buf.testing/acme/plugin
+        commit: ffded0b4cf6b47cab74da08d291a3c2f
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+`,
+	)
 }
 
 func testReadBufLockFile(
@@ -91,9 +128,9 @@ func testReadBufLockFile(
 	inputBufLockFileData string,
 ) BufLockFile {
 	bufLockFile, err := ReadBufLockFile(
-		t.Context(),
+		context.Background(),
 		strings.NewReader(testCleanYAMLData(inputBufLockFileData)),
-		defaultBufPolicyYAMLFileName,
+		DefaultBufLockFileName,
 	)
 	require.NoError(t, err)
 	return bufLockFile
@@ -109,5 +146,6 @@ func testReadWriteBufLockFileRoundTrip(
 	err := WriteBufLockFile(buffer, bufLockFile)
 	require.NoError(t, err)
 	outputBufLockData := testCleanYAMLData(buffer.String())
+	outputBufLockData = strings.TrimPrefix(outputBufLockData, "# Generated by buf. DO NOT EDIT.\n")
 	assert.Equal(t, testCleanYAMLData(expectedOutputBufLockFileData), outputBufLockData, "output:\n%s", outputBufLockData)
 }

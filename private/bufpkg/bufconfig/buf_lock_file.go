@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -87,17 +89,17 @@ type BufLockFile interface {
 	// PolicyKeys are sorted by FullName.
 	//
 	// Files with FileVersionV1Beta1 or FileVersionV1 will not have PolicyKeys.
-	// Only files with FileVersionV2 will have PolicyKeys with Digests of DigestTypeP1.
+	// Only files with FileVersionV2 will have PolicyKeys with Digests of DigestTypeO1.
 	RemotePolicyKeys() []bufpolicy.PolicyKey
-	// RemotePluginKeysForPolicy returns the PluginKeys representing the remote plugins as specified in the buf.lock file
-	// for the given policy.
+	// PolicyNameToRemotePluginKeys returns the PluginKeys for each Policy
+	// representing the remote plugins as specified in the buf.lock file.
 	//
-	// All PluginKeys will have unique FullNames.
-	// PluginKeys are sorted by FullName.
+	// All PluginKeys will have unique FullNames for each Policy.
+	// PluginKeys are sorted by FullName for each Policy.
 	//
-	// Files with FileVersionV1Beta1 or FileVersionV1 will not have PluginKeys.
-	// Only files with FileVersionV2 will have PluginKeys with Digests of DigestTypeP1.
-	RemotePluginKeysForPolicy(bufpolicy.PluginKey) []bufplugin.PluginKey
+	// Files with FileVersionV1Beta1 or FileVersionV1 will not have Policies with PluginKeys.
+	// Only files with FileVersionV2 will have Policies with PluginKeys with Digests of DigestTypeP1.
+	PolicyNameToRemotePluginKeys() map[string][]bufplugin.PluginKey
 
 	isBufLockFile()
 }
@@ -106,8 +108,14 @@ type BufLockFile interface {
 //
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateBufLockFileDigests().
-func NewBufLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey, pluginKeys []bufplugin.PluginKey) (BufLockFile, error) {
-	return newBufLockFile(fileVersion, nil, depModuleKeys, pluginKeys)
+func NewBufLockFile(
+	fileVersion FileVersion,
+	depModuleKeys []bufmodule.ModuleKey,
+	pluginKeys []bufplugin.PluginKey,
+	policyKeys []bufpolicy.PolicyKey,
+	policyNameToPluginKeys map[string][]bufplugin.PluginKey,
+) (BufLockFile, error) {
+	return newBufLockFile(fileVersion, nil, depModuleKeys, pluginKeys, policyKeys, policyNameToPluginKeys)
 }
 
 // GetBufLockFileForPrefix gets the buf.lock file at the given bucket prefix.
@@ -207,12 +215,12 @@ func BufLockFileWithDigestResolver(
 // *** PRIVATE ***
 
 type bufLockFile struct {
-	fileVersion               FileVersion
-	objectData                ObjectData
-	depModuleKeys             []bufmodule.ModuleKey
-	remotePluginKeys          []bufplugin.PluginKey
-	remotePolicyKeys          []bufpolicy.PolicyKey
-	remotePluginKeysForPolicy map[bufpolicy.PluginKey][]bufplugin.PluginKey
+	fileVersion                  FileVersion
+	objectData                   ObjectData
+	depModuleKeys                []bufmodule.ModuleKey
+	remotePluginKeys             []bufplugin.PluginKey
+	remotePolicyKeys             []bufpolicy.PolicyKey
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
 }
 
 func newBufLockFile(
@@ -221,7 +229,7 @@ func newBufLockFile(
 	depModuleKeys []bufmodule.ModuleKey,
 	remotePluginKeys []bufplugin.PluginKey,
 	remotePolicyKeys []bufpolicy.PolicyKey,
-	remotePluginKeysForPolicy map[string][]bufplugin.PluginKey,
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
 ) (*bufLockFile, error) {
 	if err := validateNoDuplicateModuleKeysByFullName(depModuleKeys); err != nil {
 		return nil, err
@@ -237,7 +245,7 @@ func newBufLockFile(
 		if len(remotePluginKeys) > 0 {
 			return nil, errors.New("remote plugins are not supported in v1 or v1beta1 buf.lock files")
 		}
-		if len(remotePolicyKeys) > 0 || len(remotePluginKeysForPolicy) > 0 {
+		if len(remotePolicyKeys) > 0 || len(policyNameToRemotePluginKeys) > 0 {
 			return nil, errors.New("remote policies are not supported in v1 or v1beta1 buf.lock files")
 		}
 	case FileVersionV2:
@@ -250,8 +258,13 @@ func newBufLockFile(
 		if err := validatePolicyExpectedDigestType(remotePolicyKeys, fileVersion, bufpolicy.DigestTypeP1); err != nil {
 			return nil, err
 		}
-		if err := validatePluginKeysForPolicy(remotePluginKeysForPolicy, fileVersion); err != nil {
-			return nil, err
+		for policyName, pluginKeys := range policyNameToRemotePluginKeys {
+			if err := validateNoDuplicatePluginKeysByFullName(pluginKeys); err != nil {
+				return nil, fmt.Errorf("policy %q: %w", policyName, err)
+			}
+			if err := validatePluginExpectedDigestType(pluginKeys, fileVersion, bufplugin.DigestTypeP1); err != nil {
+				return nil, fmt.Errorf("policy %q: %w", policyName, err)
+			}
 		}
 	default:
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
@@ -272,10 +285,12 @@ func newBufLockFile(
 		},
 	)
 	bufLockFile := &bufLockFile{
-		fileVersion:      fileVersion,
-		objectData:       objectData,
-		depModuleKeys:    depModuleKeys,
-		remotePluginKeys: remotePluginKeys,
+		fileVersion:                  fileVersion,
+		objectData:                   objectData,
+		depModuleKeys:                depModuleKeys,
+		remotePluginKeys:             remotePluginKeys,
+		remotePolicyKeys:             remotePolicyKeys,
+		policyNameToRemotePluginKeys: policyNameToRemotePluginKeys,
 	}
 	if err := validateV1AndV1Beta1DepsHaveCommits(bufLockFile); err != nil {
 		return nil, err
@@ -307,11 +322,11 @@ func (l *bufLockFile) RemotePolicyKeys() []bufpolicy.PolicyKey {
 	return l.remotePolicyKeys
 }
 
-func (l *bufLockFile) RemotePluginKeysForPolicy(pluginKey bufpolicy.PluginKey) []bufplugin.PluginKey {
-	if l.remotePluginKeysForPolicy == nil {
+func (l *bufLockFile) PolicyNameToRemotePluginKeys() map[string][]bufplugin.PluginKey {
+	if l.policyNameToRemotePluginKeys == nil {
 		return nil
 	}
-	return l.remotePluginKeysForPolicy[pluginKey.String()]
+	return l.policyNameToRemotePluginKeys
 }
 
 func (*bufLockFile) isBufLockFile() {}
@@ -387,7 +402,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, objectData, depModuleKeys, nil /* remotePluginKeys */, nil /* remotePolicyKeys */, nil /* remotePluginKeysForPolicy */)
+		return newBufLockFile(fileVersion, objectData, depModuleKeys, nil /* remotePluginKeys */, nil /* remotePolicyKeys */, nil /* remotePolicyPluginKeys */)
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
@@ -432,18 +447,31 @@ func readBufLockFile(
 		if err != nil {
 			return nil, err
 		}
-		remotePolicyKeys := make([]bufpolicy.PolicyKey, len(externalBufLockFile.Policies))
-		remotePluginKeysForPolicy := make(map[string][]bufplugin.PluginKey)
-		for i, policy := range externalBufLockFile.Policies {
+		remotePolicyKeys := make([]bufpolicy.PolicyKey, 0, len(externalBufLockFile.Policies))
+		policyNameToRemotePluginKeys := make(map[string][]bufplugin.PluginKey, len(externalBufLockFile.Policies))
+		for _, policy := range externalBufLockFile.Policies {
 			if policy.Name == "" {
 				return nil, errors.New("no policy name specified")
+			}
+			// Parse the plugins for this policy.
+			remotePluginKeys, err := parseRemotePluginDeps(policy.Plugins)
+			if err != nil {
+				return nil, fmt.Errorf("invalid plugins for policy %q: %w", policy.Name, err)
+			}
+			if policy.Commit == "" {
+				// Local policies may be specified with remote plugins.
+				// An empty commit ID indicates that this is a local policy.
+				// If the policy has a digest, it is a remote policy with a missing commit ID.
+				if policy.Digest != "" {
+					return nil, fmt.Errorf("no commit specified for policy %s", policy.Name)
+				}
+				// This is a local Policy with remote plugins.
+				policyNameToRemotePluginKeys[policy.Name] = remotePluginKeys
+				continue
 			}
 			policyFullName, err := bufparse.ParseFullName(policy.Name)
 			if err != nil {
 				return nil, fmt.Errorf("invalid policy name: %w", err)
-			}
-			if policy.Commit == "" {
-				return nil, fmt.Errorf("no commit specified for policy %s", policyFullName.String())
 			}
 			if policy.Digest == "" {
 				return nil, fmt.Errorf("no digest specified for policy %s", policyFullName.String())
@@ -452,7 +480,7 @@ func readBufLockFile(
 			if err != nil {
 				return nil, err
 			}
-			policyKey, err := bufpolicy.NewpolicyKey(
+			policyKey, err := bufpolicy.NewPolicyKey(
 				policyFullName,
 				commitID,
 				func() (bufpolicy.Digest, error) {
@@ -462,17 +490,11 @@ func readBufLockFile(
 			if err != nil {
 				return nil, err
 			}
-			remotePolicyKeys[i] = policyKey
-			// Parse the plugins for this policy.
-			remotePluginKeys, err := parseRemotePluginDeps(policy.Plugins)
-			if err != nil {
-				return nil, fmt.Errorf("invalid plugins for policy %q: %w", policyFullName.String(), err)
-			}
-			if len(remotePluginKeys) > 0 {
-				remotePluginKeysForPolicy[policyKey.String()] = remotePluginKeys
-			}
+			// Append the policy key rather than index as some policies may not be remote.
+			remotePolicyKeys = append(remotePolicyKeys, policyKey)
+			policyNameToRemotePluginKeys[policy.Name] = remotePluginKeys
 		}
-		return newBufLockFile(fileVersion, objectData, depModuleKeys, remotePluginKeys, remotePolicyKeys, remotePluginKeysForPolicy)
+		return newBufLockFile(fileVersion, objectData, depModuleKeys, remotePluginKeys, remotePolicyKeys, policyNameToRemotePluginKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
@@ -551,10 +573,13 @@ func writeBufLockFile(
 	case FileVersionV2:
 		depModuleKeys := bufLockFile.DepModuleKeys()
 		remotePluginKeys := bufLockFile.RemotePluginKeys()
+		remotePolicyKeys := bufLockFile.RemotePolicyKeys()
+		policyNameToRemotePluginKeys := maps.Clone(bufLockFile.PolicyNameToRemotePluginKeys())
 		externalBufLockFile := externalBufLockFileV2{
-			Version: fileVersion.String(),
-			Deps:    make([]externalBufLockFileDepV2, len(depModuleKeys)),
-			Plugins: make([]externalBufLockFileDepV2, len(remotePluginKeys)),
+			Version:  fileVersion.String(),
+			Deps:     make([]externalBufLockFileDepV2, len(depModuleKeys)),
+			Plugins:  make([]externalBufLockFileDepV2, len(remotePluginKeys)),
+			Policies: make([]externalBufLockFilePolicyV2, len(remotePolicyKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
 			digest, err := depModuleKey.Digest()
@@ -578,7 +603,60 @@ func writeBufLockFile(
 				Digest: digest.String(),
 			}
 		}
-		// No need to sort - depModuleKeys is already sorted by FullName
+		for i, remotePolicyKey := range remotePolicyKeys {
+			digest, err := remotePolicyKey.Digest()
+			if err != nil {
+				return err
+			}
+			remotePluginKeysForPolicy := policyNameToRemotePluginKeys[remotePolicyKey.FullName().String()]
+			externalPlugins := make([]externalBufLockFileDepV2, len(remotePluginKeysForPolicy))
+			for j, remotePluginKey := range remotePluginKeysForPolicy {
+				digest, err := remotePluginKey.Digest()
+				if err != nil {
+					return err
+				}
+				externalPlugins[j] = externalBufLockFileDepV2{
+					Name:   remotePluginKey.FullName().String(),
+					Commit: uuidutil.ToDashless(remotePluginKey.CommitID()),
+					Digest: digest.String(),
+				}
+			}
+			externalBufLockFile.Policies[i] = externalBufLockFilePolicyV2{
+				Name:    remotePolicyKey.FullName().String(),
+				Commit:  uuidutil.ToDashless(remotePolicyKey.CommitID()),
+				Digest:  digest.String(),
+				Plugins: externalPlugins,
+			}
+			// Remove the remote policy key from the map.
+			delete(policyNameToRemotePluginKeys, remotePolicyKey.FullName().String())
+		}
+		// Append any local policies that have remote plugins.
+		for policyName, remotePluginKeys := range policyNameToRemotePluginKeys {
+			externalPlugins := make([]externalBufLockFileDepV2, len(remotePluginKeys))
+			for j, remotePluginKey := range remotePluginKeys {
+				digest, err := remotePluginKey.Digest()
+				if err != nil {
+					return err
+				}
+				externalPlugins[j] = externalBufLockFileDepV2{
+					Name:   remotePluginKey.FullName().String(),
+					Commit: uuidutil.ToDashless(remotePluginKey.CommitID()),
+					Digest: digest.String(),
+				}
+			}
+			// Must append local polcies as only allocate remote policies.
+			externalBufLockFile.Policies = append(externalBufLockFile.Policies, externalBufLockFilePolicyV2{
+				Name:    policyName,
+				Plugins: externalPlugins,
+			})
+		}
+		// Sort the policies by name.
+		if len(policyNameToRemotePluginKeys) > 0 {
+			sort.Slice(externalBufLockFile.Policies, func(i, j int) bool {
+				return externalBufLockFile.Policies[i].Name < externalBufLockFile.Policies[j].Name
+			})
+		}
+
 		data, err := encoding.MarshalYAML(&externalBufLockFile)
 		if err != nil {
 			return err
@@ -721,22 +799,6 @@ func validatePolicyExpectedDigestType(
 	return nil
 }
 
-func validatePluginKeysForPolicy(
-	pluginKeysForPolicy map[bufplugin.PluginKey][]bufplugin.PluginKey,
-	fileVersion FileVersion,
-	expectedDigestType bufplugin.DigestType,
-) error {
-	for policyKey, pluginKeys := range pluginKeysForPolicy {
-		if err := validateNoDuplicatePluginKeysByFullName(pluginKeys); err != nil {
-			return fmt.Errorf("duplicate plugins attempted to be added to policy %q: %w", policyKey.String(), err)
-		}
-		if err := validatePluginExpectedDigestType(pluginKeys, fileVersion, expectedDigestType); err != nil {
-			return fmt.Errorf("invalid plugins for policy %q: %w", policyKey.String(), err)
-		}
-	}
-	return nil
-}
-
 // externalBufLockFileV1Beta1V1 represents the v1 or v1beta1 buf.lock file,
 // which have the same shape.
 type externalBufLockFileV1Beta1V1 struct {
@@ -774,7 +836,10 @@ type externalBufLockFileDepV2 struct {
 }
 
 type externalBufLockFilePolicyV2 struct {
-	externalBufLockFileDepV2
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Dashless
+	Commit  string                     `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Digest  string                     `json:"digest,omitempty" yaml:"digest,omitempty"`
 	Plugins []externalBufLockFileDepV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 

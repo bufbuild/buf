@@ -102,5 +102,13 @@ func prune(
 	if err != nil {
 		return err
 	}
-	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, prunedBufLockPluginKeys)
+	existingRemotePolicyKeys, err := workspaceDepManager.ExistingBufLockFileRemotePolicyKeys(ctx)
+	if err != nil {
+		return err
+	}
+	existingPolicyNameToRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, prunedBufLockPluginKeys, existingRemotePolicyKeys, existingPolicyNameToRemotePluginKeys)
 }
