@@ -162,6 +162,8 @@ type RepositoryServiceClient interface {
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
 	// AddRepositoryGroup adds an IdP Group to the repository.
+	//
+	// Only repositories owned by an organization can have groups.
 	AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error)
 	// UpdateRepositoryGroup updates an IdP Group for the repository.
 	UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error)
@@ -531,6 +533,8 @@ type RepositoryServiceHandler interface {
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
 	// AddRepositoryGroup adds an IdP Group to the repository.
+	//
+	// Only repositories owned by an organization can have groups.
 	AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error)
 	// UpdateRepositoryGroup updates an IdP Group for the repository.
 	UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error)

@@ -3625,6 +3625,9 @@ type AddRepositoryGroupRequest_builder struct {
 	// The name of the group to add.
 	GroupName string
 	// The role to associate with any user who is added to the repository via this group.
+	//
+	// Any user who maps to this repository via this group will be granted this role. If no role is
+	// set, the user will be granted the containing-organization's base repository role.
 	RoleOverride RepositoryRole
 }
 
