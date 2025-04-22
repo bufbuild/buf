@@ -171,6 +171,8 @@ service RepositoryService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // AddRepositoryGroup adds an IdP Group to the repository.
+  //
+  // Only repositories owned by an organization can have groups.
   rpc AddRepositoryGroup(AddRepositoryGroupRequest) returns (AddRepositoryGroupResponse) {
     option idempotency_level = IDEMPOTENT;
   }
@@ -406,7 +408,10 @@ message AddRepositoryGroupRequest {
   // The name of the group to add.
   string group_name = 2;
   // The role to associate with any user who is added to the repository via this group.
-  RepositoryRole repository_role = 3;
+  //
+  // Any user who maps to this repository via this group will be granted this role. If no role is
+  // set, the user will be granted the containing-organization's base repository role.
+  RepositoryRole role_override = 3;
 }
 
 message AddRepositoryGroupResponse {}
