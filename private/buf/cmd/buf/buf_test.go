@@ -101,20 +101,16 @@ var (
 	}
 	// ordered, contains non-default
 	builtinBreakingRulesV2 = []*outputCheckRule{
-		{ID: "ENUM_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that enums are not deleted from a given file."},
 		{ID: "EXTENSION_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that extensions are not deleted from a given file."},
-		{ID: "FILE_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that files are not deleted."},
-		{ID: "MESSAGE_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that messages are not deleted from a given file."},
 		{ID: "SERVICE_NO_DELETE", Categories: []string{"FILE"}, Default: true, Purpose: "Checks that services are not deleted from a given file."},
+		{ID: "ENUM_NO_DELETE", Categories: []string{"CSR", "FILE"}, Default: true, Purpose: "Checks that enums are not deleted from a given file."},
+		{ID: "FILE_NO_DELETE", Categories: []string{"CSR", "FILE"}, Default: true, Purpose: "Checks that files are not deleted."},
+		{ID: "MESSAGE_NO_DELETE", Categories: []string{"CSR", "FILE"}, Default: true, Purpose: "Checks that messages are not deleted from a given file."},
 		{ID: "ENUM_SAME_TYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that enums have the same type (open vs closed)."},
-		{ID: "ENUM_VALUE_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that enum values are not deleted from a given enum."},
-		{ID: "EXTENSION_MESSAGE_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that extension ranges are not deleted from a given message."},
-		{ID: "FIELD_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields are not deleted from a given message."},
 		{ID: "FIELD_SAME_CARDINALITY", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same cardinalities in a given message."},
 		{ID: "FIELD_SAME_CPP_STRING_TYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature."},
 		{ID: "FIELD_SAME_JAVA_UTF8_VALIDATION", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature."},
 		{ID: "FIELD_SAME_JSTYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same value for the jstype option."},
-		{ID: "FIELD_SAME_TYPE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same types in a given message."},
 		{ID: "FIELD_SAME_UTF8_VALIDATION", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that string fields have the same UTF8 validation mode."},
 		{ID: "FILE_SAME_CC_ENABLE_ARENAS", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the cc_enable_arenas option."},
 		{ID: "FILE_SAME_CC_GENERIC_SERVICES", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the cc_generic_services option."},
@@ -132,37 +128,41 @@ var (
 		{ID: "FILE_SAME_PY_GENERIC_SERVICES", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the py_generic_services option."},
 		{ID: "FILE_SAME_RUBY_PACKAGE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the ruby_package option."},
 		{ID: "FILE_SAME_SWIFT_PREFIX", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same value for the swift_prefix option."},
-		{ID: "FILE_SAME_SYNTAX", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same syntax."},
-		{ID: "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true."},
-		{ID: "ONEOF_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that oneofs are not deleted from a given message."},
 		{ID: "RPC_NO_DELETE", Categories: []string{"FILE", "PACKAGE"}, Default: true, Purpose: "Checks that rpcs are not deleted from a given service."},
-		{ID: "ENUM_SAME_JSON_FORMAT", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enums have the same JSON format support."},
-		{ID: "ENUM_VALUE_SAME_NAME", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enum values have the same name."},
-		{ID: "FIELD_SAME_JSON_NAME", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same value for the json_name option."},
-		{ID: "FIELD_SAME_NAME", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same names in a given message."},
-		{ID: "MESSAGE_SAME_JSON_FORMAT", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that messages have the same JSON format support."},
-		{ID: "FIELD_SAME_DEFAULT", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that fields have the same default value, if a default is specified."},
-		{ID: "FIELD_SAME_ONEOF", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that fields have the same oneofs in a given message."},
-		{ID: "FILE_SAME_PACKAGE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that files have the same package."},
-		{ID: "MESSAGE_SAME_REQUIRED_FIELDS", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that messages have no added or deleted required fields."},
-		{ID: "RESERVED_ENUM_NO_DELETE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that reserved ranges and names are not deleted from a given enum."},
-		{ID: "RESERVED_MESSAGE_NO_DELETE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that reserved ranges and names are not deleted from a given message."},
-		{ID: "RPC_SAME_CLIENT_STREAMING", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same client streaming value."},
-		{ID: "RPC_SAME_IDEMPOTENCY_LEVEL", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same value for the idempotency_level option."},
-		{ID: "RPC_SAME_REQUEST_TYPE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs are have the same request type."},
-		{ID: "RPC_SAME_RESPONSE_TYPE", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs are have the same response type."},
-		{ID: "RPC_SAME_SERVER_STREAMING", Categories: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same server streaming value."},
+		{ID: "ENUM_VALUE_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that enum values are not deleted from a given enum."},
+		{ID: "EXTENSION_MESSAGE_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that extension ranges are not deleted from a given message."},
+		{ID: "FIELD_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields are not deleted from a given message."},
+		{ID: "FIELD_SAME_TYPE", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that fields have the same types in a given message."},
+		{ID: "FILE_SAME_SYNTAX", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that files have the same syntax."},
+		{ID: "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true."},
+		{ID: "ONEOF_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that oneofs are not deleted from a given message."},
+		{ID: "ENUM_SAME_JSON_FORMAT", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enums have the same JSON format support."},
+		{ID: "ENUM_VALUE_SAME_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enum values have the same name."},
+		{ID: "FIELD_SAME_JSON_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same value for the json_name option."},
+		{ID: "FIELD_SAME_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same names in a given message."},
+		{ID: "MESSAGE_SAME_JSON_FORMAT", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that messages have the same JSON format support."},
+		{ID: "FIELD_SAME_DEFAULT", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that fields have the same default value, if a default is specified."},
+		{ID: "FIELD_SAME_ONEOF", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that fields have the same oneofs in a given message."},
+		{ID: "FILE_SAME_PACKAGE", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that files have the same package."},
+		{ID: "MESSAGE_SAME_REQUIRED_FIELDS", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that messages have no added or deleted required fields."},
+		{ID: "RESERVED_ENUM_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that reserved ranges and names are not deleted from a given enum."},
+		{ID: "RESERVED_MESSAGE_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that reserved ranges and names are not deleted from a given message."},
+		{ID: "RPC_SAME_CLIENT_STREAMING", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same client streaming value."},
+		{ID: "RPC_SAME_IDEMPOTENCY_LEVEL", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same value for the idempotency_level option."},
+		{ID: "RPC_SAME_REQUEST_TYPE", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs are have the same request type."},
+		{ID: "RPC_SAME_RESPONSE_TYPE", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs are have the same response type."},
+		{ID: "RPC_SAME_SERVER_STREAMING", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON", "WIRE"}, Default: true, Purpose: "Checks that rpcs have the same server streaming value."},
 		{ID: "PACKAGE_ENUM_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that enums are not deleted from a given package."},
 		{ID: "PACKAGE_EXTENSION_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that extensions are not deleted from a given package."},
 		{ID: "PACKAGE_MESSAGE_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that messages are not deleted from a given package."},
 		{ID: "PACKAGE_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that packages are not deleted."},
 		{ID: "PACKAGE_SERVICE_NO_DELETE", Categories: []string{"PACKAGE"}, Default: false, Purpose: "Checks that services are not deleted from a given package."},
-		{ID: "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that enum values are not deleted from a given enum unless the name is reserved."},
-		{ID: "FIELD_NO_DELETE_UNLESS_NAME_RESERVED", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that fields are not deleted from a given message unless the name is reserved."},
-		{ID: "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that fields have wire and JSON compatible cardinalities in a given message."},
-		{ID: "FIELD_WIRE_JSON_COMPATIBLE_TYPE", Categories: []string{"WIRE_JSON"}, Default: false, Purpose: "Checks that fields have wire and JSON compatible types in a given message."},
-		{ID: "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED", Categories: []string{"WIRE_JSON", "WIRE"}, Default: false, Purpose: "Checks that enum values are not deleted from a given enum unless the number is reserved."},
-		{ID: "FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED", Categories: []string{"WIRE_JSON", "WIRE"}, Default: false, Purpose: "Checks that fields are not deleted from a given message unless the number is reserved."},
+		{ID: "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED", Categories: []string{"CSR", "WIRE_JSON"}, Default: false, Purpose: "Checks that enum values are not deleted from a given enum unless the name is reserved."},
+		{ID: "FIELD_NO_DELETE_UNLESS_NAME_RESERVED", Categories: []string{"CSR", "WIRE_JSON"}, Default: false, Purpose: "Checks that fields are not deleted from a given message unless the name is reserved."},
+		{ID: "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY", Categories: []string{"CSR", "WIRE_JSON"}, Default: false, Purpose: "Checks that fields have wire and JSON compatible cardinalities in a given message."},
+		{ID: "FIELD_WIRE_JSON_COMPATIBLE_TYPE", Categories: []string{"CSR", "WIRE_JSON"}, Default: false, Purpose: "Checks that fields have wire and JSON compatible types in a given message."},
+		{ID: "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED", Categories: []string{"CSR", "WIRE_JSON", "WIRE"}, Default: false, Purpose: "Checks that enum values are not deleted from a given enum unless the number is reserved."},
+		{ID: "FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED", Categories: []string{"CSR", "WIRE_JSON", "WIRE"}, Default: false, Purpose: "Checks that fields are not deleted from a given message unless the number is reserved."},
 		{ID: "FIELD_WIRE_COMPATIBLE_CARDINALITY", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible cardinalities in a given message."},
 		{ID: "FIELD_WIRE_COMPATIBLE_TYPE", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible types in a given message."},
 	}
@@ -1131,71 +1131,71 @@ FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            
 func TestCheckLsBreakingRulesV2(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
-ID                                              CATEGORIES                      DEFAULT  PURPOSE
-ENUM_NO_DELETE                                  FILE                            *        Checks that enums are not deleted from a given file.
-EXTENSION_NO_DELETE                             FILE                            *        Checks that extensions are not deleted from a given file.
-FILE_NO_DELETE                                  FILE                            *        Checks that files are not deleted.
-MESSAGE_NO_DELETE                               FILE                            *        Checks that messages are not deleted from a given file.
-SERVICE_NO_DELETE                               FILE                            *        Checks that services are not deleted from a given file.
-ENUM_SAME_TYPE                                  FILE, PACKAGE                   *        Checks that enums have the same type (open vs closed).
-ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   *        Checks that enum values are not deleted from a given enum.
-EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   *        Checks that extension ranges are not deleted from a given message.
-FIELD_NO_DELETE                                 FILE, PACKAGE                   *        Checks that fields are not deleted from a given message.
-FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   *        Checks that fields have the same cardinalities in a given message.
-FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   *        Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
-FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   *        Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
-FIELD_SAME_JSTYPE                               FILE, PACKAGE                   *        Checks that fields have the same value for the jstype option.
-FIELD_SAME_TYPE                                 FILE, PACKAGE                   *        Checks that fields have the same types in a given message.
-FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   *        Checks that string fields have the same UTF8 validation mode.
-FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   *        Checks that files have the same value for the cc_enable_arenas option.
-FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the cc_generic_services option.
-FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   *        Checks that files have the same value for the csharp_namespace option.
-FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   *        Checks that files have the same value for the go_package option.
-FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   *        Checks that files have the same value for the java_generic_services option.
-FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   *        Checks that files have the same value for the java_multiple_files option.
-FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   *        Checks that files have the same value for the java_outer_classname option.
-FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the java_package option.
-FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   *        Checks that files have the same value for the objc_class_prefix option.
-FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   *        Checks that files have the same value for the optimize_for option.
-FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   *        Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   *        Checks that files have the same value for the php_metadata_namespace option.
-FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   *        Checks that files have the same value for the php_namespace option.
-FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   *        Checks that files have the same value for the py_generic_services option.
-FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   *        Checks that files have the same value for the ruby_package option.
-FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   *        Checks that files have the same value for the swift_prefix option.
-FILE_SAME_SYNTAX                                FILE, PACKAGE                   *        Checks that files have the same syntax.
-MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   *        Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
-ONEOF_NO_DELETE                                 FILE, PACKAGE                   *        Checks that oneofs are not deleted from a given message.
-RPC_NO_DELETE                                   FILE, PACKAGE                   *        Checks that rpcs are not deleted from a given service.
-ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE, WIRE_JSON        *        Checks that enums have the same JSON format support.
-ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same name.
-FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same value for the json_name option.
-FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same names in a given message.
-MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE, WIRE_JSON        *        Checks that messages have the same JSON format support.
-FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same default value, if a default is specified.
-FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same oneofs in a given message.
-FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that files have the same package.
-MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that messages have no added or deleted required fields.
-RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given enum.
-RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given message.
-RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same client streaming value.
-RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same value for the idempotency_level option.
-RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same request type.
-RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same response type.
-RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same server streaming value.
-PACKAGE_ENUM_NO_DELETE                          PACKAGE                                  Checks that enums are not deleted from a given package.
-PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                                  Checks that extensions are not deleted from a given package.
-PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                                  Checks that messages are not deleted from a given package.
-PACKAGE_NO_DELETE                               PACKAGE                                  Checks that packages are not deleted.
-PACKAGE_SERVICE_NO_DELETE                       PACKAGE                                  Checks that services are not deleted from a given package.
-ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                                Checks that enum values are not deleted from a given enum unless the name is reserved.
-FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                                Checks that fields are not deleted from a given message unless the name is reserved.
-FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                                Checks that fields have wire and JSON compatible cardinalities in a given message.
-FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                                Checks that fields have wire and JSON compatible types in a given message.
-ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                          Checks that enum values are not deleted from a given enum unless the number is reserved.
-FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                          Checks that fields are not deleted from a given message unless the number is reserved.
-FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                                     Checks that fields have wire-compatible cardinalities in a given message.
-FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                                     Checks that fields have wire-compatible types in a given message.
+ID                                              CATEGORIES                           DEFAULT  PURPOSE
+EXTENSION_NO_DELETE                             FILE                                 *        Checks that extensions are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                                 *        Checks that services are not deleted from a given file.
+ENUM_NO_DELETE                                  CSR, FILE                            *        Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  CSR, FILE                            *        Checks that files are not deleted.
+MESSAGE_NO_DELETE                               CSR, FILE                            *        Checks that messages are not deleted from a given file.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                        *        Checks that enums have the same type (open vs closed).
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                        *        Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                        *        Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                        *        Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                        *        Checks that fields have the same value for the jstype option.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                        *        Checks that string fields have the same UTF8 validation mode.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                        *        Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                        *        Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                        *        Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                        *        Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                        *        Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                        *        Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                        *        Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                        *        Checks that files have the same value for the java_package option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                        *        Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                        *        Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                        *        Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                        *        Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                        *        Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                        *        Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                        *        Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                        *        Checks that files have the same value for the swift_prefix option.
+RPC_NO_DELETE                                   FILE, PACKAGE                        *        Checks that rpcs are not deleted from a given service.
+ENUM_VALUE_NO_DELETE                            CSR, FILE, PACKAGE                   *        Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     CSR, FILE, PACKAGE                   *        Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 CSR, FILE, PACKAGE                   *        Checks that fields are not deleted from a given message.
+FIELD_SAME_TYPE                                 CSR, FILE, PACKAGE                   *        Checks that fields have the same types in a given message.
+FILE_SAME_SYNTAX                                CSR, FILE, PACKAGE                   *        Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  CSR, FILE, PACKAGE                   *        Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+ONEOF_NO_DELETE                                 CSR, FILE, PACKAGE                   *        Checks that oneofs are not deleted from a given message.
+ENUM_SAME_JSON_FORMAT                           CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that enums have the same JSON format support.
+ENUM_VALUE_SAME_NAME                            CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same names in a given message.
+MESSAGE_SAME_JSON_FORMAT                        CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that messages have the same JSON format support.
+FIELD_SAME_DEFAULT                              CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same default value, if a default is specified.
+FIELD_SAME_ONEOF                                CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that fields have the same oneofs in a given message.
+FILE_SAME_PACKAGE                               CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that files have the same package.
+MESSAGE_SAME_REQUIRED_FIELDS                    CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       CSR, FILE, PACKAGE, WIRE_JSON, WIRE  *        Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                                       Checks that enums are not deleted from a given package.
+PACKAGE_EXTENSION_NO_DELETE                     PACKAGE                                       Checks that extensions are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                                       Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                                       Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                                       Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       CSR, WIRE_JSON                                Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            CSR, WIRE_JSON                                Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          CSR, WIRE_JSON                                Checks that fields have wire and JSON compatible cardinalities in a given message.
+FIELD_WIRE_JSON_COMPATIBLE_TYPE                 CSR, WIRE_JSON                                Checks that fields have wire and JSON compatible types in a given message.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     CSR, WIRE_JSON, WIRE                          Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          CSR, WIRE_JSON, WIRE                          Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                                          Checks that fields have wire-compatible cardinalities in a given message.
+FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                                          Checks that fields have wire-compatible types in a given message.
 		`
 	testRunStdout(
 		t,
