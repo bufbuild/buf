@@ -39,7 +39,7 @@ message Actor {
 }
 
 // ResourceType is the type of the resource that was affected by the audited event.
-// 
+//
 // [#next-free-field: 20]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
@@ -75,7 +75,7 @@ message Resource {
 }
 
 // EventType is the type of audited event.
-// 
+//
 // [#next-free-field: 65]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
@@ -158,7 +158,7 @@ message EventMetadata {
 // Event is an audited action that happened in the BSR, with the information of what happened, when
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
-// 
+//
 // [#next-free-field: 71]
 message Event {
   // Unique id of the audited event.
