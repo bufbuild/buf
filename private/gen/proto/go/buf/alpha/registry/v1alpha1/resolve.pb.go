@@ -1815,6 +1815,7 @@ type GetParsedSDKVersionRequest struct {
 	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
 	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,1,opt,name=module_reference,json=moduleReference,proto3"`
 	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,2,opt,name=plugin_reference,json=pluginReference,proto3"`
+	xxx_hidden_SdkVersion      string                         `protobuf:"bytes,3,opt,name=sdk_version,json=sdkVersion,proto3"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -1858,12 +1859,23 @@ func (x *GetParsedSDKVersionRequest) GetPluginReference() *GetRemotePackageVersi
 	return nil
 }
 
+func (x *GetParsedSDKVersionRequest) GetSdkVersion() string {
+	if x != nil {
+		return x.xxx_hidden_SdkVersion
+	}
+	return ""
+}
+
 func (x *GetParsedSDKVersionRequest) SetModuleReference(v *LocalModuleReference) {
 	x.xxx_hidden_ModuleReference = v
 }
 
 func (x *GetParsedSDKVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
 	x.xxx_hidden_PluginReference = v
+}
+
+func (x *GetParsedSDKVersionRequest) SetSdkVersion(v string) {
+	x.xxx_hidden_SdkVersion = v
 }
 
 func (x *GetParsedSDKVersionRequest) HasModuleReference() bool {
@@ -1893,6 +1905,7 @@ type GetParsedSDKVersionRequest_builder struct {
 
 	ModuleReference *LocalModuleReference
 	PluginReference *GetRemotePackageVersionPlugin
+	SdkVersion      string
 }
 
 func (b0 GetParsedSDKVersionRequest_builder) Build() *GetParsedSDKVersionRequest {
@@ -1901,6 +1914,7 @@ func (b0 GetParsedSDKVersionRequest_builder) Build() *GetParsedSDKVersionRequest
 	_, _ = b, x
 	x.xxx_hidden_ModuleReference = b.ModuleReference
 	x.xxx_hidden_PluginReference = b.PluginReference
+	x.xxx_hidden_SdkVersion = b.SdkVersion
 	return m0
 }
 
@@ -2153,10 +2167,12 @@ const file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = "" +
 	"\x05owner\x18\x01 \x01(\tR\x05owner\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12\x1a\n" +
-	"\brevision\x18\x04 \x01(\rR\brevision\"\xe1\x01\n" +
+	"\brevision\x18\x04 \x01(\rR\brevision\"\x82\x02\n" +
 	"\x1aGetParsedSDKVersionRequest\x12\\\n" +
 	"\x10module_reference\x18\x01 \x01(\v21.buf.alpha.registry.v1alpha1.LocalModuleReferenceR\x0fmoduleReference\x12e\n" +
-	"\x10plugin_reference\x18\x02 \x01(\v2:.buf.alpha.registry.v1alpha1.GetRemotePackageVersionPluginR\x0fpluginReference\"\x80\x03\n" +
+	"\x10plugin_reference\x18\x02 \x01(\v2:.buf.alpha.registry.v1alpha1.GetRemotePackageVersionPluginR\x0fpluginReference\x12\x1f\n" +
+	"\vsdk_version\x18\x03 \x01(\tR\n" +
+	"sdkVersion\"\x80\x03\n" +
 	"\x1bGetParsedSDKVersionResponse\x12w\n" +
 	"\x12parsed_sdk_version\x18\x01 \x01(\v2I.buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse.ParsedSDKVersionR\x10parsedSdkVersion\x1a\xe7\x01\n" +
 	"\x10ParsedSDKVersion\x12%\n" +
