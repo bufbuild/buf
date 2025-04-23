@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for local bufplugins for `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 
 ## [v1.53.0] - 2025-04-21
 
